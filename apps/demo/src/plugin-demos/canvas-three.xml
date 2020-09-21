@@ -1,0 +1,11 @@
+<Page xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo"
+      class="page">
+  <Page.actionBar>
+    <ActionBar title="canvas-three" icon="" class="action-bar">
+    </ActionBar>
+  </Page.actionBar>
+  <GridLayout>
+    <canvas:Canvas height="100%" width="100%" id="canvas" ready="{{ canvasLoaded }}" loaded="{{ loaded }}"
+                      unloaded="{{unloaded}}"/>
+  </GridLayout>
+</Page>

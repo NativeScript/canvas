@@ -1,0 +1,13 @@
+<Page navigatingTo="loaded"
+    xmlns="http://schemas.nativescript.org/tns.xsd"
+    xmlns:canvas="nativescript-canvas-plugin">
+
+    <ActionBar class="action-bar">
+        <Label class="action-bar-title" text="Monster Wants Candy"/>
+    </ActionBar>
+
+    <GridLayout iosOverflowSafeArea="false">
+        <canvas:TNSCanvas  id="canvas" width="100%" height="100%" layoutChanged="canvasLoaded"/>
+        <ActivityIndicator loaded="indicatorLoaded" busy="{{ isLoading }}" visibility="{{ isLoading ? 'visible': 'collapsed' }}" />
+    </GridLayout>
+</Page>

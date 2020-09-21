@@ -1,0 +1,16 @@
+PODS:
+  - CanvasNative (0.9.0)
+
+DEPENDENCIES:
+  - CanvasNative (from `../`)
+
+EXTERNAL SOURCES:
+  CanvasNative:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  CanvasNative: 0d5f1b68e2d0aa3457e11acac7c557dff3d000b3
+
+PODFILE CHECKSUM: 3ab024b3d91db02dcefe5f43652e526a470dda82
+
+COCOAPODS: 1.10.0.rc.1

@@ -1,0 +1,34 @@
+{
+	"main": "main.js",
+	"dependencies": {
+		"@angular/animations": "file:../../node_modules/@angular/animations",
+		"@angular/common": "file:../../node_modules/@angular/common",
+		"@angular/compiler": "file:../../node_modules/@angular/compiler",
+		"@angular/core": "file:../../node_modules/@angular/core",
+		"@angular/forms": "file:../../node_modules/@angular/forms",
+		"@angular/platform-browser": "file:../../node_modules/@angular/platform-browser",
+		"@angular/platform-browser-dynamic": "file:../../node_modules/@angular/platform-browser-dynamic",
+		"@angular/router": "file:../../node_modules/@angular/router",
+		"@nativescript/angular": "file:../../node_modules/@nativescript/angular",
+		"@nativescript/core": "file:../../node_modules/@nativescript/core",
+		"nativescript-theme-core": "file:../../node_modules/nativescript-theme-core",
+		"reflect-metadata": "file:../../node_modules/reflect-metadata",
+		"rxjs": "file:../../node_modules/rxjs",
+		"zone.js": "file:../../node_modules/zone.js",
+		"@nativescript/canvas": "file:../../dist/packages/canvas",
+		"@nativescript/canvas-babylon": "file:../../dist/packages/canvas-babylon",
+		"@nativescript/canvas-polyfill": "file:../../dist/packages/canvas-polyfill",
+		"@nativescript/canvas-phaser": "file:../../dist/packages/canvas-phaser",
+		"@nativescript/canvas-phaser-ce": "file:../../dist/packages/canvas-phaser-ce",
+		"@nativescript/canvas-pixi": "file:../../dist/packages/canvas-pixi",
+		"@nativescript/canvas-three": "file:../../dist/packages/canvas-three"
+	},
+	"devDependencies": {
+		"@angular/compiler-cli": "file:../../node_modules/@angular/compiler-cli",
+		"@nativescript/android": "~7.0.0",
+		"@nativescript/ios": "7.0.0",
+		"@nativescript/webpack": "~3.0.0",
+		"@ngtools/webpack": "file:../../node_modules/@ngtools/webpack",
+		"typescript": "file:../../node_modules/typescript"
+	}
+}

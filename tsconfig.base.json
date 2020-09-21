@@ -1,0 +1,34 @@
+{
+	"compilerOptions": {
+		"rootDir": ".",
+		"sourceMap": true,
+		"declaration": true,
+		"moduleResolution": "node",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"noEmitHelpers": true,
+		"target": "es2017",
+		"module": "esnext",
+		"lib": ["es2017", "dom"],
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"baseUrl": ".",
+		"plugins": [
+			{
+				"transform": "@nativescript/webpack/transformers/ns-transform-native-classes",
+				"type": "raw"
+			}
+		],
+		"paths": {
+			"@nativescript/*": ["packages/*"],
+			"@demo/shared": ["tools/demo/index.ts"],
+			"@nativescript/canvas-polyfill": ["packages/canvas-polyfill/src/index.ts"],
+			"@nativescript/canvas-three": ["packages/canvas-three/src/index.ts"],
+			"@nativescript/canvas-babylon": ["packages/canvas-babylon/src/index.ts"],
+			"@nativescript/canvas-phaser": ["packages/canvas-phaser/src/index.ts"],
+			"@nativescript/canvas-phaser-ce": ["packages/canvas-phaser-ce/src/index.ts"],
+			"@nativescript/canvas-pixi": ["packages/canvas-pixi/src/index.ts"]
+		}
+	},
+	"exclude": ["node_modules", "tmp"]
+}

@@ -1,0 +1,20 @@
+<Page navigatingTo="loaded"
+    xmlns="http://schemas.nativescript.org/tns.xsd"
+    xmlns:canvas="nativescript-canvas-plugin">
+
+    <ActionBar class="action-bar">
+        <Label class="action-bar-title" text="Home"/>
+    </ActionBar>
+
+    <GridLayout iosOverflowSafeArea="false" touch="{{ onTouch }}" pan="{{ onTouch }}">
+        <canvas:TNSCanvas iosOverflowSafeArea="true" id="canvas" width="100%" height="100%" ready="canvasLoaded"/>
+        <ActivityIndicator loaded="indicatorLoaded" busy="{{ isLoading }}" visibility="{{ isLoading ? 'visible': 'collapsed' }}" />
+
+        <StackLayout isPassThroughParentEnabled="true">
+            <Label color="white" text="{{'Score:' + score }}"/>
+            <Label color="white" text="{{'Kills:' + kills }}"/>
+            <Label color="white" text="{{'Shots Fired:' + shotsFired }}"/>
+            <Label color="white" text="{{ displayAccuracy }}" visibility="{{ displayAccuracy != null ? 'visible': 'hidden' }}" />
+        </StackLayout>
+    </GridLayout>
+</Page>

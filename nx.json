@@ -1,0 +1,55 @@
+{
+	"npmScope": "nativescript",
+	"affected": {
+		"defaultBase": "master"
+	},
+	"implicitDependencies": {
+		"workspace.json": "*",
+		"package.json": {
+			"dependencies": "*",
+			"devDependencies": "*"
+		},
+		"tsconfig.base.json": "*",
+		"tslint.json": "*",
+		"nx.json": "*"
+	},
+	"projects": {
+		"demo": {
+			"tags": []
+		},
+		"demo-angular": {
+			"tags": []
+		},
+		"demo-vue": {
+			"tags": []
+		},
+		"all": {
+			"tags": []
+		},
+		"canvas": {
+			"tags": []
+		},
+		"canvas-babylon": {
+			"tags": []
+		},
+		"canvas-polyfill": {
+			"tags": []
+		},
+		"canvas-phaser": {
+			"tags": []
+		},
+		"canvas-phaser-ce": {
+			"tags": []
+		},
+		"canvas-pixi": {
+			"tags": []
+		},
+		"canvas-three": {
+			"tags": []
+		}
+	},
+	"workspaceLayout": {
+		"appsDir": "apps",
+		"libsDir": "packages"
+	}
+}

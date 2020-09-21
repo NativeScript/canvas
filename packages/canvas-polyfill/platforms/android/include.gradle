@@ -1,0 +1,14 @@
+android {
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+}
+
+
+dependencies {
+    def androidxVersion =  project.hasProperty("androidxVersion") ? project.androidxVersion : "1.0.0"
+    implementation 'com.squareup.okio:okio:2.4.2'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.2'
+    implementation "androidx.annotation:annotation:$androidxVersion"
+}

@@ -1,0 +1,22 @@
+<Page xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo"
+			class="page">
+	<Page.actionBar>
+		<ActionBar title="canvas-phaser-ce" icon="" class="action-bar">
+		</ActionBar>
+	</Page.actionBar>
+	<GridLayout iosOverflowSafeArea="false" touch="{{ onTouch }}" pan="{{ onTouch }}">
+		<canvas:Canvas iosOverflowSafeArea="true" id="canvas" width="100%" height="100%" ready="loaded"/>
+		<ActivityIndicator loaded="indicatorLoaded" busy="{{ isLoading }}"
+											 visibility="{{ isLoading ? 'visible': 'collapsed' }}"/>
+
+		<StackLayout isPassThroughParentEnabled="true">
+			<Label color="white" text="{{'Score:' + score }}"/>
+			<Label color="white" text="{{'Kills:' + kills }}"/>
+			<Label color="white" text="{{'Shots Fired:' + shotsFired }}"/>
+			<Label color="white" text="{{ displayAccuracy }}"
+						 visibility="{{ displayAccuracy != null ? 'visible': 'hidden' }}"/>
+		</StackLayout>
+
+		<Label color="white" horizontalAlignment="right" text="{{'fps: ' + fps }}"/>
+	</GridLayout>
+</Page>

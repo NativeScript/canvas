@@ -1,0 +1,41 @@
+[package]
+name = "canvas-native"
+version = "0.9.0"
+authors = ["Osei Fortune <fortune.osei@yahoo.com>"]
+edition = "2018"
+build = "build.rs"
+
+[build-dependencies]
+bindgen = "0.55.1"
+cmake = "0.1.44"
+cc = "1.0.56"
+
+[dependencies]
+libc = "0.2.73"
+quick-xml = "0.18.1"
+base64 = "0.12.3"
+image = "0.23.7"
+encoding_rs = "0.8.24"
+gl-bindings = { version = "0.1.0", path = "../gl-bindings" }
+
+[target.'cfg(target_os="android")'.dependencies]
+log = "0.4.8"
+jni = { version = "0.17.0", default-features = false }
+android_logger = "0.9.0"
+jni-sys = "0.3.0"
+skia-safe = { version = "0.34.0", features = ["gl", "textlayout"] }
+
+
+[target.'cfg(target_os="ios")'.dependencies]
+skia-safe = { version = "0.34.0", features = ["gl", "textlayout", "metal"] }
+cocoa = { version = "0.20" }
+objc = { version = "0.2.4" }
+block = "0.1.6"
+
+
+[lib]
+name = "canvasnative"
+crate-type = ["staticlib", "cdylib"]
+
+
+

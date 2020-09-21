@@ -1,0 +1,14 @@
+[workspace]
+
+members = [
+    "gl-bindings",
+    "canvas-core"
+]
+
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+debug = false
+

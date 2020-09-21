@@ -1,0 +1,1 @@
+require('@nativescript/canvas-polyfill');

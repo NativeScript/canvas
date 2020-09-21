@@ -1,0 +1,11 @@
+<Page xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
+    <Page.actionBar>
+        <ActionBar title="canvas-babylon" icon="" class="action-bar">
+        </ActionBar>
+    </Page.actionBar>
+    <StackLayout class="p-20">
+      <GridLayout loaded="loaded">
+        <canvas:Canvas id="canvas" loaded="{{loaded}}" unloaded="{{unloaded}}" ready="{{ canvasLoaded }}"/>
+      </GridLayout>
+    </StackLayout>
+</Page>

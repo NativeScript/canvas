@@ -1,0 +1,1 @@
+#include <android/bitmap.h>

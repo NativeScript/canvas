@@ -1,0 +1,470 @@
+{
+	"version": 1,
+	"projects": {
+		"demo": {
+			"root": "apps/demo/",
+			"sourceRoot": "apps/demo/src",
+			"projectType": "application",
+			"prefix": "demo",
+			"architect": {
+				"ios": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns debug ios --no-hmr --env.testing"],
+						"cwd": "apps/demo",
+						"parallel": false
+					}
+				},
+				"android": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns debug android --no-hmr --env.testing"],
+						"cwd": "apps/demo",
+						"parallel": false
+					}
+				},
+				"clean": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns clean", "npm i"],
+						"cwd": "apps/demo",
+						"parallel": false
+					}
+				}
+			}
+		},
+		"demo-angular": {
+			"root": "apps/demo-angular/",
+			"sourceRoot": "apps/demo-angular/src",
+			"projectType": "application",
+			"prefix": "demo",
+			"architect": {
+				"ios": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns debug ios --no-hmr --emulator --env.testing"],
+						"cwd": "apps/demo-angular",
+						"parallel": false
+					}
+				},
+				"android": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns debug android --no-hmr --emulator --env.testing"],
+						"cwd": "apps/demo-angular",
+						"parallel": false
+					}
+				},
+				"clean": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns clean", "npm i"],
+						"cwd": "apps/demo-angular",
+						"parallel": false
+					}
+				}
+			}
+		},
+		"demo-vue": {
+			"root": "apps/demo-vue/",
+			"sourceRoot": "apps/demo-vue/src",
+			"projectType": "application",
+			"prefix": "demo",
+			"architect": {
+				"ios": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns debug ios --no-hmr --emulator --env.testing"],
+						"cwd": "apps/demo-vue",
+						"parallel": false
+					}
+				},
+				"android": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns debug android --no-hmr --emulator --env.testing"],
+						"cwd": "apps/demo-vue",
+						"parallel": false
+					}
+				},
+				"clean": {
+					"builder": "@nrwl/workspace:run-commands",
+					"options": {
+						"commands": ["ns clean", "npm i"],
+						"cwd": "apps/demo-vue",
+						"parallel": false
+					}
+				}
+			}
+		},
+		"all": {
+			"root": "packages",
+			"projectType": "library",
+			"architect": {
+				"build": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": [
+							"nx run canvas:build.all",
+							"nx run canvas-polyfill:build.all",
+							"nx run canvas-babylon:build.all",
+							"nx run canvas-phaser:build.all",
+							"nx run canvas-phaser-ce:build.all",
+							"nx run canvas-pixi:build.all",
+							"nx run canvas-three:build.all"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas": {
+			"root": "packages/canvas",
+			"sourceRoot": "packages/canvas",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas",
+						"tsConfig": "packages/canvas/tsconfig.json",
+						"packageJson": "packages/canvas/package.json",
+						"main": "packages/canvas/index.ts",
+						"assets": [
+							"packages/canvas/*.md",
+							"packages/canvas/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas:build", "node tools/scripts/build-finish.ts canvas"],
+						"parallel": false
+					}
+				},
+				"build.native.ios.debug": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["sh ios-build.sh"],
+						"cwd": "tools/scripts",
+						"parallel": false
+					}
+				},
+				"build.native.ios.release": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["sh ios-build.sh --release"],
+						"cwd": "tools/scripts",
+						"parallel": false
+					}
+				},
+				"build.native.android.debug": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["sh android-build.sh"],
+						"cwd": "tools/scripts",
+						"parallel": false
+					}
+				},
+				"build.native.android.release": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["sh android-build.sh --release"],
+						"cwd": "tools/scripts",
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas-babylon": {
+			"root": "packages/canvas-babylon",
+			"sourceRoot": "packages/canvas-babylon",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas-babylon",
+						"tsConfig": "packages/canvas-babylon/tsconfig.json",
+						"packageJson": "packages/canvas-babylon/package.json",
+						"main": "packages/canvas-babylon/index.ts",
+						"assets": [
+							"packages/canvas-babylon/*.md",
+							"packages/canvas-babylon/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-babylon/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas-babylon:build", "node tools/scripts/build-finish.ts canvas-babylon"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas-babylon"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas-polyfill": {
+			"root": "packages/canvas-polyfill",
+			"sourceRoot": "packages/canvas-polyfill",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas-polyfill",
+						"tsConfig": "packages/canvas-polyfill/tsconfig.json",
+						"packageJson": "packages/canvas-polyfill/package.json",
+						"main": "packages/canvas-polyfill/index.ts",
+						"assets": [
+							"packages/canvas-polyfill/*.md",
+							"packages/canvas-polyfill/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-polyfill/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas-polyfill:build", "node tools/scripts/build-finish.ts canvas-polyfill"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas-polyfill"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas-phaser": {
+			"root": "packages/canvas-phaser",
+			"sourceRoot": "packages/canvas-phaser",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas-phaser",
+						"tsConfig": "packages/canvas-phaser/tsconfig.json",
+						"packageJson": "packages/canvas-phaser/package.json",
+						"main": "packages/canvas-phaser/index.ts",
+						"assets": [
+							"packages/canvas-phaser/*.md",
+							"packages/canvas-phaser/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-phaser/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas-phaser:build", "node tools/scripts/build-finish.ts canvas-phaser"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas-phaser"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas-phaser-ce": {
+			"root": "packages/canvas-phaser-ce",
+			"sourceRoot": "packages/canvas-phaser-ce",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas-phaser-ce",
+						"tsConfig": "packages/canvas-phaser-ce/tsconfig.json",
+						"packageJson": "packages/canvas-phaser-ce/package.json",
+						"main": "packages/canvas-phaser-ce/index.ts",
+						"assets": [
+							"packages/canvas-phaser-ce/*.md",
+							"packages/canvas-phaser-ce/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-phaser-ce/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas-phaser-ce:build", "node tools/scripts/build-finish.ts canvas-phaser-ce"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas-phaser-ce"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas-pixi": {
+			"root": "packages/canvas-pixi",
+			"sourceRoot": "packages/canvas-pixi",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas-pixi",
+						"tsConfig": "packages/canvas-pixi/tsconfig.json",
+						"packageJson": "packages/canvas-pixi/package.json",
+						"main": "packages/canvas-pixi/index.ts",
+						"assets": [
+							"packages/canvas-pixi/*.md",
+							"packages/canvas-pixi/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-pixi/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas-pixi:build", "node tools/scripts/build-finish.ts canvas-pixi"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas-pixi"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas-three": {
+			"root": "packages/canvas-three",
+			"sourceRoot": "packages/canvas-three",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas-three",
+						"tsConfig": "packages/canvas-three/tsconfig.json",
+						"packageJson": "packages/canvas-three/package.json",
+						"main": "packages/canvas-three/index.ts",
+						"assets": [
+							"packages/canvas-three/*.md",
+							"packages/canvas-three/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-three/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas-three:build", "node tools/scripts/build-finish.ts canvas-three"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas-three"],
+						"parallel": false
+					}
+				}
+			}
+		}
+	},
+	"cli": {
+		"defaultCollection": "@nrwl/workspace"
+	}
+}

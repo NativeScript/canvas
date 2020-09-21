@@ -1,0 +1,7 @@
+use_frameworks!
+platform :ios, '11.0'
+#pod 'CanvasNative' , '~> 0.9.0'
+pod 'CanvasNative', :git => 'https://github.com/nativescript/canvas.git', :tag => '0.9.0'
+#pod 'CanvasNative', :path => "$(SRCROOT)/../../../../../packages/canvas/src-native/canvas-ios"
+
+

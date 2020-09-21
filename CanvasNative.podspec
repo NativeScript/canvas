@@ -30,7 +30,7 @@ Pod::Spec.new do |s|
  }
  s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
     s.swift_versions = ['4.0','4.2', '5.0']
-    s.vendored_libraries = 'CanvasNative/libs/*.a'
-    s.public_header_files = 'CanvasNative/include/*.h'
+    s.vendored_libraries = 'packages/canvas/src-native/canvas-ios/CanvasNative/libs/*.a'
+    s.public_header_files = 'packages/canvas/src-native/canvas-ios/CanvasNative/include/*.h'
     s.libraries = 'c++'
   end

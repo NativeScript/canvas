@@ -1,10 +1,5 @@
 # NativeScript Canvas
 
-[![npm](https://img.shields.io/npm/v/nativescript-canvas-plugin.svg)](https://www.npmjs.com/package/nativescript-canvas-plugin)
-[![npm](https://img.shields.io/npm/dt/nativescript-canvas-plugin.svg?label=npm%20downloads)](https://www.npmjs.com/package/nativescript-canvas-plugin)
-[![Build Status](https://travis-ci.org/triniwiz/nativescript-canvas.svg?branch=master)](https://travis-ci.org/triniwiz/nativescript-canvas)
-
-
 **Powered by**
 * [CanvasNative](src-native/canvas-native) - Rust
 * [CanvasNative](src-native/canvas-ios) - IOS
@@ -15,7 +10,7 @@
 ns plugin add @nativescript/canvas
 ```
 
-_Note_ min ios support atm 11 | min android support 17
+_Note_ min ios support 9 | min android support 17
 
 IMPORTANT: ensure you include xmlns:canvas="@nativescript/canvas" on the Page element for core {N}
 

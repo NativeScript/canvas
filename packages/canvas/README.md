@@ -10,7 +10,7 @@
 ns plugin add @nativescript/canvas
 ```
 
-_Note_ min ios support 9 | min android support 17
+_Note_ min ios support 10 | min android support 17
 
 IMPORTANT: ensure you include xmlns:canvas="@nativescript/canvas" on the Page element for core {N}
 

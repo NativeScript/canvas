@@ -269,6 +269,11 @@
 								"glob": "**/*",
 								"input": "packages/canvas-polyfill/platforms/",
 								"output": "./platforms/"
+							},
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-polyfill/vendor/",
+								"output": "./vendor/"
 							}
 						]
 					}
@@ -355,6 +360,11 @@
 								"glob": "**/*",
 								"input": "packages/canvas-phaser-ce/platforms/",
 								"output": "./platforms/"
+							},
+							{
+								"glob": "**/*.js",
+								"input": "packages/canvas-phaser-ce/",
+								"output": "./"
 							}
 						]
 					}

@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
 
     s.summary      = "A Canvas library"
 
-    s.homepage     = "https://github.com/nativescript/tree/master/canvas/src-native/canvas-ios"
+    s.homepage     = "https://github.com/nativescript/canvas"
 
 
     s.license      = { :type => "MIT", :file => "LICENSE" }
@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
 
     s.author       = { "Osei Fortune" => "fortune.osei@yahoo.com" }
 
-    s.platform     = :ios, "9.0"
+    s.platform     = :ios, "10.0"
 
     s.source       = { :git => "https://github.com/nativescript/native-ios.git", :tag => "#{s.version}" }
 

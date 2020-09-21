@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
 
     s.platform     = :ios, "10.0"
 
-    s.source       = { :git => "https://github.com/nativescript/native-ios.git", :tag => "#{s.version}" }
+    s.source       = { :git => "https://github.com/nativescript/canvas.git", :tag => "#{s.version}" }
 
     s.source_files  = 'packages/canvas/src-native/canvas-ios/CanvasNative/**/*.{swift,m,mm,h,c}'
     s.pod_target_xcconfig = {

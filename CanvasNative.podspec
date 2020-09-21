@@ -19,16 +19,15 @@ Pod::Spec.new do |s|
     s.source       = { :git => "https://github.com/nativescript/native-ios.git", :tag => "#{s.version}" }
 
     s.source_files  = 'packages/canvas/src-native/canvas-ios/CanvasNative/**/*.{swift,m,mm,h,c}'
-    s.preserve_paths = 'libcanvasnative.a'
     s.pod_target_xcconfig = {
 'USER_HEADER_SEARCH_PATHS' => '"${PODS_ROOT}/CanvasNative/include" "${PODS_ROOT}/CanvasNative/CanvasNative/include"',
 'HEADER_SEARCH_PATHS' => '"${PODS_ROOT}/CanvasNative/include" "${PODS_ROOT}/CanvasNative/CanvasNative/include"',
 'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
 'ENABLE_BITCODE' => 'NO',
-'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' ,
+'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => '"arm64" "i386"' ,
  'GCC_PREPROCESSOR_DEFINITIONS' => 'GLES_SILENCE_DEPRECATION=1'
  }
- s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
+ s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => '"arm64" "i386"' }
     s.swift_versions = ['4.0','4.2', '5.0']
     s.vendored_libraries = 'packages/canvas/src-native/canvas-ios/CanvasNative/libs/*.a'
     s.public_header_files = 'packages/canvas/src-native/canvas-ios/CanvasNative/include/*.h'

@@ -1,6 +1,6 @@
-import {Property} from "@nativescript/core";
 import {Path2D} from "../Canvas2D";
 import {SVGItem} from "./SVGItem";
+import {Property} from "@nativescript/core/ui/core/properties";
 
 export const pointsProperty = new Property<Polygon, any>({
 	name: 'points'

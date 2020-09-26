@@ -1,8 +1,16 @@
 {
-	"main": "app.js",
 	"description": "NativeScript Application",
 	"license": "SEE LICENSE IN <your-license-filename>",
 	"repository": "<fill-your-repository-here>",
+	"nativescript": {
+		"id": "org.nativescript.plugindemo",
+		"tns-android": {
+			"version": "6.5.0"
+		},
+		"tns-ios": {
+			"version": "6.5.2"
+		}
+	},
 	"dependencies": {
 		"nativescript-theme-core": "file:../../node_modules/nativescript-theme-core",
 		"@nativescript/core": "file:../../node_modules/@nativescript/core",
@@ -27,9 +35,9 @@
 		"zen-3d": "file:../../node_modules/zen-3d"
 	},
 	"devDependencies": {
-		"@nativescript/android": "7.0.0",
-		"@nativescript/ios": "7.0.0",
-		"@nativescript/webpack": "~3.0.0",
+		"nativescript-dev-webpack": "^1.5.1",
+		"tns-android": "6.5.0",
+		"tns-ios": "6.5.2",
 		"typescript": "file:../../node_modules/typescript"
 	}
 }

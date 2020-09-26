@@ -1,4 +1,4 @@
-import {Property} from "@nativescript/core";
+import {Property} from "@nativescript/core/ui/core/properties";
 import {Path2D} from "../Canvas2D";
 import {SVGItem} from "./SVGItem";
 

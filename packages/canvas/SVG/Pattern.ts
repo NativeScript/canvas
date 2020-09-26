@@ -1,7 +1,7 @@
 import {SVGItem} from "./SVGItem";
 import {Canvas} from "../Canvas";
-import {AddChildFromBuilder, PercentLength} from "@nativescript/core";
 import {SVG} from "./SVG";
+import {AddChildFromBuilder, PercentLength} from "@nativescript/core/ui/core/view";
 
 export class Pattern extends SVGItem implements AddChildFromBuilder {
 	_pattern: Canvas;

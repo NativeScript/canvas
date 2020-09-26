@@ -1,4 +1,4 @@
-import {Screen} from "@nativescript/core/platform";
+import {Screen} from "@nativescript/core";
 
 declare const Phaser;
 const scale = Screen.mainScreen.scale;
@@ -34,68 +34,68 @@ const maxHeight = Screen.mainScreen.heightPixels;
  *  @name assets
  */
 const assets = {
-  bird: {
-    red: 'bird-red',
-    yellow: 'bird-yellow',
-    blue: 'bird-blue'
-  },
-  obstacle: {
-    pipe: {
-      green: {
-        top: 'pipe-green-top',
-        bottom: 'pipe-green-bottom'
-      },
-      red: {
-        top: 'pipe-red-top',
-        bottom: 'pipe-red-bo'
-      }
-    }
-  },
-  scene: {
-    width: 144,
-    background: {
-      day: 'background-day',
-      night: 'background-night'
-    },
-    ground: 'ground',
-    gameOver: 'game-over',
-    restart: 'restart-button',
-    messageInitial: 'message-initial'
-  },
-  scoreboard: {
-    width: 25,
-    base: 'number',
-    number0: 'number0',
-    number1: 'number1',
-    number2: 'number2',
-    number3: 'number3',
-    number4: 'number4',
-    number5: 'number5',
-    number6: 'number6',
-    number7: 'number7',
-    number8: 'number8',
-    number9: 'number9'
-  },
-  animation: {
-    bird: {
-      red: {
-        clapWings: 'red-clap-wings',
-        stop: 'red-stop'
-      },
-      blue: {
-        clapWings: 'blue-clap-wings',
-        stop: 'blue-stop'
-      },
-      yellow: {
-        clapWings: 'yellow-clap-wings',
-        stop: 'yellow-stop'
-      }
-    },
-    ground: {
-      moving: 'moving-ground',
-      stop: 'stop-ground'
-    }
-  }
+	bird: {
+		red: 'bird-red',
+		yellow: 'bird-yellow',
+		blue: 'bird-blue'
+	},
+	obstacle: {
+		pipe: {
+			green: {
+				top: 'pipe-green-top',
+				bottom: 'pipe-green-bottom'
+			},
+			red: {
+				top: 'pipe-red-top',
+				bottom: 'pipe-red-bo'
+			}
+		}
+	},
+	scene: {
+		width: 144,
+		background: {
+			day: 'background-day',
+			night: 'background-night'
+		},
+		ground: 'ground',
+		gameOver: 'game-over',
+		restart: 'restart-button',
+		messageInitial: 'message-initial'
+	},
+	scoreboard: {
+		width: 25,
+		base: 'number',
+		number0: 'number0',
+		number1: 'number1',
+		number2: 'number2',
+		number3: 'number3',
+		number4: 'number4',
+		number5: 'number5',
+		number6: 'number6',
+		number7: 'number7',
+		number8: 'number8',
+		number9: 'number9'
+	},
+	animation: {
+		bird: {
+			red: {
+				clapWings: 'red-clap-wings',
+				stop: 'red-stop'
+			},
+			blue: {
+				clapWings: 'blue-clap-wings',
+				stop: 'blue-stop'
+			},
+			yellow: {
+				clapWings: 'yellow-clap-wings',
+				stop: 'yellow-stop'
+			}
+		},
+		ground: {
+			moving: 'moving-ground',
+			stop: 'stop-ground'
+		}
+	}
 }
 
 // Game
@@ -206,52 +206,52 @@ let score
 const root = '~/assets/phaser/flappybird';
 
 function preload() {
-  // Backgrounds and ground
-  this.load.image(assets.scene.background.day, root + '/background-day.png')
-  this.load.image(assets.scene.background.night, root + '/background-night.png')
-  this.load.spritesheet(assets.scene.ground, root + '/ground-sprite.png', {
-    frameWidth: 336,
-    frameHeight: 112
-  })
+	// Backgrounds and ground
+	this.load.image(assets.scene.background.day, root + '/background-day.png')
+	this.load.image(assets.scene.background.night, root + '/background-night.png')
+	this.load.spritesheet(assets.scene.ground, root + '/ground-sprite.png', {
+		frameWidth: 336,
+		frameHeight: 112
+	})
 
-  // Pipes
-  this.load.image(assets.obstacle.pipe.green.top, root + '/pipe-green-top.png')
-  this.load.image(assets.obstacle.pipe.green.bottom, root + '/pipe-green-bottom.png')
-  this.load.image(assets.obstacle.pipe.red.top, root + '/pipe-red-top.png')
-  this.load.image(assets.obstacle.pipe.red.bottom, root + '/pipe-red-bottom.png')
+	// Pipes
+	this.load.image(assets.obstacle.pipe.green.top, root + '/pipe-green-top.png')
+	this.load.image(assets.obstacle.pipe.green.bottom, root + '/pipe-green-bottom.png')
+	this.load.image(assets.obstacle.pipe.red.top, root + '/pipe-red-top.png')
+	this.load.image(assets.obstacle.pipe.red.bottom, root + '/pipe-red-bottom.png')
 
-  // Start game
-  this.load.image(assets.scene.messageInitial, root + '/message-initial.png')
+	// Start game
+	this.load.image(assets.scene.messageInitial, root + '/message-initial.png')
 
-  // End game
-  this.load.image(assets.scene.gameOver, root + '/gameover.png')
-  this.load.image(assets.scene.restart, root + '/restart-button.png')
+	// End game
+	this.load.image(assets.scene.gameOver, root + '/gameover.png')
+	this.load.image(assets.scene.restart, root + '/restart-button.png')
 
-  // Birds
-  this.load.spritesheet(assets.bird.red, root + '/bird-red-sprite.png', {
-    frameWidth: 34,
-    frameHeight: 24
-  })
-  this.load.spritesheet(assets.bird.blue, root + '/bird-blue-sprite.png', {
-    frameWidth: 34,
-    frameHeight: 24
-  })
-  this.load.spritesheet(assets.bird.yellow, root + '/bird-yellow-sprite.png', {
-    frameWidth: 34,
-    frameHeight: 24
-  })
+	// Birds
+	this.load.spritesheet(assets.bird.red, root + '/bird-red-sprite.png', {
+		frameWidth: 34,
+		frameHeight: 24
+	})
+	this.load.spritesheet(assets.bird.blue, root + '/bird-blue-sprite.png', {
+		frameWidth: 34,
+		frameHeight: 24
+	})
+	this.load.spritesheet(assets.bird.yellow, root + '/bird-yellow-sprite.png', {
+		frameWidth: 34,
+		frameHeight: 24
+	})
 
-  // Numbers
-  this.load.image(assets.scoreboard.number0, root + '/number0.png')
-  this.load.image(assets.scoreboard.number1, root + '/number1.png')
-  this.load.image(assets.scoreboard.number2, root + '/number2.png')
-  this.load.image(assets.scoreboard.number3, root + '/number3.png')
-  this.load.image(assets.scoreboard.number4, root + '/number4.png')
-  this.load.image(assets.scoreboard.number5, root + '/number5.png')
-  this.load.image(assets.scoreboard.number6, root + '/number6.png')
-  this.load.image(assets.scoreboard.number7, root + '/number7.png')
-  this.load.image(assets.scoreboard.number8, root + '/number8.png')
-  this.load.image(assets.scoreboard.number9, root + '/number9.png')
+	// Numbers
+	this.load.image(assets.scoreboard.number0, root + '/number0.png')
+	this.load.image(assets.scoreboard.number1, root + '/number1.png')
+	this.load.image(assets.scoreboard.number2, root + '/number2.png')
+	this.load.image(assets.scoreboard.number3, root + '/number3.png')
+	this.load.image(assets.scoreboard.number4, root + '/number4.png')
+	this.load.image(assets.scoreboard.number5, root + '/number5.png')
+	this.load.image(assets.scoreboard.number6, root + '/number6.png')
+	this.load.image(assets.scoreboard.number7, root + '/number7.png')
+	this.load.image(assets.scoreboard.number8, root + '/number8.png')
+	this.load.image(assets.scoreboard.number9, root + '/number9.png')
 
 }
 
@@ -259,151 +259,151 @@ function preload() {
  *   Create the game objects (images, groups, sprites and animations).
  */
 function create() {
-  backgroundDay = this.add.image(assets.scene.width, 256, assets.scene.background.day).setInteractive()
-  backgroundDay.on('pointerdown', moveBird)
-  backgroundNight = this.add.image(assets.scene.width, 256, assets.scene.background.night).setInteractive()
-  backgroundNight.visible = false
-  backgroundNight.on('pointerdown', moveBird)
+	backgroundDay = this.add.image(assets.scene.width, 256, assets.scene.background.day).setInteractive()
+	backgroundDay.on('pointerdown', moveBird)
+	backgroundNight = this.add.image(assets.scene.width, 256, assets.scene.background.night).setInteractive()
+	backgroundNight.visible = false
+	backgroundNight.on('pointerdown', moveBird)
 
-  gapsGroup = this.physics.add.group()
-  pipesGroup = this.physics.add.group()
-  scoreboardGroup = this.physics.add.staticGroup()
+	gapsGroup = this.physics.add.group()
+	pipesGroup = this.physics.add.group()
+	scoreboardGroup = this.physics.add.staticGroup()
 
-  ground = this.physics.add.sprite(assets.scene.width, this.scale.height - 400, assets.scene.ground)
-  ground.setCollideWorldBounds(true)
-  ground.setDepth(10)
+	ground = this.physics.add.sprite(assets.scene.width, this.scale.height - 400, assets.scene.ground)
+	ground.setCollideWorldBounds(true)
+	ground.setDepth(10)
 
-  messageInitial = this.add.image(assets.scene.width, 156, assets.scene.messageInitial)
-  messageInitial.setDepth(30)
-  messageInitial.visible = false
+	messageInitial = this.add.image(assets.scene.width, 156, assets.scene.messageInitial)
+	messageInitial.setDepth(30)
+	messageInitial.visible = false
 
-  upButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP)
+	upButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP)
 
-  // Ground animations
-  this.anims.create({
-    key: assets.animation.ground.moving,
-    frames: this.anims.generateFrameNumbers(assets.scene.ground, {
-      start: 0,
-      end: 2
-    }),
-    frameRate: 15,
-    repeat: -1
-  })
-  this.anims.create({
-    key: assets.animation.ground.stop,
-    frames: [{
-      key: assets.scene.ground,
-      frame: 0
-    }],
-    frameRate: 20
-  })
+	// Ground animations
+	this.anims.create({
+		key: assets.animation.ground.moving,
+		frames: this.anims.generateFrameNumbers(assets.scene.ground, {
+			start: 0,
+			end: 2
+		}),
+		frameRate: 15,
+		repeat: -1
+	})
+	this.anims.create({
+		key: assets.animation.ground.stop,
+		frames: [{
+			key: assets.scene.ground,
+			frame: 0
+		}],
+		frameRate: 20
+	})
 
-  // Red Bird Animations
-  this.anims.create({
-    key: assets.animation.bird.red.clapWings,
-    frames: this.anims.generateFrameNumbers(assets.bird.red, {
-      start: 0,
-      end: 2
-    }),
-    frameRate: 10,
-    repeat: -1
-  })
-  this.anims.create({
-    key: assets.animation.bird.red.stop,
-    frames: [{
-      key: assets.bird.red,
-      frame: 1
-    }],
-    frameRate: 20
-  })
+	// Red Bird Animations
+	this.anims.create({
+		key: assets.animation.bird.red.clapWings,
+		frames: this.anims.generateFrameNumbers(assets.bird.red, {
+			start: 0,
+			end: 2
+		}),
+		frameRate: 10,
+		repeat: -1
+	})
+	this.anims.create({
+		key: assets.animation.bird.red.stop,
+		frames: [{
+			key: assets.bird.red,
+			frame: 1
+		}],
+		frameRate: 20
+	})
 
-  // Blue Bird animations
-  this.anims.create({
-    key: assets.animation.bird.blue.clapWings,
-    frames: this.anims.generateFrameNumbers(assets.bird.blue, {
-      start: 0,
-      end: 2
-    }),
-    frameRate: 10,
-    repeat: -1
-  })
-  this.anims.create({
-    key: assets.animation.bird.blue.stop,
-    frames: [{
-      key: assets.bird.blue,
-      frame: 1
-    }],
-    frameRate: 20
-  })
+	// Blue Bird animations
+	this.anims.create({
+		key: assets.animation.bird.blue.clapWings,
+		frames: this.anims.generateFrameNumbers(assets.bird.blue, {
+			start: 0,
+			end: 2
+		}),
+		frameRate: 10,
+		repeat: -1
+	})
+	this.anims.create({
+		key: assets.animation.bird.blue.stop,
+		frames: [{
+			key: assets.bird.blue,
+			frame: 1
+		}],
+		frameRate: 20
+	})
 
-  // Yellow Bird animations
-  this.anims.create({
-    key: assets.animation.bird.yellow.clapWings,
-    frames: this.anims.generateFrameNumbers(assets.bird.yellow, {
-      start: 0,
-      end: 2
-    }),
-    frameRate: 10,
-    repeat: -1
-  })
-  this.anims.create({
-    key: assets.animation.bird.yellow.stop,
-    frames: [{
-      key: assets.bird.yellow,
-      frame: 1
-    }],
-    frameRate: 20
-  })
+	// Yellow Bird animations
+	this.anims.create({
+		key: assets.animation.bird.yellow.clapWings,
+		frames: this.anims.generateFrameNumbers(assets.bird.yellow, {
+			start: 0,
+			end: 2
+		}),
+		frameRate: 10,
+		repeat: -1
+	})
+	this.anims.create({
+		key: assets.animation.bird.yellow.stop,
+		frames: [{
+			key: assets.bird.yellow,
+			frame: 1
+		}],
+		frameRate: 20
+	})
 
-  prepareGame(this)
+	prepareGame(this)
 
-  gameOverBanner = this.add.image(assets.scene.width, 206, assets.scene.gameOver)
-  gameOverBanner.setDepth(20)
-  gameOverBanner.visible = false
+	gameOverBanner = this.add.image(assets.scene.width, 206, assets.scene.gameOver)
+	gameOverBanner.setDepth(20)
+	gameOverBanner.visible = false
 
-  restartButton = this.add.image(assets.scene.width, 300, assets.scene.restart).setInteractive()
-  restartButton.on('pointerdown', restartGame)
-  restartButton.setDepth(20)
-  restartButton.visible = false
+	restartButton = this.add.image(assets.scene.width, 300, assets.scene.restart).setInteractive()
+	restartButton.on('pointerdown', restartGame)
+	restartButton.setDepth(20)
+	restartButton.visible = false
 }
 
 /**
  *  Update the scene frame by frame, responsible for move and rotate the bird and to create and move the pipes.
  */
 function update() {
-  if (gameOver || !gameStarted)
-    return
+	if (gameOver || !gameStarted)
+		return
 
-  if (framesMoveUp > 0)
-    framesMoveUp--
-  else if (Phaser.Input.Keyboard.JustDown(upButton))
-    moveBird()
-  else {
-    player.setVelocityY(120)
+	if (framesMoveUp > 0)
+		framesMoveUp--
+	else if (Phaser.Input.Keyboard.JustDown(upButton))
+		moveBird()
+	else {
+		player.setVelocityY(120)
 
-    if (player.angle < 90)
-      player.angle += 1
-  }
+		if (player.angle < 90)
+			player.angle += 1
+	}
 
-  pipesGroup.children.iterate(function (child) {
-    if (child == undefined)
-      return
+	pipesGroup.children.iterate(function (child) {
+		if (child == undefined)
+			return
 
-    if (child.x < -50)
-      child.destroy()
-    else
-      child.setVelocityX(-100)
-  })
+		if (child.x < -50)
+			child.destroy()
+		else
+			child.setVelocityX(-100)
+	})
 
-  gapsGroup.children.iterate(function (child) {
-    child.body.setVelocityX(-100)
-  })
+	gapsGroup.children.iterate(function (child) {
+		child.body.setVelocityX(-100)
+	})
 
-  nextPipes++
-  if (nextPipes === 130) {
-    makePipes(game.scene.scenes[0])
-    nextPipes = 0
-  }
+	nextPipes++
+	if (nextPipes === 130) {
+		makePipes(game.scene.scenes[0])
+		nextPipes = 0
+	}
 }
 
 /**
@@ -411,16 +411,16 @@ function update() {
  *  @param {object} player - Game object that collided, in this case the bird.
  */
 function hitBird(player) {
-  this.physics.pause()
+	this.physics.pause()
 
-  gameOver = true
-  gameStarted = false
+	gameOver = true
+	gameStarted = false
 
-  player.anims.play(getAnimationBird(birdName).stop)
-  ground.anims.play(assets.animation.ground.stop)
+	player.anims.play(getAnimationBird(birdName).stop)
+	ground.anims.play(assets.animation.ground.stop)
 
-  gameOverBanner.visible = true
-  restartButton.visible = true
+	gameOverBanner.visible = true
+	restartButton.visible = true
 }
 
 /**
@@ -429,20 +429,20 @@ function hitBird(player) {
  *   @param {object} gap - Game object that was overlapped, in this case the gap.
  */
 function updateScore(_, gap) {
-  score++
-  gap.destroy()
+	score++
+	gap.destroy()
 
-  if (score % 10 == 0) {
-    backgroundDay.visible = !backgroundDay.visible
-    backgroundNight.visible = !backgroundNight.visible
+	if (score % 10 == 0) {
+		backgroundDay.visible = !backgroundDay.visible
+		backgroundNight.visible = !backgroundNight.visible
 
-    if (currentPipe === assets.obstacle.pipe.green)
-      currentPipe = assets.obstacle.pipe.red
-    else
-      currentPipe = assets.obstacle.pipe.green
-  }
+		if (currentPipe === assets.obstacle.pipe.green)
+			currentPipe = assets.obstacle.pipe.red
+		else
+			currentPipe = assets.obstacle.pipe.green
+	}
 
-  updateScoreboard()
+	updateScoreboard()
 }
 
 /**
@@ -450,35 +450,35 @@ function updateScore(_, gap) {
  * @param {object} scene - Game scene.
  */
 function makePipes(scene) {
-  if (!gameStarted || gameOver) return
+	if (!gameStarted || gameOver) return
 
-  const pipeTopY = Phaser.Math.Between(-120, 120)
+	const pipeTopY = Phaser.Math.Between(-120, 120)
 
-  const gap = scene.add.line(288, pipeTopY + 210, 0, 0, 0, 98)
-  gapsGroup.add(gap)
-  gap.body.allowGravity = false
-  gap.visible = false
+	const gap = scene.add.line(288, pipeTopY + 210, 0, 0, 0, 98)
+	gapsGroup.add(gap)
+	gap.body.allowGravity = false
+	gap.visible = false
 
-  const pipeTop = pipesGroup.create(288, pipeTopY, currentPipe.top)
-  pipeTop.body.allowGravity = false
+	const pipeTop = pipesGroup.create(288, pipeTopY, currentPipe.top)
+	pipeTop.body.allowGravity = false
 
-  const pipeBottom = pipesGroup.create(288, pipeTopY + 420, currentPipe.bottom)
-  pipeBottom.body.allowGravity = false
+	const pipeBottom = pipesGroup.create(288, pipeTopY + 420, currentPipe.bottom)
+	pipeBottom.body.allowGravity = false
 }
 
 /**
  * Move the bird in the screen.
  */
 function moveBird() {
-  if (gameOver)
-    return
+	if (gameOver)
+		return
 
-  if (!gameStarted)
-    startGame(game.scene.scenes[0])
+	if (!gameStarted)
+		startGame(game.scene.scenes[0])
 
-  player.setVelocityY(-400)
-  player.angle = -15
-  framesMoveUp = 5
+	player.setVelocityY(-400)
+	player.angle = -15
+	framesMoveUp = 5
 }
 
 /**
@@ -486,15 +486,15 @@ function moveBird() {
  * @return {string} Bird color asset.
  */
 function getRandomBird() {
-  switch (Phaser.Math.Between(0, 2)) {
-    case 0:
-      return assets.bird.red
-    case 1:
-      return assets.bird.blue
-    case 2:
-    default:
-      return assets.bird.yellow
-  }
+	switch (Phaser.Math.Between(0, 2)) {
+		case 0:
+			return assets.bird.red
+		case 1:
+			return assets.bird.blue
+		case 2:
+		default:
+			return assets.bird.yellow
+	}
 }
 
 /**
@@ -503,34 +503,34 @@ function getRandomBird() {
  * @return {object} - Bird animation asset.
  */
 function getAnimationBird(birdColor) {
-  switch (birdColor) {
-    case assets.bird.red:
-      return assets.animation.bird.red
-    case assets.bird.blue:
-      return assets.animation.bird.blue
-    case assets.bird.yellow:
-    default:
-      return assets.animation.bird.yellow
-  }
+	switch (birdColor) {
+		case assets.bird.red:
+			return assets.animation.bird.red
+		case assets.bird.blue:
+			return assets.animation.bird.blue
+		case assets.bird.yellow:
+		default:
+			return assets.animation.bird.yellow
+	}
 }
 
 /**
  * Update the game scoreboard.
  */
 function updateScoreboard() {
-  scoreboardGroup.clear(true, true)
+	scoreboardGroup.clear(true, true)
 
-  const scoreAsString = score.toString()
-  if (scoreAsString.length == 1)
-    scoreboardGroup.create(assets.scene.width, 30, assets.scoreboard.base + score).setDepth(10)
-  else {
-    let initialPosition = assets.scene.width - ((score.toString().length * assets.scoreboard.width) / 2)
+	const scoreAsString = score.toString()
+	if (scoreAsString.length == 1)
+		scoreboardGroup.create(assets.scene.width, 30, assets.scoreboard.base + score).setDepth(10)
+	else {
+		let initialPosition = assets.scene.width - ((score.toString().length * assets.scoreboard.width) / 2)
 
-    for (let i = 0; i < scoreAsString.length; i++) {
-      scoreboardGroup.create(initialPosition, 30, assets.scoreboard.base + scoreAsString[i]).setDepth(10)
-      initialPosition += assets.scoreboard.width
-    }
-  }
+		for (let i = 0; i < scoreAsString.length; i++) {
+			scoreboardGroup.create(initialPosition, 30, assets.scoreboard.base + scoreAsString[i]).setDepth(10)
+			initialPosition += assets.scoreboard.width
+		}
+	}
 }
 
 /**
@@ -538,18 +538,18 @@ function updateScoreboard() {
  * Clean all groups, hide game over objects and stop game physics.
  */
 function restartGame() {
-  pipesGroup.clear(true, true)
-  pipesGroup.clear(true, true)
-  gapsGroup.clear(true, true)
-  scoreboardGroup.clear(true, true)
-  player.destroy()
-  gameOverBanner.visible = false
-  restartButton.visible = false
+	pipesGroup.clear(true, true)
+	pipesGroup.clear(true, true)
+	gapsGroup.clear(true, true)
+	scoreboardGroup.clear(true, true)
+	player.destroy()
+	gameOverBanner.visible = false
+	restartButton.visible = false
 
-  const gameScene = game.scene.scenes[0]
-  prepareGame(gameScene)
+	const gameScene = game.scene.scenes[0]
+	prepareGame(gameScene)
 
-  gameScene.physics.resume()
+	gameScene.physics.resume()
 }
 
 /**
@@ -557,27 +557,27 @@ function restartGame() {
  * @param {object} scene - Game scene.
  */
 function prepareGame(scene) {
-  framesMoveUp = 0
-  nextPipes = 0
-  currentPipe = assets.obstacle.pipe.green
-  score = 0
-  gameOver = false
-  backgroundDay.visible = true
-  backgroundNight.visible = false
-  messageInitial.visible = true
+	framesMoveUp = 0
+	nextPipes = 0
+	currentPipe = assets.obstacle.pipe.green
+	score = 0
+	gameOver = false
+	backgroundDay.visible = true
+	backgroundNight.visible = false
+	messageInitial.visible = true
 
-  birdName = getRandomBird()
-  player = scene.physics.add.sprite(60, 265, birdName)
-  player.setCollideWorldBounds(true)
-  player.anims.play(getAnimationBird(birdName).clapWings, true)
-  player.body.allowGravity = false
+	birdName = getRandomBird()
+	player = scene.physics.add.sprite(60, 265, birdName)
+	player.setCollideWorldBounds(true)
+	player.anims.play(getAnimationBird(birdName).clapWings, true)
+	player.body.allowGravity = false
 
-  scene.physics.add.collider(player, ground, hitBird, null, scene)
-  scene.physics.add.collider(player, pipesGroup, hitBird, null, scene)
+	scene.physics.add.collider(player, ground, hitBird, null, scene)
+	scene.physics.add.collider(player, pipesGroup, hitBird, null, scene)
 
-  scene.physics.add.overlap(player, gapsGroup, updateScore, null, scene)
+	scene.physics.add.overlap(player, gapsGroup, updateScore, null, scene)
 
-  ground.anims.play(assets.animation.ground.moving, true)
+	ground.anims.play(assets.animation.ground.moving, true)
 }
 
 /**
@@ -585,29 +585,29 @@ function prepareGame(scene) {
  * @param {object} scene - Game scene.
  */
 function startGame(scene) {
-  gameStarted = true
-  messageInitial.visible = false
+	gameStarted = true
+	messageInitial.visible = false
 
-  const score0 = scoreboardGroup.create(assets.scene.width, 30, assets.scoreboard.number0)
-  score0.setDepth(20)
+	const score0 = scoreboardGroup.create(assets.scene.width, 30, assets.scoreboard.number0)
+	score0.setDepth(20)
 
-  makePipes(scene)
+	makePipes(scene)
 }
 
 export function setupGame(canvas) {
-  game = require("@nativescript/canvas-phaser").Game({
-    canvas,
-    type: 2,
-    scene: {
-      preload,
-      create,
-      update,
-    },
-    physics: {
-      default: "arcade",
-      arcade: {
-        debug: false,
-      },
-    },
-  });
+	game = require("@nativescript/canvas-phaser").Game({
+		canvas,
+		type: 2,
+		scene: {
+			preload,
+			create,
+			update,
+		},
+		physics: {
+			default: "arcade",
+			arcade: {
+				debug: false,
+			},
+		},
+	});
 }

@@ -1,9 +1,9 @@
 import {Element} from "./Element";
-import {knownFolders, path, File, ImageSource} from "@nativescript/core";
+import {knownFolders, path, File, ImageSource, isIOS, isAndroid} from "@nativescript/core";
 import {ImageAsset} from '@nativescript/canvas';
 
-const background_queue = global.isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
-const main_queue = global.isIOS ? dispatch_get_current_queue() : undefined;
+const background_queue = isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
+const main_queue = isIOS ? dispatch_get_current_queue() : undefined;
 declare var NSUUID, java, NSData, android;
 const b64Extensions = {
 	"/": "jpg",
@@ -30,7 +30,7 @@ function getMIMEforBase64String(b64) {
 }
 
 function getUUID() {
-	if (global.isIOS) {
+	if (isIOS) {
 		return NSUUID.UUID().UUIDString;
 	}
 	return java.util.UUID.randomUUID().toString();
@@ -107,7 +107,7 @@ export class HTMLImageElement extends Element {
 					try {
 						const MIME = getMIMEforBase64String(base64result);
 						const dir = knownFolders.documents().path;
-						if (global.isIOS) {
+						if (isIOS) {
 							dispatch_async(background_queue, () => {
 								this.localUri = path.join(
 									dir,
@@ -136,7 +136,7 @@ export class HTMLImageElement extends Element {
 								}
 							});
 						}
-						if (global.isAndroid) {
+						if (isAndroid) {
 							const ref = new WeakRef(this);
 							(com as any).github.triniwiz.async.Async.base64ToFile(base64result, dir + '/', new (com as any).github.triniwiz.async.Async.Callback({
 								success(response) {
@@ -153,7 +153,10 @@ export class HTMLImageElement extends Element {
 											message,
 										);
 									}
-									ref.get()?.emitter.emit("error", {target: ref.get(), message});
+									const owner = ref.get();
+									if (owner) {
+										owner.emitter.emit("error", {target: ref.get(), message});
+									}
 								}
 							}))
 						}
@@ -202,16 +205,16 @@ export class HTMLImageElement extends Element {
 						this.emitter.emit("error", {target: this});
 					});*/
 
-			/*	this._asset.loadFileAsync(this.src)
-					.then(() => {
-						this.width = this._asset.width;
-						this.height = this._asset.height;
-						this.complete = true;
-					})
-					.catch(e => {
-						this.emitter.emit("error", {target: this});
-					});
-				*/
+				/*	this._asset.loadFileAsync(this.src)
+						.then(() => {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = true;
+						})
+						.catch(e => {
+							this.emitter.emit("error", {target: this});
+						});
+					*/
 			}
 		}
 	}

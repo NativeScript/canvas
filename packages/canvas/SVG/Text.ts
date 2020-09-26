@@ -1,4 +1,6 @@
-import {AddChildFromBuilder, Property, View} from "@nativescript/core";
+import {View} from "@nativescript/core";
+import {Property} from "@nativescript/core/ui/core/properties";
+import {AddChildFromBuilder} from "@nativescript/core/ui/core/view";
 
 export const xProperty = new Property<Text, any>({
     name: 'x'

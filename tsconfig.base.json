@@ -7,18 +7,12 @@
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"noEmitHelpers": true,
-		"target": "es2017",
-		"module": "esnext",
+		"target": "es5",
+		"module": "commonjs",
 		"lib": ["es2017", "dom"],
 		"skipLibCheck": true,
 		"skipDefaultLibCheck": true,
 		"baseUrl": ".",
-		"plugins": [
-			{
-				"transform": "@nativescript/webpack/transformers/ns-transform-native-classes",
-				"type": "raw"
-			}
-		],
 		"paths": {
 			"@nativescript/*": ["packages/*"],
 			"@demo/shared": ["tools/demo/index.ts"],

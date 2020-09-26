@@ -1,6 +1,7 @@
-import {PercentLength, View} from '@nativescript/core';
+import {View} from '@nativescript/core';
 import {Canvas} from "../Canvas";
 import {SVG} from "./SVG";
+import {PercentLength} from "@nativescript/core/ui/styling/style-properties";
 
 export class SVGItem extends View {
 	set stroke(value) {

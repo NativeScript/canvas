@@ -1,6 +1,6 @@
-import {AddChildFromBuilder} from "@nativescript/core";
 import {Canvas} from "../Canvas";
 import {SVGItem} from "./SVGItem";
+import {AddChildFromBuilder} from "@nativescript/core/ui/core/view";
 
 export class G extends SVGItem implements AddChildFromBuilder {
     _canvas: Canvas;

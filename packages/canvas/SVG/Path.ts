@@ -1,6 +1,6 @@
-import {Property} from "@nativescript/core";
 import {Path2D, CanvasGradient} from "../Canvas2D";
 import {SVGItem} from "./SVGItem";
+import {Property} from "@nativescript/core/ui/core/properties";
 
 export const dProperty = new Property<Path, string>({
 	name: 'd'

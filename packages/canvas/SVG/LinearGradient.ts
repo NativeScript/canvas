@@ -1,7 +1,7 @@
 import {SVGItem} from "./SVGItem";
 import {SVG} from "./SVG";
-import {AddChildFromBuilder} from "@nativescript/core";
 import {Stop} from "./Stop";
+import {AddChildFromBuilder} from "@nativescript/core/ui/core/view";
 
 export class LinearGradient extends SVGItem implements AddChildFromBuilder {
 	_views: any[];

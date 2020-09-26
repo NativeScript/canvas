@@ -4,12 +4,13 @@ import {HTMLImageElement} from "./DOM/HTMLImageElement";
 import {HTMLCanvasElement} from "./DOM/HTMLCanvasElement";
 import {HTMLVideoElement} from "./DOM/HTMLVideoElement";
 import {XMLDocument} from './DOM/XMLDocument';
-import {Device, fromObject, Application, View} from "@nativescript/core";
+import {Device, Application, View} from "@nativescript/core";
 import {
 	CanvasRenderingContext2D,
 	WebGLRenderingContext,
 	WebGL2RenderingContext
 } from "@nativescript/canvas";
+import {fromObject} from "@nativescript/core/data/observable";
 
 (global as any).CANVAS_RENDERER = "true";
 (global as any).WEBGL_RENDERER = "true";

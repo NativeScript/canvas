@@ -2,7 +2,7 @@ import {Http} from '../http/http';
 import {HttpError, ProgressEvent} from '../http/http-request-common';
 import {FileManager} from '../file/file';
 import {isNullOrUndefined, isObject, isFunction} from '@nativescript/core/utils/types';
-import {knownFolders, path as filePath, File as fsFile} from '@nativescript/core';
+import {knownFolders, path as filePath, File as fsFile, isIOS, isAndroid} from '@nativescript/core';
 
 var XMLHttpRequestResponseType;
 (function (XMLHttpRequestResponseType) {
@@ -364,7 +364,7 @@ export class TNSXMLHttpRequest {
           this._responseURL = responseURL;
           if (this.responseType === XMLHttpRequestResponseType.json) {
             try {
-              if (global.isAndroid) {
+              if (isAndroid) {
                 this._responseText = this._toJSString(data);
                 this._response = JSON.parse(this._responseText);
               } else {
@@ -378,7 +378,7 @@ export class TNSXMLHttpRequest {
               console.log('json parse error', e);
             }
           } else if (this.responseType === XMLHttpRequestResponseType.text) {
-            if (global.isIOS) {
+            if (isIOS) {
               let code = NSUTF8StringEncoding;
               let encodedString = NSString.alloc().initWithDataEncoding(data, code);
               if (!encodedString) {
@@ -394,7 +394,7 @@ export class TNSXMLHttpRequest {
             }
 
           } else if (this.responseType === XMLHttpRequestResponseType.document) {
-            if (global.isIOS) {
+            if (isIOS) {
               let code = NSUTF8StringEncoding;
               let encodedString = NSString.alloc().initWithDataEncoding(data, code);
               if (!encodedString) {
@@ -409,14 +409,14 @@ export class TNSXMLHttpRequest {
                 : '';
             }
           } else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-            if (global.isIOS) {
+            if (isIOS) {
               this._response = interop.bufferFromData(data);
             } else {
               this._response = ArrayBuffer.from(java.nio.ByteBuffer.wrap(data));
             }
           } else if (this.responseType === XMLHttpRequestResponseType.blob) {
             let buffer;
-            if (global.isIOS) {
+            if (isIOS) {
               buffer = interop.bufferFromData(data);
             } else {
               buffer = ArrayBuffer.from(java.nio.ByteBuffer.wrap(data));
@@ -424,7 +424,7 @@ export class TNSXMLHttpRequest {
             this._response = new Blob([buffer]);
           }
           let size = 0;
-          if (global.isIOS) {
+          if (isIOS) {
             if (data instanceof NSData) {
               size = data.length;
             }
@@ -535,7 +535,7 @@ export class TNSXMLHttpRequest {
             this._response = res.content;
             this._responseText = res.responseText;
           } else {
-            if (global.isIOS) {
+            if (isIOS) {
               if (res.content instanceof NSData) {
                 let code = NSUTF8StringEncoding;
                 let encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
@@ -559,7 +559,7 @@ export class TNSXMLHttpRequest {
           } else if (typeof res.content === 'object') {
             this._responseText = JSON.stringify(res.content);
           } else {
-            if (global.isIOS) {
+            if (isIOS) {
               if (res.content instanceof NSData) {
                 let code = NSUTF8StringEncoding;
                 let encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
@@ -580,7 +580,7 @@ export class TNSXMLHttpRequest {
           if (typeof res.content === 'string') {
             this._responseText = res.content;
           } else {
-            if (global.isIOS) {
+            if (isIOS) {
               if (res.content instanceof NSData) {
                 let code = NSUTF8StringEncoding;
                 let encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
@@ -597,7 +597,7 @@ export class TNSXMLHttpRequest {
             }
           }
         } else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-          if (global.isIOS) {
+          if (isIOS) {
             this._response = interop.bufferFromData(res.content);
           } else {
             this._response = ArrayBuffer.from(res.content);

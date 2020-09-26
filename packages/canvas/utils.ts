@@ -1,6 +1,8 @@
+import {isIOS, isAndroid} from '@nativescript/core/platform';
+
 export class Utils {
 	public static toJSArray(array) {
-		if (global.isIOS) {
+		if (isIOS) {
 			if (array instanceof NSArray) {
 				const jsArray = [];
 				const count = array.count;
@@ -11,7 +13,7 @@ export class Utils {
 			}
 		}
 
-		if (global.isAndroid) {
+		if (isAndroid) {
 			const jsArray = [];
 			if (array instanceof java.util.ArrayList) {
 				const count = array.size();

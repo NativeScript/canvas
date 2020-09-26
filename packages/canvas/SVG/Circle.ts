@@ -1,6 +1,6 @@
-import {Property} from "@nativescript/core";
 import {SVGItem} from "./SVGItem";
 import {CanvasGradient, Path2D} from "../Canvas2D";
+import {Property} from "@nativescript/core/ui/core/properties";
 
 export const cxProperty = new Property<Circle, any>({
 	name: 'cx'

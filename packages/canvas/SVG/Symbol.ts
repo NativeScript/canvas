@@ -1,5 +1,6 @@
 import {SVGItem} from "./SVGItem";
-import {AddChildFromBuilder} from "@nativescript/core";
+import {AddChildFromBuilder} from "@nativescript/core/ui/core/view";
+
 
 export class Symbol extends SVGItem implements AddChildFromBuilder {
 	_views: any[];

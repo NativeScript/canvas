@@ -1,6 +1,8 @@
-import {View, AddChildFromBuilder, Style, CssProperty} from '@nativescript/core';
+import {View, Style} from '@nativescript/core';
 import {Canvas} from '../Canvas';
 import {DOMParser} from 'xmldom-qsa';
+import {CssProperty} from "@nativescript/core/ui/core/properties";
+import {AddChildFromBuilder} from "@nativescript/core/ui/core/view";
 
 export const strokeProperty = new CssProperty<Style, any>({
     name: 'stroke',

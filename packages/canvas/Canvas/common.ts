@@ -1,5 +1,6 @@
-import {CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application} from '@nativescript/core';
+import {View, Screen, GestureStateTypes, Utils, Application} from '@nativescript/core';
 import {CanvasRenderingContext, TouchList} from '../common';
+import {CSSType, PercentLength} from "@nativescript/core/ui/core/view";
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
@@ -224,7 +225,27 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (attrib === 'height') {
 			return this.height;
 		}
+
+		if (attrib === 'tabindex') {
+			return this['tabindex'] = arguments[1];
+		}
 		return this[attrib];
+	}
+
+	setAttribute(attrib) {
+		if (attrib === 'width') {
+			if (!isNaN(parseInt(arguments[1]))) {
+				this.width = parseInt(arguments[1]);
+			}
+		}
+		if (attrib === 'height') {
+			if (!isNaN(parseInt(arguments[1]))) {
+				this.height = parseInt(arguments[1]);
+			}
+		}
+		if (attrib === 'tabindex') {
+			this['tabindex'] = arguments[1];
+		}
 	}
 
 	public abstract getContext(

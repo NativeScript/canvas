@@ -1,3 +1,5 @@
+import {isIOS} from "@nativescript/core";
+
 if (!(global as any).performance || !(global as any).performance.now) {
     (global as any).performance = {
         timeOrigin: -1,
@@ -25,7 +27,7 @@ if (!(global as any).performance || !(global as any).performance.now) {
             unloadEventStart: -1,
         },
         now() {
-            if (global.isIOS) {
+            if (isIOS) {
                 return CACurrentMediaTime() * 1000;
             }
 

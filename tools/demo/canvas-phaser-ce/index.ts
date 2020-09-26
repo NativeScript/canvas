@@ -1,5 +1,5 @@
 import {DemoSharedBase} from '../utils';
-import {Screen, Utils} from "@nativescript/core";
+import {isAndroid, isIOS, Screen, Utils} from "@nativescript/core";
 import {func, images} from "./games/utils";
 
 declare let Phaser: any, UIDevice;
@@ -27,11 +27,11 @@ class Accelerometer {
 
 	static accManager;
 	static isListeningForUpdates = false;
-	static main_queue = global.isIOS ? dispatch_get_current_queue() : null;
+	static main_queue = isIOS ? dispatch_get_current_queue() : null;
 
 
 	static getNativeDelay(options?: AccelerometerOptions): number {
-		if (global.isAndroid) {
+		if (isAndroid) {
 			if (!options || !options.sensorDelay) {
 				return android.hardware.SensorManager.SENSOR_DELAY_NORMAL;
 			}
@@ -68,14 +68,14 @@ class Accelerometer {
 	}
 
 	static startAccelerometerUpdates(callback: (data: AccelerometerData) => void, options?: AccelerometerOptions) {
-		if (global.isAndroid) {
+		if (isAndroid) {
 			if (Accelerometer.isListening()) {
 				console.log(startButNotStopped);
 				Accelerometer.stopAccelerometerUpdates();
 			}
 
 			const wrappedCallback = zonedCallback(callback);
-			const context: android.content.Context = Utils.ad.getApplicationContext();
+			const context: android.content.Context = Utils.android.getApplicationContext();
 			if (!context) {
 				throw Error("Could not get Android application context.")
 			}
@@ -151,7 +151,7 @@ class Accelerometer {
 	}
 
 	static stopAccelerometerUpdates() {
-		if (global.isAndroid) {
+		if (isAndroid) {
 			if (Accelerometer.sensorListener) {
 				Accelerometer.sensorManager.unregisterListener(Accelerometer.sensorListener);
 				Accelerometer.sensorListener = undefined;
@@ -169,7 +169,7 @@ class Accelerometer {
 	}
 
 	static isListening(): boolean {
-		if (global.isAndroid) {
+		if (isAndroid) {
 			return !!Accelerometer.sensorListener;
 		} else {
 			return Accelerometer.isListeningForUpdates;
@@ -241,7 +241,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 		if (!this.useAccelerometer) {
 			return;
 		}
-		if (global.isIOS) {
+		if (isIOS) {
 
 			if (
 				!CMMotionManager.alloc().init().gyroAvailable
@@ -269,7 +269,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 		if (!this.useAccelerometer) {
 			return;
 		}
-		if (global.isIOS) {
+		if (isIOS) {
 			return (
 				UIDevice.currentDevice.name
 					.toLowerCase()

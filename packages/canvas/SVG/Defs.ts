@@ -1,5 +1,5 @@
-import {AddChildFromBuilder} from "@nativescript/core";
 import {SVGItem} from "./SVGItem";
+import {AddChildFromBuilder} from "@nativescript/core/ui/core/view";
 
 export class Defs extends SVGItem implements AddChildFromBuilder {
 	_views: any[];

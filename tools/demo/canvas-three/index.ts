@@ -41,15 +41,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
     //this.group(this.canvas);
     //this.geoColors(this.canvas);
     //this.threeDepth(this.canvas);
-    //this.threeCrate(this.canvas);
-    //this.skinningAndMorphing(this.canvas);
-    //this.nearestNeighbour(this.canvas);
+   // this.threeCrate(this.canvas);
+    this.skinningAndMorphing(this.canvas);
+   // this.nearestNeighbour(this.canvas);
    // this.threeOcean(this.canvas);
-    // this.threeCube(this.canvas);
-    //this.geoTextShapes(this.canvas);
+     //this.threeCube(this.canvas);
+   // this.geoTextShapes(this.canvas);
     //this.webGLHelpers(this.canvas);
     //this.fbxLoader(this.canvas);
-    this.gtlfLoader(this.canvas);
+   // this.gtlfLoader(this.canvas);
     //this.rayCasting(this.canvas);
     //this.ThreeDS(this.canvas);
     // this.ThreeMF(this.canvas);
@@ -211,7 +211,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
       camera.position.set(-1.8, 0.6, 2.7);
 
-      controls = new OrbitControls(camera, renderer.domElement);
+      controls = new OrbitControls(camera, canvas);
       controls.addEventListener('change', render); // use if there is no animation loop
       controls.enableZoom = false;
       controls.enablePan = false;
@@ -949,7 +949,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.shadowMap.enabled = true;
 
-      controls = new OrbitControls(camera, renderer.domElement);
+      controls = new OrbitControls(camera, canvas);
       controls.target.set(0, 100, 0);
       controls.update();
 
@@ -1822,7 +1822,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
       renderer = new THREE.WebGLRenderer({context});
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
-      controls = new FirstPersonControls(camera, renderer.domElement);
+      controls = new FirstPersonControls(camera, canvas);
       controls.movementSpeed = 100;
       controls.lookSpeed = 0.1;
 
@@ -1955,7 +1955,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
   };
 
   skinningAndMorphing(canvas) {
-    const context = canvas.getContext("webgl2") as any;
+    const context = canvas.getContext("webgl2", {antialias: false}) as any;
 
     const {drawingBufferWidth: width, drawingBufferHeight: height} = context;
     var container,
@@ -2023,7 +2023,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
         }
       );
 
-      renderer = new THREE.WebGLRenderer({context, antialias: true});
+      renderer = new THREE.WebGLRenderer({context, antialias: false});
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(width, height);
       renderer.outputEncoding = THREE.sRGBEncoding;
@@ -2280,7 +2280,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
     //
 
-    controls = new OrbitControls(camera, renderer.domElement);
+    controls = new OrbitControls(camera, canvas);
     controls.maxPolarAngle = Math.PI * 0.495;
     controls.target.set(0, 10, 0);
     controls.minDistance = 40.0;

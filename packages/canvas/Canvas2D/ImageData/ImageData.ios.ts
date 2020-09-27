@@ -1,9 +1,9 @@
-import {ImageDataBase} from './common';
+import { ImageDataBase } from './common';
 
 export class ImageData extends ImageDataBase {
 	constructor(nativeInstance: any) {
 		super(nativeInstance);
-		this.data = new Uint8ClampedArray(nativeInstance.data);
+		this.data = new Uint8ClampedArray(interop.bufferFromData(nativeInstance.data));
 	}
 
 	static fromNative(nativeInstance) {

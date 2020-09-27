@@ -1,16 +1,3 @@
 {
-  "name": "nativescript-canvas-angular",
-  "ngPackage": {
-    "lib": {
-      "entryFile": "index.ts",
-      "umdModuleIds": {
-        "@nativescript/core": "ns-core",
-        "@nativescript/angular": "ns-angular",
-        "@nativescript/canvas": "ns-canvas"
-      }
-    },
-    "whitelistedNonPeerDependencies": [
-      "."
-    ]
-  }
+	"main": "index"
 }

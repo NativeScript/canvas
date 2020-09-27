@@ -1,24 +1,11 @@
 (Set as any).prototype.remove = function (value) {
-  this.delete(value);
+	this.delete(value);
 };
 
 export class TouchList extends Array {
-  item(index: number) {
-    return this[index];
-  }
+	item(index: number) {
+		return this[index];
+	}
 }
 
-export interface CanvasRenderingContext {
-}
-
-
-
-
-
-
-
-
-
-
-
-
+export interface CanvasRenderingContext {}

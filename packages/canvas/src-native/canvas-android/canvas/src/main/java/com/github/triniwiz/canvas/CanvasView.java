@@ -597,7 +597,7 @@ public class CanvasView extends FrameLayout implements Choreographer.FrameCallba
   CanvasRenderingContext getContext(String type, @Nullable Map<String, Object> contextAttributes) {
     handleAttributes(contextAttributes);
     if (type.equals("2d") || type.equals("experimental-webgl") || type.equals("webgl") || (type.equals("webgl2") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)) {
-      handler.post(new Runnable() {
+      mainHandler.post(new Runnable() {
         @Override
         public void run() {
           glView.setOpaque(!contextAlpha);

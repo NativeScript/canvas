@@ -1,5 +1,5 @@
-import {CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application} from '@nativescript/core';
-import {CanvasRenderingContext, TouchList} from '../common';
+import { CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application } from '@nativescript/core';
+import { CanvasRenderingContext, TouchList } from '../common';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
@@ -37,28 +37,28 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			antialias: true,
 			depth: true,
 			failIfMajorPerformanceCaveat: false,
-			powerPreference: "default",
+			powerPreference: 'default',
 			premultipliedAlpha: true,
 			preserveDrawingBuffer: false,
 			stencil: false,
 			desynchronized: false,
-			xrCompatible: false
+			xrCompatible: false,
 		};
 		if (!contextOpts) {
 			if (type === '2d') {
 				return {
-					alpha: true
-				}
+					alpha: true,
+				};
 			}
 			if (type.indexOf('webgl') > -1) {
 				return defaultGLOptions;
 			}
 		}
 		if (type === '2d') {
-			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === "boolean") {
+			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === 'boolean') {
 				return contextOpts;
 			} else {
-				return {alpha: true}
+				return { alpha: true };
 			}
 		}
 		const setIfDefined = (prop, value) => {
@@ -66,7 +66,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			if (property !== undefined && typeof value === typeof property) {
 				defaultGLOptions[prop] = value;
 			}
-		}
+		};
 		if (type.indexOf('webgl') > -1) {
 			setIfDefined('alpha', contextOpts.alpha);
 			setIfDefined('antialias', contextOpts.antialias);
@@ -101,10 +101,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					break;
 			}
 		} else if (event.eventName === 'pan') {
-			if (
-				event.state === GestureStateTypes.began ||
-				event.state === GestureStateTypes.changed
-			) {
+			if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
 				this._emitEvent('touchmove', event);
 			}
 		}
@@ -197,10 +194,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			shiftKey: false,
 			targetTouches: pointers,
 			touches: pointers,
-			preventDefault: () => {
-			},
-			stopPropagation: () => {
-			},
+			preventDefault: () => {},
+			stopPropagation: () => {},
 			target,
 			...activePointer,
 		};
@@ -224,13 +219,30 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (attrib === 'height') {
 			return this.height;
 		}
+
+		if (attrib === 'tabindex') {
+			return (this['tabindex'] = arguments[1]);
+		}
 		return this[attrib];
 	}
 
-	public abstract getContext(
-		type: string,
-		options?: any
-	): CanvasRenderingContext | null;
+	setAttribute(attrib) {
+		if (attrib === 'width') {
+			if (!isNaN(parseInt(arguments[1]))) {
+				this.width = parseInt(arguments[1]);
+			}
+		}
+		if (attrib === 'height') {
+			if (!isNaN(parseInt(arguments[1]))) {
+				this.height = parseInt(arguments[1]);
+			}
+		}
+		if (attrib === 'tabindex') {
+			this['tabindex'] = arguments[1];
+		}
+	}
+
+	public abstract getContext(type: string, options?: any): CanvasRenderingContext | null;
 
 	public abstract getBoundingClientRect(): {
 		x: number;
@@ -250,23 +262,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (typeof value === 'number') {
 			// treat as px
 			return value || 0;
-		} else if (
-			(value !== null || true) && typeof value === 'object' && typeof value.value &&
-			typeof value.unit
-		) {
+		} else if ((value !== null || true) && typeof value === 'object' && typeof value.value && typeof value.unit) {
 			if (value.unit === 'px') {
 				return value.value || 0;
 			} else if (value.unit === 'dip') {
 				return Utils.layout.toDevicePixels(value.value) || 0;
 			} else if (value.unit === '%') {
 				if (Application.orientation() === 'portrait') {
-					return type === 'width'
-						? Screen.mainScreen.widthPixels
-						: Screen.mainScreen.heightPixels * value.value || 0;
+					return type === 'width' ? Screen.mainScreen.widthPixels : Screen.mainScreen.heightPixels * value.value || 0;
 				} else if (Application.orientation() === 'landscape') {
-					return type === 'width'
-						? Screen.mainScreen.widthPixels
-						: Screen.mainScreen.heightPixels * value.value || 0;
+					return type === 'width' ? Screen.mainScreen.widthPixels : Screen.mainScreen.heightPixels * value.value || 0;
 				} else {
 					return 0;
 				}

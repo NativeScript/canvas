@@ -1,25 +1,26 @@
-import {SVGItem} from "./SVGItem";
+import { SVGItem } from './SVGItem';
+import { isIOS } from '@nativescript/core';
 
 const b64Extensions = {
-	"/": "jpg",
-	i: "png",
-	R: "gif",
-	U: "webp",
+	'/': 'jpg',
+	i: 'png',
+	R: 'gif',
+	U: 'webp',
 };
 
 function b64WithoutPrefix(b64) {
-	return b64.split(",")[1];
+	return b64.split(',')[1];
 }
 
 function getMIMEforBase64String(b64) {
 	let input = b64;
-	if (b64.includes(",")) {
+	if (b64.includes(',')) {
 		input = b64WithoutPrefix(b64);
 	}
 	const first = input.charAt(0);
 	const mime = b64Extensions[first];
 	if (!mime) {
-		throw new Error("Unknown Base64 MIME type: " + b64);
+		throw new Error('Unknown Base64 MIME type: ' + b64);
 	}
 	return mime;
 }
@@ -55,32 +56,20 @@ export class Image extends SVGItem {
 	}
 
 	isBase64(src) {
-		return typeof src === "string" &&
-			src.startsWith &&
-			src.startsWith("data:");
+		return typeof src === 'string' && src.startsWith && src.startsWith('data:');
 	}
 
 	loadSrc(src) {
-		if (
-			typeof src === "string" &&
-			src.startsWith &&
-			src.startsWith("data:")
-		) {
-			const base64result = src.split(",")[1];
+		if (typeof src === 'string' && src.startsWith && src.startsWith('data:')) {
+			const base64result = src.split(',')[1];
 			if (!base64result) {
 				return null;
 			}
 			try {
-				if (global.isIOS) {
-					return UIImage.imageWithData(NSData.alloc().initWithBase64EncodedStringOptions(
-						base64result,
-						0
-					));
+				if (isIOS) {
+					return UIImage.imageWithData(NSData.alloc().initWithBase64EncodedStringOptions(base64result, 0));
 				} else {
-					const bytes = android.util.Base64.decode(
-						base64result,
-						android.util.Base64.DEFAULT
-					);
+					const bytes = android.util.Base64.decode(base64result, android.util.Base64.DEFAULT);
 					return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 				}
 			} catch (error) {

@@ -1,2 +1,4 @@
 /build
 /.cxx
+libc++_shared.so
+libcanvasnative.so

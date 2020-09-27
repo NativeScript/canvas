@@ -4,6 +4,9 @@
 		"outDir": "../../dist/out-tsc",
 		"rootDir": "."
 	},
-	"exclude": ["**/*.spec.ts", "angular", "src-native"],
-	"include": ["**/*.ts", "references.d.ts"]
+	"exclude": ["**/*.spec.ts", "src-native"],
+	"include": ["**/*.ts", "references.d.ts"],
+	"angularCompilerOptions": {
+		"skipTemplateCodegen": true
+	}
 }

@@ -1,4 +1,4 @@
 declare var global: any;
-require('@nativescript/polyfill');
+require('@nativescript/canvas-polyfill');
 import * as THREE from 'three';
-(global as any).THREE =  global.window.THREE = global.THREE || THREE;
+(global as any).THREE = global.window.THREE = global.THREE || THREE;

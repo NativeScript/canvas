@@ -2,7 +2,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
 group 'com.github.triniwiz'
-version '0.9.0'
+version '0.9.1'
 
 
 publishing {

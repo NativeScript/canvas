@@ -105,14 +105,7 @@
 					"builder": "@nrwl/workspace:run-commands",
 					"outputs": ["dist/packages"],
 					"options": {
-						"commands": [
-							"nx run canvas:build.all",
-							"nx run canvas-polyfill:build.all",
-							"nx run canvas-babylon:build.all",
-							"nx run canvas-phaser:build.all",
-							"nx run canvas-phaser-ce:build.all",
-							"nx run canvas-pixi:build.all",
-							"nx run canvas-three:build.all"],
+						"commands": ["nx run canvas:build.all", "nx run canvas-polyfill:build.all", "nx run canvas-babylon:build.all", "nx run canvas-phaser:build.all", "nx run canvas-phaser-ce:build.all", "nx run canvas-pixi:build.all", "nx run canvas-three:build.all"],
 						"parallel": false
 					}
 				},
@@ -147,15 +140,108 @@
 								"glob": "**/*",
 								"input": "packages/canvas/platforms/",
 								"output": "./platforms/"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas/",
+								"output": "./Canvas/"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/CanvasGradient",
+								"output": "./Canvas2D/CanvasGradient"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/CanvasPattern",
+								"output": "./Canvas2D/CanvasPattern"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/CanvasRenderingContext2D",
+								"output": "./Canvas2D/CanvasRenderingContext2D"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/DOMMatrix",
+								"output": "./Canvas2D/DOMMatrix"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/ImageData",
+								"output": "./Canvas2D/ImageData"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/Path2D",
+								"output": "./Canvas2D/Path2D"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/Path2D",
+								"output": "./Canvas2D/Path2D"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/Canvas2D/TextMetrics",
+								"output": "./Canvas2D/TextMetrics"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/ImageAsset",
+								"output": "./ImageAsset"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/TextDecoder",
+								"output": "./TextDecoder"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/TextEncoder",
+								"output": "./TextEncoder"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/WebGL/WebGLExtensions",
+								"output": "./WebGL/WebGLExtensions"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/WebGL/WebGLRenderingContext",
+								"output": "./WebGL/WebGLRenderingContext"
+							},
+							{
+								"glob": "**/*.d.ts",
+								"input": "packages/canvas/WebGL2/WebGL2RenderingContext",
+								"output": "./WebGL2/WebGL2RenderingContext"
 							}
 						]
+					}
+				},
+				"clean.angular": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["find ./ angular/ -name '*.metadata.json' -delete"],
+						"cwd": "packages/canvas",
+						"parallel": false
+					}
+				},
+				"build.angular": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["node --max-old-space-size=8192 ../../node_modules/.bin/ngc -noEmitOnError -skipLibCheck -p tsconfig.json"],
+						"cwd": "packages/canvas",
+						"parallel": false
 					}
 				},
 				"build.all": {
 					"builder": "@nrwl/workspace:run-commands",
 					"outputs": ["dist/packages"],
 					"options": {
-						"commands": ["nx run canvas:build", "node tools/scripts/build-finish.ts canvas"],
+						"commands": ["nx run canvas:build", "nx run canvas:clean.angular", "nx run canvas:build.angular", "node tools/scripts/build-finish.ts canvas", "nx run canvas:clean.angular"],
 						"parallel": false
 					}
 				},

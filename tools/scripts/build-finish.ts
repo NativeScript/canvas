@@ -13,41 +13,14 @@ const publish = cmdArgs[1] === 'publish';
 
 console.log(`Building ${npmScope}/${packageName}...${publish ? 'and publishing.' : ''}`);
 
-// build angular package
-function buildAngular() {
-	ngPackage
-		.ngPackagr()
-		.forProject(`packages/${packageName}/angular/package.json`)
-		.withTsConfig(`packages/${packageName}/angular/tsconfig.angular.json`)
-		.build()
-		.then(() => {
-			copyAngularDist();
-		})
-		.catch((error) => {
-			console.error(error);
-			process.exit(1);
-		});
-}
-
-// copy angular ng-packagr output to dist/packages/{name}
-function copyAngularDist() {
-	fs.copy(path.join('packages', packageName, 'angular', 'dist'), path.join('dist', 'packages', packageName, 'angular'))
-		.then(() => {
-			console.log(`${packageName} angular built successfully.`);
-			finishPreparation();
-		})
-		.catch((err) => console.error(err));
-}
-
 function finishPreparation() {
-	fs.copy(path.join('tools', 'assets', 'publishing'), path.join('dist', 'packages', packageName))
+	fs.copy(path.join('dist', 'out-tsc'), path.join('dist', 'packages', packageName))
+		.then(() => fs.copy(path.join('tools', 'assets', 'publishing'), path.join('dist', 'packages', packageName)))
 		.then(() => console.log(`${npmScope}/${packageName} ready to publish.`))
 		.catch((err) => console.error(err));
+	// fs.copy(path.join('tools', 'assets', 'publishing'), path.join('dist', 'packages', packageName))
+	// 	.then(() => console.log(`${npmScope}/${packageName} ready to publish.`))
+	// 	.catch((err) => console.error(err));
 }
 
-if (fs.existsSync(path.join(rootDir, 'packages', packageName, 'angular'))) {
-	// package has angular specific src, build it first
-	buildAngular();
-} else {
-	finishPreparation();
-}
+finishPreparation();

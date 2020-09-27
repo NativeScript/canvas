@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"license": "MIT",
 	"scripts": {
-		"setup": "npx rimraf node_modules package-lock.json dist tmp && npm i && ts-patch install",
+		"setup": "npx rimraf node_modules package-lock.json dist tmp && npm i",
 		"start": "nps",
 		"add": "nx workspace-schematic add-package"
 	},
@@ -21,7 +21,6 @@
 		"@nativescript/angular": "~8.20.0",
 		"@nativescript/core": "~6.5.19",
 		"@nativescript/types": "~7.0.0",
-		"@nativescript/webpack": "",
 		"@ngtools/webpack": "~8.2.0",
 		"@nrwl/eslint-plugin-nx": "~10.1.0",
 		"@nrwl/jest": "~10.1.0",
@@ -65,9 +64,9 @@
 		"svelte": "^3.24.1",
 		"svelte-native": "~0.9.2",
 		"three": "^0.120.1",
+		"tns-core-modules": "^6.5.20",
 		"ts-jest": "~26.2.0",
 		"ts-node": "~8.10.2",
-		"ts-patch": "^1.3.0",
 		"tslint": "~6.1.2",
 		"typescript": "~3.5.3",
 		"vexflow": "^3.0.9",

@@ -2,7 +2,7 @@ Pod::Spec.new do |s|
 
     s.name         = "CanvasNative"
 
-    s.version      = "0.9.0"
+    s.version      = "0.9.1"
 
     s.summary      = "A Canvas library"
 

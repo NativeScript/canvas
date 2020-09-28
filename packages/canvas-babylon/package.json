@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-babylon",
-	"version": "1.0.0-alpha3-v6",
+	"version": "1.0.0-alpha4-v6",
 	"description": "",
 	"main": "index",
 	"typings": "index.d.ts",

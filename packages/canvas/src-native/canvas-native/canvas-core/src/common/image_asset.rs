@@ -1,4 +1,5 @@
 use std::ffi::{CStr, CString};
+use std::io::{Read, Seek, SeekFrom};
 use std::mem;
 use std::os::raw::{c_char, c_longlong, c_uint};
 use std::ptr::{null, null_mut};
@@ -82,14 +83,48 @@ impl NativeImageAsset {
         }
         self.image = None;
         let real_path = unsafe { CStr::from_ptr(path) }.to_str().unwrap_or("");
-        let result = image::open(real_path);
-        match result {
-            Ok(result) => {
-                self.image = Some(result);
-                1
+        let file = std::fs::File::open(real_path);
+        match file {
+            Ok(file) => {
+                let mut reader = std::io::BufReader::new(file);
+                let mut bytes = [0; 16];
+                let result = reader.read(&mut bytes);
+                match result {
+                    Ok(_) => {
+                        let _ = reader.seek(SeekFrom::Start(0));
+                        let mime = image::guess_format(&bytes);
+                        match mime {
+                            Ok(mime) => match image::load(reader, mime) {
+                                Ok(result) => {
+                                    self.image = Some(result);
+                                    1
+                                }
+                                Err(e) => {
+                                    let error = e.to_string();
+                                    self.error.clear();
+                                    self.error.push_str(error.as_str());
+                                    0
+                                }
+                            },
+                            Err(e) => {
+                                let error = e.to_string();
+                                self.error.clear();
+                                self.error.push_str(error.as_str());
+                                0
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        let error = e.to_string();
+                        self.error.clear();
+                        self.error.push_str(error.as_str());
+                        0
+                    }
+                }
             }
             Err(e) => {
                 let error = e.to_string();
+                self.error.clear();
                 self.error.push_str(error.as_str());
                 0
             }

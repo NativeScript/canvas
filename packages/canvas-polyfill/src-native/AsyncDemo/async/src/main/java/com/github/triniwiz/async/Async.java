@@ -2,11 +2,14 @@ package com.github.triniwiz.async;
 
 import android.os.Handler;
 import android.os.HandlerThread;
+
 import androidx.annotation.Nullable;
+
 import okhttp3.*;
 import okhttp3.internal.http2.ErrorCode;
 import okhttp3.internal.http2.StreamResetException;
 import okio.*;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,6 +17,7 @@ import org.json.JSONTokener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -109,6 +113,7 @@ public class Async {
 			}
 		});
 	}
+
 	public static void runInBackground(final Runnable runnable) {
 		executor.submit(new Runnable() {
 			@Override
@@ -434,7 +439,7 @@ public class Async {
 									FormBody.Builder formBody = null;
 									if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
 										formBody = new FormBody.Builder(StandardCharsets.UTF_8);
-									}else {
+									} else {
 										formBody = new FormBody.Builder(java.nio.charset.Charset.forName("UTF-8"));
 									}
 
@@ -472,7 +477,7 @@ public class Async {
 									FormBody.Builder formBody = null;
 									if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
 										formBody = new FormBody.Builder(StandardCharsets.UTF_8);
-									}else {
+									} else {
 										formBody = new FormBody.Builder(java.nio.charset.Charset.forName("UTF-8"));
 									}
 
@@ -883,15 +888,24 @@ public class Async {
 			Async.executor.submit(new Runnable() {
 				@Override
 				public void run() {
-					BufferedSink sink;
+					File file = new File(path);
+					FileOutputStream stream = null;
 					try {
-						sink = Okio.buffer(Okio.sink(new File(path)));
-						sink.write(bytes);
+						stream = new FileOutputStream(file);
+						stream.write(bytes);
 						callback.onComplete(null);
 					} catch (FileNotFoundException e) {
 						callback.onError(e.getMessage(), e);
 					} catch (IOException e) {
 						callback.onError(e.getMessage(), e);
+					} finally {
+						if (stream != null) {
+							try {
+								stream.flush();
+								stream.close();
+							} catch (IOException e) {
+							}
+						}
 					}
 				}
 			});
@@ -902,13 +916,20 @@ public class Async {
 				@Override
 				public void run() {
 					File file = new File(path);
-					BufferedSource source = null;
-					Sink sink = null;
+					FileInputStream stream = null;
 					try {
-						source = Okio.buffer(Okio.source(file));
-						ByteArrayOutputStream2 outputStream = new ByteArrayOutputStream2();
-						sink = Okio.sink(outputStream);
-						source.readAll(sink);
+						stream = new FileInputStream(file);
+						int count;
+						byte[] buffer = new byte[1024];
+						ByteArrayOutputStream2 outputStream = new ByteArrayOutputStream2(stream.available());
+
+						while (true) {
+							count = stream.read(buffer);
+							if (count <= 0)
+								break;
+							outputStream.write(buffer, 0, count);
+						}
+
 						callback.onComplete(outputStream.buf());
 					} catch (FileNotFoundException e) {
 						callback.onError(e.getMessage(), e);
@@ -916,14 +937,8 @@ public class Async {
 						callback.onError(e.getMessage(), e);
 					} finally {
 						try {
-							if (source != null) {
-								source.close();
-							}
-						} catch (IOException ignored) {
-						}
-						try {
-							if (sink != null) {
-								sink.close();
+							if (stream != null) {
+								stream.close();
 							}
 						} catch (IOException ignored) {
 						}

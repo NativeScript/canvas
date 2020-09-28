@@ -8,7 +8,7 @@ use std::os::raw::c_void;
 use jni::{objects::JClass, JNIEnv};
 use jni_sys::{jboolean, jint, jlong, JNI_TRUE};
 
-use crate::common::{image_asset_get_bytes, image_asset_get_rgb_bytes, image_asset_get_rgba_bytes};
+use crate::common::{image_asset_get_rgb_bytes, image_asset_get_rgba_bytes};
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;

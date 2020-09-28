@@ -21,8 +21,7 @@ use crate::android::bitmap::{
     ANDROID_BITMAP_RESULT_SUCCESS,
 };
 use crate::common::{
-    image_asset_flip_y, image_asset_flip_y_in_place, image_asset_get_rgb_bytes,
-    image_asset_get_rgba_bytes,
+    image_asset_flip_y_in_place, image_asset_get_rgb_bytes, image_asset_get_rgba_bytes,
 };
 
 const RGBA: u32 = 0x1908;
@@ -329,19 +328,17 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_WebGLRenderingContext_n
             height as usize,
         );
     }
-    unsafe {
-        gl_bindings::glTexSubImage2D(
-            target as u32,
-            level,
-            xoffset,
-            yoffset,
-            width,
-            height,
-            format as u32,
-            image_type as u32,
-            data.array as *const c_void,
-        );
-    }
+    gl_bindings::glTexSubImage2D(
+        target as u32,
+        level,
+        xoffset,
+        yoffset,
+        width,
+        height,
+        format as u32,
+        image_type as u32,
+        data.array as *const c_void,
+    );
 }
 
 #[no_mangle]

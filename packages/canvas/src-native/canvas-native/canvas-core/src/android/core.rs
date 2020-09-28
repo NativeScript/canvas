@@ -1832,7 +1832,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_CanvasRenderingContext2
     dirty_width: jint,
     dirty_height: jint,
 ) -> jlong {
-    let mut slice = env.get_direct_buffer_address(array);
+    let slice = env.get_direct_buffer_address(array);
     match slice {
         Ok(slice) => put_image_data(
             canvas_native_ptr,

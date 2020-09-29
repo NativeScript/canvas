@@ -1,30 +1,30 @@
-import {Element} from "./Element";
-import {knownFolders, path, File, ImageSource, isIOS, isAndroid} from "@nativescript/core";
-import {ImageAsset} from '@nativescript/canvas';
+import { Element } from './Element';
+import { knownFolders, path, File, ImageSource, isIOS, isAndroid } from '@nativescript/core';
+import { ImageAsset } from '@nativescript/canvas';
 
 const background_queue = isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
 const main_queue = isIOS ? dispatch_get_current_queue() : undefined;
 declare var NSUUID, java, NSData, android;
 const b64Extensions = {
-	"/": "jpg",
-	i: "png",
-	R: "gif",
-	U: "webp",
+	'/': 'jpg',
+	i: 'png',
+	R: 'gif',
+	U: 'webp',
 };
 
 function b64WithoutPrefix(b64) {
-	return b64.split(",")[1];
+	return b64.split(',')[1];
 }
 
 function getMIMEforBase64String(b64) {
 	let input = b64;
-	if (b64.includes(",")) {
+	if (b64.includes(',')) {
 		input = b64WithoutPrefix(b64);
 	}
 	const first = input.charAt(0);
 	const mime = b64Extensions[first];
 	if (!mime) {
-		throw new Error("Unknown Base64 MIME type: " + b64);
+		throw new Error('Unknown Base64 MIME type: ' + b64);
 	}
 	return mime;
 }
@@ -69,20 +69,18 @@ export class HTMLImageElement extends Element {
 	set complete(value) {
 		this._complete = value;
 		if (value) {
-			this.emitter.emit("load", this);
+			this.emitter.emit('load', this);
 			this.onload();
 		}
 	}
 
-
 	constructor(props?) {
-		super("image");
+		super('image');
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
 		// this._load = this._load.bind(this);
-		this._onload = () => {
-		};
-		if (props !== null && typeof props === "object") {
+		this._onload = () => {};
+		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;
 			this.width = props.width;
 			this.height = props.height;
@@ -92,14 +90,10 @@ export class HTMLImageElement extends Element {
 
 	_load() {
 		if (this.src) {
-			if (
-				typeof this.src === "string" &&
-				this.src.startsWith &&
-				this.src.startsWith("data:")
-			) {
+			if (typeof this.src === 'string' && this.src.startsWith && this.src.startsWith('data:')) {
 				// is base64 - convert and try again;
 				this._base64 = this.src;
-				const base64result = this.src.split(",")[1];
+				const base64result = this.src.split(',')[1];
 				if (!base64result) {
 					return;
 				}
@@ -109,25 +103,16 @@ export class HTMLImageElement extends Element {
 						const dir = knownFolders.documents().path;
 						if (isIOS) {
 							dispatch_async(background_queue, () => {
-								this.localUri = path.join(
-									dir,
-									`${getUUID()}-b64image.${MIME}`
-								);
+								this.localUri = path.join(dir, `${getUUID()}-b64image.${MIME}`);
 								const file = File.fromPath(this.localUri);
-								const toWrite = NSData.alloc().initWithBase64EncodedStringOptions(
-									base64result,
-									0
-								);
+								const toWrite = NSData.alloc().initWithBase64EncodedStringOptions(base64result, 0);
 								let hasError = false;
 								file.writeSync(toWrite, (error) => {
 									hasError = true;
 									if ((global as any).__debug_browser_polyfill_image) {
-										console.log(
-											`nativescript-browser-polyfill: Error:`,
-											error.message
-										);
+										console.log(`nativescript-browser-polyfill: Error:`, error.message);
 									}
-									this.emitter.emit("error", {target: this, error});
+									this.emitter.emit('error', { target: this, error });
 								});
 								if (!hasError) {
 									dispatch_async(main_queue, () => {
@@ -138,36 +123,34 @@ export class HTMLImageElement extends Element {
 						}
 						if (isAndroid) {
 							const ref = new WeakRef(this);
-							(com as any).github.triniwiz.async.Async.base64ToFile(base64result, dir + '/', new (com as any).github.triniwiz.async.Async.Callback({
-								success(response) {
-									const owner = ref.get();
-									if (owner) {
-										owner.localUri = response.toString();
-										owner._load();
-									}
-								},
-								error(error, message) {
-									if ((global as any).__debug_browser_polyfill_image) {
-										console.log(
-											`nativescript-browser-polyfill: Error:`,
-											message,
-										);
-									}
-									const owner = ref.get();
-									if (owner) {
-										owner.emitter.emit("error", {target: ref.get(), message});
-									}
-								}
-							}))
+							(com as any).github.triniwiz.async.Async2.base64ToFile(
+								base64result,
+								dir + '/',
+								new (com as any).github.triniwiz.async.Async2.Base64.Callback({
+									success(response) {
+										const owner = ref.get();
+										if (owner) {
+											owner.localUri = response.toString();
+											owner._load();
+										}
+									},
+									error(error, message) {
+										if ((global as any).__debug_browser_polyfill_image) {
+											console.log(`nativescript-browser-polyfill: Error:`, message);
+										}
+										const owner = ref.get();
+										if (owner) {
+											owner.emitter.emit('error', { target: ref.get(), message });
+										}
+									},
+								})
+							);
 						}
 					} catch (error) {
 						if ((global as any).__debug_browser_polyfill_image) {
-							console.log(
-								`nativescript-browser-polyfill: Error:`,
-								error.message
-							);
+							console.log(`nativescript-browser-polyfill: Error:`, error.message);
 						}
-						this.emitter.emit("error", {target: this, error});
+						this.emitter.emit('error', { target: this, error });
 					}
 				})();
 				return;
@@ -184,14 +167,15 @@ export class HTMLImageElement extends Element {
 					.catch(e => {
 						this.emitter.emit("error", {target: this});
 					});*/
-				this._asset.loadFileAsync(this.src)
+				this._asset
+					.loadFileAsync(this.src)
 					.then(() => {
 						this.width = this._asset.width;
 						this.height = this._asset.height;
 						this.complete = true;
 					})
-					.catch(e => {
-						this.emitter.emit("error", {target: this});
+					.catch((e) => {
+						this.emitter.emit('error', { target: this });
 					});
 			} else {
 				/*ImageSource.fromFile(this.src)
@@ -204,7 +188,6 @@ export class HTMLImageElement extends Element {
 					.catch(e => {
 						this.emitter.emit("error", {target: this});
 					});*/
-
 				/*	this._asset.loadFileAsync(this.src)
 						.then(() => {
 							this.width = this._asset.width;
@@ -219,4 +202,3 @@ export class HTMLImageElement extends Element {
 		}
 	}
 }
-

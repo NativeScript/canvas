@@ -39,7 +39,7 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Async {
+public class Async2 {
 	private static ExecutorService executor = Executors.newCachedThreadPool();
 	private static Handler handler;
 	static final Map<String, String> b64Extensions = new HashMap<>();
@@ -56,62 +56,64 @@ public class Async {
 	}
 
 
-	static String b64WithoutPrefix(String b64) {
-		return b64.split(",")[1];
-	}
-
-	static String getMIMEForBase64String(String b64) throws Exception {
-		String input = b64;
-		if (b64.contains(",")) {
-			input = b64WithoutPrefix(b64);
+	public static class Base64 {
+		static String b64WithoutPrefix(String b64) {
+			return b64.split(",")[1];
 		}
-		char first = input.charAt(0);
-		String mime = b64Extensions.get(String.valueOf(first));
-		if (mime == null) {
-			throw new Exception("Unknown Base64 MIME type: " + b64);
-		}
-		return mime;
-	}
 
-	static String getUUID() {
-		return java.util.UUID.randomUUID().toString();
-	}
-
-	public interface Callback {
-		void success(Object response);
-
-		void error(Object error, String message);
-	}
-
-	public static void base64ToFile(final String base64, final String path, final Callback callback) {
-		executor.submit(new Runnable() {
-			@Override
-			public void run() {
-				String MIME;
-				try {
-					MIME = getMIMEForBase64String(base64);
-				} catch (Exception e) {
-					callback.error(e, e.getMessage());
-					return;
-				}
-				String localUri = path + getUUID() + "-b64image." + MIME;
-				File file = new File(localUri);
-				try {
-					FileOutputStream os = new FileOutputStream(file);
-					os.write(android.util.Base64.decode(
-						base64,
-						android.util.Base64.DEFAULT
-					));
-					os.flush();
-					os.close();
-					callback.success(file.getAbsolutePath());
-				} catch (FileNotFoundException e) {
-					callback.error(e, e.getMessage());
-				} catch (IOException e) {
-					callback.error(e, e.getMessage());
-				}
+		static String getMIMEForBase64String(String b64) throws Exception {
+			String input = b64;
+			if (b64.contains(",")) {
+				input = b64WithoutPrefix(b64);
 			}
-		});
+			char first = input.charAt(0);
+			String mime = b64Extensions.get(String.valueOf(first));
+			if (mime == null) {
+				throw new Exception("Unknown Base64 MIME type: " + b64);
+			}
+			return mime;
+		}
+
+		static String getUUID() {
+			return java.util.UUID.randomUUID().toString();
+		}
+
+		public interface Callback {
+			void success(Object response);
+
+			void error(Object error, String message);
+		}
+
+		public static void base64ToFile(final String base64, final String path, final Callback callback) {
+			executor.submit(new Runnable() {
+				@Override
+				public void run() {
+					String MIME;
+					try {
+						MIME = getMIMEForBase64String(base64);
+					} catch (Exception e) {
+						callback.error(e, e.getMessage());
+						return;
+					}
+					String localUri = path + getUUID() + "-b64image." + MIME;
+					File file = new File(localUri);
+					try {
+						FileOutputStream os = new FileOutputStream(file);
+						os.write(android.util.Base64.decode(
+							base64,
+							android.util.Base64.DEFAULT
+						));
+						os.flush();
+						os.close();
+						callback.success(file.getAbsolutePath());
+					} catch (FileNotFoundException e) {
+						callback.error(e, e.getMessage());
+					} catch (IOException e) {
+						callback.error(e, e.getMessage());
+					}
+				}
+			});
+		}
 	}
 
 	public static void runInBackground(final Runnable runnable) {
@@ -385,7 +387,7 @@ public class Async {
 		public static String makeRequest(final RequestOptions options, final Http.Callback callback) {
 			UUID uuid = UUID.randomUUID();
 			final String id = uuid.toString();
-			Async.executor.submit(new Runnable() {
+			Async2.executor.submit(new Runnable() {
 				@Override
 				public void run() {
 					OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -673,7 +675,7 @@ public class Async {
 		public static String getFileRequest(final DownloadRequestOptions options, final Http.Callback callback) {
 			UUID uuid = UUID.randomUUID();
 			final String id = uuid.toString();
-			Async.executor.submit(new Runnable() {
+			Async2.executor.submit(new Runnable() {
 				@Override
 				public void run() {
 					OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -782,7 +784,7 @@ public class Async {
 
 		public static void cancelRequest(final String id) {
 			if (id != null) {
-				Async.executor.submit(new Runnable() {
+				Async2.executor.submit(new Runnable() {
 					@Override
 					public void run() {
 						CallOptions pair = callMap.get(id);
@@ -885,7 +887,7 @@ public class Async {
 		}
 
 		public static void writeFile(final byte[] bytes, final String path, final Callback callback) {
-			Async.executor.submit(new Runnable() {
+			Async2.executor.submit(new Runnable() {
 				@Override
 				public void run() {
 					File file = new File(path);
@@ -912,7 +914,7 @@ public class Async {
 		}
 
 		public static void readFile(final String path, final @Nullable Options options, final Callback callback) {
-			Async.executor.submit(new Runnable() {
+			Async2.executor.submit(new Runnable() {
 				@Override
 				public void run() {
 					File file = new File(path);

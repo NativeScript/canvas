@@ -83,8 +83,5 @@
 		"**/*": [
 			"nx format:write --files"
 		]
-	},
-	"dependencies": {
-		"xmldom-qsa": "^1.0.3"
 	}
 }

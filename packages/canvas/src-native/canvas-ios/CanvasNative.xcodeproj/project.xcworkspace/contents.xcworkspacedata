@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:../CanvasNative/Source/DataURLRequest.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/Extensions.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/GLRenderer.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/GLUtils.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/HowToClear.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/MetalRenderer.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/Renderer.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_ANGLE_instanced_arrays.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_EXT_blend_minmax.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_EXT_color_buffer_float.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_EXT_color_buffer_half_float.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_EXT_shader_texture_lod.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_EXT_sRGB.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_EXT_texture_filter_anisotropic.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_element_index_uint.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_fbo_render_mipmap.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_standard_derivatives.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_texture_float_linear.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_texture_float.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_texture_half_float_linear.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_texture_half_float.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_OES_vertex_array_object.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_WEBGL_color_buffer_float.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_WEBGL_compressed_texture_etc.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_WEBGL_compressed_texture_etc1.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_WEBGL_compressed_texture_pvrtc.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_WEBGL_depth_texture.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_WEBGL_draw_buffers.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNS_WEBGL_lose_context.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSAnimationFrame.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSCanvas.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSCanvasListener.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSCanvasRenderingContext.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSCanvasRenderingContext2D.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSColors.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSColorStyle.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSCompositeOperationType.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSDOMMatrix.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSFramebufferAttachmentParameter.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSImageAsset.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSImageAssetFormat.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSImageData.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSImageSmoothingQuality.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSIndexedParameter.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSLineCap.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSLineJoin.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSPath2D.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSTextAlignment.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSTextDecoder.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSTextEncoder.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSTextMetrics.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSWebGL2RenderingContext.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSWebGLActiveInfo.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSWebGLRenderingContext.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/TNSWebGLShaderPrecisionFormat.swift">
+   </FileRef>
+   <FileRef
+      location = "group:../CanvasNative/Source/Utils.m">
+   </FileRef>
+   <FileRef
+      location = "self:">
+   </FileRef>
+</Workspace>

@@ -183,9 +183,9 @@ class ViewController: UIViewController {
             
         }
         */
-        //let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
+        let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
        //clearExample(ctx: ctx)
-        //drawImageExample(ctx: ctx)
+        drawImageExample(ctx: ctx)
        // canvas1?.flush()
         //drawImageBlock(ctx: ctx)
          //doSolarAnimation(ctx: ctx)

@@ -227,6 +227,15 @@
 						"parallel": false
 					}
 				},
+				"build.native.ios.framework.release": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["sh canvas-build.sh --release"],
+						"cwd": "tools/scripts",
+						"parallel": false
+					}
+				},
 				"build.native.ios.debug": {
 					"builder": "@nrwl/workspace:run-commands",
 					"outputs": ["dist/packages"],

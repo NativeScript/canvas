@@ -134,6 +134,11 @@ export class Canvas extends CanvasBase {
 		return this._canvas;
 	}
 
+	initNativeView() {
+		super.initNativeView();
+		this.__handleGestures();
+	}
+
 	flush() {
 		if (this.ios) {
 			this.ios.flush();

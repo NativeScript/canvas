@@ -99,6 +99,7 @@ export class Canvas extends CanvasBase {
 	initNativeView(): void {
 		super.initNativeView();
 		const ref = new WeakRef(this);
+		this.__handleGestures();
 		this._canvas.setListener(
 			new com.github.triniwiz.canvas.CanvasView.Listener({
 				contextReady() {

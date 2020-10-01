@@ -1,5 +1,6 @@
 import { CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application } from '@nativescript/core';
 import { CanvasRenderingContext, TouchList } from '../common';
+import { Pointer } from '@nativescript/core/ui/gestures';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
@@ -13,9 +14,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	protected constructor() {
 		super();
-		this._touchEvents = this._touchEventsFN.bind(this);
-		this.on('touch, pan', this._touchEvents);
 		this._classList = new Set();
+	}
+
+	__handleGestures() {
+		if (this._touchEvents) {
+			this.off('touch, pan, pinch', this._touchEvents);
+			this._touchEvents = undefined;
+		}
+		this._touchEvents = this._touchEventsFN.bind(this);
+		this.on('touch, pan, pinch', this._touchEvents);
 	}
 
 	_classList: Set<any>;
@@ -82,17 +90,22 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return null;
 	}
 
+	__touchStart?: Pointer;
+
 	_touchEventsFN(event: any) {
 		if (event.eventName === 'touch') {
 			switch (event.action) {
 				case 'down':
+					this.__touchStart = event.getActivePointers()[0];
 					this._emitEvent('touchstart', event);
 					break;
 				case 'up':
 					this._emitEvent('touchend', event);
+					this.__touchStart = undefined;
 					break;
 				case 'cancel':
 					this._emitEvent('touchcancel', event);
+					this.__touchStart = undefined;
 					break;
 				case 'move':
 					// NOOP
@@ -100,6 +113,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				default:
 					break;
 			}
+		} else if (event.eventName === 'pinch') {
+			this._emitEvent('touchmove:pinch', event);
 		} else if (event.eventName === 'pan') {
 			if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
 				this._emitEvent('touchmove', event);
@@ -110,8 +125,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_getTouchEvent(name, event, target) {
 		const pointers = new TouchList();
 		const scale = 1;
-		let activePointer = {};
+		let activePointer: {};
 		if (name === 'touchmove') {
+			name = 'touchmove';
 			/* mouse */
 			activePointer = {
 				clientX: event.deltaX * scale,
@@ -142,6 +158,55 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				rotationAngle: 0,
 				screenX: event.deltaX * scale,
 				screenY: event.deltaY * scale,
+				target,
+			});
+		} else if (name === 'touchmove:pinch') {
+			name = 'touchmove';
+			const x = event.getFocusX();
+			const y = event.getFocusY();
+			const scale = event.scale;
+			// mouse event
+			activePointer = {
+				clientX: x * scale,
+				clientY: y * scale,
+				force: 0.0,
+				identifier: 0,
+				pageX: x * scale,
+				pageY: y * scale,
+				radiusX: 0,
+				radiusY: 0,
+				rotationAngle: 0,
+				screenX: x * scale,
+				screenY: x * scale,
+			};
+
+			pointers.push({
+				clientX: this.__touchStart.getX(),
+				clientY: this.__touchStart.getY(),
+				force: 0.0,
+				identifier: 0,
+				pageX: this.__touchStart.getX(),
+				pageY: this.__touchStart.getY(),
+				radiusX: 0,
+				radiusY: 0,
+				rotationAngle: 0,
+				screenX: this.__touchStart.getX(),
+				screenY: this.__touchStart.getY(),
+				target,
+			});
+
+			pointers.push({
+				clientX: x,
+				clientY: y,
+				force: 0.0,
+				identifier: 1,
+				pageX: x,
+				pageY: y,
+				radiusX: 0,
+				radiusY: 0,
+				rotationAngle: 0,
+				screenX: x,
+				screenY: y,
 				target,
 			});
 		} else {

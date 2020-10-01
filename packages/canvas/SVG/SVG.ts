@@ -1,7 +1,7 @@
-import { View, Style } from '@nativescript/core';
-import { Canvas } from '../Canvas';
-import { CssProperty } from '@nativescript/core/ui/core/properties';
-import { AddChildFromBuilder } from '@nativescript/core/ui/core/view';
+import {View, Style, Frame, isIOS} from '@nativescript/core';
+import {Canvas} from '../Canvas';
+import {CssProperty} from '@nativescript/core/ui/core/properties';
+import {AddChildFromBuilder} from '@nativescript/core/ui/core/view';
 
 export const strokeProperty = new CssProperty<Style, any>({
 	name: 'stroke',
@@ -37,26 +37,35 @@ export class SVG extends View implements AddChildFromBuilder {
 	_canvas: any;
 	_views: any[];
 	_children: Map<string, View>;
+	_isReady: boolean = false;
 
 	constructor() {
 		super();
-		this._canvas = new Canvas();
+		this._canvas = new (Canvas as any)(true);
 		this._views = [];
 		this._children = new Map<string, View>();
 	}
 
-	createNativeView(): Object {
-		this.on('layoutChanged', (args) => {
+	initNativeView() {
+		super.initNativeView();
+		this._canvas.on('ready', args => {
+			console.log('ready');
+			this._isReady = true;
 			this._views.forEach((view) => {
 				if (typeof view.handleValues === 'function') {
 					view.handleValues();
 				}
 			});
 		});
-		if (this._canvas.ios) {
-			return this._canvas.ios;
+
+		console.log(this._canvas.parent);
+		if (!this._canvas.parent) {
+			Frame.topmost()._addView(this._canvas);
 		}
-		return this._canvas.android;
+	}
+
+	createNativeView() {
+		return isIOS ? this._canvas.ios : this._canvas.android;
 	}
 
 	_addChildFromBuilder(name: string, value: any): void {

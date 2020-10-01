@@ -1,1 +1,1 @@
-VALID_ARCHS = arm64 arm64e x86_64
+EXCLUDED_ARCHS[sdk=iphonesimulator*] => i386 arm64

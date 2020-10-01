@@ -459,7 +459,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	private _strokeStyle: string | CanvasGradient | CanvasPattern = 'black';
 
 	get strokeStyle() {
-		this.log('get strokeStyle');
 		return this._strokeStyle;
 	}
 

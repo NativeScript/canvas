@@ -27,7 +27,14 @@ export class Canvas extends CanvasBase {
 		super();
 		const activity =
 			Application.android.foregroundActivity || Application.android.startActivity;
-		this._canvas = new com.github.triniwiz.canvas.CanvasView(activity, false);
+		let useCpu = false;
+		if (arguments.length === 1) {
+			const value = arguments[0];
+			if (typeof value === 'boolean') {
+				useCpu = value;
+			}
+		}
+		this._canvas = new com.github.triniwiz.canvas.CanvasView(activity, useCpu);
 	}
 
 	get android() {

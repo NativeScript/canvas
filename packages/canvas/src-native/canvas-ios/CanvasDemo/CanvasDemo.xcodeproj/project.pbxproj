@@ -3,11 +3,10 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4297E6E7EE343316CB1780AF /* Pods_CanvasDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5BC09618707C0A8402336FA /* Pods_CanvasDemo.framework */; };
 		F16241E822DA6E9C007FBF7B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241E722DA6E9C007FBF7B /* AppDelegate.swift */; };
 		F16241EA22DA6E9C007FBF7B /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241E922DA6E9C007FBF7B /* ViewController.swift */; };
 		F16241ED22DA6E9C007FBF7B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F16241EB22DA6E9C007FBF7B /* Main.storyboard */; };
@@ -15,6 +14,8 @@
 		F16241F222DA6E9D007FBF7B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F16241F022DA6E9D007FBF7B /* LaunchScreen.storyboard */; };
 		F16241FD22DA6E9D007FBF7B /* CanvasDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241FC22DA6E9D007FBF7B /* CanvasDemoTests.swift */; };
 		F162420822DA6E9D007FBF7B /* CanvasDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F162420722DA6E9D007FBF7B /* CanvasDemoUITests.swift */; };
+		F1FF6B07252535C8001DAE0D /* CanvasNative.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */; };
+		F1FF6B08252535C8001DAE0D /* CanvasNative.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,9 +35,21 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		F1FF6B09252535C8001DAE0D /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				F1FF6B08252535C8001DAE0D /* CanvasNative.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		11EDA523E9C10AF3795C1D1C /* Pods-CanvasDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CanvasDemo.release.xcconfig"; path = "Target Support Files/Pods-CanvasDemo/Pods-CanvasDemo.release.xcconfig"; sourceTree = "<group>"; };
-		C5BC09618707C0A8402336FA /* Pods_CanvasDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CanvasDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F16241E422DA6E9C007FBF7B /* CanvasDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CanvasDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F16241E722DA6E9C007FBF7B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F16241E922DA6E9C007FBF7B /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -50,9 +63,7 @@
 		F162420322DA6E9D007FBF7B /* CanvasDemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CanvasDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F162420722DA6E9D007FBF7B /* CanvasDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDemoUITests.swift; sourceTree = "<group>"; };
 		F162420922DA6E9D007FBF7B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F198A1462514884300DFCA5D /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		F1A0AEE425147B5A0069F286 /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		F6CBFBDC7F089D70DB46979A /* Pods-CanvasDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CanvasDemo.debug.xcconfig"; path = "Target Support Files/Pods-CanvasDemo/Pods-CanvasDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = CanvasNative.xcframework; path = ../CanvasNative/Dist/CanvasNative.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,7 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4297E6E7EE343316CB1780AF /* Pods_CanvasDemo.framework in Frameworks */,
+				F1FF6B07252535C8001DAE0D /* CanvasNative.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,9 +95,7 @@
 		4481D334EC20564EAB46B0E3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				F198A1462514884300DFCA5D /* CanvasNative.framework */,
-				F1A0AEE425147B5A0069F286 /* CanvasNative.framework */,
-				C5BC09618707C0A8402336FA /* Pods_CanvasDemo.framework */,
+				F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -94,8 +103,6 @@
 		783CB0E45C2971C4BD79D204 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				F6CBFBDC7F089D70DB46979A /* Pods-CanvasDemo.debug.xcconfig */,
-				11EDA523E9C10AF3795C1D1C /* Pods-CanvasDemo.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -160,11 +167,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = F162420C22DA6E9D007FBF7B /* Build configuration list for PBXNativeTarget "CanvasDemo" */;
 			buildPhases = (
-				EA48906440EC6E1223D3A2B6 /* [CP] Check Pods Manifest.lock */,
 				F16241E022DA6E9C007FBF7B /* Sources */,
 				F16241E122DA6E9C007FBF7B /* Frameworks */,
 				F16241E222DA6E9C007FBF7B /* Resources */,
-				C3CC4E5E3AD28EF0955BCF3B /* [CP] Embed Pods Frameworks */,
+				F1FF6B09252535C8001DAE0D /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -280,48 +286,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		C3CC4E5E3AD28EF0955BCF3B /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-CanvasDemo/Pods-CanvasDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-CanvasDemo/Pods-CanvasDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-CanvasDemo/Pods-CanvasDemo-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		EA48906440EC6E1223D3A2B6 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-CanvasDemo-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		F16241E022DA6E9C007FBF7B /* Sources */ = {
@@ -504,21 +468,21 @@
 		};
 		F162420D22DA6E9D007FBF7B /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F6CBFBDC7F089D70DB46979A /* Pods-CanvasDemo.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = TG7LSJHB64;
-				ENABLE_BITCODE = NO;
+				ENABLE_BITCODE = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)",
+					"\"$(SRCROOT)/../CanvasNative/Dist\"",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = CanvasDemo/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -539,21 +503,21 @@
 		};
 		F162420E22DA6E9D007FBF7B /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 11EDA523E9C10AF3795C1D1C /* Pods-CanvasDemo.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = TG7LSJHB64;
-				ENABLE_BITCODE = NO;
+				ENABLE_BITCODE = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)",
+					"\"$(SRCROOT)/../CanvasNative/Dist\"",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = CanvasDemo/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

@@ -1,4 +1,0 @@
-module CanvasNative {
-    umbrella "../Pods/CanvasNative/Sources"
-    export *
-}

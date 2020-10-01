@@ -112,9 +112,16 @@ public class MetalRenderer: NSObject, Renderer, MTKViewDelegate {
             self.listener?.didDraw()
         }
         #else
-        drawable.addPresentedHandler { _ in
-            self.listener?.didDraw()
+        if #available(iOS 10.3, *) {
+            drawable.addPresentedHandler { _ in
+                self.listener?.didDraw()
+            }
+        }else {
+            commandBuffer.addCompletedHandler { _ in
+                self.listener?.didDraw()
+            }
         }
+        
         #endif
         
         commandBuffer.present(drawable)

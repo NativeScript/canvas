@@ -6,13 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.github.triniwiz.async.Async;
+import com.github.triniwiz.async.Async2;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		File font = new File(getFilesDir(), "helvetiker_regular.typeface.json");
-		Async.FileManager.readFile(font.getAbsolutePath(), null, new Async.FileManager.Callback() {
+		Async2.FileManager.readFile(font.getAbsolutePath(), null, new Async2.FileManager.Callback() {
 			@Override
 			public void onError(String error, Exception e) {
 				Log.d("com.test", "readFile error: " + error);

@@ -1,4 +1,4 @@
-import {TNSXMLHttpRequest, FileReader, Blob} from './vendor/http-async/async';
+import {TNSXMLHttpRequest, FileReader, Blob} from './async/async';
 import {Document} from './DOM/Document';
 import './window';
 import './resize';

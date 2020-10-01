@@ -39,21 +39,21 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		this.canvas = args.object;
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
-		//this.geoColors(this.canvas);
+		//	this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
-		//this.skinningAndMorphing(this.canvas);
+		//	this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		// this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 		// this.threeCube(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		//this.gtlfLoader(this.canvas);
+		this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
-		this.ThreeDS(this.canvas);
+		//this.ThreeDS(this.canvas);
 		// this.ThreeMF(this.canvas);
-		// this.gtlfTonemapping(this.canvas);
+		//this.gtlfTonemapping(this.canvas);
 	}
 
 	gtlfLoader(canvas) {
@@ -192,7 +192,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene = new THREE.Scene();
 
 			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 20);
-			camera.position.set(-1.8, 0.6, 2.7);
+			camera.position.set(-1.8, 0.6, 10);
 
 			controls = new OrbitControls(camera, canvas);
 			controls.addEventListener('change', render); // use if there is no animation loop
@@ -801,7 +801,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// scene.add( new CameraHelper( light.shadow.camera ) );
 
 			// ground
-			var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
+			var mesh = new THREE.Mesh(
+				new THREE.PlaneBufferGeometry(2000, 2000),
+				new THREE.MeshPhongMaterial({
+					color: 0x999999,
+					depthWrite: false,
+				})
+			);
 			mesh.rotation.x = -Math.PI / 2;
 			mesh.receiveShadow = true;
 			scene.add(mesh);
@@ -1347,7 +1353,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 								 },5000)*/
 				});
 
-			var ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(400, 400), new THREE.MeshBasicMaterial({ color: 0x6e6a62, depthWrite: false }));
+			var ground = new THREE.Mesh(
+				new THREE.PlaneBufferGeometry(400, 400),
+				new THREE.MeshBasicMaterial({
+					color: 0x6e6a62,
+					depthWrite: false,
+				})
+			);
 
 			ground.rotation.x = -Math.PI / 2;
 			ground.renderOrder = 1;
@@ -1765,7 +1777,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			// ground
 
-			var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
+			var mesh = new THREE.Mesh(
+				new THREE.PlaneBufferGeometry(2000, 2000),
+				new THREE.MeshPhongMaterial({
+					color: 0x999999,
+					depthWrite: false,
+				})
+			);
 			mesh.rotation.x = -Math.PI / 2;
 			scene.add(mesh);
 

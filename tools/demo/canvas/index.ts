@@ -5,13 +5,22 @@ import Chart from 'chart.js';
 let Matter;
 import {Canvas} from '@nativescript/canvas';
 import {
-	arc, arcTo,
+	arc,
+	arcTo,
 	cancelParticlesColor,
 	cancelParticlesLarge,
 	cancelRain,
 	cancelRainbowOctopus,
-	cancelSwarm, colorRain, march, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus,
-	swarm, touchParticles
+	cancelSwarm, clip,
+	colorRain, createLinearGradient, createRadialGradient, ellipse, fillRule, imageBlock, imageSmoothingEnabled,
+	isPointInStrokeTouch,
+	march, multiStrokeStyle,
+	particlesColor,
+	particlesLarge,
+	patternWithCanvas,
+	rainbowOctopus, shadowBlur,
+	swarm,
+	touchParticles
 } from "./canvas2d";
 
 
@@ -39,7 +48,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		this.draw();
-		console.log('canvasLoaded');
 	}
 
 	draw() {
@@ -76,7 +84,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// });
 		// this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
-		// const ctx = canvas.getContext('2d');
+		//const ctx = canvas.getContext('2d');
+		//	fillRule(this.canvas);
+		//const ctx = this.canvas.getContext('2d');
+		//clip(this.canvas);
 		//fillStyle(this.canvas);
 		// font(this.canvas);
 		// globalAlpha(this.canvas);
@@ -93,7 +104,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
 		// strokeStyle(this.canvas);
-		// multiStrokeStyle(this.canvas);
+		//multiStrokeStyle(this.canvas);
 		//textAlign(this.canvas)
 
 		//arc(this.canvas);
@@ -105,7 +116,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ellipse(this.canvas);
 
 		// fillPath(this.canvas);
-
+		//imageBlock(this.canvas);
 		// scale(this.canvas);
 		//pattern(this.canvas);
 		// patternWithCanvas(this.canvas);
@@ -114,7 +125,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//createRadialGradient(this.canvas);
 		//march(this.canvas);
 		//this.putImageDataDemo(this.canvas);
-		// drawImage(this.canvas);
+		//	this.drawImage(this.canvas);
 		// ctx.fillStyle = 'blue';
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
@@ -129,9 +140,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;
 		//this.hBarChart(this.canvas);
-		//this.bubbleChart(this.canvas);
+		this.bubbleChart(this.canvas);
 		//this.dataSets(this.canvas);
 		//this.chartJS(this.canvas);
+
 		//clear(null)
 		//points(this.canvas)
 		//textures(this.canvas);
@@ -155,7 +167,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// draw_image_space(this.canvas);
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
-		// cubeRotationRotation(this.canvas);
+		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
 		// interactiveCube(this.canvas);
@@ -168,14 +180,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//},3000)
 		// drawModes(this.canvas,'triangles')
 		//cubeRotation(this.canvas);
-		// main(this.canvas)
+		//main(this.canvas)
 		//this.pointStyle(this.canvas);
 		// this.matterJSExample(this.canvas);
 		//this.matterJSCar(this.canvas);
 		//this.multiCanvas(this.canvas);
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		this.zen3dGeometryLoaderGltf(this.canvas);
+		//this.zen3dGeometryLoaderGltf(this.canvas);
 	}
 
 	gridLoaded(args) {
@@ -1711,6 +1723,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 					},
 				},
 				responsive: true,
+				maintainAspectRatio: false,
 				legend: {
 					position: 'right',
 				},
@@ -1886,6 +1899,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		};
 
 		var options = {
+			responsive: true,
 			maintainAspectRatio: false,
 			spanGaps: false,
 			elements: {
@@ -1965,57 +1979,63 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			},
 			options: {
 				responsive: true,
+				maintainAspectRatio: false,
 			},
 		};
 
 		const myPie = new Chart(canvas.getContext('2d'), config);
 	}
 
-	function
+	chart;
 
 	chartJS(canvas) {
-		//var ctx = canvas.getContext('2d');
-
-		var myChart = new Chart(canvas, {
-			type: 'bar',
-			data: {
-				labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-				datasets: [
-					{
-						label: '# of Votes',
-						data: [12, 19, 3, 5, 2, 3],
-						backgroundColor: [
-							'rgba(255, 99, 132, 0.2)',
-							'rgba(54, 162, 235, 0.2)',
-							'rgba(255, 206, 86, 0.2)',
-							'rgba(75, 192, 192, 0.2)',
-							'rgba(153, 102, 255, 0.2)',
-							'rgba(255, 159, 64, 0.2)',
-						],
-						borderColor: [
-							'rgba(255, 99, 132, 1)',
-							'rgba(54, 162, 235, 1)',
-							'rgba(255, 206, 86, 1)',
-							'rgba(75, 192, 192, 1)',
-							'rgba(153, 102, 255, 1)',
-							'rgba(255, 159, 64, 1)',
-						],
-						borderWidth: 1,
-					},
-				],
-			},
-			options: {
-				scales: {
-					yAxes: [
+		var ctx = canvas.getContext('2d');
+		if (this.chart) {
+			this.chart.resize();
+		} else {
+			this.chart = new Chart(ctx, {
+				type: 'bar',
+				data: {
+					labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+					datasets: [
 						{
-							ticks: {
-								beginAtZero: true,
-							},
+							label: '# of Votes',
+							data: [12, 19, 3, 5, 2, 3],
+							backgroundColor: [
+								'rgba(255, 99, 132, 0.2)',
+								'rgba(54, 162, 235, 0.2)',
+								'rgba(255, 206, 86, 0.2)',
+								'rgba(75, 192, 192, 0.2)',
+								'rgba(153, 102, 255, 0.2)',
+								'rgba(255, 159, 64, 0.2)',
+							],
+							borderColor: [
+								'rgba(255, 99, 132, 1)',
+								'rgba(54, 162, 235, 1)',
+								'rgba(255, 206, 86, 1)',
+								'rgba(75, 192, 192, 1)',
+								'rgba(153, 102, 255, 1)',
+								'rgba(255, 159, 64, 1)',
+							],
+							borderWidth: 1,
 						},
 					],
 				},
-			},
-		});
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					scales: {
+						yAxes: [
+							{
+								ticks: {
+									beginAtZero: true,
+								},
+							},
+						],
+					},
+				},
+			});
+		}
 	}
 
 	toggle(args) {

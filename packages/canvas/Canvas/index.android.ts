@@ -3,7 +3,7 @@ import {DOMMatrix} from '../Canvas2D';
 import {CanvasRenderingContext2D} from '../Canvas2D/CanvasRenderingContext2D';
 import {WebGLRenderingContext} from '../WebGL/WebGLRenderingContext';
 import {WebGL2RenderingContext} from '../WebGL2/WebGL2RenderingContext';
-import {Application} from '@nativescript/core';
+import {Application, View} from '@nativescript/core';
 
 declare var com;
 
@@ -25,9 +25,15 @@ export class Canvas extends CanvasBase {
 
 	constructor() {
 		super();
+		let useCpu = false;
+		if(arguments.length === 1){
+			if(typeof arguments[0] === 'boolean'){
+				useCpu = arguments[0];
+			}
+		}
 		const activity =
 			Application.android.foregroundActivity || Application.android.startActivity;
-		this._canvas = new com.github.triniwiz.canvas.CanvasView(activity, false);
+		this._canvas = new com.github.triniwiz.canvas.CanvasView(activity, useCpu);
 	}
 
 	get android() {
@@ -44,7 +50,7 @@ export class Canvas extends CanvasBase {
 
 	get width() {
 		if (this.getMeasuredWidth() > 0) {
-			return this.getMeasuredWidth();
+			return this.getMeasuredWidth()
 		}
 		const width = this._canvas.getWidth();
 		if (width === 0) {
@@ -100,6 +106,24 @@ export class Canvas extends CanvasBase {
 		super.initNativeView();
 		const ref = new WeakRef(this);
 		this.__handleGestures();
+		this.on(View.layoutChangedEvent, args => {
+			console.log('onLayout', 'android');
+			const parent = this.parent as any;
+			// TODO change DIPs once implemented
+			console.log('parent',this.parent);
+			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
+				Object.defineProperty(parent, 'clientWidth', {
+					get: function () {
+						return parent.getMeasuredWidth();
+					}
+				});
+				Object.defineProperty(parent, 'clientHeight', {
+					get: function () {
+						return parent.getMeasuredHeight();
+					}
+				});
+			}
+		});
 		this._canvas.setListener(
 			new com.github.triniwiz.canvas.CanvasView.Listener({
 				contextReady() {

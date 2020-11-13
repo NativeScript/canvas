@@ -11,75 +11,75 @@ import UIKit
 class GLUtils {
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<UInt8>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<Int8>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place_i8(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place_i8(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<UInt16>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place_u16(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place_u16(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<Int16>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place_i16(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place_i16(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<UInt32>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place_u32(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place_u32(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<Int32>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place_i32(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place_i32(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<Float32>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place_f32(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place_f32(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     
     static func flipYInPlace(_ data: UnsafeMutablePointer<Float64>!,_ length: Int,_ bytesPerRow: Int,_ height: Int){
-        native_flip_y_in_place_f64(data, UInt(length), UInt(bytesPerRow), UInt(height))
+        flip_y_in_place_f64(data, UInt(length), UInt(bytesPerRow), UInt(height))
     }
     
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<UInt8>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<Int8>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d_i8(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d_i8(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<UInt16>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d_u16(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d_u16(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<Int16>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d_i16(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d_i16(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<UInt32>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d_u32(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d_u32(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<Int32>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d_i32(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d_i32(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<Float32>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d_f32(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d_f32(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     static func flipYInPlace3D(_ data: UnsafeMutablePointer<Float64>!,_ length: Int,_ bytesPerRow: Int,_ height: Int,_ depth: Int){
-        native_flip_y_in_place_3d_f64(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
+        flip_y_in_place_3d_f64(data, UInt(length), UInt(bytesPerRow), UInt(height), UInt(depth))
     }
     
     static var device: MTLDevice?

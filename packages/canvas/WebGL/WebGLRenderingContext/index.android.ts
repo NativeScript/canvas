@@ -13,7 +13,7 @@ import {WebGLShaderPrecisionFormat} from '../WebGLShaderPrecisionFormat';
 import {WebGLBuffer} from '../WebGLBuffer';
 
 
-import {ImageSource} from '@nativescript/core';
+import {ImageSource, Screen} from '@nativescript/core';
 import {
 	ANGLE_instanced_arrays,
 	EXT_blend_minmax,

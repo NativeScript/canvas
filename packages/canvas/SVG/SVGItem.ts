@@ -19,12 +19,44 @@ export class SVGItem extends View {
 		return (this.style as any).strokeWidth;
 	}
 
+	set strokeLinecap(value) {
+		(this.style as any).strokeLinecap = value;
+	}
+
+	get strokeLinecap(): any {
+		return (this.style as any).strokeLinecap;
+	}
+
+	set strokeLinejoin(value) {
+		(this.style as any).strokeLinejoin = value;
+	}
+
+	get strokeLinejoin(): any {
+		return (this.style as any).strokeLinejoin;
+	}
+
+	set strokeMiterlimitProperty(value) {
+		(this.style as any).strokeMiterlimitProperty = value;
+	}
+
+	get strokeMiterlimitProperty(): any {
+		return (this.style as any).strokeMiterlimitProperty;
+	}
+
 	get fill(): any {
 		return (this.style as any).fill;
 	}
 
 	set fill(value) {
 		(this.style as any).fill = value;
+	}
+
+	set fillRule(value) {
+		(this.style as any).fillRule = value;
+	}
+
+	get fillRule(): any {
+		return (this.style as any).fillRule;
 	}
 
 	_parseOpacity(value) {
@@ -100,7 +132,14 @@ export class SVGItem extends View {
 			return this.opacity;
 		}
 		// @ts-ignore
-		return (this.parent && this.parent.opacity) || this.opacity || 1;
+		if (this.parent && this.parent.opacity !== undefined) {
+			// @ts-ignore
+			return this.parent.opacity;
+		}
+		if (this.opacity !== undefined) {
+			return this.opacity;
+		}
+		return 1;
 	}
 
 	_getRealSize(value, parent?: any, type?: string) {

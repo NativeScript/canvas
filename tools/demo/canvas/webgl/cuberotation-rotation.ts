@@ -336,7 +336,6 @@ export function cubeRotationRotation(canvas) {
 
         // render the cube with the texture we just rendered to
         gl.bindTexture(gl.TEXTURE_2D, targetTexture);
-
         // Tell WebGL how to convert from clip space to pixels
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 

@@ -9,82 +9,219 @@ import Foundation
 @objcMembers
 @objc(TNSDOMMatrix)
 public class TNSDOMMatrix: NSObject {
-    public var a: Float = 1.0 {
-        didSet {
-            if (internalUpdate) {return}
-            updateValues()
+    var matrix: Int64
+    override public init() {
+        matrix = matrix_create()
+    }
+    
+    public var a: Float{
+        set {
+            matrix_set_a(matrix,newValue)
+        }
+        get {
+            matrix_a(matrix)
         }
     }
-    public var b: Float = 0 {
-        didSet {
-            if (internalUpdate) {return}
-            updateValues()
+    
+    public var b: Float{
+        set {
+            matrix_set_b(matrix,newValue)
+        }
+        get {
+            matrix_b(matrix)
         }
     }
-    public var c: Float = 0 {
-        didSet {
-            if (internalUpdate) {return}
-            updateValues()
+    
+    public var c: Float{
+        set {
+            matrix_set_c(matrix,newValue)
+        }
+        get {
+            matrix_c(matrix)
         }
     }
-    public var d: Float = 1.0 {
-        didSet {
-            if (internalUpdate) {return}
-            updateValues()
+    public var d: Float{
+        set {
+            matrix_set_d(matrix,newValue)
+        }
+        get {
+            matrix_d(matrix)
         }
     }
-    public var e: Float = 0 {
-        didSet {
-            if (internalUpdate) {return}
-            updateValues()
+    
+    
+    public var e: Float{
+        set {
+            matrix_set_e(matrix,newValue)
+        }
+        get {
+            matrix_e(matrix)
         }
     }
-    public var f: Float = 0 {
-        didSet {
-            if (internalUpdate) {return}
-            updateValues()
+    
+    public var f: Float{
+        set {
+            matrix_set_f(matrix,newValue)
+        }
+        get {
+            matrix_f(matrix)
         }
     }
-    var internalUpdate: Bool = false
-    var matrix: Int64 = 0
-    public override init() {
-        super.init()
-        matrix = native_create_matrix()
-        setInitialValues()
+    
+    
+    public var m11: Float{
+        set {
+            matrix_set_m11(matrix,newValue)
+        }
+        get {
+            matrix_m11(matrix)
+        }
+    }
+    
+    public var m12: Float{
+        set {
+            matrix_set_m12(matrix,newValue)
+        }
+        get {
+            matrix_m12(matrix)
+        }
+    }
+    
+    public var m13: Float{
+        set {
+            matrix_set_m13(matrix,newValue)
+        }
+        get {
+            matrix_m13(matrix)
+        }
+    }
+    public var m14: Float{
+        set {
+            matrix_set_m14(matrix,newValue)
+        }
+        get {
+            matrix_m14(matrix)
+        }
+    }
+    
+    
+    public var m21: Float{
+        set {
+            matrix_set_m21(matrix,newValue)
+        }
+        get {
+            matrix_m21(matrix)
+        }
+    }
+    
+    public var m22: Float{
+        set {
+            matrix_set_m22(matrix,newValue)
+        }
+        get {
+            matrix_m22(matrix)
+        }
+    }
+    
+    
+    public var m23: Float{
+        set {
+            matrix_set_m23(matrix,newValue)
+        }
+        get {
+            matrix_m23(matrix)
+        }
+    }
+    
+    public var m24: Float{
+        set {
+            matrix_set_m24(matrix,newValue)
+        }
+        get {
+            matrix_m24(matrix)
+        }
+    }
+    
+    
+    public var m31: Float{
+        set {
+            matrix_set_m31(matrix,newValue)
+        }
+        get {
+            matrix_m31(matrix)
+        }
+    }
+    
+    public var m32: Float{
+        set {
+            matrix_set_m32(matrix,newValue)
+        }
+        get {
+            matrix_m32(matrix)
+        }
+    }
+    
+    public var m33: Float{
+        set {
+            matrix_set_m33(matrix,newValue)
+        }
+        get {
+            matrix_m33(matrix)
+        }
+    }
+    public var m34: Float{
+        set {
+            matrix_set_m34(matrix,newValue)
+        }
+        get {
+            matrix_m34(matrix)
+        }
+    }
+    
+    
+    public var m41: Float{
+        set {
+            matrix_set_m41(matrix,newValue)
+        }
+        get {
+            matrix_m41(matrix)
+        }
+    }
+    
+    public var m42: Float{
+        set {
+            matrix_set_m42(matrix,newValue)
+        }
+        get {
+            matrix_m42(matrix)
+        }
+    }
+    
+    
+    public var m43: Float{
+        set {
+            matrix_set_m43(matrix,newValue)
+        }
+        get {
+            matrix_m43(matrix)
+        }
+    }
+    
+    public var m44: Float{
+        set {
+            matrix_set_m44(matrix,newValue)
+        }
+        get {
+            matrix_m44(matrix)
+        }
     }
     
     init(matrix: Int64) {
-        super.init()
         self.matrix = matrix
-        setInitialValues()
-    }
-    func setInitialValues() {
-        internalUpdate = true
-        refreshValues()
-        internalUpdate = false
-    }
-   
-    func refreshValues(){
-        let matrixValues = native_get_matrix(matrix)
-        if(matrixValues != nil){
-            let pointer = matrixValues!.pointee
-            let values = Array(UnsafeBufferPointer(start: pointer.array.assumingMemoryBound(to: Float.self), count: pointer.length))
-                   native_free_matrix_data(matrixValues)
-                 internalUpdate = true
-                   a = values[0]
-                   b = values[1]
-                   c = values[2]
-                   d = values[3]
-                   e = values[4]
-                   f = values[5]
-                   internalUpdate = false
-        }
     }
     
-    func updateValues() {
-        if(matrix == 0) {return}
-        var values = [a,b,c,d,e,f]
-        matrix = native_set_matrix(matrix,&values ,values.count)
-        refreshValues()
+    deinit {
+        destroy_matrix(matrix)
+        matrix = 0
     }
 }

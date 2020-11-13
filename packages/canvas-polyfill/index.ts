@@ -1,3 +1,4 @@
+require('globals');
 import {TNSXMLHttpRequest, FileReader, Blob} from './async/async';
 import {Document} from './DOM/Document';
 import './window';

@@ -11,27 +11,30 @@ cmake = "0.1.44"
 cc = "1.0.56"
 
 [dependencies]
-libc = "0.2.73"
-quick-xml = "0.18.1"
-base64 = "0.12.3"
+quick-xml = "0.20.0"
+base64 = "0.13.0"
 image = "0.23.7"
 encoding_rs = "0.8.24"
 gl-bindings = { version = "0.1.0", path = "../gl-bindings" }
+lazy_static = "1.4.0"
+css-color-parser = "0.1.2"
+reqwest = { version = "0.10.8", default-features = false, features = ["rustls-tls"] }
+tokio = { version = "0.3.3", features = ["rt-multi-thread", "sync"] }
+
 
 [target.'cfg(target_os="android")'.dependencies]
 log = "0.4.8"
-jni = { version = "0.17.0", default-features = false }
+jni = { version = "0.18.0", default-features = false }
 android_logger = "0.9.0"
 jni-sys = "0.3.0"
-skia-safe = { version = "0.34.0", features = ["gl", "textlayout"] }
+skia-safe = { version = "0.35.1", features = ["gl"] }
 
 
 [target.'cfg(target_os="ios")'.dependencies]
-skia-safe = { version = "0.34.0", features = ["gl", "textlayout", "metal"] }
-cocoa = { version = "0.20" }
+skia-safe = { version = "0.35.1", features = ["gl"] }
+cocoa = { version = "0.24.0" }
 objc = { version = "0.2.4" }
 block = "0.1.6"
-
 
 [lib]
 name = "canvasnative"

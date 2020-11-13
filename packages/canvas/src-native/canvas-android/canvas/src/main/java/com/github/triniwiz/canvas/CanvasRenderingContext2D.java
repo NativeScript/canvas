@@ -910,6 +910,7 @@ public class CanvasRenderingContext2D implements CanvasRenderingContext {
     if (alpha == 0 || alpha > 1) {
       alpha = 1;
     }
+    // fix
     final int globalAlpha = (int) (alpha * 255);
 
     canvasView.queueEvent(new Runnable() {

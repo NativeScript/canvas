@@ -74,7 +74,8 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	get globalAlpha(): number {
 		this.log('globalAlpha');
-		return this.context.getGlobalAlpha();
+		console.log('getGlobalAlpha', this.context.getGlobalAlpha()/255)
+		return this.context.getGlobalAlpha()
 	}
 
 	set globalAlpha(alpha: number) {
@@ -368,15 +369,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		let nativeStyle;
-		if (this._fillStyle === color) {
-			return;
-		}
-		if (!(color instanceof CanvasGradient || color instanceof CanvasPattern) && CanvasRenderingContext2D.colorCache[color]) {
-			const cache = CanvasRenderingContext2D.colorCache[color];
-			this._fillStyle = cache;
-			this.context.setFillStyle(cache);
-			return;
-		}
 		if (color instanceof CanvasGradient) {
 			nativeStyle = color.native;
 			this._fillStyle = color;
@@ -386,7 +378,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		} else {
 			this._fillStyle = color;
 			nativeStyle = new Color(color).argb;
-			CanvasRenderingContext2D.colorCache[color] = nativeStyle;
 		}
 		this.context.setFillStyle(nativeStyle);
 	}
@@ -405,15 +396,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		let nativeStyle;
-		if (this._strokeStyle === color) {
-			return;
-		}
-		if (!(color instanceof CanvasGradient || color instanceof CanvasPattern) && CanvasRenderingContext2D.colorCache[color]) {
-			const cache = CanvasRenderingContext2D.colorCache[color];
-			this._strokeStyle = cache;
-			this.context.setStrokeStyle(cache);
-			return;
-		}
 		if (color instanceof CanvasGradient) {
 			nativeStyle = color.native;
 			this._strokeStyle = color;
@@ -423,7 +405,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		} else {
 			this._strokeStyle = color;
 			nativeStyle = new Color(color).argb;
-			CanvasRenderingContext2D.colorCache[color] = nativeStyle;
 		}
 		this.context.setStrokeStyle(nativeStyle);
 	}

@@ -11,6 +11,7 @@ export * from './TextEncoder';
 export * from './TextDecoder';
 export * from './WebGL';
 export * from './WebGL2';
+export * from './SVG';
 
 export {CanvasRenderingContext2D} from './Canvas2D/CanvasRenderingContext2D';
 export {WebGLRenderingContext} from './WebGL/WebGLRenderingContext';

@@ -45,4 +45,4 @@ tasks.withType(Javadoc) {
     options.addStringOption('charSet', 'UTF-8')
 }
 
-apply from: 'publish.gradle'
+//apply from: 'publish.gradle'

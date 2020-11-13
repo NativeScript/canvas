@@ -62,11 +62,11 @@ fi
 
 if [[ $IS_RELEASE == true ]]; then
   cd "$NATIVE_SRC"
-  cargo build --target x86_64-apple-ios $BUILD_FLAG $FEATURE_FLAGS
+  RUST_BACKTRACE=1 cargo build --target x86_64-apple-ios $BUILD_FLAG $FEATURE_FLAGS
   cp "$IOS_X86_64_SIM_OUTPUT_RELEASE_DIR" "$IOS_LIB_X86_64_SIM/$OUTPUT_LIB_NAME"
 else
   cd "$NATIVE_SRC"
-  cargo build --target x86_64-apple-ios $FEATURE_FLAGS
+ RUST_BACKTRACE=1 cargo build --target x86_64-apple-ios $FEATURE_FLAGS
   cp "$IOS_X86_64_SIM_OUTPUT_DEBUG_DIR" "$IOS_LIB_X86_64_SIM/$OUTPUT_LIB_NAME"
 fi
 
@@ -77,11 +77,11 @@ fi
 
 if [[ $IS_RELEASE == true ]]; then
   cd "$NATIVE_SRC"
-  cargo build --target aarch64-apple-ios $BUILD_FLAG $FEATURE_FLAGS
+ RUST_BACKTRACE=1 cargo build --target aarch64-apple-ios $BUILD_FLAG $FEATURE_FLAGS
   cp "$IOS_ARM_64_PHONE_OUTPUT_RELEASE_DIR" "$IOS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME"
 else
   cd "$NATIVE_SRC"
-  cargo build --target aarch64-apple-ios $FEATURE_FLAGS
+ RUST_BACKTRACE=1 cargo build --target aarch64-apple-ios $FEATURE_FLAGS
   cp "$IOS_ARM_64_PHONE_OUTPUT_DEBUG_DIR" "$IOS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME"
 fi
 

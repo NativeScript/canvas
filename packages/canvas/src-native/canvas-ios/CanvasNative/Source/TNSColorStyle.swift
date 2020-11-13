@@ -8,7 +8,8 @@
 import Foundation
 import UIKit
 
-@objc public enum CanvasColorStyleType: Int, RawRepresentable {
+@objc(CanvasColorStyleType)
+public enum CanvasColorStyleType: Int, RawRepresentable {
     case Color
     case Gradient
     case Pattern
@@ -32,8 +33,10 @@ import UIKit
             self = .Gradient
         case "pattern":
             self = .Pattern
-        default:
+        case "color":
             self = .Color
+        default:
+            return nil
         }
     }
     
@@ -49,22 +52,40 @@ import UIKit
     case RepeatY
     case NoRepeat
     
-    public typealias RawValue = String
+    public typealias RawValue = UInt32
     
-    public var rawValue: String {
+    public var rawValue: UInt32 {
         switch self {
+        case .Repeat:
+            return 0
         case .RepeatX:
-            return "repeat-x"
+            return 1
         case .RepeatY:
-            return "repeat-y"
+            return 2
         case .NoRepeat:
-            return "no-repeat"
-        default:
-            return "repeat"
+            return 3
         }
     }
+    
     public init?(rawValue: RawValue) {
         switch rawValue {
+        case 0:
+            self = .Repeat
+        case 1:
+            self = .RepeatX
+        case 2:
+            self = .RepeatY
+        case 3:
+            self = .NoRepeat
+        default:
+            return nil
+        }
+    }
+    
+    public init?(rawValue: String) {
+        switch rawValue {
+        case "repeat":
+            self = .Repeat
         case "repeat-x":
             self = .RepeatX
         case "repeat-y":
@@ -72,7 +93,7 @@ import UIKit
         case "no-repeat":
             self = .NoRepeat
         default:
-            self = .Repeat
+            return nil
         }
     }
 }
@@ -80,16 +101,18 @@ import UIKit
 @objcMembers
 @objc(TNSColorStyle)
 public class TNSColorStyle: NSObject {
-    
     @objcMembers
-    @objc(Color)
-    public class Color: NSObject, ICanvasColorStyle {
-        var color: UIColor
-        @objc public init(color: UIColor?) {
-            if(color == nil){
-                self.color = UIColor.black
-            }else {
-                self.color = color!
+    @objc(TNSColor)
+    public class TNSColor: NSObject, ICanvasColorStyle {
+        private var value: String
+        
+        @objc public init(_ color: String) {
+            value = color
+        }
+        
+        public var color: String {
+            get {
+                return value
             }
         }
         
@@ -100,89 +123,51 @@ public class TNSColorStyle: NSObject {
     }
     
     @objcMembers
-    @objc(Gradient)
+    @objc(TNSGradient)
     public class TNSGradient:NSObject, ICanvasColorStyle {
-        var gradientMap: NSMutableDictionary = [:]
+        var style: Int64
+        init(_ style: Int64) {
+            self.style = style
+        }
         
         public func getStyleType() -> CanvasColorStyleType {
             return .Gradient
         }
         
-        public func addColorStop(offset: Float, color: UInt32){
-            if (offset < 0) {
-                return
-            }
-            
-            if (offset > 1) {
-                return
-            }
-            gradientMap[offset] = color
+        public func addColorStop(_ offset: Float,_ color: String){
+            let cStr = (color as NSString).utf8String
+            gradient_add_color_stop(style, offset, cStr)
         }
         
-        @objc(addColorStopWithOffsetUIColor::)
-        public func addColorStop(offset: Float,color: UIColor){
-            if (offset < 0) {
-                return
-            }
-            
-            if (offset > 1) {
-                return
-            }
-            gradientMap[offset] = UInt32(color.colorCode)
-        }
-        
-        
-        func getPostions() -> [Float] {
-            return Array(gradientMap.allKeys) as! [Float]
-        }
-        
-        func getColors() -> [UInt32] {
-            return Array(gradientMap.allValues) as! [UInt32]
-        }
     }
     
     
     @objcMembers
     @objc(TNSLinearGradient)
     public class TNSLinearGradient: TNSGradient {
-        let x0: Float
-        let y0: Float
-        let x1: Float
-        let y1: Float
-        
-        public init(x0: Float, y0: Float, x1: Float, y1: Float) {
-            self.x0 = x0
-            self.y0 = y0
-            self.x1 = x1
-            self.y1 = y1
+        override init(_ style: Int64) {
+            super.init(style)
         }
     }
     
     @objcMembers
     @objc(TNSRadialGradient)
     public class TNSRadialGradient: TNSGradient {
-        let x0: Float
-        let y0: Float
-        let r0: Float
-        let x1: Float
-        let y1: Float
-        let r1: Float
-        
-        public init(x0:Float, y0: Float, r0: Float, x1: Float, y1: Float, r1: Float) {
-            self.x0 = x0
-            self.y0 = y0
-            self.r0 = r0
-            self.r1 = r1
-            self.x1 = x1
-            self.y1 = y1
+        override init(_ style: Int64) {
+            super.init(style)
         }
     }
     
     @objcMembers
     @objc(TNSPattern)
-    public class TNSPattern:NSObject, ICanvasColorStyle {
-        var nativePattern: Int64 = 0
-        public init(src: UIImage, pattern: TNSPatternRepetition){
+    public class TNSPattern: NSObject, ICanvasColorStyle {
+        var style: Int64 = 0
+        init(_ style: Int64){
+            super.init()
+            self.style = style
+        }
+        
+        init?(context: Int64, src: UIImage, pattern: TNSPatternRepetition){
             super.init()
             
             var cgImage: CGImage?
@@ -200,43 +185,58 @@ public class TNSColorStyle: NSObject {
                 let colorSpace = CGColorSpaceCreateDeviceRGB()
                 let imageCtx = CGContext(data: buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
                 imageCtx!.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-                let rep = (pattern.rawValue as NSString).utf8String
-                nativePattern = native_create_pattern(buffer?.assumingMemoryBound(to: UInt8.self), width * height  * 4, Int32(width), Int32(height), rep)
-                buffer?.deallocate()
+                let result = context_create_pattern(context,buffer?.assumingMemoryBound(to: UInt8.self), UInt(width * height)  * 4, Int32(width), Int32(height), Repetition(rawValue: pattern.rawValue))
+                                                           buffer?.deallocate()
+                if result ==  0 {
+                    return nil
+                }else {
+                    self.style = result
+                }
+            }else {
+                return nil
             }
         }
         
         
-        public init(canvas: TNSCanvas, pattern: TNSPatternRepetition){
+        init?(context: Int64, canvas: TNSCanvas, pattern: TNSPatternRepetition){
             super.init()
-            let rep = (pattern.rawValue as NSString).utf8String
-            let context = EAGLContext.current()
+            let glContext = EAGLContext.current()
             var ss = canvas.snapshot()
-            if context != nil {
-                EAGLContext.setCurrent(context)
+            if glContext != nil {
+                EAGLContext.setCurrent(glContext)
             }
-            nativePattern = native_create_pattern_encoded(&ss, ss.count, rep)
+            let result = context_create_pattern_encoded(context, &ss, UInt(ss.count), Repetition(rawValue: pattern.rawValue))
+            if result == 0 {
+                return nil
+            }else {
+                self.style = result
+            }
         }
         
         
-        public init(asset src: TNSImageAsset, pattern: TNSPatternRepetition){
+        init?(context: Int64, asset src: TNSImageAsset, pattern: TNSPatternRepetition){
             super.init()
             let size = src.width * src.height * 4
             let width = src.width
             let height = src.height
-            let rep = (pattern.rawValue as NSString).utf8String
-            nativePattern = native_create_pattern(src.getRawBytes(), Int(size), width, height, rep)
+            let result = context_create_pattern(context,src.getRawBytes(), UInt(size), width, height, Repetition(rawValue: pattern.rawValue))
+            
+            if result == 0 {
+                return nil
+            }else {
+                self.style = result
+            }
         }
         
         
         public func setTransform(matrix: TNSDOMMatrix) {
-            nativePattern = native_set_pattern_transform(nativePattern, matrix.matrix)
+            pattern_set_transform(style, matrix.matrix)
         }
         
         deinit {
-            if(nativePattern != 0){
-                native_free_pattern(nativePattern)
-                nativePattern = 0
+            if(style != 0){
+                destroy_paint_style(style)
+                style = 0
             }
         }
         

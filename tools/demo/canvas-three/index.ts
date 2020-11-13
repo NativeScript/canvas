@@ -39,9 +39,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		this.canvas = args.object;
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
-		//	this.geoColors(this.canvas);
+		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
-		//this.threeCrate(this.canvas);
+		this.threeCrate(this.canvas);
 		//	this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
 		//this.threeOcean(this.canvas);
@@ -49,7 +49,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.geoTextShapes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		this.gtlfLoader(this.canvas);
+		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		// this.ThreeMF(this.canvas);

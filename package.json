@@ -35,6 +35,7 @@
 		"@typescript-eslint/parser": "~3.6.0",
 		"babylonjs": "^4.1.0",
 		"babylonjs-materials": "^4.1.0",
+		"canvg": "^3.0.6",
 		"chart.js": "^2.9.3",
 		"d3": "^6.1.1",
 		"dotenv": "~8.2.0",
@@ -71,6 +72,8 @@
 		"typescript": "~3.9.3",
 		"vexflow": "^3.0.9",
 		"xml2js": "^0.4.23",
+		"xmldom": "^0.3.0",
+		"xmldom-qsa": "^1.0.3",
 		"zen-3d": "0.0.3",
 		"zone.js": "0.11.1"
 	},

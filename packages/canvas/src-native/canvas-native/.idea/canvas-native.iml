@@ -253,6 +253,51 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/bindgen-70a6b66c310ba170/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/clang-sys-0e0aa5be9ce552b3/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libloading-c6a5c65de3ea71fc/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-0f72805426e43dbb/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-cfb7979e45fc7e13/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/gl-bindings-2fb7450a12065c94/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro2-6d96cc0e86d8ff27/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-fe79d8ed27ad4593/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/gl-bindings-5c124329cd46b9ea/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro2-b35cc8bf88906a85/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/native-tls-710ded80e752b956/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/getrandom-2dee6114f61a15ce/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/core-foundation-sys-8c9269078b500040/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-38d12b3d7ecf54a5/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/mime_guess-85f77fc7a9f41072/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/unicase-a17c821a516c7da8/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/pin-project-internal-9408b3b7061f29c1/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/indexmap-b148ec7584472b9d/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/httparse-3d3a9db3921f75e6/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-ee253a818b0cef86/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/gl-bindings-9e566ab7ecde6bb2/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libc-037c02c703402aca/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/log-eb84158610a4ef8a/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde-a564839387671277/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_derive-10bbdc206654f311/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-940d7cd706274c8d/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/curl-d10d00b149cd4758/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/curl-sys-56dc950c1448962d/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libnghttp2-sys-81bf077a811829c9/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libz-sys-7312b3cbf1230668/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/isahc-9890f065303753dc/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crossbeam-utils-68132d6de81213e3/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/const_fn-b8ce6d0c79606504/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro-hack-e3496ae450cc47f6/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro-nested-750997e1834ae20b/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/http-types-120aa6d9f831c388/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/cookie-ce05447bdd65a44c/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/generic-array-e4a40c49559b0195/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/typenum-080bcb860ceb50f3/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/time-4eeb861a44b8094a/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/standback-c80323947d613677/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/anyhow-086c751e5d39af32/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-64718b345b8600ed/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/gl-bindings-d303c3afe0321ac6/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-d89dafe6852c5afc/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ring-47e9f89f4b86e9c9/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-d0617c31ce72fcf9/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-db1df7e5f23744ab/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

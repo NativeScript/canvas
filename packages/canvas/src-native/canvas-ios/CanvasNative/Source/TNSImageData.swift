@@ -17,13 +17,13 @@ public class TNSImageData: NSObject {
     init(width: Int32, height: Int32) {
         imageData = image_data_create(Int32(width), Int32(height))
         let length = image_data_data_length(imageData)
-        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length))
+        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length), freeWhenDone: false)
     }
     
     init(imageData: Int64) {
         self.imageData = imageData
         let length = image_data_data_length(imageData)
-        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length))
+        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length), freeWhenDone: false)
     }
     
     public var width: Int32 {

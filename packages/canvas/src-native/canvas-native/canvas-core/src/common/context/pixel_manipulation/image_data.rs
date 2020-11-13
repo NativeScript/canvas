@@ -14,7 +14,7 @@ impl ImageData {
         let mut slice = data.into_boxed_slice();
         let ptr = slice.as_mut_ptr();
         let len = slice.len();
-        std::mem::forget(slice);
+        Box::into_raw(slice);
         (ptr, len)
     }
     pub fn new(width: c_int, height: c_int) -> Self {

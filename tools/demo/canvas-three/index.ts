@@ -42,7 +42,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.geoColors(this.canvas);
 		this.threeDepth(this.canvas);
 		// this.threeCrate(this.canvas);
-	//	this.skinningAndMorphing(this.canvas);
+		//	this.skinningAndMorphing(this.canvas);
 		// this.nearestNeighbour(this.canvas);
 		// this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);

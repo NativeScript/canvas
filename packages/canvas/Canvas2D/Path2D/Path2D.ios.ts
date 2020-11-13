@@ -25,7 +25,7 @@ export class Path2D extends Path2DBase {
 				transform.native
 			);
 		} else {
-			this.nativeInstance.addPathWithPath(path.nativeInstance);
+			this.nativeInstance.addPath(path.nativeInstance);
 		}
 	}
 
@@ -37,7 +37,7 @@ export class Path2D extends Path2DBase {
 		endAngle: number,
 		anticlockwise: boolean = false
 	): void {
-		this.nativeInstance.arcWithXYRadiusStartAngleEndAngleAnticlockwise(
+		this.nativeInstance.arc(
 			x,
 			y,
 			radius,
@@ -48,7 +48,7 @@ export class Path2D extends Path2DBase {
 	}
 
 	arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void {
-		this.nativeInstance.arcToX1Y1X2Y2Radius(x1, y1, x2, y2, radius);
+		this.nativeInstance.arcTo(x1, y1, x2, y2, radius);
 	}
 
 	bezierCurveTo(
@@ -59,7 +59,7 @@ export class Path2D extends Path2DBase {
 		x: number,
 		y: number
 	): void {
-		this.nativeInstance.bezierCurveToCp1xCp1yCp2xCp2yXY(
+		this.nativeInstance.arcTo(
 			cp1x,
 			cp1y,
 			cp2x,
@@ -83,7 +83,7 @@ export class Path2D extends Path2DBase {
 		endAngle: number,
 		anticlockwise: boolean = false
 	): void {
-		this.nativeInstance.ellipseWithXYRadiusXRadiusYRotationStartAngleEndAngleAnticlockwise(
+		this.nativeInstance.ellipse(
 			x,
 			y,
 			radiusX,
@@ -96,18 +96,18 @@ export class Path2D extends Path2DBase {
 	}
 
 	lineTo(x: number, y: number): void {
-		this.nativeInstance.lineToXY(x, y);
+		this.nativeInstance.lineTo(x, y);
 	}
 
 	moveTo(x: number, y: number): void {
-		this.nativeInstance.moveToXY(x, y);
+		this.nativeInstance.moveTo(x, y);
 	}
 
 	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void {
-		this.nativeInstance.quadraticCurveToCpxCpyXY(cpx, cpy, x, y);
+		this.nativeInstance.quadraticCurveTo(cpx, cpy, x, y);
 	}
 
 	rect(x: number, y: number, width: number, height: number): void {
-		this.nativeInstance.rectWithXYWidthHeight(x, y, width, height);
+		this.nativeInstance.rect(x, y, width, height);
 	}
 }

@@ -17,10 +17,12 @@ export class CanvasGradient extends CanvasGradientBase {
 		return new CanvasGradient(nativeInstance);
 	}
 
-	public addColorStop(offset: number, color: any): void {
-		this.nativeInstance.addColorStopWithOffsetColor(
-			offset,
-			new Color(color).argb
-		);
+	public addColorStop(offset: number, color: string): void {
+		if (offset >= 0.0 && offset <= 1.0) {
+			this.nativeInstance.addColorStop(
+				offset,
+				color
+			);
+		}
 	}
 }

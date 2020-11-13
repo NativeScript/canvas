@@ -1,0 +1,11 @@
+framework module CanvasNative {
+  umbrella header "CanvasNative.h"
+
+  export *
+  module * { export * }
+}
+
+module CanvasNative.Swift {
+    header "CanvasNative-Swift.h"
+    requires objc
+}

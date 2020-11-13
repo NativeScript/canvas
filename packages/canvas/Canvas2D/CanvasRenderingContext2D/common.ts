@@ -13,6 +13,7 @@ export abstract class CanvasRenderingContext2DBase
 	lineCap: string;
 	globalCompositeOperation: string;
 	font: string;
+	filter: string;
 	globalAlpha: number;
 
 	imageSmoothingEnabled: boolean;

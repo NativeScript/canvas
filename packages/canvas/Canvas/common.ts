@@ -146,7 +146,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				screenY: event.deltaY * scale,
 				target,
 			};
-
 			/* mouse */
 			pointers.push({
 				// * SCALE ??
@@ -183,20 +182,22 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				screenY: x * scale,
 			};
 
-			pointers.push({
-				clientX: this.__touchStart.getX(),
-				clientY: this.__touchStart.getY(),
-				force: 0.0,
-				identifier: 0,
-				pageX: this.__touchStart.getX(),
-				pageY: this.__touchStart.getY(),
-				radiusX: 0,
-				radiusY: 0,
-				rotationAngle: 0,
-				screenX: this.__touchStart.getX(),
-				screenY: this.__touchStart.getY(),
-				target,
-			});
+			if (this.__touchStart) {
+				pointers.push({
+					clientX: this.__touchStart.getX(),
+					clientY: this.__touchStart.getY(),
+					force: 0.0,
+					identifier: 0,
+					pageX: this.__touchStart.getX(),
+					pageY: this.__touchStart.getY(),
+					radiusX: 0,
+					radiusY: 0,
+					rotationAngle: 0,
+					screenX: this.__touchStart.getX(),
+					screenY: this.__touchStart.getY(),
+					target,
+				});
+			}
 
 			pointers.push({
 				clientX: x,

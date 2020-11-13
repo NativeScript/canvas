@@ -175,7 +175,23 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		this.zen3dGeometryLoaderGltf(this.canvas);
+		//this.zen3dGeometryLoaderGltf(this.canvas);
+		this.putImageData(this.canvas);
+	}
+
+	putImageData(canvas){
+		var context = canvas.getContext('2d');
+
+		// create a 100x100 region of random colors
+		var imageData = context.createImageData(100, 100);
+
+		console.log('??');
+
+		for (var i = 0; i < imageData.data.length; i++) {
+			imageData.data[i] = Math.round(255 * Math.random());
+		}
+
+		context.putImageData(imageData, 0, 0);
 	}
 
 	gridLoaded(args) {

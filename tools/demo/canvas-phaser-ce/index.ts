@@ -205,6 +205,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 				this.set("didSubscribe", true);
 			}
 		});
+
 		this.updateStats = this.updateStats.bind(this);
 		//this.preloadAssetsAsync = this.preloadAssetsAsync.bind(this);
 		this.preloadAssetsAsync();

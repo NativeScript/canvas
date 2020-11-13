@@ -12,7 +12,6 @@ export function createSVGMatrix(): DOMMatrix {
 }
 
 export class Canvas extends CanvasBase {
-	useMetal: boolean = false;
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
 	private _webgl2Context: WebGL2RenderingContext;
@@ -23,9 +22,8 @@ export class Canvas extends CanvasBase {
 
 	constructor() {
 		super();
-		this._canvas = TNSCanvas.alloc().initWithFrameUseGL(
-			CGRectZero,
-			!this.useMetal
+		this._canvas = TNSCanvas.alloc().initWithFrame(
+			CGRectZero
 		);
 		const ref = new WeakRef(this);
 		const listener = (NSObject as any).extend({

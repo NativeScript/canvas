@@ -1,7 +1,7 @@
 export class ImageDataBase {
-	width = 0;
-	height = 0;
-	data = null;
+	readonly width;
+	readonly height;
+	readonly data;
 	protected nativeInstance: any;
 
 	constructor(nativeInstance: any) {

@@ -11,18 +11,19 @@ import Foundation
 @objc(TNSImageData)
 public class TNSImageData: NSObject {
     var imageData: Int64
-    private var dataHolder: NSData
+    
+    public private(set) var data: NSData
     
     init(width: Int32, height: Int32) {
         imageData = image_data_create(Int32(width), Int32(height))
         let length = image_data_data_length(imageData)
-        dataHolder = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length))
+        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length))
     }
     
     init(imageData: Int64) {
         self.imageData = imageData
         let length = image_data_data_length(imageData)
-        dataHolder = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length))
+        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length))
     }
     
     public var width: Int32 {
@@ -34,12 +35,6 @@ public class TNSImageData: NSObject {
     public var height: Int32 {
         get {
             return image_data_height(imageData)
-        }
-    }
-    
-    public var data: NSData {
-        get {
-            return dataHolder
         }
     }
     

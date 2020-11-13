@@ -168,13 +168,13 @@ import UIKit
   @objc deinit
 }
 @_hasMissingDesignatedInitializers @objcMembers @objc(TNSImageData) public class TNSImageData : ObjectiveC.NSObject {
+  @objc public var data: Foundation.NSData {
+    get
+  }
   @objc public var width: Swift.Int32 {
     @objc get
   }
   @objc public var height: Swift.Int32 {
-    @objc get
-  }
-  @objc public var data: Foundation.NSData {
     @objc get
   }
   @objc deinit

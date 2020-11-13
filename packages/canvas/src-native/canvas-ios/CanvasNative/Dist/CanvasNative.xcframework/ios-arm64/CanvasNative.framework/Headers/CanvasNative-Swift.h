@@ -556,9 +556,9 @@ typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageAssetFormat, "TNSImageAssetFormat", 
 
 SWIFT_CLASS_NAMED("TNSImageData")
 @interface TNSImageData : NSObject
+@property (nonatomic, readonly, strong) NSData * _Nonnull data;
 @property (nonatomic, readonly) int32_t width;
 @property (nonatomic, readonly) int32_t height;
-@property (nonatomic, readonly, strong) NSData * _Nonnull data;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end

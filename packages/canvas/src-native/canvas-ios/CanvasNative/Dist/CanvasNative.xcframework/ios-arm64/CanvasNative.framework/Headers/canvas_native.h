@@ -623,8 +623,6 @@ bool image_asset_load_from_path(long long asset, const char *path);
 
 bool image_asset_load_from_raw(long long asset, const uint8_t *array, uintptr_t size);
 
-void image_asset_load_from_url(long long asset, const char *url, void (*callback)(bool));
-
 bool image_asset_save_path(long long asset, const char *path, unsigned int format);
 
 bool image_asset_scale(long long asset, unsigned int x, unsigned int y);

@@ -147,7 +147,7 @@ if ((global as any).document) {
 (global as any).window.setInterval = setInterval;
 (global as any).window.requestAnimationFrame = requestAnimationFrame;
 (global as any).window.cancelAnimationFrame = cancelAnimationFrame;
-(global as any).window.getComputedStyle = function (element, pseudoEltOptional) {
+(global as any).getComputedStyle = (global as any).window.getComputedStyle = function (element, pseudoEltOptional) {
 	const obj: any = {};
 	obj.getPropertyValue = function (prop) {
 		if (element instanceof View) {

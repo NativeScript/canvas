@@ -8,5 +8,5 @@ export declare class CanvasGradient extends CanvasGradientBase {
 
     static fromNative(nativeInstance: any): CanvasGradient;
 
-    addColorStop(offset: number, color: any): void;
+    addColorStop(offset: number, color: string): void;
 }

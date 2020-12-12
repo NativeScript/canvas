@@ -3,7 +3,6 @@ import {Screen} from '@nativescript/core';
 let LAF = 0;
 
 export function cloth(canvas) {
-
 // settings
 
   var physics_accuracy = 3,
@@ -237,6 +236,8 @@ export function cloth(canvas) {
   canvas.height = 350;
 
   ctx = canvas.getContext('2d');
+  // const scale = Screen.mainScreen.scale;
+  // ctx.scale(scale,scale);
 
   start();
 

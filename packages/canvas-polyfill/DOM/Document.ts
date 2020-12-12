@@ -1,10 +1,10 @@
-import {Element} from "./Element";
-import {HTMLVideoElement} from "./HTMLVideoElement";
-import {HTMLImageElement} from "./HTMLImageElement";
-import {HTMLCanvasElement} from "./HTMLCanvasElement";
-import {Text} from "./Text";
-import {Canvas} from "@nativescript/canvas";
-import {Frame} from '@nativescript/core';
+import { Element } from "./Element";
+import { HTMLVideoElement } from "./HTMLVideoElement";
+import { HTMLImageElement } from "./HTMLImageElement";
+import { HTMLCanvasElement } from "./HTMLCanvasElement";
+import { Text } from "./Text";
+import { Canvas } from "@nativescript/canvas";
+import { Frame } from '@nativescript/core';
 
 export class Document extends Element {
 	private body: any;
@@ -63,6 +63,11 @@ export class Document extends Element {
 
 	getElementById(id) {
 		const topmost = Frame.topmost();
+		if (id instanceof Canvas) {
+			const canvas = new HTMLCanvasElement();
+			canvas._canvas = id;
+			return canvas;
+		}
 		if (topmost) {
 			const nativeElement = topmost.getViewById(id);
 			if (nativeElement) {
@@ -72,5 +77,9 @@ export class Document extends Element {
 			}
 		}
 		return new Element("div");
+	}
+
+	querySelector(selector){
+		return new Element(selector);
 	}
 }

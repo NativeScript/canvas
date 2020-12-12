@@ -2,18 +2,18 @@ import {
 	WebGLRenderingContextBase,
 } from './common';
 
-import {WebGLShader} from '../WebGLShader';
-import {WebGLFramebuffer} from '../WebGLFramebuffer';
-import {WebGLTexture} from '../WebGLTexture';
-import {WebGLProgram} from '../WebGLProgram';
-import {WebGLUniformLocation} from '../WebGLUniformLocation';
-import {WebGLActiveInfo} from '../WebGLActiveInfo';
-import {WebGLRenderbuffer} from '../WebGLRenderbuffer';
-import {WebGLShaderPrecisionFormat} from '../WebGLShaderPrecisionFormat';
-import {WebGLBuffer} from '../WebGLBuffer';
+import { WebGLShader } from '../WebGLShader';
+import { WebGLFramebuffer } from '../WebGLFramebuffer';
+import { WebGLTexture } from '../WebGLTexture';
+import { WebGLProgram } from '../WebGLProgram';
+import { WebGLUniformLocation } from '../WebGLUniformLocation';
+import { WebGLActiveInfo } from '../WebGLActiveInfo';
+import { WebGLRenderbuffer } from '../WebGLRenderbuffer';
+import { WebGLShaderPrecisionFormat } from '../WebGLShaderPrecisionFormat';
+import { WebGLBuffer } from '../WebGLBuffer';
 
 
-import {ImageSource} from '@nativescript/core';
+import { ImageSource } from '@nativescript/core';
 import {
 	ANGLE_instanced_arrays,
 	EXT_blend_minmax,
@@ -39,8 +39,8 @@ import {
 	WEBGL_draw_buffers,
 	WEBGL_lose_context
 } from '../WebGLExtensions';
-import {ImageAsset} from '../../ImageAsset';
-import {Canvas} from '../../Canvas';
+import { ImageAsset } from '../../ImageAsset';
+import { Canvas } from '../../Canvas';
 
 
 export class WebGLRenderingContext extends WebGLRenderingContextBase {

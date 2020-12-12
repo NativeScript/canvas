@@ -13,28 +13,18 @@ export abstract class CanvasRenderingContext2DBase
 	lineCap: string;
 	globalCompositeOperation: string;
 	font: string;
+	filter: string;
 	globalAlpha: number;
-
 	imageSmoothingEnabled: boolean;
-
 	imageSmoothingQuality: string;
-
 	lineDashOffset: number;
-
 	lineJoin: string;
-
 	miterLimit: number;
-
 	shadowBlur: number;
-
 	shadowColor: string;
-
 	shadowOffsetX: number;
-
 	shadowOffsetY: number;
-
 	textAlign: string;
-
 	direction: string;
 
 	_canvas: any;

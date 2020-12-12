@@ -79,7 +79,7 @@ export class HTMLImageElement extends Element {
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
 		// this._load = this._load.bind(this);
-		this._onload = () => {};
+		this._onload = () => { };
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;
 			this.width = props.width;
@@ -123,7 +123,7 @@ export class HTMLImageElement extends Element {
 						}
 						if (isAndroid) {
 							const ref = new WeakRef(this);
-							(com as any).github.triniwiz.async.Async2.base64ToFile(
+							(com as any).github.triniwiz.async.Async2.Base64.base64ToFile(
 								base64result,
 								dir + '/',
 								new (com as any).github.triniwiz.async.Async2.Base64.Callback({
@@ -157,16 +157,6 @@ export class HTMLImageElement extends Element {
 			}
 			if (!this.width || !this.height) {
 				this.complete = false;
-				/*ImageSource.fromFile(this.src)
-					.then((asset) => {
-						this._imageSource = asset;
-						this.width = asset.width;
-						this.height = asset.height;
-						this.complete = true;
-					})
-					.catch(e => {
-						this.emitter.emit("error", {target: this});
-					});*/
 				this._asset
 					.loadFileAsync(this.src)
 					.then(() => {
@@ -177,27 +167,6 @@ export class HTMLImageElement extends Element {
 					.catch((e) => {
 						this.emitter.emit('error', { target: this });
 					});
-			} else {
-				/*ImageSource.fromFile(this.src)
-					.then((asset) => {
-						this._imageSource = asset;
-						this.width = asset.width;
-						this.height = asset.height;
-						this.complete = true;
-					})
-					.catch(e => {
-						this.emitter.emit("error", {target: this});
-					});*/
-				/*	this._asset.loadFileAsync(this.src)
-						.then(() => {
-							this.width = this._asset.width;
-							this.height = this._asset.height;
-							this.complete = true;
-						})
-						.catch(e => {
-							this.emitter.emit("error", {target: this});
-						});
-					*/
 			}
 		}
 	}

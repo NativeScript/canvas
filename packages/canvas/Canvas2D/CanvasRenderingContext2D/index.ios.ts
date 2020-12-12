@@ -8,7 +8,7 @@ import {ImageAsset} from '../../ImageAsset';
 import {CanvasPattern} from '../CanvasPattern';
 import {Canvas} from '../../Canvas';
 
-declare let TNSImageAsset, TNSCanvas;
+declare const TNSImageAsset, TNSCanvas, TNSFillRule, TNSTextDirection, TNSColor;
 
 export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	public static isDebug = false;
@@ -19,13 +19,36 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.context = context;
 	}
 
+	_fillRuleFromString(string: string) {
+		if (string === 'evenodd') {
+			return TNSFillRule.EvenOdd;
+		} else if (string === 'nonzero') {
+			return TNSFillRule.NonZero;
+		}
+		return null;
+	}
+
 	get native() {
 		return this.context;
 	}
 
 	get canvas() {
-		``
 		return this._canvas;
+	}
+
+	get direction(): string {
+		this.log('direction');
+		return this.context.getDirection() === TNSTextDirection.Ltr ? "ltr" : "rtl";
+	}
+
+	set direction(value: string) {
+		this.log('direction value:', value);
+		this._ensureLayoutBeforeDraw();
+		if (this.context) {
+			this.context.setDirection(
+				value === "rtl" ? TNSTextDirection.Rtl : TNSTextDirection.Ltr
+			);
+		}
 	}
 
 	get font(): string {
@@ -40,22 +63,16 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 	}
 
-	private _shadowColor: any = 'transparent';
-
 	get shadowColor() {
 		this.log('get shadowColor');
-		return this._shadowColor;
+		return this.context.shadowColor;
 	}
 
 	set shadowColor(color: any) {
 		this.log('set shadowColor', color);
 		this._ensureLayoutBeforeDraw();
-		if (this.context) {
-			if (typeof color === 'string' && !isNaN(parseInt(color))) {
-				this.context.shadowColor = parseInt(color);
-			} else {
-				this.context.shadowColor = new Color(color).argb;
-			}
+		if (this.context && typeof color === 'string') {
+			this.context.shadowColor = color;
 		}
 	}
 
@@ -88,10 +105,10 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	get imageSmoothingQuality() {
 		this.log('get imageSmoothingQuality');
 		switch (this.context.imageSmoothingQuality) {
-			case 1:
-				return 'medium';
-			case 2:
+			case TNSImageSmoothingQuality.High:
 				return 'high';
+			case TNSImageSmoothingQuality.Medium:
+				return 'medium';
 			default:
 				return 'low';
 		}
@@ -103,13 +120,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (quality) {
 				case 'high':
-					this.context.imageSmoothingQuality = 2; // ImageSmoothingQuality.High;
+					this.context.imageSmoothingQuality = TNSImageSmoothingQuality.High;
 					break;
 				case 'medium':
-					this.context.imageSmoothingQuality = 1; // ImageSmoothingQuality.Medium;
+					this.context.imageSmoothingQuality = TNSImageSmoothingQuality.Medium;
 					break;
-				default:
-					this.context.imageSmoothingQuality = 0; // ImageSmoothingQuality.Low;
+				case 'low':
+					this.context.imageSmoothingQuality = TNSImageSmoothingQuality.Low;
 					break;
 			}
 		}
@@ -131,9 +148,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	get lineJoin() {
 		this.log('get lineJoin');
 		switch (this.context.lineJoin) {
-			case 0:
+			case TNSLineJoin.Bevel:
 				return 'bevel';
-			case 1:
+			case TNSLineJoin.Round:
 				return 'round';
 			default:
 				return 'miter';
@@ -146,13 +163,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (join) {
 				case 'bevel':
-					this.context.lineJoin = 0; // LineJoin.Bevel;
+					this.context.lineJoin = TNSLineJoin.Bevel;
 					break;
 				case 'round':
-					this.context.lineJoin = 1; // LineJoin.Round;
+					this.context.lineJoin = TNSLineJoin.Round;
 					break;
-				default:
-					this.context.lineJoin = 2; // LineJoin.Miter;
+				case 'miter':
+					this.context.lineJoin = TNSLineJoin.Miter;
 					break;
 			}
 		}
@@ -161,9 +178,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	get lineCap() {
 		this.log('get lineCap');
 		switch (this.context.lineCap) {
-			case 1:
+			case TNSLineCap.Round:
 				return 'round';
-			case 2:
+			case TNSLineCap.Square:
 				return 'square';
 			default:
 				return 'butt';
@@ -176,13 +193,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (cap) {
 				case 'round':
-					this.context.lineCap = 1; // LineCap.Round;
+					this.context.lineCap = TNSLineCap.Round;
 					break;
 				case 'square':
-					this.context.lineCap = 2; // LineCap.Square;
+					this.context.lineCap = TNSLineCap.Square;
 					break;
-				default:
-					this.context.lineCap = 0; // LineCap.Butt;
+				case 'butt':
+					this.context.lineCap = TNSLineCap.Butt;
 			}
 		}
 	}
@@ -242,13 +259,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	get textAlign() {
 		this.log('get textAlign');
 		switch (this.context.textAlign) {
-			case 1:
+			case TNSTextAlignment.Start:
 				return 'start';
-			case 2:
+			case TNSTextAlignment.Center:
 				return 'center';
-			case 3:
+			case TNSTextAlignment.End:
 				return 'end';
-			case 4:
+			case TNSTextAlignment.Right:
 				return 'right';
 			default:
 				return 'left';
@@ -261,19 +278,19 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (alignment) {
 				case 'start':
-					this.context.textAlign = 1; // TextAlignment.Start;
+					this.context.textAlign = TNSTextAlignment.Start;
 					break;
 				case 'center':
-					this.context.textAlign = 2; // TextAlignment.Center;
+					this.context.textAlign = TNSTextAlignment.Center;
 					break;
 				case 'end':
-					this.context.textAlign = 3; // TextAlignment.End;
+					this.context.textAlign = TNSTextAlignment.End;
 					break;
 				case 'right':
-					this.context.textAlign = 4; // TextAlignment.Right;
+					this.context.textAlign = TNSTextAlignment.Right;
 					break;
-				default:
-					this.context.textAlign = 0; // TextAlignment.Left;
+				case 'left':
+					this.context.textAlign = TNSTextAlignment.Left;
 					break;
 			}
 		}
@@ -282,60 +299,58 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	get globalCompositeOperation() {
 		this.log('get globalCompositeOperation');
 		switch (this.context.globalCompositeOperation) {
-			case 0:
+			case TNSCompositeOperationType.SourceOver:
 				return 'source-over';
-			case 1:
+			case TNSCompositeOperationType.SourceIn:
 				return 'source-in';
-			case 2:
+			case TNSCompositeOperationType.SourceOut:
 				return 'source-out';
-			case 3:
+			case TNSCompositeOperationType.SourceAtop:
 				return 'source-atop';
-			case 4:
+			case TNSCompositeOperationType.DestinationOver:
 				return 'destination-over';
-			case 5:
+			case TNSCompositeOperationType.DestinationIn:
 				return 'destination-in';
-			case 6:
+			case TNSCompositeOperationType.DestinationOut:
 				return 'destination-out';
-			case 7:
+			case TNSCompositeOperationType.DestinationAtop:
 				return 'destination-atop';
-			case 8:
+			case TNSCompositeOperationType.Lighter:
 				return 'lighter';
-			case 9:
+			case TNSCompositeOperationType.Copy:
 				return 'copy';
-			case 10:
+			case TNSCompositeOperationType.Xor:
 				return 'xor';
-			case 11:
+			case TNSCompositeOperationType.Multiply:
 				return 'multiply';
-			case 12:
+			case TNSCompositeOperationType.Screen:
 				return 'screen';
-			case 13:
+			case TNSCompositeOperationType.Overlay:
 				return 'overlay';
-			case 14:
+			case TNSCompositeOperationType.Darken:
 				return 'darken';
-			case 15:
+			case TNSCompositeOperationType.Lighten:
 				return 'lighten';
-			case 16:
+			case TNSCompositeOperationType.ColorDodge:
 				return 'color-dodge';
-			case 17:
+			case TNSCompositeOperationType.ColorBurn:
 				return 'color-burn';
-			case 18:
+			case TNSCompositeOperationType.HardLight:
 				return 'hard-light';
-			case 19:
+			case TNSCompositeOperationType.SoftLight:
 				return 'soft-light';
-			case 20:
+			case TNSCompositeOperationType.Difference:
 				return 'difference';
-			case 21:
+			case TNSCompositeOperationType.Exclusion:
 				return 'exclusion';
-			case 22:
+			case TNSCompositeOperationType.Hue:
 				return 'hue';
-			case 23:
+			case TNSCompositeOperationType.Saturation:
 				return 'saturation';
-			case 24:
+			case TNSCompositeOperationType.Color:
 				return 'color';
-			case 25:
+			case TNSCompositeOperationType.Luminosity:
 				return 'luminosity';
-			default:
-				return 'source-over';
 		}
 	}
 
@@ -345,92 +360,111 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (composite.toLowerCase()) {
 				case 'source-over':
-					this.context.globalCompositeOperation = 0;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.SourceOver;
 					break;
 				case 'source-in':
-					this.context.globalCompositeOperation = 1;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.SourceIn;
 					break;
 				case 'source-out':
-					this.context.globalCompositeOperation = 2;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.SourceOut;
 					break;
 				case 'source-atop':
-					this.context.globalCompositeOperation = 3;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.SourceAtop;
 					break;
 				case 'destination-over':
-					this.context.globalCompositeOperation = 4;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.DestinationOver;
 					break;
 				case 'destination-in':
-					this.context.globalCompositeOperation = 5;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.DestinationIn;
 					break;
 				case 'destination-out':
-					this.context.globalCompositeOperation = 6;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.DestinationOut;
 					break;
 				case 'destination-atop':
-					this.context.globalCompositeOperation = 7;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.DestinationAtop;
 					break;
 				case 'lighter':
-					this.context.globalCompositeOperation = 8;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Lighter;
 					break;
 				case 'copy':
-					this.context.globalCompositeOperation = 9;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Copy;
 					break;
 				case 'xor':
-					this.context.globalCompositeOperation = 10;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Xor;
 					break;
 				case 'multiply':
-					this.context.globalCompositeOperation = 11;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Multiply;
 					break;
 				case 'screen':
-					this.context.globalCompositeOperation = 12;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Screen;
 					break;
 				case 'overlay':
-					this.context.globalCompositeOperation = 13;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Overlay;
 					break;
 				case 'darken':
-					this.context.globalCompositeOperation = 14;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Darken;
 					break;
 				case 'lighten':
-					this.context.globalCompositeOperation = 15;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Lighten;
 					break;
 				case 'color-dodge':
-					this.context.globalCompositeOperation = 16;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.ColorDodge;
 					break;
 				case 'color-burn':
-					this.context.globalCompositeOperation = 17;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.ColorBurn;
 					break;
 				case 'hard-light':
-					this.context.globalCompositeOperation = 18;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.HardLight;
 					break;
 				case 'soft-light':
-					this.context.globalCompositeOperation = 19;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.SoftLight;
 					break;
 				case 'difference':
-					this.context.globalCompositeOperation = 20;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Difference;
 					break;
 				case 'exclusion':
-					this.context.globalCompositeOperation = 21;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Exclusion;
 					break;
 				case 'hue':
-					this.context.globalCompositeOperation = 22;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Hue;
 					break;
 				case 'saturation':
-					this.context.globalCompositeOperation = 23;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Saturation;
 					break;
 				case 'color':
-					this.context.globalCompositeOperation = 24;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Color;
 					break;
 				case 'luminosity':
-					this.context.globalCompositeOperation = 25;
+					this.context.globalCompositeOperation = TNSCompositeOperationType.Luminosity;
 					break;
 			}
 		}
 	}
 
-	private _fillStyle: string | CanvasGradient | CanvasPattern = 'black';
+	get filter(): string {
+		this.log('get filter');
+		return this.context.filter;
+	}
+
+	set filter(value: string) {
+		this.log('set filter', value);
+		if (this.context) {
+			this.context.filter = value;
+		}
+	}
+
 
 	get fillStyle() {
 		this.log('get fillStyle');
-		return this._fillStyle;
+		switch (this.context.fillStyle.getStyleType()) {
+			case CanvasColorStyleType.Color:
+				const color = this.context.fillStyle;
+				return color.color;
+			case CanvasColorStyleType.Gradient:
+				return CanvasGradient.fromNative(this.context.fillStyle);
+			case CanvasColorStyleType.Pattern:
+				return new CanvasPattern(this.context.fillStyle);
+		}
 	}
 
 	set fillStyle(color: string | CanvasGradient | CanvasPattern) {
@@ -439,28 +473,27 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			return;
 		}
 		this._ensureLayoutBeforeDraw();
-		if (this._fillStyle === color) {
-			return;
-		}
-		let nativeStyle;
-		if (color instanceof CanvasGradient) {
-			this._fillStyle = color;
-			nativeStyle = color.native;
+		if (typeof color === 'string') {
+			this.context.fillStyle = TNSColor.alloc().init(color);
+		} else if (color instanceof CanvasGradient) {
+			this.context.fillStyle = color.native;
 		} else if (color instanceof CanvasPattern) {
-			this._fillStyle = color;
-			nativeStyle = color.native;
-		} else {
-			this._fillStyle = color;
-			nativeStyle = new Color(color).argb;
+			this.context.fillStyle = color.native;
 		}
-		this.context.fillStyle = nativeStyle;
 	}
 
-	private _strokeStyle: string | CanvasGradient | CanvasPattern = 'black';
 
 	get strokeStyle() {
 		this.log('get strokeStyle');
-		return this._strokeStyle;
+		switch (this.context.strokeStyle.getStyleType()) {
+			case CanvasColorStyleType.Color:
+				const color = this.context.strokeStyle;
+				return color.color;
+			case CanvasColorStyleType.Gradient:
+				return CanvasGradient.fromNative(this.context.strokeStyle);
+			case CanvasColorStyleType.Pattern:
+				return new CanvasPattern(this.context.strokeStyle);
+		}
 	}
 
 	set strokeStyle(color: string | CanvasGradient | CanvasPattern) {
@@ -469,21 +502,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			return;
 		}
 		this._ensureLayoutBeforeDraw();
-		if (this.strokeStyle === color) {
-			return;
-		}
-		let nativeStyle;
-		if (color instanceof CanvasGradient) {
-			nativeStyle = color.native;
-			this._strokeStyle = color;
+		if (typeof color === 'string') {
+			this.context.strokeStyle = TNSColor.alloc().init(color);
+		} else if (color instanceof CanvasGradient) {
+			this.context.strokeStyle = color.native;
 		} else if (color instanceof CanvasPattern) {
-			this._strokeStyle = color;
-			nativeStyle = color.native;
-		} else {
-			this._strokeStyle = color;
-			nativeStyle = new Color(color).argb;
+			this.context.strokeStyle = color.native;
 		}
-		this.context.strokeStyle = nativeStyle;
 	}
 
 	get lineWidth() {
@@ -566,9 +591,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('clip', ...args);
 		this._ensureLayoutBeforeDraw();
 		if (typeof args[0] === 'string') {
-			this.context.clip(args[0]);
+			// browser throws for invalid enum
+			const rule = this._fillRuleFromString(args[0]);
+			console.log(rule);
+			this.context.clip(rule);
 		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
-			this.context.clip(args[0].native, args[1]);
+			const rule = this._fillRuleFromString(args[1]);
+			this.context.clip(args[0].native, rule);
 		} else if (args[0] instanceof Path2D) {
 			this.context.clip(args[0].native);
 		} else {
@@ -651,16 +680,16 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		let rep;
 		switch (repetition) {
 			case 'no-repeat':
-				rep = 3; // PatternRepetition.NoRepeat;
+				rep = TNSPatternRepetition.NoRepeat;
 				break;
 			case 'repeat-x':
-				rep = 1; // PatternRepetition.RepeatX;
+				rep = TNSPatternRepetition.RepeatX;
 				break;
 			case 'repeat-y':
-				rep = 2; // PatternRepetition.RepeatY;
+				rep = TNSPatternRepetition.RepeatY;
 				break;
 			default:
-				rep = 0; // PatternRepetition.Repeat;
+				rep = TNSPatternRepetition.Repeat;
 				break;
 		}
 
@@ -867,9 +896,11 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('fill', ...args);
 		this._ensureLayoutBeforeDraw();
 		if (typeof args[0] === 'string') {
-			this.context.fillWithValue(args[0]);
-		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
-			this.context.fill(args[0].native, args[1]);
+			const rule = this._fillRuleFromString(args[0]);
+			this.context.fillWithValue(rule);
+		} else if (args.length === 2 && args[0] instanceof Path2D && typeof args[1] === 'string') {
+			const rule = this._fillRuleFromString(args[1]);
+			this.context.fill(args[0].native, rule);
 		} else if (args[0] instanceof Path2D) {
 			this.context.fillWithValue(args[0].native);
 		} else {
@@ -1046,7 +1077,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	scale(x: number, y: number): void {
 		this.log('scale', x, y);
 		this._ensureLayoutBeforeDraw();
-		this.context.scale(x, y);
+		if (typeof x === 'number' && typeof y === 'number') {
+			this.context.scale(x, y);
+		}
 	}
 
 	scrollPathIntoView(): void;

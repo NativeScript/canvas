@@ -28,7 +28,7 @@
 		"@nrwl/workspace": "~10.1.0",
 		"@nstudio/focus": "^10.0.6",
 		"@nstudio/nps-i": "~1.1.0",
-		"@types/jest": "~26.0.10",
+		"@types/jest": "~25.2.1",
 		"@types/node": "~12.0.0",
 		"@typescript-eslint/eslint-plugin": "~3.6.0",
 		"@typescript-eslint/parser": "~3.6.0",
@@ -70,6 +70,7 @@
 		"tslint": "~6.1.2",
 		"typescript": "~3.5.3",
 		"vexflow": "^3.0.9",
+		"vextab": "^3.0.6",
 		"xml2js": "^0.4.23",
 		"zen-3d": "0.0.3",
 		"zone.js": "^0.9.1"
@@ -83,5 +84,6 @@
 		"**/*": [
 			"nx format:write --files"
 		]
-	}
+	},
+	"dependencies": {}
 }

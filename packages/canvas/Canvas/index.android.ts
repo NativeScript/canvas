@@ -9,7 +9,7 @@ declare var com;
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(
-		com.github.triniwiz.canvas.CanvasView.createSVGMatrix()
+		com.github.triniwiz.canvas.TNSCanvas.createSVGMatrix()
 	);
 }
 
@@ -27,7 +27,7 @@ export class Canvas extends CanvasBase {
 		super();
 		const activity =
 			Application.android.foregroundActivity || Application.android.startActivity;
-		this._canvas = new com.github.triniwiz.canvas.CanvasView(activity, false);
+		this._canvas = new com.github.triniwiz.canvas.TNSCanvas(activity, false);
 	}
 
 	get android() {
@@ -101,7 +101,7 @@ export class Canvas extends CanvasBase {
 		const ref = new WeakRef(this);
 		this.__handleGestures();
 		this._canvas.setListener(
-			new com.github.triniwiz.canvas.CanvasView.Listener({
+			new com.github.triniwiz.canvas.TNSCanvas.Listener({
 				contextReady() {
 					const owner = ref.get() as any;
 					if (owner && !owner._ready) {
@@ -178,15 +178,8 @@ export class Canvas extends CanvasBase {
 				}
 				rootParams.width = size.width;
 				rootParams.height = size.height;
-				let surfaceParams = this._canvas.getSurface().getLayoutParams();
-				if (!surfaceParams) {
-					surfaceParams = new android.widget.FrameLayout.LayoutParams(0, 0);
-				}
-				surfaceParams.width = size.width;
-				surfaceParams.height = size.height;
 
 				this._canvas.setLayoutParams(rootParams);
-				this._canvas.getSurface().setLayoutParams(surfaceParams);
 
 				const w = android.view.View.MeasureSpec.makeMeasureSpec(
 					size.width,

@@ -1,6 +1,6 @@
 import {ImageSource} from '@nativescript/core';
 import {Canvas, ImageAsset, Path2D} from '@nativescript/canvas';
-
+import { Screen } from '@nativescript/core';
 export function fillStyle(canvas) {
 	const ctx = canvas.getContext('2d');
 	for (let i = 0; i < 6; i++) {
@@ -77,12 +77,12 @@ export function imageSmoothingQuality(canvas) {
 
 export function imageBlock(canvas) {
 	const ctx = canvas.getContext('2d');
-	ctx.scale(3, 3)
+	ctx.save();
 	ImageSource.fromUrl('https://mdn.mozillademos.org/files/5397/rhino.jpg')
 		.then(function (img) {
 			for (var i = 0; i < 4; i++) {
 				for (var j = 0; j < 3; j++) {
-					ctx.drawImage(img, j * 50, i * 38, 50, 38);
+					ctx.drawImage(img, (j * 50) * Screen.mainScreen.scale, (i * 38) * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
 				}
 			}
 		});
@@ -547,6 +547,7 @@ export function isPointInStrokeTouch(canvas) {
 	ctx.strokeStyle = 'red';
 	ctx.fill(ellipse);
 	ctx.stroke(ellipse);
+
 
 // Listen for mouse moves
 	canvas.addEventListener('touchmove', function (args) {

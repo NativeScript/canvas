@@ -38,7 +38,6 @@ import {
 	textures
 } from "./webgl";
 import {cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog} from "./webgl2";
-
 declare var com, java;
 let zen3d
 
@@ -130,17 +129,17 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		// drawPatternWithCanvas(this.canvas);
-		//clock(this.canvas);
-		//solar(this.canvas);
+		//this.clock(this.canvas);
+		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
-		//ball(this.canvas)
+		//this.ball(this.canvas)
 		//swarm(this.canvas);
 		//this.bubbleChart(this.canvas);
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;
 		//this.hBarChart(this.canvas);
-		this.bubbleChart(this.canvas);
+		//this.bubbleChart(this.canvas);
 		//this.dataSets(this.canvas);
 		//this.chartJS(this.canvas);
 
@@ -157,7 +156,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//touchParticles(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
-		//drawModes(canvas,'triangles')
+		//drawModes(this.canvas,'triangles')
 		//drawElements(this.canvas)
 		// ctx = canvas.getContext("2d") as any;
 		//swarm(this.canvas);
@@ -188,6 +187,46 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
+		this.playCanvas(this.canvas);
+	}
+
+	playCanvas(canvas){
+		require('@nativescript/canvas-polyfill');
+		const pc = require('playcanvas');
+        const app = new pc.Application(canvas,{});
+
+        // fill the available space at full resolution
+        app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+        app.setCanvasResolution(pc.RESOLUTION_AUTO);
+
+        // ensure canvas is resized when window changes size
+        window.addEventListener('resize', () => app.resizeCanvas());
+
+        // create box entity
+        const box = new pc.Entity('cube');
+        box.addComponent('model', {
+            type: 'box'
+        });
+        app.root.addChild(box);
+
+        // create camera entity
+        const camera = new pc.Entity('camera');
+        camera.addComponent('camera', {
+            clearColor: new pc.Color(0.1, 0.1, 0.1)
+        });
+        app.root.addChild(camera);
+        camera.setPosition(0, 0, 3);
+
+        // create directional light entity
+        const light = new pc.Entity('light');
+        light.addComponent('light');
+        app.root.addChild(light);
+        light.setEulerAngles(45, 0, 0);
+
+        // rotate the box according to the delta time since the last frame
+        app.on('update', dt => box.rotate(10 * dt, 20 * dt, 30 * dt));
+
+        app.start();
 	}
 
 	gridLoaded(args) {
@@ -1598,7 +1637,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		};
 
 		var options = {
-			aspectRatio: 1,
+			aspectRatio: canvas.width / canvas.height,
+			devicePixelRatio: 1,
 			legend: false,
 			tooltips: false,
 			responsive: true,

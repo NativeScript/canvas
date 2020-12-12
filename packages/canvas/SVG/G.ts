@@ -41,13 +41,13 @@ export class G extends SVGItem implements AddChildFromBuilder {
 
         const updateColors = () => {
             if (this._doStroke()) {
-                ctx.strokeStyle = this.stroke;
+                ctx.strokeStyle = this._realStroke;
             }
             if (this._doFill()) {
                 if (this.fill === undefined) {
-                    ctx.fillStyle = 'black';
+                    // ctx.fillStyle = 'black';
                 } else {
-                    ctx.fillStyle = this.fill;
+                    ctx.fillStyle = this._realFill;
                 }
             }
         };

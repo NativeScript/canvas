@@ -10,40 +10,36 @@ import Foundation
 @objcMembers
 @objc(TNSImageData)
 public class TNSImageData: NSObject {
-    private var _width: Int
-    private var _height: Int
-    private var _data: Data
-    public init(width: Int, height: Int) {
-        _width = width
-        _height = height
-        let data = native_create_image_data(width, height)
-        if(data != nil){
-            let pointer = data!.pointee
-            _data = Data(bytes: pointer.array, count: pointer.length)
-            native_drop_image_data(data)
-        }else {
-            _data = Data()
-        }
+    var imageData: Int64
+    
+    public private(set) var data: NSData
+    
+    init(width: Int32, height: Int32) {
+        imageData = image_data_create(Int32(width), Int32(height))
+        let length = image_data_data_length(imageData)
+        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length), freeWhenDone: false)
     }
-    public var width: Int {
-        get {
-            return _width
-        }
+    
+    init(imageData: Int64) {
+        self.imageData = imageData
+        let length = image_data_data_length(imageData)
+        data = NSData(bytesNoCopy:image_data_data(imageData) , length: Int(length), freeWhenDone: false)
     }
-    public var height: Int {
+    
+    public var width: Int32 {
         get {
-            return _height
-        }
-    }
-    public var data: Data {
-        get {
-            return _data
+            return image_data_width(imageData)
         }
     }
     
-    init(width: Int, height: Int, data: Data) {
-        _width = width
-        _height = height
-        _data = data
+    public var height: Int32 {
+        get {
+            return image_data_height(imageData)
+        }
+    }
+    
+    deinit {
+        destroy_image_data(imageData)
+        imageData = 0
     }
 }

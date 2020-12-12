@@ -6,9 +6,9 @@ use std::ptr::{null, null_mut};
 
 use cocoa::foundation::NSAutoreleasePool;
 use libc::{c_float, c_int, c_longlong, size_t};
-use skia_safe::gpu;
 use skia_safe::gpu::{BackendRenderTarget, Context};
 use skia_safe::paint::{Cap, Join, Style};
+use skia_safe::{gpu, FilterQuality};
 use skia_safe::{
     Color, ColorType, Font, FontStyle, Paint, Path, PixelGeometry, Surface, SurfaceProps,
     SurfacePropsFlags, Typeface,
@@ -32,7 +32,7 @@ use crate::common::{
     set_shadow_offset_y, set_stroke_color, set_stroke_color_rgba, set_stroke_pattern,
     set_text_align, set_transform, snapshot_canvas, stroke, stroke_path, to_data_url, transform,
     translate, CanvasArray, CanvasCompositeOperationType, CanvasNative, CanvasNativeInitialState,
-    CanvasTextMetrics, NativeByteArray, SurfaceKind, COLOR_TRANSPARENT,
+    CanvasTextMetrics, NativeByteArray, SurfaceKind, TextAlign, TextDirection, COLOR_TRANSPARENT,
 };
 
 pub(crate) struct AutoreleasePool(*mut objc::runtime::Object);
@@ -354,57 +354,46 @@ pub extern "C" fn native_init_legacy(
         Some(&surface_props),
     );
     let surface = surface_holder.unwrap();
-    let mut stroke_paint = Paint::default();
-    stroke_paint.set_anti_alias(true);
-    stroke_paint.set_color(Color::BLACK);
-    stroke_paint.set_stroke_width(1.0);
-    stroke_paint.set_style(Style::Stroke);
-    stroke_paint.set_stroke_join(Join::Miter);
-    stroke_paint.set_stroke_cap(Cap::Butt);
-    stroke_paint.set_stroke_miter(10.0);
-    let mut fill_paint = Paint::default();
-    fill_paint.set_anti_alias(true);
-    fill_paint.set_color(Color::BLACK);
-    fill_paint.set_style(Style::Fill);
-    fill_paint.set_stroke_miter(10.0);
-    fill_paint.set_stroke_join(Join::Miter);
-    fill_paint.set_stroke_cap(Cap::Butt);
-    // "10px sans-serif" Default
-    let default_type_face =
-        Typeface::from_name("sans-serif", FontStyle::normal()).unwrap_or(Typeface::default());
-    let font = Font::from_typeface(&default_type_face, Some(10.0));
-    let direction = unsafe { CStr::from_ptr(direction) }
-        .to_str()
-        .unwrap_or("ltr");
+    let mut paint = Paint::default();
+    paint
+        .set_anti_alias(true)
+        .set_color(Color::BLACK)
+        .set_style(Style::Fill)
+        .set_stroke_miter(10.0)
+        .set_stroke_width(1.0)
+        .set_stroke_cap(Cap::Butt)
+        .set_filter_quality(FilterQuality::Low);
+    let direction = TextDirection::from_ptr(direction).unwrap();
+
     let canvas_native = Box::new(CanvasNative {
         surface,
-        stroke_paint,
-        fill_paint,
+        font: NativeFont::default(),
+        paint,
         path: Path::new(),
         context: Some(ctx),
-        font,
         state: vec![],
         line_dash_offset: 0.0,
         shadow_blur: 0.0,
         shadow_color: COLOR_TRANSPARENT as u32,
-        shadow_offset_x: 0.0,
-        shadow_offset_y: 0.0,
+        shadow_offset: (0.0, 0.0).into(),
         image_smoothing_enabled: true,
-        image_smoothing_quality: "low".to_string(),
+        image_smoothing_quality: FilterQuality::Low,
         device_scale: scale,
-        text_align: "start".to_string(),
+        text_align: TextAlign::START,
         ios: 0,
         global_composite_operation: CanvasCompositeOperationType::SourceOver,
         line_cap: "butt".to_string(),
         line_join: "miter".to_string(),
-        direction: direction.to_string(),
+        direction,
         miter_limit: 10.0,
         surface_kind: SurfaceKind::GPU,
         initial_state: CanvasNativeInitialState {
-            direction: direction.to_string(),
+            direction,
             device_scale: scale,
             surface_kind: SurfaceKind::GPU,
         },
+        filter: "none".to_string(),
+        text_baseline: TextBaseline,
     });
     canvas_native.into_ptr()
 }
@@ -430,7 +419,6 @@ pub extern "C" fn native_init(
         None,
         Some(&surface_props),
     );
-
     let surface = surface_holder.unwrap();
     let mut stroke_paint = Paint::default();
     stroke_paint.set_anti_alias(true);

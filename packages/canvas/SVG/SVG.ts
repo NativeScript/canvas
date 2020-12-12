@@ -1,5 +1,5 @@
-import { View, Style, CssProperty, AddChildFromBuilder } from '@nativescript/core';
-import { Canvas } from '../Canvas';
+import {View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders} from '@nativescript/core';
+import {Canvas} from '../Canvas';
 
 export const strokeProperty = new CssProperty<Style, any>({
 	name: 'stroke',
@@ -19,6 +19,12 @@ export const fillProperty = new CssProperty<Style, any>({
 	defaultValue: undefined,
 });
 
+export const fillRuleProperty = new CssProperty<Style, any>({
+	name: 'fillRule',
+	cssName: 'fill-rule',
+	defaultValue: undefined
+})
+
 export const fillOpacityProperty = new CssProperty<Style, any>({
 	name: 'fillOpacity',
 	cssName: 'fill-opacity',
@@ -31,26 +37,70 @@ export const stopColorProperty = new CssProperty<Style, any>({
 	defaultValue: undefined,
 });
 
+export const strokeLinecapProperty = new CssProperty<Style, any>({
+	name: 'strokeLinecap',
+	cssName: 'stroke-linecap'
+})
+
+export const strokeLinejoinProperty = new CssProperty<Style, any>({
+	name: 'strokeLinejoin',
+	cssName: 'stroke-linejoin'
+})
+
+export const strokeMiterlimitProperty = new CssProperty<Style,any>({
+	name: 'strokeMiterlimit',
+	cssName: 'stroke-miterlimit'
+})
+export const srcProperty = new Property<SVG, string>({
+	name: 'src'
+});
+
+
+
+
+import {File} from '@nativescript/core';
+import {DOMParser} from 'xmldom';
+
 export class SVG extends View implements AddChildFromBuilder {
 	_canvas: any;
 	_views: any[];
 	_children: Map<string, View>;
+	src: string;
+	_domParser: DOMParser;
+	private _isReady: boolean;
 
 	constructor() {
 		super();
-		this._canvas = new Canvas();
+		this._canvas = new (Canvas as any)(false);
 		this._views = [];
 		this._children = new Map<string, View>();
+		this._domParser = new DOMParser();
+	}
+
+
+
+	[srcProperty.setNative](value: string) {
+		if (this._isReady) {
+
+		}
 	}
 
 	createNativeView(): Object {
-		this.on('layoutChanged', (args) => {
-			this._views.forEach((view) => {
-				if (typeof view.handleValues === 'function') {
-					view.handleValues();
-				}
-			});
+		this._canvas.on('ready', (args) => {
+			console.log('ready');
+			if (this.src) {
+
+			} else {
+				this._views.forEach((view) => {
+					if (typeof view.handleValues === 'function') {
+						view.handleValues();
+					}
+				});
+			}
+			this._isReady = true;
 		});
+		//console.log(this.parent);
+		this._addView(this._canvas);
 		if (this._canvas.ios) {
 			return this._canvas.ios;
 		}
@@ -83,8 +133,14 @@ export class SVG extends View implements AddChildFromBuilder {
 	}
 }
 
+
+srcProperty.register(SVG);
 stopColorProperty.register(Style);
 strokeWidthProperty.register(Style);
 strokeProperty.register(Style);
 fillProperty.register(Style);
 fillOpacityProperty.register(Style);
+fillRuleProperty.register(Style);
+strokeLinecapProperty.register(Style);
+strokeLinejoinProperty.register(Style);
+strokeMiterlimitProperty.register(Style);

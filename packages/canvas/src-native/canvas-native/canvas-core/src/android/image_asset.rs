@@ -1,184 +1,257 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
-extern crate libc;
 
-use std::ffi::CStr;
+use jni::JNIEnv;
+use jni::objects::{ JClass, JString};
+use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
 
-use jni::{
-    objects::{JClass, JString},
-    JNIEnv,
-};
-use jni_sys::{jboolean, jbyteArray, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
-
-use crate::common::{
-    create_image_asset, image_asset_flip_x, image_asset_flip_y, image_asset_free_bytes,
-    image_asset_get_bytes, image_asset_get_error, image_asset_has_error, image_asset_height,
-    image_asset_load_from_path, image_asset_load_from_slice_i8, image_asset_release,
-    image_asset_save_path, image_asset_scale, image_asset_width,
-};
-use jni::objects::JByteBuffer;
-use std::mem::transmute;
+use crate::common::context::image_asset::{ImageAsset, OutputFormat};
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeInit(
-    _env: JNIEnv,
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeInit(
+    _: JNIEnv,
     _: JClass,
 ) -> jlong {
-    create_image_asset()
+    Box::into_raw(Box::new(ImageAsset::new())) as jlong
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeGetBytes(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetBytes(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
 ) -> jbyteArray {
-    let array = image_asset_get_bytes(asset);
-    let bytes = std::slice::from_raw_parts_mut(array.array, array.length);
-    let result = env
-        .new_byte_array(array.length as i32)
-        .unwrap_or(env.new_byte_array(0).unwrap());
-    let _ = env.get_byte_array_region(result, 0, transmute(bytes));
-    image_asset_free_bytes(array);
-    result
+    if asset == 0 {
+        return env.new_byte_array(0).unwrap();
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        let bytes = asset.bytes_internal();
+        if let Ok(array) = env.byte_array_from_slice(bytes.as_slice()) {
+            array
+        } else {
+            env.new_byte_array(0).unwrap()
+        }
+    }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeGetBuffer(
-    env: JNIEnv,
-    _: JClass,
-    asset: jlong,
-) -> jobject {
-    let array = image_asset_get_bytes(asset);
-    let bytes = std::slice::from_raw_parts_mut(array.array, array.length);
-    let result = env.new_direct_byte_buffer(bytes).unwrap();
-    image_asset_free_bytes(array);
-    result.into_inner()
-}
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeGetWidth(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetWidth(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
 ) -> jint {
-    image_asset_width(asset) as i32
+    if asset == 0 {
+        return 0;
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        asset.width() as i32
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeGetHeight(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetHeight(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
 ) -> jint {
-    image_asset_height(asset) as i32
+    if asset == 0 {
+        return 0;
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        asset.height() as i32
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeScale(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeScale(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
     x: jint,
     y: jint,
-) -> jlong {
-    image_asset_scale(asset, x as u32, y as u32)
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        if asset.scale(x as u32, y as u32) {
+            return JNI_TRUE;
+        }
+        JNI_FALSE
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeFlipX(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeFlipX(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
-) -> jlong {
-    image_asset_flip_x(asset)
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        if asset.flip_x() {
+            return JNI_TRUE;
+        }
+        JNI_FALSE
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeSave(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeFlipY(
+    _env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        if asset.flip_y() {
+            return JNI_TRUE;
+        }
+        JNI_FALSE
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeSave(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
     path: JString,
     format: jint,
 ) -> jboolean {
-    let real_path = env.get_string(path).unwrap();
-    image_asset_save_path(asset, real_path.get_raw(), format as u32) as u8
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    if let Ok(path) = env.get_string(path) {
+        unsafe {
+            let asset: *mut ImageAsset = asset as _;
+            let asset = &mut *asset;
+            if asset.save_path(path.as_ptr(), OutputFormat::from(format)) {
+                return JNI_TRUE;
+            }
+            return JNI_FALSE;
+        }
+    }
+    JNI_FALSE
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeFlipY(
-    _env: JNIEnv,
-    _: JClass,
-    asset: jlong,
-) -> jlong {
-    image_asset_flip_y(asset)
-}
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeGetError(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetError(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
 ) -> jstring {
-    let error = image_asset_get_error(asset);
-    let string = CStr::from_ptr(error).to_str();
-    let string = string.unwrap_or("");
-    env.new_string(string).unwrap().into_inner()
+    if asset == 0 {
+        return env.new_string("").unwrap().into_inner();
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        if let Ok(error) = env.new_string(&asset.error) {
+            return error.into_inner()
+        }
+        env.new_string("").unwrap().into_inner()
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeHasError(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeHasError(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
 ) -> jboolean {
-    if image_asset_has_error(asset) == 0 {
+    if asset == 0 {
         return JNI_FALSE;
     }
-    return JNI_TRUE;
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        if asset.error.is_empty() {
+            return JNI_FALSE;
+        }
+        JNI_TRUE
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeRelease(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeDestroy(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
 ) {
-    image_asset_release(asset)
+    if asset == 0 {
+        return;
+    }
+    unsafe {
+        let asset: *mut ImageAsset = asset as _;
+        let _ = Box::from_raw(asset);
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeLoadAssetPath(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeLoadAssetPath(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
     path: JString,
 ) -> jboolean {
-    let real_path = env.get_string(path).unwrap();
-    image_asset_load_from_path(asset, real_path.get_raw()) as u8
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    if let Ok(path) = env.get_string(path) {
+        unsafe {
+            let asset: *mut ImageAsset = asset as _;
+            let mut asset = &mut *asset;
+            if asset.load_from_path(path.as_ptr()) {
+                return JNI_TRUE;
+            }
+            return JNI_FALSE
+        }
+    }
+    JNI_FALSE
 }
 
+
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeLoadAssetBuffer(
-    env: JNIEnv,
-    _: JClass,
-    asset: jlong,
-    buffer: JByteBuffer,
-) -> jboolean {
-    let size = env.get_direct_buffer_address(buffer).unwrap();
-    image_asset_load_from_slice_i8(asset, transmute(size)) as u8
-}
-#[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_ImageAsset_nativeLoadAssetBytes(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeLoadAssetBytes(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
     buffer: jbyteArray,
 ) -> jboolean {
-    let size = env.get_array_length(buffer).unwrap_or(0);
-    let mut buf = vec![0i8; size as usize];
-    let _ = env.get_byte_array_region(buffer, 0, buf.as_mut_slice());
-    image_asset_load_from_slice_i8(asset, buf.as_mut_slice()) as u8
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    if let Ok(size) = env.get_array_length(buffer) {
+        let mut buf = vec![0u8; size as usize];
+        if let Ok(_) = env.get_byte_array_region(buffer, 0, std::mem::transmute(buf.as_mut_slice())) {
+            unsafe {
+                let asset: *mut ImageAsset = asset as _;
+                let asset = &mut *asset;
+                if asset.load_from_bytes(buf.as_slice()) {
+                    return JNI_TRUE;
+                }
+            }
+        }
+    }
+    JNI_FALSE
 }

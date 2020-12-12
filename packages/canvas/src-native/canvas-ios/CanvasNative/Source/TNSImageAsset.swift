@@ -10,7 +10,8 @@ import UIKit
 @objcMembers
 @objc(TNSImageAsset)
 public class TNSImageAsset: NSObject {
-    var nativeAsset: Int64 = 0
+    var asset: Int64 = 0
+    var raw_data: UnsafeMutablePointer<U8Array>? = nil
     public static var _queue: DispatchQueue?
     private static var queue: DispatchQueue {
         if(_queue == nil){
@@ -19,16 +20,13 @@ public class TNSImageAsset: NSObject {
         return _queue!
     }
     public override init() {
-       self.nativeAsset =  native_create_image_asset()
+       self.asset = image_asset_create()
     }
     private var _error: String?
-    public func loadImageFromPath(path: String) -> Bool{
+    public func loadImageFromPath(path: String) -> Bool {
         let ptr = (path as NSString).utf8String
-        if(self.raw_data != nil){
-            native_image_asset_free_bytes(self.raw_data!)
-            self.raw_data = nil
-        }
-        return native_image_asset_load_from_path(nativeAsset, ptr) != 0
+        free_data()
+        return image_asset_load_from_path(asset, ptr)
     }
     
     public func loadImageFromPathAsync(path: String, callback: @escaping (String?)-> ()){
@@ -48,11 +46,8 @@ public class TNSImageAsset: NSObject {
     
     public func loadImageFromBytes(array: [UInt8]) -> Bool{
         var ptr = array
-        if(self.raw_data != nil){
-            native_image_asset_free_bytes(self.raw_data!)
-            self.raw_data = nil
-        }
-        return native_image_asset_load_from_raw(nativeAsset, &ptr, array.count) != 0
+        free_data()
+        return image_asset_load_from_raw(asset, &ptr, UInt(array.count))
     }
     
     public func loadImageFromBytesAsync(array: [UInt8], callback: @escaping (String?)-> ()){
@@ -79,11 +74,8 @@ public class TNSImageAsset: NSObject {
                 cgImage = ctx.createCGImage(image, from: image.extent)
                }
                if let pixels = cgImage {
-                if(self.raw_data != nil){
-                    native_image_asset_free_bytes(self.raw_data!)
-                    self.raw_data = nil
-                }
-                
+               free_data()
+    
                let width = Int(pixels.width)
                                   let height = Int(pixels.height)
                                   let buffer = calloc(width * height, 4)
@@ -91,9 +83,9 @@ public class TNSImageAsset: NSObject {
                 let imageCtx = CGContext(data: buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
                                   imageCtx!.draw(pixels, in: CGRect(x: 0, y: 0, width: width, height: height))
                                  
-                let result = native_image_asset_load_from_raw(nativeAsset, buffer?.assumingMemoryBound(to: UInt8.self), size)
+                let result = image_asset_load_from_raw(asset, buffer?.assumingMemoryBound(to: UInt8.self), UInt(size))
                 buffer?.deallocate()
-               return result != 0
+               return result
                }
         return false
     }
@@ -113,79 +105,73 @@ public class TNSImageAsset: NSObject {
         }
     }
     
-    var raw_data: NativeByteArray?
-    
     var length: Int {
-        return raw_data?.length ?? (Int(width * height) * 4)
+        return Int(raw_data?.pointee.data_len ?? 0)
     }
     public func getRawBytes() -> UnsafeMutablePointer<UInt8>? {
-        if(nativeAsset == 0){return nil}
+        if(asset == 0){return nil}
         if(raw_data == nil){
-            raw_data = native_image_asset_get_bytes(nativeAsset)
+            raw_data = image_asset_get_bytes(asset)
         }
         
-        return raw_data?.array
-        // use raw pointer directly
-       // var bytes = Data(bytes: raw.array, count: raw.length) as NSData
-       // native_image_asset_free_bytes(raw)
-   
-//        return bytes.withUnsafeMutableBytes { (ptr) -> UnsafeMutablePointer<UInt8>? in
-//            ptr.baseAddress?.assumingMemoryBound(to: UInt8.self)
-//        }
+        
+        if raw_data != nil {
+            return raw_data!.pointee.data
+        }
+        
+        return nil
     }
     
+    
     public var width: Int32 {
-        if(nativeAsset == 0){
+        if(asset == 0){
             return 0
         }
-        return Int32(native_image_asset_get_width(nativeAsset))
+        return Int32(image_asset_width(asset))
     }
     
     public var height: Int32 {
-       if(nativeAsset == 0){
+       if(asset == 0){
            return 0
        }
-        return Int32(native_image_asset_get_height(nativeAsset))
+        return Int32(image_asset_height(asset))
     }
     
     public func flipX(){
-        if(nativeAsset == 0){
+        if(asset == 0){
             return
         }
-        self.nativeAsset = native_image_asset_flip_x(nativeAsset)
+        image_asset_flip_x(asset)
+        free_data()
+    }
+    
+    private func free_data(){
         if(self.raw_data != nil){
-            native_image_asset_free_bytes(self.raw_data!)
+            destroy_u8_array(self.raw_data!)
             self.raw_data = nil
         }
     }
     
     public func flipY(){
-        if(nativeAsset == 0){
+        if(asset == 0){
             return
         }
-        
-       self.nativeAsset = native_image_asset_flip_y(nativeAsset)
-        if(self.raw_data != nil){
-            native_image_asset_free_bytes(self.raw_data!)
-            self.raw_data = nil
-        }
+        image_asset_flip_y(asset)
+        free_data()
     }
     
     public func scale(x: UInt32, y: UInt32){
-        if(nativeAsset == 0){
+        if(asset == 0){
             return
         }
-       self.nativeAsset = native_image_asset_scale(nativeAsset, x, y)
-        
-        if(self.raw_data != nil){
-            native_image_asset_free_bytes(self.raw_data!)
-            self.raw_data = nil
-        }
+    
+        image_asset_scale(asset, x, y)
+        free_data()
     }
     
     public func save(path: String,format: TNSImageAssetFormat)-> Bool{
         let pathPtr = (path as NSString).utf8String
-        return native_native_image_asset_save_path(nativeAsset, pathPtr, UInt32(format.rawValue)) != 0
+        return image_asset_save_path(asset, pathPtr, UInt32(format.rawValue))
     }
     
     public func saveAsync(path: String,format: TNSImageAssetFormat, callback: @escaping (Bool)-> ()){
@@ -204,22 +190,21 @@ public class TNSImageAsset: NSObject {
     }
     
     public var error: String? {
-        if(nativeAsset == 0){
+        if(asset == 0){
             return nil
         }
-        let cStr = native_image_asset_get_error(nativeAsset)
+        let cStr = image_asset_get_error(asset)
         if(cStr == nil){return nil}
-        return String(cString: cStr!)
+        let error = String(cString: cStr!)
+        destroy_string(cStr)
+        return error
     }
     
     deinit {
-       if(self.raw_data != nil){
-           native_image_asset_free_bytes(self.raw_data!)
-           self.raw_data = nil
-       }
-        if(nativeAsset != 0){
-           native_image_asset_release(nativeAsset)
-            nativeAsset = 0
+       free_data()
+        if(asset != 0){
+           destroy_image_asset(asset)
+            asset = 0
         }
     }
 }

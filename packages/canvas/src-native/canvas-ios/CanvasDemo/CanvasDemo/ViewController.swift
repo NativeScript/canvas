@@ -1,25 +1,23 @@
 import UIKit
 import CanvasNative
 @available(iOS 13.0, *)
-class ViewController: UIViewController {
-    var canvas1: TNSCanvas?
+class ViewController: UIViewController, TNSCanvasListener {
+    func contextReady() {
+        print("ready")
+    }
+    
+    @IBOutlet weak var canvas1: TNSCanvas!
     var canvas2: TNSCanvas?
     var imageView: UIImageView?
     let PI: Float = .pi
     let TWO_PI: Float = .pi * 2
-    @IBOutlet weak var first: UIView!
-    @IBOutlet weak var second: UIView!
-    @IBOutlet weak var third: UIView!
     var tapped = 0
     
-
     override func viewDidLoad() {
         super.viewDidLoad()
         scale = Int(UIScreen.main.scale)
         // Do any additional setup after loading the view.
-        canvas1 = TNSCanvas(frame: first.bounds, useGL: true)
-        canvas1!.backgroundColor = .green
-        first.addSubview(canvas1!)
+        canvas1.setListener(self)
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
     }
@@ -75,7 +73,6 @@ class ViewController: UIViewController {
         gl!.enableVertexAttribArray(0)
         buffer = gl!.createBuffer()
         gl!.bindBuffer(gl!.ARRAY_BUFFER, buffer!)
-        print(CACurrentMediaTime())
         let data:[Float32] = [0.0, 0.0]
         gl!.bufferData(gl!.ARRAY_BUFFER,f32: data, gl!.STATIC_DRAW)
         gl!.vertexAttribPointer(0, 2, gl!.FLOAT, false, 0, 0);
@@ -130,12 +127,12 @@ class ViewController: UIViewController {
     
     func clearExample(ctx: TNSCanvasRenderingContext2D) {
         ctx.beginPath()
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromString: "#ff6"))
+        ctx.fillStyle = TNSColorStyle.TNSColor("#ff6")
         ctx.fillRect(0, 0, canvas1!.width, canvas1!.height)
 
         // Draw blue triangle
         ctx.beginPath();
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromString: "blue"))
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
         ctx.moveTo(20, 20)
         ctx.lineTo(180, 20)
         ctx.lineTo(130, 130)
@@ -148,7 +145,8 @@ class ViewController: UIViewController {
     
     
     func drawAll() {
-       // canvas1?.handleInvalidationManually = true
+      //  let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
+        //canvas1?.handleInvalidationManually = true
         
 //        let q = DispatchQueue(label: "bg", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
 //        q.async {
@@ -158,15 +156,15 @@ class ViewController: UIViewController {
         
         
         
-      // drawRotatingCube(gl: gl!)
+       //drawRotatingCube(gl: gl)
         
-       // drawRotatingCube(gl: gl!)
-       // drawGL(canvas: canvas1!) // sun
+        //drawRotatingCube(gl: gl)
+       // drawTextures(canvas: canvas1)
+       
         
-        // drawTextures(canvas: canvas1!)
+       // self.drawGL(canvas: self.canvas1!) // sun
 
-
-        
+        //drawTextures(canvas: canvas1)
         
        // canvas1?.handleInvalidationManually = true
         
@@ -183,15 +181,72 @@ class ViewController: UIViewController {
             
         }
         */
-        let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
-       //clearExample(ctx: ctx)
-        drawImageExample(ctx: ctx)
+        let scale = Float(UIScreen.main.scale)
+        
+    let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
+        // Create circular clipping region
+        /*ctx.beginPath()
+        ctx.arc(Float(100 * scale), Float(75 * scale), Float(50 * scale), 0, PI * 2)
+        ctx.clip()
+
+        // Draw stuff that gets clipped
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
+        ctx.fillRect(0, 0, Float(canvas1.frame.width * scale), Float(canvas1.frame.height * scale))
+        ctx.fillStyle = TNSColorStyle.TNSColor("orange")
+        ctx.fillRect(0, 0, Float(100 * scale), Float(100 * scale))
+        
+        */
+        /*
+        
+        // Create clipping path
+        let region = TNSPath2D()
+        region.rect(80, 10, 20, 130)
+        region.rect(40, 50, 100, 50)
+        ctx.clip(region, TNSFillRule.EvenOdd)
+
+        // Draw stuff that gets clipped
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
+        ctx.fillRect(0, 0, Float(canvas1.frame.width) * scale, Float(canvas1!.frame.height) * scale)
+        
+        */
+        
+        
+        
+       /* ctx.scale(Float(scale), Float(scale))
+        ctx.beginPath()
+        ctx.arc(50, 50, 30, 0, 2 * PI)
+        ctx.stroke()
+        ctx.clip()
+
+        ctx.font = "\(48/scale)px sans-serif"
+        ctx.strokeText("canvas test", 10, 55)
+        */
+        
+    
+        /*
+        // Create clipping path
+        let region = TNSPath2D()
+        region.rect(80 * scale, 10 * scale, 20 * scale, 130 * scale)
+        region.rect(40 * scale, 50 * scale, 100 * scale, 50 * scale)
+        ctx.clip(region, TNSFillRule.EvenOdd)
+
+        // Draw stuff that gets clipped
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
+        ctx.fillRect(0, 0, 300 * scale, 300 * scale)
+    
+        */
+        
+    
+        
+      // clearExample(ctx: ctx)
+       // drawImageExample(ctx: ctx)
        // canvas1?.flush()
         //drawImageBlock(ctx: ctx)
-         //doSolarAnimation(ctx: ctx)
-        //  drawFace(ctx: ctx)
+        // doSolarAnimation(ctx: ctx)
+        //drawFace(ctx: ctx)
         // fontExample(ctx: ctx)
-       // arcToAnimationExample(ctx: ctx)
+        //textBaseLine(ctx: ctx)
+        //arcToAnimationExample(ctx: ctx)
         //  saveRestoreExample(ctx: ctx)
         //ballExample(ctx: ctx)
         
@@ -202,14 +257,42 @@ class ViewController: UIViewController {
         //           print("data: ", data)
         //        }
         
-        //drawPatterWithCanvas(canvas: canvas1!)
-        //ellipseExample(ctx: ctx)
+       // drawPatterWithCanvas(canvas: canvas1!)
+       // ellipseExample(ctx: ctx)
         
+    }
+    
+    func decoder() {
+                // let uint8Array = new Uint8Array([228, 189, 160, 229, 165, 189]);
+                //
+                // console.log( new TextDecoder().decode(uint8Array) ); // 你好
+
+
+                let utf8decoder = TNSTextDecoder() // default 'utf-8' or 'utf8'
+                print(utf8decoder.encoding);
+
+                let u8arr: [UInt8] = [240, 160, 174, 183]
+                let i8arr:[Int8] = [-16, -96, -82, -73]
+                let u16arr: [UInt16] = [41200, 47022]
+                let i16arr:[Int16] = [-24336, -18514]
+                let i32arr:[Int32] = [-1213292304]
+
+        print(utf8decoder.decode(bytes: u8arr))
+        print(utf8decoder.decode(i8: i8arr))
+        print(utf8decoder.decode(u16: u16arr))
+        print(utf8decoder.decode(i16: i16arr))
+        print(utf8decoder.decode(i32: i32arr))
+
+
+        let win1251decoder = TNSTextDecoder(encoding: "windows-1251")
+        let bytes:[UInt8] = [207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]
+        print(win1251decoder.decode(bytes: bytes)); // Привет, мир!
+            
     }
     
     
     func drawPatterWithCanvas(canvas: TNSCanvas){
-        let patternCanvas = TNSCanvas(frame: .zero, useGL: true)
+        let patternCanvas = TNSCanvas(frame: .zero)
         let patternContext = patternCanvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let scale = UIScreen.main.scale
         let width = 50
@@ -223,16 +306,15 @@ class ViewController: UIViewController {
 
 
     // Give the pattern a background color and draw an arc
-        patternContext.fillStyle = "#fec"
+        patternContext.fillStyle = TNSColorStyle.TNSColor("#fec")
         patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height)
         patternContext.arc(0, 0, Float(50 * scale), 0, (0.5 * PI))
         patternContext.stroke()
-        print("done")
     // Create our primary canvas and fill it with the pattern
 
         let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let pattern = ctx.createPattern(patternCanvas, .Repeat)
-        ctx.fillStyle = pattern
+        ctx.fillStyle = pattern as! ICanvasColorStyle
         ctx.fillRect(0, 0, canvas.width, canvas.height)
         }
     
@@ -521,7 +603,6 @@ class ViewController: UIViewController {
             Float(gl.drawingBufferWidth),
             Float(gl.drawingBufferHeight)
         );
-        
 
         // draw 50 random rectangles in random colors
         for _ in 0 ... 50 {
@@ -577,8 +658,8 @@ class ViewController: UIViewController {
     
     
     func drawRotatingCube(gl: TNSWebGLRenderingContext){
-        let width = gl.getCanvas().width
-        let height = gl.getCanvas().height
+        let width = gl.drawingBufferWidth
+        let height = gl.drawingBufferHeight
         let vertices: [Float32] = [
             -1,-1,-1, 1,-1,-1, 1, 1,-1, -1, 1,-1,
             -1,-1, 1, 1,-1, 1, 1, 1, 1, -1, 1, 1,
@@ -768,14 +849,14 @@ class ViewController: UIViewController {
     func scaleTransformation(ctx: TNSCanvasRenderingContext2D){
         // Scaled rectangle
         ctx.scale(9, 3);
-        ctx.fillStyle = TNSColorStyle.Color(color: .red);
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.fillRect(10, 10, 8, 20);
         
         // Reset current transformation matrix to the identity matrix
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         
         // Non-scaled rectangle
-        ctx.fillStyle = TNSColorStyle.Color(color: .gray);
+        ctx.fillStyle = TNSColorStyle.TNSColor("grey")
         ctx.fillRect(10, 10, 8, 20);
     }
     
@@ -790,8 +871,8 @@ class ViewController: UIViewController {
         
         // draw background
         let lingrad = ctx.createLinearGradient(0, -75, 0, 75);
-        lingrad.addColorStop(offset: 0, color: UIColor(fromString: "#232256"));
-        lingrad.addColorStop(offset: 1, color: UIColor(fromString: "#143778"));
+        lingrad.addColorStop(0, "#232256");
+        lingrad.addColorStop(1, "#143778");
         
         ctx.fillStyle = lingrad;
         ctx.fillRect(-75, -75, 150, 150);
@@ -799,7 +880,7 @@ class ViewController: UIViewController {
         // draw stars
         for _ in 0 ... 49 {
             ctx.save()
-            ctx.fillStyle = TNSColorStyle.Color.init(color: .white)
+            ctx.fillStyle = TNSColorStyle.TNSColor("white")
             ctx.translate(75 - floor(Float.random(in: 0.0...1.0) * 150),
                           75 - floor(Float.random(in: 0.0...1.0) * 150));
             drawStar(ctx: ctx, r: floor(Float.random(in: 0.0...1.0) * 4) + 2);
@@ -829,17 +910,17 @@ class ViewController: UIViewController {
         // left rectangles, rotate from canvas origin
         ctx.save();
         // blue rect
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromString: "#0095DD"));
+        ctx.fillStyle = TNSColorStyle.TNSColor( "#0095DD");
         ctx.fillRect(30, 30, 100, 100);
         ctx.rotate((PI / 180) * 25);
         // grey rect
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromString: "#4D4E53"));
+        ctx.fillStyle = TNSColorStyle.TNSColor( "#4D4E53");
         ctx.fillRect(30, 30, 100, 100);
         ctx.restore();
         
         // right rectangles, rotate from rectangle center
         // draw blue rect
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromString: "#0095DD"));
+        ctx.fillStyle = TNSColorStyle.TNSColor( "#0095DD");
         ctx.fillRect(150, 30, 100, 100);
         
         ctx.translate(200, 80); // translate to rectangle center
@@ -849,12 +930,11 @@ class ViewController: UIViewController {
         ctx.translate(-200, -80); // translate back
         
         // draw grey rect
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromString: "#4D4E53"));
+        ctx.fillStyle = TNSColorStyle.TNSColor( "#4D4E53");
         ctx.fillRect(150, 30, 100, 100);
     }
     
     func drawImageBlock(ctx: TNSCanvasRenderingContext2D){
-        
         do {
             let home = URL(fileURLWithPath:NSTemporaryDirectory())
             let rhino = home.appendingPathComponent("rhino.jpg")
@@ -866,11 +946,11 @@ class ViewController: UIViewController {
             }else {
                 image = UIImage(contentsOfFile: rhino.path)
             }
-            let s = Float(UIScreen.main.scale) * 2
-            
+            let s = Float(UIScreen.main.scale)
+            ctx.scale(s, s)
             for i in 0...3{
                 for j in 0 ... 3 {
-                    ctx.drawImage(image!, Float(j * 50) * s, Float(i * 38) * s, 50 * s, 38 * s);
+                    ctx.drawImage(image!, Float(j * 50), Float(i * 38), 50, 38);
                 }
             }
         } catch  {
@@ -882,24 +962,24 @@ class ViewController: UIViewController {
     func radialGradient(ctx: TNSCanvasRenderingContext2D){
         // Create gradients
         let radgrad = ctx.createRadialGradient(45, 45, 10, 52, 50, 30);
-        radgrad.addColorStop(offset: 0, color: UIColor(fromString: "#A7D30C"))
-        radgrad.addColorStop(offset: 0.9, color: UIColor(fromString: "#019F62"));
-        radgrad.addColorStop(offset: 1, color: UIColor(fromString: "rgba(1, 159, 98, 0)"));
+        radgrad.addColorStop(0, "#A7D30C")
+        radgrad.addColorStop(0.9, "#019F62")
+        radgrad.addColorStop(1, "rgba(1, 159, 98, 0)")
         
         let radgrad2 = ctx.createRadialGradient(105, 105, 20, 112, 120, 50);
-        radgrad2.addColorStop(offset: 0, color: UIColor(fromString: "#FF5F98"));
-        radgrad2.addColorStop(offset: 0.75, color: UIColor(fromString: "#FF0188"));
-        radgrad2.addColorStop(offset: 1, color: UIColor(fromString: "rgba(255, 1, 136, 0)"));
+        radgrad2.addColorStop(0, "#FF5F98")
+        radgrad2.addColorStop(0.75, "#FF0188")
+        radgrad2.addColorStop(1, "rgba(255, 1, 136, 0)")
         
         let radgrad3 = ctx.createRadialGradient(95, 15, 15, 102, 20, 40);
-        radgrad3.addColorStop(offset: 0, color: UIColor(fromString: "#00C9FF"));
-        radgrad3.addColorStop(offset: 0.8, color: UIColor(fromString: "#00B5E2"));
-        radgrad3.addColorStop(offset: 1, color: UIColor(fromString: "rgba(0, 201, 255, 0)"));
+        radgrad3.addColorStop(0, "#00C9FF")
+        radgrad3.addColorStop(0.8, "#00B5E2")
+        radgrad3.addColorStop(1, "rgba(0, 201, 255, 0)")
         
         let radgrad4 = ctx.createRadialGradient(0, 150, 50, 0, 140, 90);
-        radgrad4.addColorStop(offset: 0, color: UIColor(fromString: "#F4F201"));
-        radgrad4.addColorStop(offset: 0.8, color: UIColor(fromString: "#E4C700"));
-        radgrad4.addColorStop(offset: 1, color: UIColor(fromString: "rgba(228, 199, 0, 0)"));
+        radgrad4.addColorStop(0, "#F4F201")
+        radgrad4.addColorStop(0.8, "#E4C700")
+        radgrad4.addColorStop(1, "rgba(228, 199, 0, 0)")
         
         // draw shapes
         ctx.fillStyle = radgrad4;
@@ -915,14 +995,14 @@ class ViewController: UIViewController {
     func drawLinearGradient(ctx: TNSCanvasRenderingContext2D) {
         // Create gradients
         let lingrad = ctx.createLinearGradient(0, 0, 0, 150);
-        lingrad.addColorStop(offset: 0, color: UIColor(fromHex: "#00ABEB"))
-        lingrad.addColorStop(offset: 0.5, color: UIColor(fromHex: "#fff"));
-        lingrad.addColorStop(offset: 0.5, color: UIColor(fromHex: "#26C000"));
-        lingrad.addColorStop(offset: 1, color: UIColor(fromHex: "#fff"));
+        lingrad.addColorStop(0, "#00ABEB")
+        lingrad.addColorStop(0.5, "#fff")
+        lingrad.addColorStop(0.5, "#26C000")
+        lingrad.addColorStop(1, "#fff")
         
         let lingrad2 = ctx.createLinearGradient(0, 50, 0, 95);
-        lingrad2.addColorStop(offset: 0.5, color: UIColor(fromHex: "#000"));
-        lingrad2.addColorStop(offset: 1, color: UIColor(red: 0, green: 0, blue: 0, alpha: 0));
+        lingrad2.addColorStop(0.5, "#000")
+        lingrad2.addColorStop(1, "rgba(0,0,0,0)");
         
         // assign gradients to fill and stroke styles
         ctx.fillStyle = lingrad;
@@ -977,7 +1057,7 @@ class ViewController: UIViewController {
         ctx.lineTo(83 * s, 116 * s);
         ctx.fill();
         
-        ctx.fillStyle = TNSColorStyle.Color(color: .white);
+        ctx.fillStyle = TNSColorStyle.TNSColor("white")
         ctx.beginPath();
         ctx.moveTo(91 * s, 96 * s);
         ctx.bezierCurveTo(88 * s, 96 * s, 87 * s, 99 * s, 87 * s, 101 * s);
@@ -991,7 +1071,7 @@ class ViewController: UIViewController {
         ctx.bezierCurveTo(107 * s, 99 * s, 106 * s, 96 * s, 103 * s, 96 * s);
         ctx.fill();
         
-        ctx.fillStyle = TNSColorStyle.Color(color: .black);
+        ctx.fillStyle = TNSColorStyle.TNSColor("black")
         ctx.beginPath();
         ctx.arc( 101 * s, 102 * s, 2 * s, 0 * s, PI * 2, true);
         ctx.fill();
@@ -1020,15 +1100,15 @@ class ViewController: UIViewController {
     
     func drawWindow(ctx: TNSCanvasRenderingContext2D){
         // draw background
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#FD0"));
+        ctx.fillStyle = TNSColorStyle.TNSColor("#FD0")
         ctx.fillRect(0, 0, Float(75 * scale), Float(75 * scale));
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#6C0"));
+        ctx.fillStyle = TNSColorStyle.TNSColor("#6C0")
         ctx.fillRect(Float(75 * scale), 0, Float(75 * scale), Float(75 * scale));
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#09F"));
+        ctx.fillStyle = TNSColorStyle.TNSColor("#09F")
         ctx.fillRect(0, Float(75 * scale), Float(75 * scale), Float(75 * scale));
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#F30"));
+        ctx.fillStyle = TNSColorStyle.TNSColor("#F30")
         ctx.fillRect(Float(75 * scale), Float(75 * scale), Float(75 * scale), Float(75 * scale));
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#FFF"));
+        ctx.fillStyle = TNSColorStyle.TNSColor("#FFF")
         
         // set transparency value
         ctx.globalAlpha = 0.2;
@@ -1066,13 +1146,13 @@ class ViewController: UIViewController {
         // Save the default state
         ctx.save();
         let s = Float(UIScreen.main.scale)
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 0, green: 128/255, blue: 0, alpha: 1.0));
-        ctx.fillRect(10 * s, 10 * s, 100 * s, 100 * s);
+        ctx.fillStyle = TNSColorStyle.TNSColor("green")
+        ctx.fillRect(10 * s, 10 * s, 100 * s, 100 * s)
         
         // Restore the default state
-        ctx.restore();
+        ctx.restore()
         
-        ctx.fillRect(150 * s, 40 * s, 100 * s, 100 * s);
+        ctx.fillRect(150 * s, 40 * s, 100 * s, 100 * s)
         
     }
     func closePathExample(ctx: TNSCanvasRenderingContext2D){
@@ -1101,14 +1181,14 @@ class ViewController: UIViewController {
         ctx.stroke()
         
         // Start and end points
-        ctx.fillStyle = TNSColorStyle.Color(color: .blue)
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
         ctx.beginPath()
         ctx.arc(start.x, start.y, 5, 0, TWO_PI)  // Start point
         ctx.arc(end.x, end.y, 5, 0, TWO_PI)      // End point
         ctx.fill()
         
         // Control points
-        ctx.fillStyle = TNSColorStyle.Color(color: .red)
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.beginPath()
         ctx.arc(cp1.x, cp1.y, 5, 0, TWO_PI)  // Control point one
         ctx.arc(cp2.x, cp2.y, 5, 0, TWO_PI)  // Control point two
@@ -1179,21 +1259,21 @@ class ViewController: UIViewController {
     func strokeExample(ctx: TNSCanvasRenderingContext2D){
         // First sub-path
         ctx.lineWidth = 26
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(red: 1, green: 165/255, blue: 0, alpha: 1.0))
+        ctx.strokeStyle = TNSColorStyle.TNSColor("rgba(255,165,0,1.0)")
         ctx.moveTo(20, 20)
         ctx.lineTo(160, 20)
         ctx.stroke()
         
         // Second sub-path
         ctx.lineWidth = 14
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(red: 0, green: 128/255, blue: 0, alpha: 1.0))
+        ctx.strokeStyle = TNSColorStyle.TNSColor("green")
         ctx.moveTo(20, 80)
         ctx.lineTo(220, 80)
         ctx.stroke()
         
         // Third sub-path
         ctx.lineWidth = 4
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(red: 255/255, green: 192/255, blue: 203/255, alpha: 1.0))
+        ctx.strokeStyle = TNSColorStyle.TNSColor("rgba(255,192,203,1.0)")
         ctx.moveTo(20, 140)
         ctx.lineTo(280, 140)
         ctx.stroke()
@@ -1261,7 +1341,7 @@ class ViewController: UIViewController {
         ctx.arc(60, 65, 5, 0, TWO_PI, true)  // Left eye
         ctx.moveTo(95, 65);
         ctx.arc(90, 65, 5, 0, TWO_PI, true)  // Right eye
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromString: "blue"))
+        ctx.strokeStyle = TNSColorStyle.TNSColor( "blue")
         ctx.stroke();
         
     }
@@ -1286,7 +1366,7 @@ class ViewController: UIViewController {
         var vx = 5.0
         var vy = 2.0
         var radius: Float = 25
-        var color = UIColor.blue
+        var color = "blue"
         init() {
             
         }
@@ -1294,7 +1374,7 @@ class ViewController: UIViewController {
             ctx.beginPath();
             ctx.arc(Float(x), Float(y),radius, 0, .pi * 2, true);
             ctx.closePath();
-            ctx.fillStyle = TNSColorStyle.Color(color: color)
+            ctx.fillStyle = TNSColorStyle.TNSColor(color)
             ctx.fill();
         }
     }
@@ -1303,7 +1383,7 @@ class ViewController: UIViewController {
     
     func draw(ctx: TNSCanvasRenderingContext2D) {
         let canvas = ctx.getCanvas()
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromString: "rgba(255, 255, 255, 0.3)"))
+        ctx.fillStyle = TNSColorStyle.TNSColor( "rgba(255, 255, 255, 0.3)")
         let width = canvas.width
         let height = canvas.height
         ctx.fillRect(0, 0, Float(width), Float(height));
@@ -1337,12 +1417,12 @@ class ViewController: UIViewController {
     
     
     func globalCompositeOperationExample(ctx: TNSCanvasRenderingContext2D){
-        ctx.globalCompositeOperation = TNSCompositeOperationType(rawValue: "xor")!
+        ctx.globalCompositeOperation = TNSCompositeOperationType.Xor
         
-        ctx.fillStyle = TNSColorStyle.Color(color: .blue)
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
         ctx.fillRect(10, 10, 100, 100)
         
-        ctx.fillStyle = TNSColorStyle.Color(color: .red)
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.fillRect(50, 50, 100, 100)
     }
     
@@ -1355,7 +1435,7 @@ class ViewController: UIViewController {
         // Add three color stops
         //gradient.addColorStop(offset: 0, color: UIColor(red: 1.0, green: 192/255, blue: 203/255, alpha: 1.0));
         // gradient.addColorStop(offset: 0.9, color: .white);
-        gradient.addColorStop(offset: 1, color: UIColor(red: 0.0, green: 128/255, blue: 0.0, alpha: 1.0));
+        gradient.addColorStop(1, "green")
         
         // Set the fill style and draw a rectangle
         ctx.fillStyle = gradient;
@@ -1370,10 +1450,9 @@ class ViewController: UIViewController {
         let gradient = ctx.createLinearGradient(20,0, 220,0);
         
         // Add three color stops
-        let green = UIColor(red: 0.0, green: 128/255, blue: 0.0, alpha: 1.0)
-        gradient.addColorStop(offset: 0, color: green);
-        gradient.addColorStop(offset: 0.5, color: UIColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0));
-        gradient.addColorStop(offset: 1, color: green);
+        gradient.addColorStop(0, "green")
+        gradient.addColorStop(0.5, "rgba(0,255,255,1.0)")
+        gradient.addColorStop(1, "green")
         
         // Set the fill style and draw a rectangle
         ctx.fillStyle = gradient;
@@ -1398,7 +1477,7 @@ class ViewController: UIViewController {
     func arcToExample(ctx: TNSCanvasRenderingContext2D) {
         // Tangential lines
         ctx.beginPath()
-        ctx.strokeStyle = TNSColorStyle.Color(color: .darkGray)
+        ctx.strokeStyle = TNSColorStyle.TNSColor("darkgray")
         ctx.moveTo(200, 20)
         ctx.lineTo(200, 130)
         ctx.lineTo(50, 20)
@@ -1406,7 +1485,7 @@ class ViewController: UIViewController {
         
         // Arc
         ctx.beginPath()
-        ctx.strokeStyle = TNSColorStyle.Color(color: .black)
+        ctx.strokeStyle = TNSColorStyle.TNSColor("black")
         ctx.lineWidth = 5
         ctx.moveTo(200, 20)
         ctx.arcTo(200, 130, 50, 20, 40)
@@ -1414,13 +1493,13 @@ class ViewController: UIViewController {
         
         // Start point
         ctx.beginPath()
-        ctx.fillStyle = TNSColorStyle.Color(color: .blue)
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
         ctx.arc(200, 20, 5, 0, (TWO_PI))
         ctx.fill()
         
         // Control points
         ctx.beginPath()
-        ctx.fillStyle = TNSColorStyle.Color(color: .red)
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.arc(200, 130, 5, 0, TWO_PI) // Control point one
         ctx.arc(50, 20, 5, 0, TWO_PI)   // Control point two
         ctx.fill()
@@ -1431,12 +1510,12 @@ class ViewController: UIViewController {
         let width = ctx.getCanvas().width
         let height = ctx.getCanvas().height
         ctx.beginPath();
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#ff6"))
+        ctx.fillStyle = TNSColorStyle.TNSColor("#ff6")
         ctx.fillRect(0, 0, width, height);
         
         // Draw blue triangle
         ctx.beginPath();
-        ctx.fillStyle = TNSColorStyle.Color(color: .blue);
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
         ctx.moveTo(20, 20);
         ctx.lineTo(180, 20);
         ctx.lineTo(130, 130);
@@ -1452,7 +1531,24 @@ class ViewController: UIViewController {
         ctx.strokeText("Hello world", 50, 100);
         
         ctx.font = "50px serif"
-        ctx.fillText("Hello world", 50, 190);
+        ctx.fillText("Hello world", 50, 190)
+    }
+    
+    func textBaseLine(ctx: TNSCanvasRenderingContext2D){
+        let baselines: [TNSTextBaseLine] = [.Top, .Hanging, .Middle, .Alphabetic, .Ideographic, .Bottom]
+        ctx.font = "36px serif";
+        ctx.strokeStyle = TNSColorStyle.TNSColor("red")
+        var index = 0
+        for baseline in baselines {
+            ctx.textBaseline = baseline;
+            let y = Float(75 + index * 75)
+            ctx.beginPath()
+            ctx.moveTo(0, y + 0.5)
+            ctx.lineTo(550, y + 0.5)
+            ctx.stroke()
+            ctx.fillText("Abcdefghijklmnop (\(baseline))", 0, y)
+            index += 1
+        }
     }
     
     func setTransformExample(ctx: TNSCanvasRenderingContext2D){
@@ -1463,30 +1559,30 @@ class ViewController: UIViewController {
     func scaleExample(ctx: TNSCanvasRenderingContext2D){
         // Scaled rectangle
         ctx.scale(9, 3)
-        ctx.fillStyle = TNSColorStyle.Color(color: .red)
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.fillRect(10, 10, 8, 20);
         
         // Reset current transformation matrix to the identity matrix
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         
         // Non-scaled rectangle
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 128/255, green: 128/255, blue: 128/255, alpha: 1.0))
+        ctx.fillStyle = TNSColorStyle.TNSColor("rgba(128,128,128,1.0)")
         ctx.fillRect(10, 10, 8, 20);
     }
     
     func rotateAngleExample(ctx: TNSCanvasRenderingContext2D){
         // Point of transform origin
         ctx.arc(0, 0, 5, 0, TWO_PI);
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0));
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
         ctx.fill();
         
         // Non-rotated rectangle
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 128/255, green: 128/255, blue: 128/255, alpha: 1.0))
+        ctx.fillStyle = TNSColorStyle.TNSColor("rgba(128,128,128,1.0)")
         ctx.fillRect(100, 0, 80, 20);
         
         // Rotated rectangle
         ctx.rotate(45 * PI / 180);
-        ctx.fillStyle =  TNSColorStyle.Color(color: .red)
+        ctx.fillStyle =  TNSColorStyle.TNSColor("red")
         ctx.fillRect(100, 0, 80, 20);
         
         // Reset transformation matrix to the identity matrix
@@ -1495,7 +1591,7 @@ class ViewController: UIViewController {
     
     func secondRotateAngleExample(ctx: TNSCanvasRenderingContext2D) {
         // Non-rotated rectangle
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 128/255, green: 128/255, blue: 128/255, alpha: 1.0))
+        ctx.fillStyle = TNSColorStyle.TNSColor("rgba(128,128,128,1.0)")
         ctx.fillRect(80, 60, 140, 30);
         
         // Matrix transformation
@@ -1504,20 +1600,20 @@ class ViewController: UIViewController {
         ctx.translate(-150, -75);
         
         // Rotated rectangle
-        ctx.fillStyle = TNSColorStyle.Color(color: .red)
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.fillRect(80, 60, 140, 30);
     }
     
     func translateExample(ctx: TNSCanvasRenderingContext2D){
         ctx.translate(110, 30);
-        ctx.fillStyle = TNSColorStyle.Color(color: .red)
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.fillRect(0, 0, 80, 80);
         
         // Reset current transformation matrix to the identity matrix
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         
         // Unmoved square
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 128/255, green: 128/255, blue: 128/255, alpha: 1.0))
+        ctx.fillStyle = TNSColorStyle.TNSColor("rgba(128,128,128,1.0)")
         ctx.fillRect(0, 0, 80, 80);
     }
     
@@ -1529,14 +1625,14 @@ class ViewController: UIViewController {
         ctx.stroke();
         
         // Start and end points
-        ctx.fillStyle = TNSColorStyle.Color(color: .blue)
+        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
         ctx.beginPath();
         ctx.arc(50, 20, 5, 0, TWO_PI);   // Start point
         ctx.arc(50, 100, 5, 0, TWO_PI);  // End point
         ctx.fill();
         
         // Control point
-        ctx.fillStyle = TNSColorStyle.Color(color: .red)
+        ctx.fillStyle = TNSColorStyle.TNSColor("red")
         ctx.beginPath();
         ctx.arc(230, 30, 5, 0, TWO_PI);
         ctx.fill();
@@ -1597,8 +1693,8 @@ class ViewController: UIViewController {
             ctx.globalCompositeOperation = TNSCompositeOperationType.DestinationOver
             ctx.clearRect(0, 0, 300, 300); // clear canvas
             
-            ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 0, green: 0, blue: 0, alpha: 0.4))
-            ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(red: 0.0, green: 153/255, blue: 1.0, alpha: 0.4))
+            ctx.fillStyle = TNSColorStyle.TNSColor("rgba(0,0,0,0.4)")
+            ctx.strokeStyle = TNSColorStyle.TNSColor("rgba(0,153,255,0.4)")
             ctx.save();
             ctx.translate(150, 150);
             
@@ -1672,8 +1768,8 @@ class ViewController: UIViewController {
         ctx.translate(Float(75 ), Float(75 ));
         ctx.scale(0.4, 0.4);
         ctx.rotate(-PI / 2);
-        ctx.strokeStyle = TNSColorStyle.Color(color: .black);
-        ctx.fillStyle = TNSColorStyle.Color(color: .white);
+        ctx.strokeStyle = TNSColorStyle.TNSColor("black")
+        ctx.fillStyle = TNSColorStyle.TNSColor("white")
         ctx.lineWidth = Float(8  );
         ctx.lineCap = TNSLineCap.Round;
         
@@ -1707,7 +1803,7 @@ class ViewController: UIViewController {
         var hr  = Float(hours)
         hr = hr >= 12 ? hr - 12 : hr;
         
-        ctx.fillStyle = TNSColorStyle.Color(color: .black);
+        ctx.fillStyle = TNSColorStyle.TNSColor("black")
         
         // write Hours
         ctx.save();
@@ -1735,8 +1831,8 @@ class ViewController: UIViewController {
         // Write seconds
         ctx.save();
         ctx.rotate(sec * PI / 30);
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#D40000"));
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#D40000"));
+        ctx.strokeStyle = TNSColorStyle.TNSColor("#D40000")
+        ctx.fillStyle = TNSColorStyle.TNSColor("#D40000")
         ctx.lineWidth = Float(6 );
         ctx.beginPath();
         ctx.moveTo(Float(-30 ), 0);
@@ -1748,14 +1844,14 @@ class ViewController: UIViewController {
         ctx.beginPath();
         ctx.arc(Float(95 ), 0, Float(10 ), 0, PI * 2, true);
         ctx.stroke();
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 0, green: 0, blue: 0, alpha: 0));
+        ctx.fillStyle = TNSColorStyle.TNSColor("rgba(0,0,0,0)")
         ctx.arc(0, 0, Float(3 ), 0, PI * 2, true);
         ctx.fill();
         ctx.restore();
         
         ctx.beginPath();
         ctx.lineWidth = Float(14 );
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#325FA2"));
+        ctx.strokeStyle = TNSColorStyle.TNSColor("#325FA2")
         ctx.arc(0, 0, Float(142 ), 0, PI * 2, true);
         ctx.stroke();
         
@@ -1778,8 +1874,8 @@ class ViewController: UIViewController {
         ctx.translate(75, 75);
         ctx.scale(0.5, 0.5);
         ctx.rotate(-PI / 2);
-        ctx.strokeStyle = TNSColorStyle.Color(color: .black);
-        ctx.fillStyle = TNSColorStyle.Color(color: .white);
+        ctx.strokeStyle = TNSColorStyle.TNSColor("black")
+        ctx.fillStyle = TNSColorStyle.TNSColor("white")
         ctx.lineWidth = 8;
         ctx.lineCap = TNSLineCap.Round;
         
@@ -1813,7 +1909,7 @@ class ViewController: UIViewController {
         var hr  = Float(hours)
         hr = hr >= 12 ? hr - 12 : hr;
         
-        ctx.fillStyle = TNSColorStyle.Color(color: .black);
+        ctx.fillStyle = TNSColorStyle.TNSColor("black")
         
         // write Hours
         ctx.save();
@@ -1841,8 +1937,8 @@ class ViewController: UIViewController {
         // Write seconds
         ctx.save();
         ctx.rotate(sec * PI / 30);
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#D40000"));
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#D40000"));
+        ctx.strokeStyle = TNSColorStyle.TNSColor("#D40000")
+        ctx.fillStyle = TNSColorStyle.TNSColor("#D40000")
         ctx.lineWidth = 6;
         ctx.beginPath();
         ctx.moveTo(-30, 0);
@@ -1854,14 +1950,14 @@ class ViewController: UIViewController {
         ctx.beginPath();
         ctx.arc(95, 0, 10, 0, PI * 2, true);
         ctx.stroke();
-        ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: 0, green: 0, blue: 0, alpha: 0));
+        ctx.fillStyle = TNSColorStyle.TNSColor("rgba(0,0,0,0)");
         ctx.arc(0,0, 3, 0,PI * 2, true);
         ctx.fill();
         ctx.restore();
         
         ctx.beginPath();
         ctx.lineWidth = 14;
-        ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#325FA2"));
+        ctx.strokeStyle = TNSColorStyle.TNSColor("#325FA2")
         ctx.arc(0,0, 142, 0, PI * 2, true);
         ctx.stroke();
         
@@ -1897,9 +1993,9 @@ class ViewController: UIViewController {
         var radius: Float = 4
         var W: Int = 0
         var H: Int = 0
-        var color: TNSColorStyle.Color
+        var color: TNSColorStyle.TNSColor
         static var PI_TWO = Float.pi * 2
-        init(width: Int, height: Int, color: TNSColorStyle.Color) {
+        init(width: Int, height: Int, color: TNSColorStyle.TNSColor) {
             W = width
             H = height
             x = Float.random(in: 0...1) * Float(W)
@@ -1953,7 +2049,7 @@ class ViewController: UIViewController {
         
     }
     
-    var p: Particle = Particle(width: 0, height: 0, color: TNSColorStyle.Color(color: UIColor(fromString: "white")))
+    var p: Particle = Particle(width: 0, height: 0, color: TNSColorStyle.TNSColor( "white"))
     func update(ctx: TNSCanvasRenderingContext2D) {
         
         // In this function, we are first going to update every
@@ -1998,8 +2094,8 @@ class ViewController: UIViewController {
         }
     }
     
-    let whiteColor = TNSColorStyle.Color(color: UIColor(fromString: "white"))
-    let blackColor = TNSColorStyle.Color(color: UIColor(fromString: "black"))
+    let whiteColor = TNSColorStyle.TNSColor("white")
+    let blackColor = TNSColorStyle.TNSColor("black")
     func distance(ctx:TNSCanvasRenderingContext2D,p1: Particle, p2: Particle) {
         var colorIndex = 0
         let dx = p1.x - p2.x;
@@ -2078,13 +2174,13 @@ class ViewController: UIViewController {
                 
                 switch(count) {
                 case 0:
-                    ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#008000"))
+                    ctx.strokeStyle = TNSColorStyle.TNSColor("#008000")
                 case 1:
-                    ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#0000ff"))
+                    ctx.strokeStyle = TNSColorStyle.TNSColor("#0000ff")
                 case 2:
-                    ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#ff0000"))
+                    ctx.strokeStyle = TNSColorStyle.TNSColor("#ff0000")
                 case 3:
-                    ctx.strokeStyle = TNSColorStyle.Color(color: UIColor(fromHex: "#800080"))
+                    ctx.strokeStyle = TNSColorStyle.TNSColor("#800080")
                 default: break
                     
                 }
@@ -2142,7 +2238,7 @@ class ViewController: UIViewController {
             
             ctx.beginPath();
             ctx.rect((x * 25) , (y * 25) , Float(24 ) , Float(24 ));
-            ctx.fillStyle = TNSColorStyle.Color(color: UIColor(red: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: 1.0))
+            ctx.fillStyle = TNSColorStyle.TNSColor("rgba(\(red),\(green),\(blue),1.0)")
             ctx.fill();
         }
         

@@ -8,14 +8,15 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import { VertexTangentsHelper } from 'three/examples/jsm/helpers/VertexTangentsHelper';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import { DRACOLoader } from './custom/DRACOLoader';
 import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
 import { Points } from 'three';
 import { TypedArrayUtils } from 'three/examples/jsm/utils/TypedArrayUtils';
 import { Water } from 'three/examples/jsm/objects/Water';
 import { Sky } from 'three/examples/jsm/objects/Sky';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
-
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment";
+import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 // import {ThreeMFLoader} from "three/examples/jsm/loaders/3MFLoader";
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -39,21 +40,25 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		this.canvas = args.object;
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
-		//	this.geoColors(this.canvas);
+		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
-		//	this.skinningAndMorphing(this.canvas);
+		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		//this.threeOcean(this.canvas);
-		// this.threeCube(this.canvas);
+		this.threeOcean(this.canvas);
+		//this.threeCube(this.canvas);
+		//this.threeCar(this.canvas);
+		//this.threeKeyframes(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		this.gtlfLoader(this.canvas);
+		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
-		// this.ThreeMF(this.canvas);
+		//this.ThreeMF(this.canvas);
 		//this.gtlfTonemapping(this.canvas);
+		//this.bufferGeo(this.canvas);
+		//this.birds(this.canvas);
 	}
 
 	gtlfLoader(canvas) {
@@ -67,7 +72,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			camera = new THREE.PerspectiveCamera(75, width / height, 0.25, 20);
 			camera.position.set(-1.8, 0.6, 2.7 * 1.2);
 			scene = new THREE.Scene();
-
+			const light = new THREE.SpotLight();
+			light.position.set(-1.8, 0.6, 2.7 * 1.2);
+			scene.add(light);
 			new RGBELoader()
 				.setDataType(THREE.UnsignedByteType)
 				.setPath(this.root + '/textures/equirectangular/')
@@ -1280,6 +1287,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene.add(mesh);
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
 		}
 
@@ -1298,253 +1306,142 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 	threeCar(canvas) {
 		const context = canvas.getContext('webgl2') as any;
-		var camera, scene, renderer;
-		var stats, carModel, materialsLib;
+		let camera, scene, renderer;
+		let stats;
 
-		var bodyMatSelect = {
-			selectedIndex: 0,
-		};
-		var rimMatSelect = {
-			selectedIndex: 0,
-		};
-		var glassMatSelect = {
-			selectedIndex: 0,
-		};
+		let grid;
+		let controls;
 
-		var carParts = {
-			body: [],
-			rims: [],
-			glass: [],
-		};
+		const wheels = [];
+		let bodyColor = '#ff0000';
+		let detailsColor = '#ffffff';
+		let glassColor = '#ffffff';
+		function init(root) {
 
-		var grid,
-			wheels = [];
+			renderer = new THREE.WebGLRenderer({ context, antialias: false });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
 
-		const init = () => {
-			camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 200);
-
-			scene = new THREE.Scene();
-			// scene.fog = new THREE.Fog( 0xd7cbb1, 1, 80 );
-
-			new RGBELoader()
-				.setDataType(THREE.UnsignedByteType)
-				.setPath(this.root + 'textures/equirectangular/')
-				.load('quarry_01_1k.hdr', function (texture) {
-					var envMap = pmremGenerator.fromEquirectangular(texture).texture;
-					pmremGenerator.dispose();
-
-					scene.background = envMap;
-					scene.environment = envMap;
-
-					//
-
-					initCar();
-					initMaterials();
-					initMaterialSelectionMenus();
-
-					/*   function doRender(){
-											requestAnimationFrame(doRender)
-											render()
-									}
-								 setTimeout(()=>{
-										 console.log('render??')
-
-									requestAnimationFrame(doRender)
-								 },5000)*/
-				});
-
-			var ground = new THREE.Mesh(
-				new THREE.PlaneBufferGeometry(400, 400),
-				new THREE.MeshBasicMaterial({
-					color: 0x6e6a62,
-					depthWrite: false,
-				})
-			);
-
-			ground.rotation.x = -Math.PI / 2;
-			ground.renderOrder = 1;
-			scene.add(ground);
-
-			grid = new THREE.GridHelper(400, 80, 0x000000, 0x000000);
+			grid = new THREE.GridHelper(100, 40, 0x000000, 0x000000);
 			grid.material.opacity = 0.1;
 			grid.material.depthWrite = false;
 			grid.material.transparent = true;
-			scene.add(grid);
-
-			renderer = new THREE.WebGLRenderer({ context, antialias: true });
-
-			renderer.setPixelRatio(window.devicePixelRatio);
-
-			renderer.setSize(window.innerWidth, window.innerHeight);
-
-			console.log(window.innerWidth, window.innerHeight);
-
 			renderer.outputEncoding = THREE.sRGBEncoding;
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 0.85;
 
-			var pmremGenerator = new THREE.PMREMGenerator(renderer);
-			pmremGenerator.compileEquirectangularShader();
-
-			/*stats = new Stats();
-			container.appendChild( stats.dom );
-	*/
 			window.addEventListener('resize', onWindowResize, false);
 
+			//
+			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+			camera.position.set(4.25, 1.4, -7);
+
+			controls = new OrbitControls(camera, canvas);
+			controls.target.set(0, 0.5, 0);
+
+			const environment = new RoomEnvironment();
+			const pmremGenerator = new THREE.PMREMGenerator(renderer);
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0xeeeeee);
+			scene.environment = pmremGenerator.fromScene(environment).texture;
+			scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
+
+			const light = new THREE.SpotLight('white', 1);
+			light.position.set(4.25, 10, -10)
+			scene.add(light);
+			scene.add(grid);
+
+			// materials
+
+			const bodyMaterial = new THREE.MeshPhysicalMaterial({
+				color: 0xff0000, metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
+			});
+
+			const detailsMaterial = new THREE.MeshStandardMaterial({
+				color: 0xffffff, metalness: 1.0, roughness: 0.5
+			});
+
+			const glassMaterial = new THREE.MeshPhysicalMaterial({
+				color: 0xffffff, metalness: 0, roughness: 0.1, transmission: 0.9, transparent: true
+			});
+
+			bodyMaterial.color.set(bodyColor);
+			detailsMaterial.color.set(detailsColor);
+			glassMaterial.color.set(glassColor);
+			/*
+			const bodyColorInput = document.getElementById( 'body-color' );
+			bodyColorInput.addEventListener( 'input', function () {
+
+				bodyMaterial.color.set( this.value );
+
+			} );
+
+			const detailsColorInput = document.getElementById( 'details-color' );
+			detailsColorInput.addEventListener( 'input', function () {
+
+				detailsMaterial.color.set( this.value );
+
+			} );
+
+			const glassColorInput = document.getElementById( 'glass-color' );
+			glassColorInput.addEventListener( 'input', function () {
+
+				glassMaterial.color.set( this.value );
+
+			} );
+			*/
+
+			// Car
+
+			const shadow = new THREE.TextureLoader().load(root + '/models/gltf/ferrari_ao.png');
+			// almost working
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath(root + '/js/libs/draco/gltf/');
+			dracoLoader.setDecoderConfig({ type: 'js' });
+
+			const loader = new GLTFLoader();
+			loader.setDRACOLoader(dracoLoader);
+
+			loader.load(root + '/models/gltf/ferrari.glb', function (gltf) {
+				const carModel: any = gltf.scene.children[0];
+
+				carModel.getObjectByName('body').material = bodyMaterial;
+
+				carModel.getObjectByName('rim_fl').material = detailsMaterial;
+				carModel.getObjectByName('rim_fr').material = detailsMaterial;
+				carModel.getObjectByName('rim_rr').material = detailsMaterial;
+				carModel.getObjectByName('rim_rl').material = detailsMaterial;
+				carModel.getObjectByName('trim').material = detailsMaterial;
+
+				carModel.getObjectByName('glass').material = glassMaterial;
+
+				wheels.push(
+					carModel.getObjectByName('wheel_fl'),
+					carModel.getObjectByName('wheel_fr'),
+					carModel.getObjectByName('wheel_rl'),
+					carModel.getObjectByName('wheel_rr')
+				);
+
+				// shadow
+				const mesh = new THREE.Mesh(
+					new THREE.PlaneBufferGeometry(0.655 * 4, 1.3 * 4),
+					new THREE.MeshBasicMaterial({
+						map: shadow, toneMapped: false, transparent: true
+					})
+				);
+				mesh.rotation.x = -Math.PI / 2;
+				mesh.renderOrder = 2;
+				carModel.add(mesh);
+
+				scene.add(carModel);
+
+			});
+
 			renderer.setAnimationLoop(render);
-		};
 
-		const initCar = () => {
-			// TODO support this
-			var dracoLoader = new DRACOLoader();
-			//dracoLoader.setDecoderPath( root + 'js/libs/draco/gltf/' );
-			// dracoLoader.setDecoderConfig({ type: 'js' });
+			controls.update();
 
-			var loader = new GLTFLoader();
-			//loader.setDRACOLoader( dracoLoader );
-
-			loader.load(
-				this.root + 'models/gltf/ferrari.glb',
-				(gltf) => {
-					carModel = gltf.scene.children[0];
-
-					// shadow
-					var texture = new THREE.TextureLoader().load(this.root + 'models/gltf/ferrari_ao.png');
-					var shadow = new THREE.Mesh(
-						new THREE.PlaneBufferGeometry(0.655 * 4, 1.3 * 4),
-						new THREE.MeshBasicMaterial({
-							map: texture,
-							opacity: 0.7,
-							transparent: true,
-						})
-					);
-					shadow.rotation.x = -Math.PI / 2;
-					shadow.renderOrder = 2;
-					carModel.add(shadow);
-
-					scene.add(carModel);
-
-					// car parts for material selection
-					carParts.body.push(carModel.getObjectByName('body'));
-					carParts.rims.push(carModel.getObjectByName('rim_fl'), carModel.getObjectByName('rim_fr'), carModel.getObjectByName('rim_rr'), carModel.getObjectByName('rim_rl'), carModel.getObjectByName('trim'));
-
-					carParts.glass.push(carModel.getObjectByName('glass'));
-
-					wheels.push(carModel.getObjectByName('wheel_fl'), carModel.getObjectByName('wheel_fr'), carModel.getObjectByName('wheel_rl'), carModel.getObjectByName('wheel_rr'));
-
-					updateMaterials();
-				},
-				null,
-				(e) => {
-					console.log('model load error', e);
-				}
-			);
-		};
-
-		function initMaterials() {
-			materialsLib = {
-				main: [
-					new THREE.MeshStandardMaterial({
-						color: 0xff4400,
-						metalness: 1.0,
-						roughness: 0.2,
-						name: 'orange',
-					}),
-					new THREE.MeshStandardMaterial({
-						color: 0x001166,
-						metalness: 1.0,
-						roughness: 0.2,
-						name: 'blue',
-					}),
-					new THREE.MeshStandardMaterial({
-						color: 0x990000,
-						metalness: 1.0,
-						roughness: 0.2,
-						name: 'red',
-					}),
-					new THREE.MeshStandardMaterial({
-						color: 0x000000,
-						metalness: 1.0,
-						roughness: 0.4,
-						name: 'black',
-					}),
-					new THREE.MeshStandardMaterial({
-						color: 0xffffff,
-						metalness: 0.1,
-						roughness: 0.2,
-						name: 'white',
-					}),
-					new THREE.MeshStandardMaterial({
-						color: 0xffffff,
-						metalness: 1.0,
-						roughness: 0.2,
-						name: 'metallic',
-					}),
-				],
-
-				glass: [
-					new (THREE.MeshPhysicalMaterial as any)({
-						color: 0xffffff,
-						metalness: 0,
-						roughness: 0,
-						transparency: 1.0,
-						transparent: true,
-						name: 'clear',
-					}),
-					new (THREE.MeshPhysicalMaterial as any)({
-						color: 0x000000,
-						metalness: 0,
-						roughness: 0,
-						transparency: 0.7,
-						transparent: true,
-						name: 'smoked',
-					}),
-					new (THREE.MeshPhysicalMaterial as any)({
-						color: 0x001133,
-						metalness: 0,
-						roughness: 0,
-						transparency: 0.7,
-						transparent: true,
-						name: 'blue',
-					}),
-				],
-			};
-		}
-
-		function initMaterialSelectionMenus() {
-			function addOption(name, menu) {
-				var option = document.createElement('option');
-				option.text = name;
-				option.value = name;
-				//menu.add( option );
-			}
-
-			materialsLib.main.forEach(function (material) {
-				addOption(material.name, bodyMatSelect);
-				addOption(material.name, rimMatSelect);
-			});
-
-			materialsLib.glass.forEach(function (material) {
-				addOption(material.name, glassMatSelect);
-			});
-
-			bodyMatSelect.selectedIndex = 2;
-			rimMatSelect.selectedIndex = 5;
-			glassMatSelect.selectedIndex = 0;
-
-			//	bodyMatSelect.addEventListener( 'change', updateMaterials );
-			//	rimMatSelect.addEventListener( 'change', updateMaterials );
-			//	glassMatSelect.addEventListener( 'change', updateMaterials );
-		}
-
-		// set materials to the current values of the selection menus
-		function updateMaterials() {
-			var bodyMat = materialsLib.main[bodyMatSelect.selectedIndex];
-			var rimMat = materialsLib.main[rimMatSelect.selectedIndex];
-			var glassMat = materialsLib.glass[glassMatSelect.selectedIndex];
-
-			carParts.body.forEach((part) => (part.material = bodyMat));
-			carParts.rims.forEach((part) => (part.material = rimMat));
-			carParts.glass.forEach((part) => (part.material = glassMat));
 		}
 
 		function onWindowResize() {
@@ -1552,27 +1449,885 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			camera.updateProjectionMatrix();
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
+
 		}
 
 		function render() {
-			var time = -performance.now() / 1000;
 
-			camera.position.x = Math.cos(time / 10) * 6;
-			camera.position.y = 1.5;
-			camera.position.z = Math.sin(time / 10) * 6;
-			camera.lookAt(0, 0.5, 0);
+			const time = -performance.now() / 1000;
 
-			for (var i = 0; i < wheels.length; i++) {
+			for (let i = 0; i < wheels.length; i++) {
+
 				wheels[i].rotation.x = time * Math.PI;
+
 			}
 
-			grid.position.z = -time % 5;
+			grid.position.z = -(time) % 5;
 
 			renderer.render(scene, camera);
+
 			//	stats.update();
+
 		}
 
+		init(this.root);
+	}
+
+	threeKeyframes(canvas) {
+		let mixer;
+		const context = canvas.getContext('webgl2') as any;
+		const clock = new THREE.Clock();
+		const renderer = new THREE.WebGLRenderer({ context, antialias: true });
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		renderer.outputEncoding = THREE.sRGBEncoding;
+
+
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color(0xbfe3dd);
+
+		const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, .1, 1000);
+		camera.position.set(5, 2, 8);
+
+		const controls = new OrbitControls(camera, canvas);
+		controls.target.set(0, 0.5, 0);
+		controls.update();
+		controls.enablePan = false;
+		controls.enableDamping = true;
+
+		scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.4));
+
+		const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+		dirLight.position.set(5, 2, 8);
+		scene.add(dirLight);
+
+		// envmap
+		const path = this.root + '/textures/cube/Park2/';
+		const format = '.jpg';
+		const envMap = new THREE.CubeTextureLoader().load([
+			path + 'posx' + format, path + 'negx' + format,
+			path + 'posy' + format, path + 'negy' + format,
+			path + 'posz' + format, path + 'negz' + format
+		], undefined, undefined, e => {
+			console.log('CubeTextureLoader', e);
+		});
+
+		const dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath(this.root + '/js/libs/draco/gltf/');
+		dracoLoader.setDecoderConfig({ type: 'js' });
+
+		const loader = new GLTFLoader();
+		loader.setDRACOLoader(dracoLoader);
+		loader.load(this.root + '/models/gltf/LittlestTokyo.glb', function (gltf) {
+			const model = gltf.scene;
+			model.position.set(1, 1, 0);
+			model.scale.set(0.01, 0.01, 0.01);
+			model.traverse(function (child: any) {
+
+				if (child.isMesh) child.material.envMap = envMap;
+
+			});
+
+			scene.add(model);
+
+			mixer = new THREE.AnimationMixer(model);
+			mixer.clipAction(gltf.animations[0]).play();
+
+			animate();
+
+		}, undefined, function (e) {
+			console.log('e', e)
+			console.error(e);
+
+		});
+
+
+		window.onresize = function () {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+		};
+
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+
+			const delta = clock.getDelta();
+
+			mixer.update(delta);
+
+			controls.update();
+
+			renderer.render(scene, camera);
+
+		}
+	}
+	birds(canvas) {
+		const context = canvas.getContext('webgl2') as any;
+
+
+		/* TEXTURE WIDTH FOR SIMULATION */
+		const WIDTH = 20;
+		const BIRDS = WIDTH * WIDTH;
+
+		/* BAKE ANIMATION INTO TEXTURE and CREATE GEOMETRY FROM BASE MODEL */
+		const BirdGeometry = new THREE.BufferGeometry();
+		let textureAnimation, durationAnimation, birdMesh, materialShader, vertexPerBird;
+
+		function nextPowerOf2(n) {
+
+			return Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
+
+		}
+
+		// @ts-ignore
+		Math.lerp = function (value1, value2, amount) {
+
+			amount = Math.max(Math.min(amount, 1), 0);
+			return value1 + (value2 - value1) * amount;
+
+		};
+
+		const gltfs = ['/models/gltf/Parrot.glb', '/models/gltf/Flamingo.glb'];
+		const colors = [0xccFFFF, 0xffdeff];
+		const sizes = [0.2, 0.1];
+		const selectModel = Math.floor(Math.random() * gltfs.length);
+		new GLTFLoader()
+			.setPath(this.root)
+			.load(gltfs[selectModel], function (gltf: any) {
+				const animations = gltf.animations;
+				durationAnimation = Math.round(animations[0].duration * 60);
+				const birdGeo = gltf.scene.children[0].geometry;
+				const morphAttributes = birdGeo.morphAttributes.position;
+				const tHeight = nextPowerOf2(durationAnimation);
+				const tWidth = nextPowerOf2(birdGeo.getAttribute('position').count);
+				vertexPerBird = birdGeo.getAttribute('position').count;
+				const tData = new Float32Array(3 * tWidth * tHeight);
+
+				for (let i = 0; i < tWidth; i++) {
+
+					for (let j = 0; j < tHeight; j++) {
+
+						const offset = j * tWidth * 3;
+
+						const curMorph = Math.floor(j / durationAnimation * morphAttributes.length);
+						const nextMorph = (Math.floor(j / durationAnimation * morphAttributes.length) + 1) % morphAttributes.length;
+						const lerpAmount = j / durationAnimation * morphAttributes.length % 1;
+
+						if (j < durationAnimation) {
+
+							let d0, d1;
+
+							d0 = morphAttributes[curMorph].array[i * 3];
+							d1 = morphAttributes[nextMorph].array[i * 3];
+							//@ts-ignore
+							if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3] = Math.lerp(d0, d1, lerpAmount);
+
+							d0 = morphAttributes[curMorph].array[i * 3 + 1];
+							d1 = morphAttributes[nextMorph].array[i * 3 + 1];
+
+							//@ts-ignore
+							if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3 + 1] = Math.lerp(d0, d1, lerpAmount);
+
+							d0 = morphAttributes[curMorph].array[i * 3 + 2];
+							d1 = morphAttributes[nextMorph].array[i * 3 + 2];
+							//@ts-ignore
+							if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3 + 2] = Math.lerp(d0, d1, lerpAmount);
+
+						}
+
+					}
+
+				}
+
+				textureAnimation = new THREE.DataTexture(tData, tWidth, tHeight, THREE.RGBFormat, THREE.FloatType);
+				textureAnimation.needsUpdate = true;
+
+				const vertices = [], color = [], reference = [], seeds = [], indices = [];
+				const totalVertices = birdGeo.getAttribute('position').count * 3 * BIRDS;
+				for (let i = 0; i < totalVertices; i++) {
+
+					const bIndex = i % (birdGeo.getAttribute('position').count * 3);
+					vertices.push(birdGeo.getAttribute('position').array[bIndex]);
+					color.push(birdGeo.getAttribute('color').array[bIndex]);
+
+				}
+
+				let r = Math.random();
+				for (let i = 0; i < birdGeo.getAttribute('position').count * BIRDS; i++) {
+
+					const bIndex = i % (birdGeo.getAttribute('position').count);
+					const bird = Math.floor(i / birdGeo.getAttribute('position').count);
+					if (bIndex == 0) r = Math.random();
+					const j = ~ ~bird;
+					const x = (j % WIDTH) / WIDTH;
+					const y = ~ ~(j / WIDTH) / WIDTH;
+					reference.push(x, y, bIndex / tWidth, durationAnimation / tHeight);
+					seeds.push(bird, r, Math.random(), Math.random());
+
+				}
+
+				for (let i = 0; i < birdGeo.index.array.length * BIRDS; i++) {
+
+					const offset = Math.floor(i / birdGeo.index.array.length) * (birdGeo.getAttribute('position').count);
+					indices.push(birdGeo.index.array[i % birdGeo.index.array.length] + offset);
+
+				}
+
+				BirdGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
+				BirdGeometry.setAttribute('birdColor', new THREE.BufferAttribute(new Float32Array(color), 3));
+				BirdGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(color), 3));
+				BirdGeometry.setAttribute('reference', new THREE.BufferAttribute(new Float32Array(reference), 4));
+				BirdGeometry.setAttribute('seeds', new THREE.BufferAttribute(new Float32Array(seeds), 4));
+
+				BirdGeometry.setIndex(indices);
+
+				init();
+				animate();
+
+			});
+
+		let container, stats;
+		let camera, scene, renderer;
+		let mouseX = 0, mouseY = 0;
+
+		let windowHalfX = window.innerWidth / 2;
+		let windowHalfY = window.innerHeight / 2;
+
+		const BOUNDS = 800, BOUNDS_HALF = BOUNDS / 2;
+
+		let last = performance.now();
+
+		let gpuCompute;
+		let velocityVariable;
+		let positionVariable;
+		let positionUniforms;
+		let velocityUniforms;
+
+		function init() {
+
+			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
+			camera.position.z = 350;
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(colors[selectModel]);
+			scene.fog = new THREE.Fog(colors[selectModel], 100, 1000);
+
+			// LIGHTS
+
+			const hemiLight = new THREE.HemisphereLight(colors[selectModel], 0xffffff, 1.6);
+			hemiLight.color.setHSL(0.6, 1, 0.6);
+			hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+			hemiLight.position.set(0, 50, 0);
+			scene.add(hemiLight);
+
+			const dirLight = new THREE.DirectionalLight(0x00CED1, 0.6);
+			dirLight.color.setHSL(0.1, 1, 0.95);
+			dirLight.position.set(- 1, 1.75, 1);
+			dirLight.position.multiplyScalar(30);
+			scene.add(dirLight);
+
+			renderer = new THREE.WebGLRenderer({ context, antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+			initComputeRenderer();
+
+			window.addEventListener('resize', onWindowResize, false);
+
+
+			const effectController = {
+
+				separation: 20.0,
+				alignment: 20.0,
+				cohesion: 20.0,
+				freedom: 0.75,
+				size: sizes[selectModel],
+				count: BIRDS
+
+			};
+
+			const valuesChanger = function () {
+
+				velocityUniforms["separationDistance"].value = effectController.separation;
+				velocityUniforms["alignmentDistance"].value = effectController.alignment;
+				velocityUniforms["cohesionDistance"].value = effectController.cohesion;
+				velocityUniforms["freedomFactor"].value = effectController.freedom;
+				if (materialShader) materialShader.uniforms["size"].value = effectController.size;
+				BirdGeometry.setDrawRange(0, vertexPerBird * effectController.count);
+
+			};
+
+			valuesChanger();
+
+
+			initBirds(effectController);
+
+		}
+
+		function initComputeRenderer() {
+
+			gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, renderer);
+
+			if (isSafari()) {
+
+				gpuCompute.setDataType(THREE.HalfFloatType);
+
+			}
+
+			const dtPosition = gpuCompute.createTexture();
+			const dtVelocity = gpuCompute.createTexture();
+			fillPositionTexture(dtPosition);
+			fillVelocityTexture(dtVelocity);
+			const fragmentShaderVelocity = `
+				uniform float time;
+			uniform float testing;
+			uniform float delta; // about 0.016
+			uniform float separationDistance; // 20
+			uniform float alignmentDistance; // 40
+			uniform float cohesionDistance; //
+			uniform float freedomFactor;
+			uniform vec3 predator;
+
+			const float width = resolution.x;
+			const float height = resolution.y;
+
+			const float PI = 3.141592653589793;
+			const float PI_2 = PI * 2.0;
+			// const float VISION = PI * 0.55;
+
+			float zoneRadius = 40.0;
+			float zoneRadiusSquared = 1600.0;
+
+			float separationThresh = 0.45;
+			float alignmentThresh = 0.65;
+
+			const float UPPER_BOUNDS = BOUNDS;
+			const float LOWER_BOUNDS = -UPPER_BOUNDS;
+
+			const float SPEED_LIMIT = 9.0;
+
+			float rand( vec2 co ){
+				return fract( sin( dot( co.xy, vec2(12.9898,78.233) ) ) * 43758.5453 );
+			}
+
+			void main() {
+
+				zoneRadius = separationDistance + alignmentDistance + cohesionDistance;
+				separationThresh = separationDistance / zoneRadius;
+				alignmentThresh = ( separationDistance + alignmentDistance ) / zoneRadius;
+				zoneRadiusSquared = zoneRadius * zoneRadius;
+
+
+				vec2 uv = gl_FragCoord.xy / resolution.xy;
+				vec3 birdPosition, birdVelocity;
+
+				vec3 selfPosition = texture2D( texturePosition, uv ).xyz;
+				vec3 selfVelocity = texture2D( textureVelocity, uv ).xyz;
+
+				float dist;
+				vec3 dir; // direction
+				float distSquared;
+
+				float separationSquared = separationDistance * separationDistance;
+				float cohesionSquared = cohesionDistance * cohesionDistance;
+
+				float f;
+				float percent;
+
+				vec3 velocity = selfVelocity;
+
+				float limit = SPEED_LIMIT;
+
+				dir = predator * UPPER_BOUNDS - selfPosition;
+				dir.z = 0.;
+				// dir.z *= 0.6;
+				dist = length( dir );
+				distSquared = dist * dist;
+
+				float preyRadius = 150.0;
+				float preyRadiusSq = preyRadius * preyRadius;
+
+
+				// move birds away from predator
+				if ( dist < preyRadius ) {
+
+					f = ( distSquared / preyRadiusSq - 1.0 ) * delta * 100.;
+					velocity += normalize( dir ) * f;
+					limit += 5.0;
+				}
+
+
+				// if (testing == 0.0) {}
+				// if ( rand( uv + time ) < freedomFactor ) {}
+
+
+				// Attract flocks to the center
+				vec3 central = vec3( 0., 0., 0. );
+				dir = selfPosition - central;
+				dist = length( dir );
+
+				dir.y *= 2.5;
+				velocity -= normalize( dir ) * delta * 5.;
+
+				for ( float y = 0.0; y < height; y++ ) {
+					for ( float x = 0.0; x < width; x++ ) {
+
+						vec2 ref = vec2( x + 0.5, y + 0.5 ) / resolution.xy;
+						birdPosition = texture2D( texturePosition, ref ).xyz;
+
+						dir = birdPosition - selfPosition;
+						dist = length( dir );
+
+						if ( dist < 0.0001 ) continue;
+
+						distSquared = dist * dist;
+
+						if ( distSquared > zoneRadiusSquared ) continue;
+
+						percent = distSquared / zoneRadiusSquared;
+
+						if ( percent < separationThresh ) { // low
+
+							// Separation - Move apart for comfort
+							f = ( separationThresh / percent - 1.0 ) * delta;
+							velocity -= normalize( dir ) * f;
+
+						} else if ( percent < alignmentThresh ) { // high
+
+							// Alignment - fly the same direction
+							float threshDelta = alignmentThresh - separationThresh;
+							float adjustedPercent = ( percent - separationThresh ) / threshDelta;
+
+							birdVelocity = texture2D( textureVelocity, ref ).xyz;
+
+							f = ( 0.5 - cos( adjustedPercent * PI_2 ) * 0.5 + 0.5 ) * delta;
+							velocity += normalize( birdVelocity ) * f;
+
+						} else {
+
+							// Attraction / Cohesion - move closer
+							float threshDelta = 1.0 - alignmentThresh;
+							float adjustedPercent;
+							if( threshDelta == 0. ) adjustedPercent = 1.;
+							else adjustedPercent = ( percent - alignmentThresh ) / threshDelta;
+
+							f = ( 0.5 - ( cos( adjustedPercent * PI_2 ) * -0.5 + 0.5 ) ) * delta;
+
+							velocity += normalize( dir ) * f;
+
+						}
+
+					}
+
+				}
+
+				// this make tends to fly around than down or up
+				// if (velocity.y > 0.) velocity.y *= (1. - 0.2 * delta);
+
+				// Speed Limits
+				if ( length( velocity ) > limit ) {
+					velocity = normalize( velocity ) * limit;
+				}
+
+				gl_FragColor = vec4( velocity, 1.0 );
+			}
+				`;
+
+			const fragmentShaderPosition = `
+				uniform float time;
+			uniform float delta;
+
+			void main()	{
+
+				vec2 uv = gl_FragCoord.xy / resolution.xy;
+				vec4 tmpPos = texture2D( texturePosition, uv );
+				vec3 position = tmpPos.xyz;
+				vec3 velocity = texture2D( textureVelocity, uv ).xyz;
+
+				float phase = tmpPos.w;
+
+				phase = mod( ( phase + delta +
+					length( velocity.xz ) * delta * 3. +
+					max( velocity.y, 0.0 ) * delta * 6. ), 62.83 );
+
+				gl_FragColor = vec4( position + velocity * delta * 15. , phase );
+
+			}
+				`;
+			velocityVariable = gpuCompute.addVariable("textureVelocity", fragmentShaderVelocity, dtVelocity);
+			positionVariable = gpuCompute.addVariable("texturePosition", fragmentShaderPosition, dtPosition);
+
+			gpuCompute.setVariableDependencies(velocityVariable, [positionVariable, velocityVariable]);
+			gpuCompute.setVariableDependencies(positionVariable, [positionVariable, velocityVariable]);
+
+			positionUniforms = positionVariable.material.uniforms;
+			velocityUniforms = velocityVariable.material.uniforms;
+
+			positionUniforms["time"] = { value: 0.0 };
+			positionUniforms["delta"] = { value: 0.0 };
+			velocityUniforms["time"] = { value: 1.0 };
+			velocityUniforms["delta"] = { value: 0.0 };
+			velocityUniforms["testing"] = { value: 1.0 };
+			velocityUniforms["separationDistance"] = { value: 1.0 };
+			velocityUniforms["alignmentDistance"] = { value: 1.0 };
+			velocityUniforms["cohesionDistance"] = { value: 1.0 };
+			velocityUniforms["freedomFactor"] = { value: 1.0 };
+			velocityUniforms["predator"] = { value: new THREE.Vector3() };
+			velocityVariable.material.defines.BOUNDS = BOUNDS.toFixed(2);
+
+			velocityVariable.wrapS = THREE.RepeatWrapping;
+			velocityVariable.wrapT = THREE.RepeatWrapping;
+			positionVariable.wrapS = THREE.RepeatWrapping;
+			positionVariable.wrapT = THREE.RepeatWrapping;
+
+			const error = gpuCompute.init();
+
+			if (error !== null) {
+
+				console.error(error);
+
+			}
+
+		}
+
+		function isSafari() {
+
+			return !!navigator.userAgent.match(/Safari/i) && !navigator.userAgent.match(/Chrome/i);
+
+		}
+
+		function initBirds(effectController) {
+
+			const geometry = BirdGeometry;
+
+			const m = new THREE.MeshStandardMaterial({
+				vertexColors: true,
+				flatShading: true,
+				roughness: 1,
+				metalness: 0
+			});
+
+			m.onBeforeCompile = (shader) => {
+
+				shader.uniforms.texturePosition = { value: null };
+				shader.uniforms.textureVelocity = { value: null };
+				shader.uniforms.textureAnimation = { value: textureAnimation };
+				shader.uniforms.time = { value: 1.0 };
+				shader.uniforms.size = { value: effectController.size };
+				shader.uniforms.delta = { value: 0.0 };
+
+				let token = '#define STANDARD';
+
+				let insert = /* glsl */`
+						attribute vec4 reference;
+						attribute vec4 seeds;
+						attribute vec3 birdColor;
+						uniform sampler2D texturePosition;
+						uniform sampler2D textureVelocity;
+						uniform sampler2D textureAnimation;
+						uniform float size;
+						uniform float time;
+					`;
+
+				shader.vertexShader = shader.vertexShader.replace(token, token + insert);
+
+				token = '#include <begin_vertex>';
+
+				insert = /* glsl */`
+						vec4 tmpPos = texture2D( texturePosition, reference.xy );
+						vec3 pos = tmpPos.xyz;
+						vec3 velocity = normalize(texture2D( textureVelocity, reference.xy ).xyz);
+						vec3 aniPos = texture2D( textureAnimation, vec2( reference.z, mod( time + ( seeds.x ) * ( ( 0.0004 + seeds.y / 10000.0) + normalize( velocity ) / 20000.0 ), reference.w ) ) ).xyz;
+						vec3 newPosition = position;
+						newPosition = mat3( modelMatrix ) * ( newPosition + aniPos );
+						newPosition *= size + seeds.y * size * 0.2;
+						velocity.z *= -1.;
+						float xz = length( velocity.xz );
+						float xyz = 1.;
+						float x = sqrt( 1. - velocity.y * velocity.y );
+						float cosry = velocity.x / xz;
+						float sinry = velocity.z / xz;
+						float cosrz = x / xyz;
+						float sinrz = velocity.y / xyz;
+						mat3 maty =  mat3( cosry, 0, -sinry, 0    , 1, 0     , sinry, 0, cosry );
+						mat3 matz =  mat3( cosrz , sinrz, 0, -sinrz, cosrz, 0, 0     , 0    , 1 );
+						newPosition =  maty * matz * newPosition;
+						newPosition += pos;
+						vec3 transformed = vec3( newPosition );
+					`;
+
+				shader.vertexShader = shader.vertexShader.replace(token, insert);
+
+				materialShader = shader;
+
+			};
+
+			birdMesh = new THREE.Mesh(geometry, m);
+			birdMesh.rotation.y = Math.PI / 2;
+
+			birdMesh.castShadow = true;
+			birdMesh.receiveShadow = true;
+
+			scene.add(birdMesh);
+
+		}
+
+		function fillPositionTexture(texture) {
+
+			const theArray = texture.image.data;
+
+			for (let k = 0, kl = theArray.length; k < kl; k += 4) {
+
+				const x = Math.random() * BOUNDS - BOUNDS_HALF;
+				const y = Math.random() * BOUNDS - BOUNDS_HALF;
+				const z = Math.random() * BOUNDS - BOUNDS_HALF;
+
+				theArray[k + 0] = x;
+				theArray[k + 1] = y;
+				theArray[k + 2] = z;
+				theArray[k + 3] = 1;
+
+			}
+
+		}
+
+		function fillVelocityTexture(texture) {
+
+			const theArray = texture.image.data;
+
+			for (let k = 0, kl = theArray.length; k < kl; k += 4) {
+
+				const x = Math.random() - 0.5;
+				const y = Math.random() - 0.5;
+				const z = Math.random() - 0.5;
+
+				theArray[k + 0] = x * 10;
+				theArray[k + 1] = y * 10;
+				theArray[k + 2] = z * 10;
+				theArray[k + 3] = 1;
+
+			}
+
+		}
+
+		function onWindowResize() {
+
+			windowHalfX = window.innerWidth / 2;
+			windowHalfY = window.innerHeight / 2;
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+		}
+
+		function onPointerMove(event) {
+
+			if (event.isPrimary === false) return;
+
+			mouseX = event.clientX - windowHalfX;
+			mouseY = event.clientY - windowHalfY;
+
+		}
+
+		//
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+
+			render();
+
+		}
+
+		function render() {
+
+			const now = performance.now();
+			let delta = (now - last) / 1000;
+
+			if (delta > 1) delta = 1; // safety cap on large deltas
+			last = now;
+
+			positionUniforms["time"].value = now;
+			positionUniforms["delta"].value = delta;
+			velocityUniforms["time"].value = now;
+			velocityUniforms["delta"].value = delta;
+			if (materialShader) materialShader.uniforms["time"].value = now / 1000;
+			if (materialShader) materialShader.uniforms["delta"].value = delta;
+
+			velocityUniforms["predator"].value.set(0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0);
+
+			mouseX = 10000;
+			mouseY = 10000;
+
+			gpuCompute.compute();
+
+			if (materialShader) materialShader.uniforms["texturePosition"].value = gpuCompute.getCurrentRenderTarget(positionVariable).texture;
+			if (materialShader) materialShader.uniforms["textureVelocity"].value = gpuCompute.getCurrentRenderTarget(velocityVariable).texture;
+
+			renderer.render(scene, camera);
+
+		}
+	}
+
+	bufferGeo(canvas) {
+
+		const context = canvas.getContext('webgl2') as any;
+
+
+		let container, stats;
+
+		let camera, scene, renderer;
+
+		let points;
+
+		const particles = 300000;
+		let drawCount = 10000;
+
 		init();
+		animate();
+
+		function init() {
+
+			renderer = new THREE.WebGLRenderer({ context, antialias: false });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+
+			//
+
+			camera = new THREE.PerspectiveCamera(27, window.innerWidth / window.innerHeight, 5, 3500);
+			camera.position.z = 2750;
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0x050505);
+			scene.fog = new THREE.Fog(0x050505, 2000, 3500);
+
+			//
+
+			const geometry = new THREE.BufferGeometry();
+
+			const positions = [];
+			const positions2 = [];
+			const colors = [];
+
+			const color = new THREE.Color();
+
+			const n = 1000, n2 = n / 2; // particles spread in the cube
+
+			for (let i = 0; i < particles; i++) {
+
+				// positions
+
+				const x = Math.random() * n - n2;
+				const y = Math.random() * n - n2;
+				const z = Math.random() * n - n2;
+
+				positions.push(x, y, z);
+				positions2.push(z * 0.3, x * 0.3, y * 0.3);
+
+				// colors
+
+				const vx = (x / n) + 0.5;
+				const vy = (y / n) + 0.5;
+				const vz = (z / n) + 0.5;
+
+				color.setRGB(vx, vy, vz);
+
+				colors.push(color.r, color.g, color.b);
+
+			}
+
+			const gl = renderer.getContext();
+
+			const pos = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, pos);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+			const pos2 = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, pos2);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions2), gl.STATIC_DRAW);
+
+			const rgb = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, rgb);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+			// @ts-ignore
+			const posAttr1 = new THREE.GLBufferAttribute(pos, gl.FLOAT, 3, 4, particles);
+			// @ts-ignore
+			const posAttr2 = new THREE.GLBufferAttribute(pos2, gl.FLOAT, 3, 4, particles);
+			geometry.setAttribute('position', posAttr1);
+
+			setInterval(function () {
+
+				const attr = geometry.getAttribute('position');
+
+				geometry.setAttribute('position', (attr === posAttr1) ? posAttr2 : posAttr1);
+
+			}, 2000);
+
+			// @ts-ignore
+			geometry.setAttribute('color', new THREE.GLBufferAttribute(rgb, gl.FLOAT, 3, 4, particles));
+
+			//
+
+			const material = new THREE.PointsMaterial({ size: 15, vertexColors: true });
+
+			points = new THREE.Points(geometry, material);
+
+			// Choose one:
+			// geometry.boundingSphere = ( new THREE.Sphere() ).set( new THREE.Vector3(), Infinity );
+			points.frustumCulled = false;
+
+			scene.add(points);
+
+			//
+
+
+			//
+
+			window.addEventListener('resize', onWindowResize, false);
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+		}
+
+		//
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+
+			render();
+
+		}
+
+		function render() {
+
+			drawCount = (Math.max(5000, drawCount) + Math.floor(500 * Math.random())) % particles;
+			points.geometry.setDrawRange(0, drawCount);
+
+			const time = Date.now() * 0.001;
+
+			points.rotation.x = time * 0.1;
+			points.rotation.y = time * 0.2;
+
+			renderer.render(scene, camera);
+
+		}
 	}
 
 	nearestNeighbour(canvas) {
@@ -1634,7 +2389,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			renderer = new THREE.WebGLRenderer({ context });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
-			controls = new FirstPersonControls(camera, renderer.domElement);
+			controls = new FirstPersonControls(camera, canvas);
 			controls.movementSpeed = 100;
 			controls.lookSpeed = 0.1;
 

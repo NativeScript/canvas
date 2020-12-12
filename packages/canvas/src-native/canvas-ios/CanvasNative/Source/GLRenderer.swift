@@ -36,7 +36,20 @@ public class CanvasGLKView: GLKView {
 }
 
 
-public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
+public protocol RenderListener {
+    func didDraw()
+}
+
+
+public enum ContextType: Int, RawRepresentable {
+       case none
+       case webGL
+       case twoD
+}
+
+
+
+public class GLRenderer: NSObject, GLKViewDelegate {
     
     public var attributes: NSDictionary = NSMutableDictionary()
     
@@ -58,8 +71,7 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     var displayFramebuffer: GLuint
     var depthRenderbuffer: GLuint
     static var sharedGroup: EAGLSharegroup =  EAGLSharegroup()
-    public var canvasState: [Int64] = []
-    public var canvas: Int64 = 0
+    public var context: Int64 = 0
     weak var canvasView: TNSCanvas?
     public var view: UIView {
         get {
@@ -68,23 +80,18 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     }
     
     var cachedFrame: CGRect = .zero
-    
     public var didMoveOffMain: Bool = false
-    
     public var drawingBufferWidth: Int {
         return glkView.drawableWidth
     }
-    
     public var drawingBufferHeight: Int {
         return glkView.drawableHeight
     }
-    
     public var width: Float {
         get {
             return Float(view.frame.size.width)
         }
     }
-    
     public var height: Float {
         get {
             return Float(view.frame.size.height)
@@ -94,7 +101,7 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     var glkView: CanvasGLKView
     var scale: Float
     var didExit: Bool = false
-    var context: EAGLContext
+    var glContext: EAGLContext
     var currentOrientation: UIDeviceOrientation
     var cachedDirection: String = "ltr"
     func initAttributes(){
@@ -127,9 +134,9 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
         }
         
         if(self.contextType == ContextType.webGL && self.canvasView!.contextAntialias){
-          //  self.glkView.drawableMultisample = .multisample4X
+           // self.glkView.drawableMultisample = .multisample4X
         }else if(self.contextType == .twoD) {
-            self.glkView.drawableMultisample = .multisample4X
+           // self.glkView.drawableMultisample = .multisample4X
         }
         setup()
     }
@@ -149,27 +156,30 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
             }
         }
     }
+    
+
+    
     public override init() {
         glkView = CanvasGLKView()
         glkView.enableSetNeedsDisplay = false
         displayFramebuffer = GLuint()
         displayRenderbuffer = GLuint()
         depthRenderbuffer = GLuint()
-        var context = EAGLContext(api: .openGLES3)
-        if context == nil {
-            context = EAGLContext(api: .openGLES2)
+        var glContext = EAGLContext(api: .openGLES3)
+        if glContext == nil {
+            glContext = EAGLContext(api: .openGLES2)
         }
-        self.context = context!
+        self.glContext = glContext!
         //self.context.isMultiThreaded = true
         scale = Float(UIScreen.main.nativeScale)
         currentOrientation = UIDevice.current.orientation
         super.init()
-        glkView.layer.masksToBounds = true
-        glkView.context = context!
+       // glkView.layer.masksToBounds = true
+        glkView.context = glContext!
         glkView.contentScaleFactor = CGFloat(scale)
         glkView.layer.isOpaque = false
         glkView.delegate = self
-        glkView.contentMode = .center
+       // glkView.contentMode = .bottomLeft
         exitObserver = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
             self.didExit = true
         }
@@ -213,8 +223,8 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     }
     
     
-    public func ensureIsContextIsCurrent() -> Bool{
-        return EAGLContext.setCurrent(context)
+    @discardableResult public func ensureIsContextIsCurrent() ->  Bool{
+        return EAGLContext.setCurrent(glContext)
     }
     
     var fboid = GLint()
@@ -242,14 +252,7 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
                     glClearDepthf(1)
                     glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
                     glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                    var _alpha = 1
-                    if(!(canvasView?.contextAlpha ?? true)){
-                        _alpha = 0
-                    }
-                    canvas = native_surface_resized_legacy(Int32(drawingBufferWidth), Int32(drawingBufferHeight), binding, scale, 8 , 4,UInt8(_alpha), canvas)
-                    if let context = canvasView?.renderingContext2d as? TNSCanvasRenderingContext2D {
-                        context.reset()
-                    }
+                   context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, binding, 4,canvasView?.contextAlpha ?? true, 100.0)
                 }
                 glkView.display()
                 
@@ -267,7 +270,7 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     }
     
     public func setup() {
-        let _ = ensureIsContextIsCurrent()
+        ensureIsContextIsCurrent()
         if((contextType == .twoD || contextType == .webGL)){
             if(glkView.frame.size.width == 0 && glkView.frame.size.height == 0){
                 glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/scale), height: CGFloat(1/scale))
@@ -286,28 +289,25 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
                 }
             }
             
-            if(canvas == 0 && contextType == .twoD){
+            if(context == 0 && contextType == .twoD){
                 glClearColor(0, 0, 0, 0)
                 glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT))
-                var direction = "ltr"
+                var direction = TNSTextDirection.Ltr
                 if(Thread.isMainThread){
                     if(UIView.userInterfaceLayoutDirection(for: glkView.semanticContentAttribute) == .rightToLeft){
-                        direction = "rtl"
+                        direction = TNSTextDirection.Rtl
                     }
                 }else {
                     DispatchQueue.main.sync {
                         if(UIView.userInterfaceLayoutDirection(for: glkView.semanticContentAttribute) == .rightToLeft){
-                            direction = "rtl"
+                            direction = TNSTextDirection.Rtl
                         }
                     }
                     
                 }
-                var _alpha = 1
-                if(!(canvasView?.contextAlpha ?? true)){
-                    _alpha = 0
-                }
                 glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                canvas = native_init_legacy(Int32(drawingBufferWidth), Int32(drawingBufferHeight), Int32(displayFramebuffer), scale, 8 , 4, UInt8(_alpha), (direction as NSString).utf8String)
+                context = context_init_context(Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, Int32(displayFramebuffer), 4, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                
             }
             
             
@@ -327,7 +327,7 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     public var contextType: ContextType  = .none
     public func render() {
         if(didExit){return}
-        let _ = ensureIsContextIsCurrent()
+        ensureIsContextIsCurrent()
         if(drawingBufferWidth > 0 && drawingBufferHeight > 0){
             glkView.display()
         }
@@ -340,7 +340,7 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     
     public func flush(){
         if(didExit){return}
-        let _ = ensureIsContextIsCurrent()
+        ensureIsContextIsCurrent()
         glkView.isDirty = true
         if(contextType == .twoD){
             DispatchQueue.main.async {
@@ -363,8 +363,8 @@ public class GLRenderer: NSObject, Renderer, GLKViewDelegate {
     }
     
     func internalFlush(){
-        if(contextType == .twoD && canvas > 0){
-            canvas = native_flush(canvas)
+        if(contextType == .twoD && context > 0){
+            context_flush(context)
         }
     }
     

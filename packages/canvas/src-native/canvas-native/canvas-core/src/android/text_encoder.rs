@@ -1,53 +1,76 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
-extern crate libc;
 
-use std::ffi::CStr;
 
-use jni::objects::{JClass, JString};
-use jni::strings::JavaStr;
 use jni::JNIEnv;
-use jni_sys::{jbyteArray, jlong, jstring};
+use jni::objects::{JClass, JString};
+use jni::sys::{jbyteArray, jlong, jobject, jstring};
 
-use crate::common::{text_encoder_encode, text_encoder_get_encoding, NativeByteArray, TextEncoder};
+use crate::common::context::text_encoder::TextEncoder;
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TextEncoder_nativeInit(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeInit(
     env: JNIEnv,
     _: JClass,
     encoding: JString,
 ) -> jlong {
-    let empty = env.new_string("").unwrap();
-    let value = env
-        .get_string(encoding)
-        .unwrap_or(JavaStr::from_env(&env, empty).unwrap());
-    TextEncoder::new(value.get_raw()).into_ptr()
+    if let Ok(encoding) = env.get_string(encoding) {
+        let encoding = encoding.to_string_lossy();
+        Box::into_raw(Box::new(TextEncoder::new(Some(encoding.as_ref())))) as jlong
+    } else {
+        Box::into_raw(Box::new(TextEncoder::new(None))) as jlong
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TextEncoder_nativeGetEncoding(
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeDestroy(
+    _: JNIEnv,
+    _: JClass,
+    encoder: jlong,
+) {
+    if encoder == 0 {
+        return;
+    }
+    unsafe {
+        let encoder: *mut TextEncoder = encoder as _;
+        let _ = Box::from_raw(encoder);
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeGetEncoding(
     env: JNIEnv,
     _: JClass,
-    encoder: i64,
+    encoder: jlong,
 ) -> jstring {
-    let encoding = text_encoder_get_encoding(encoder);
-    let value = CStr::from_ptr(encoding).to_str().unwrap_or("");
-    env.new_string(value).unwrap().into_inner()
+    unsafe {
+        let encoder: *mut TextEncoder = encoder as _;
+        let encoder = &mut *encoder;
+        env.new_string(encoder.encoding()).unwrap().into_inner()
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TextEncoder_nativeEncode(
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeEncode(
     env: JNIEnv,
     _: JClass,
-    encoder: i64,
+    encoder: jlong,
     text: JString,
 ) -> jbyteArray {
-    let empty = env.new_string("").unwrap();
-    let string = env
-        .get_string(text)
-        .unwrap_or(JavaStr::from_env(&env, empty).unwrap());
-    let rawArray = NativeByteArray::from_raw(text_encoder_encode(encoder, string.as_ptr()));
-    let rawSlice = std::slice::from_raw_parts_mut(rawArray.array, rawArray.length);
-    env.byte_array_from_slice(rawSlice).unwrap()
+    if encoder == 0 {
+        return env.new_byte_array(0).unwrap();
+    }
+    if let Ok(text) = env.get_string(text) {
+        let text = text.to_string_lossy();
+        unsafe {
+            let encoder: *mut TextEncoder = encoder as _;
+            let encoder = &mut *encoder;
+            let mut array = encoder.encode(text.as_ref());
+            return env.byte_array_from_slice(array.as_slice()).unwrap_or(
+                env.new_byte_array(0).unwrap()
+            );
+        }
+    }
+    env.new_byte_array(0).unwrap()
 }

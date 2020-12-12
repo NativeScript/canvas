@@ -1,5 +1,5 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 5.3 (swiftlang-1200.0.29.2 clang-1200.0.30.1)
+// swift-compiler-version: Apple Swift version 5.3.1 (swiftlang-1200.0.41 clang-1200.0.32.8)
 // swift-module-flags: -target arm64-apple-ios10.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
 @_exported import CanvasNative
 import Foundation
@@ -9,6 +9,7 @@ import OpenGLES
 import Swift
 import UIKit
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSDOMMatrix) public class TNSDOMMatrix : ObjectiveC.NSObject {
+  @objc override dynamic public init()
   @objc public var a: Swift.Float {
     @objc get
     @objc set
@@ -33,20 +34,84 @@ import UIKit
     @objc get
     @objc set
   }
-  @objc override dynamic public init()
+  @objc public var m11: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m12: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m13: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m14: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m21: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m22: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m23: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m24: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m31: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m32: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m33: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m34: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m41: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m42: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m43: Swift.Float {
+    @objc get
+    @objc set
+  }
+  @objc public var m44: Swift.Float {
+    @objc get
+    @objc set
+  }
   @objc deinit
 }
-@objc public enum TNSTextAlignment : Swift.Int, Swift.RawRepresentable {
-  case Left
+@objc(TNSTextAlignment) public enum TNSTextAlignment : Swift.Int, Swift.RawRepresentable {
   case Start
+  case Left
   case Center
-  case End
   case Right
-  public typealias RawValue = Swift.String
+  case End
+  public typealias RawValue = Swift.UInt32
   public var rawValue: CanvasNative.TNSTextAlignment.RawValue {
     get
   }
   public init?(rawValue: CanvasNative.TNSTextAlignment.RawValue)
+  public init?(string: Swift.String)
 }
 @objc(TNSCanvasListener) public protocol TNSCanvasListener {
   @objc func contextReady()
@@ -76,6 +141,16 @@ import UIKit
   @objc deinit
   @objc override dynamic public init()
 }
+@objc(TNSFillRule) public enum TNSFillRule : Swift.Int, Swift.RawRepresentable {
+  case NonZero
+  case EvenOdd
+  public typealias RawValue = Swift.UInt32
+  public var rawValue: CanvasNative.TNSFillRule.RawValue {
+    get
+  }
+  public init?(rawValue: CanvasNative.TNSFillRule.RawValue)
+  public init?(string: Swift.String)
+}
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_EXT_sRGB) public class TNS_EXT_sRGB : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc public var SRGB_EXT: Swift.Int32 {
@@ -93,18 +168,27 @@ import UIKit
   @objc deinit
 }
 @_hasMissingDesignatedInitializers @objcMembers @objc(TNSImageData) public class TNSImageData : ObjectiveC.NSObject {
-  @objc public init(width: Swift.Int, height: Swift.Int)
-  @objc public var width: Swift.Int {
+  @objc public var data: Foundation.NSData {
+    get
+  }
+  @objc public var width: Swift.Int32 {
     @objc get
   }
-  @objc public var height: Swift.Int {
-    @objc get
-  }
-  @objc public var data: Foundation.Data {
+  @objc public var height: Swift.Int32 {
     @objc get
   }
   @objc deinit
   @objc override dynamic public init()
+}
+@objc(TNSTextDirection) public enum TNSTextDirection : Swift.Int, Swift.RawRepresentable {
+  case Ltr
+  case Rtl
+  public typealias RawValue = Swift.UInt32
+  public var rawValue: CanvasNative.TNSTextDirection.RawValue {
+    get
+  }
+  public init?(rawValue: CanvasNative.TNSTextDirection.RawValue)
+  public init?(string: Swift.String)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_WEBGL_color_buffer_float) public class TNS_WEBGL_color_buffer_float : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -133,45 +217,6 @@ import UIKit
   @objc deinit
   @objc override dynamic public init()
 }
-public protocol Renderer {
-  var canvas: Swift.Int64 { get set }
-  var canvasState: [Swift.Int64] { get set }
-  var contextType: CanvasNative.ContextType { get set }
-  var view: UIKit.UIView { get }
-  var width: Swift.Float { get }
-  var height: Swift.Float { get }
-  var drawingBufferWidth: Swift.Int { get }
-  var drawingBufferHeight: Swift.Int { get }
-  var isDirty: Swift.Bool { get set }
-  var isOpaque: Swift.Bool { get set }
-  var didMoveOffMain: Swift.Bool { get set }
-  var attributes: Foundation.NSDictionary { get set }
-  func updateDirection(_ direction: Swift.String)
-  func setup()
-  func setupContext()
-  func render()
-  func flush()
-  func setRenderListener(listener: CanvasNative.RenderListener?)
-  func pause()
-  func resume()
-  func ensureIsReady()
-  @discardableResult
-  func ensureIsContextIsCurrent() -> Swift.Bool
-  func resize()
-}
-public protocol RenderListener {
-  func didDraw()
-}
-public enum ContextType : Swift.Int, Swift.RawRepresentable {
-  case none
-  case webGL
-  case twoD
-  public typealias RawValue = Swift.Int
-  public init?(rawValue: Swift.Int)
-  public var rawValue: Swift.Int {
-    get
-  }
-}
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_EXT_blend_minmax) public class TNS_EXT_blend_minmax : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc public var MIN_EXT: Swift.Int32 {
@@ -182,7 +227,7 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   }
   @objc deinit
 }
-@_hasMissingDesignatedInitializers @objcMembers @objc(TNSCanvas) public class TNSCanvas : UIKit.UIView, CanvasNative.RenderListener {
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSCanvas) public class TNSCanvas : UIKit.UIView, CanvasNative.RenderListener {
   @objc public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.TNSCanvas>
   @objc public func getViewPtr() -> Swift.UnsafeMutableRawPointer?
   @objc public static func createSVGMatrix() -> CanvasNative.TNSDOMMatrix
@@ -209,17 +254,13 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
     @objc get
   }
   @objc public func updateDirection(_ direction: Swift.String)
-  @objc public var canvas: Swift.Int64 {
-    @objc get
-    @objc set
-  }
-  @objc public var canvasState: [Swift.Int64] {
+  @objc public var context: Swift.Int64 {
     @objc get
     @objc set
   }
   @objc public func doDraw()
   @objc public func flush()
-  @objc public init(frame: CoreGraphics.CGRect, useGL: Swift.Bool)
+  @objc override dynamic public init(frame: CoreGraphics.CGRect)
   @objc public func setListener(_ listener: CanvasNative.TNSCanvasListener?)
   @objc public var fps: Swift.Float {
     @objc get
@@ -234,14 +275,6 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   @objc public func handleMoveToMain()
   @objc public func getContext(_ type: Swift.String) -> CanvasNative.TNSCanvasRenderingContext?
   @objc public func getContext(_ type: Swift.String, contextAttributes: Foundation.NSDictionary) -> CanvasNative.TNSCanvasRenderingContext?
-  @objc override dynamic public init(frame: CoreGraphics.CGRect)
-}
-@_hasMissingDesignatedInitializers public class TNSColors {
-  @objc deinit
-}
-extension UIColor {
-  @objc convenience dynamic public init(fromString string: Swift.String)
-  @objc convenience dynamic public init(fromHex hex: Swift.String)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSTextEncoder) public class TNSTextEncoder : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -273,15 +306,16 @@ extension UIColor {
 extension RangeReplaceableCollection {
   public mutating func resize(_ size: Swift.Int, fillWith value: Self.Iterator.Element)
 }
-@objc public enum TNSLineJoin : Swift.Int, Swift.RawRepresentable {
-  case Bevel
+@objc(TNSLineJoin) public enum TNSLineJoin : Swift.Int, Swift.RawRepresentable {
   case Round
+  case Bevel
   case Miter
-  public typealias RawValue = Swift.String
+  public typealias RawValue = Swift.UInt32
   public var rawValue: CanvasNative.TNSLineJoin.RawValue {
     get
   }
   public init?(rawValue: CanvasNative.TNSLineJoin.RawValue)
+  public init?(string: Swift.String)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSFramebufferAttachmentParameter) public class TNSFramebufferAttachmentParameter : ObjectiveC.NSObject {
   @objc public var isTexture: Swift.Bool {
@@ -1251,15 +1285,16 @@ extension RangeReplaceableCollection {
   }
   @objc deinit
 }
-@objc public enum TNSLineCap : Swift.Int, Swift.RawRepresentable {
+@objc(TNSLineCap) public enum TNSLineCap : Swift.Int, Swift.RawRepresentable {
   case Butt
   case Round
   case Square
-  public typealias RawValue = Swift.String
+  public typealias RawValue = Swift.UInt32
   public var rawValue: CanvasNative.TNSLineCap.RawValue {
     get
   }
   public init?(rawValue: CanvasNative.TNSLineCap.RawValue)
+  public init?(string: Swift.String)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSPath2D) public class TNSPath2D : ObjectiveC.NSObject {
   @objc deinit
@@ -2389,15 +2424,16 @@ extension RangeReplaceableCollection {
   @objc override dynamic public init()
   @objc deinit
 }
-@objc public enum TNSImageSmoothingQuality : Swift.Int, Swift.RawRepresentable {
+@objc(TNSImageSmoothingQuality) public enum TNSImageSmoothingQuality : Swift.UInt32, Swift.RawRepresentable {
   case Low
   case Medium
   case High
-  public typealias RawValue = Swift.String
+  public typealias RawValue = Swift.UInt32
   public var rawValue: CanvasNative.TNSImageSmoothingQuality.RawValue {
     get
   }
   public init?(rawValue: CanvasNative.TNSImageSmoothingQuality.RawValue)
+  public init?(string: Swift.String)
 }
 @objcMembers @objc(TNSWebGLShaderPrecisionFormat) public class TNSWebGLShaderPrecisionFormat : ObjectiveC.NSObject {
   @objc public var rangeMin: Swift.Int32 {
@@ -2439,11 +2475,11 @@ extension RangeReplaceableCollection {
 }
 @objcMembers @objc(TNSCanvasRenderingContext2D) public class TNSCanvasRenderingContext2D : CanvasNative.TNSCanvasRenderingContext {
   @objc public init(_ canvas: CanvasNative.TNSCanvas)
-  @objc public var currentTransform: CanvasNative.TNSDOMMatrix {
+  @objc public var font: Swift.String {
     @objc get
     @objc set
   }
-  @objc public var font: Swift.String {
+  @objc public var filter: Swift.String {
     @objc get
     @objc set
   }
@@ -2487,7 +2523,7 @@ extension RangeReplaceableCollection {
     @objc get
     @objc set
   }
-  @objc public var shadowColor: Any {
+  @objc public var shadowColor: Swift.String {
     @objc get
     @objc set
   }
@@ -2503,11 +2539,15 @@ extension RangeReplaceableCollection {
     @objc get
     @objc set
   }
-  @objc public var fillStyle: Any {
+  @objc public var textBaseline: CanvasNative.TNSTextBaseLine {
     @objc get
     @objc set
   }
-  @objc public var strokeStyle: Any {
+  @objc public var fillStyle: CanvasNative.ICanvasColorStyle {
+    @objc get
+    @objc set
+  }
+  @objc public var strokeStyle: CanvasNative.ICanvasColorStyle {
     @objc get
     @objc set
   }
@@ -2520,9 +2560,9 @@ extension RangeReplaceableCollection {
   @objc public func rect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float)
   @objc public func fill()
   @objc public func fill(value: Any)
-  @objc public func fill(_ path: CanvasNative.TNSPath2D, _ rule: Swift.String)
+  @objc public func fill(_ path: CanvasNative.TNSPath2D, _ rule: CanvasNative.TNSFillRule)
   @objc public func stroke()
-  @objc public func stroke(_ path: CanvasNative.TNSPath2D)
+  @objc public func stroke(_ path: CanvasNative.TNSPath2D?)
   @objc public func beginPath()
   @objc public func moveTo(_ x: Swift.Float, _ y: Swift.Float)
   @objc public func lineTo(_ x: Swift.Float, _ y: Swift.Float)
@@ -2535,13 +2575,13 @@ extension RangeReplaceableCollection {
   @objc public func ellipse(_ x: Swift.Float, _ y: Swift.Float, _ radiusX: Swift.Float, _ radiusY: Swift.Float, _ rotation: Swift.Float, _ startAngle: Swift.Float, _ endAngle: Swift.Float, _ anticlockwise: Swift.Bool)
   @objc public func clip()
   @objc public func clip(_ value: Any)
-  @objc public func clip(_ path: CanvasNative.TNSPath2D, _ rule: Swift.String)
+  @objc public func clip(_ path: CanvasNative.TNSPath2D, _ rule: CanvasNative.TNSFillRule)
   @objc public func clearRect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float)
   @objc public func setLineDash(_ segments: [Swift.Float32])
   @objc public func getCanvas() -> CanvasNative.TNSCanvas
   @objc public func createLinearGradient(_ x0: Swift.Float, _ y0: Swift.Float, _ x1: Swift.Float, _ y1: Swift.Float) -> CanvasNative.TNSColorStyle.TNSLinearGradient
   @objc public func createRadialGradient(_ x0: Swift.Float, _ y0: Swift.Float, _ r0: Swift.Float, _ x1: Swift.Float, _ y1: Swift.Float, _ r1: Swift.Float) -> CanvasNative.TNSColorStyle.TNSRadialGradient
-  @objc public func createPattern(_ value: Any, _ repetition: CanvasNative.TNSPatternRepetition) -> Any
+  @objc public func createPattern(_ value: Any, _ repetition: CanvasNative.TNSPatternRepetition) -> Any?
   @objc public func setTransform(_ a: Swift.Float, _ b: Swift.Float, _ c: Swift.Float, _ d: Swift.Float, _ e: Swift.Float, _ f: Swift.Float)
   @objc public func scale(_ x: Swift.Float, _ y: Swift.Float)
   @objc public func rotate(_ angle: Swift.Float)
@@ -2550,11 +2590,11 @@ extension RangeReplaceableCollection {
   @objc public func drawImage(_ image: Any, _ dx: Swift.Float, _ dy: Swift.Float)
   @objc public func drawImage(_ image: Any, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float)
   @objc public func drawImage(_ image: Any, _ sx: Swift.Float, _ sy: Swift.Float, _ sWidth: Swift.Float, _ sHeight: Swift.Float, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float)
-  @objc public func createImageData(_ width: Swift.Int, _ height: Swift.Int) -> CanvasNative.TNSImageData
+  @objc public func createImageData(_ width: Swift.Int32, _ height: Swift.Int32) -> CanvasNative.TNSImageData
   @objc public func createImageData(_ imageData: CanvasNative.TNSImageData) -> CanvasNative.TNSImageData
-  @objc public func getImageData(_ sx: Swift.Float, _ sy: Swift.Float, _ sw: Swift.Int, _ sh: Swift.Int) -> CanvasNative.TNSImageData
+  @objc public func getImageData(_ sx: Swift.Float, _ sy: Swift.Float, _ sw: Swift.Float, _ sh: Swift.Float) -> CanvasNative.TNSImageData
   @objc public func putImageData(_ imageData: CanvasNative.TNSImageData, _ dx: Swift.Float, _ dy: Swift.Float)
-  @objc public func putImageData(_ imageData: CanvasNative.TNSImageData, _ dx: Swift.Float, _ dy: Swift.Float, _ dirtyX: Swift.Float, _ dirtyY: Swift.Float, _ dirtyWidth: Swift.Int, _ dirtyHeight: Swift.Int)
+  @objc public func putImageData(_ imageData: CanvasNative.TNSImageData, _ dx: Swift.Float, _ dy: Swift.Float, _ dirtyX: Swift.Float, _ dirtyY: Swift.Float, _ dirtyWidth: Swift.Float32, _ dirtyHeight: Swift.Float32)
   @objc public func getLineDash() -> [Swift.Float32]
   @objc public func save()
   @objc public func restore()
@@ -2562,8 +2602,8 @@ extension RangeReplaceableCollection {
   @objc public func resetTransform()
   @objc public func transform(_ a: Swift.Float, _ b: Swift.Float, _ c: Swift.Float, _ d: Swift.Float, _ e: Swift.Float, _ f: Swift.Float)
   @objc public func isPointInPath(_ x: Swift.Float, _ y: Swift.Float) -> Swift.Bool
-  @objc public func isPointInPath(_ x: Swift.Float, _ y: Swift.Float, _ fillRule: Swift.String) -> Swift.Bool
-  @objc public func isPointInPath(_ path: CanvasNative.TNSPath2D, _ x: Swift.Float, _ y: Swift.Float, _ fillRule: Swift.String) -> Swift.Bool
+  @objc public func isPointInPath(_ x: Swift.Float, _ y: Swift.Float, _ fillRule: CanvasNative.TNSFillRule) -> Swift.Bool
+  @objc public func isPointInPath(_ path: CanvasNative.TNSPath2D, _ x: Swift.Float, _ y: Swift.Float, _ fillRule: CanvasNative.TNSFillRule) -> Swift.Bool
   @objc public func isPointInStroke(_ x: Swift.Float, _ y: Swift.Float) -> Swift.Bool
   @objc public func isPointInStroke(_ path: CanvasNative.TNSPath2D, _ x: Swift.Float, _ y: Swift.Float) -> Swift.Bool
   @objc override dynamic public init()
@@ -2614,48 +2654,6 @@ extension RangeReplaceableCollection {
   @objc override dynamic public init()
   @objc deinit
 }
-@objc @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers public class MetalRenderer : ObjectiveC.NSObject, CanvasNative.Renderer, MetalKit.MTKViewDelegate {
-  public func resize()
-  public var attributes: Foundation.NSDictionary
-  public var didMoveOffMain: Swift.Bool
-  public func updateDirection(_ direction: Swift.String)
-  public var isDirty: Swift.Bool
-  public func setRenderListener(listener: CanvasNative.RenderListener?)
-  public func updateSize()
-  public var canvas: Swift.Int64
-  public var canvasState: [Swift.Int64]
-  public var isOpaque: Swift.Bool {
-    get
-    set
-  }
-  public func ensureIsReady()
-  @objc public func mtkView(_ view: MetalKit.MTKView, drawableSizeWillChange size: CoreGraphics.CGSize)
-  public func setupContext()
-  public func setup()
-  public var drawingBufferWidth: Swift.Int {
-    get
-  }
-  public var drawingBufferHeight: Swift.Int {
-    get
-  }
-  public var width: Swift.Float {
-    get
-  }
-  public var height: Swift.Float {
-    get
-  }
-  public var contextType: CanvasNative.ContextType
-  @objc public func draw(in view: MetalKit.MTKView)
-  public func ensureIsContextIsCurrent() -> Swift.Bool
-  public var view: UIKit.UIView {
-    get
-  }
-  public func render()
-  public func pause()
-  public func resume()
-  public func flush()
-  @objc deinit
-}
 @objc(TNSImageAssetFormat) public enum TNSImageAssetFormat : Swift.Int, Swift.RawRepresentable {
   public init(rawValue: Swift.Int)
   public var rawValue: Swift.Int {
@@ -2668,6 +2666,20 @@ extension RangeReplaceableCollection {
   case BMP
   case TIFF
 }
+@objc(TNSTextBaseLine) public enum TNSTextBaseLine : Swift.Int, Swift.RawRepresentable {
+  case Top
+  case Hanging
+  case Middle
+  case Alphabetic
+  case Ideographic
+  case Bottom
+  public typealias RawValue = Swift.UInt32
+  public var rawValue: CanvasNative.TNSTextBaseLine.RawValue {
+    get
+  }
+  public init?(rawValue: CanvasNative.TNSTextBaseLine.RawValue)
+  public init?(string: Swift.String)
+}
 @_hasMissingDesignatedInitializers @objcMembers @objc(CanvasGLKView) public class CanvasGLKView : GLKit.GLKView {
   @objc dynamic public init()
   @objc override dynamic public init(frame: CoreGraphics.CGRect)
@@ -2676,15 +2688,27 @@ extension RangeReplaceableCollection {
   @objc deinit
   @objc override dynamic public init(frame: CoreGraphics.CGRect, context: OpenGLES.EAGLContext)
 }
-@objc @_inheritsConvenienceInitializers public class GLRenderer : ObjectiveC.NSObject, CanvasNative.Renderer, GLKit.GLKViewDelegate {
+public protocol RenderListener {
+  func didDraw()
+}
+public enum ContextType : Swift.Int, Swift.RawRepresentable {
+  case none
+  case webGL
+  case twoD
+  public typealias RawValue = Swift.Int
+  public init?(rawValue: Swift.Int)
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@objc @_inheritsConvenienceInitializers public class GLRenderer : ObjectiveC.NSObject, GLKit.GLKViewDelegate {
   public var attributes: Foundation.NSDictionary
   public func updateDirection(_ direction: Swift.String)
   public var isDirty: Swift.Bool {
     get
     set
   }
-  public var canvasState: [Swift.Int64]
-  public var canvas: Swift.Int64
+  public var context: Swift.Int64
   public var view: UIKit.UIView {
     get
   }
@@ -2709,6 +2733,7 @@ extension RangeReplaceableCollection {
     set
   }
   @objc deinit
+  @discardableResult
   public func ensureIsContextIsCurrent() -> Swift.Bool
   public func resize()
   public func setup()
@@ -2748,7 +2773,7 @@ extension RangeReplaceableCollection {
   }
   @objc deinit
 }
-@objc public enum TNSCompositeOperationType : Swift.Int, Swift.RawRepresentable {
+@objc(TNSCompositeOperationType) public enum TNSCompositeOperationType : Swift.Int, Swift.RawRepresentable {
   case SourceOver
   case SourceIn
   case SourceOut
@@ -2775,11 +2800,12 @@ extension RangeReplaceableCollection {
   case Saturation
   case Color
   case Luminosity
-  public typealias RawValue = Swift.String
+  public typealias RawValue = Swift.UInt32
   public var rawValue: CanvasNative.TNSCompositeOperationType.RawValue {
     get
   }
   public init?(rawValue: CanvasNative.TNSCompositeOperationType.RawValue)
+  public init?(string: Swift.String)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSImageAsset) public class TNSImageAsset : ObjectiveC.NSObject {
   @objc public static var _queue: Dispatch.DispatchQueue?
@@ -2925,7 +2951,7 @@ extension RangeReplaceableCollection {
   }
   @objc deinit
 }
-@objc public enum CanvasColorStyleType : Swift.Int, Swift.RawRepresentable {
+@objc(CanvasColorStyleType) public enum CanvasColorStyleType : Swift.Int, Swift.RawRepresentable {
   case Color
   case Gradient
   case Pattern
@@ -2943,40 +2969,36 @@ extension RangeReplaceableCollection {
   case RepeatX
   case RepeatY
   case NoRepeat
-  public typealias RawValue = Swift.String
-  public var rawValue: Swift.String {
+  public typealias RawValue = Swift.UInt32
+  public var rawValue: Swift.UInt32 {
     get
   }
   public init?(rawValue: CanvasNative.TNSPatternRepetition.RawValue)
+  public init?(rawValue: Swift.String)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSColorStyle) public class TNSColorStyle : ObjectiveC.NSObject {
-  @objcMembers @objc(Color) public class Color : ObjectiveC.NSObject, CanvasNative.ICanvasColorStyle {
-    @objc public init(color: UIKit.UIColor?)
+  @objcMembers @objc(TNSColor) public class TNSColor : ObjectiveC.NSObject, CanvasNative.ICanvasColorStyle {
+    @objc public init(_ color: Swift.String)
+    @objc public var color: Swift.String {
+      @objc get
+    }
     @objc public func getStyleType() -> CanvasNative.CanvasColorStyleType
     @objc override dynamic public init()
     @objc deinit
   }
-  @_inheritsConvenienceInitializers @objcMembers @objc(Gradient) public class TNSGradient : ObjectiveC.NSObject, CanvasNative.ICanvasColorStyle {
+  @_hasMissingDesignatedInitializers @objcMembers @objc(TNSGradient) public class TNSGradient : ObjectiveC.NSObject, CanvasNative.ICanvasColorStyle {
     @objc public func getStyleType() -> CanvasNative.CanvasColorStyleType
-    @objc public func addColorStop(offset: Swift.Float, color: Swift.UInt32)
-    @objc(addColorStopWithOffsetUIColor::) public func addColorStop(offset: Swift.Float, color: UIKit.UIColor)
+    @objc public func addColorStop(_ offset: Swift.Float, _ color: Swift.String)
     @objc override dynamic public init()
     @objc deinit
   }
-  @objcMembers @objc(TNSLinearGradient) public class TNSLinearGradient : CanvasNative.TNSColorStyle.TNSGradient {
-    @objc public init(x0: Swift.Float, y0: Swift.Float, x1: Swift.Float, y1: Swift.Float)
-    @objc override dynamic public init()
+  @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSLinearGradient) public class TNSLinearGradient : CanvasNative.TNSColorStyle.TNSGradient {
     @objc deinit
   }
-  @objcMembers @objc(TNSRadialGradient) public class TNSRadialGradient : CanvasNative.TNSColorStyle.TNSGradient {
-    @objc public init(x0: Swift.Float, y0: Swift.Float, r0: Swift.Float, x1: Swift.Float, y1: Swift.Float, r1: Swift.Float)
-    @objc override dynamic public init()
+  @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSRadialGradient) public class TNSRadialGradient : CanvasNative.TNSColorStyle.TNSGradient {
     @objc deinit
   }
-  @objcMembers @objc(TNSPattern) public class TNSPattern : ObjectiveC.NSObject, CanvasNative.ICanvasColorStyle {
-    @objc public init(src: UIKit.UIImage, pattern: CanvasNative.TNSPatternRepetition)
-    @objc public init(canvas: CanvasNative.TNSCanvas, pattern: CanvasNative.TNSPatternRepetition)
-    @objc public init(asset src: CanvasNative.TNSImageAsset, pattern: CanvasNative.TNSPatternRepetition)
+  @_hasMissingDesignatedInitializers @objcMembers @objc(TNSPattern) public class TNSPattern : ObjectiveC.NSObject, CanvasNative.ICanvasColorStyle {
     @objc public func setTransform(matrix: CanvasNative.TNSDOMMatrix)
     @objc deinit
     @objc public func getStyleType() -> CanvasNative.CanvasColorStyleType
@@ -2986,16 +3008,51 @@ extension RangeReplaceableCollection {
   @objc override dynamic public init()
 }
 @_hasMissingDesignatedInitializers @objcMembers @objc(TNSTextMetrics) public class TNSTextMetrics : ObjectiveC.NSObject {
+  @objc deinit
   @objc public var width: Swift.Float {
     @objc get
   }
+  @objc public var actualBoundingBoxLeft: Swift.Float {
+    @objc get
+  }
+  @objc public var actualBoundingBoxRight: Swift.Float {
+    @objc get
+  }
+  @objc public var actualBoundingBoxAscent: Swift.Float {
+    @objc get
+  }
+  @objc public var actualBoundingBoxDescent: Swift.Float {
+    @objc get
+  }
+  @objc public var fontBoundingBoxAscent: Swift.Float {
+    @objc get
+  }
+  @objc public var fontBoundingBoxDescent: Swift.Float {
+    @objc get
+  }
+  @objc public var emHeightAscent: Swift.Float {
+    @objc get
+  }
+  @objc public var emHeightDescent: Swift.Float {
+    @objc get
+  }
+  @objc public var hangingBaseline: Swift.Float {
+    @objc get
+  }
+  @objc public var alphabeticBaseline: Swift.Float {
+    @objc get
+  }
+  @objc public var ideographicBaseline: Swift.Float {
+    @objc get
+  }
   @objc override dynamic public init()
-  @objc deinit
 }
 extension CanvasNative.TNSTextAlignment : Swift.Equatable {}
 extension CanvasNative.TNSTextAlignment : Swift.Hashable {}
-extension CanvasNative.ContextType : Swift.Equatable {}
-extension CanvasNative.ContextType : Swift.Hashable {}
+extension CanvasNative.TNSFillRule : Swift.Equatable {}
+extension CanvasNative.TNSFillRule : Swift.Hashable {}
+extension CanvasNative.TNSTextDirection : Swift.Equatable {}
+extension CanvasNative.TNSTextDirection : Swift.Hashable {}
 extension CanvasNative.TNSLineJoin : Swift.Equatable {}
 extension CanvasNative.TNSLineJoin : Swift.Hashable {}
 extension CanvasNative.TNSLineCap : Swift.Equatable {}
@@ -3004,6 +3061,10 @@ extension CanvasNative.TNSImageSmoothingQuality : Swift.Equatable {}
 extension CanvasNative.TNSImageSmoothingQuality : Swift.Hashable {}
 extension CanvasNative.TNSImageAssetFormat : Swift.Equatable {}
 extension CanvasNative.TNSImageAssetFormat : Swift.Hashable {}
+extension CanvasNative.TNSTextBaseLine : Swift.Equatable {}
+extension CanvasNative.TNSTextBaseLine : Swift.Hashable {}
+extension CanvasNative.ContextType : Swift.Equatable {}
+extension CanvasNative.ContextType : Swift.Hashable {}
 extension CanvasNative.TNSCompositeOperationType : Swift.Equatable {}
 extension CanvasNative.TNSCompositeOperationType : Swift.Hashable {}
 extension CanvasNative.CanvasColorStyleType : Swift.Equatable {}

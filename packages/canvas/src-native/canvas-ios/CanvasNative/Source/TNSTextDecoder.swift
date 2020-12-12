@@ -10,7 +10,7 @@ import Foundation
 @objc(TNSTextDecoder)
 public class TNSTextDecoder: NSObject {
 
-    private var nativeDecoder: Int64 = 0
+    private var decoder: Int64 = 0
     public override init() {
         super.init()
         create(encoding: "utf-8")
@@ -23,39 +23,39 @@ public class TNSTextDecoder: NSObject {
 
     private func create(encoding: String){
         let type = (encoding as NSString).utf8String
-        nativeDecoder = native_create_text_decoder(type)
+        decoder = text_decoder_create(type)
     }
 
     public var encoding: String {
-        let raw = native_text_encoder_get_encoding(nativeDecoder)
+        let raw = text_decoder_get_encoding(decoder)
         if(raw == nil){
             // Return default utf8 ?
             return String()
         }
         let encoding = String(cString: raw!)
-        native_free_char(raw)
+        destroy_string(raw)
         return encoding
     }
 
     public func decode(buffer: Data) -> String{
         var data = [UInt8](buffer)
-        let raw = native_text_decoder_decode(nativeDecoder, &data, buffer.count)
+        let raw = text_decoder_decode(decoder, &data, UInt(buffer.count))
         if(raw == nil){
             return String()
         }
         let result = String(cString: raw!)
-        native_free_char(raw)
+        destroy_string(raw)
         return result
     }
 
     public func decode(bytes: [UInt8]) -> String{
         var data = bytes
-        let raw = native_text_decoder_decode(nativeDecoder, &data, bytes.count)
+        let raw = text_decoder_decode(decoder, &data, UInt(bytes.count))
         if(raw == nil){
             return String()
         }
         let result = String(cString: raw!)
-        native_free_char(raw)
+        destroy_string(raw)
         return result
     }
 
@@ -64,12 +64,12 @@ public class TNSTextDecoder: NSObject {
         let data = bytes.withUnsafeBytes { (buf) -> UnsafePointer<UInt8>? in
             return buf.baseAddress?.assumingMemoryBound(to: UInt8.self)
         }
-        let raw = native_text_decoder_decode(nativeDecoder, data, bytes.count)
+        let raw = text_decoder_decode(decoder, data, UInt(bytes.count))
         if(raw == nil){
             return String()
         }
         let result = String(cString: raw!)
-        native_free_char(raw)
+        destroy_string(raw)
         return result
     }
 
@@ -77,24 +77,24 @@ public class TNSTextDecoder: NSObject {
 
     public func decode(u16 bytes: [UInt16]) -> String {
         var data = bytes
-        let raw = native_text_decoder_decode_u16(nativeDecoder, &data, bytes.count)
+        let raw = text_decoder_decode_u16(decoder, &data, UInt(bytes.count))
         if(raw == nil){
             return String()
         }
         let result = String(cString: raw!)
-        native_free_char(raw)
+        destroy_string(raw)
         return result
     }
 
 
     public func decode(i16 bytes: [Int16]) -> String{
         var data = bytes
-        let raw = native_text_decoder_decode_i16(nativeDecoder, &data, bytes.count)
+        let raw = text_decoder_decode_i16(decoder, &data, UInt(bytes.count))
         if(raw == nil){
             return String()
         }
         let result = String(cString: raw!)
-        native_free_char(raw)
+        destroy_string(raw)
         return result
     }
 
@@ -102,17 +102,17 @@ public class TNSTextDecoder: NSObject {
 
     public func decode(i32 bytes: [Int32]) -> String{
         let data = bytes
-        let raw = native_text_decoder_decode_i32(nativeDecoder, data, bytes.count)
+        let raw = text_decoder_decode_i32(decoder, data, UInt(bytes.count))
         if(raw == nil){
             return String()
         }
         let result = String(cString: raw!)
-        native_free_char(raw)
+        destroy_string(raw)
         return result
     }
 
     deinit {
-        native_text_decoder_free(nativeDecoder)
+        destroy_text_decoder(decoder)
     }
 
 }

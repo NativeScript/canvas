@@ -3,702 +3,828 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct {
-  const void *array;
-  size_t length;
-} CanvasArray;
+typedef enum {
+  SourceOver = 0,
+  SourceIn = 1,
+  SourceOut = 2,
+  SourceAtop = 3,
+  DestinationOver = 4,
+  DestinationIn = 5,
+  DestinationOut = 6,
+  DestinationAtop = 7,
+  Lighter = 8,
+  Copy = 9,
+  Xor = 10,
+  Multiply = 11,
+  Screen = 12,
+  Overlay = 13,
+  Darken = 14,
+  Lighten = 15,
+  ColorDodge = 16,
+  ColorBurn = 17,
+  HardLight = 18,
+  SoftLight = 19,
+  Difference = 20,
+  Exclusion = 21,
+  Hue = 22,
+  Saturation = 23,
+  Color = 24,
+  Luminosity = 25,
+} CompositeOperationType;
+
+typedef enum {
+  NonZero = 0,
+  EvenOdd = 1,
+} FillRule;
+
+typedef enum {
+  Low = 0,
+  Medium = 1,
+  High = 2,
+} ImageSmoothingQuality;
+
+typedef enum {
+  CapButt = 0,
+  CapRound = 1,
+  CapSquare = 2,
+} LineCap;
+
+typedef enum {
+  JoinRound = 0,
+  JoinBevel = 1,
+  JoinMiter = 2,
+} LineJoin;
+
+typedef enum {
+  PaintStyleValueTypeColor = 0,
+  PaintStyleValueTypeGradient = 1,
+  PaintStyleValueTypePattern = 2,
+} PaintStyleValueType;
+
+typedef enum {
+  Repeat = 0,
+  RepeatX = 1,
+  RepeatY = 2,
+  NoRepeat = 3,
+} Repetition;
+
+typedef enum {
+  START = 0,
+  LEFT = 1,
+  CENTER = 2,
+  RIGHT = 3,
+  END = 4,
+} TextAlign;
+
+typedef enum {
+  TOP = 0,
+  HANGING = 1,
+  MIDDLE = 2,
+  ALPHABETIC = 3,
+  IDEOGRAPHIC = 4,
+  BOTTOM = 5,
+} TextBaseLine;
+
+typedef enum {
+  LTR = 0,
+  RTL = 1,
+} TextDirection;
+
+typedef struct Context Context;
 
 typedef struct {
-  float width;
-} CanvasTextMetrics;
+  long long value;
+  PaintStyleValueType value_type;
+} PaintStyleValue;
 
 typedef struct {
-  uint8_t *array;
-  size_t length;
-} NativeByteArray;
+  float *data;
+  uintptr_t data_len;
+} F32Array;
 
 typedef struct {
-  const void *device;
-  const void *queue;
-  const void *drawable;
-} CanvasDevice;
+  uint8_t *data;
+  uintptr_t data_len;
+} U8Array;
 
-long long native_arc(long long canvas_native_ptr,
+typedef struct {
+  double *data;
+  uintptr_t data_len;
+} F64Array;
+
+typedef struct {
+  int16_t *data;
+  uintptr_t data_len;
+} I16Array;
+
+typedef struct {
+  int32_t *data;
+  uintptr_t data_len;
+} I32Array;
+
+typedef struct {
+  int8_t *data;
+  uintptr_t data_len;
+} I8Array;
+
+typedef struct {
+  uint16_t *data;
+  uintptr_t data_len;
+} U16Array;
+
+typedef struct {
+  uint32_t *data;
+  uintptr_t data_len;
+} U32Array;
+
+void context_arc(long long context,
+                 float x,
+                 float y,
+                 float radius,
+                 float start_angle,
+                 float end_angle,
+                 bool anti_clockwise);
+
+void context_arc_to(long long context, float x1, float y1, float x2, float y2, float radius);
+
+void context_begin_path(long long context);
+
+void context_bezier_curve_to(long long context,
+                             float cp1x,
+                             float cp1y,
+                             float cp2x,
+                             float cp2y,
+                             float x,
+                             float y);
+
+void context_clear_rect(long long context, float x, float y, float width, float height);
+
+void context_clip(long long context, long long path, FillRule rule);
+
+void context_clip_rule(long long context, FillRule rule);
+
+void context_close_path(long long context);
+
+long long context_create_image_data(int width, int height);
+
+long long context_create_linear_gradient(long long context, float x0, float y0, float x1, float y1);
+
+long long context_create_pattern(long long context,
+                                 const uint8_t *image_data,
+                                 uintptr_t image_len,
+                                 int width,
+                                 int height,
+                                 Repetition repetition);
+
+long long context_create_pattern_encoded(long long context,
+                                         const uint8_t *image_data,
+                                         uintptr_t image_len,
+                                         Repetition repetition);
+
+long long context_create_radial_gradient(long long context,
+                                         float x0,
+                                         float y0,
+                                         float r0,
+                                         float x1,
+                                         float y1,
+                                         float r1);
+
+const char *context_data_url(long long context, const char *format, float quality);
+
+void context_draw_image(long long context,
+                        const uint8_t *image_data,
+                        uintptr_t image_len,
+                        float width,
+                        float height,
+                        float sx,
+                        float sy,
+                        float s_width,
+                        float s_height,
+                        float dx,
+                        float dy,
+                        float d_width,
+                        float d_height);
+
+void context_draw_image_dx_dy(long long context,
+                              const uint8_t *image_data,
+                              uintptr_t image_len,
+                              float width,
+                              float height,
+                              float dx,
+                              float dy);
+
+void context_draw_image_dx_dy_dw_dh(long long context,
+                                    const uint8_t *image_data,
+                                    uintptr_t image_len,
+                                    float width,
+                                    float height,
+                                    float dx,
+                                    float dy,
+                                    float d_width,
+                                    float d_height);
+
+void context_draw_image_encoded(long long context,
+                                const uint8_t *image_data,
+                                uintptr_t image_len,
+                                float sx,
+                                float sy,
+                                float s_width,
+                                float s_height,
+                                float dx,
+                                float dy,
+                                float d_width,
+                                float d_height);
+
+void context_draw_image_encoded_dx_dy(long long context,
+                                      const uint8_t *image_data,
+                                      uintptr_t image_len,
+                                      float dx,
+                                      float dy);
+
+void context_draw_image_encoded_dx_dy_dw_dh(long long context,
+                                            const uint8_t *image_data,
+                                            uintptr_t image_len,
+                                            float dx,
+                                            float dy,
+                                            float d_width,
+                                            float d_height);
+
+void context_ellipse(long long context,
                      float x,
                      float y,
-                     float radius,
+                     float radius_x,
+                     float radius_y,
+                     float rotation,
                      float start_angle,
                      float end_angle,
                      bool anticlockwise);
 
-long long native_arc_to(long long canvas_native_ptr,
-                        float x1,
-                        float y1,
-                        float x2,
-                        float y2,
-                        float radius);
+void context_fill(long long context, long long path, FillRule rule);
 
-long long native_begin_path(long long canvas_native_ptr);
+void context_fill_rect(long long context, float x, float y, float width, float height);
 
-long long native_bezier_curve_to(long long canvas_native_ptr,
-                                 float cp1x,
-                                 float cp1y,
-                                 float cp2x,
-                                 float cp2y,
-                                 float x,
-                                 float y);
+void context_fill_text(long long context, const char *text, float x, float y, float width);
 
-long long native_clear_canvas(long long canvas_native_ptr, void *view);
+void context_flush(long long context);
 
-long long native_clear_rect(long long canvas_native_ptr,
-                            float x,
-                            float y,
-                            float width,
-                            float height,
-                            void *view);
+TextDirection context_get_direction(const Context *context);
 
-long long native_clip(long long canvas_native_ptr, void *view);
+PaintStyleValue *context_get_fill_style(long long context);
 
-long long native_clip_path_rule(long long canvas_native_ptr,
-                                long long path,
-                                const char *fill_rule,
-                                void *view);
+const char *context_get_filter(long long context);
 
-long long native_clip_rule(long long canvas_native_ptr, const char *fill_rule, void *view);
+const char *context_get_font(long long context);
 
-long long native_close_path(long long canvas_native_ptr);
+float context_get_global_alpha(long long context);
 
-long long native_create_image_asset(void);
+CompositeOperationType context_get_global_composite_operation(long long context);
 
-CanvasArray *native_create_image_data(size_t width, size_t height);
+long long context_get_image_data(long long context, float sx, float sy, float sw, float sh);
 
-long long native_create_matrix(void);
+bool context_get_image_smoothing_enabled(long long context);
 
-long long native_create_path_2d(void);
+ImageSmoothingQuality context_get_image_smoothing_quality(long long context);
 
-long long native_create_path_2d_from_path_data(const char *data);
+LineCap context_get_line_cap(long long context);
 
-long long native_create_path_from_path(long long path);
+F32Array *context_get_line_dash(long long context);
 
-long long native_create_pattern(uint8_t *image_array,
-                                size_t image_size,
-                                int original_width,
-                                int original_height,
-                                const char *repetition);
+float context_get_line_dash_offset(long long context);
 
-long long native_create_pattern_encoded(uint8_t *image_array,
-                                        size_t image_size,
-                                        const char *repetition);
+LineJoin context_get_line_join(long long context);
 
-long long native_create_text_decoder(const char *decoding);
+float context_get_line_width(long long context);
 
-long long native_create_text_encoder(const char *encoding);
+float context_get_miter_limit(long long context);
 
-void native_destroy(long long canvas_ptr);
+float context_get_shadow_blur(long long context);
 
-long long native_draw_image(long long canvas_native_ptr,
-                            const uint8_t *image_array,
-                            size_t image_size,
-                            int original_width,
-                            int original_height,
+const char *context_get_shadow_color(long long context);
+
+float context_get_shadow_offset_x(long long context);
+
+float context_get_shadow_offset_y(long long context);
+
+PaintStyleValue *context_get_stroke_style(long long context);
+
+TextAlign context_get_text_align(long long context);
+
+TextBaseLine context_get_text_baseline(long long context);
+
+long long context_get_transform(long long context);
+
+long long context_init_context(float width,
+                               float height,
+                               float density,
+                               int buffer_id,
+                               uintptr_t samples,
+                               bool alpha,
+                               unsigned int font_color,
+                               float ppi,
+                               TextDirection direction);
+
+bool context_is_point_in_path(long long context, long long path, float x, float y, FillRule rule);
+
+bool context_is_point_in_stroke(long long context, long long path, float x, float y);
+
+void context_line_to(long long context, float x, float y);
+
+long long context_measure_text(long long context, const char *text);
+
+void context_move_to(long long context, float x, float y);
+
+void context_put_image_data(long long context,
+                            long long image_data,
                             float dx,
                             float dy,
-                            void *view);
+                            float dirty_x,
+                            float dirty_y,
+                            float dirty_width,
+                            float dirty_height);
 
-long long native_draw_image_dw(long long canvas_native_ptr,
-                               const uint8_t *image_array,
-                               size_t image_size,
-                               int original_width,
-                               int original_height,
-                               float dx,
-                               float dy,
-                               float d_width,
-                               float d_height,
-                               void *view);
+void context_quadratic_curve_to(long long context, float cpx, float cpy, float x, float y);
 
-long long native_draw_image_dw_raw(long long canvas_native_ptr,
-                                   const uint8_t *image_array,
-                                   size_t image_size,
-                                   int original_width,
-                                   int original_height,
-                                   float dx,
-                                   float dy,
-                                   float d_width,
-                                   float d_height,
-                                   void *view);
+void context_rect(long long context, float x, float y, float width, float height);
 
-long long native_draw_image_raw(long long canvas_native_ptr,
-                                const uint8_t *image_array,
-                                size_t image_size,
-                                int original_width,
-                                int original_height,
-                                float dx,
-                                float dy,
-                                void *view);
+void context_reset_transform(long long context);
 
-long long native_draw_image_sw(long long canvas_native_ptr,
-                               const uint8_t *image_array,
-                               size_t image_size,
-                               int original_width,
-                               int original_height,
-                               float sx,
-                               float sy,
-                               float s_width,
-                               float s_height,
-                               float dx,
-                               float dy,
-                               float d_width,
-                               float d_height,
-                               void *view);
+void context_resize_surface(long long context,
+                            float width,
+                            float height,
+                            float density,
+                            int buffer_id,
+                            uintptr_t samples,
+                            bool alpha,
+                            float ppi);
 
-long long native_draw_image_sw_raw(long long canvas_native_ptr,
-                                   const uint8_t *image_array,
-                                   size_t image_size,
-                                   int original_width,
-                                   int original_height,
-                                   float sx,
-                                   float sy,
-                                   float s_width,
-                                   float s_height,
-                                   float dx,
-                                   float dy,
-                                   float d_width,
-                                   float d_height,
-                                   void *view);
+void context_restore(long long context);
 
-void native_drop_image_data(CanvasArray *data);
+void context_rotate(long long context, float angle);
 
-void native_drop_text_metrics(CanvasTextMetrics *data);
+void context_save(long long context);
 
-long long native_ellipse(long long canvas_native_ptr,
-                         float x,
-                         float y,
-                         float radius_x,
-                         float radius_y,
-                         float rotation,
-                         float start_angle,
-                         float end_angle,
-                         bool anticlockwise);
+void context_scale(long long context, float x, float y);
 
-long long native_fill(long long canvas_native_ptr, void *view);
+void context_set_direction(long long context, TextDirection direction);
 
-long long native_fill_path_rule(long long canvas_native_ptr,
-                                long long path_ptr,
-                                const char *rule,
-                                void *view);
+void context_set_fill_style(long long context, long long style);
 
-long long native_fill_rect(long long canvas_native_ptr,
-                           float x,
-                           float y,
-                           float width,
-                           float height,
-                           void *view);
+void context_set_filter(long long context, const char *filter);
 
-long long native_fill_rule(long long canvas_native_ptr, const char *rule, void *view);
+void context_set_font(long long context, const char *filter);
 
-long long native_fill_text(long long canvas_native_ptr,
-                           const char *text,
-                           float x,
-                           float y,
-                           float width,
-                           void *view);
+void context_set_global_alpha(long long context, float alpha);
 
-void native_flip_y_in_place(uint8_t *data,
+void context_set_global_composite_operation(long long context, CompositeOperationType operation);
+
+void context_set_image_smoothing_enabled(long long context, bool enabled);
+
+void context_set_image_smoothing_quality(long long context, ImageSmoothingQuality quality);
+
+void context_set_line_cap(long long context, LineCap cap);
+
+void context_set_line_dash(long long context, const float *data, uintptr_t data_length);
+
+void context_set_line_dash_offset(long long context, float offset);
+
+void context_set_line_join(long long context, LineJoin join);
+
+void context_set_line_width(long long context, float width);
+
+void context_set_miter_limit(long long context, float limit);
+
+void context_set_shadow_blur(long long context, float blur);
+
+void context_set_shadow_color(long long context, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+
+void context_set_shadow_color_string(long long context, const char *color);
+
+void context_set_shadow_offset_x(long long context, float x);
+
+void context_set_shadow_offset_y(long long context, float y);
+
+void context_set_stroke_style(long long context, long long style);
+
+void context_set_text_align(long long context, TextAlign align);
+
+void context_set_text_baseline(long long context, TextBaseLine baseline);
+
+void context_set_transform(long long context, float a, float b, float c, float d, float e, float f);
+
+void context_set_transform_matrix(long long context, long long matrix);
+
+U8Array *context_snapshot_canvas(long long context);
+
+void context_stroke(long long context, long long path);
+
+void context_stroke_rect(long long context, float x, float y, float width, float height);
+
+void context_stroke_text(long long context, const char *text, float x, float y, float width);
+
+void context_transform(long long context, float a, float b, float c, float d, float e, float f);
+
+void context_translate(long long context, float x, float y);
+
+void destroy_context(long long context);
+
+void destroy_f32_array(F32Array *array);
+
+void destroy_f64_array(F64Array *array);
+
+void destroy_i16_array(I16Array *array);
+
+void destroy_i32_array(I32Array *array);
+
+void destroy_i8_array(I8Array *array);
+
+void destroy_image_asset(long long asset);
+
+void destroy_image_data(long long image_data);
+
+void destroy_matrix(long long matrix);
+
+void destroy_paint_style(long long style);
+
+void destroy_paint_style_value(long long value);
+
+void destroy_path(long long path);
+
+void destroy_string(const char *string);
+
+void destroy_text_decoder(long long decoder);
+
+void destroy_text_encoder(long long encoder);
+
+void destroy_text_metrics(long long metrics);
+
+void destroy_u16_array(U16Array *array);
+
+void destroy_u32_array(U32Array *array);
+
+void destroy_u8_array(U8Array *array);
+
+void flip_y_in_place(uint8_t *data, uintptr_t length, uintptr_t bytes_per_row, uintptr_t height);
+
+void flip_y_in_place_3d(uint8_t *data,
+                        uintptr_t length,
+                        uintptr_t bytes_per_row,
+                        uintptr_t height,
+                        uintptr_t depth);
+
+void flip_y_in_place_3d_f32(float *data,
                             uintptr_t length,
                             uintptr_t bytes_per_row,
-                            uintptr_t height);
-
-void native_flip_y_in_place_3d(uint8_t *data,
-                               uintptr_t length,
-                               uintptr_t bytes_per_row,
-                               uintptr_t height,
-                               uintptr_t depth);
-
-void native_flip_y_in_place_3d_f32(float *data,
-                                   uintptr_t length,
-                                   uintptr_t bytes_per_row,
-                                   uintptr_t height,
-                                   uintptr_t depth);
-
-void native_flip_y_in_place_3d_f64(double *data,
-                                   uintptr_t length,
-                                   uintptr_t bytes_per_row,
-                                   uintptr_t height,
-                                   uintptr_t depth);
-
-void native_flip_y_in_place_3d_i16(int16_t *data,
-                                   uintptr_t length,
-                                   uintptr_t bytes_per_row,
-                                   uintptr_t height,
-                                   uintptr_t depth);
-
-void native_flip_y_in_place_3d_i32(int32_t *data,
-                                   uintptr_t length,
-                                   uintptr_t bytes_per_row,
-                                   uintptr_t height,
-                                   uintptr_t depth);
-
-void native_flip_y_in_place_3d_i8(int8_t *data,
-                                  uintptr_t length,
-                                  uintptr_t bytes_per_row,
-                                  uintptr_t height,
-                                  uintptr_t depth);
-
-void native_flip_y_in_place_3d_u16(uint16_t *data,
-                                   uintptr_t length,
-                                   uintptr_t bytes_per_row,
-                                   uintptr_t height,
-                                   uintptr_t depth);
-
-void native_flip_y_in_place_3d_u32(uint32_t *data,
-                                   uintptr_t length,
-                                   uintptr_t bytes_per_row,
-                                   uintptr_t height,
-                                   uintptr_t depth);
-
-void native_flip_y_in_place_f32(float *data,
-                                uintptr_t length,
-                                uintptr_t bytes_per_row,
-                                uintptr_t height);
-
-void native_flip_y_in_place_f64(double *data,
-                                uintptr_t length,
-                                uintptr_t bytes_per_row,
-                                uintptr_t height);
-
-void native_flip_y_in_place_i16(int16_t *data,
-                                uintptr_t length,
-                                uintptr_t bytes_per_row,
-                                uintptr_t height);
-
-void native_flip_y_in_place_i32(int32_t *data,
-                                uintptr_t length,
-                                uintptr_t bytes_per_row,
-                                uintptr_t height);
-
-void native_flip_y_in_place_i8(int8_t *data,
-                               uintptr_t length,
-                               uintptr_t bytes_per_row,
-                               uintptr_t height);
-
-void native_flip_y_in_place_u16(uint16_t *data,
-                                uintptr_t length,
-                                uintptr_t bytes_per_row,
-                                uintptr_t height);
-
-void native_flip_y_in_place_u32(uint32_t *data,
-                                uintptr_t length,
-                                uintptr_t bytes_per_row,
-                                uintptr_t height);
-
-long long native_flush(long long canvas_ptr);
-
-void native_free_byte_array(NativeByteArray *array);
-
-void native_free_char(const char *text);
-
-void native_free_matrix_data(CanvasArray *data);
-
-void native_free_path_2d(long long path);
-
-void native_free_pattern(long long pattern);
-
-long long native_get_current_transform(long long canvas_native_ptr);
-
-const char *native_get_direction(long long canvas_native_ptr);
-
-CanvasArray *native_get_image_data(long long canvas_native_ptr,
-                                   float sx,
-                                   float sy,
-                                   size_t sw,
-                                   size_t sh);
-
-CanvasDevice *native_get_ios_device(long long canvas_native_ptr);
-
-CanvasArray *native_get_matrix(long long matrix);
-
-long long native_get_vertex_attrib_offset(unsigned int index, unsigned int pname);
-
-void native_gl_tex_image_2D_asset(unsigned int target,
-                                  int level,
-                                  int internalformat,
-                                  int width,
-                                  int height,
-                                  int border,
-                                  unsigned int format,
-                                  unsigned int image_type,
-                                  long long asset,
-                                  uint8_t flip_y);
-
-void native_gl_tex_sub_image_2D_asset(unsigned int target,
-                                      int level,
-                                      int xoffset,
-                                      int yoffset,
-                                      int width,
-                                      int height,
-                                      unsigned int format,
-                                      unsigned int image_type,
-                                      long long asset,
-                                      uint8_t flip_y);
-
-long long native_image_asset_flip_x(long long asset);
-
-void native_image_asset_flip_x_in_place_owned(uint32_t width,
-                                              uint32_t height,
-                                              uint8_t *buf,
-                                              uintptr_t length);
-
-long long native_image_asset_flip_y(long long asset);
-
-void native_image_asset_flip_y_in_place_owned(uint32_t width,
-                                              uint32_t height,
-                                              uint8_t *buf,
-                                              uintptr_t length);
-
-void native_image_asset_free_bytes(NativeByteArray data);
-
-NativeByteArray native_image_asset_get_bytes(long long asset);
-
-const char *native_image_asset_get_error(long long asset);
-
-unsigned int native_image_asset_get_height(long long asset);
-
-unsigned int native_image_asset_get_width(long long asset);
-
-unsigned int native_image_asset_has_error(long long asset);
-
-unsigned int native_image_asset_load_from_path(long long asset, const char *path);
-
-unsigned int native_image_asset_load_from_raw(long long asset, const uint8_t *array, size_t size);
-
-void native_image_asset_release(long long asset);
-
-long long native_image_asset_scale(long long asset, unsigned int x, unsigned int y);
-
-long long native_image_smoothing_enabled(long long canvas_native_ptr, bool enabled);
-
-long long native_image_smoothing_quality(long long canvas_native_ptr, const char *quality);
-
-long long native_init(void *device, void *queue, void *view, float scale, const char *direction);
-
-long long native_init_legacy(int width,
-                             int height,
-                             int buffer_id,
-                             float scale,
-                             uintptr_t stencil,
-                             uintptr_t samples,
-                             uint8_t alpha,
-                             const char *direction);
-
-unsigned char native_is_point_in_path(int64_t canvas_ptr, float x, float y);
-
-unsigned char native_is_point_in_path_with_path_rule(int64_t canvas_ptr,
-                                                     int64_t path,
-                                                     float x,
-                                                     float y,
-                                                     const char *fill_rule);
-
-unsigned char native_is_point_in_path_with_rule(int64_t canvas_ptr,
-                                                float x,
-                                                float y,
-                                                const char *fill_rule);
-
-unsigned char native_is_point_in_stroke(int64_t canvas_ptr, float x, float y);
-
-unsigned char native_is_point_in_stroke_with_path(int64_t canvas_ptr,
-                                                  int64_t path,
-                                                  float x,
-                                                  float y);
-
-long long native_line_dash_offset(long long canvas_native_ptr, float offset);
-
-long long native_line_join(long long canvas_native_ptr, const char *line_join);
-
-long long native_line_to(long long canvas_native_ptr, float x, float y);
-
-CanvasTextMetrics *native_measure_text(long long canvas_native_ptr, const char *text);
-
-long long native_miter_limit(long long canvas_native_ptr, float limit);
-
-long long native_move_to(long long canvas_native_ptr, float x, float y);
-
-unsigned int native_native_image_asset_save_path(long long asset,
-                                                 const char *path,
-                                                 unsigned int format);
-
-long long native_path_2d_add_path(long long path, long long path_to_add, long long matrix);
-
-long long native_path_2d_arc(long long path,
-                             float x,
-                             float y,
-                             float radius,
-                             float start_angle,
-                             float end_angle,
-                             bool anticlockwise);
-
-long long native_path_2d_arc_to(long long path,
-                                float x1,
-                                float y1,
-                                float x2,
-                                float y2,
-                                float radius);
-
-long long native_path_2d_bezier_curve_to(long long path,
-                                         float cp1x,
-                                         float cp1y,
-                                         float cp2x,
-                                         float cp2y,
-                                         float x,
-                                         float y);
-
-long long native_path_2d_close_path(long long path);
-
-long long native_path_2d_ellipse(long long path,
-                                 float x,
-                                 float y,
-                                 float radius_x,
-                                 float radius_y,
-                                 float rotation,
-                                 float start_angle,
-                                 float end_angle,
-                                 bool anticlockwise);
-
-long long native_path_2d_line_to(long long path, float x, float y);
-
-long long native_path_2d_move_to(long long path, float x, float y);
-
-long long native_path_2d_quadratic_curve_to(long long path, float cpx, float cpy, float x, float y);
-
-long long native_path_2d_rect(long long path, float x, float y, float width, float height);
-
-long long native_put_image_data(long long canvas_native_ptr,
-                                size_t width,
-                                size_t height,
-                                const uint8_t *array,
-                                size_t array_size,
-                                float x,
-                                float y,
-                                float dirty_x,
-                                float dirty_y,
-                                size_t dirty_width,
-                                size_t dirty_height);
-
-long long native_quadratic_curve_to(long long canvas_native_ptr,
-                                    float cpx,
-                                    float cpy,
-                                    float x,
-                                    float y);
-
-long long native_rect(long long canvas_native_ptr, float x, float y, float width, float height);
-
-long long native_reset_transform(long long canvas_native_ptr);
-
-long long native_restore(long long canvas_native_ptr);
-
-long long native_rotate(long long canvas_native_ptr, float angle, void *view);
-
-long long native_save(long long canvas_native_ptr);
-
-long long native_scale(long long canvas_native_ptr, float x, float y, void *view);
-
-long long native_set_current_transform(long long canvas_native_ptr, long long matrix);
-
-long long native_set_direction(long long canvas_native_ptr, const char *direction);
-
-long long native_set_fill_color(long long canvas_native_ptr, uint32_t color);
-
-long long native_set_fill_color_rgba(long long canvas_native_ptr,
-                                     uint8_t red,
-                                     uint8_t green,
-                                     uint8_t blue,
-                                     uint8_t alpha);
-
-long long native_set_fill_gradient_linear(long long canvas_native_ptr,
-                                          float x0,
-                                          float y0,
-                                          float x1,
-                                          float y1,
-                                          size_t colors_size,
-                                          const unsigned int *colors_array,
-                                          size_t positions_size,
-                                          const float *positions_array);
-
-long long native_set_fill_gradient_radial(long long canvas_native_ptr,
-                                          float x0,
-                                          float y0,
-                                          float radius_0,
-                                          float x1,
-                                          float y1,
-                                          float radius_1,
-                                          size_t colors_size,
-                                          const unsigned int *colors_array,
-                                          size_t positions_size,
-                                          const float *positions_array);
-
-long long native_set_fill_pattern(long long canvas_native_ptr, long long pattern);
-
-long long native_set_font(long long canvas_native_ptr, const char *font);
-
-long long native_set_global_alpha(long long canvas_native_ptr, uint8_t alpha);
-
-long long native_set_global_composite_operation(long long canvas_native_ptr, const char *composite);
-
-long long native_set_line_cap(long long canvas_native_ptr, const char *line_cap);
-
-long long native_set_line_dash(long long canvas_native_ptr, size_t size, const float *array);
-
-long long native_set_line_width(long long canvas_native_ptr, float line_width);
-
-long long native_set_matrix(long long matrix, const void *array, size_t length);
-
-long long native_set_pattern_transform(long long pattern, long long matrix);
-
-long long native_set_stroke_color(long long canvas_native_ptr, uint32_t color);
-
-long long native_set_stroke_color_rgba(long long canvas_native_ptr,
-                                       uint8_t red,
-                                       uint8_t green,
-                                       uint8_t blue,
-                                       uint8_t alpha);
-
-long long native_set_stroke_gradient_linear(long long canvas_native_ptr,
-                                            float x0,
-                                            float y0,
-                                            float x1,
-                                            float y1,
-                                            size_t colors_size,
-                                            const unsigned int *colors_array,
-                                            size_t positions_size,
-                                            const float *positions_array);
-
-long long native_set_stroke_gradient_radial(long long canvas_native_ptr,
-                                            float x0,
-                                            float y0,
-                                            float radius_0,
-                                            float x1,
-                                            float y1,
-                                            float radius_1,
-                                            size_t colors_size,
-                                            const unsigned int *colors_array,
-                                            size_t positions_size,
-                                            const float *positions_array);
-
-long long native_set_stroke_pattern(long long canvas_native_ptr, long long pattern);
-
-long long native_set_transform(long long canvas_native_ptr,
-                               float a,
-                               float b,
-                               float c,
-                               float d,
-                               float e,
-                               float f,
-                               void *view);
-
-long long native_shadow_blur(long long canvas_native_ptr, float limit);
-
-long long native_shadow_color(long long canvas_native_ptr, uint32_t color);
-
-long long native_shadow_offset_x(long long canvas_native_ptr, float x);
-
-long long native_shadow_offset_y(long long canvas_native_ptr, float y);
-
-NativeByteArray *native_snapshot_canvas(long long canvas_native_ptr);
-
-long long native_stroke(long long canvas_native_ptr, void *view);
-
-long long native_stroke_path(long long canvas_native_ptr, long long path, void *view);
-
-long long native_stroke_rect(long long canvas_native_ptr,
-                             float x,
-                             float y,
-                             float width,
-                             float height,
-                             void *view);
-
-long long native_stroke_text(long long canvas_native_ptr,
-                             const char *text,
-                             float x,
-                             float y,
-                             float width,
-                             void *view);
-
-long long native_surface_resized(int _width,
-                                 int _height,
-                                 void *_device,
-                                 void *_queue,
-                                 float _scale,
-                                 long long current_canvas);
-
-long long native_surface_resized_legacy(int width,
-                                        int height,
-                                        int buffer_id,
-                                        float _scale,
-                                        uintptr_t stencil,
-                                        uintptr_t samples,
-                                        uint8_t alpha,
-                                        long long canvas_native_ptr);
-
-void native_tex_image_3D_asset(unsigned int target,
+                            uintptr_t height,
+                            uintptr_t depth);
+
+void flip_y_in_place_3d_f64(double *data,
+                            uintptr_t length,
+                            uintptr_t bytes_per_row,
+                            uintptr_t height,
+                            uintptr_t depth);
+
+void flip_y_in_place_3d_i16(int16_t *data,
+                            uintptr_t length,
+                            uintptr_t bytes_per_row,
+                            uintptr_t height,
+                            uintptr_t depth);
+
+void flip_y_in_place_3d_i32(int32_t *data,
+                            uintptr_t length,
+                            uintptr_t bytes_per_row,
+                            uintptr_t height,
+                            uintptr_t depth);
+
+void flip_y_in_place_3d_i8(int8_t *data,
+                           uintptr_t length,
+                           uintptr_t bytes_per_row,
+                           uintptr_t height,
+                           uintptr_t depth);
+
+void flip_y_in_place_3d_u16(uint16_t *data,
+                            uintptr_t length,
+                            uintptr_t bytes_per_row,
+                            uintptr_t height,
+                            uintptr_t depth);
+
+void flip_y_in_place_3d_u32(uint32_t *data,
+                            uintptr_t length,
+                            uintptr_t bytes_per_row,
+                            uintptr_t height,
+                            uintptr_t depth);
+
+void flip_y_in_place_f32(float *data, uintptr_t length, uintptr_t bytes_per_row, uintptr_t height);
+
+void flip_y_in_place_f64(double *data, uintptr_t length, uintptr_t bytes_per_row, uintptr_t height);
+
+void flip_y_in_place_i16(int16_t *data,
+                         uintptr_t length,
+                         uintptr_t bytes_per_row,
+                         uintptr_t height);
+
+void flip_y_in_place_i32(int32_t *data,
+                         uintptr_t length,
+                         uintptr_t bytes_per_row,
+                         uintptr_t height);
+
+void flip_y_in_place_i8(int8_t *data, uintptr_t length, uintptr_t bytes_per_row, uintptr_t height);
+
+void flip_y_in_place_u16(uint16_t *data,
+                         uintptr_t length,
+                         uintptr_t bytes_per_row,
+                         uintptr_t height);
+
+void flip_y_in_place_u32(uint32_t *data,
+                         uintptr_t length,
+                         uintptr_t bytes_per_row,
+                         uintptr_t height);
+
+long long gl_get_vertex_attrib_offset(unsigned int index, unsigned int pname);
+
+void gl_tex_image_2D_asset(unsigned int target,
+                           int level,
+                           int internalformat,
+                           int border,
+                           unsigned int format,
+                           unsigned int image_type,
+                           long long asset,
+                           bool flip_y);
+
+void gl_tex_image_3D_asset(unsigned int target,
+                           int level,
+                           int internalformat,
+                           int width,
+                           int height,
+                           int depth,
+                           int border,
+                           unsigned int format,
+                           unsigned int image_type,
+                           long long asset,
+                           bool flip_y);
+
+void gl_tex_sub_image_2D_asset(unsigned int target,
                                int level,
-                               int internalformat,
-                               int width,
-                               int height,
-                               int depth,
-                               int border,
+                               int xoffset,
+                               int yoffset,
                                unsigned int format,
                                unsigned int image_type,
                                long long asset,
-                               uint8_t flip_y);
+                               bool flip_y);
 
-void native_tex_sub_image_3D_asset(unsigned int target,
-                                   int level,
-                                   int xoffset,
-                                   int yoffset,
-                                   int zoffset,
-                                   int width,
-                                   int height,
-                                   int depth,
-                                   unsigned int format,
-                                   unsigned int image_type,
-                                   long long asset,
-                                   uint8_t flip_y);
+void gl_tex_sub_image_3D_asset(unsigned int target,
+                               int level,
+                               int xoffset,
+                               int yoffset,
+                               int zoffset,
+                               int width,
+                               int height,
+                               int depth,
+                               unsigned int format,
+                               unsigned int image_type,
+                               long long asset,
+                               bool flip_y);
 
-long long native_text_align(long long canvas_native_ptr, const char *alignment);
+void gl_vertex_attrib_pointer(unsigned int index,
+                              int size,
+                              unsigned int pointer_type,
+                              bool normalized,
+                              int stride,
+                              long long offset);
 
-const char *native_text_decoder_decode(int64_t decoder, const uint8_t *data, size_t len);
+void gradient_add_color_stop(long long style, float stop, const char *color);
 
-const char *native_text_decoder_decode_i16(int64_t decoder, const int16_t *data, size_t len);
+long long image_asset_create(void);
 
-const char *native_text_decoder_decode_i32(int64_t decoder, const int32_t *data, size_t len);
+bool image_asset_flip_x(long long asset);
 
-const char *native_text_decoder_decode_u16(int64_t decoder, const uint16_t *data, size_t len);
+bool image_asset_flip_x_in_place(long long asset);
 
-void native_text_decoder_free(int64_t decoder);
+void image_asset_flip_x_in_place_owned(uint8_t *buf, uintptr_t length);
 
-const char *native_text_decoder_get_encoding(int64_t decoder);
+bool image_asset_flip_y(long long asset);
 
-NativeByteArray *native_text_encoder_encode(int64_t encoder, const char *text);
+bool image_asset_flip_y_in_place(long long asset);
 
-void native_text_encoder_free(int64_t encoder);
+void image_asset_flip_y_in_place_owned(uint8_t *buf, uintptr_t length);
 
-const char *native_text_encoder_get_encoding(int64_t encoder);
+U8Array *image_asset_get_bytes(long long asset);
 
-char *native_to_data_url(long long canvas_ptr, const char *format, float quality);
+const char *image_asset_get_error(long long asset);
 
-long long native_transform(long long canvas_native_ptr,
-                           float a,
-                           float b,
-                           float c,
-                           float d,
-                           float e,
-                           float f,
-                           void *_view);
+U8Array *image_asset_get_rgb_bytes(long long asset);
 
-long long native_translate(long long canvas_native_ptr, float x, float y, void *view);
+U8Array *image_asset_get_rgba_bytes(long long asset);
 
-void native_vertex_attrib_pointer(unsigned int index,
-                                  int size,
-                                  unsigned int pointer_type,
-                                  uint8_t normalized,
-                                  int stride,
-                                  long long offset);
+bool image_asset_has_error(long long asset);
+
+unsigned int image_asset_height(long long asset);
+
+bool image_asset_load_from_path(long long asset, const char *path);
+
+bool image_asset_load_from_raw(long long asset, const uint8_t *array, uintptr_t size);
+
+bool image_asset_save_path(long long asset, const char *path, unsigned int format);
+
+bool image_asset_scale(long long asset, unsigned int x, unsigned int y);
+
+unsigned int image_asset_width(long long asset);
+
+long long image_data_create(int width, int height);
+
+uint8_t *image_data_data(long long image_data);
+
+uintptr_t image_data_data_length(long long image_data);
+
+int image_data_height(long long image_data);
+
+int image_data_width(long long image_data);
+
+float matrix_a(long long matrix);
+
+float matrix_b(long long matrix);
+
+float matrix_c(long long matrix);
+
+long long matrix_create(void);
+
+float matrix_d(long long matrix);
+
+float matrix_e(long long matrix);
+
+float matrix_f(long long matrix);
+
+float matrix_m11(long long matrix);
+
+float matrix_m12(long long matrix);
+
+float matrix_m13(long long matrix);
+
+float matrix_m14(long long matrix);
+
+float matrix_m21(long long matrix);
+
+float matrix_m22(long long matrix);
+
+float matrix_m23(long long matrix);
+
+float matrix_m24(long long matrix);
+
+float matrix_m31(long long matrix);
+
+float matrix_m32(long long matrix);
+
+float matrix_m33(long long matrix);
+
+float matrix_m34(long long matrix);
+
+float matrix_m41(long long matrix);
+
+float matrix_m42(long long matrix);
+
+float matrix_m43(long long matrix);
+
+float matrix_m44(long long matrix);
+
+void matrix_set_a(long long matrix, float a);
+
+void matrix_set_b(long long matrix, float b);
+
+void matrix_set_c(long long matrix, float c);
+
+void matrix_set_d(long long matrix, float d);
+
+void matrix_set_e(long long matrix, float e);
+
+void matrix_set_f(long long matrix, float f);
+
+void matrix_set_m11(long long matrix, float m11);
+
+void matrix_set_m12(long long matrix, float m12);
+
+void matrix_set_m13(long long matrix, float m13);
+
+void matrix_set_m14(long long matrix, float m14);
+
+void matrix_set_m21(long long matrix, float m21);
+
+void matrix_set_m22(long long matrix, float m22);
+
+void matrix_set_m23(long long matrix, float m23);
+
+void matrix_set_m24(long long matrix, float m24);
+
+void matrix_set_m31(long long matrix, float m31);
+
+void matrix_set_m32(long long matrix, float m32);
+
+void matrix_set_m33(long long matrix, float m33);
+
+void matrix_set_m34(long long matrix, float m34);
+
+void matrix_set_m41(long long matrix, float m41);
+
+void matrix_set_m42(long long matrix, float m42);
+
+void matrix_set_m43(long long matrix, float m43);
+
+void matrix_set_m44(long long matrix, float m44);
+
+void matrix_update(long long matrix, const float *data, uintptr_t data_len);
+
+const char *paint_style_get_color_string(long long color);
+
+void paint_style_set_fill_color_with_string(long long context, const char *color);
+
+void paint_style_set_stroke_color_with_string(long long context, const char *color);
+
+void path_add_path(long long path, long long path_to_add);
+
+void path_add_path_with_matrix(long long path, long long path_to_add, long long matrix);
+
+void path_arc(long long path,
+              float x,
+              float y,
+              float radius,
+              float start_angle,
+              float end_angle,
+              bool anti_clockwise);
+
+void path_arc_to(long long path, float x1, float y1, float x2, float y2, float radius);
+
+void path_bezier_curve_to(long long path,
+                          float cp1x,
+                          float cp1y,
+                          float cp2x,
+                          float cp2y,
+                          float x,
+                          float y);
+
+void path_close_path(long long path);
+
+long long path_create(void);
+
+long long path_create_with_path(long long path);
+
+long long path_create_with_string(const char *string);
+
+void path_ellipse(long long path,
+                  float x,
+                  float y,
+                  float radius_x,
+                  float radius_y,
+                  float rotation,
+                  float start_angle,
+                  float end_angle,
+                  bool anticlockwise);
+
+void path_line_to(long long path, float x, float y);
+
+void path_move_to(long long path, float x, float y);
+
+void path_quadratic_curve_to(long long path, float cpx, float cpy, float x, float y);
+
+void path_rect(long long path, float x, float y, float width, float height);
+
+void pattern_set_transform(long long pattern, long long matrix);
+
+long long text_decoder_create(const char *decoding);
+
+const char *text_decoder_decode(long long decoder, const uint8_t *data, uintptr_t len);
+
+const char *text_decoder_decode_i16(long long decoder, const int16_t *data, uintptr_t len);
+
+const char *text_decoder_decode_i32(long long decoder, const int32_t *data, uintptr_t len);
+
+const char *text_decoder_decode_u16(long long decoder, const uint16_t *data, uintptr_t len);
+
+const char *text_decoder_get_encoding(long long decoder);
+
+long long text_encoder_create(const char *encoding);
+
+U8Array *text_encoder_encode(long long encoder, const char *text);
+
+const char *text_encoder_get_encoding(long long encoder);
+
+float text_metrics_get_actual_bounding_box_ascent(long long metrics);
+
+float text_metrics_get_actual_bounding_box_descent(long long metrics);
+
+float text_metrics_get_actual_bounding_box_left(long long metrics);
+
+float text_metrics_get_actual_bounding_box_right(long long metrics);
+
+float text_metrics_get_alphabetic_baseline(long long metrics);
+
+float text_metrics_get_em_height_ascent(long long metrics);
+
+float text_metrics_get_em_height_descent(long long metrics);
+
+float text_metrics_get_font_bounding_box_ascent(long long metrics);
+
+float text_metrics_get_font_bounding_box_descent(long long metrics);
+
+float text_metrics_get_hanging_baseline(long long metrics);
+
+float text_metrics_get_ideographic_baseline(long long metrics);
+
+float text_metrics_get_width(long long metrics);

@@ -10,18 +10,24 @@ export class Path extends SVGItem {
 	public d: string;
 
 	handleValues(canvas?) {
-		let ctx: any;
+		let ctx: CanvasRenderingContext2D;
 		if (canvas) {
 			ctx = canvas.getContext('2d');
 		} else {
 			ctx = this._canvas.getContext('2d') as any;
 		}
 		ctx.save();
-		if (this.strokeWidth) {
+		// @ts-ignore
+		if (this.parent.strokeWidth !== undefined) {
+			// @ts-ignore
+			ctx.lineWidth = this.parent.strokeWidth;
+		}
+		if (this.strokeWidth !== undefined) {
 			ctx.lineWidth = this.strokeWidth;
 		}
 		ctx.globalAlpha = this._realOpacity;
 		let lastOpacity;
+// @ts-ignore
 		if (this._doFillOpacity()) {
 			lastOpacity = ctx.globalAlpha;
 			ctx.globalAlpha = this._realFillOpacity;
@@ -31,9 +37,9 @@ export class Path extends SVGItem {
 			path = new Path2D(this.d);
 		}
 		if (path && this._doFill()) {
-			if (this.fill !== undefined && this.fill !== 'none') {
-				if (this.fill && this.fill.indexOf('url') > -1) {
-					const fill = this._getViewById(this.fill);
+			if (this._realFill !== undefined && this._realFill !== 'none') {
+				if (this._realFill && this._realFill.indexOf('url') > -1) {
+					const fill = this._getViewById(this._realFill);
 					if (fill) {
 						const style = fill._getFillOrStrokeStyle();
 						if (style instanceof CanvasGradient) {
@@ -43,19 +49,31 @@ export class Path extends SVGItem {
 						}
 					}
 				} else {
-					ctx.fillStyle = this.fill;
+					ctx.fillStyle = this._realFill;
 				}
+				ctx.fill(path, this.fillRule);
 			}
-			ctx.fill(path);
 		}
 
 		if (lastOpacity !== undefined) {
 			ctx.globalAlpha = lastOpacity;
 		}
+
+		if (this.strokeLinecap) {
+			ctx.lineCap = this.strokeLinecap;
+		}
+
+		if (this.strokeLinejoin) {
+			ctx.lineJoin = this.strokeLinejoin;
+		}
+		const miterLimit = parseInt(this.strokeMiterlimitProperty, 10)
+		if (!isNaN(miterLimit)) {
+			ctx.miterLimit = miterLimit;
+		}
 		if (path && this._doStroke()) {
-			if (this.stroke !== undefined && this.stroke !== 'none') {
-				if (this.stroke && this.stroke.indexOf('url') > -1) {
-					const stroke = this._getViewById(this.stroke);
+			if (this._realStroke !== undefined && this._realStroke !== 'none') {
+				if (this._realStroke && this._realStroke.indexOf('url') > -1) {
+					const stroke = this._getViewById(this._realStroke);
 					if (stroke) {
 						const style = stroke._getFillOrStrokeStyle();
 						if (style instanceof CanvasGradient) {
@@ -65,10 +83,10 @@ export class Path extends SVGItem {
 						}
 					}
 				} else {
-					ctx.strokeStyle = this.stroke;
+					ctx.strokeStyle = this._realStroke;
 				}
+				ctx.stroke(path);
 			}
-			ctx.stroke(path);
 		}
 		ctx.restore();
 	}

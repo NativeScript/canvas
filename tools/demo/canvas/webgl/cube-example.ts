@@ -106,7 +106,9 @@ export function main(canvas, nativeCanvas?) {
   }
 
   if (!nativeCanvas) {
+
     canvas.on('loaded', args => {
+    	console.log('here');
       if (paused) {
         setTimeout(() => {
           if (paused) {
@@ -339,7 +341,6 @@ function loadTexture(gl) {
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
         srcFormat, srcType, asset);
-
       // WebGL1 has different requirements for power of 2 images
       // vs non power of 2 images so check if the image is a
       // power of 2 in both dimensions.

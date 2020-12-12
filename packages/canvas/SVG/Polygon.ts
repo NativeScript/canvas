@@ -11,7 +11,7 @@ export class Polygon extends SVGItem {
 
 
 	handleValues(canvas?) {
-		let ctx: any;
+		let ctx: CanvasRenderingContext2D;
 		if (canvas) {
 			ctx = canvas.getContext('2d');
 		} else {
@@ -50,7 +50,7 @@ export class Polygon extends SVGItem {
 
 		if (this._doFill()) {
 			ctx.fillStyle = this._realFill;
-			ctx.fill(path);
+			ctx.fill(path, this.fillRule);
 		}
 
 		if (this._doStroke()) {

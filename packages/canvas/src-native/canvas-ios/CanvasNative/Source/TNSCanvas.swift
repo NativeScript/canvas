@@ -56,9 +56,10 @@ public class TNSCanvas: UIView, RenderListener {
 
     
     
-    public static func createSVGMatrix() -> TNSDOMMatrix{
+    public static func createSVGMatrix() -> TNSDOMMatrix {
         TNSDOMMatrix()
     }
+    
     var isContextLost: Bool = false
     var _handleInvalidationManually: Bool = false
     public var handleInvalidationManually: Bool {
@@ -77,11 +78,12 @@ public class TNSCanvas: UIView, RenderListener {
             }
         }
     }
+    
     public func didDraw() {
         if(dataURLCallbacks.count == 0) {return}
         DispatchQueue.main.async {
             for request in self.dataURLCallbacks {
-                let result = native_to_data_url(self.canvas, request.type, request.format)
+                let result = context_data_url(self.context, request.type, request.format)
                 let data = String(cString: result!)
                 request.callback(data)
             }
@@ -102,9 +104,9 @@ public class TNSCanvas: UIView, RenderListener {
             let data = Data(bytes: &ss, count: ss.count)
             return data.base64EncodedString(options: Data.Base64EncodingOptions(rawValue: 0))
         }
-        let result = native_to_data_url(canvas, type, format)
+        let result = context_data_url(self.context, type, format)
         let data = String(cString: result!)
-        native_free_char(result)
+        destroy_string(result)
         return data
     }
     
@@ -124,34 +126,21 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     public func snapshot() -> [UInt8]{
-        let _ = renderer.ensureIsContextIsCurrent()
+        renderer.ensureIsContextIsCurrent()
         if(renderer.contextType == ContextType.twoD){
-            let result = native_snapshot_canvas(canvas)
+            let result = context_snapshot_canvas(self.context)
             if(result == nil){
                 return []
             }
             let pointer = result!.pointee
-            let data = [UInt8](Data(bytes: pointer.array, count: pointer.length))
-            native_free_byte_array(result)
+            let data = [UInt8](Data(bytes: pointer.data, count: Int(pointer.data_len)))
+            destroy_u8_array(result)
             return data
         }else if(renderer.contextType == ContextType.webGL){
-            if let gl = renderer as? GLRenderer {
-                let pixels = (gl.view as! CanvasGLKView).snapshot
-                let data = pixels.pngData() ?? Data()
-                EAGLContext.setCurrent(nil)
-                return [UInt8](data)
-            }else if let metal = renderer as? MetalRenderer {
-                let metalView = (metal.view as! MTKView)
-                UIGraphicsBeginImageContextWithOptions(frame.size, true, 0.0)
-                let context = UIGraphicsGetCurrentContext()!
-                context.fill(frame)
-                metalView.layer.render(in: context)
-                let image = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
-                let data = image?.pngData() ?? Data()
-                EAGLContext.setCurrent(nil)
-                return [UInt8](data)
-            }
+            let pixels = (renderer.view as! CanvasGLKView).snapshot
+            let data = pixels.pngData() ?? Data()
+            EAGLContext.setCurrent(nil)
+            return [UInt8](data)
         }
         return []
     }
@@ -186,23 +175,16 @@ public class TNSCanvas: UIView, RenderListener {
     
     var didMoveOffMain: Bool = false
     var didWait: Bool = false
-    var renderer: Renderer
-    public var canvas: Int64 {
+    var renderer: GLRenderer
+    public var context: Int64 {
         get {
-            return renderer.canvas
+            return renderer.context
         }
         set {
-            renderer.canvas = newValue
+            renderer.context = newValue
         }
     }
-    public var canvasState: [Int64]  {
-        get {
-            return renderer.canvasState
-        }
-        set {
-            renderer.canvasState = newValue
-        }
-    }
+
     var renderingContext2d: TNSCanvasRenderingContext?
     var renderingContextWebGL: TNSCanvasRenderingContext?
     var renderingContextWebGL2: TNSCanvasRenderingContext?
@@ -217,28 +199,18 @@ public class TNSCanvas: UIView, RenderListener {
     
     var useGL: Bool = false
     func setup(){
-        if(useGL){
-            if let glRenderer = renderer as? GLRenderer {
-                glRenderer.canvasView = self
-            }
-        }else {
-            if let mtlRenderer = renderer as? MetalRenderer {
-                mtlRenderer.canvasView = self
-            }
-        }
+        renderer.canvasView = self
         renderer.setRenderListener(listener: self)
         addSubview(renderer.view)
     }
     
-    public init(frame: CGRect, useGL: Bool) {
-        self.useGL = useGL
-        if(useGL){
-            _isGL = true
-            renderer = GLRenderer()
-        }else {
-            renderer = MetalRenderer()
-        }
-        super.init(frame: frame)
+    required init?(coder: NSCoder) {
+        renderer = GLRenderer()
+        super.init(coder: coder)
+        realInit()
+    }
+    
+    func realInit() {
         setup()
         
         self.isOpaque = false
@@ -258,6 +230,12 @@ public class TNSCanvas: UIView, RenderListener {
                 self.displayLink?.add(to: .main, forMode: .common)
             }
         }
+    }
+    
+    public override init(frame: CGRect) {
+        renderer = GLRenderer()
+        super.init(frame: frame)
+        realInit()
     }
     
     var _fps: Float = 0
@@ -281,20 +259,21 @@ public class TNSCanvas: UIView, RenderListener {
     
     private var lastSize: CGRect = .null
     private var isLoaded: Bool = false
+  
     public override func layoutSubviews() {
         super.layoutSubviews()
         if(bounds == .zero || (bounds.size.width < 0 || bounds.size.height < 0)){
             renderer.view.frame = CGRect(x: 0, y: 0, width: CGFloat(1/UIScreen.main.nativeScale), height: CGFloat(1/UIScreen.main.nativeScale))
         }else {
-            renderer.view.frame = bounds
-            renderer.view.setNeedsLayout()
-            renderer.view.layoutIfNeeded()
+                renderer.view.frame = bounds
+                renderer.view.setNeedsLayout()
+                renderer.view.layoutIfNeeded()
         }
-        
+
         if(renderer.drawingBufferHeight == 0 && renderer.drawingBufferWidth == 0){
             if(!isLoaded){
+                self.isLoaded = false
                self.readyListener?.contextReady()
-               self.isLoaded = false
             }
         }else {
             renderer.resize()
@@ -303,16 +282,12 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     
-    required init(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     
     deinit {
-        if(canvas > 0){
+        if(context > 0){
             renderer.resume()
-            native_destroy(canvas)
-            canvas = 0
+            destroy_context(context)
+            context = 0
         }
     }
     
@@ -396,9 +371,7 @@ public class TNSCanvas: UIView, RenderListener {
                 renderer.setupContext()
             }else {
                  renderer.contextType = .twoD
-                if let gl = renderer as? GLRenderer{
-                    let _ = gl.ensureIsContextIsCurrent()
-                }
+                    renderer.ensureIsContextIsCurrent()
             }
             return renderingContext2d!
         }else if(type.elementsEqual("webgl")){
@@ -410,17 +383,13 @@ public class TNSCanvas: UIView, RenderListener {
                 renderer.setupContext()
             }else {
                 renderer.contextType = .webGL
-                if let gl = renderer as? GLRenderer{
-                    let _ = gl.ensureIsContextIsCurrent()
-                }
+                renderer.ensureIsContextIsCurrent()
             }
             
             return renderingContextWebGL!
         }else if(type.elementsEqual("webgl2")){
-            if let render = renderer as? GLRenderer {
-                if(render.context.api != .openGLES3){
-                    return emptyCanvas
-                }
+            if(renderer.glContext.api != .openGLES3){
+                return emptyCanvas
             }
             
             if(renderingContextWebGL2 == nil){
@@ -431,9 +400,7 @@ public class TNSCanvas: UIView, RenderListener {
                 renderer.setupContext()
             }else {
                 renderer.contextType = .webGL
-                if let gl = renderer as? GLRenderer{
-                    let _ = gl.ensureIsContextIsCurrent()
-                }
+                renderer.ensureIsContextIsCurrent()
             }
             return renderingContextWebGL2!
         }

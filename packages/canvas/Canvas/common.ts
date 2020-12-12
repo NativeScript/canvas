@@ -1,6 +1,6 @@
-import { CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application } from '@nativescript/core';
-import { CanvasRenderingContext, TouchList } from '../common';
-import { Pointer } from '@nativescript/core/ui/gestures';
+import {CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application} from '@nativescript/core';
+import {CanvasRenderingContext, TouchList} from '../common';
+import {Pointer} from '@nativescript/core/ui/gestures';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
@@ -66,7 +66,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === 'boolean') {
 				return contextOpts;
 			} else {
-				return { alpha: true };
+				return {alpha: true};
 			}
 		}
 		const setIfDefined = (prop, value) => {
@@ -122,44 +122,68 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
+	_previousX = 0;
+	_previousY = 0;
+
 	_getTouchEvent(name, event, target) {
 		const pointers = new TouchList();
-		const scale = 1;
+		let scale = 1;
 		let activePointer: {};
+
 		if (name === 'touchmove') {
 			name = 'touchmove';
+			let x = 0;
+			let y = 0;
+			if (global.isIOS) {
+				x = event.deltaX + this.__touchStart?.getX() ?? 0;
+				y = event.deltaY + this.__touchStart?.getY() ?? 0;
+			} else {
+				const initial: android.view.MotionEvent = event.android.initial;
+				const current: android.view.MotionEvent = event.android.current;
+				scale = Screen.mainScreen.scale;
+				if(initial){
+					x = initial.getX() / scale;
+					y = initial.getY() / scale;
+				}else {
+					x = current.getX() / scale;
+					y = current.getY()/ scale;
+				}
+			}
+
 			/* mouse */
 			activePointer = {
-				clientX: event.deltaX * scale,
-				clientY: event.deltaY * scale,
+				clientX: x,
+				clientY: y,
 				force: 0.0,
 				identifier: 0,
-				pageX: event.deltaX * scale,
-				pageY: event.deltaY * scale,
+				pageX: x,
+				pageY: y,
 				radiusX: 0,
 				radiusY: 0,
 				rotationAngle: 0,
-				screenX: event.deltaX * scale,
-				screenY: event.deltaY * scale,
+				screenX: x,
+				screenY: y,
 				target,
 			};
 
 			/* mouse */
 			pointers.push({
 				// * SCALE ??
-				clientX: event.deltaX * scale,
-				clientY: event.deltaY * scale,
+				clientX: x,
+				clientY: y,
 				force: 0.0,
 				identifier: 0,
-				pageX: event.deltaX * scale,
-				pageY: event.deltaY * scale,
+				pageX: x,
+				pageY: y,
 				radiusX: 0,
 				radiusY: 0,
 				rotationAngle: 0,
-				screenX: event.deltaX * scale,
-				screenY: event.deltaY * scale,
+				screenX: x,
+				screenY: y,
 				target,
 			});
+			this._previousX = event.deltaX;
+			this._previousY = event.deltaY;
 		} else if (name === 'touchmove:pinch') {
 			name = 'touchmove';
 			const x = event.getFocusX();
@@ -259,8 +283,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			shiftKey: false,
 			targetTouches: pointers,
 			touches: pointers,
-			preventDefault: () => {},
-			stopPropagation: () => {},
+			preventDefault: () => {
+			},
+			stopPropagation: () => {
+			},
 			target,
 			...activePointer,
 		};

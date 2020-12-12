@@ -9,7 +9,7 @@ export class Pattern extends SVGItem implements AddChildFromBuilder {
 
 	constructor() {
 		super();
-		this._pattern = Canvas.createCustomView();
+		this._pattern = new (Canvas as any)(true);
 		this._views = [];
 	}
 

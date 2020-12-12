@@ -86,29 +86,12 @@ class GLUtils {
     static var glContext: EAGLContext?
     static func getBytesFromImage(pixels: UIImage) -> (UnsafeMutableRawPointer?, Int){
         var cgImage: CGImage?
-        #if !targetEnvironment(simulator)
-        device = MTLCreateSystemDefaultDevice()
-        #endif
-        
-        if(device == nil){
-            glContext = EAGLContext(api: .openGLES3)
-            if(glContext == nil){
-                glContext = EAGLContext(api: .openGLES2)
-            }
-        }
+   
         if let image = pixels.cgImage {
             cgImage = image
         }else if let image = pixels.ciImage {
-            var context: CIContext?
-            if let mtlDevice = device {
-                context = CIContext(mtlDevice: mtlDevice)
-            }
-            if let glCtx = glContext {
-                context = CIContext(eaglContext: glCtx)
-            }
-            if let ctx = context {
-                cgImage = ctx.createCGImage(image, from: image.extent)
-            }
+            let context = CIContext()
+            cgImage = context.createCGImage(image, from: image.extent)
         }
         
         if let image = cgImage {

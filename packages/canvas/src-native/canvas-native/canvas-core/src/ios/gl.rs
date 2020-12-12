@@ -13,8 +13,6 @@ pub extern "C" fn gl_tex_image_2D_asset(
     target: c_uint,
     level: c_int,
     internalformat: c_int,
-    width: c_int,
-    height: c_int,
     border: c_int,
     format: c_uint,
     image_type: c_uint,
@@ -34,11 +32,13 @@ pub extern "C" fn gl_tex_image_2D_asset(
             }
         }
         let data_array = data.as_mut_slice();
+        let width = asset.width();
+        let height = asset.height();
         if flip_y {
             crate::common::utils::gl::flip_in_place(
                 data_array.as_mut_ptr(),
                 data_array.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width) as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width as i32) as usize,
                 height as usize,
             );
         }
@@ -46,8 +46,8 @@ pub extern "C" fn gl_tex_image_2D_asset(
             target,
             level,
             internalformat,
-            width,
-            height,
+            asset.width() as i32,
+            asset.height() as i32,
             border,
             format,
             image_type,
@@ -62,8 +62,6 @@ pub extern "C" fn gl_tex_sub_image_2D_asset(
     level: c_int,
     xoffset: c_int,
     yoffset: c_int,
-    width: c_int,
-    height: c_int,
     format: c_uint,
     image_type: c_uint,
     asset: c_longlong,
@@ -81,12 +79,14 @@ pub extern "C" fn gl_tex_sub_image_2D_asset(
                 data = asset.rgb_bytes();
             }
         }
+        let width = asset.width();
+        let height = asset.height();
         let data_array = &mut *data;
         if flip_y {
             crate::common::utils::gl::flip_in_place(
                 data_array.data,
                 data_array.data_len,
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width) as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width as i32) as usize,
                 height as usize,
             );
         }
@@ -95,8 +95,8 @@ pub extern "C" fn gl_tex_sub_image_2D_asset(
             level,
             xoffset,
             yoffset,
-            width,
-            height,
+            asset.width() as i32,
+            asset.height() as i32,
             format,
             image_type,
             data_array.data as *const c_void,
@@ -136,8 +136,8 @@ pub extern "C" fn gl_tex_image_3D_asset(
             crate::common::utils::gl::flip_in_place_3d(
                 data_array.data,
                 data_array.data_len,
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width) as usize,
-                height as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * asset.width() as i32) as usize,
+                asset.height() as usize,
                 depth as usize,
             );
         }
@@ -189,8 +189,8 @@ pub extern "C" fn gl_tex_sub_image_3D_asset(
             crate::common::utils::gl::flip_in_place_3d(
                 data_array.data,
                 data_array.data_len,
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width) as usize,
-                height as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * asset.width() as i32) as usize,
+                asset.height() as usize,
                 depth as usize,
             );
         }

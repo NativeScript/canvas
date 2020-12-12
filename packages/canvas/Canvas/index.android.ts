@@ -33,7 +33,7 @@ export class Canvas extends CanvasBase {
 		}
 		const activity =
 			Application.android.foregroundActivity || Application.android.startActivity;
-		this._canvas = new com.github.triniwiz.canvas.CanvasView(activity, useCpu);
+		this._canvas = new com.github.triniwiz.canvas.TNSCanvas(activity, useCpu);
 	}
 
 	get android() {
@@ -125,7 +125,7 @@ export class Canvas extends CanvasBase {
 			}
 		});
 		this._canvas.setListener(
-			new com.github.triniwiz.canvas.CanvasView.Listener({
+			new com.github.triniwiz.canvas.TNSCanvas.Listener({
 				contextReady() {
 					const owner = ref.get() as any;
 					if (owner && !owner._ready) {
@@ -202,15 +202,15 @@ export class Canvas extends CanvasBase {
 				}
 				rootParams.width = size.width;
 				rootParams.height = size.height;
-				let surfaceParams = this._canvas.getSurface().getLayoutParams();
+				let surfaceParams// = this._canvas.getSurface().getLayoutParams();
 				if (!surfaceParams) {
 					surfaceParams = new android.widget.FrameLayout.LayoutParams(0, 0);
 				}
-				surfaceParams.width = size.width;
-				surfaceParams.height = size.height;
+			//	surfaceParams.width = size.width;
+			//	surfaceParams.height = size.height;
 
 				this._canvas.setLayoutParams(rootParams);
-				this._canvas.getSurface().setLayoutParams(surfaceParams);
+				//this._canvas.getSurface().setLayoutParams(surfaceParams);
 
 				const w = android.view.View.MeasureSpec.makeMeasureSpec(
 					size.width,

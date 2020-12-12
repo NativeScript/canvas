@@ -74,6 +74,7 @@ pub extern "C" fn context_init_context(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
+    let density = 1.0;
     let mut device = Device {
         width,
         height,
@@ -134,6 +135,7 @@ pub extern "C" fn context_resize_surface(
     alpha: bool,
     ppi: c_float,
 ) {
+    let density = 1.0;
     unsafe {
         if context == 0 {
             return;
@@ -244,7 +246,6 @@ pub(crate) fn context_to_data(context: *mut Context) -> Vec<u8> {
     }
 }
 
-
 #[inline]
 #[no_mangle]
 pub extern "C" fn context_snapshot_canvas(context: c_longlong) -> *mut U8Array {
@@ -326,7 +327,7 @@ pub extern "C" fn context_get_fill_style(context: c_longlong) -> *mut PaintStyle
     unsafe {
         let context: *mut Context = context as _;
         let context = &mut *context;
-        let fill_style = context.fill_style();
+        let fill_style = context.fill_style().clone();
         let result = match fill_style {
             PaintStyle::Color(_) => PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypeColor),
             PaintStyle::Gradient(_) => PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypeGradient),
@@ -433,7 +434,6 @@ pub extern "C" fn context_get_global_composite_operation(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn context_set_image_smoothing_enabled(
     context: c_longlong,
@@ -457,7 +457,6 @@ pub extern "C" fn context_get_image_smoothing_enabled(context: c_longlong) -> bo
         context.get_image_smoothing_enabled()
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn context_set_image_smoothing_quality(
@@ -708,7 +707,7 @@ pub extern "C" fn context_get_stroke_style(context: c_longlong) -> *mut PaintSty
     unsafe {
         let context: *mut Context = context as _;
         let context = &mut *context;
-        let stroke_style = context.stroke_style();
+        let stroke_style = context.stroke_style().clone();
         Box::into_raw(
             Box::new(
                 match stroke_style {
@@ -891,7 +890,7 @@ pub extern "C" fn context_close_path(context: c_longlong) {
 
 
 #[no_mangle]
-pub extern "C" fn context_native_create_image_data(width: c_int, height: c_int) -> c_longlong {
+pub extern "C" fn context_create_image_data(width: c_int, height: c_int) -> c_longlong {
     unsafe { Box::into_raw(Box::new(Context::create_image_data(width, height))) as c_longlong }
 }
 

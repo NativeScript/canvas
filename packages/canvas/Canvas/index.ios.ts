@@ -159,6 +159,10 @@ export class Canvas extends CanvasBase {
 
 	disposeNativeView(): void {
 		this.off('touch, pan', this._touchEvents);
+		this._canvas.setListener(null);
+		this._readyListener = undefined;
+		this._canvas = undefined;
+		this.setNativeView(undefined);
 		super.disposeNativeView();
 	}
 

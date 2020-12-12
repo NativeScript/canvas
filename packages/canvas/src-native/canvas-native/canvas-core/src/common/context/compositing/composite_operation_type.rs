@@ -37,6 +37,72 @@ impl Default for CompositeOperationType {
     }
 }
 
+impl Into<i32> for CompositeOperationType {
+    fn into(self) -> i32 {
+        match self {
+            CompositeOperationType::SourceOver => 0,
+            CompositeOperationType::SourceIn => 1,
+            CompositeOperationType::SourceOut => 2,
+            CompositeOperationType::SourceAtop => 3,
+            CompositeOperationType::DestinationOver => 4,
+            CompositeOperationType::DestinationIn => 5,
+            CompositeOperationType::DestinationOut => 6,
+            CompositeOperationType::DestinationAtop => 7,
+            CompositeOperationType::Lighter => 8,
+            CompositeOperationType::Copy => 9,
+            CompositeOperationType::Xor => 10,
+            CompositeOperationType::Multiply => 11,
+            CompositeOperationType::Screen => 12,
+            CompositeOperationType::Overlay => 13,
+            CompositeOperationType::Darken => 14,
+            CompositeOperationType::Lighten => 15,
+            CompositeOperationType::ColorDodge => 16,
+            CompositeOperationType::ColorBurn => 17,
+            CompositeOperationType::HardLight => 18,
+            CompositeOperationType::SoftLight => 19,
+            CompositeOperationType::Difference => 20,
+            CompositeOperationType::Exclusion => 21,
+            CompositeOperationType::Hue => 22,
+            CompositeOperationType::Saturation => 23,
+            CompositeOperationType::Color => 24,
+            CompositeOperationType::Luminosity => 25
+        }
+    }
+}
+
+impl From<i32> for CompositeOperationType {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => CompositeOperationType::SourceOver,
+            1 => CompositeOperationType::SourceIn,
+            2 => CompositeOperationType::SourceOut,
+            3 => CompositeOperationType::SourceAtop,
+            4 => CompositeOperationType::DestinationOver,
+            5 => CompositeOperationType::DestinationIn,
+            6 => CompositeOperationType::DestinationOut,
+            7 => CompositeOperationType::DestinationAtop,
+            8 => CompositeOperationType::Lighter,
+            9 => CompositeOperationType::Copy,
+            10 => CompositeOperationType::Multiply,
+            11 => CompositeOperationType::Xor,
+            12 => CompositeOperationType::Screen,
+            13 => CompositeOperationType::Overlay,
+            14 => CompositeOperationType::Darken,
+            15 => CompositeOperationType::Lighten,
+            16 => CompositeOperationType::ColorDodge,
+            17 => CompositeOperationType::ColorBurn,
+            18 => CompositeOperationType::HardLight,
+            19 => CompositeOperationType::SoftLight,
+            20 => CompositeOperationType::Difference,
+            21 => CompositeOperationType::Exclusion,
+            22 => CompositeOperationType::Hue,
+            23 => CompositeOperationType::Saturation,
+            24 => CompositeOperationType::Luminosity,
+            _ => CompositeOperationType::SourceOver
+        }
+    }
+}
+
 impl CompositeOperationType {
     pub fn to_str(self) -> &'static str {
         match self {

@@ -8,16 +8,25 @@ import {ImageAsset} from '../../ImageAsset';
 import {CanvasPattern} from '../CanvasPattern';
 import {Canvas} from '../../Canvas';
 
-declare var com;
+//declare var com;
 
 export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	public static isDebug = false;
 	static colorCache = {};
-	private context; // : com.github.triniwiz.canvas.CanvasRenderingContext2D;
+	private context: com.github.triniwiz.canvas.TNSCanvasRenderingContext2D;
 
 	constructor(context: any) {
 		super();
 		this.context = context;
+	}
+
+	_fillRuleFromString(string: string) {
+		if (string === 'evenodd') {
+			return com.github.triniwiz.canvas.TNSFillRule.EvenOdd;
+		} else if (string === 'nonzero') {
+			return com.github.triniwiz.canvas.TNSFillRule.NonZero;
+		}
+		return null;
 	}
 
 	get native() {
@@ -32,18 +41,14 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	get shadowColor() {
 		this.log('shadowColor');
-		return this._shadowColor;
+		return this.context.getShadowColor();
 	}
 
 	set shadowColor(color: string) {
 		this.log('shadowColor value:', color);
 		this._ensureLayoutBeforeDraw();
 		if (this.context) {
-			if (typeof color === 'string' && !isNaN(parseInt(color))) {
-				this.context.setShadowColor(new Color(parseInt(color)).argb);
-			} else {
-				this.context.setShadowColor(new Color(color).argb);
-			}
+			this.context.setShadowColor(color);
 		}
 	}
 
@@ -61,21 +66,22 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	get direction(): string {
 		this.log('direction');
-		return this.context.getDirection();
+		return this.context.getDirection() === com.github.triniwiz.canvas.TNSTextDirection.Ltr ? "ltr" : "rtl";
 	}
 
 	set direction(value: string) {
 		this.log('direction value:', value);
 		this._ensureLayoutBeforeDraw();
 		if (this.context) {
-			this.context.setDirection(value);
+			this.context.setDirection(
+				value === "rtl" ? com.github.triniwiz.canvas.TNSTextDirection.Rtl : com.github.triniwiz.canvas.TNSTextDirection.Ltr
+			);
 		}
 	}
 
 	get globalAlpha(): number {
 		this.log('globalAlpha');
-		console.log('getGlobalAlpha', this.context.getGlobalAlpha()/255)
-		return this.context.getGlobalAlpha()
+		return this.context.getGlobalAlpha();
 	}
 
 	set globalAlpha(alpha: number) {
@@ -110,13 +116,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (quality) {
 				case 'high':
-					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.CanvasRenderingContext2D.ImageSmoothingQuality.High);
+					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.TNSImageSmoothingQuality.High);
 					break;
 				case 'medium':
-					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.CanvasRenderingContext2D.ImageSmoothingQuality.Medium);
+					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.TNSImageSmoothingQuality.Medium);
 					break;
 				default:
-					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.CanvasRenderingContext2D.ImageSmoothingQuality.Low);
+					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.TNSImageSmoothingQuality.Low);
 					break;
 			}
 		}
@@ -146,13 +152,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (join) {
 				case 'bevel':
-					this.context.setLineJoin(com.github.triniwiz.canvas.CanvasRenderingContext2D.LineJoin.Bevel);
+					this.context.setLineJoin(com.github.triniwiz.canvas.TNSLineJoin.Bevel);
 					break;
 				case 'round':
-					this.context.setLineJoin(com.github.triniwiz.canvas.CanvasRenderingContext2D.LineJoin.Round);
+					this.context.setLineJoin(com.github.triniwiz.canvas.TNSLineJoin.Round);
 					break;
 				default:
-					this.context.setLineJoin(com.github.triniwiz.canvas.CanvasRenderingContext2D.LineJoin.Miter);
+					this.context.setLineJoin(com.github.triniwiz.canvas.TNSLineJoin.Miter);
 					break;
 			}
 		}
@@ -169,13 +175,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (cap) {
 				case 'round':
-					this.context.setLineCap(com.github.triniwiz.canvas.CanvasRenderingContext2D.LineCap.Round);
+					this.context.setLineCap(com.github.triniwiz.canvas.TNSLineCap.Round);
 					break;
 				case 'square':
-					this.context.setLineCap(com.github.triniwiz.canvas.CanvasRenderingContext2D.LineCap.Square);
+					this.context.setLineCap(com.github.triniwiz.canvas.TNSLineCap.Square);
 					break;
 				default:
-					this.context.setLineCap(com.github.triniwiz.canvas.CanvasRenderingContext2D.LineCap.Butt);
+					this.context.setLineCap(com.github.triniwiz.canvas.TNSLineCap.Butt);
 			}
 		}
 	}
@@ -243,19 +249,19 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (alignment) {
 				case 'start':
-					this.context.setTextAlign(com.github.triniwiz.canvas.CanvasTextAlignment.Start);
+					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Start);
 					break;
 				case 'center':
-					this.context.setTextAlign(com.github.triniwiz.canvas.CanvasTextAlignment.Center);
+					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Center);
 					break;
 				case 'end':
-					this.context.setTextAlign(com.github.triniwiz.canvas.CanvasTextAlignment.End);
+					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.End);
 					break;
 				case 'right':
-					this.context.setTextAlign(com.github.triniwiz.canvas.CanvasTextAlignment.Right);
+					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Right);
 					break;
 				default:
-					this.context.setTextAlign(com.github.triniwiz.canvas.CanvasTextAlignment.Left);
+					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Left);
 					break;
 			}
 		}
@@ -273,93 +279,100 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			let operation;
 			switch (composite.toLowerCase()) {
 				case 'source-over':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.SourceOver;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceOver;
 					break;
 				case 'source-in':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.SourceIn;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceIn;
 					break;
 				case 'source-out':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.SourceoOut;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceOut;
 					break;
 				case 'source-atop':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.SourceAtop;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceAtop;
 					break;
 				case 'destination-over':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.DestinationOver;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationOver;
 					break;
 				case 'destination-in':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.DestinationIn;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationIn;
 					break;
 				case 'destination-out':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.DestinationOut;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationOut;
 					break;
 				case 'destination-atop':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.DestinationAtop;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationAtop;
 					break;
 				case 'lighter':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Lighter;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Lighter;
 					break;
 				case 'copy':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Copy;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Copy;
 					break;
 				case 'xor':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Xor;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Xor;
 					break;
 				case 'multiply':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Multiply;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Multiply;
 					break;
 				case 'screen':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Screen;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Screen;
 					break;
 				case 'overlay':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Overlay;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Overlay;
 					break;
 				case 'darken':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Darken;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Darken;
 					break;
 				case 'lighten':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Lighten;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Lighten;
 					break;
 				case 'color-dodge':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.ColorDodge;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.ColorDodge;
 					break;
 				case 'color-burn':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.ColorBurn;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.ColorBurn;
 					break;
 				case 'hard-light':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.HardLight;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.HardLight;
 					break;
 				case 'soft-light':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.SoftLight;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SoftLight;
 					break;
 				case 'difference':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Difference;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Difference;
 					break;
 				case 'exclusion':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Exclusion;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Exclusion;
 					break;
 				case 'hue':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Hue;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Hue;
 					break;
 				case 'saturation':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Saturation;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Saturation;
 					break;
 				case 'color':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Color;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Color;
 					break;
 				case 'luminosity':
-					operation = com.github.triniwiz.canvas.CanvasCompositeOperationType.Luminosity;
+					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Luminosity;
 					break;
 			}
 			this.context.setGlobalCompositeOperation(operation);
 		}
 	}
 
-	private _fillStyle: string | CanvasGradient | CanvasPattern = 'black';
 
 	get fillStyle() {
 		this.log('fillStyle');
-		return this._fillStyle;
+		switch (this.context.getFillStyle().getStyleType()) {
+			case CanvasColorStyleType.Color:
+				const color = this.context.getFillStyle() as com.github.triniwiz.canvas.TNSColor;
+				return color.getColor();
+			case CanvasColorStyleType.Gradient:
+				return CanvasGradient.fromNative(this.context.getFillStyle());
+			case CanvasColorStyleType.Pattern:
+				return new CanvasPattern(this.context.getFillStyle());
+		}
 	}
 
 	set fillStyle(color: string | CanvasGradient | CanvasPattern) {
@@ -368,45 +381,41 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			return;
 		}
 		this._ensureLayoutBeforeDraw();
-		let nativeStyle;
-		if (color instanceof CanvasGradient) {
-			nativeStyle = color.native;
-			this._fillStyle = color;
+		if (typeof color === 'string') {
+			this.context.setFillStyle(new com.github.triniwiz.canvas.TNSColor(color));
+		} else if (color instanceof CanvasGradient) {
+			this.context.setFillStyle(color.native);
 		} else if (color instanceof CanvasPattern) {
-			nativeStyle = color.native;
-			this._fillStyle = color;
-		} else {
-			this._fillStyle = color;
-			nativeStyle = new Color(color).argb;
+			this.context.setFillStyle(color.native);
 		}
-		this.context.setFillStyle(nativeStyle);
 	}
-
-	private _strokeStyle: string | CanvasGradient | CanvasPattern = 'black';
 
 	get strokeStyle() {
 		this.log('strokeStyle');
-		return this._strokeStyle;
+		switch (this.context.getStrokeStyle().getStyleType()) {
+			case CanvasColorStyleType.Color:
+				const color = this.context.getStrokeStyle() as com.github.triniwiz.canvas.TNSColor;
+				return color.getColor();
+			case CanvasColorStyleType.Gradient:
+				return CanvasGradient.fromNative(this.context.getStrokeStyle());
+			case CanvasColorStyleType.Pattern:
+				return new CanvasPattern(this.context.getStrokeStyle());
+		}
 	}
 
 	set strokeStyle(color: string | CanvasGradient | CanvasPattern) {
-		this.log('strokeStyle value:', color);
+		this.log('strokeStyle:', color);
 		if (color === undefined || color === null) {
 			return;
 		}
 		this._ensureLayoutBeforeDraw();
-		let nativeStyle;
-		if (color instanceof CanvasGradient) {
-			nativeStyle = color.native;
-			this._strokeStyle = color;
+		if (typeof color === 'string') {
+			this.context.setStrokeStyle(new com.github.triniwiz.canvas.TNSColor(color));
+		} else if (color instanceof CanvasGradient) {
+			this.context.setStrokeStyle(color.native);
 		} else if (color instanceof CanvasPattern) {
-			nativeStyle = color.native;
-			this._strokeStyle = color;
-		} else {
-			this._strokeStyle = color;
-			nativeStyle = new Color(color).argb;
+			this.context.setStrokeStyle(color.native);
 		}
-		this.context.setStrokeStyle(nativeStyle);
 	}
 
 	get lineWidth() {
@@ -562,16 +571,16 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		let rep;
 		switch (repetition) {
 			case 'no-repeat':
-				rep = com.github.triniwiz.canvas.Pattern.PatternRepetition.NoRepeat;
+				rep = com.github.triniwiz.canvas.TNSPatternRepetition.NoRepeat;
 				break;
 			case 'repeat-x':
-				rep = com.github.triniwiz.canvas.Pattern.PatternRepetition.RepeatX;
+				rep = com.github.triniwiz.canvas.TNSPatternRepetition.RepeatX;
 				break;
 			case 'repeat-y':
-				rep = com.github.triniwiz.canvas.Pattern.PatternRepetition.RepeatY;
+				rep = com.github.triniwiz.canvas.TNSPatternRepetition.RepeatY;
 				break;
 			default:
-				rep = com.github.triniwiz.canvas.Pattern.PatternRepetition.Repeat;
+				rep = com.github.triniwiz.canvas.TNSPatternRepetition.Repeat;
 				break;
 		}
 		return new CanvasPattern(this.context.createPattern(img, rep));
@@ -834,11 +843,8 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		let data = args[0] as any;
 		// Would be nice not to update the native backing array each time ... but since buffers don't use pointers ... we are here 😅
-		if (args.length === 1) {
-			//  data.native.updateData(Array.from(data.data));
-			this.context.putImageData(data.native);
-		} else if (args.length === 3) {
-			// data.native.updateData(Array.from(data.data));
+		if (args.length === 3) {
+			//data.native.updateData(Array.from(data.data));
 			this.context.putImageData(data.native, args[1], args[2]);
 		} else if (args.length === 7) {
 			// data.native.updateData(Array.from(data.data));

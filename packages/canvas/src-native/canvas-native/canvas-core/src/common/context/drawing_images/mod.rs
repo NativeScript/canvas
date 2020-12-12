@@ -11,7 +11,7 @@ impl Context {
         dst_rect: impl Into<Rect>,
     ) {
         let mut src_rect = src_rect.into();
-        let dst_rect = dst_rect.into();
+        let mut dst_rect = dst_rect.into();
         let paint = self.state.paint.image_paint().clone();
         self.surface.canvas().draw_image_rect(
             image,

@@ -36,6 +36,21 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		return this._canvas;
 	}
 
+	get direction(): string {
+		this.log('direction');
+		return this.context.getDirection() === TNSTextDirection.Ltr ? "ltr" : "rtl";
+	}
+
+	set direction(value: string) {
+		this.log('direction value:', value);
+		this._ensureLayoutBeforeDraw();
+		if (this.context) {
+			this.context.setDirection(
+				value === "rtl" ? TNSTextDirection.Rtl : TNSTextDirection.Ltr
+			);
+		}
+	}
+
 	get font(): string {
 		this.log('get font');
 		return this.context.font;

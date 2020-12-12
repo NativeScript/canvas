@@ -74,6 +74,8 @@ pub struct Font {
 
 impl Font {
     pub fn new(font_details: &str, density: c_float) -> Self {
+        // setting as 1 for now
+        let density = 1.0;
         Self {
             font_details: font_details.to_string(),
             density,

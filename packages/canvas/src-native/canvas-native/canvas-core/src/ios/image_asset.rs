@@ -9,21 +9,6 @@ pub extern "C" fn image_asset_create() -> c_longlong {
 }
 
 #[no_mangle]
-pub extern "C" fn image_asset_load_from_url(asset: c_longlong, url: *const c_char, callback: extern fn(bool)) {
-    if asset == 0 {
-        return callback(false);
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let mut asset = &mut *asset;
-        let mut asset = std::sync::Arc::new(
-            tokio::sync::Mutex::new(asset)
-        );
-        ImageAsset::load_from_url(asset.clone(), url, callback)
-    }
-}
-
-#[no_mangle]
 pub extern "C" fn image_asset_load_from_path(asset: c_longlong, path: *const c_char) -> bool {
     if asset == 0 {
         return false;

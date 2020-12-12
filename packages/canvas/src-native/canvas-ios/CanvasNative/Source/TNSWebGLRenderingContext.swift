@@ -1511,7 +1511,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         }
 
         // Use RGBA for now
-        glTexImage2D(target, level, GL_RGBA, GLsizei(width), GLsizei(height), 0, GLenum(GL_RGBA), type, buffer)
+        glTexImage2D(target, level, internalformat, GLsizei(width), GLsizei(height), 0, GLenum(GL_RGBA), type, buffer)
 
         buffer?.deallocate()
 
@@ -1520,7 +1520,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
     public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ format: UInt32,_ type: UInt32, asset: TNSImageAsset) {
         canvas.renderer.ensureIsContextIsCurrent()
         // Use RGBA for now
-        gl_tex_image_2D_asset(target, level, GL_RGBA, GLsizei(asset.width), GLsizei(asset.height), 0, UInt32(GL_RGBA), type, asset.asset, flipYWebGL)
+        gl_tex_image_2D_asset(target, level, internalformat, 0, UInt32(GL_RGBA), type, asset.asset, flipYWebGL)
 
     }
 
@@ -1604,7 +1604,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
 
     public func texSubImage2D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ format: UInt32,_ type:UInt32, asset: TNSImageAsset) {
         canvas.renderer.ensureIsContextIsCurrent()
-        gl_tex_sub_image_2D_asset(target, level, xoffset, yoffset, GLsizei(asset.width), GLsizei(asset.height), format, type, asset.asset, flipYWebGL)
+        gl_tex_sub_image_2D_asset(target, level, xoffset, yoffset, format, type, asset.asset, flipYWebGL)
     }
 
 

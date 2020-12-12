@@ -41,6 +41,18 @@ impl From<u32> for OutputFormat {
     }
 }
 
+impl From<i32> for OutputFormat {
+    fn from(format: i32) -> Self {
+        match format {
+            1 => OutputFormat::PNG,
+            2 => OutputFormat::ICO,
+            3 => OutputFormat::BMP,
+            4 => OutputFormat::TIFF,
+            _ => OutputFormat::JPG,
+        }
+    }
+}
+
 enum ByteType {
     Default,
     RGBA,
@@ -79,58 +91,6 @@ impl ImageAsset {
         match &self.image {
             Some(image) => image.height(),
             _ => 0,
-        }
-    }
-
-    pub fn load_from_url(image: std::sync::Arc<tokio::sync::Mutex<&'static mut ImageAsset>>, url: *const c_char, callback: extern fn(bool)) {
-        unsafe {
-            let url = CStr::from_ptr(url).to_string_lossy();
-            let url = url.to_string();
-            crate::common::utils::threads::THREAD_POOL.spawn(async move {
-                let mut asset = image.lock().await;
-                if !asset.error.is_empty() {
-                    asset.error.clear()
-                }
-                asset.image = None;
-                match reqwest::Url::from_str(&url) {
-                    Ok(url) => {
-                        match reqwest::get(url).await {
-                            Ok(response) => match response.bytes().await {
-                                Ok(bytes) => match image::load_from_memory(&bytes) {
-                                    Ok(image) => {
-                                        asset.image = Some(image);
-                                        callback(true)
-                                    }
-                                    Err(err) => {
-                                        asset.error.clear();
-                                        let err = err.to_string();
-                                        asset.error.push_str(err.as_str());
-                                        callback(false);
-                                    }
-                                }
-                                Err(err) => {
-                                    asset.error.clear();
-                                    let err = err.to_string();
-                                    asset.error.push_str(err.as_str());
-                                    callback(false);
-                                }
-                            }
-                            Err(err) => {
-                                asset.error.clear();
-                                let err = err.to_string();
-                                asset.error.push_str(err.as_str());
-                                callback(false);
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        asset.error.clear();
-                        let err = err.to_string();
-                        asset.error.push_str(err.as_str());
-                        callback(false);
-                    }
-                }
-            });
         }
     }
 

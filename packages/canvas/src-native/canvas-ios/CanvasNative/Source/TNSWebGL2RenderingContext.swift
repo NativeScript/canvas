@@ -893,7 +893,7 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
     
     public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32, asset: TNSImageAsset) {
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        gl_tex_image_3D_asset(target, level, internalformat, asset.width, asset.height, depth, border, format, target, asset.asset, flipYWebGL)
+        gl_tex_image_3D_asset(target, level, internalformat, width, height, depth, border, format, target, asset.asset, flipYWebGL)
     }
     
     public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32, _ height: Int32,_ depth: Int32, _ border: Int32,_ format: UInt32,_ type: UInt32, canvas: TNSCanvas) {

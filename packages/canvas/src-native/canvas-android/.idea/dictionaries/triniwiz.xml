@@ -3,8 +3,10 @@
     <words>
       <w>attrib</w>
       <w>canvasnative</w>
+      <w>desynchronized</w>
       <w>minmax</w>
       <w>pname</w>
+      <w>premultiplied</w>
       <w>primcount</w>
       <w>renderbuffer</w>
       <w>shaders</w>

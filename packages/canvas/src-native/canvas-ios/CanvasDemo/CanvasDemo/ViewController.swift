@@ -196,8 +196,9 @@ class ViewController: UIViewController, TNSCanvasListener {
         ctx.fillRect(0, 0, Float(100 * scale), Float(100 * scale))
         
         */
+        /*
         
-       /* // Create clipping path
+        // Create clipping path
         let region = TNSPath2D()
         region.rect(80, 10, 20, 130)
         region.rect(40, 50, 100, 50)
@@ -205,10 +206,12 @@ class ViewController: UIViewController, TNSCanvasListener {
 
         // Draw stuff that gets clipped
         ctx.fillStyle = TNSColorStyle.TNSColor("blue")
-        ctx.fillRect(0, 0, Float(canvas1.frame.width * scale), Float(canvas1.frame.height * scale))
-        
+        ctx.fillRect(0, 0, Float(canvas1.frame.width) * scale, Float(canvas1!.frame.height) * scale)
         
         */
+        
+        
+        
        /* ctx.scale(Float(scale), Float(scale))
         ctx.beginPath()
         ctx.arc(50, 50, 30, 0, 2 * PI)
@@ -238,8 +241,8 @@ class ViewController: UIViewController, TNSCanvasListener {
       // clearExample(ctx: ctx)
        // drawImageExample(ctx: ctx)
        // canvas1?.flush()
-        drawImageBlock(ctx: ctx)
-         //doSolarAnimation(ctx: ctx)
+        //drawImageBlock(ctx: ctx)
+        // doSolarAnimation(ctx: ctx)
         //drawFace(ctx: ctx)
         // fontExample(ctx: ctx)
         //textBaseLine(ctx: ctx)

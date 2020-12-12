@@ -165,6 +165,8 @@ void context_clip_rule(long long context, FillRule rule);
 
 void context_close_path(long long context);
 
+long long context_create_image_data(int width, int height);
+
 long long context_create_linear_gradient(long long context, float x0, float y0, float x1, float y1);
 
 long long context_create_pattern(long long context,
@@ -330,8 +332,6 @@ void context_line_to(long long context, float x, float y);
 long long context_measure_text(long long context, const char *text);
 
 void context_move_to(long long context, float x, float y);
-
-long long context_native_create_image_data(int width, int height);
 
 void context_put_image_data(long long context,
                             long long image_data,
@@ -544,8 +544,6 @@ long long gl_get_vertex_attrib_offset(unsigned int index, unsigned int pname);
 void gl_tex_image_2D_asset(unsigned int target,
                            int level,
                            int internalformat,
-                           int width,
-                           int height,
                            int border,
                            unsigned int format,
                            unsigned int image_type,
@@ -568,8 +566,6 @@ void gl_tex_sub_image_2D_asset(unsigned int target,
                                int level,
                                int xoffset,
                                int yoffset,
-                               int width,
-                               int height,
                                unsigned int format,
                                unsigned int image_type,
                                long long asset,

@@ -1,5 +1,4 @@
 use std::os::raw::c_int;
-use std::panic::catch_unwind;
 
 use skia_safe::{
     AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, Size, Surface,

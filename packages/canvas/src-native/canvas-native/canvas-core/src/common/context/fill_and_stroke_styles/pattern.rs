@@ -11,6 +11,29 @@ pub enum Repetition {
     NoRepeat = 3,
 }
 
+impl From<i32> for Repetition {
+     fn from(value: i32) -> Self {
+        match value {
+            0 => Repetition::Repeat,
+            1 => Repetition::RepeatX,
+            2 => Repetition::RepeatY,
+            3 => Repetition::NoRepeat,
+            _ => Repetition::Repeat
+        }
+    }
+}
+
+impl Into<i32> for Repetition {
+    fn into(self) -> i32 {
+        match self {
+            Repetition::Repeat => 0,
+            Repetition::RepeatX => 1,
+            Repetition::RepeatY => 2,
+            Repetition::NoRepeat => 3
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Pattern {
     image: Image,
@@ -38,7 +61,7 @@ impl Pattern {
     }
 
     pub fn set_pattern_transform(&mut self, matrix: &Matrix) {
-        let mut affine: [f32;6] = [0f32;6];
+        let mut affine: [f32; 6] = [0f32; 6];
         let slice = matrix.affine();
         affine.copy_from_slice(slice.as_slice());
         self.matrix.set_affine(&affine);

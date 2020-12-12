@@ -9,6 +9,27 @@ pub enum PaintStyleValueType {
     PaintStyleValueTypePattern = 2,
 }
 
+impl Into<i32> for PaintStyleValueType{
+    fn into(self) -> i32 {
+        match self {
+            PaintStyleValueType::PaintStyleValueTypeColor => 0,
+            PaintStyleValueType::PaintStyleValueTypeGradient => 1,
+            PaintStyleValueType::PaintStyleValueTypePattern => 2
+        }
+    }
+}
+
+impl PaintStyleValueType {
+    pub fn from_i32(value: i32) -> Option<Self>{
+        match value {
+            0 => Some(PaintStyleValueType::PaintStyleValueTypeColor),
+            1 => Some(PaintStyleValueType::PaintStyleValueTypeGradient),
+            2 => Some(PaintStyleValueType::PaintStyleValueTypePattern),
+            _ => None
+        }
+    }
+}
+
 
 #[repr(C)]
 pub struct PaintStyleValue {
@@ -17,7 +38,7 @@ pub struct PaintStyleValue {
 }
 
 impl PaintStyleValue {
-    pub fn new(value: &PaintStyle, value_type: PaintStyleValueType) -> Self {
+    pub fn new(value: PaintStyle, value_type: PaintStyleValueType) -> Self {
         Self {
             value: Box::into_raw(
                 Box::new(

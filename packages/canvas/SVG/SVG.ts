@@ -57,7 +57,7 @@ export const srcProperty = new Property<SVG, string>({
 
 
 
-import {Canvg, presets} from 'canvg';
+
 import {File} from '@nativescript/core';
 import {DOMParser} from 'xmldom';
 
@@ -77,31 +77,11 @@ export class SVG extends View implements AddChildFromBuilder {
 		this._domParser = new DOMParser();
 	}
 
-	private async _handleSVG(svg) {
-		if (typeof svg === "string") {
-			if (svg.startsWith('~')) {
-				try {
-					const file = path.join(knownFolders.currentApp().path, svg.replace('~', ''));
-					const r = File.fromPath(file);
-					const text = await r.readText();
-					const ctx = this._canvas.getContext('2d');
-					console.log(text);
-					const s = await Canvg.fromString(ctx, text, {
-						DOMParser
-					});
-					console.log('done?')
-					s.start();
-				} catch (e) {
-					console.log('failed to loade svg: ', e);
-				}
-			}
-		}
-	}
+
 
 	[srcProperty.setNative](value: string) {
 		if (this._isReady) {
-			console.log('readdddd');
-			this._handleSVG(value);
+
 		}
 	}
 
@@ -109,9 +89,7 @@ export class SVG extends View implements AddChildFromBuilder {
 		this._canvas.on('ready', (args) => {
 			console.log('ready');
 			if (this.src) {
-				setTimeout(() => {
-					this._handleSVG(this.src);
-				})
+
 			} else {
 				this._views.forEach((view) => {
 					if (typeof view.handleValues === 'function') {

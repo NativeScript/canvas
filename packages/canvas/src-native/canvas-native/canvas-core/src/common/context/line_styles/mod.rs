@@ -16,7 +16,7 @@ impl Context {
         self.state
             .paint
             .stroke_paint_mut()
-            .set_stroke_width(width * self.device.density);
+            .set_stroke_width(width);
     }
 
     pub fn line_width(&self) -> c_float {
@@ -50,7 +50,7 @@ impl Context {
         self.state
             .paint
             .stroke_paint_mut()
-            .set_stroke_miter(limit * self.device.density);
+            .set_stroke_miter(limit);
     }
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {

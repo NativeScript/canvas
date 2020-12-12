@@ -14,3 +14,30 @@ impl Default for TextBaseLine {
         TextBaseLine::ALPHABETIC
     }
 }
+
+impl From<i32> for TextBaseLine {
+    fn from(value: i32) -> TextBaseLine {
+        match value {
+            0 => Self::TOP,
+            1 => Self::HANGING,
+            2 => Self::MIDDLE,
+            3 => Self::ALPHABETIC,
+            4 => Self::IDEOGRAPHIC,
+            5 => Self::BOTTOM,
+            _ => TextBaseLine::ALPHABETIC
+        }
+    }
+}
+
+impl Into<i32> for TextBaseLine {
+    fn into(self) -> i32 {
+        match self {
+            TextBaseLine::TOP => 0,
+            TextBaseLine::HANGING => 1,
+            TextBaseLine::MIDDLE => 2,
+            TextBaseLine::ALPHABETIC => 3,
+            TextBaseLine::IDEOGRAPHIC => 4,
+            TextBaseLine::BOTTOM => 5
+        }
+    }
+}

@@ -1,12 +1,18 @@
 require('globals');
 import {TNSXMLHttpRequest, FileReader, Blob} from './async/async';
+import {Element} from './DOM/Element';
 import {Document} from './DOM/Document';
 import './window';
 import './resize';
 import './process';
 import {TextDecoder, TextEncoder} from '@nativescript/canvas';
-
+import {URL} from './URL';
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
+Object.defineProperty(global, 'Element', {
+	value: Element,
+	configurable: true,
+	writable: true,
+});
 Object.defineProperty(global, 'XMLHttpRequest', {
 	value: TNSXMLHttpRequest,
 	configurable: true,
@@ -38,6 +44,14 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 		configurable: true,
 		writable: true,
 	});
-
 }
 
+
+if (!((global as any).URL instanceof URL)) {
+	Object.defineProperty(global, 'URL', {
+		value: URL,
+		configurable: true,
+		writable: true,
+	});
+	(global as any).window.URL = (global as any).URL;
+}

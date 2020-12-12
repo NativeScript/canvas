@@ -421,7 +421,7 @@ export class TNSXMLHttpRequest {
 			this.emitEvent('loadstart', startEvent);
 
 			this._updateReadyStateChange(this.LOADING);
-
+		
 			FileManager.readFile(path, {}, (error, data) => {
 				if (error) {
 					const errorEvent = new ProgressEvent(
@@ -455,6 +455,7 @@ export class TNSXMLHttpRequest {
 					this._status = 200;
 					this._httpContent = data;
 					this._responseURL = responseURL;
+
 
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {
@@ -508,7 +509,6 @@ export class TNSXMLHttpRequest {
 					) {
 						if ((global as any).isIOS) {
 							let code = NSUTF8StringEncoding; // long:4
-
 							let encodedString = NSString.alloc().initWithDataEncoding(
 								data,
 								code
@@ -547,9 +547,8 @@ export class TNSXMLHttpRequest {
 						if ((global as any).isIOS) {
 							buffer = interop.bufferFromData(data);
 						} else {
-							buffer = (ArrayBuffer as any).from(
-								java.nio.ByteBuffer.wrap(data)
-							);
+							const buf = java.nio.ByteBuffer.wrap(data);
+							buffer = (ArrayBuffer as any).from(buf);
 						}
 
 						this._response = new Blob([buffer]);

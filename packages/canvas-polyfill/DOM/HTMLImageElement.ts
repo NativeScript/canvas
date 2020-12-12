@@ -157,16 +157,6 @@ export class HTMLImageElement extends Element {
 			}
 			if (!this.width || !this.height) {
 				this.complete = false;
-				/*ImageSource.fromFile(this.src)
-					.then((asset) => {
-						this._imageSource = asset;
-						this.width = asset.width;
-						this.height = asset.height;
-						this.complete = true;
-					})
-					.catch(e => {
-						this.emitter.emit("error", {target: this});
-					});*/
 				this._asset
 					.loadFileAsync(this.src)
 					.then(() => {
@@ -177,27 +167,6 @@ export class HTMLImageElement extends Element {
 					.catch((e) => {
 						this.emitter.emit('error', { target: this });
 					});
-			} else {
-				/*ImageSource.fromFile(this.src)
-					.then((asset) => {
-						this._imageSource = asset;
-						this.width = asset.width;
-						this.height = asset.height;
-						this.complete = true;
-					})
-					.catch(e => {
-						this.emitter.emit("error", {target: this});
-					});*/
-				/*	this._asset.loadFileAsync(this.src)
-					.then(() => {
-						this.width = this._asset.width;
-						this.height = this._asset.height;
-						this.complete = true;
-					})
-					.catch(e => {
-						this.emitter.emit("error", {target: this});
-					});
-				*/
 			}
 		}
 	}

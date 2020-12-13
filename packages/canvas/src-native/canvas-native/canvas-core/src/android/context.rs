@@ -852,7 +852,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         let context = &mut *context;
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.bytes_internal();
+        let bytes = asset.rgba_internal_bytes();
         if let Some(image) = from_image_slice(bytes.as_slice(), asset.width() as i32, asset.height() as i32) {
             return Box::into_raw(Box::new(
                 PaintStyle::Pattern(context.create_pattern(image, Repetition::from(repetition)))
@@ -973,7 +973,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.bytes_internal();
+        let bytes = asset.rgba_internal_bytes();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
@@ -1053,7 +1053,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.bytes_internal();
+        let bytes = asset.rgba_internal_bytes();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
@@ -1106,7 +1106,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.bytes_internal();
+        let bytes = asset.rgba_internal_bytes();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(

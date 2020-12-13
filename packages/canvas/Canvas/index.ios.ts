@@ -1,9 +1,9 @@
-import {CanvasBase} from './common';
-import {DOMMatrix} from '../Canvas2D';
-import {CanvasRenderingContext2D} from '../Canvas2D/CanvasRenderingContext2D';
-import {WebGLRenderingContext} from '../WebGL/WebGLRenderingContext';
-import {WebGL2RenderingContext} from '../WebGL2/WebGL2RenderingContext';
-import {Utils} from "@nativescript/core";
+import { CanvasBase } from './common';
+import { DOMMatrix } from '../Canvas2D';
+import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
+import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
+import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
+import { Utils, profile } from "@nativescript/core";
 
 declare var TNSCanvas, TNSCanvasListener;
 
@@ -43,6 +43,7 @@ export class Canvas extends CanvasBase {
 		this._canvas.setListener(this._readyListener);
 	}
 
+	// @ts-ignore
 	get ios() {
 		return this._canvas;
 	}
@@ -55,6 +56,7 @@ export class Canvas extends CanvasBase {
 		return this.height;
 	}
 
+	//@ts-ignore
 	get width() {
 		const measuredWidth = this.getMeasuredWidth();
 		if (measuredWidth > 0) {
@@ -70,6 +72,7 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
+	//@ts-ignore
 	get height() {
 		const measuredHeight = this.getMeasuredHeight();
 		if (measuredHeight > 0) {
@@ -87,6 +90,7 @@ export class Canvas extends CanvasBase {
 
 	private _iosOverflowSafeArea = false;
 
+	//@ts-ignore
 	get iosOverflowSafeArea() {
 		return this._iosOverflowSafeArea;
 	}
@@ -149,6 +153,7 @@ export class Canvas extends CanvasBase {
 		super.onUnloaded();
 	}
 
+	@profile
 	onLoaded() {
 		super.onLoaded();
 		if (this._didPause) {
@@ -212,6 +217,9 @@ export class Canvas extends CanvasBase {
 		| WebGLRenderingContext
 		| WebGL2RenderingContext
 		| null {
+		if (!this._canvas) {
+			return null;
+		}
 		if (type && type === '2d') {
 			if (this._webglContext || this._webgl2Context) {
 				return null;

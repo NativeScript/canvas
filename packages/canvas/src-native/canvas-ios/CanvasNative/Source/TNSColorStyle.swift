@@ -216,10 +216,7 @@ public class TNSColorStyle: NSObject {
         
         init?(context: Int64, asset src: TNSImageAsset, pattern: TNSPatternRepetition){
             super.init()
-            let size = src.width * src.height * 4
-            let width = src.width
-            let height = src.height
-            let result = context_create_pattern(context,src.getRawBytes(), UInt(size), width, height, Repetition(rawValue: pattern.rawValue))
+            let result = context_create_pattern_asset(context,src.asset, Repetition(rawValue: pattern.rawValue))
             
             if result == 0 {
                 return nil

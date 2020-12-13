@@ -1,4 +1,4 @@
-import {TextDecoderBase} from './common';
+import { TextDecoderBase } from './common';
 
 declare let TNSTextDecoder;
 
@@ -14,6 +14,7 @@ export class TextDecoder extends TextDecoderBase {
     decode(buffer?: ArrayBuffer | ArrayBufferView, options?: any): string {
         if (
             buffer instanceof ArrayBuffer ||
+            buffer instanceof Uint8ClampedArray ||
             buffer instanceof Uint8Array ||
             buffer instanceof Int8Array ||
             buffer instanceof Uint16Array ||
@@ -23,7 +24,7 @@ export class TextDecoder extends TextDecoderBase {
             buffer instanceof Float32Array
         ) {
             if (
-                buffer instanceof Uint8Array
+                buffer instanceof Uint8Array || buffer instanceof Uint8ClampedArray
             ) {
                 return this.native.decodeWithBytes(Array.from(buffer));
             } else if (

@@ -2,7 +2,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
 group 'com.github.triniwiz'
-version '0.9.5'
+version '0.9.7'
 
 afterEvaluate {
 	publishing {
@@ -15,7 +15,7 @@ afterEvaluate {
 				// You can then customize attributes of the publication as shown below.
 				groupId = 'com.github.triniwiz'
 				artifactId = 'canvas'
-				version = '0.9.5'
+				version = '0.9.7'
 			}
 		}
 	}

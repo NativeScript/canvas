@@ -1,8 +1,7 @@
-import {ImageAssetBase, ImageAssetSaveFormat} from './common';
-import {knownFolders, path as filePath} from '@nativescript/core';
+import { ImageAssetBase, ImageAssetSaveFormat } from './common';
+import { knownFolders, path as filePath } from '@nativescript/core';
 
 export class ImageAsset extends ImageAssetBase {
-	native: com.github.triniwiz.canvas.TNSImageAsset;
     constructor() {
         super(new com.github.triniwiz.canvas.TNSImageAsset());
     }
@@ -38,6 +37,26 @@ export class ImageAsset extends ImageAssetBase {
             return value.doubleValue();
         }
         return value;
+    }
+
+    loadFromUrl(url: string): boolean {
+        return this.native.loadImageFromUrl(url);
+    }
+
+    loadFromUrlAsync(path: string) {
+        return new Promise((resolve, reject) => {
+            this.native.loadImageFromUrlAsync(
+                path,
+                new com.github.triniwiz.canvas.TNSImageAsset.Callback({
+                    onError(error) {
+                        reject(error);
+                    },
+                    onSuccess(success) {
+                        resolve(ImageAsset.toPrimitive(success));
+                    },
+                })
+            );
+        });
     }
 
 

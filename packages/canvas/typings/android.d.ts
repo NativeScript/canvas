@@ -1,5 +1,3 @@
-/// <reference path="android-declarations.d.ts"/>
-
 declare module com {
 	export module github {
 		export module triniwiz {
@@ -415,10 +413,10 @@ declare module com {
 					public setupActivityHandler(param0: globalAndroid.app.Application): void;
 					public getNativeContext$canvas_release(): number;
 					public setSurface$canvas_release(param0: com.github.triniwiz.canvas.GLView): void;
-					public snapshot(): java.nio.ByteBuffer;
 					public isWebGL$canvas_release(): boolean;
 					public initCanvas$canvas_release(): void;
 					public setNativeContext$canvas_release(param0: number): void;
+					public static createSVGMatrix(): com.github.triniwiz.canvas.TNSDOMMatrix;
 					public static getDirection$canvas_release(): com.github.triniwiz.canvas.TNSTextDirection;
 					public toDataURL(): string;
 					public getContext(param0: string, param1: java.util.Map<string,any>): com.github.triniwiz.canvas.TNSCanvasRenderingContext;
@@ -428,9 +426,9 @@ declare module com {
 					public onActivityDestroyed(param0: globalAndroid.app.Activity): void;
 					public setLastSize$canvas_release(param0: com.github.triniwiz.canvas.TNSCanvas.Size): void;
 					public static nativeResizeSurface(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: boolean, param7: number): void;
-					public static createSVGMatrix(): com.github.triniwiz.canvas.TNSCanvasDOMMatrix;
 					public onDetachedFromWindow(): void;
 					public toDataURLAsync(param0: com.github.triniwiz.canvas.TNSCanvas.DataURLListener): void;
+					public snapshot(): native.Array<number>;
 					public setWebGL$canvas_release(param0: boolean): void;
 					public getUseCpu$canvas_release(): boolean;
 					public setUseCpu$canvas_release(param0: boolean): void;
@@ -459,13 +457,13 @@ declare module com {
 						public nativeResizeSurface(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: boolean, param7: number): void;
 						public getDirection$canvas_release(): com.github.triniwiz.canvas.TNSTextDirection;
 						public nativeInitContext(param0: number, param1: number, param2: number, param3: number, param4: number, param5: boolean, param6: number, param7: number, param8: number): number;
-						public createSVGMatrix(): com.github.triniwiz.canvas.TNSCanvasDOMMatrix;
 						public getViews(): java.util.concurrent.ConcurrentHashMap<any,any>;
 						public nativeInitContextWithCustomSurface(param0: number, param1: number, param2: number, param3: boolean, param4: number, param5: number, param6: number): number;
 						public getLastCall$canvas_release(): number;
 						public setLastCall$canvas_release(param0: number): void;
 						public setViews(param0: java.util.concurrent.ConcurrentHashMap<any,any>): void;
 						public nativeFlush(param0: number): number;
+						public createSVGMatrix(): com.github.triniwiz.canvas.TNSDOMMatrix;
 					}
 					export class ContextType {
 						public static class: java.lang.Class<com.github.triniwiz.canvas.TNSCanvas.ContextType>;
@@ -504,73 +502,6 @@ declare module com {
 						public setHeight(param0: number): void;
 						public getHeight(): number;
 						public constructor(param0: number, param1: number);
-					}
-				}
-			}
-		}
-	}
-}
-
-declare module com {
-	export module github {
-		export module triniwiz {
-			export module canvas {
-				export class TNSCanvasDOMMatrix {
-					public static class: java.lang.Class<com.github.triniwiz.canvas.TNSCanvasDOMMatrix>;
-					public static Companion: com.github.triniwiz.canvas.TNSCanvasDOMMatrix.Companion;
-					public setM13(param0: number): void;
-					public finalize(): void;
-					public setD(param0: number): void;
-					public setM34(param0: number): void;
-					public getD(): number;
-					public constructor();
-					public setM42(param0: number): void;
-					public setM21(param0: number): void;
-					public getM32(): number;
-					public setM14(param0: number): void;
-					public getM22(): number;
-					public getM42(): number;
-					public getM12(): number;
-					public setC(param0: number): void;
-					public setM33(param0: number): void;
-					public getB(): number;
-					public getM23(): number;
-					public getM13(): number;
-					public getA(): number;
-					public setM22(param0: number): void;
-					public getM43(): number;
-					public setM41(param0: number): void;
-					public getM33(): number;
-					public setB(param0: number): void;
-					public getM24(): number;
-					public getM14(): number;
-					public setM32(param0: number): void;
-					public getM11(): number;
-					public setM11(param0: number): void;
-					public setF(param0: number): void;
-					public getM44(): number;
-					public getF(): number;
-					public getM34(): number;
-					public getM41(): number;
-					public getM21(): number;
-					public getC(): number;
-					public setM23(param0: number): void;
-					public setM44(param0: number): void;
-					public getM31(): number;
-					public constructor(param0: number);
-					public getE(): number;
-					public setMatrix$canvas_release(param0: number): void;
-					public getMatrix$canvas_release(): number;
-					public setA(param0: number): void;
-					public setM12(param0: number): void;
-					public setE(param0: number): void;
-					public setM31(param0: number): void;
-					public setM24(param0: number): void;
-					public setM43(param0: number): void;
-				}
-				export module TNSCanvasDOMMatrix {
-					export class Companion {
-						public static class: java.lang.Class<com.github.triniwiz.canvas.TNSCanvasDOMMatrix.Companion>;
 					}
 				}
 			}
@@ -640,6 +571,7 @@ declare module com {
 					public createPattern(param0: com.github.triniwiz.canvas.TNSCanvas, param1: com.github.triniwiz.canvas.TNSPatternRepetition): com.github.triniwiz.canvas.TNSPattern;
 					public getCanvas(): com.github.triniwiz.canvas.TNSCanvas;
 					public isPointInPath(param0: com.github.triniwiz.canvas.TNSPath2D, param1: number, param2: number, param3: com.github.triniwiz.canvas.TNSFillRule): boolean;
+					public getCurrentTransform(): com.github.triniwiz.canvas.TNSDOMMatrix;
 					public constructor(param0: com.github.triniwiz.canvas.TNSCanvas);
 					public fillText(param0: string, param1: number, param2: number): void;
 					public clip(param0: com.github.triniwiz.canvas.TNSPath2D): void;
@@ -686,13 +618,13 @@ declare module com {
 					public setLineWidth(param0: number): void;
 					public getMiterLimit(): number;
 					public setFont(param0: string): void;
+					public setCurrentTransform(param0: com.github.triniwiz.canvas.TNSDOMMatrix): void;
 					public setLineDashOffset(param0: number): void;
 					public setShadowColor(param0: string): void;
 					public fill(param0: com.github.triniwiz.canvas.TNSFillRule): void;
 					public getGlobalCompositeOperation(): com.github.triniwiz.canvas.TNSCompositeOperationType;
 					public stroke(): void;
 					public getShadowOffsetX(): number;
-					public setCurrentTransform(param0: com.github.triniwiz.canvas.TNSCanvasDOMMatrix): void;
 					public lineTo(param0: number, param1: number): void;
 					public restore(): void;
 					public closePath(): void;
@@ -729,7 +661,6 @@ declare module com {
 					public moveTo(param0: number, param1: number): void;
 					public setImageSmoothingEnabled(param0: boolean): void;
 					public strokeText(param0: string, param1: number, param2: number): void;
-					public getCurrentTransform(): com.github.triniwiz.canvas.TNSCanvasDOMMatrix;
 					public resetTransform(): void;
 					public setMiterLimit(param0: number): void;
 					public fill(param0: com.github.triniwiz.canvas.TNSPath2D): void;
@@ -873,6 +804,73 @@ declare module com {
 	export module github {
 		export module triniwiz {
 			export module canvas {
+				export class TNSDOMMatrix {
+					public static class: java.lang.Class<com.github.triniwiz.canvas.TNSDOMMatrix>;
+					public static Companion: com.github.triniwiz.canvas.TNSDOMMatrix.Companion;
+					public setM13(param0: number): void;
+					public finalize(): void;
+					public setD(param0: number): void;
+					public setM34(param0: number): void;
+					public getD(): number;
+					public constructor();
+					public setM42(param0: number): void;
+					public setM21(param0: number): void;
+					public getM32(): number;
+					public setM14(param0: number): void;
+					public getM22(): number;
+					public getM42(): number;
+					public getM12(): number;
+					public setC(param0: number): void;
+					public setM33(param0: number): void;
+					public getB(): number;
+					public getM23(): number;
+					public getM13(): number;
+					public getA(): number;
+					public setM22(param0: number): void;
+					public getM43(): number;
+					public setM41(param0: number): void;
+					public getM33(): number;
+					public setB(param0: number): void;
+					public getM24(): number;
+					public getM14(): number;
+					public setM32(param0: number): void;
+					public getM11(): number;
+					public setM11(param0: number): void;
+					public setF(param0: number): void;
+					public getM44(): number;
+					public getF(): number;
+					public getM34(): number;
+					public getM41(): number;
+					public getM21(): number;
+					public getC(): number;
+					public setM23(param0: number): void;
+					public setM44(param0: number): void;
+					public getM31(): number;
+					public constructor(param0: number);
+					public getE(): number;
+					public setMatrix$canvas_release(param0: number): void;
+					public getMatrix$canvas_release(): number;
+					public setA(param0: number): void;
+					public setM12(param0: number): void;
+					public setE(param0: number): void;
+					public setM31(param0: number): void;
+					public setM24(param0: number): void;
+					public setM43(param0: number): void;
+				}
+				export module TNSDOMMatrix {
+					export class Companion {
+						public static class: java.lang.Class<com.github.triniwiz.canvas.TNSDOMMatrix.Companion>;
+					}
+				}
+			}
+		}
+	}
+}
+
+declare module com {
+	export module github {
+		export module triniwiz {
+			export module canvas {
 				export class TNSFileReader {
 					public static class: java.lang.Class<com.github.triniwiz.canvas.TNSFileReader>;
 					public static INSTANCE: com.github.triniwiz.canvas.TNSFileReader;
@@ -940,10 +938,9 @@ declare module com {
 				export class TNSImageAsset {
 					public static class: java.lang.Class<com.github.triniwiz.canvas.TNSImageAsset>;
 					public static Companion: com.github.triniwiz.canvas.TNSImageAsset.Companion;
-					public getBuffer(): java.nio.ByteBuffer;
-					public loadImageFromBuffer(param0: java.nio.ByteBuffer): boolean;
 					public loadImageFromBytesAsync(param0: native.Array<number>, param1: com.github.triniwiz.canvas.TNSImageAsset.Callback): void;
 					public flipX(): void;
+					public loadImageFromUrl(param0: string): boolean;
 					public getHeight(): number;
 					public finalize(): void;
 					public getWidth(): number;
@@ -956,15 +953,21 @@ declare module com {
 					public getBytes(): native.Array<number>;
 					public getError(): string;
 					public flipY(): void;
+					public loadImageFromUrlAsync(param0: string, param1: com.github.triniwiz.canvas.TNSImageAsset.Callback): void;
 					public scale(param0: number, param1: number): void;
 					public constructor();
-					public loadImageFromBufferAsync(param0: java.nio.ByteBuffer, param1: com.github.triniwiz.canvas.TNSImageAsset.Callback): void;
 					public loadImageFromPathAsync(param0: string, param1: com.github.triniwiz.canvas.TNSImageAsset.Callback): void;
 					public saveAsync(param0: string, param1: com.github.triniwiz.canvas.TNSImageAssetFormat, param2: com.github.triniwiz.canvas.TNSImageAsset.Callback): void;
 					public loadImageFromBytes(param0: native.Array<number>): boolean;
 					public setNativeImageAsset$canvas_release(param0: number): void;
 				}
 				export module TNSImageAsset {
+					export class ByteArrayOutputStream2 {
+						public static class: java.lang.Class<com.github.triniwiz.canvas.TNSImageAsset.ByteArrayOutputStream2>;
+						public constructor();
+						public constructor(param0: number);
+						public buf(): native.Array<number>;
+					}
 					export class Callback {
 						public static class: java.lang.Class<com.github.triniwiz.canvas.TNSImageAsset.Callback>;
 						/**
@@ -1124,12 +1127,12 @@ declare module com {
 				export class TNSPath2D {
 					public static class: java.lang.Class<com.github.triniwiz.canvas.TNSPath2D>;
 					public static Companion: com.github.triniwiz.canvas.TNSPath2D.Companion;
-					public addPath(param0: com.github.triniwiz.canvas.TNSPath2D, param1: com.github.triniwiz.canvas.TNSCanvasDOMMatrix): void;
 					public moveTo(param0: number, param1: number): void;
 					public rect(param0: number, param1: number, param2: number, param3: number): void;
 					public bezierCurveTo(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
 					public constructor(param0: string);
 					public finalize(): void;
+					public addPath(param0: com.github.triniwiz.canvas.TNSPath2D, param1: com.github.triniwiz.canvas.TNSDOMMatrix): void;
 					public getPath$canvas_release(): number;
 					public arc(param0: number, param1: number, param2: number, param3: number, param4: number, param5: boolean): void;
 					public ellipse(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: boolean): void;
@@ -1139,6 +1142,7 @@ declare module com {
 					public quadraticCurveTo(param0: number, param1: number, param2: number, param3: number): void;
 					public constructor(param0: com.github.triniwiz.canvas.TNSPath2D);
 					public lineTo(param0: number, param1: number): void;
+					public addPath(param0: com.github.triniwiz.canvas.TNSPath2D): void;
 					public closePath(): void;
 				}
 				export module TNSPath2D {
@@ -1160,9 +1164,9 @@ declare module com {
 					public static Companion: com.github.triniwiz.canvas.TNSPattern.Companion;
 					public getStyle(): number;
 					public constructor();
-					public setTransform(param0: com.github.triniwiz.canvas.TNSCanvasDOMMatrix): void;
 					public finalize(): void;
 					public getStyleType(): com.github.triniwiz.canvas.TNSColorStyleType;
+					public setTransform(param0: com.github.triniwiz.canvas.TNSDOMMatrix): void;
 					public constructor(param0: number);
 					public setStyle(param0: number): void;
 				}
@@ -1260,6 +1264,7 @@ declare module com {
 					public constructor(param0: string);
 					public constructor();
 					public finalize(): void;
+					public decode(param0: java.nio.ByteBuffer): string;
 					public getEncoding(): string;
 					public decode(param0: native.Array<number>): string;
 				}
@@ -1645,6 +1650,7 @@ declare module com {
 					public copyBufferSubData(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 					public uniform1uiv(param0: number, param1: native.Array<number>): void;
 					public getFragDataLocation(param0: number, param1: string): number;
+					public texSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: com.github.triniwiz.canvas.TNSCanvas): void;
 					public getR16UI(): number;
 					public bindTransformFeedback(param0: number, param1: number): void;
 					public getCOLOR_ATTACHMENT15(): number;
@@ -1682,6 +1688,7 @@ declare module com {
 					public getSAMPLER_2D_ARRAY_SHADOW(): number;
 					public getVERTEX_ATTRIB_ARRAY_DIVISOR(): number;
 					public getREAD_FRAMEBUFFER(): number;
+					public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: com.github.triniwiz.canvas.TNSCanvas): void;
 					public getRGB10_A2UI(): number;
 					public getTEXTURE_2D_ARRAY(): number;
 					public getMAX_CLIENT_WAIT_TIMEOUT_WEBGL(): number;
@@ -2233,8 +2240,8 @@ declare module com {
 				export class Utils {
 					public static class: java.lang.Class<com.github.triniwiz.canvas.Utils>;
 					public static INSTANCE: com.github.triniwiz.canvas.Utils;
+					public getBytesFromBitmap(param0: globalAndroid.graphics.Bitmap): native.Array<number>;
 					public isEmulator(): boolean;
-					public getByteBufferFromBitmap(param0: globalAndroid.graphics.Bitmap): java.nio.ByteBuffer;
 				}
 			}
 		}

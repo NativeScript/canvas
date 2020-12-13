@@ -17,6 +17,7 @@ use crate::common::context::drawing_text::text_metrics::TextMetrics;
 use crate::common::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::fill_and_stroke_styles::pattern::{Pattern, Repetition};
+use crate::common::context::image_asset::ImageAsset;
 use crate::common::context::image_smoothing::ImageSmoothingQuality;
 use crate::common::context::line_styles::line_cap::LineCap;
 use crate::common::context::line_styles::line_join::LineJoin;
@@ -31,7 +32,7 @@ use crate::common::ffi::paint_style_value::{PaintStyleValue, PaintStyleValueType
 use crate::common::ffi::u8_array::U8Array;
 use crate::common::to_data_url;
 use crate::common::utils::color::to_parsed_color;
-use crate::common::utils::image::{to_image, to_image_encoded};
+use crate::common::utils::image::{from_image_slice, to_image, to_image_encoded};
 
 /*
 #[inline]
@@ -939,6 +940,30 @@ pub extern "C" fn context_create_pattern(
 }
 
 #[no_mangle]
+pub extern "C" fn context_create_pattern_asset(
+    context: c_longlong,
+    asset: c_longlong,
+    repetition: Repetition,
+) -> c_longlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        let bytes = asset.rgba_internal_bytes();
+        if let Some(image) = from_image_slice(bytes.as_slice(), asset.width() as i32, asset.height() as i32) {
+            return Box::into_raw(Box::new(
+                PaintStyle::Pattern(context.create_pattern(image, repetition))
+            )) as c_longlong;
+        }
+        0
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn context_create_pattern_encoded(
     context: c_longlong,
     image_data: *const u8,
@@ -1012,9 +1037,9 @@ pub extern "C" fn context_draw_image_dx_dy_dw_dh(
 ) {
     context_draw_image(
         context, image_data, image_len,
-        width,height,
-        0.0,0.0, width, height,
-        dx, dy, d_width, d_height
+        width, height,
+        0.0, 0.0, width, height,
+        dx, dy, d_width, d_height,
     )
 }
 
@@ -1108,7 +1133,6 @@ pub extern "C" fn context_draw_image_encoded_dx_dy_dw_dh(
 }
 
 
-
 #[no_mangle]
 pub extern "C" fn context_draw_image_encoded(
     context: c_longlong,
@@ -1130,6 +1154,90 @@ pub extern "C" fn context_draw_image_encoded(
         let context: *mut Context = context as _;
         let context = &mut *context;
         if let Some(image) = to_image_encoded(image_data, image_len) {
+            context.draw_image(
+                &image,
+                Rect::from_xywh(sx, sy, s_width, s_height),
+                Rect::from_xywh(dx, dy, d_width, d_height),
+            )
+        }
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn context_draw_image_dx_dy_asset(
+    context: c_longlong,
+    asset: c_longlong,
+    dx: c_float,
+    dy: c_float,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let ctx_ptr = context;
+        let asset_ptr = asset;
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        let width = asset.width() as f32;
+        let height = asset.height() as f32;
+        context_draw_image_asset(
+            ctx_ptr, asset_ptr, 0.0, 0.0, width, height,
+            dx, dy, width, height,
+        );
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn context_draw_image_dx_dy_dw_dh_asset(
+    context: c_longlong,
+    asset: c_longlong,
+    dx: c_float,
+    dy: c_float,
+    d_width: c_float,
+    d_height: c_float,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let ctx_ptr = context;
+        let asset_ptr = asset;
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        let width = asset.width() as f32;
+        let height = asset.height() as f32;
+        context_draw_image_asset(
+            ctx_ptr, asset_ptr, 0.0, 0.0, width, height,
+            dx, dy, d_width, d_height,
+        );
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn context_draw_image_asset(
+    context: c_longlong,
+    asset: c_longlong,
+    sx: c_float,
+    sy: c_float,
+    s_width: c_float,
+    s_height: c_float,
+    dx: c_float,
+    dy: c_float,
+    d_width: c_float,
+    d_height: c_float,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        let asset: *mut ImageAsset = asset as _;
+        let asset = &mut *asset;
+        let bytes = asset.rgba_internal_bytes();
+        if let Some(image) = from_image_slice(bytes.as_slice(), asset.width() as i32, asset.height() as i32) {
             context.draw_image(
                 &image,
                 Rect::from_xywh(sx, sy, s_width, s_height),

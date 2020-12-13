@@ -10,8 +10,8 @@ import {WebGLShaderPrecisionFormat} from '../WebGLShaderPrecisionFormat';
 
 export abstract class WebGLRenderingContextBase
 	implements CanvasRenderingContext {
-	readonly drawingBufferHeight: number;
-	readonly drawingBufferWidth: number;
+	abstract readonly drawingBufferHeight: number;
+	abstract readonly drawingBufferWidth: number;
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
 

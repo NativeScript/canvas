@@ -1,9 +1,9 @@
-import {DemoSharedBase} from '../utils';
-import {ImageSource, ObservableArray, Screen, Color} from '@nativescript/core';
+import { DemoSharedBase } from '../utils';
+import { ImageSource, ObservableArray, Screen, Color } from '@nativescript/core';
 import Chart from 'chart.js';
 
 let Matter;
-import {Canvas} from '@nativescript/canvas';
+import { Canvas, ImageAsset } from '@nativescript/canvas';
 import {
 	arc,
 	arcTo,
@@ -13,6 +13,7 @@ import {
 	cancelRainbowOctopus,
 	cancelSwarm, clip,
 	colorRain, createLinearGradient, createRadialGradient, ellipse, fillRule, imageBlock, imageSmoothingEnabled,
+	imageSmoothingQuality,
 	isPointInStrokeTouch,
 	march, multiStrokeStyle,
 	particlesColor,
@@ -37,7 +38,7 @@ import {
 	main,
 	textures
 } from "./webgl";
-import {cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog} from "./webgl2";
+import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from "./webgl2";
 declare var com, java;
 let zen3d
 
@@ -92,7 +93,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
-		// imageSmoothingQuality(this.canvas);
+		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
 		//lineJoin(this.canvas);
@@ -123,7 +124,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
 		//march(this.canvas);
-		//this.putImageDataDemo(this.canvas);
+		this.putImageDataDemo(this.canvas);
 		//	this.drawImage(this.canvas);
 		// ctx.fillStyle = 'blue';
 		// ctx.fillRect(0,0,400,400)
@@ -187,46 +188,58 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
-		this.playCanvas(this.canvas);
+		//this.playCanvas(this.canvas);
+		//this.drawRandomFullscreenImage(this.canvas);
 	}
 
-	playCanvas(canvas){
+	drawRandomFullscreenImage(canvas) {
+		const width = Screen.mainScreen.widthPixels;
+		const height = Screen.mainScreen.heightPixels;
+		const ctx = canvas.getContext('2d');
+		const image = new Image();
+		image.onload = () => {
+			ctx.drawImage(image, 0, 0);
+		}
+		image.src = `https://source.unsplash.com/random/${width}x${height}`;
+	}
+
+	playCanvas(canvas) {
 		require('@nativescript/canvas-polyfill');
 		const pc = require('playcanvas');
-        const app = new pc.Application(canvas,{});
+		const app = new pc.Application(canvas, {});
 
-        // fill the available space at full resolution
-        app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
-        app.setCanvasResolution(pc.RESOLUTION_AUTO);
+		// fill the available space at full resolution
+		app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
+		app.setCanvasResolution(pc.RESOLUTION_AUTO);
 
-        // ensure canvas is resized when window changes size
-        window.addEventListener('resize', () => app.resizeCanvas());
+		// ensure canvas is resized when window changes size
+		window.addEventListener('resize', () => app.resizeCanvas());
 
-        // create box entity
-        const box = new pc.Entity('cube');
-        box.addComponent('model', {
-            type: 'box'
-        });
-        app.root.addChild(box);
+		// create box entity
+		const box = new pc.Entity('cube');
+		box.addComponent('model', {
+			type: 'box'
+		});
+		app.root.addChild(box);
 
-        // create camera entity
-        const camera = new pc.Entity('camera');
-        camera.addComponent('camera', {
-            clearColor: new pc.Color(0.1, 0.1, 0.1)
-        });
-        app.root.addChild(camera);
-        camera.setPosition(0, 0, 3);
+		// create camera entity
+		const camera = new pc.Entity('camera');
+		camera.addComponent('camera', {
+			clearColor: new pc.Color(0.1, 0.1, 0.1)
+		});
+		app.root.addChild(camera);
+		camera.setPosition(0, 0, 3);
 
-        // create directional light entity
-        const light = new pc.Entity('light');
-        light.addComponent('light');
-        app.root.addChild(light);
-        light.setEulerAngles(45, 0, 0);
+		// create directional light entity
+		const light = new pc.Entity('light');
+		light.addComponent('light');
+		app.root.addChild(light);
+		light.setEulerAngles(45, 0, 0);
 
-        // rotate the box according to the delta time since the last frame
-        app.on('update', dt => box.rotate(10 * dt, 20 * dt, 30 * dt));
+		// rotate the box according to the delta time since the last frame
+		app.on('update', dt => box.rotate(10 * dt, 20 * dt, 30 * dt));
 
-        app.start();
+		app.start();
 	}
 
 	gridLoaded(args) {
@@ -272,7 +285,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			alpha: false,
 			stencil: true
 		});
-		const {drawingBufferWidth, drawingBufferHeight} = gl;
+		const { drawingBufferWidth, drawingBufferHeight } = gl;
 		let width = drawingBufferWidth;
 		let height = drawingBufferHeight;
 
@@ -348,7 +361,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			gl = canvas.getContext('webgl');
 		}
 
-		const {drawingBufferWidth, drawingBufferHeight} = gl;
+		const { drawingBufferWidth, drawingBufferHeight } = gl;
 		let width = drawingBufferWidth;
 		let height = drawingBufferHeight;
 		var scene = new zen3d.Scene();
@@ -499,13 +512,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const context = renderer.getContext();
 		context.setFont('Arial', 10, '').setBackgroundFillStyle('#eed');
 
-// Create a stave of width 400 at position 10, 40 on the canvas.
+		// Create a stave of width 400 at position 10, 40 on the canvas.
 		const stave = new VF.Stave(10, 40, 400);
 
-// Add a clef and time signature.
+		// Add a clef and time signature.
 		stave.addClef('treble').addTimeSignature('4/4');
 
-// Connect it to the rendering context and draw!
+		// Connect it to the rendering context and draw!
 		stave.setContext(context).draw();
 	}
 
@@ -680,10 +693,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			// add bodies
 			World.add(world, [
 				// walls
-				Bodies.rectangle(400, 0, 800, 50, {isStatic: true}),
-				Bodies.rectangle(400, 600, 800, 50, {isStatic: true}),
-				Bodies.rectangle(800, 300, 50, 600, {isStatic: true}),
-				Bodies.rectangle(0, 300, 50, 600, {isStatic: true}),
+				Bodies.rectangle(400, 0, 800, 50, { isStatic: true }),
+				Bodies.rectangle(400, 600, 800, 50, { isStatic: true }),
+				Bodies.rectangle(800, 300, 50, 600, { isStatic: true }),
+				Bodies.rectangle(0, 300, 50, 600, { isStatic: true }),
 			]);
 
 			let scale = 0.9;
@@ -732,8 +745,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			// fit the render viewport to the scene
 			Render.lookAt(render, {
-				min: {x: 0, y: 0},
-				max: {x: 800, y: 600},
+				min: { x: 0, y: 0 },
+				max: { x: 800, y: 600 },
 			});
 
 			// context for MatterTools.Demo
@@ -774,7 +787,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// create two boxes and a ground
 		var boxA = Bodies.rectangle(400, 200, 80, 80);
 		var boxB = Bodies.rectangle(450, 50, 80, 80);
-		var ground = Bodies.rectangle(400, 610, 810, 60, {isStatic: true});
+		var ground = Bodies.rectangle(400, 610, 810, 60, { isStatic: true });
 
 		// add all of the bodies to the world
 		World.add(engine.world, [boxA, boxB, ground]);
@@ -1109,7 +1122,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				var colorName =
 					colorNames[
 					config.data.datasets[0].data.length % colorNames.length
-						];
+					];
 				var newColor = this.chartColors[colorName];
 
 				config.data.datasets.forEach(function (dataset) {
@@ -1261,15 +1274,25 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	async solar(canvas) {
-		var sun = await ImageSource.fromUrl(
-			'https://mdn.mozillademos.org/files/1456/Canvas_sun.png'
-		);
-		var moon = await ImageSource.fromUrl(
-			'https://mdn.mozillademos.org/files/1443/Canvas_moon.png'
-		);
-		var earth = await ImageSource.fromUrl(
-			'https://mdn.mozillademos.org/files/1429/Canvas_earth.png'
-		);
+
+		var sun = new ImageAsset();
+		var moon = new ImageAsset();
+		var earth = new ImageAsset();
+
+		try {
+			await sun.loadFromUrlAsync(
+				'https://mdn.mozillademos.org/files/1456/Canvas_sun.png'
+			);
+			await moon.loadFromUrlAsync(
+				'https://mdn.mozillademos.org/files/1443/Canvas_moon.png'
+			);
+			await earth.loadFromUrlAsync(
+				'https://mdn.mozillademos.org/files/1429/Canvas_earth.png'
+			)
+
+		} catch (e) {
+			console.log('solar error:', e);
+		}
 
 		function init() {
 			window.requestAnimationFrame(draw);
@@ -1279,6 +1302,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		function draw() {
 			var ctx = canvas.getContext('2d');
+			if(!ctx){
+				return;
+			}
 
 			ctx.globalCompositeOperation = 'destination-over';
 			ctx.clearRect(0, 0, 300, 300); // clear canvas
@@ -1488,9 +1514,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			var alpha = (opacity === undefined ? 0.5 : 1 - opacity) * 255;
 			const c = new Color(color);
 			const newColor = new Color(alpha, c.r, c.g, c.b);
-			return `rgba(${newColor.r},${newColor.g},${newColor.b},${
-				newColor.a / 255
-			})`;
+			return `rgba(${newColor.r},${newColor.g},${newColor.b},${newColor.a / 255
+				})`;
 		},
 	}
 
@@ -1509,10 +1534,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				v < 35
 					? '#D60000'
 					: v < 55
-					? '#F46300'
-					: v < 75
-						? '#0358B6'
-						: '#44DE28';
+						? '#F46300'
+						: v < 75
+							? '#0358B6'
+							: '#44DE28';
 
 			var opacity = hover
 				? 1 - Math.abs(v / 150) - 0.2
@@ -1790,7 +1815,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			var colorName =
 				colorNames[
 				horizontalBarChartData.datasets.length % colorNames.length
-					];
+				];
 			var dsColor = this.chartColors[colorName];
 			var newDataset = {
 				label: 'Dataset ' + (horizontalBarChartData.datasets.length + 1),
@@ -1862,7 +1887,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 
 		const generateLabels = () => {
-			return this.utils.months({count: inputs.count});
+			return this.utils.months({ count: inputs.count });
 		}
 
 		this.utils.srand(42);
@@ -2294,23 +2319,23 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	textColor: string = 'black';
 
 	items = new ObservableArray([
-		{name: "2D Swarm", type: "swarm"},
-		{name: "2D ColorRain", type: "colorRain"},
-		{name: "2D Particles Large", type: "particlesLarge"},
-		{name: "2D Rainbow Octopus", type: "rainbowOctopus"},
-		{name: "2D Particles Color", type: "particlesColor"},
-		{name: "WEBGL textures", type: "textures"},
-		{name: "WEBGL Draw Elements", type: "drawElements"},
-		{name: "WEBGL Draw Modes", type: "drawModes"},
-		{name: "WEBGL InteractiveCube", type: "interactiveCube"},
-		{name: "WEBGL Cube Rotation With Image", type: "main"},
-		{name: "WEBGL2 Draw Instanced", type: "draw_instanced"},
-		{name: "WEBGL2 Draw ImageSpace", type: "draw_image_space"},
+		{ name: "2D Swarm", type: "swarm" },
+		{ name: "2D ColorRain", type: "colorRain" },
+		{ name: "2D Particles Large", type: "particlesLarge" },
+		{ name: "2D Rainbow Octopus", type: "rainbowOctopus" },
+		{ name: "2D Particles Color", type: "particlesColor" },
+		{ name: "WEBGL textures", type: "textures" },
+		{ name: "WEBGL Draw Elements", type: "drawElements" },
+		{ name: "WEBGL Draw Modes", type: "drawModes" },
+		{ name: "WEBGL InteractiveCube", type: "interactiveCube" },
+		{ name: "WEBGL Cube Rotation With Image", type: "main" },
+		{ name: "WEBGL2 Draw Instanced", type: "draw_instanced" },
+		{ name: "WEBGL2 Draw ImageSpace", type: "draw_image_space" },
 		{
 			name: "WEBGL2 Cube Rotation With Cube Roating inside",
 			type: "cubeRotationRotation",
 		},
-		{name: "WEBGL2 Fog", type: "fog"},
+		{ name: "WEBGL2 Fog", type: "fog" },
 		{
 			name: "WEBGL2 Environment Map Roatating Cube",
 			type: "environmentMap",
@@ -2320,17 +2345,17 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	arcAnimation(ctx) {
 		ctx.scale(2, 2);
-		const mouse = {x: 0, y: 0};
+		const mouse = { x: 0, y: 0 };
 
 		let r = 100; // Radius
-		const p0 = {x: 0, y: 50};
+		const p0 = { x: 0, y: 50 };
 
-		const p1 = {x: 100, y: 100};
-		const p2 = {x: 150, y: 50};
-		const p3 = {x: 200, y: 100};
+		const p1 = { x: 100, y: 100 };
+		const p2 = { x: 150, y: 50 };
+		const p3 = { x: 200, y: 100 };
 
 		const labelPoint = function (p, offset, i = 0) {
-			const {x, y} = offset;
+			const { x, y } = offset;
 			ctx.beginPath();
 			ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
 			ctx.fill('');
@@ -2340,7 +2365,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const drawPoints = function (points) {
 			for (let i = 0; i < points.length; i++) {
 				var p = points[i];
-				labelPoint(p, {x: 0, y: -20}, i);
+				labelPoint(p, { x: 0, y: -20 }, i);
 			}
 		};
 

@@ -1,6 +1,7 @@
-import {ImageSource} from '@nativescript/core';
-import {Canvas, ImageAsset, Path2D} from '@nativescript/canvas';
+import { ImageSource } from '@nativescript/core';
+import { Canvas, ImageAsset, Path2D } from '@nativescript/canvas';
 import { Screen } from '@nativescript/core';
+import { doesNotReject } from 'assert';
 export function fillStyle(canvas) {
 	const ctx = canvas.getContext('2d');
 	for (let i = 0; i < 6; i++) {
@@ -78,11 +79,12 @@ export function imageSmoothingQuality(canvas) {
 export function imageBlock(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.save();
-	ImageSource.fromUrl('https://mdn.mozillademos.org/files/5397/rhino.jpg')
-		.then(function (img) {
+	const asset = new ImageAsset();
+	asset.loadFromUrlAsync('https://mdn.mozillademos.org/files/5397/rhino.jpg')
+		.then(done => {
 			for (var i = 0; i < 4; i++) {
 				for (var j = 0; j < 3; j++) {
-					ctx.drawImage(img, (j * 50) * Screen.mainScreen.scale, (i * 38) * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
+					ctx.drawImage(asset, (j * 50) * Screen.mainScreen.scale, (i * 38) * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
 				}
 			}
 		});
@@ -103,13 +105,13 @@ export function lineDashOffset(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.setLineDash([4, 16]);
 
-// Dashed line with no offset
+	// Dashed line with no offset
 	ctx.beginPath();
 	ctx.moveTo(0, 50);
 	ctx.lineTo(300, 50);
 	ctx.stroke();
 
-// Dashed line with offset of 4
+	// Dashed line with offset of 4
 	ctx.beginPath();
 	ctx.strokeStyle = 'red';
 	ctx.lineDashOffset = 4;
@@ -143,7 +145,7 @@ export function lineWidth(canvas) {
 	ctx.stroke();
 }
 
-export function shadowBlur(canvas){
+export function shadowBlur(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.shadowBlur = 3;
 	ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
@@ -194,22 +196,22 @@ export function shadowColor(canvas) {
 	// remove after release
 	ctx.shadowBlur = 1;
 
-// Filled rectangle
+	// Filled rectangle
 	ctx.fillRect(20, 20, 100, 100);
 
-// Stroked rectangle
+	// Stroked rectangle
 	ctx.lineWidth = 6;
 	ctx.strokeRect(170, 20, 100, 100);
 }
 
 export function shadowOffsetX(canvas) {
 	const ctx = canvas.getContext('2d');
-// Shadow
+	// Shadow
 	ctx.shadowColor = 'red';
 	ctx.shadowOffsetX = 25;
 	ctx.shadowBlur = 10;
 
-// Rectangle
+	// Rectangle
 	ctx.fillStyle = 'blue';
 	ctx.fillRect(20, 20, 150, 100);
 }
@@ -222,7 +224,7 @@ export function shadowOffsetY(canvas) {
 	ctx.shadowOffsetY = 25;
 	ctx.shadowBlur = 10;
 
-// Rectangle
+	// Rectangle
 	ctx.fillStyle = 'blue';
 	ctx.fillRect(20, 20, 150, 80);
 }
@@ -303,7 +305,7 @@ export function arcMultiple(canvas) {
 
 export function arcTo(canvas) {
 	const ctx = canvas.getContext('2d');
-// Tangential lines
+	// Tangential lines
 	ctx.beginPath();
 	ctx.strokeStyle = 'gray';
 	ctx.moveTo(200, 20);
@@ -311,7 +313,7 @@ export function arcTo(canvas) {
 	ctx.lineTo(50, 20);
 	ctx.stroke();
 
-// Arc
+	// Arc
 	ctx.beginPath();
 	ctx.strokeStyle = 'black';
 	ctx.lineWidth = 5;
@@ -319,13 +321,13 @@ export function arcTo(canvas) {
 	ctx.arcTo(200, 130, 50, 20, 40);
 	ctx.stroke();
 
-// Start point
+	// Start point
 	ctx.beginPath();
 	ctx.fillStyle = 'blue';
 	ctx.arc(200, 20, 5, 0, 2 * Math.PI);
 	ctx.fill();
 
-// Control points
+	// Control points
 	ctx.beginPath();
 	ctx.fillStyle = 'red';
 	ctx.arc(200, 130, 5, 0, 2 * Math.PI); // Control point one
@@ -336,17 +338,17 @@ export function arcTo(canvas) {
 export function arcToAnimation(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.scale(3, 3);
-	const mouse = {x: 0, y: 0};
+	const mouse = { x: 0, y: 0 };
 
 	let r = 100; // Radius
-	const p0 = {x: 0, y: 50};
+	const p0 = { x: 0, y: 50 };
 
-	const p1 = {x: 100, y: 100};
-	const p2 = {x: 150, y: 50};
-	const p3 = {x: 200, y: 100};
+	const p1 = { x: 100, y: 100 };
+	const p2 = { x: 150, y: 50 };
+	const p3 = { x: 200, y: 100 };
 
 	const labelPoint = function (p, offset, i = 0) {
-		const {x, y} = offset;
+		const { x, y } = offset;
 		ctx.beginPath();
 		ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
 		ctx.fill();
@@ -356,11 +358,11 @@ export function arcToAnimation(canvas) {
 	const drawPoints = function (points) {
 		for (let i = 0; i < points.length; i++) {
 			var p = points[i];
-			labelPoint(p, {x: 0, y: -20}, i);
+			labelPoint(p, { x: 0, y: -20 }, i);
 		}
 	};
 
-// Draw arc
+	// Draw arc
 	const drawArc = function ([p0, p1, p2], r) {
 		ctx.beginPath();
 		ctx.moveTo(p0.x, p0.y);
@@ -392,12 +394,12 @@ export function arcToAnimation(canvas) {
 
 export function ellipse(canvas) {
 	const ctx = canvas.getContext('2d');
-// Draw the ellipse
+	// Draw the ellipse
 	ctx.beginPath();
 	ctx.ellipse(100, 100, 50, 75, Math.PI / 4, 0, 2 * Math.PI);
 	ctx.stroke();
 
-// Draw the ellipse's line of reflection
+	// Draw the ellipse's line of reflection
 	ctx.beginPath();
 	ctx.setLineDash([5, 5]);
 	ctx.moveTo(0, 200);
@@ -411,7 +413,7 @@ export function fill(ctx) {
 
 export function fillPath(canvas) {
 	const ctx = canvas.getContext('2d');
-// Create path
+	// Create path
 	let region = new Path2D();
 	region.moveTo(30, 90);
 	region.lineTo(110, 20);
@@ -421,41 +423,41 @@ export function fillPath(canvas) {
 	region.lineTo(270, 90);
 	region.closePath();
 
-// Fill path
+	// Fill path
 	ctx.fillStyle = 'green';
 	ctx.fill(region, 'evenodd');
 }
 
 export function createLinearGradient(canvas) {
 	const ctx = canvas.getContext('2d');
-// Create a linear gradient
-// The start gradient point is at x=20, y=0
-// The end gradient point is at x=220, y=0
+	// Create a linear gradient
+	// The start gradient point is at x=20, y=0
+	// The end gradient point is at x=220, y=0
 	var gradient = ctx.createLinearGradient(20, 0, 220, 0);
 
-// Add three color stops
+	// Add three color stops
 	gradient.addColorStop(0, 'green');
 	gradient.addColorStop(.5, 'cyan');
 	gradient.addColorStop(1, 'green');
 
-// Set the fill style and draw a rectangle
+	// Set the fill style and draw a rectangle
 	ctx.fillStyle = gradient;
 	ctx.fillRect(20, 20, 200, 100);
 }
 
 export function createRadialGradient(canvas) {
 	const ctx = canvas.getContext('2d');
-// Create a radial gradient
-// The inner circle is at x=110, y=90, with radius=30
-// The outer circle is at x=100, y=100, with radius=70
+	// Create a radial gradient
+	// The inner circle is at x=110, y=90, with radius=30
+	// The outer circle is at x=100, y=100, with radius=70
 	var gradient = ctx.createRadialGradient(110, 90, 30, 100, 100, 70);
 
-// Add three color stops
+	// Add three color stops
 	gradient.addColorStop(0, 'pink');
 	gradient.addColorStop(.9, 'white');
 	gradient.addColorStop(1, 'green');
 
-// Set the fill style and draw a rectangle
+	// Set the fill style and draw a rectangle
 	ctx.fillStyle = gradient;
 	ctx.fillRect(20, 20, 160, 160);
 }
@@ -463,7 +465,7 @@ export function createRadialGradient(canvas) {
 export function fillRule(canvas) {
 	const ctx = canvas.getContext('2d');
 
-// Create path
+	// Create path
 	let region = new Path2D();
 	region.moveTo(30, 90);
 	region.lineTo(110, 20);
@@ -473,22 +475,22 @@ export function fillRule(canvas) {
 	region.lineTo(270, 90);
 	region.closePath();
 
-// Fill path
+	// Fill path
 	ctx.fillStyle = 'green';
 	ctx.fill(region, 'evenodd');
 }
 
 export function scale(canvas) {
 	const ctx = canvas.getContext('2d');
-// Scaled rectangle
+	// Scaled rectangle
 	ctx.scale(9, 3);
 	ctx.fillStyle = 'red';
 	ctx.fillRect(10, 10, 8, 20);
 
-// Reset current transformation matrix to the identity matrix
+	// Reset current transformation matrix to the identity matrix
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-// Non-scaled rectangle
+	// Non-scaled rectangle
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(10, 10, 8, 20);
 }
@@ -506,11 +508,11 @@ export function patternWithCanvas(canvas) {
 	const patternCanvas = Canvas.createCustomView();
 	const patternContext = patternCanvas.getContext('2d') as any;
 
-// Give the pattern a width and height of 50
+	// Give the pattern a width and height of 50
 	patternCanvas.width = 50;
 	patternCanvas.height = 50;
 
-// Give the pattern a background color and draw an arc
+	// Give the pattern a background color and draw an arc
 	patternContext.fillStyle = '#fec';
 	patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
 	patternContext.arc(0, 0, 50, 0, .5 * Math.PI);
@@ -518,7 +520,7 @@ export function patternWithCanvas(canvas) {
 
 	const ctx = canvas.getContext('2d');
 
-// Create our primary canvas and fill it with the pattern
+	// Create our primary canvas and fill it with the pattern
 	ctx.fillStyle = ctx.createPattern(patternCanvas, 'repeat');
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
@@ -530,7 +532,7 @@ export function clip(canvas) {
 	ctx.arc(100, 75, 50, 0, Math.PI * 2);
 	ctx.clip();
 
-// Draw stuff that gets clipped
+	// Draw stuff that gets clipped
 	ctx.fillStyle = 'blue';
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -540,7 +542,7 @@ export function clip(canvas) {
 
 export function isPointInStrokeTouch(canvas) {
 	const ctx = canvas.getContext('2d');
-// Create ellipse
+	// Create ellipse
 	const ellipse = new Path2D();
 	ellipse.ellipse(150, 75, 40, 60, Math.PI * .25, 0, 2 * Math.PI);
 	ctx.lineWidth = 25;
@@ -549,7 +551,7 @@ export function isPointInStrokeTouch(canvas) {
 	ctx.stroke(ellipse);
 
 
-// Listen for mouse moves
+	// Listen for mouse moves
 	canvas.addEventListener('touchmove', function (args) {
 		// Check whether point is inside ellipse's stroke
 		const event = args.changedTouches[0];

@@ -364,7 +364,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			if (clearIfComposited(mask) !== HowToClear.CombinedClear) {
 				GLES20.glClear(mask)
 			}
-			GLES20.glClear(mask)
 			updateCanvas()
 			lock.countDown()
 		})

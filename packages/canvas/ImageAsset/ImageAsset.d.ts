@@ -7,6 +7,10 @@ export declare class ImageAsset extends ImageAssetBase {
 
 	constructor();
 
+	loadFromUrl(url: string): boolean;
+
+	loadFromUrlAsync(url: string): Promise<boolean>;
+
 	loadFile(path: string): boolean;
 
 	loadFileAsync(path: string): Promise<boolean>;

@@ -1,5 +1,5 @@
-import {Node} from "./Node";
-import {Canvas} from '@nativescript/canvas';
+import { Node } from "./Node";
+import { Canvas } from '@nativescript/canvas';
 
 export class Element extends Node {
 	private doc: any;
@@ -9,7 +9,7 @@ export class Element extends Node {
 	namespaceURI: any;
 	nativeElement: any;
 
-	constructor(tagName) {
+	constructor(tagName, canvas = undefined) {
 		super(tagName.toUpperCase());
 
 		this.doc = {
@@ -19,7 +19,11 @@ export class Element extends Node {
 		};
 		this._classList = new Set();
 		if (tagName.toLowerCase() === 'canvas') {
-			this._canvas = Canvas.createCustomView();
+			if (canvas instanceof Canvas) {
+				this._canvas = canvas;
+			} else {
+				this._canvas = Canvas.createCustomView();
+			}
 		}
 	}
 
@@ -112,4 +116,3 @@ export class Element extends Node {
 		return {};
 	}
 }
-

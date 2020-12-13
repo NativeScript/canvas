@@ -1,9 +1,9 @@
-import {CanvasBase} from './common';
-import {DOMMatrix} from '../Canvas2D';
-import {CanvasRenderingContext2D} from '../Canvas2D/CanvasRenderingContext2D';
-import {WebGLRenderingContext} from '../WebGL/WebGLRenderingContext';
-import {WebGL2RenderingContext} from '../WebGL2/WebGL2RenderingContext';
-import {Application, View} from '@nativescript/core';
+import { CanvasBase } from './common';
+import { DOMMatrix } from '../Canvas2D';
+import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
+import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
+import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
+import { Application, View, profile } from '@nativescript/core';
 
 declare var com;
 
@@ -26,8 +26,8 @@ export class Canvas extends CanvasBase {
 	constructor() {
 		super();
 		let useCpu = false;
-		if(arguments.length === 1){
-			if(typeof arguments[0] === 'boolean'){
+		if (arguments.length === 1) {
+			if (typeof arguments[0] === 'boolean') {
 				useCpu = arguments[0];
 			}
 		}
@@ -36,6 +36,7 @@ export class Canvas extends CanvasBase {
 		this._canvas = new com.github.triniwiz.canvas.TNSCanvas(activity, useCpu);
 	}
 
+	// @ts-ignore
 	get android() {
 		return this._canvas;
 	}
@@ -48,6 +49,7 @@ export class Canvas extends CanvasBase {
 		return this.height;
 	}
 
+	// @ts-ignore
 	get width() {
 		if (this.getMeasuredWidth() > 0) {
 			return this.getMeasuredWidth()
@@ -69,6 +71,7 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
+	// @ts-ignore
 	get height() {
 		if (this.getMeasuredHeight() > 0) {
 			return this.getMeasuredHeight();
@@ -107,10 +110,8 @@ export class Canvas extends CanvasBase {
 		const ref = new WeakRef(this);
 		this.__handleGestures();
 		this.on(View.layoutChangedEvent, args => {
-			console.log('onLayout', 'android');
 			const parent = this.parent as any;
 			// TODO change DIPs once implemented
-			console.log('parent',this.parent);
 			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 				Object.defineProperty(parent, 'clientWidth', {
 					get: function () {
@@ -145,6 +146,7 @@ export class Canvas extends CanvasBase {
 		super.onUnloaded();
 	}
 
+	@profile
 	onLoaded() {
 		super.onLoaded();
 		if (this._didPause) {
@@ -166,6 +168,9 @@ export class Canvas extends CanvasBase {
 
 	disposeNativeView(): void {
 		this.off('touch, pan', this._touchEvents);
+		this._canvas.setListener(null);
+		this._canvas = undefined;
+		this.setNativeView(undefined);
 		super.disposeNativeView();
 	}
 
@@ -206,8 +211,8 @@ export class Canvas extends CanvasBase {
 				if (!surfaceParams) {
 					surfaceParams = new android.widget.FrameLayout.LayoutParams(0, 0);
 				}
-			//	surfaceParams.width = size.width;
-			//	surfaceParams.height = size.height;
+				//	surfaceParams.width = size.width;
+				//	surfaceParams.height = size.height;
 
 				this._canvas.setLayoutParams(rootParams);
 				//this._canvas.getSurface().setLayoutParams(surfaceParams);
@@ -234,6 +239,9 @@ export class Canvas extends CanvasBase {
 		| WebGLRenderingContext
 		| WebGL2RenderingContext
 		| null {
+		if (!this._canvas) {
+			return null;
+		}
 		const getNativeOptions = (options) => {
 			const jsOptions = this._handleContextOptions(type, options);
 			const opts = new java.util.HashMap();

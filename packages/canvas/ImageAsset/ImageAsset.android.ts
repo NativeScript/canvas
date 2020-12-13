@@ -39,6 +39,27 @@ export class ImageAsset extends ImageAssetBase {
         return value;
     }
 
+    loadFromUrl(url: string): boolean {
+        return this.native.loadImageFromUrl(url);
+    }
+
+    loadFromUrlAsync(path: string) {
+        return new Promise((resolve, reject) => {
+            this.native.loadImageFromUrlAsync(
+                path,
+                new com.github.triniwiz.canvas.TNSImageAsset.Callback({
+                    onError(error) {
+                        reject(error);
+                    },
+                    onSuccess(success) {
+                        resolve(ImageAsset.toPrimitive(success));
+                    },
+                })
+            );
+        });
+    }
+
+
 
     loadFile(path: string): boolean {
         let realPath = path;

@@ -23,6 +23,22 @@ export class ImageAsset extends ImageAssetBase {
 		return this.native.error;
 	}
 
+	loadFromUrl(url: string): boolean {
+		return this.native.loadImageFromUrlWithUrl(url);
+	}
+
+	loadFromUrlAsync(url: string) {
+		return new Promise((resolve, reject) => {
+			this.native.loadImageFromUrlAsyncWithUrlCallback(url, (error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+				resolve(true);
+			});
+		});
+	}
+
 	loadFile(path: string): boolean {
 		let realPath = path;
 		if (typeof realPath === 'string') {

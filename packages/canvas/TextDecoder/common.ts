@@ -1,5 +1,5 @@
-export class TextDecoderBase {
-	public readonly encoding: string;
+export abstract class TextDecoderBase {
+	public abstract readonly encoding: string;
 	private nativeInstance: any;
 
 	constructor(nativeInstance) {
@@ -10,7 +10,5 @@ export class TextDecoderBase {
 		return this.nativeInstance;
 	}
 
-	decode(buffer: ArrayBuffer | ArrayBufferView, options?: any): string {
-		return null;
-	}
+	abstract decode(buffer: ArrayBuffer | ArrayBufferView, options?: any): string;
 }

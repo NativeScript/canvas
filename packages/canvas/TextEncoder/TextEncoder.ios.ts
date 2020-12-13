@@ -1,4 +1,4 @@
-import {TextEncoderBase} from './common';
+import { TextEncoderBase } from './common';
 
 declare let TNSTextEncoder;
 

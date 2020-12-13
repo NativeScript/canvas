@@ -1,5 +1,5 @@
-import {ImageAssetBase, ImageAssetSaveFormat} from './common';
-import {knownFolders, path as filePath} from '@nativescript/core';
+import { ImageAssetBase, ImageAssetSaveFormat } from './common';
+import { knownFolders, path as filePath } from '@nativescript/core';
 
 declare var TNSImageAsset;
 
@@ -7,6 +7,7 @@ const main_queue = dispatch_get_current_queue();
 const background_queue = dispatch_get_global_queue(21, 0);
 
 export class ImageAsset extends ImageAssetBase {
+	native: TNSImageAsset
 	constructor() {
 		super(TNSImageAsset.alloc().init());
 	}
@@ -21,6 +22,22 @@ export class ImageAsset extends ImageAssetBase {
 
 	get error(): string {
 		return this.native.error;
+	}
+
+	loadFromUrl(url: string): boolean {
+		return this.native.loadImageFromUrlWithUrl(url);
+	}
+
+	loadFromUrlAsync(url: string) {
+		return new Promise((resolve, reject) => {
+			this.native.loadImageFromUrlAsyncWithUrlCallback(url, (error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+				resolve(true);
+			});
+		});
 	}
 
 	loadFile(path: string): boolean {
@@ -38,15 +55,21 @@ export class ImageAsset extends ImageAssetBase {
 
 	loadFileAsync(path: string) {
 		return new Promise((resolve, reject) => {
-			dispatch_async(background_queue, () => {
-				const success = this.loadFile(path);
-				dispatch_async(main_queue, () => {
-					if (!success) {
-						reject(this.error);
-						return;
-					}
-					resolve(true);
-				});
+			let realPath = path;
+			if (typeof realPath === 'string') {
+				if (realPath.startsWith('~/')) {
+					realPath = filePath.join(
+						knownFolders.currentApp().path,
+						realPath.replace('~/', '')
+					);
+				}
+			}
+			this.native.loadImageFromPathAsyncWithPathCallback(realPath, (error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+				resolve(true);
 			});
 		});
 	}
@@ -57,35 +80,29 @@ export class ImageAsset extends ImageAssetBase {
 
 	loadFromNativeAsync(image: any) {
 		return new Promise((resolve, reject) => {
-			dispatch_async(background_queue, () => {
-				const success = this.loadFromNative(image);
-				dispatch_async(main_queue, () => {
-					if (!success) {
-						reject(this.error);
-						return;
-					}
-					resolve(true);
-				});
-			});
+			this.native.loadImageFromImageAsyncWithImageCallback(image, error => {
+				if (error) {
+					reject(error);
+					return;
+				}
+				resolve(true);
+			})
 		});
 	}
 
 	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray): boolean {
-		return this.native.loadImageFromBytesWithArray(bytes as any);
+		return this.native.loadImageFromBytesWithArray(Array.from(bytes as any));
 	}
 
 	loadFromBytesAsync(bytes: Uint8Array | Uint8ClampedArray) {
 		return new Promise((resolve, reject) => {
-			dispatch_async(background_queue, () => {
-				const success = this.loadFromBytes(bytes);
-				dispatch_async(main_queue, () => {
-					if (!success) {
-						reject(this.error);
-						return;
-					}
-					resolve(true);
-				});
-			});
+			this.native.loadImageFromBytesAsyncWithArrayCallback(Array.from(bytes as any), (error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+				resolve(true);
+			})
 		});
 	}
 

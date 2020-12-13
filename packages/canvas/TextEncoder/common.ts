@@ -1,5 +1,5 @@
-export class TextEncoderBase {
-	public readonly encoding: string;
+export abstract class TextEncoderBase {
+	public abstract readonly encoding: string;
 	private nativeInstance: any;
 
 	constructor(nativeInstance) {
@@ -10,7 +10,5 @@ export class TextEncoderBase {
 		return this.nativeInstance;
 	}
 
-	encode(text: string): Uint8Array {
-		return null;
-	}
+	abstract encode(text: string): Uint8Array;
 }

@@ -4,9 +4,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.lang.Exception
+import java.net.URL
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Created by triniwiz on 5/4/20
@@ -121,6 +127,62 @@ class TNSImageAsset {
 		} else nativeLoadAssetPath(nativeImageAsset, path)
 	}
 
+	// Blocking because why not 😂
+	fun loadImageFromUrl(url: String): Boolean {
+		resourceError = null
+		val lock = CountDownLatch(1)
+		var result = false
+		executorService.execute {
+			try {
+				val urlSrc =
+					URL(url)
+				val bs = ByteArrayOutputStream2()
+				urlSrc.openStream().use { input ->
+					bs.use { output ->
+						input.copyTo(output)
+					}
+				}
+				result = loadImageFromBytes(bs.buf())
+			} catch (e: Exception) {
+				resourceError = e.message
+				result = false
+			}
+			lock.countDown()
+		}
+		try {
+			lock.await()
+		}catch (e: java.lang.Exception){
+
+		}
+		return result
+	}
+
+
+	fun loadImageFromUrlAsync(url: String, callback: Callback) {
+		resourceError = null
+		executorService.execute {
+			try {
+				val urlSrc =
+					URL(url)
+				val bs = ByteArrayOutputStream2()
+				urlSrc.openStream().use { input ->
+					bs.use { output ->
+						input.copyTo(output)
+					}
+				}
+				val loaded = loadImageFromBytes(bs.buf())
+				if(loaded){
+					callback.onSuccess(true)
+				}else {
+					callback.onError(error)
+				}
+			} catch (e: Exception) {
+				resourceError = e.message
+				callback.onError(error)
+			}
+		}
+	}
+
 	fun loadImageFromPathAsync(path: String, callback: Callback) {
 		executorService.submit {
 			if (nativeLoadAssetPath(nativeImageAsset, path)) {
@@ -137,7 +199,6 @@ class TNSImageAsset {
 		} else nativeLoadAssetBytes(nativeImageAsset, buffer)
 	}
 
-
 	fun loadImageFromBytesAsync(buffer: ByteArray, callback: Callback) {
 		executorService.submit {
 			if (nativeLoadAssetBytes(nativeImageAsset, buffer)) {
@@ -147,7 +208,6 @@ class TNSImageAsset {
 			}
 		}
 	}
-
 
 	fun loadImageFromImage(bitmap: Bitmap): Boolean {
 		if (nativeImageAsset == 0L) {
@@ -174,6 +234,19 @@ class TNSImageAsset {
 	protected fun finalize() {
 		nativeDestroy(nativeImageAsset)
 		nativeImageAsset = 0
+	}
+
+	internal class ByteArrayOutputStream2 : ByteArrayOutputStream {
+		constructor() : super() {}
+		constructor(size: Int) : super(size) {}
+
+		/**
+		 * Returns the internal buffer of this ByteArrayOutputStream, without copying.
+		 */
+		@Synchronized
+		fun buf(): ByteArray {
+			return buf
+		}
 	}
 
 	companion object {

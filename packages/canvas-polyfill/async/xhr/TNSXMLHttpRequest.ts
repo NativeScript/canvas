@@ -1,8 +1,8 @@
-import {CancellablePromise, Http} from '../http/http';
-import {HttpError, HttpRequestOptions, ProgressEvent} from '../http/http-request-common';
-import {FileManager} from '../file/file';
-import {isNullOrUndefined, isObject, isFunction} from '@nativescript/core/utils/types';
-import {knownFolders, path as filePath, File as fsFile} from '@nativescript/core';
+import { CancellablePromise, Http } from '../http/http';
+import { HttpError, HttpRequestOptions, ProgressEvent } from '../http/http-request-common';
+import { FileManager } from '../file/file';
+import { isNullOrUndefined, isObject, isFunction } from '@nativescript/core/utils/types';
+import { knownFolders, path as filePath, File as fsFile } from '@nativescript/core';
 
 enum XMLHttpRequestResponseType {
 	empty = '',
@@ -126,7 +126,7 @@ export class TNSXMLHttpRequest {
 		loaded: number;
 		total: number;
 		target: any;
-	} = {lengthComputable: false, loaded: 0, total: 0, target: this};
+	} = { lengthComputable: false, loaded: 0, total: 0, target: this };
 
 	private _headers: any;
 	private _responseURL: string = '';
@@ -149,6 +149,8 @@ export class TNSXMLHttpRequest {
 	get response() {
 		return this._response;
 	}
+
+	private _didUserSetResponseType = false;
 
 	get responseType(): any {
 		return this._responseType;
@@ -286,6 +288,7 @@ export class TNSXMLHttpRequest {
 	}
 
 	set responseType(value: any) {
+		this._didUserSetResponseType = true;
 		if (
 			value === XMLHttpRequestResponseType.empty ||
 			value in XMLHttpRequestResponseType
@@ -421,7 +424,7 @@ export class TNSXMLHttpRequest {
 			this.emitEvent('loadstart', startEvent);
 
 			this._updateReadyStateChange(this.LOADING);
-		
+
 			FileManager.readFile(path, {}, (error, data) => {
 				if (error) {
 					const errorEvent = new ProgressEvent(
@@ -449,7 +452,7 @@ export class TNSXMLHttpRequest {
 
 					this._updateReadyStateChange(this.DONE);
 				} else {
-					if (!this.responseType) {
+					if (!this._didUserSetResponseType) {
 						this._setResponseType();
 					}
 					this._status = 200;
@@ -692,11 +695,12 @@ export class TNSXMLHttpRequest {
 
 		this._currentRequest
 			.then((res) => {
-				this._setResponseType();
+				if (!this._didUserSetResponseType) {
+					this._setResponseType();
+				}
 				this._status = res.statusCode;
 				this._httpContent = res.content;
 				this._responseURL = res.url;
-
 				if (this.responseType === XMLHttpRequestResponseType.json) {
 					if (typeof res.content === 'string') {
 						this._responseText = res.content;
@@ -1097,7 +1101,7 @@ export class Blob {
 	public slice(start?: number, end?: number, type?: string): Blob {
 		const slice = this._buffer.slice(start || 0, end || this._buffer.length);
 
-		return new Blob([slice], {type: type});
+		return new Blob([slice], { type: type });
 	}
 
 	public stream() {

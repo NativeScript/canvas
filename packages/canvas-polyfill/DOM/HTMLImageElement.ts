@@ -1,7 +1,6 @@
 import { Element } from './Element';
-import { knownFolders, path, File, ImageSource } from '@nativescript/core';
+import { knownFolders, path, File } from '@nativescript/core';
 import { ImageAsset } from '@nativescript/canvas';
-
 const background_queue = global.isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
 const main_queue = global.isIOS ? dispatch_get_current_queue() : undefined;
 declare var NSUUID, java, NSData, android;
@@ -45,6 +44,8 @@ export class HTMLImageElement extends Element {
 	_imageSource: any;
 	__id: any;
 
+	decoding = 'auto';
+
 	get src() {
 		return this.localUri;
 	}
@@ -78,8 +79,7 @@ export class HTMLImageElement extends Element {
 		super('image');
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
-		// this._load = this._load.bind(this);
-		this._onload = () => {};
+		this._onload = () => { };
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;
 			this.width = props.width;
@@ -87,6 +87,7 @@ export class HTMLImageElement extends Element {
 			this._load();
 		}
 	}
+
 
 	_load() {
 		if (this.src) {
@@ -155,18 +156,54 @@ export class HTMLImageElement extends Element {
 				})();
 				return;
 			}
-			if (!this.width || !this.height) {
-				this.complete = false;
-				this._asset
-					.loadFileAsync(this.src)
-					.then(() => {
-						this.width = this._asset.width;
-						this.height = this._asset.height;
-						this.complete = true;
-					})
-					.catch((e) => {
-						this.emitter.emit('error', { target: this });
-					});
+
+			if (typeof this.src === 'string') {
+				let async = this.decoding !== 'sync';
+				if (this.src.startsWith('http')) {
+					if (!async) {
+						const loaded = this._asset.loadFromUrl(this.src);
+						if (loaded) {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = true;
+						} else {
+							this.emitter.emit('error', { target: this });
+						}
+					} else {
+						this._asset.loadFromUrlAsync(this.src).then(() => {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = true;
+						}).catch(e => {
+							this.emitter.emit('error', { target: this });
+						})
+					}
+				} else {
+					if (!this.width || !this.height) {
+						this.complete = false;
+						if (!async) {
+							const loaded = this._asset.loadFile(this.src);
+							if (loaded) {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+							} else {
+								this.emitter.emit('error', { target: this });
+							}
+						} else {
+							this._asset
+								.loadFileAsync(this.src)
+								.then(() => {
+									this.width = this._asset.width;
+									this.height = this._asset.height;
+									this.complete = true;
+								})
+								.catch((e) => {
+									this.emitter.emit('error', { target: this });
+								});
+						}
+					}
+				}
 			}
 		}
 	}

@@ -176,6 +176,8 @@ long long context_create_pattern(long long context,
                                  int height,
                                  Repetition repetition);
 
+long long context_create_pattern_asset(long long context, long long asset, Repetition repetition);
+
 long long context_create_pattern_encoded(long long context,
                                          const uint8_t *image_data,
                                          uintptr_t image_len,
@@ -205,6 +207,17 @@ void context_draw_image(long long context,
                         float d_width,
                         float d_height);
 
+void context_draw_image_asset(long long context,
+                              long long asset,
+                              float sx,
+                              float sy,
+                              float s_width,
+                              float s_height,
+                              float dx,
+                              float dy,
+                              float d_width,
+                              float d_height);
+
 void context_draw_image_dx_dy(long long context,
                               const uint8_t *image_data,
                               uintptr_t image_len,
@@ -212,6 +225,8 @@ void context_draw_image_dx_dy(long long context,
                               float height,
                               float dx,
                               float dy);
+
+void context_draw_image_dx_dy_asset(long long context, long long asset, float dx, float dy);
 
 void context_draw_image_dx_dy_dw_dh(long long context,
                                     const uint8_t *image_data,
@@ -222,6 +237,13 @@ void context_draw_image_dx_dy_dw_dh(long long context,
                                     float dy,
                                     float d_width,
                                     float d_height);
+
+void context_draw_image_dx_dy_dw_dh_asset(long long context,
+                                          long long asset,
+                                          float dx,
+                                          float dy,
+                                          float d_width,
+                                          float d_height);
 
 void context_draw_image_encoded(long long context,
                                 const uint8_t *image_data,

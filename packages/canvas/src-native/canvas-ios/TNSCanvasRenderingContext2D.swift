@@ -521,10 +521,7 @@
         
         @nonobjc func drawImage(image: TNSImageAsset, dx: Float, dy: Float){
             ensureIsContextIsCurrent()
-            let size = image.width * image.height * 4
-            let width = image.width
-            let height = image.height
-            context_draw_image_dx_dy(canvas.context, image.getRawBytes(), UInt(size),Float32(width),Float32(height), dx, dy)
+            context_draw_image_dx_dy_asset(canvas.context, image.asset, dx, dy)
             canvas.doDraw()
         }
         
@@ -562,10 +559,7 @@
         
         @nonobjc func drawImage(image: TNSImageAsset, dx: Float, dy: Float, dWidth: Float, dHeight: Float){
             ensureIsContextIsCurrent()
-            let size = image.width * image.height * 4
-            let width = image.width
-            let height = image.height
-            context_draw_image_dx_dy_dw_dh(canvas.context, image.getRawBytes(), UInt(size),Float32(width),Float32(height),dx, dy,dWidth,dHeight)
+            context_draw_image_dx_dy_dw_dh_asset(canvas.context, image.asset, dx, dy,dWidth,dHeight)
             canvas.doDraw()
         }
         
@@ -603,10 +597,7 @@
         
         @nonobjc func drawImage(image: TNSImageAsset, sx: Float, sy: Float, sWidth: Float, sHeight: Float, dx: Float, dy: Float, dWidth: Float, dHeight: Float){
             ensureIsContextIsCurrent()
-            let size = image.width * image.height * 4
-            let width = image.width
-            let height = image.height
-            context_draw_image(canvas.context, image.getRawBytes(),UInt(size), Float32(width), Float32(height), sx, sy,sWidth, sHeight, dx, dy, dWidth, dHeight)
+            context_draw_image_asset(canvas.context, image.asset,sx, sy,sWidth, sHeight, dx, dy, dWidth, dHeight)
             canvas.doDraw()
         }
         

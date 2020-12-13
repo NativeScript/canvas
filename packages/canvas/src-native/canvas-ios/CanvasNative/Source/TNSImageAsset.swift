@@ -25,8 +25,35 @@ public class TNSImageAsset: NSObject {
     private var _error: String?
     public func loadImageFromPath(path: String) -> Bool {
         let ptr = (path as NSString).utf8String
+        _error = nil
         free_data()
         return image_asset_load_from_path(asset, ptr)
+    }
+    
+    public func loadImageFromUrl(url: String) -> Bool {
+        _error = nil
+        do {
+            let data = try Data(contentsOf: URL(string: url)!)
+            return loadImageFromBytes(array: [UInt8](data))
+        } catch let thisError {
+            _error = thisError.localizedDescription
+            return false
+        }
+    }
+    
+    public func loadImageFromUrlAsync(url: String, callback: @escaping (String?)-> ()) {
+        TNSImageAsset.queue.async {
+            let success = self.loadImageFromUrl(url: url)
+            if(success){
+                DispatchQueue.main.async {
+                    callback(nil)
+                }
+            }else {
+                DispatchQueue.main.async {
+                     callback(self.error)
+                }
+            }
+        }
     }
     
     public func loadImageFromPathAsync(path: String, callback: @escaping (String?)-> ()){
@@ -46,6 +73,7 @@ public class TNSImageAsset: NSObject {
     
     public func loadImageFromBytes(array: [UInt8]) -> Bool{
         var ptr = array
+        _error = nil
         free_data()
         return image_asset_load_from_raw(asset, &ptr, UInt(array.count))
     }
@@ -66,6 +94,7 @@ public class TNSImageAsset: NSObject {
     }
     
     public func loadImageFromImage(image: UIImage) -> Bool {
+        _error = nil
         var cgImage: CGImage?
         if let pixels = image.cgImage {
                    cgImage = pixels
@@ -192,6 +221,9 @@ public class TNSImageAsset: NSObject {
     public var error: String? {
         if(asset == 0){
             return nil
+        }
+        if(_error != nil){
+            return _error
         }
         let cStr = image_asset_get_error(asset)
         if(cStr == nil){return nil}

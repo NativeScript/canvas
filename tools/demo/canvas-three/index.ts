@@ -42,10 +42,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.group(this.canvas);
 		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
-		//this.threeCrate(this.canvas);
+		this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
@@ -59,6 +59,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
+
 	}
 
 	gtlfLoader(canvas) {

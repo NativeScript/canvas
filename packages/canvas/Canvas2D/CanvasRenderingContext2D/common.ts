@@ -1,31 +1,31 @@
-import {CanvasRenderingContext} from "../../common";
-import {CanvasGradient} from '../CanvasGradient';
-import {CanvasPattern} from '../CanvasPattern';
-import {Path2D} from '../Path2D';
-import {ImageData} from '../ImageData';
-import {TextMetrics} from '../TextMetrics';
+import { CanvasRenderingContext } from "../../common";
+import { CanvasGradient } from '../CanvasGradient';
+import { CanvasPattern } from '../CanvasPattern';
+import { Path2D } from '../Path2D';
+import { ImageData } from '../ImageData';
+import { TextMetrics } from '../TextMetrics';
 
 export abstract class CanvasRenderingContext2DBase
 	implements CanvasRenderingContext {
-	lineWidth: number;
-	fillStyle: string | CanvasGradient | CanvasPattern;
-	strokeStyle: string | CanvasGradient | CanvasPattern;
-	lineCap: string;
-	globalCompositeOperation: string;
-	font: string;
-	filter: string;
-	globalAlpha: number;
-	imageSmoothingEnabled: boolean;
-	imageSmoothingQuality: string;
-	lineDashOffset: number;
-	lineJoin: string;
-	miterLimit: number;
-	shadowBlur: number;
-	shadowColor: string;
-	shadowOffsetX: number;
-	shadowOffsetY: number;
-	textAlign: string;
-	direction: string;
+	abstract lineWidth: number;
+	abstract fillStyle: string | CanvasGradient | CanvasPattern;
+	abstract strokeStyle: string | CanvasGradient | CanvasPattern;
+	abstract lineCap: string;
+	abstract globalCompositeOperation: string;
+	abstract font: string;
+	abstract filter: string;
+	abstract globalAlpha: number;
+	abstract imageSmoothingEnabled: boolean;
+	abstract imageSmoothingQuality: string;
+	abstract lineDashOffset: number;
+	abstract lineJoin: string;
+	abstract miterLimit: number;
+	abstract shadowBlur: number;
+	abstract shadowColor: string;
+	abstract shadowOffsetX: number;
+	abstract shadowOffsetY: number;
+	abstract textAlign: string;
+	abstract direction: string;
 
 	_canvas: any;
 	get canvas(): any {

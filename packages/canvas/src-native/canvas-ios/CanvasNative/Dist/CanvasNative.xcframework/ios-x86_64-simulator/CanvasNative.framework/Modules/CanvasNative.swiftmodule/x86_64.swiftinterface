@@ -2811,6 +2811,8 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   @objc public static var _queue: Dispatch.DispatchQueue?
   @objc override dynamic public init()
   @objc public func loadImageFromPath(path: Swift.String) -> Swift.Bool
+  @objc public func loadImageFromUrl(url: Swift.String) -> Swift.Bool
+  @objc public func loadImageFromUrlAsync(url: Swift.String, callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromPathAsync(path: Swift.String, callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromBytes(array: [Swift.UInt8]) -> Swift.Bool
   @objc public func loadImageFromBytesAsync(array: [Swift.UInt8], callback: @escaping (Swift.String?) -> ())

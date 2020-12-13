@@ -175,14 +175,6 @@ declare var ICanvasColorStyle: {
 	prototype: ICanvasColorStyle;
 };
 
-interface ImageData {
-	data: string;
-	data_len: number;
-	width: number;
-	height: number;
-}
-declare var ImageData: interop.StructType<ImageData>;
-
 declare const enum ImageSmoothingQuality {
 
 	Low = 0,
@@ -341,6 +333,8 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 	static new(): TNSCanvasRenderingContext2D; // inherited from NSObject
 
 	fillStyle: ICanvasColorStyle;
+
+	filter: string;
 
 	font: string;
 
@@ -657,6 +651,10 @@ declare class TNSImageAsset extends NSObject {
 	loadImageFromPathAsyncWithPathCallback(path: string, callback: (p1: string) => void): void;
 
 	loadImageFromPathWithPath(path: string): boolean;
+
+	loadImageFromUrlAsyncWithUrlCallback(url: string, callback: (p1: string) => void): void;
+
+	loadImageFromUrlWithUrl(url: string): boolean;
 
 	saveAsyncWithPathFormatCallback(path: string, format: TNSImageAssetFormat, callback: (p1: boolean) => void): void;
 
@@ -3049,9 +3047,13 @@ declare function context_clip_rule(context: number, rule: FillRule): void;
 
 declare function context_close_path(context: number): void;
 
+declare function context_create_image_data(width: number, height: number): number;
+
 declare function context_create_linear_gradient(context: number, x0: number, y0: number, x1: number, y1: number): number;
 
 declare function context_create_pattern(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, repetition: Repetition): number;
+
+declare function context_create_pattern_asset(context: number, asset: number, repetition: Repetition): number;
 
 declare function context_create_pattern_encoded(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, repetition: Repetition): number;
 
@@ -3061,7 +3063,21 @@ declare function context_data_url(context: number, format: string | interop.Poin
 
 declare function context_draw_image(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
+declare function context_draw_image_asset(context: number, asset: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
+
+declare function context_draw_image_dx_dy(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, dx: number, dy: number): void;
+
+declare function context_draw_image_dx_dy_asset(context: number, asset: number, dx: number, dy: number): void;
+
+declare function context_draw_image_dx_dy_dw_dh(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): void;
+
+declare function context_draw_image_dx_dy_dw_dh_asset(context: number, asset: number, dx: number, dy: number, d_width: number, d_height: number): void;
+
 declare function context_draw_image_encoded(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
+
+declare function context_draw_image_encoded_dx_dy(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, dx: number, dy: number): void;
+
+declare function context_draw_image_encoded_dx_dy_dw_dh(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
 declare function context_ellipse(context: number, x: number, y: number, radius_x: number, radius_y: number, rotation: number, start_angle: number, end_angle: number, anticlockwise: boolean): void;
 
@@ -3130,8 +3146,6 @@ declare function context_line_to(context: number, x: number, y: number): void;
 declare function context_measure_text(context: number, text: string | interop.Pointer | interop.Reference<any>): number;
 
 declare function context_move_to(context: number, x: number, y: number): void;
-
-declare function context_native_create_image_data(width: number, height: number): interop.Pointer | interop.Reference<ImageData>;
 
 declare function context_put_image_data(context: number, image_data: number, dx: number, dy: number, dirty_x: number, dirty_y: number, dirty_width: number, dirty_height: number): void;
 
@@ -3283,11 +3297,11 @@ declare function flip_y_in_place_u32(data: interop.Pointer | interop.Reference<n
 
 declare function gl_get_vertex_attrib_offset(index: number, pname: number): number;
 
-declare function gl_tex_image_2D_asset(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
+declare function gl_tex_image_2D_asset(target: number, level: number, internalformat: number, border: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
 
 declare function gl_tex_image_3D_asset(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
 
-declare function gl_tex_sub_image_2D_asset(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
+declare function gl_tex_sub_image_2D_asset(target: number, level: number, xoffset: number, yoffset: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
 
 declare function gl_tex_sub_image_3D_asset(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
 
@@ -3324,8 +3338,6 @@ declare function image_asset_height(asset: number): number;
 declare function image_asset_load_from_path(asset: number, path: string | interop.Pointer | interop.Reference<any>): boolean;
 
 declare function image_asset_load_from_raw(asset: number, array: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
-
-declare function image_asset_load_from_url(asset: number, url: string | interop.Pointer | interop.Reference<any>, callback: interop.FunctionReference<(p1: boolean) => void>): void;
 
 declare function image_asset_save_path(asset: number, path: string | interop.Pointer | interop.Reference<any>, format: number): boolean;
 

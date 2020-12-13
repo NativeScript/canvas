@@ -1,7 +1,7 @@
-export class ImageDataBase {
-	width = 0;
-	height = 0;
-	data = null;
+export abstract class ImageDataBase {
+	abstract readonly width: number;
+	abstract readonly height: number;
+	abstract readonly data: Uint8ClampedArray;
 	protected nativeInstance: any;
 
 	constructor(nativeInstance: any) {

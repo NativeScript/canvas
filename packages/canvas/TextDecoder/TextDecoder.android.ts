@@ -1,4 +1,4 @@
-import {TextDecoderBase} from './common';
+import { TextDecoderBase } from './common';
 
 declare var com;
 
@@ -23,7 +23,6 @@ export class TextDecoder extends TextDecoderBase {
 			buffer instanceof Int32Array ||
 			buffer instanceof Float32Array || buffer instanceof Uint8ClampedArray
 		) {
-			android.util.Log.d("com.test",Array.from(buffer as any).toString());
 			if (buffer instanceof Uint8Array || buffer instanceof Int8Array || buffer instanceof Uint8ClampedArray) {
 				const nativeBuffer = java.nio.ByteBuffer.wrap(Array.from(buffer));
 				return this.native.decode(nativeBuffer.array());
@@ -41,15 +40,7 @@ export class TextDecoder extends TextDecoderBase {
 				return this.native.decode(nativeBuffer.array());
 			}
 
-			//const array = new Uint8Array(buffer);
-			console.log('hererere');
 			const nativeBuffer = java.nio.ByteBuffer.wrap(Array.from(buffer as any));
-			try {
-				const decoded = this.native.decode(nativeBuffer.array());
-				console.log('decoded',decoded)
-			}catch (e) {
-				console.log('decode', e);
-			}
 			return this.native.decode(nativeBuffer.array());
 		} else {
 			return '';

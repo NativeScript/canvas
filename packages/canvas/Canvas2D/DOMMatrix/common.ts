@@ -1,27 +1,27 @@
 export abstract class DOMMatrixBase {
-	a: number;
-	b: number;
-	c: number;
-	d: number;
-	e: number;
-	f: number;
+	abstract a: number;
+	abstract b: number;
+	abstract c: number;
+	abstract d: number;
+	abstract e: number;
+	abstract f: number;
 
-	m11: number
-	m12: number
-	m13: number
-	m14: number
-	m21: number
-	m22: number
-	m23: number
-	m24: number
-	m31: number;
-	m32: number;
-	m33: number;
-	m34: number;
-	m41: number;
-	m42: number;
-	m43: number
-	m44: number;
+	abstract m11: number
+	abstract m12: number
+	abstract m13: number
+	abstract m14: number
+	abstract m21: number
+	abstract m22: number
+	abstract m23: number
+	abstract m24: number
+	abstract m31: number;
+	abstract m32: number;
+	abstract m33: number;
+	abstract m34: number;
+	abstract m41: number;
+	abstract m42: number;
+	abstract m43: number
+	abstract m44: number;
 
 	protected nativeInstance: any;
 

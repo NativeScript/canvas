@@ -115,7 +115,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         
         if (!(gl.getProgramParameter(program, gl.LINK_STATUS) as! Bool)) {
             let linkErrLog = gl.getProgramInfoLog(program)
-        print("error", linkErrLog)
+            print("error", linkErrLog)
             cleanup(gl: gl)
         }
         
@@ -129,7 +129,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         ctx.beginPath()
         ctx.fillStyle = TNSColorStyle.TNSColor("#ff6")
         ctx.fillRect(0, 0, canvas1!.width, canvas1!.height)
-
+        
         // Draw blue triangle
         ctx.beginPath();
         ctx.fillStyle = TNSColorStyle.TNSColor("blue")
@@ -138,109 +138,111 @@ class ViewController: UIViewController, TNSCanvasListener {
         ctx.lineTo(130, 130)
         ctx.closePath()
         ctx.fill()
-
+        
         // Clear part of the canvas
         ctx.clearRect(10, 10, 120, 100)
     }
     
     
     func drawAll() {
-      //  let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
+        //  let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
         //canvas1?.handleInvalidationManually = true
         
-//        let q = DispatchQueue(label: "bg", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
-//        q.async {
-//            self.gl = (self.canvas1?.getContext("webgl")  as! TNSWebGLRenderingContext)
-//            self.drawPoints(canvas: self.canvas1!)
-//        }
+        //        let q = DispatchQueue(label: "bg", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
+        //        q.async {
+        //            self.gl = (self.canvas1?.getContext("webgl")  as! TNSWebGLRenderingContext)
+        //            self.drawPoints(canvas: self.canvas1!)
+        //        }
         
         
-        
-       //drawRotatingCube(gl: gl)
         
         //drawRotatingCube(gl: gl)
-       // drawTextures(canvas: canvas1)
-       
         
-       // self.drawGL(canvas: self.canvas1!) // sun
-
+        //drawRotatingCube(gl: gl)
+        // drawTextures(canvas: canvas1)
+        
+        
+        // self.drawGL(canvas: self.canvas1!) // sun
+        
         //drawTextures(canvas: canvas1)
         
-       // canvas1?.handleInvalidationManually = true
+        // canvas1?.handleInvalidationManually = true
         
         //drawPoints(canvas: canvas1!)
-      // canvas1?.handleInvalidationManually = true
-       /* canvas1?.moveOffMain()
-        DispatchQueue.global(qos: .default).async {
-            self.canvas1?.handleMoveOffMain()
-            //let ctx = self.canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
-            //self.doSolarAnimation(ctx: ctx)
-            //self.drawFace(ctx: ctx)
-            self.gl = (self.canvas1?.getContext("webgl")  as! TNSWebGLRenderingContext)
-           // self.drawTextures(canvas: self.canvas1!)
-            
-        }
-        */
+        // canvas1?.handleInvalidationManually = true
+        /* canvas1?.moveOffMain()
+         DispatchQueue.global(qos: .default).async {
+         self.canvas1?.handleMoveOffMain()
+         //let ctx = self.canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
+         //self.doSolarAnimation(ctx: ctx)
+         //self.drawFace(ctx: ctx)
+         self.gl = (self.canvas1?.getContext("webgl")  as! TNSWebGLRenderingContext)
+         // self.drawTextures(canvas: self.canvas1!)
+         
+         }
+         */
         let scale = Float(UIScreen.main.scale)
         
-    let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
+        let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
+        
+        drawImageFromUrl(ctx: ctx, url: "https://source.unsplash.com/random")
         // Create circular clipping region
         /*ctx.beginPath()
-        ctx.arc(Float(100 * scale), Float(75 * scale), Float(50 * scale), 0, PI * 2)
-        ctx.clip()
-
-        // Draw stuff that gets clipped
-        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
-        ctx.fillRect(0, 0, Float(canvas1.frame.width * scale), Float(canvas1.frame.height * scale))
-        ctx.fillStyle = TNSColorStyle.TNSColor("orange")
-        ctx.fillRect(0, 0, Float(100 * scale), Float(100 * scale))
-        
-        */
+         ctx.arc(Float(100 * scale), Float(75 * scale), Float(50 * scale), 0, PI * 2)
+         ctx.clip()
+         
+         // Draw stuff that gets clipped
+         ctx.fillStyle = TNSColorStyle.TNSColor("blue")
+         ctx.fillRect(0, 0, Float(canvas1.frame.width * scale), Float(canvas1.frame.height * scale))
+         ctx.fillStyle = TNSColorStyle.TNSColor("orange")
+         ctx.fillRect(0, 0, Float(100 * scale), Float(100 * scale))
+         
+         */
         /*
+         
+         // Create clipping path
+         let region = TNSPath2D()
+         region.rect(80, 10, 20, 130)
+         region.rect(40, 50, 100, 50)
+         ctx.clip(region, TNSFillRule.EvenOdd)
+         
+         // Draw stuff that gets clipped
+         ctx.fillStyle = TNSColorStyle.TNSColor("blue")
+         ctx.fillRect(0, 0, Float(canvas1.frame.width) * scale, Float(canvas1!.frame.height) * scale)
+         
+         */
         
-        // Create clipping path
-        let region = TNSPath2D()
-        region.rect(80, 10, 20, 130)
-        region.rect(40, 50, 100, 50)
-        ctx.clip(region, TNSFillRule.EvenOdd)
-
-        // Draw stuff that gets clipped
-        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
-        ctx.fillRect(0, 0, Float(canvas1.frame.width) * scale, Float(canvas1!.frame.height) * scale)
-        
-        */
         
         
+        /* ctx.scale(Float(scale), Float(scale))
+         ctx.beginPath()
+         ctx.arc(50, 50, 30, 0, 2 * PI)
+         ctx.stroke()
+         ctx.clip()
+         
+         ctx.font = "\(48/scale)px sans-serif"
+         ctx.strokeText("canvas test", 10, 55)
+         */
         
-       /* ctx.scale(Float(scale), Float(scale))
-        ctx.beginPath()
-        ctx.arc(50, 50, 30, 0, 2 * PI)
-        ctx.stroke()
-        ctx.clip()
-
-        ctx.font = "\(48/scale)px sans-serif"
-        ctx.strokeText("canvas test", 10, 55)
-        */
         
-    
         /*
-        // Create clipping path
-        let region = TNSPath2D()
-        region.rect(80 * scale, 10 * scale, 20 * scale, 130 * scale)
-        region.rect(40 * scale, 50 * scale, 100 * scale, 50 * scale)
-        ctx.clip(region, TNSFillRule.EvenOdd)
-
-        // Draw stuff that gets clipped
-        ctx.fillStyle = TNSColorStyle.TNSColor("blue")
-        ctx.fillRect(0, 0, 300 * scale, 300 * scale)
-    
-        */
+         // Create clipping path
+         let region = TNSPath2D()
+         region.rect(80 * scale, 10 * scale, 20 * scale, 130 * scale)
+         region.rect(40 * scale, 50 * scale, 100 * scale, 50 * scale)
+         ctx.clip(region, TNSFillRule.EvenOdd)
+         
+         // Draw stuff that gets clipped
+         ctx.fillStyle = TNSColorStyle.TNSColor("blue")
+         ctx.fillRect(0, 0, 300 * scale, 300 * scale)
+         
+         */
         
-    
         
-      // clearExample(ctx: ctx)
-       // drawImageExample(ctx: ctx)
-       // canvas1?.flush()
+        
+        // clearExample(ctx: ctx)
+        // drawImageExample(ctx: ctx)
+        // canvas1?.flush()
         //drawImageBlock(ctx: ctx)
         // doSolarAnimation(ctx: ctx)
         //drawFace(ctx: ctx)
@@ -252,42 +254,42 @@ class ViewController: UIViewController, TNSCanvasListener {
         
         //ctx.fillRect(x: 200, y: 10, width: 200, height: 200);
         // scaleTransformation(ctx: ctx)
-       // particleAnimation(ctx: ctx)
+        // particleAnimation(ctx: ctx)
         //        canvas1!.toDataURLAsync { (data) in
         //           print("data: ", data)
         //        }
         
-       // drawPatterWithCanvas(canvas: canvas1!)
-       // ellipseExample(ctx: ctx)
+        // drawPatterWithCanvas(canvas: canvas1!)
+        // ellipseExample(ctx: ctx)
         
     }
     
     func decoder() {
-                // let uint8Array = new Uint8Array([228, 189, 160, 229, 165, 189]);
-                //
-                // console.log( new TextDecoder().decode(uint8Array) ); // 你好
-
-
-                let utf8decoder = TNSTextDecoder() // default 'utf-8' or 'utf8'
-                print(utf8decoder.encoding);
-
-                let u8arr: [UInt8] = [240, 160, 174, 183]
-                let i8arr:[Int8] = [-16, -96, -82, -73]
-                let u16arr: [UInt16] = [41200, 47022]
-                let i16arr:[Int16] = [-24336, -18514]
-                let i32arr:[Int32] = [-1213292304]
-
+        // let uint8Array = new Uint8Array([228, 189, 160, 229, 165, 189]);
+        //
+        // console.log( new TextDecoder().decode(uint8Array) ); // 你好
+        
+        
+        let utf8decoder = TNSTextDecoder() // default 'utf-8' or 'utf8'
+        print(utf8decoder.encoding);
+        
+        let u8arr: [UInt8] = [240, 160, 174, 183]
+        let i8arr:[Int8] = [-16, -96, -82, -73]
+        let u16arr: [UInt16] = [41200, 47022]
+        let i16arr:[Int16] = [-24336, -18514]
+        let i32arr:[Int32] = [-1213292304]
+        
         print(utf8decoder.decode(bytes: u8arr))
         print(utf8decoder.decode(i8: i8arr))
         print(utf8decoder.decode(u16: u16arr))
         print(utf8decoder.decode(i16: i16arr))
         print(utf8decoder.decode(i32: i32arr))
-
-
+        
+        
         let win1251decoder = TNSTextDecoder(encoding: "windows-1251")
         let bytes:[UInt8] = [207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]
         print(win1251decoder.decode(bytes: bytes)); // Привет, мир!
-            
+        
     }
     
     
@@ -303,20 +305,20 @@ class ViewController: UIViewController, TNSCanvasListener {
         patternCanvas.frame = frame
         patternCanvas.setNeedsLayout()
         patternCanvas.layoutIfNeeded()
-
-
-    // Give the pattern a background color and draw an arc
+        
+        
+        // Give the pattern a background color and draw an arc
         patternContext.fillStyle = TNSColorStyle.TNSColor("#fec")
         patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height)
         patternContext.arc(0, 0, Float(50 * scale), 0, (0.5 * PI))
         patternContext.stroke()
-    // Create our primary canvas and fill it with the pattern
-
+        // Create our primary canvas and fill it with the pattern
+        
         let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let pattern = ctx.createPattern(patternCanvas, .Repeat)
         ctx.fillStyle = pattern as! ICanvasColorStyle
         ctx.fillRect(0, 0, canvas.width, canvas.height)
-        }
+    }
     
     var vertCode2 = """
                    attribute vec3 coordinates;
@@ -334,110 +336,110 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     func drawPoints(canvas: TNSCanvas){
         let gl = canvas.getContext("webgl") as! TNSWebGLRenderingContext
-
-                /*==========Defining and storing the geometry=======*/
-
+        
+        /*==========Defining and storing the geometry=======*/
+        
         let vertices: [Float] = [
-                   -0.5,0.5,0.0,
-                   0.0,0.5,0.0,
-                   -0.25,0.25,0.0,
-                ]
-
-                // Create an empty buffer object to store the vertex buffer
+            -0.5,0.5,0.0,
+            0.0,0.5,0.0,
+            -0.25,0.25,0.0,
+        ]
+        
+        // Create an empty buffer object to store the vertex buffer
         let vertex_buffer = gl.createBuffer();
-     
-
-                //Bind appropriate array buffer to it
+        
+        
+        //Bind appropriate array buffer to it
         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
         
-
-                // Pass the vertex data to the buffer
+        
+        // Pass the vertex data to the buffer
         gl.bufferData(gl.ARRAY_BUFFER,f32: vertices, gl.STATIC_DRAW);
-
-                // Unbind the buffer
+        
+        // Unbind the buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, 0)
-
-                /*=========================Shaders========================*/
-
-                // vertex shader source code
-           
-
-                // Create a vertex shader object
+        
+        /*=========================Shaders========================*/
+        
+        // vertex shader source code
+        
+        
+        // Create a vertex shader object
         let vertShader = gl.createShader(gl.VERTEX_SHADER);
-                
-                // Attach vertex shader source code
+        
+        // Attach vertex shader source code
         gl.shaderSource(vertShader, vertCode2);
-
-                // Compile the vertex shader
+        
+        // Compile the vertex shader
         gl.compileShader(vertShader);
-
-                // fragment shader source code
-                
-
-                // Create fragment shader object
+        
+        // fragment shader source code
+        
+        
+        // Create fragment shader object
         let fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-
-                // Attach fragment shader source code
+        
+        // Attach fragment shader source code
         gl.shaderSource(fragShader, fragCode2);
-
-                // Compile the fragmentt shader
+        
+        // Compile the fragmentt shader
         gl.compileShader(fragShader);
-                
-                // Create a shader program object to store
-                // the combined shader program
+        
+        // Create a shader program object to store
+        // the combined shader program
         let shaderProgram = gl.createProgram();
-
-                // Attach a vertex shader
+        
+        // Attach a vertex shader
         gl.attachShader(shaderProgram, vertShader);
-
-                // Attach a fragment shader
+        
+        // Attach a fragment shader
         gl.attachShader(shaderProgram, fragShader);
-
-                // Link both programs
+        
+        // Link both programs
         gl.linkProgram(shaderProgram);
         
         
         let linked = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS) as! Bool
-               if (!linked) {
-                 // something went wrong with the link
-                let lastError = gl.getProgramInfoLog(shaderProgram);
-                 print("Error in program linking:" + lastError);
-
-                gl.deleteProgram(shaderProgram);
-                 return
-               }
-
-                // Use the combined shader program object
+        if (!linked) {
+            // something went wrong with the link
+            let lastError = gl.getProgramInfoLog(shaderProgram);
+            print("Error in program linking:" + lastError);
+            
+            gl.deleteProgram(shaderProgram);
+            return
+        }
+        
+        // Use the combined shader program object
         gl.useProgram(shaderProgram);
-
-                /*======== Associating shaders to buffer objects ========*/
-
-                // Bind vertex buffer object
+        
+        /*======== Associating shaders to buffer objects ========*/
+        
+        // Bind vertex buffer object
         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-
-                // Get the attribute location
+        
+        // Get the attribute location
         let coord = gl.getAttribLocation(shaderProgram, "coordinates");
-                // Point an attribute to the currently bound VBO
+        // Point an attribute to the currently bound VBO
         gl.vertexAttribPointer(UInt32(coord), 3, gl.FLOAT, false, 0, 0)
-
-                // Enable the attribute
+        
+        // Enable the attribute
         gl.enableVertexAttribArray(UInt32(coord))
-
-                /*============= Drawing the primitive ===============*/
-
-                // Clear the canvas
+        
+        /*============= Drawing the primitive ===============*/
+        
+        // Clear the canvas
         gl.clearColor(0.5, 0.5, 0.5, 0.9);
-
-                // Enable the depth test
+        
+        // Enable the depth test
         gl.enable(gl.DEPTH_TEST);
         
-                // Clear the color buffer bit
+        // Clear the color buffer bit
         gl.clear(UInt32(gl.COLOR_BUFFER_BIT));
-   
-                // Set the view port
+        
+        // Set the view port
         gl.viewport(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight);
-
-                // Draw the triangle
+        
+        // Draw the triangle
         gl.drawArrays(gl.POINTS, 0, 3);
     }
     
@@ -445,7 +447,7 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     func drawTextures(canvas: TNSCanvas) {
         let gl = canvas.getContext("webgl") as! TNSWebGLRenderingContext
-    
+        
         let vertexShaderSrc = """
       attribute vec2 a_position;
       uniform vec2 u_resolution;
@@ -456,7 +458,7 @@ class ViewController: UIViewController, TNSCanvasListener {
          gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
         }
     """
-
+        
         let fragmentShaderSrc = """
          precision mediump float;
          uniform vec4 u_color;
@@ -464,120 +466,120 @@ class ViewController: UIViewController, TNSCanvasListener {
             gl_FragColor = u_color;
          }
          """
-
+        
         // setup GLSL program
-
+        
         let vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, vertexShaderSrc);
         gl.compileShader(vertexShader);
-
+        
         var compiled = gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS) as! Bool
         if (!compiled) {
-          // Something went wrong during compilation; get the error
+            // Something went wrong during compilation; get the error
             let lastError = gl.getShaderInfoLog(vertexShader);
-          print(
-            "*** Error compiling vertexShader ", vertexShader, ":" , lastError
-          )
+            print(
+                "*** Error compiling vertexShader ", vertexShader, ":" , lastError
+            )
             gl.deleteShader(vertexShader)
-          return
+            return
         }
-
+        
         let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader, fragmentShaderSrc);
         gl.compileShader(fragmentShader);
-
+        
         compiled = gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS) as! Bool
         if (!compiled) {
-          // Something went wrong during compilation; get the error
+            // Something went wrong during compilation; get the error
             let lastError = gl.getShaderInfoLog(fragmentShader);
-          print(
-            "*** Error compiling fragmentShader ",
-              fragmentShader,
-              ":",
-              lastError
-          );
+            print(
+                "*** Error compiling fragmentShader ",
+                fragmentShader,
+                ":",
+                lastError
+            );
             gl.deleteShader(fragmentShader);
-          return;
+            return;
         }
-
+        
         let program = gl.createProgram();
-
+        
         gl.attachShader(program, vertexShader);
         gl.attachShader(program, fragmentShader);
         gl.linkProgram(program);
-
+        
         // Check the link status
         let linked = gl.getProgramParameter(program, gl.LINK_STATUS) as! Bool
         if (!linked) {
-          // something went wrong with the link
+            // something went wrong with the link
             let lastError = gl.getProgramInfoLog(program);
-          print("Error in program linking:" + lastError);
-
+            print("Error in program linking:" + lastError);
+            
             gl.deleteProgram(program);
-          return
+            return
         }
-
+        
         // look up where the vertex data needs to go.
         let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-
+        
         // look up uniform locations
         let resolutionUniformLocation = gl.getUniformLocation(
             program,
             "u_resolution"
         );
-   
+        
         let colorUniformLocation = gl.getUniformLocation(program, "u_color");
-
+        
         // Create a buffer to put three 2d clip space points in
         let positionBuffer = gl.createBuffer();
-
+        
         // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
+        
         // Tell WebGL how to convert from clip space to pixels
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-
+        
         // Clear the canvas
         gl.clearColor(1, 1, 1, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
-
+        
         // Tell it to use our program (pair of shaders)
         gl.useProgram(program);
-
+        
         // Bind the position buffer.
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
+        
         // create the buffer
         let indexBuffer = gl.createBuffer();
-  
-
+        
+        
         // make this buffer the current 'ELEMENT_ARRAY_BUFFER'
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
+        
         // Fill the current element array buffer with data
         let indices : [UInt16] = [
-                    0,
-                     1,
-                     2, // first triangle
-                     2,
-                     1,
-                     3, // second triangle
+            0,
+            1,
+            2, // first triangle
+            2,
+            1,
+            3, // second triangle
         ]
-            
+        
         
         gl.bufferData(
             gl.ELEMENT_ARRAY_BUFFER,
             u16: indices,
             gl.STATIC_DRAW
         )
-
+        
         // code above this line is initialization code
         // --------------------------------
         // code below this line is rendering code
-
+        
         // Turn on the attribute
         gl.enableVertexAttribArray(UInt32(positionAttributeLocation));
-
+        
         // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
         let size = 2; // 2 components per iteration
         let type = gl.FLOAT; // the data is 32bit floats
@@ -593,17 +595,17 @@ class ViewController: UIViewController, TNSCanvasListener {
             Int32(stride),
             offset
         );
-
+        
         // bind the buffer containing the indices
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
+        
         // set the resolution
         gl.uniform2f(
             resolutionUniformLocation,
             Float(gl.drawingBufferWidth),
             Float(gl.drawingBufferHeight)
         );
-
+        
         // draw 50 random rectangles in random colors
         for _ in 0 ... 50 {
             // Setup a random rectangle
@@ -617,7 +619,7 @@ class ViewController: UIViewController, TNSCanvasListener {
                 width: randomInt(range: 300),
                 height: randomInt(range: 300)
             );
-
+            
             // Set a random color.
             gl.uniform4f(
                 colorUniformLocation,
@@ -626,7 +628,7 @@ class ViewController: UIViewController, TNSCanvasListener {
                 Float.random(in: 0 ... 1),
                 1
             );
-
+            
             // Draw the rectangle.
             let primitiveType = gl.TRIANGLES
             let offset = 0
@@ -634,14 +636,14 @@ class ViewController: UIViewController, TNSCanvasListener {
             let indexType = gl.UNSIGNED_SHORT
             gl.drawElements(primitiveType, Int32(count), indexType, Int(offset))
         }
-      }
-
-      // Returns a random integer from 0 to range - 1.
+    }
+    
+    // Returns a random integer from 0 to range - 1.
     func randomInt(range: Float) -> Float{
         return floor(Float.random(in: -1 ... 0) * range)
-      }
-
-      // Fill the buffer with the values that define a rectangle.
+    }
+    
+    // Fill the buffer with the values that define a rectangle.
     func setRectangle(gl: TNSWebGLRenderingContext, x: Float, y: Float, width: Float, height: Float) {
         let x1 = x;
         let x2 = x + width;
@@ -652,8 +654,8 @@ class ViewController: UIViewController, TNSCanvasListener {
             f32: [x1, y1, x2, y1, x1, y2, x2, y2],
             gl.STATIC_DRAW
         );
-      }
-
+    }
+    
     
     
     
@@ -699,7 +701,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         index_buffer = gl.createBuffer()
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer)
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,u16: indices, gl.STATIC_DRAW)
-    
+        
         
         let vertShader = gl.createShader(gl.VERTEX_SHADER)
         gl.shaderSource(vertShader, vertCode)
@@ -720,7 +722,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         Pmatrix = gl.getUniformLocation(shaderProgram, "Pmatrix")
         Vmatrix = gl.getUniformLocation(shaderProgram, "Vmatrix")
         Mmatrix = gl.getUniformLocation(shaderProgram, "Mmatrix")
-
+        
         
         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
         let position = gl.getAttribLocation(shaderProgram, "position")
@@ -745,7 +747,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         // translating z
         view_matrix[14] = view_matrix[14]-6;//zoom
         
-          
+        
         cubeRotationAnimation(gl: gl, time: 0)
         
     }
@@ -1235,17 +1237,17 @@ class ViewController: UIViewController, TNSCanvasListener {
     }
     
     func ellipseExample(ctx: TNSCanvasRenderingContext2D){
-       // Draw the ellipse
-       ctx.beginPath()
+        // Draw the ellipse
+        ctx.beginPath()
         ctx.ellipse(100, 100, 50, 75, PI / 4, 0, TWO_PI)
-       ctx.stroke()
-
-       // Draw the ellipse's line of reflection
-       ctx.beginPath()
+        ctx.stroke()
+        
+        // Draw the ellipse's line of reflection
+        ctx.beginPath()
         ctx.setLineDash([5, 5])
         ctx.moveTo(0, 200)
         ctx.lineTo(200, 0)
-       ctx.stroke()
+        ctx.stroke()
     }
     
     func getCanvasWidth(canvas: TNSCanvas) -> Float32 {
@@ -1394,11 +1396,11 @@ class ViewController: UIViewController, TNSCanvasListener {
         ball.vy += 0.25;
         
         if (Int(ball.y + ball.vy) > Int(height) ||
-            ball.y + ball.vy < 0) {
+                ball.y + ball.vy < 0) {
             ball.vy = -ball.vy;
         }
         if (Int(ball.x + ball.vx) > Int(width) ||
-            ball.x + ball.vx < 0) {
+                ball.x + ball.vx < 0) {
             ball.vx = -ball.vx;
         }
         
@@ -1657,6 +1659,20 @@ class ViewController: UIViewController, TNSCanvasListener {
         }
     }
     
+    func drawImageFromUrl(ctx: TNSCanvasRenderingContext2D, url: String) {
+        let asset = TNSImageAsset()
+        asset.loadImageFromUrlAsync(url: "https://source.unsplash.com/random") { (error) in
+            if(error == nil){
+                let scale = Float(UIScreen.main.scale)
+                ctx.clearRect(0, 0, ctx.getCanvas().width * scale, ctx.getCanvas().height * scale)
+                ctx.drawImage(asset, 0,0)
+            }else {
+                print("drawImageFromUrl error:",error as Any)
+            }
+        }
+        
+    }
+    
     func doSolarAnimation(ctx: TNSCanvasRenderingContext2D){
         TNSAnimationFrame.requestAnimationFrame(toLoop: { (id) in
             self.solarSystemExample(ctx: ctx)
@@ -1709,7 +1725,7 @@ class ViewController: UIViewController, TNSCanvasListener {
             let part_two = (TWO_PI / 60000) * Float(milliseconds)
             let first_angle = part_one + part_two
             
-        
+            
             ctx.rotate(first_angle)
             ctx.translate(105, 0);
             ctx.fillRect(0, -12, 40, 24); // Shadow
@@ -1735,7 +1751,7 @@ class ViewController: UIViewController, TNSCanvasListener {
             ctx.drawImage(sun!, 0, 0, 300, 300);
             
             if(!didScaleSolar){
-              //  ctx.scale(x: ctx.getCanvas().width / 300, y: ctx.getCanvas().height / 300)
+                //  ctx.scale(x: ctx.getCanvas().width / 300, y: ctx.getCanvas().height / 300)
                 didScaleSolar = true
             }
             
@@ -2034,7 +2050,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         // will get re-painted in each next frame
         paintCanvas(ctx: ctx)
         
-       // Call the function that will draw the balls using a loop
+        // Call the function that will draw the balls using a loop
         let count = particleLoopCount
         for i in 0...count {
             p = particles[i]
@@ -2110,8 +2126,8 @@ class ViewController: UIViewController, TNSCanvasListener {
             // Draw the line
             ctx.beginPath()
             colorIndex = Int((100.0 * dist/minDist)) + 25
-             ctx.strokeStyle = whiteColor
-//            ctx.strokeStyle = CanvasColorStyle.Color(color: UIColor(hue: 2/360, saturation: CGFloat(colorIndex/100), brightness: 0.5, alpha: (CGFloat(1.2-dist/minDist))))
+            ctx.strokeStyle = whiteColor
+            //            ctx.strokeStyle = CanvasColorStyle.Color(color: UIColor(hue: 2/360, saturation: CGFloat(colorIndex/100), brightness: 0.5, alpha: (CGFloat(1.2-dist/minDist))))
             ctx.moveTo(p1.x, p1.y)
             ctx.lineTo(p2.x, p2.y)
             ctx.closePath()
@@ -2120,7 +2136,7 @@ class ViewController: UIViewController, TNSCanvasListener {
             // Some acceleration for the partcles
             // depending upon their distance
             let ax = dx/2000,
-            ay = dy/2000;
+                ay = dy/2000;
             
             // Apply the acceleration on the particles
             p1.vx -= ax;
@@ -2134,7 +2150,7 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     
     func animloop(ctx: TNSCanvasRenderingContext2D) {
-         TNSAnimationFrame.requestAnimationFrame(toLoop: {(_) in self.animloop(ctx: ctx)})
+        TNSAnimationFrame.requestAnimationFrame(toLoop: {(_) in self.animloop(ctx: ctx)})
         particle_draw(ctx: ctx)
     }
     

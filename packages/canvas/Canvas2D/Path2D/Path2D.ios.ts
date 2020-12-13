@@ -1,7 +1,7 @@
 import {Path2DBase} from './common';
 import {DOMMatrix} from '../DOMMatrix';
 
-//declare let TNSPath2D;
+declare let TNSPath2D;
 
 export class Path2D extends Path2DBase {
 	constructor(instance?: any) {

@@ -528,6 +528,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, strong) dispatch_queue_t _Null
 + (void)set_queue:(dispatch_queue_t _Nullable)value;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (BOOL)loadImageFromPathWithPath:(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
+- (BOOL)loadImageFromUrlWithUrl:(NSString * _Nonnull)url SWIFT_WARN_UNUSED_RESULT;
+- (void)loadImageFromUrlAsyncWithUrl:(NSString * _Nonnull)url callback:(void (^ _Nonnull)(NSString * _Nullable))callback;
 - (void)loadImageFromPathAsyncWithPath:(NSString * _Nonnull)path callback:(void (^ _Nonnull)(NSString * _Nullable))callback;
 - (BOOL)loadImageFromBytesWithArray:(NSArray<NSNumber *> * _Nonnull)array SWIFT_WARN_UNUSED_RESULT;
 - (void)loadImageFromBytesAsyncWithArray:(NSArray<NSNumber *> * _Nonnull)array callback:(void (^ _Nonnull)(NSString * _Nullable))callback;

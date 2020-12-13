@@ -18,11 +18,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.net.URL
-import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Executors
-import kotlin.collections.HashMap
-import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.*
@@ -117,9 +114,9 @@ class MainActivity : AppCompatActivity() {
 		ctx.putImageData(imageData, 0F, 0F)
 	}
 
-	fun decodeFile(){
+	fun decodeFile() {
 		runBlocking {
-			withContext(Dispatchers.IO){
+			withContext(Dispatchers.IO) {
 				val downloader = suspendCoroutine<ByteArray> {
 					val file = File(filesDir, "DamagedHelmet.gltf")
 					val os = ByteArrayOutputStream2()
@@ -145,7 +142,7 @@ class MainActivity : AppCompatActivity() {
 		}
 	}
 
-	fun addPath(canvas: TNSCanvas){
+	fun addPath(canvas: TNSCanvas) {
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 
 // Create first path and add a rectangle
@@ -814,18 +811,34 @@ class MainActivity : AppCompatActivity() {
 
 	val executor = Executors.newSingleThreadExecutor()
 
-	fun decodeText(){
+	fun decodeText() {
 		val encoder = TNSTextEncoder()
 		val array = encoder.encode("€") // Uint8Array(3) [-30 -126 -84]
-		Log.d("com.triniwiz.github","encoded-value: $array")
+		Log.d("com.triniwiz.github", "encoded-value: $array")
 
 		val decoder = TNSTextDecoder()
 		val str = decoder.decode(array) // String "€"
-		Log.d("com.triniwiz.github","decoded-value: $str")
+		Log.d("com.triniwiz.github", "decoded-value: $str")
 
 		val win1251decoder = TNSTextDecoder("windows-1251")
-		val bytes = byteArrayOf(207.toByte(), 240.toByte(), 232.toByte(), 226.toByte(), 229.toByte(), 242.toByte(), 44.toByte(), 32.toByte(), 236.toByte(), 232.toByte(), 240.toByte(), 33.toByte())
-		Log.d("com.triniwiz.github","windows-decoded-value: ${win1251decoder.decode(bytes)}") // Привет, мир!
+		val bytes = byteArrayOf(
+			207.toByte(),
+			240.toByte(),
+			232.toByte(),
+			226.toByte(),
+			229.toByte(),
+			242.toByte(),
+			44.toByte(),
+			32.toByte(),
+			236.toByte(),
+			232.toByte(),
+			240.toByte(),
+			33.toByte()
+		)
+		Log.d(
+			"com.triniwiz.github",
+			"windows-decoded-value: ${win1251decoder.decode(bytes)}"
+		) // Привет, мир!
 
 	}
 
@@ -902,7 +915,8 @@ class MainActivity : AppCompatActivity() {
 		}*/
 
 		// drawPatterWithCanvas(canvas!!)
-		 drawImageExample(canvas!!)
+		//drawImageExample(canvas!!)
+		drawImageFromUrl(canvas!!, "https://source.unsplash.com/random")
 		// drawImageSmoothingEnabled(ctx!!)
 		// drawElements(canvas!!)
 		//  Log.d("com.test", "ext: " +   gl!!.getExtension("ANGLE_instanced_arrays"))
@@ -1741,6 +1755,22 @@ class MainActivity : AppCompatActivity() {
 		}
 	}
 
+	fun drawImageFromUrl(canvas: TNSCanvas, src: String) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val asset = TNSImageAsset()
+		asset.loadImageFromUrlAsync(src, object : TNSImageAsset.Callback {
+			override fun onSuccess(value: Any?) {
+				ctx.clearRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+				ctx.drawImage(asset, 0f, 0f)
+			}
+
+			override fun onError(error: String?) {
+				println(error)
+			}
+		})
+
+	}
+
 	fun drawImageExample(canvas: TNSCanvas) {
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		try {
@@ -1760,8 +1790,18 @@ class MainActivity : AppCompatActivity() {
 						input.copyTo(output)
 					}
 				}
-				val image = BitmapFactory.decodeFile(file.absolutePath)
-				ctx.drawImage(image, 0f, 0f)
+				val asset = TNSImageAsset()
+				asset.loadImageFromPathAsync(file.absolutePath, object : TNSImageAsset.Callback {
+					override fun onSuccess(value: Any?) {
+						ctx.drawImage(asset, 0f, 0f)
+					}
+
+					override fun onError(error: String?) {
+						println(error)
+					}
+				})
+				//val image = BitmapFactory.decodeFile(file.absolutePath)
+				//ctx.drawImage(image, 0f, 0f)
 			}
 
 		} catch (e: IOException) {

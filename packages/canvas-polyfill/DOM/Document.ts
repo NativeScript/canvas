@@ -63,6 +63,11 @@ export class Document extends Element {
 
 	getElementById(id) {
 		const topmost = Frame.topmost();
+		if (id instanceof Canvas) {
+			const canvas = new HTMLCanvasElement();
+			canvas._canvas = id;
+			return canvas;
+		}
 		if (topmost) {
 			const nativeElement = topmost.getViewById(id);
 			if (nativeElement) {
@@ -72,5 +77,9 @@ export class Document extends Element {
 			}
 		}
 		return new Element("div");
+	}
+
+	querySelector(selector){
+		return new Element(selector);
 	}
 }

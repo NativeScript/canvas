@@ -118,403 +118,406 @@ public class Async2 {
             private val callMap = ConcurrentHashMap<String, CallOptions>()
             private val downloadCallMap = ConcurrentHashMap<String, DownloadCallOptions>()
             private val cancelList = ArrayList<String>()
-        }
 
-        internal fun isTextType(contentType: String?): Boolean {
-            var isTextType = false
-            if (contentType != null) {
-                val textTypes = arrayOf(
-                        "text/plain",
-                        "application/xml",
-                        "application/rss+xml",
-                        "text/html",
-                        "text/xml")
-                for (type in textTypes) {
-                    isTextType = contentType.contains(type)
-                    if (isTextType) {
-                        break
-                    }
-                }
-            }
-            return isTextType
-        }
+					internal fun isTextType(contentType: String?): Boolean {
+						var isTextType = false
+						if (contentType != null) {
+							val textTypes = arrayOf(
+								"text/plain",
+								"application/xml",
+								"application/rss+xml",
+								"text/html",
+								"text/xml")
+							for (type in textTypes) {
+								isTextType = contentType.contains(type)
+								if (isTextType) {
+									break
+								}
+							}
+						}
+						return isTextType
+					}
 
-        fun makeRequest(options: RequestOptions, callback: Callback): String {
-            val uuid = UUID.randomUUID()
-            val id = uuid.toString()
-            executor.execute {
-                val builder = OkHttpClient.Builder()
-                val listener = HttpEventListener()
-                builder.eventListener(listener)
-                builder.followRedirects(!options.dontFollowRedirects)
-                if (options.timeout > -1) {
-                    builder.connectTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
-                    builder.readTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
-                    builder.writeTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
-                }
-                if (options.username != null && options.password != null) {
-                    builder.authenticator { route, response ->
-                        if (response.request().header("Authorization") != null) {
-                            null
-                        } else response.request().newBuilder()
-                                .header("Authorization", Credentials.basic(options.username, options.password))
-                                .build()
-                    }
-                }
-                val request = Request.Builder()
-                request.url(options.url)
-                var contentType = "text/html"
-                if (options.headers != null) {
-                    for (pair in options.headers!!) {
-                        pair.value?.let {
-                            request.addHeader(pair.key, it)
-                            if (pair.key == "Content-Type") {
-                                contentType = it
-                            }
-                        }
-                    }
-                }
-                var body: RequestBody? = null
-                val isPostPutOrPatch = options.method == "POST" || options.method == "PUT" || options.method == "PATCH"
-                if (isPostPutOrPatch) {
-                    if (options.content is File) {
-                    } else if (options.content is String) {
-                        if (contentType == "application/x-www-form-urlencoded") {
-                            val tokener = JSONTokener(options.content as String?)
-                            var value: Any? = null
-                            try {
-                                value = tokener.nextValue()
-                            } catch (e: JSONException) {
-                                e.printStackTrace()
-                            }
-                            if (value is JSONObject) {
-                                var formBody: FormBody.Builder? = null
-                                formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                                    FormBody.Builder(StandardCharsets.UTF_8)
-                                } else {
-                                    FormBody.Builder(Charset.forName("UTF-8"))
-                                }
-                                val it = value.keys()
-                                while (it.hasNext()) {
-                                    val key = it.next()
-                                    formBody.addEncoded(key, value.opt(key).toString())
-                                }
-                                body = ProgressRequestBody(formBody.build(), object : ProgressListener {
-                                    override fun onProgress(loaded: Long, total: Long) {
-                                        callback.onProgress(total > -1, loaded, total)
-                                    }
-                                })
-                            } else {
-                                body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content as String?), object : ProgressListener {
-                                    override fun onProgress(loaded: Long, total: Long) {
-                                        callback.onProgress(total > -1, loaded, total)
-                                    }
-                                })
-                            }
-                        } else {
-                            body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content as String?), object : ProgressListener {
-                                override fun onProgress(loaded: Long, total: Long) {
-                                    callback.onProgress(total > -1, loaded, total)
-                                }
-                            })
-                        }
-                    } else if (options.content is JSONObject || options.content is JSONArray) {
-                        if (contentType == "application/x-www-form-urlencoded") {
-                            if (options.content is JSONObject) {
-                                var formBody: FormBody.Builder? = null
-                                formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                                    FormBody.Builder(StandardCharsets.UTF_8)
-                                } else {
-                                    FormBody.Builder(Charset.forName("UTF-8"))
-                                }
-                                val it = (options.content as JSONObject?)!!.keys()
-                                while (it.hasNext()) {
-                                    val key = it.next()
-                                    formBody.addEncoded(key, (options.content as JSONObject?)!!.opt(key).toString())
-                                }
-                                body = ProgressRequestBody(formBody.build(), object : ProgressListener {
-                                    override fun onProgress(loaded: Long, total: Long) {
-                                        callback.onProgress(total > -1, loaded, total)
-                                    }
-                                })
-                            } else {
-                                body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content.toString()), object : ProgressListener {
-                                    override fun onProgress(loaded: Long, total: Long) {
-                                        callback.onProgress(total > -1, loaded, total)
-                                    }
-                                })
-                            }
-                        } else {
-                            body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content.toString()), object : ProgressListener {
-                                override fun onProgress(loaded: Long, total: Long) {
-                                    callback.onProgress(total > -1, loaded, total)
-                                }
-                            })
-                        }
-                    } else {
-                        body = RequestBody.create(null, "")
-                    }
-                }
-                request.method(options.method, body)
-                val client = builder.build()
-                val call = client.newCall(request.build())
-                call.enqueue(object : okhttp3.Callback {
-                    var stream: ByteArrayOutputStream2? = null
-                    override fun onFailure(call: Call, e: IOException) {
-                        if (call.isCanceled) {
-                            val result = Result()
-                            if (stream != null) {
-                                result.content = ByteBuffer.wrap(stream!!.buf())
-                                result.url = call.request().url().toString()
-                                callback.onCancel(result)
-                            } else {
-                                result.content = ByteBuffer.allocate(0)
-                                result.url = call.request().url().toString()
-                                callback.onCancel(result)
-                            }
-                        } else if (e is SocketTimeoutException) {
-                            callback.onTimeout()
-                        } else {
-                            callback.onError(e.message, e)
-                        }
-                        callMap.remove(id)
-                    }
+					@JvmStatic
+					fun makeRequest(options: RequestOptions, callback: Callback): String {
+						val uuid = UUID.randomUUID()
+						val id = uuid.toString()
+						executor.execute {
+							val builder = OkHttpClient.Builder()
+							val listener = HttpEventListener()
+							builder.eventListener(listener)
+							builder.followRedirects(!options.dontFollowRedirects)
+							if (options.timeout > -1) {
+								builder.connectTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
+								builder.readTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
+								builder.writeTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
+							}
+							if (options.username != null && options.password != null) {
+								builder.authenticator { route, response ->
+									if (response.request().header("Authorization") != null) {
+										null
+									} else response.request().newBuilder()
+										.header("Authorization", Credentials.basic(options.username, options.password))
+										.build()
+								}
+							}
+							val request = Request.Builder()
+							request.url(options.url)
+							var contentType = "text/html"
+							if (options.headers != null) {
+								for (pair in options.headers!!) {
+									pair.value?.let {
+										request.addHeader(pair.key, it)
+										if (pair.key == "Content-Type") {
+											contentType = it
+										}
+									}
+								}
+							}
+							var body: RequestBody? = null
+							val isPostPutOrPatch = options.method == "POST" || options.method == "PUT" || options.method == "PATCH"
+							if (isPostPutOrPatch) {
+								if (options.content is File) {
+								} else if (options.content is String) {
+									if (contentType == "application/x-www-form-urlencoded") {
+										val tokener = JSONTokener(options.content as String?)
+										var value: Any? = null
+										try {
+											value = tokener.nextValue()
+										} catch (e: JSONException) {
+											e.printStackTrace()
+										}
+										if (value is JSONObject) {
+											var formBody: FormBody.Builder? = null
+											formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+												FormBody.Builder(StandardCharsets.UTF_8)
+											} else {
+												FormBody.Builder(Charset.forName("UTF-8"))
+											}
+											val it = value.keys()
+											while (it.hasNext()) {
+												val key = it.next()
+												formBody.addEncoded(key, value.opt(key).toString())
+											}
+											body = ProgressRequestBody(formBody.build(), object : ProgressListener {
+												override fun onProgress(loaded: Long, total: Long) {
+													callback.onProgress(total > -1, loaded, total)
+												}
+											})
+										} else {
+											body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content as String?), object : ProgressListener {
+												override fun onProgress(loaded: Long, total: Long) {
+													callback.onProgress(total > -1, loaded, total)
+												}
+											})
+										}
+									} else {
+										body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content as String?), object : ProgressListener {
+											override fun onProgress(loaded: Long, total: Long) {
+												callback.onProgress(total > -1, loaded, total)
+											}
+										})
+									}
+								} else if (options.content is JSONObject || options.content is JSONArray) {
+									if (contentType == "application/x-www-form-urlencoded") {
+										if (options.content is JSONObject) {
+											var formBody: FormBody.Builder? = null
+											formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+												FormBody.Builder(StandardCharsets.UTF_8)
+											} else {
+												FormBody.Builder(Charset.forName("UTF-8"))
+											}
+											val it = (options.content as JSONObject?)!!.keys()
+											while (it.hasNext()) {
+												val key = it.next()
+												formBody.addEncoded(key, (options.content as JSONObject?)!!.opt(key).toString())
+											}
+											body = ProgressRequestBody(formBody.build(), object : ProgressListener {
+												override fun onProgress(loaded: Long, total: Long) {
+													callback.onProgress(total > -1, loaded, total)
+												}
+											})
+										} else {
+											body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content.toString()), object : ProgressListener {
+												override fun onProgress(loaded: Long, total: Long) {
+													callback.onProgress(total > -1, loaded, total)
+												}
+											})
+										}
+									} else {
+										body = ProgressRequestBody(RequestBody.create(MediaType.parse(contentType), options.content.toString()), object : ProgressListener {
+											override fun onProgress(loaded: Long, total: Long) {
+												callback.onProgress(total > -1, loaded, total)
+											}
+										})
+									}
+								} else {
+									body = RequestBody.create(null, "")
+								}
+							}
+							request.method(options.method, body)
+							val client = builder.build()
+							val call = client.newCall(request.build())
+							call.enqueue(object : okhttp3.Callback {
+								var stream: ByteArrayOutputStream2? = null
+								override fun onFailure(call: Call, e: IOException) {
+									if (call.isCanceled) {
+										val result = Result()
+										if (stream != null) {
+											result.content = ByteBuffer.wrap(stream!!.buf())
+											result.url = call.request().url().toString()
+											callback.onCancel(result)
+										} else {
+											result.content = ByteBuffer.allocate(0)
+											result.url = call.request().url().toString()
+											callback.onCancel(result)
+										}
+									} else if (e is SocketTimeoutException) {
+										callback.onTimeout()
+									} else {
+										callback.onError(e.message, e)
+									}
+									callMap.remove(id)
+								}
 
-                    @Throws(IOException::class)
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseBody = ProgressResponseBody(response.body(), object : ProgressListener {
-                            override fun onProgress(loaded: Long, total: Long) {
-                                if (options.method != "POST" && options.method != "PUT") {
-                                    callback.onProgress(total > -1, loaded, total)
-                                }
-                            }
-                        })
-                        var contentType = response.header("Content-Type")
-                        if (contentType == null) {
-                            contentType = response.header("content-type")
-                        }
-                        var acceptHeader: String?
-                        if (contentType == null) {
-                            acceptHeader = response.header("Accept")
-                            if (acceptHeader == null) {
-                                acceptHeader = response.header("accept")
-                            }
-                        } else {
-                            acceptHeader = contentType
-                        }
-                        var returnType = "text/plain"
-                        if (acceptHeader != null) {
-                            val acceptValues = acceptHeader.split(",").toTypedArray()
-                            val quality = ArrayList<String>()
-                            val defaultQuality = ArrayList<String>()
-                            val customQuality = ArrayList<String>()
-                            for (value in acceptValues) {
-                                if (value.contains(";q=")) {
-                                    customQuality.add(value)
-                                } else {
-                                    defaultQuality.add(value)
-                                }
-                            }
-                            Collections.sort(customQuality, QualitySort())
-                            quality.addAll(defaultQuality)
-                            quality.addAll(customQuality)
-                            returnType = quality[0]
-                        }
-                        val source = responseBody.source()
-                        stream = ByteArrayOutputStream2()
-                        val sink = stream!!.sink()
-                        val result = Result()
-                        result.contentText = ""
-                        result.url = response.request().url().toString()
-                        result.headers = ArrayList()
-                        try {
-                            source.readAll(sink)
-                            if (isTextType(returnType)) {
-                                result.headers!!.add(KeyValuePair("Content-Type", returnType))
-                                result.content = stream.toString()
-                                result.contentText = result.content as String?
-                                callback.onComplete(result)
-                            } else if (returnType.contains("application/json")) {
-                                val returnValue = stream.toString()
-                                val tokener = JSONTokener(returnValue)
-                                val value = tokener.nextValue()
-                                if (value is JSONObject || value is JSONArray) {
-                                    result.headers!!.add(KeyValuePair("Content-Type", returnType))
-                                    result.content = value
-                                    result.contentText = returnValue
-                                } else {
-                                    result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
-                                    result.content = returnValue
-                                    result.contentText = returnValue
-                                }
-                                callback.onComplete(result)
-                            } else {
-                                result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
-                                result.content = ByteBuffer.wrap(stream!!.buf())
-                                callback.onComplete(result)
-                            }
-                        } catch (e: StreamResetException) {
-                            if (e.errorCode == ErrorCode.CANCEL) {
-                                if (isTextType(returnType)) {
-                                    result.content = stream.toString()
-                                    callback.onCancel(result)
-                                } else if (returnType.contains("application/json")) {
-                                    val returnValue = stream.toString()
-                                    val tokener = JSONTokener(returnValue)
-                                    try {
-                                        val value = tokener.nextValue()
-                                        if (value is JSONObject || value is JSONArray) {
-                                            result.headers!!.add(KeyValuePair("Content-Type", returnType))
-                                            result.content = value
-                                            result.contentText = returnValue
-                                        } else {
-                                            result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
-                                            result.content = returnValue
-                                            result.contentText = returnValue
-                                        }
-                                        callback.onCancel(result)
-                                    } catch (e1: JSONException) {
-                                        callback.onError(e1.message, e1)
-                                    }
-                                } else {
-                                    result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
-                                    result.content = ByteBuffer.wrap(stream!!.buf())
-                                    callback.onCancel(result)
-                                }
-                            } else {
-                                callback.onError(e.message, e)
-                            }
-                        } catch (e: SocketTimeoutException) {
-                            callback.onTimeout()
-                        } catch (e: Exception) {
-                            callback.onError(e.message, e)
-                        }
-                        responseBody.close()
-                        callMap.remove(id)
-                    }
-                })
-                callMap[id] = CallOptions(call, options, callback)
-                for (cancelId in cancelList) {
-                    if (id == cancelId) {
-                        call.cancel()
-                        callMap.remove(cancelId)
-                        cancelList.remove(cancelId)
-                    }
-                }
-            }
-            return id
-        }
+								@Throws(IOException::class)
+								override fun onResponse(call: Call, response: Response) {
+									val responseBody = ProgressResponseBody(response.body(), object : ProgressListener {
+										override fun onProgress(loaded: Long, total: Long) {
+											if (options.method != "POST" && options.method != "PUT") {
+												callback.onProgress(total > -1, loaded, total)
+											}
+										}
+									})
+									var contentType = response.header("Content-Type")
+									if (contentType == null) {
+										contentType = response.header("content-type")
+									}
+									var acceptHeader: String?
+									if (contentType == null) {
+										acceptHeader = response.header("Accept")
+										if (acceptHeader == null) {
+											acceptHeader = response.header("accept")
+										}
+									} else {
+										acceptHeader = contentType
+									}
+									var returnType = "text/plain"
+									if (acceptHeader != null) {
+										val acceptValues = acceptHeader.split(",").toTypedArray()
+										val quality = ArrayList<String>()
+										val defaultQuality = ArrayList<String>()
+										val customQuality = ArrayList<String>()
+										for (value in acceptValues) {
+											if (value.contains(";q=")) {
+												customQuality.add(value)
+											} else {
+												defaultQuality.add(value)
+											}
+										}
+										Collections.sort(customQuality, QualitySort())
+										quality.addAll(defaultQuality)
+										quality.addAll(customQuality)
+										returnType = quality[0]
+									}
+									val source = responseBody.source()
+									stream = ByteArrayOutputStream2()
+									val sink = stream!!.sink()
+									val result = Result()
+									result.contentText = ""
+									result.url = response.request().url().toString()
+									result.headers = ArrayList()
+									try {
+										source.readAll(sink)
+										if (isTextType(returnType)) {
+											result.headers!!.add(KeyValuePair("Content-Type", returnType))
+											result.content = stream.toString()
+											result.contentText = result.content as String?
+											callback.onComplete(result)
+										} else if (returnType.contains("application/json")) {
+											val returnValue = stream.toString()
+											val tokener = JSONTokener(returnValue)
+											val value = tokener.nextValue()
+											if (value is JSONObject || value is JSONArray) {
+												result.headers!!.add(KeyValuePair("Content-Type", returnType))
+												result.content = value
+												result.contentText = returnValue
+											} else {
+												result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
+												result.content = returnValue
+												result.contentText = returnValue
+											}
+											callback.onComplete(result)
+										} else {
+											result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
+											result.content = ByteBuffer.wrap(stream!!.buf())
+											callback.onComplete(result)
+										}
+									} catch (e: StreamResetException) {
+										if (e.errorCode == ErrorCode.CANCEL) {
+											if (isTextType(returnType)) {
+												result.content = stream.toString()
+												callback.onCancel(result)
+											} else if (returnType.contains("application/json")) {
+												val returnValue = stream.toString()
+												val tokener = JSONTokener(returnValue)
+												try {
+													val value = tokener.nextValue()
+													if (value is JSONObject || value is JSONArray) {
+														result.headers!!.add(KeyValuePair("Content-Type", returnType))
+														result.content = value
+														result.contentText = returnValue
+													} else {
+														result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
+														result.content = returnValue
+														result.contentText = returnValue
+													}
+													callback.onCancel(result)
+												} catch (e1: JSONException) {
+													callback.onError(e1.message, e1)
+												}
+											} else {
+												result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
+												result.content = ByteBuffer.wrap(stream!!.buf())
+												callback.onCancel(result)
+											}
+										} else {
+											callback.onError(e.message, e)
+										}
+									} catch (e: SocketTimeoutException) {
+										callback.onTimeout()
+									} catch (e: Exception) {
+										callback.onError(e.message, e)
+									}
+									responseBody.close()
+									callMap.remove(id)
+								}
+							})
+							callMap[id] = CallOptions(call, options, callback)
+							for (cancelId in cancelList) {
+								if (id == cancelId) {
+									call.cancel()
+									callMap.remove(cancelId)
+									cancelList.remove(cancelId)
+								}
+							}
+						}
+						return id
+					}
 
-        fun getFileRequest(options: DownloadRequestOptions, callback: Callback): String {
-            val uuid = UUID.randomUUID()
-            val id = uuid.toString()
-            executor.execute {
-                val builder = OkHttpClient.Builder()
-                builder.eventListener(HttpEventListener())
-                builder.followRedirects(!options.dontFollowRedirects)
-                if (options.timeout > -1) {
-                    builder.connectTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
-                    builder.readTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
-                    builder.writeTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
-                }
-                if (options.username != null && options.password != null) {
-                    builder.authenticator { route, response ->
-                        if (response.request().header("Authorization") != null) {
-                            null
-                        } else response.request().newBuilder()
-                                .header("Authorization", Credentials.basic(options.username, options.password))
-                                .build()
-                    }
-                }
-                val request = Request.Builder()
-                request.url(options.url)
-                val client = builder.build()
-                val call = client.newCall(request.build())
-                call.enqueue(object : okhttp3.Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        if (call.isCanceled) {
-                            val result = FileResult()
-                            callback.onCancel(result)
-                        } else if (e is SocketTimeoutException) {
-                            callback.onTimeout()
-                        } else {
-                            callback.onError(e.message, e)
-                        }
-                        downloadCallMap.remove(id)
-                    }
+					@JvmStatic
+					fun getFileRequest(options: DownloadRequestOptions, callback: Callback): String {
+						val uuid = UUID.randomUUID()
+						val id = uuid.toString()
+						executor.execute {
+							val builder = OkHttpClient.Builder()
+							builder.eventListener(HttpEventListener())
+							builder.followRedirects(!options.dontFollowRedirects)
+							if (options.timeout > -1) {
+								builder.connectTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
+								builder.readTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
+								builder.writeTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
+							}
+							if (options.username != null && options.password != null) {
+								builder.authenticator { route, response ->
+									if (response.request().header("Authorization") != null) {
+										null
+									} else response.request().newBuilder()
+										.header("Authorization", Credentials.basic(options.username, options.password))
+										.build()
+								}
+							}
+							val request = Request.Builder()
+							request.url(options.url)
+							val client = builder.build()
+							val call = client.newCall(request.build())
+							call.enqueue(object : okhttp3.Callback {
+								override fun onFailure(call: Call, e: IOException) {
+									if (call.isCanceled) {
+										val result = FileResult()
+										callback.onCancel(result)
+									} else if (e is SocketTimeoutException) {
+										callback.onTimeout()
+									} else {
+										callback.onError(e.message, e)
+									}
+									downloadCallMap.remove(id)
+								}
 
-                    @Throws(IOException::class)
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseBody = ProgressResponseBody(response.body(), response.headers(), object : ProgressListener {
-                            override fun onProgress(loaded: Long, total: Long) {
-                                callback.onProgress(total > -1, loaded, total)
-                            }
-                        })
-                        val bufferedSource = responseBody.source()
-                        val file = File(options.filePath)
-                        var sink: BufferedSink? = null
-                        try {
-                            sink = file.sink().buffer()
-                            sink.writeAll(bufferedSource)
-                            val result = FileResult()
-                            result.url = response.request().url().toString()
-                            result.headers = ArrayList()
-                            result.filePath = file.absolutePath
-                            sink.close()
-                            callback.onComplete(result)
-                        } catch (e: StreamResetException) {
-                            if (e.errorCode == ErrorCode.CANCEL) {
-                                val result = FileResult()
-                                callback.onCancel(result)
-                            } else {
-                                callback.onError(e.message, e)
-                            }
-                        } catch (e: SocketTimeoutException) {
-                            callback.onTimeout()
-                        } catch (e: Exception) {
-                            callback.onError(e.message, e)
-                        } finally {
-                            if (sink != null) {
-                                try {
-                                    sink.close()
-                                } catch (e: IOException) {
-                                }
-                            }
-                            if (bufferedSource != null) {
-                                try {
-                                    bufferedSource.close()
-                                } catch (e: IOException) {
-                                }
-                            }
-                            responseBody.close()
-                            downloadCallMap.remove(id)
-                        }
-                    }
-                })
-                downloadCallMap[id] = DownloadCallOptions(call, options, callback)
-                for (cancelId in cancelList) {
-                    if (id == cancelId) {
-                        call.cancel()
-                        downloadCallMap.remove(cancelId)
-                        cancelList.remove(cancelId)
-                    }
-                }
-            }
-            return id
-        }
+								@Throws(IOException::class)
+								override fun onResponse(call: Call, response: Response) {
+									val responseBody = ProgressResponseBody(response.body(), response.headers(), object : ProgressListener {
+										override fun onProgress(loaded: Long, total: Long) {
+											callback.onProgress(total > -1, loaded, total)
+										}
+									})
+									val bufferedSource = responseBody.source()
+									val file = File(options.filePath)
+									var sink: BufferedSink? = null
+									try {
+										sink = file.sink().buffer()
+										sink.writeAll(bufferedSource)
+										val result = FileResult()
+										result.url = response.request().url().toString()
+										result.headers = ArrayList()
+										result.filePath = file.absolutePath
+										sink.close()
+										callback.onComplete(result)
+									} catch (e: StreamResetException) {
+										if (e.errorCode == ErrorCode.CANCEL) {
+											val result = FileResult()
+											callback.onCancel(result)
+										} else {
+											callback.onError(e.message, e)
+										}
+									} catch (e: SocketTimeoutException) {
+										callback.onTimeout()
+									} catch (e: Exception) {
+										callback.onError(e.message, e)
+									} finally {
+										if (sink != null) {
+											try {
+												sink.close()
+											} catch (e: IOException) {
+											}
+										}
+										if (bufferedSource != null) {
+											try {
+												bufferedSource.close()
+											} catch (e: IOException) {
+											}
+										}
+										responseBody.close()
+										downloadCallMap.remove(id)
+									}
+								}
+							})
+							downloadCallMap[id] = DownloadCallOptions(call, options, callback)
+							for (cancelId in cancelList) {
+								if (id == cancelId) {
+									call.cancel()
+									downloadCallMap.remove(cancelId)
+									cancelList.remove(cancelId)
+								}
+							}
+						}
+						return id
+					}
 
-        fun cancelRequest(id: String?) {
-            if (id != null) {
-                executor.execute {
-                    val pair = callMap[id]
-                    val downloadPair = downloadCallMap[id]
-                    pair?.call?.cancel()
-                    downloadPair?.call?.cancel()
-                    if (pair == null && downloadPair == null) {
-                        cancelList.add(id)
-                    }
-                }
-            }
+					@JvmStatic
+					fun cancelRequest(id: String?) {
+						if (id != null) {
+							executor.execute {
+								val pair = callMap[id]
+								val downloadPair = downloadCallMap[id]
+								pair?.call?.cancel()
+								downloadPair?.call?.cancel()
+								if (pair == null && downloadPair == null) {
+									cancelList.add(id)
+								}
+							}
+						}
+					}
         }
 
         internal interface ProgressListener {

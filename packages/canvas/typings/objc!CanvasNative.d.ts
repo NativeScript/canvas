@@ -1,9 +1,22 @@
 
-interface CanvasArray {
-	array: interop.Pointer | interop.Reference<any>;
-	length: number;
+declare class CanvasCPUView extends UIView {
+
+	static alloc(): CanvasCPUView; // inherited from NSObject
+
+	static appearance(): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceForTraitCollection(trait: UITraitCollection): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceForTraitCollectionWhenContainedIn(trait: UITraitCollection, ContainerClass: typeof NSObject): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceForTraitCollectionWhenContainedInInstancesOfClasses(trait: UITraitCollection, containerTypes: NSArray<typeof NSObject> | typeof NSObject[]): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceWhenContainedIn(ContainerClass: typeof NSObject): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceWhenContainedInInstancesOfClasses(containerTypes: NSArray<typeof NSObject> | typeof NSObject[]): CanvasCPUView; // inherited from UIAppearance
+
+	static new(): CanvasCPUView; // inherited from NSObject
 }
-declare var CanvasArray: interop.StructType<CanvasArray>;
 
 declare const enum CanvasColorStyleType {
 
@@ -13,13 +26,6 @@ declare const enum CanvasColorStyleType {
 
 	Pattern = 2
 }
-
-interface CanvasDevice {
-	device: interop.Pointer | interop.Reference<any>;
-	queue: interop.Pointer | interop.Reference<any>;
-	drawable: interop.Pointer | interop.Reference<any>;
-}
-declare var CanvasDevice: interop.StructType<CanvasDevice>;
 
 declare class CanvasGLKView extends GLKView {
 
@@ -44,22 +50,78 @@ declare var CanvasNativeVersionNumber: number;
 
 declare var CanvasNativeVersionString: interop.Reference<number>;
 
-interface CanvasTextMetrics {
-	width: number;
+declare const enum CompositeOperationType {
+
+	SourceOver = 0,
+
+	SourceIn = 1,
+
+	SourceOut = 2,
+
+	SourceAtop = 3,
+
+	DestinationOver = 4,
+
+	DestinationIn = 5,
+
+	DestinationOut = 6,
+
+	DestinationAtop = 7,
+
+	Lighter = 8,
+
+	Copy = 9,
+
+	Xor = 10,
+
+	Multiply = 11,
+
+	Screen = 12,
+
+	Overlay = 13,
+
+	Darken = 14,
+
+	Lighten = 15,
+
+	ColorDodge = 16,
+
+	ColorBurn = 17,
+
+	HardLight = 18,
+
+	SoftLight = 19,
+
+	Difference = 20,
+
+	Exclusion = 21,
+
+	Hue = 22,
+
+	Saturation = 23,
+
+	Color = 24,
+
+	Luminosity = 25
 }
-declare var CanvasTextMetrics: interop.StructType<CanvasTextMetrics>;
 
-declare class Color extends NSObject implements ICanvasColorStyle {
+interface F32Array {
+	data: interop.Pointer | interop.Reference<number>;
+	data_len: number;
+}
+declare var F32Array: interop.StructType<F32Array>;
 
-	static alloc(): Color; // inherited from NSObject
+interface F64Array {
+	data: interop.Pointer | interop.Reference<number>;
+	data_len: number;
+}
+declare var F64Array: interop.StructType<F64Array>;
 
-	static new(): Color; // inherited from NSObject
+declare const enum FillRule {
 
-	constructor(o: { color: UIColor; });
+	NonZero = 0,
 
-	getStyleType(): CanvasColorStyleType;
-
-	initWithColor(color: UIColor): this;
+	EvenOdd = 1
 }
 
 declare class GLRenderer extends NSObject implements GLKViewDelegate {
@@ -105,18 +167,23 @@ declare class GLRenderer extends NSObject implements GLKViewDelegate {
 	self(): this;
 }
 
-declare class Gradient extends NSObject implements ICanvasColorStyle {
-
-	static alloc(): Gradient; // inherited from NSObject
-
-	static new(): Gradient; // inherited from NSObject
-
-	addColorStopWithOffsetColor(offset: number, color: number): void;
-
-	addColorStopWithOffsetUIColor(offset: number, color: UIColor): void;
-
-	getStyleType(): CanvasColorStyleType;
+interface I16Array {
+	data: interop.Pointer | interop.Reference<number>;
+	data_len: number;
 }
+declare var I16Array: interop.StructType<I16Array>;
+
+interface I32Array {
+	data: interop.Pointer | interop.Reference<number>;
+	data_len: number;
+}
+declare var I32Array: interop.StructType<I32Array>;
+
+interface I8Array {
+	data: interop.Pointer | interop.Reference<number>;
+	data_len: number;
+}
+declare var I8Array: interop.StructType<I8Array>;
 
 interface ICanvasColorStyle {
 
@@ -127,56 +194,58 @@ declare var ICanvasColorStyle: {
 	prototype: ICanvasColorStyle;
 };
 
-declare class MetalRenderer extends NSObject implements MTKViewDelegate {
+declare const enum ImageSmoothingQuality {
 
-	static alloc(): MetalRenderer; // inherited from NSObject
+	Low = 0,
 
-	static new(): MetalRenderer; // inherited from NSObject
+	Medium = 1,
 
-	readonly debugDescription: string; // inherited from NSObjectProtocol
-
-	readonly description: string; // inherited from NSObjectProtocol
-
-	readonly hash: number; // inherited from NSObjectProtocol
-
-	readonly isProxy: boolean; // inherited from NSObjectProtocol
-
-	readonly superclass: typeof NSObject; // inherited from NSObjectProtocol
-
-	readonly  // inherited from NSObjectProtocol
-
-	class(): typeof NSObject;
-
-	conformsToProtocol(aProtocol: any /* Protocol */): boolean;
-
-	drawInMTKView(view: MTKView): void;
-
-	isEqual(object: any): boolean;
-
-	isKindOfClass(aClass: typeof NSObject): boolean;
-
-	isMemberOfClass(aClass: typeof NSObject): boolean;
-
-	mtkViewDrawableSizeWillChange(view: MTKView, size: CGSize): void;
-
-	performSelector(aSelector: string): any;
-
-	performSelectorWithObject(aSelector: string, object: any): any;
-
-	performSelectorWithObjectWithObject(aSelector: string, object1: any, object2: any): any;
-
-	respondsToSelector(aSelector: string): boolean;
-
-	retainCount(): number;
-
-	self(): this;
+	High = 2
 }
 
-interface NativeByteArray {
-	array: string;
-	length: number;
+declare const enum LineCap {
+
+	CapButt = 0,
+
+	CapRound = 1,
+
+	CapSquare = 2
 }
-declare var NativeByteArray: interop.StructType<NativeByteArray>;
+
+declare const enum LineJoin {
+
+	JoinRound = 0,
+
+	JoinBevel = 1,
+
+	JoinMiter = 2
+}
+
+interface PaintStyleValue {
+	value: number;
+	value_type: PaintStyleValueType;
+}
+declare var PaintStyleValue: interop.StructType<PaintStyleValue>;
+
+declare const enum PaintStyleValueType {
+
+	Color = 0,
+
+	Gradient = 1,
+
+	Pattern = 2
+}
+
+declare const enum Repetition {
+
+	Repeat = 0,
+
+	RepeatX = 1,
+
+	RepeatY = 2,
+
+	NoRepeat = 3
+}
 
 declare class TNSAnimationFrame extends NSObject {
 
@@ -211,9 +280,7 @@ declare class TNSCanvas extends UIView {
 
 	static new(): TNSCanvas; // inherited from NSObject
 
-	canvas: number;
-
-	canvasState: NSArray<number>;
+	context: number;
 
 	readonly fps: number;
 
@@ -225,7 +292,7 @@ declare class TNSCanvas extends UIView {
 
 	readonly width: number;
 
-	constructor(o: { frame: CGRect; useGL: boolean; });
+	constructor(o: { frame: CGRect; useCpu: boolean; });
 
 	didDraw(): void;
 
@@ -245,7 +312,7 @@ declare class TNSCanvas extends UIView {
 
 	handleMoveToMain(): void;
 
-	initWithFrameUseGL(frame: CGRect, useGL: boolean): this;
+	initWithFrameUseCpu(frame: CGRect, useCpu: boolean): this;
 
 	moveOffMain(): void;
 
@@ -288,9 +355,9 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	static new(): TNSCanvasRenderingContext2D; // inherited from NSObject
 
-	currentTransform: TNSDOMMatrix;
+	fillStyle: ICanvasColorStyle;
 
-	fillStyle: any;
+	filter: string;
 
 	font: string;
 
@@ -314,15 +381,17 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	shadowBlur: number;
 
-	shadowColor: any;
+	shadowColor: string;
 
 	shadowOffsetX: number;
 
 	shadowOffsetY: number;
 
-	strokeStyle: any;
+	strokeStyle: ICanvasColorStyle;
 
 	textAlign: TNSTextAlignment;
+
+	textBaseline: TNSTextBaseLine;
 
 	constructor();
 
@@ -366,7 +435,6 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	getLineDash(): NSArray<number>;
 
-	// @ts-ignore
 	init(canvas: TNSCanvas): this;
 
 	isPointInPath(x: number, y: number): boolean;
@@ -408,6 +476,21 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 	transform(a: number, b: number, c: number, d: number, e: number, f: number): void;
 
 	translate(x: number, y: number): void;
+}
+
+declare class TNSColor extends NSObject implements ICanvasColorStyle {
+
+	static alloc(): TNSColor; // inherited from NSObject
+
+	static new(): TNSColor; // inherited from NSObject
+
+	readonly color: string;
+
+	constructor();
+
+	getStyleType(): CanvasColorStyleType;
+
+	init(color: string): this;
 }
 
 declare class TNSColorStyle extends NSObject {
@@ -489,6 +572,45 @@ declare class TNSDOMMatrix extends NSObject {
 	e: number;
 
 	f: number;
+
+	m11: number;
+
+	m12: number;
+
+	m13: number;
+
+	m14: number;
+
+	m21: number;
+
+	m22: number;
+
+	m23: number;
+
+	m24: number;
+
+	m31: number;
+
+	m32: number;
+
+	m33: number;
+
+	m34: number;
+
+	m41: number;
+
+	m42: number;
+
+	m43: number;
+
+	m44: number;
+}
+
+declare const enum TNSFillRule {
+
+	NonZero = 0,
+
+	EvenOdd = 1
 }
 
 declare class TNSFramebufferAttachmentParameter extends NSObject {
@@ -506,6 +628,17 @@ declare class TNSFramebufferAttachmentParameter extends NSObject {
 	constructor(o: { isTexture: boolean; isRenderbuffer: boolean; value: number; });
 
 	initWithIsTextureIsRenderbufferValue(isTexture: boolean, isRenderbuffer: boolean, value: number): this;
+}
+
+declare class TNSGradient extends NSObject implements ICanvasColorStyle {
+
+	static alloc(): TNSGradient; // inherited from NSObject
+
+	static new(): TNSGradient; // inherited from NSObject
+
+	addColorStop(offset: number, color: string): void;
+
+	getStyleType(): CanvasColorStyleType;
 }
 
 declare class TNSImageAsset extends NSObject {
@@ -542,6 +675,10 @@ declare class TNSImageAsset extends NSObject {
 
 	loadImageFromPathWithPath(path: string): boolean;
 
+	loadImageFromUrlAsyncWithUrlCallback(url: string, callback: (p1: string) => void): void;
+
+	loadImageFromUrlWithUrl(url: string): boolean;
+
 	saveAsyncWithPathFormatCallback(path: string, format: TNSImageAssetFormat, callback: (p1: boolean) => void): void;
 
 	saveWithPathFormat(path: string, format: TNSImageAssetFormat): boolean;
@@ -573,10 +710,6 @@ declare class TNSImageData extends NSObject {
 	readonly height: number;
 
 	readonly width: number;
-
-	constructor(o: { width: number; height: number; });
-
-	initWithWidthHeight(width: number, height: number): this;
 }
 
 declare const enum TNSImageSmoothingQuality {
@@ -606,22 +739,18 @@ declare const enum TNSLineCap {
 
 declare const enum TNSLineJoin {
 
-	Bevel = 0,
+	Round = 0,
 
-	Round = 1,
+	Bevel = 1,
 
 	Miter = 2
 }
 
-declare class TNSLinearGradient extends Gradient {
+declare class TNSLinearGradient extends TNSGradient {
 
 	static alloc(): TNSLinearGradient; // inherited from NSObject
 
 	static new(): TNSLinearGradient; // inherited from NSObject
-
-	constructor(o: { x0: number; y0: number; x1: number; y1: number; });
-
-	initWithX0Y0X1Y1(x0: number, y0: number, x1: number, y1: number): this;
 }
 
 declare class TNSPath2D extends NSObject {
@@ -665,19 +794,7 @@ declare class TNSPattern extends NSObject implements ICanvasColorStyle {
 
 	static new(): TNSPattern; // inherited from NSObject
 
-	constructor(o: { asset: TNSImageAsset; pattern: TNSPatternRepetition; });
-
-	constructor(o: { canvas: TNSCanvas; pattern: TNSPatternRepetition; });
-
-	constructor(o: { src: UIImage; pattern: TNSPatternRepetition; });
-
 	getStyleType(): CanvasColorStyleType;
-
-	initWithAssetPattern(src: TNSImageAsset, pattern: TNSPatternRepetition): this;
-
-	initWithCanvasPattern(canvas: TNSCanvas, pattern: TNSPatternRepetition): this;
-
-	initWithSrcPattern(src: UIImage, pattern: TNSPatternRepetition): this;
 
 	setTransformWithMatrix(matrix: TNSDOMMatrix): void;
 }
@@ -693,28 +810,39 @@ declare const enum TNSPatternRepetition {
 	NoRepeat = 3
 }
 
-declare class TNSRadialGradient extends Gradient {
+declare class TNSRadialGradient extends TNSGradient {
 
 	static alloc(): TNSRadialGradient; // inherited from NSObject
 
 	static new(): TNSRadialGradient; // inherited from NSObject
-
-	constructor(o: { x0: number; y0: number; r0: number; x1: number; y1: number; r1: number; });
-
-	initWithX0Y0R0X1Y1R1(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): this;
 }
 
 declare const enum TNSTextAlignment {
 
-	Left = 0,
+	Start = 0,
 
-	Start = 1,
+	Left = 1,
 
 	Center = 2,
 
-	End = 3,
+	Right = 3,
 
-	Right = 4
+	End = 4
+}
+
+declare const enum TNSTextBaseLine {
+
+	Top = 0,
+
+	Hanging = 1,
+
+	Middle = 2,
+
+	Alphabetic = 3,
+
+	Ideographic = 4,
+
+	Bottom = 5
 }
 
 declare class TNSTextDecoder extends NSObject {
@@ -742,6 +870,13 @@ declare class TNSTextDecoder extends NSObject {
 	initWithEncoding(encoding: string): this;
 }
 
+declare const enum TNSTextDirection {
+
+	Ltr = 0,
+
+	Rtl = 1
+}
+
 declare class TNSTextEncoder extends NSObject {
 
 	static alloc(): TNSTextEncoder; // inherited from NSObject
@@ -764,6 +899,28 @@ declare class TNSTextMetrics extends NSObject {
 	static alloc(): TNSTextMetrics; // inherited from NSObject
 
 	static new(): TNSTextMetrics; // inherited from NSObject
+
+	readonly actualBoundingBoxAscent: number;
+
+	readonly actualBoundingBoxDescent: number;
+
+	readonly actualBoundingBoxLeft: number;
+
+	readonly actualBoundingBoxRight: number;
+
+	readonly alphabeticBaseline: number;
+
+	readonly emHeightAscent: number;
+
+	readonly emHeightDescent: number;
+
+	readonly fontBoundingBoxAscent: number;
+
+	readonly fontBoundingBoxDescent: number;
+
+	readonly hangingBaseline: number;
+
+	readonly ideographicBaseline: number;
 
 	readonly width: number;
 }
@@ -2346,7 +2503,6 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	hint(target: number, mode: number): void;
 
-	// @ts-ignore
 	init(canvas: TNSCanvas): this;
 
 	isBuffer(buffer: number): boolean;
@@ -2845,295 +3001,480 @@ declare class TNS_WEBGL_lose_context extends NSObject {
 	restoreContext(): void;
 }
 
-declare function native_arc(canvas_native_ptr: number, x: number, y: number, radius: number, start_angle: number, end_angle: number, anticlockwise: boolean): number;
+declare const enum TextAlign {
 
-declare function native_arc_to(canvas_native_ptr: number, x1: number, y1: number, x2: number, y2: number, radius: number): number;
+	START = 0,
 
-declare function native_begin_path(canvas_native_ptr: number): number;
+	LEFT = 1,
 
-declare function native_bezier_curve_to(canvas_native_ptr: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): number;
+	CENTER = 2,
 
-declare function native_clear_canvas(canvas_native_ptr: number, view: interop.Pointer | interop.Reference<any>): number;
+	RIGHT = 3,
 
-declare function native_clear_rect(canvas_native_ptr: number, x: number, y: number, width: number, height: number, view: interop.Pointer | interop.Reference<any>): number;
+	END = 4
+}
 
-declare function native_clip(canvas_native_ptr: number, view: interop.Pointer | interop.Reference<any>): number;
+declare const enum TextBaseLine {
 
-declare function native_clip_path_rule(canvas_native_ptr: number, path: number, fill_rule: string | interop.Pointer | interop.Reference<any>, view: interop.Pointer | interop.Reference<any>): number;
+	TOP = 0,
 
-declare function native_clip_rule(canvas_native_ptr: number, fill_rule: string | interop.Pointer | interop.Reference<any>, view: interop.Pointer | interop.Reference<any>): number;
+	HANGING = 1,
 
-declare function native_close_path(canvas_native_ptr: number): number;
+	MIDDLE = 2,
 
-declare function native_create_image_asset(): number;
+	ALPHABETIC = 3,
 
-declare function native_create_image_data(width: number, height: number): interop.Pointer | interop.Reference<CanvasArray>;
+	IDEOGRAPHIC = 4,
 
-declare function native_create_matrix(): number;
+	BOTTOM = 5
+}
 
-declare function native_create_path_2d(): number;
+declare const enum TextDirection {
 
-declare function native_create_path_2d_from_path_data(data: string | interop.Pointer | interop.Reference<any>): number;
+	LTR = 0,
 
-declare function native_create_path_from_path(path: number): number;
+	RTL = 1
+}
 
-declare function native_create_pattern(image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, original_width: number, original_height: number, repetition: string | interop.Pointer | interop.Reference<any>): number;
+interface U16Array {
+	data: interop.Pointer | interop.Reference<number>;
+	data_len: number;
+}
+declare var U16Array: interop.StructType<U16Array>;
 
-declare function native_create_pattern_encoded(image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, repetition: string | interop.Pointer | interop.Reference<any>): number;
+interface U32Array {
+	data: interop.Pointer | interop.Reference<number>;
+	data_len: number;
+}
+declare var U32Array: interop.StructType<U32Array>;
 
-declare function native_create_text_decoder(decoding: string | interop.Pointer | interop.Reference<any>): number;
+interface U8Array {
+	data: string;
+	data_len: number;
+}
+declare var U8Array: interop.StructType<U8Array>;
 
-declare function native_create_text_encoder(encoding: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_arc(context: number, x: number, y: number, radius: number, start_angle: number, end_angle: number, anti_clockwise: boolean): void;
 
-declare function native_destroy(canvas_ptr: number): void;
+declare function context_arc_to(context: number, x1: number, y1: number, x2: number, y2: number, radius: number): void;
 
-declare function native_draw_image(canvas_native_ptr: number, image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, original_width: number, original_height: number, dx: number, dy: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_begin_path(context: number): void;
 
-declare function native_draw_image_dw(canvas_native_ptr: number, image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, original_width: number, original_height: number, dx: number, dy: number, d_width: number, d_height: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_bezier_curve_to(context: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void;
 
-declare function native_draw_image_dw_raw(canvas_native_ptr: number, image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, original_width: number, original_height: number, dx: number, dy: number, d_width: number, d_height: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_clear_rect(context: number, x: number, y: number, width: number, height: number): void;
 
-declare function native_draw_image_raw(canvas_native_ptr: number, image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, original_width: number, original_height: number, dx: number, dy: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_clip(context: number, path: number, rule: FillRule): void;
 
-declare function native_draw_image_sw(canvas_native_ptr: number, image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, original_width: number, original_height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_clip_rule(context: number, rule: FillRule): void;
 
-declare function native_draw_image_sw_raw(canvas_native_ptr: number, image_array: string | interop.Pointer | interop.Reference<any>, image_size: number, original_width: number, original_height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_close_path(context: number): void;
 
-declare function native_drop_image_data(data: interop.Pointer | interop.Reference<CanvasArray>): void;
+declare function context_create_image_data(width: number, height: number): number;
 
-declare function native_drop_text_metrics(data: interop.Pointer | interop.Reference<CanvasTextMetrics>): void;
+declare function context_create_linear_gradient(context: number, x0: number, y0: number, x1: number, y1: number): number;
 
-declare function native_ellipse(canvas_native_ptr: number, x: number, y: number, radius_x: number, radius_y: number, rotation: number, start_angle: number, end_angle: number, anticlockwise: boolean): number;
+declare function context_create_pattern(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, repetition: Repetition): number;
 
-declare function native_fill(canvas_native_ptr: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_create_pattern_asset(context: number, asset: number, repetition: Repetition): number;
 
-declare function native_fill_path_rule(canvas_native_ptr: number, path_ptr: number, rule: string | interop.Pointer | interop.Reference<any>, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_create_pattern_encoded(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, repetition: Repetition): number;
 
-declare function native_fill_rect(canvas_native_ptr: number, x: number, y: number, width: number, height: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_create_radial_gradient(context: number, x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): number;
 
-declare function native_fill_rule(canvas_native_ptr: number, rule: string | interop.Pointer | interop.Reference<any>, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_custom_with_buffer_flush(context: number, buf: string | interop.Pointer | interop.Reference<any>, buf_size: number, width: number, height: number): void;
 
-declare function native_fill_text(canvas_native_ptr: number, text: string | interop.Pointer | interop.Reference<any>, x: number, y: number, width: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_data_url(context: number, format: string | interop.Pointer | interop.Reference<any>, quality: number): string;
 
-declare function native_flip_y_in_place(data: string | interop.Pointer | interop.Reference<any>, length: number, bytes_per_row: number, height: number): void;
+declare function context_draw_image(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
-declare function native_flip_y_in_place_3d(data: string | interop.Pointer | interop.Reference<any>, length: number, bytes_per_row: number, height: number, depth: number): void;
+declare function context_draw_image_asset(context: number, asset: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
-declare function native_flush(canvas_ptr: number): number;
+declare function context_draw_image_dx_dy(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, dx: number, dy: number): void;
 
-declare function native_free_byte_array(array: interop.Pointer | interop.Reference<NativeByteArray>): void;
+declare function context_draw_image_dx_dy_asset(context: number, asset: number, dx: number, dy: number): void;
 
-declare function native_free_char(text: string | interop.Pointer | interop.Reference<any>): void;
+declare function context_draw_image_dx_dy_dw_dh(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
-declare function native_free_matrix_data(data: interop.Pointer | interop.Reference<CanvasArray>): void;
+declare function context_draw_image_dx_dy_dw_dh_asset(context: number, asset: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
-declare function native_free_path_2d(path: number): void;
+declare function context_draw_image_encoded(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
-declare function native_free_pattern(pattern: number): void;
+declare function context_draw_image_encoded_dx_dy(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, dx: number, dy: number): void;
 
-declare function native_get_current_transform(canvas_native_ptr: number): number;
+declare function context_draw_image_encoded_dx_dy_dw_dh(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
-declare function native_get_direction(canvas_native_ptr: number): string;
+declare function context_ellipse(context: number, x: number, y: number, radius_x: number, radius_y: number, rotation: number, start_angle: number, end_angle: number, anticlockwise: boolean): void;
 
-declare function native_get_image_data(canvas_native_ptr: number, sx: number, sy: number, sw: number, sh: number): interop.Pointer | interop.Reference<CanvasArray>;
+declare function context_fill(context: number, path: number, rule: FillRule): void;
 
-declare function native_get_ios_device(canvas_native_ptr: number): interop.Pointer | interop.Reference<CanvasDevice>;
+declare function context_fill_rect(context: number, x: number, y: number, width: number, height: number): void;
 
-declare function native_get_matrix(matrix: number): interop.Pointer | interop.Reference<CanvasArray>;
+declare function context_fill_text(context: number, text: string | interop.Pointer | interop.Reference<any>, x: number, y: number, width: number): void;
 
-declare function native_gl_tex_image_2D_asset(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, image_type: number, asset: number, flip_y: number): void;
+declare function context_flush(context: number): void;
 
-declare function native_gl_tex_sub_image_2D_asset(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, image_type: number, asset: number, flip_y: number): void;
+declare function context_get_direction(context: interop.Pointer | interop.Reference<any>): TextDirection;
 
-declare function native_image_asset_flip_x(asset: number): number;
+declare function context_get_fill_style(context: number): interop.Pointer | interop.Reference<PaintStyleValue>;
 
-declare function native_image_asset_flip_x_in_place_owned(width: number, height: number, buf: string | interop.Pointer | interop.Reference<any>, length: number): void;
+declare function context_get_filter(context: number): string;
 
-declare function native_image_asset_flip_y(asset: number): number;
+declare function context_get_font(context: number): string;
 
-declare function native_image_asset_flip_y_in_place_owned(width: number, height: number, buf: string | interop.Pointer | interop.Reference<any>, length: number): void;
+declare function context_get_global_alpha(context: number): number;
 
-declare function native_image_asset_free_bytes(data: NativeByteArray): void;
+declare function context_get_global_composite_operation(context: number): CompositeOperationType;
 
-declare function native_image_asset_get_bytes(asset: number): NativeByteArray;
+declare function context_get_image_data(context: number, sx: number, sy: number, sw: number, sh: number): number;
 
-declare function native_image_asset_get_error(asset: number): string;
+declare function context_get_image_smoothing_enabled(context: number): boolean;
 
-declare function native_image_asset_get_height(asset: number): number;
+declare function context_get_image_smoothing_quality(context: number): ImageSmoothingQuality;
 
-declare function native_image_asset_get_width(asset: number): number;
+declare function context_get_line_cap(context: number): LineCap;
 
-declare function native_image_asset_has_error(asset: number): number;
+declare function context_get_line_dash(context: number): interop.Pointer | interop.Reference<F32Array>;
 
-declare function native_image_asset_load_from_path(asset: number, path: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_get_line_dash_offset(context: number): number;
 
-declare function native_image_asset_load_from_raw(asset: number, array: string | interop.Pointer | interop.Reference<any>, size: number): number;
+declare function context_get_line_join(context: number): LineJoin;
 
-declare function native_image_asset_release(asset: number): void;
+declare function context_get_line_width(context: number): number;
 
-declare function native_image_asset_scale(asset: number, x: number, y: number): number;
+declare function context_get_miter_limit(context: number): number;
 
-declare function native_image_smoothing_enabled(canvas_native_ptr: number, enabled: boolean): number;
+declare function context_get_shadow_blur(context: number): number;
 
-declare function native_image_smoothing_quality(canvas_native_ptr: number, quality: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_get_shadow_color(context: number): string;
 
-declare function native_init(device: interop.Pointer | interop.Reference<any>, queue: interop.Pointer | interop.Reference<any>, view: interop.Pointer | interop.Reference<any>, scale: number, direction: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_get_shadow_offset_x(context: number): number;
 
-declare function native_init_legacy(width: number, height: number, buffer_id: number, scale: number, stencil: number, samples: number, alpha: number, direction: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_get_shadow_offset_y(context: number): number;
 
-declare function native_is_point_in_path(canvas_ptr: number, x: number, y: number): number;
+declare function context_get_stroke_style(context: number): interop.Pointer | interop.Reference<PaintStyleValue>;
 
-declare function native_is_point_in_path_with_path_rule(canvas_ptr: number, path: number, x: number, y: number, fill_rule: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_get_text_align(context: number): TextAlign;
 
-declare function native_is_point_in_path_with_rule(canvas_ptr: number, x: number, y: number, fill_rule: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_get_text_baseline(context: number): TextBaseLine;
 
-declare function native_is_point_in_stroke(canvas_ptr: number, x: number, y: number): number;
+declare function context_get_transform(context: number): number;
 
-declare function native_is_point_in_stroke_with_path(canvas_ptr: number, path: number, x: number, y: number): number;
+declare function context_init_context(width: number, height: number, density: number, buffer_id: number, samples: number, alpha: boolean, font_color: number, ppi: number, direction: TextDirection): number;
 
-declare function native_line_dash_offset(canvas_native_ptr: number, offset: number): number;
+declare function context_init_context_with_custom_surface(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: TextDirection): number;
 
-declare function native_line_join(canvas_native_ptr: number, line_join: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_is_point_in_path(context: number, path: number, x: number, y: number, rule: FillRule): boolean;
 
-declare function native_line_to(canvas_native_ptr: number, x: number, y: number): number;
+declare function context_is_point_in_stroke(context: number, path: number, x: number, y: number): boolean;
 
-declare function native_measure_text(canvas_native_ptr: number, text: string | interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<CanvasTextMetrics>;
+declare function context_line_to(context: number, x: number, y: number): void;
 
-declare function native_miter_limit(canvas_native_ptr: number, limit: number): number;
+declare function context_measure_text(context: number, text: string | interop.Pointer | interop.Reference<any>): number;
 
-declare function native_move_to(canvas_native_ptr: number, x: number, y: number): number;
+declare function context_move_to(context: number, x: number, y: number): void;
 
-declare function native_native_image_asset_save_path(asset: number, path: string | interop.Pointer | interop.Reference<any>, format: number): number;
+declare function context_put_image_data(context: number, image_data: number, dx: number, dy: number, dirty_x: number, dirty_y: number, dirty_width: number, dirty_height: number): void;
 
-declare function native_path_2d_add_path(path: number, path_to_add: number, matrix: number): number;
+declare function context_quadratic_curve_to(context: number, cpx: number, cpy: number, x: number, y: number): void;
 
-declare function native_path_2d_arc(path: number, x: number, y: number, radius: number, start_angle: number, end_angle: number, anticlockwise: boolean): number;
+declare function context_rect(context: number, x: number, y: number, width: number, height: number): void;
 
-declare function native_path_2d_arc_to(path: number, x1: number, y1: number, x2: number, y2: number, radius: number): number;
+declare function context_reset_transform(context: number): void;
 
-declare function native_path_2d_bezier_curve_to(path: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): number;
+declare function context_resize_custom_surface(context: number, width: number, height: number, density: number, alpha: boolean, ppi: number): void;
 
-declare function native_path_2d_close_path(path: number): number;
+declare function context_resize_surface(context: number, width: number, height: number, density: number, buffer_id: number, samples: number, alpha: boolean, ppi: number): void;
 
-declare function native_path_2d_ellipse(path: number, x: number, y: number, radius_x: number, radius_y: number, rotation: number, start_angle: number, end_angle: number, anticlockwise: boolean): number;
+declare function context_restore(context: number): void;
 
-declare function native_path_2d_line_to(path: number, x: number, y: number): number;
+declare function context_rotate(context: number, angle: number): void;
 
-declare function native_path_2d_move_to(path: number, x: number, y: number): number;
+declare function context_save(context: number): void;
 
-declare function native_path_2d_quadratic_curve_to(path: number, cpx: number, cpy: number, x: number, y: number): number;
+declare function context_scale(context: number, x: number, y: number): void;
 
-declare function native_path_2d_rect(path: number, x: number, y: number, width: number, height: number): number;
+declare function context_set_direction(context: number, direction: TextDirection): void;
 
-declare function native_put_image_data(canvas_native_ptr: number, width: number, height: number, array: string | interop.Pointer | interop.Reference<any>, array_size: number, x: number, y: number, dirty_x: number, dirty_y: number, dirty_width: number, dirty_height: number): number;
+declare function context_set_fill_style(context: number, style: number): void;
 
-declare function native_quadratic_curve_to(canvas_native_ptr: number, cpx: number, cpy: number, x: number, y: number): number;
+declare function context_set_filter(context: number, filter: string | interop.Pointer | interop.Reference<any>): void;
 
-declare function native_rect(canvas_native_ptr: number, x: number, y: number, width: number, height: number): number;
+declare function context_set_font(context: number, filter: string | interop.Pointer | interop.Reference<any>): void;
 
-declare function native_reset_transform(canvas_native_ptr: number): number;
+declare function context_set_global_alpha(context: number, alpha: number): void;
 
-declare function native_restore(canvas_native_ptr: number): number;
+declare function context_set_global_composite_operation(context: number, operation: CompositeOperationType): void;
 
-declare function native_rotate(canvas_native_ptr: number, angle: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_set_image_smoothing_enabled(context: number, enabled: boolean): void;
 
-declare function native_save(canvas_native_ptr: number): number;
+declare function context_set_image_smoothing_quality(context: number, quality: ImageSmoothingQuality): void;
 
-declare function native_scale(canvas_native_ptr: number, x: number, y: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_set_line_cap(context: number, cap: LineCap): void;
 
-declare function native_set_current_transform(canvas_native_ptr: number, matrix: number): number;
+declare function context_set_line_dash(context: number, data: interop.Pointer | interop.Reference<number>, data_length: number): void;
 
-declare function native_set_direction(canvas_native_ptr: number, direction: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_set_line_dash_offset(context: number, offset: number): void;
 
-declare function native_set_fill_color(canvas_native_ptr: number, color: number): number;
+declare function context_set_line_join(context: number, join: LineJoin): void;
 
-declare function native_set_fill_color_rgba(canvas_native_ptr: number, red: number, green: number, blue: number, alpha: number): number;
+declare function context_set_line_width(context: number, width: number): void;
 
-declare function native_set_fill_gradient_linear(canvas_native_ptr: number, x0: number, y0: number, x1: number, y1: number, colors_size: number, colors_array: interop.Pointer | interop.Reference<number>, positions_size: number, positions_array: interop.Pointer | interop.Reference<number>): number;
+declare function context_set_miter_limit(context: number, limit: number): void;
 
-declare function native_set_fill_gradient_radial(canvas_native_ptr: number, x0: number, y0: number, radius_0: number, x1: number, y1: number, radius_1: number, colors_size: number, colors_array: interop.Pointer | interop.Reference<number>, positions_size: number, positions_array: interop.Pointer | interop.Reference<number>): number;
+declare function context_set_shadow_blur(context: number, blur: number): void;
 
-declare function native_set_fill_pattern(canvas_native_ptr: number, pattern: number): number;
+declare function context_set_shadow_color(context: number, r: number, g: number, b: number, a: number): void;
 
-declare function native_set_font(canvas_native_ptr: number, font: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_set_shadow_color_string(context: number, color: string | interop.Pointer | interop.Reference<any>): void;
 
-declare function native_set_global_alpha(canvas_native_ptr: number, alpha: number): number;
+declare function context_set_shadow_offset_x(context: number, x: number): void;
 
-declare function native_set_global_composite_operation(canvas_native_ptr: number, composite: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_set_shadow_offset_y(context: number, y: number): void;
 
-declare function native_set_line_cap(canvas_native_ptr: number, line_cap: string | interop.Pointer | interop.Reference<any>): number;
+declare function context_set_stroke_style(context: number, style: number): void;
 
-declare function native_set_line_dash(canvas_native_ptr: number, size: number, array: interop.Pointer | interop.Reference<number>): number;
+declare function context_set_text_align(context: number, align: TextAlign): void;
 
-declare function native_set_line_width(canvas_native_ptr: number, line_width: number): number;
+declare function context_set_text_baseline(context: number, baseline: TextBaseLine): void;
 
-declare function native_set_matrix(matrix: number, array: interop.Pointer | interop.Reference<any>, length: number): number;
+declare function context_set_transform(context: number, a: number, b: number, c: number, d: number, e: number, f: number): void;
 
-declare function native_set_pattern_transform(pattern: number, matrix: number): number;
+declare function context_set_transform_matrix(context: number, matrix: number): void;
 
-declare function native_set_stroke_color(canvas_native_ptr: number, color: number): number;
+declare function context_snapshot_canvas(context: number): interop.Pointer | interop.Reference<U8Array>;
 
-declare function native_set_stroke_color_rgba(canvas_native_ptr: number, red: number, green: number, blue: number, alpha: number): number;
+declare function context_stroke(context: number, path: number): void;
 
-declare function native_set_stroke_gradient_linear(canvas_native_ptr: number, x0: number, y0: number, x1: number, y1: number, colors_size: number, colors_array: interop.Pointer | interop.Reference<number>, positions_size: number, positions_array: interop.Pointer | interop.Reference<number>): number;
+declare function context_stroke_rect(context: number, x: number, y: number, width: number, height: number): void;
 
-declare function native_set_stroke_gradient_radial(canvas_native_ptr: number, x0: number, y0: number, radius_0: number, x1: number, y1: number, radius_1: number, colors_size: number, colors_array: interop.Pointer | interop.Reference<number>, positions_size: number, positions_array: interop.Pointer | interop.Reference<number>): number;
+declare function context_stroke_text(context: number, text: string | interop.Pointer | interop.Reference<any>, x: number, y: number, width: number): void;
 
-declare function native_set_stroke_pattern(canvas_native_ptr: number, pattern: number): number;
+declare function context_transform(context: number, a: number, b: number, c: number, d: number, e: number, f: number): void;
 
-declare function native_set_transform(canvas_native_ptr: number, a: number, b: number, c: number, d: number, e: number, f: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function context_translate(context: number, x: number, y: number): void;
 
-declare function native_shadow_blur(canvas_native_ptr: number, limit: number): number;
+declare function destroy_context(context: number): void;
 
-declare function native_shadow_color(canvas_native_ptr: number, color: number): number;
+declare function destroy_f32_array(array: interop.Pointer | interop.Reference<F32Array>): void;
 
-declare function native_shadow_offset_x(canvas_native_ptr: number, x: number): number;
+declare function destroy_f64_array(array: interop.Pointer | interop.Reference<F64Array>): void;
 
-declare function native_shadow_offset_y(canvas_native_ptr: number, y: number): number;
+declare function destroy_i16_array(array: interop.Pointer | interop.Reference<I16Array>): void;
 
-declare function native_snapshot_canvas(canvas_native_ptr: number): interop.Pointer | interop.Reference<NativeByteArray>;
+declare function destroy_i32_array(array: interop.Pointer | interop.Reference<I32Array>): void;
 
-declare function native_stroke(canvas_native_ptr: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function destroy_i8_array(array: interop.Pointer | interop.Reference<I8Array>): void;
 
-declare function native_stroke_path(canvas_native_ptr: number, path: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function destroy_image_asset(asset: number): void;
 
-declare function native_stroke_rect(canvas_native_ptr: number, x: number, y: number, width: number, height: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function destroy_image_data(image_data: number): void;
 
-declare function native_stroke_text(canvas_native_ptr: number, text: string | interop.Pointer | interop.Reference<any>, x: number, y: number, width: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function destroy_matrix(matrix: number): void;
 
-declare function native_surface_resized(_width: number, _height: number, _device: interop.Pointer | interop.Reference<any>, _queue: interop.Pointer | interop.Reference<any>, _scale: number, current_canvas: number): number;
+declare function destroy_paint_style(style: number): void;
 
-declare function native_surface_resized_legacy(width: number, height: number, buffer_id: number, _scale: number, stencil: number, samples: number, alpha: number, canvas_native_ptr: number): number;
+declare function destroy_paint_style_value(value: number): void;
 
-declare function native_tex_image_3D_asset(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, image_type: number, asset: number, flip_y: number): void;
+declare function destroy_path(path: number): void;
 
-declare function native_tex_sub_image_3D_asset(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, image_type: number, asset: number, flip_y: number): void;
+declare function destroy_string(string: string | interop.Pointer | interop.Reference<any>): void;
 
-declare function native_text_align(canvas_native_ptr: number, alignment: string | interop.Pointer | interop.Reference<any>): number;
+declare function destroy_text_decoder(decoder: number): void;
 
-declare function native_text_decoder_decode(decoder: number, data: string | interop.Pointer | interop.Reference<any>, len: number): string;
+declare function destroy_text_encoder(encoder: number): void;
 
-declare function native_text_decoder_decode_i16(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+declare function destroy_text_metrics(metrics: number): void;
 
-declare function native_text_decoder_decode_i32(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+declare function destroy_u16_array(array: interop.Pointer | interop.Reference<U16Array>): void;
 
-declare function native_text_decoder_decode_u16(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+declare function destroy_u32_array(array: interop.Pointer | interop.Reference<U32Array>): void;
 
-declare function native_text_decoder_free(decoder: number): void;
+declare function destroy_u8_array(array: interop.Pointer | interop.Reference<U8Array>): void;
 
-declare function native_text_decoder_get_encoding(decoder: number): string;
+declare function flip_y_in_place(data: string | interop.Pointer | interop.Reference<any>, length: number, bytes_per_row: number, height: number): void;
 
-declare function native_text_encoder_encode(encoder: number, text: string | interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<NativeByteArray>;
+declare function flip_y_in_place_3d(data: string | interop.Pointer | interop.Reference<any>, length: number, bytes_per_row: number, height: number, depth: number): void;
 
-declare function native_text_encoder_free(encoder: number): void;
+declare function flip_y_in_place_3d_f32(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number, depth: number): void;
 
-declare function native_text_encoder_get_encoding(encoder: number): string;
+declare function flip_y_in_place_3d_f64(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number, depth: number): void;
 
-declare function native_to_data_url(canvas_ptr: number, format: string | interop.Pointer | interop.Reference<any>, quality: number): string;
+declare function flip_y_in_place_3d_i16(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number, depth: number): void;
 
-declare function native_transform(canvas_native_ptr: number, a: number, b: number, c: number, d: number, e: number, f: number, _view: interop.Pointer | interop.Reference<any>): number;
+declare function flip_y_in_place_3d_i32(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number, depth: number): void;
 
-declare function native_translate(canvas_native_ptr: number, x: number, y: number, view: interop.Pointer | interop.Reference<any>): number;
+declare function flip_y_in_place_3d_i8(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number, depth: number): void;
+
+declare function flip_y_in_place_3d_u16(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number, depth: number): void;
+
+declare function flip_y_in_place_3d_u32(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number, depth: number): void;
+
+declare function flip_y_in_place_f32(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number): void;
+
+declare function flip_y_in_place_f64(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number): void;
+
+declare function flip_y_in_place_i16(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number): void;
+
+declare function flip_y_in_place_i32(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number): void;
+
+declare function flip_y_in_place_i8(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number): void;
+
+declare function flip_y_in_place_u16(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number): void;
+
+declare function flip_y_in_place_u32(data: interop.Pointer | interop.Reference<number>, length: number, bytes_per_row: number, height: number): void;
+
+declare function gl_get_vertex_attrib_offset(index: number, pname: number): number;
+
+declare function gl_tex_image_2D_asset(target: number, level: number, internalformat: number, border: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
+
+declare function gl_tex_image_3D_asset(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
+
+declare function gl_tex_sub_image_2D_asset(target: number, level: number, xoffset: number, yoffset: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
+
+declare function gl_tex_sub_image_3D_asset(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, image_type: number, asset: number, flip_y: boolean): void;
+
+declare function gl_vertex_attrib_pointer(index: number, size: number, pointer_type: number, normalized: boolean, stride: number, offset: number): void;
+
+declare function gradient_add_color_stop(style: number, stop: number, color: string | interop.Pointer | interop.Reference<any>): void;
+
+declare function image_asset_create(): number;
+
+declare function image_asset_flip_x(asset: number): boolean;
+
+declare function image_asset_flip_x_in_place(asset: number): boolean;
+
+declare function image_asset_flip_x_in_place_owned(buf: string | interop.Pointer | interop.Reference<any>, length: number): void;
+
+declare function image_asset_flip_y(asset: number): boolean;
+
+declare function image_asset_flip_y_in_place(asset: number): boolean;
+
+declare function image_asset_flip_y_in_place_owned(buf: string | interop.Pointer | interop.Reference<any>, length: number): void;
+
+declare function image_asset_get_bytes(asset: number): interop.Pointer | interop.Reference<U8Array>;
+
+declare function image_asset_get_error(asset: number): string;
+
+declare function image_asset_get_rgb_bytes(asset: number): interop.Pointer | interop.Reference<U8Array>;
+
+declare function image_asset_get_rgba_bytes(asset: number): interop.Pointer | interop.Reference<U8Array>;
+
+declare function image_asset_has_error(asset: number): boolean;
+
+declare function image_asset_height(asset: number): number;
+
+declare function image_asset_load_from_path(asset: number, path: string | interop.Pointer | interop.Reference<any>): boolean;
+
+declare function image_asset_load_from_raw(asset: number, array: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
+
+declare function image_asset_save_path(asset: number, path: string | interop.Pointer | interop.Reference<any>, format: number): boolean;
+
+declare function image_asset_scale(asset: number, x: number, y: number): boolean;
+
+declare function image_asset_width(asset: number): number;
+
+declare function image_data_create(width: number, height: number): number;
+
+declare function image_data_data(image_data: number): string;
+
+declare function image_data_data_length(image_data: number): number;
+
+declare function image_data_height(image_data: number): number;
+
+declare function image_data_width(image_data: number): number;
+
+declare function matrix_a(matrix: number): number;
+
+declare function matrix_b(matrix: number): number;
+
+declare function matrix_c(matrix: number): number;
+
+declare function matrix_create(): number;
+
+declare function matrix_d(matrix: number): number;
+
+declare function matrix_e(matrix: number): number;
+
+declare function matrix_f(matrix: number): number;
+
+declare function matrix_m11(matrix: number): number;
+
+declare function matrix_m12(matrix: number): number;
+
+declare function matrix_m13(matrix: number): number;
+
+declare function matrix_m14(matrix: number): number;
+
+declare function matrix_m21(matrix: number): number;
+
+declare function matrix_m22(matrix: number): number;
+
+declare function matrix_m23(matrix: number): number;
+
+declare function matrix_m24(matrix: number): number;
+
+declare function matrix_m31(matrix: number): number;
+
+declare function matrix_m32(matrix: number): number;
+
+declare function matrix_m33(matrix: number): number;
+
+declare function matrix_m34(matrix: number): number;
+
+declare function matrix_m41(matrix: number): number;
+
+declare function matrix_m42(matrix: number): number;
+
+declare function matrix_m43(matrix: number): number;
+
+declare function matrix_m44(matrix: number): number;
+
+declare function matrix_set_a(matrix: number, a: number): void;
+
+declare function matrix_set_b(matrix: number, b: number): void;
+
+declare function matrix_set_c(matrix: number, c: number): void;
+
+declare function matrix_set_d(matrix: number, d: number): void;
+
+declare function matrix_set_e(matrix: number, e: number): void;
+
+declare function matrix_set_f(matrix: number, f: number): void;
+
+declare function matrix_set_m11(matrix: number, m11: number): void;
+
+declare function matrix_set_m12(matrix: number, m12: number): void;
+
+declare function matrix_set_m13(matrix: number, m13: number): void;
+
+declare function matrix_set_m14(matrix: number, m14: number): void;
+
+declare function matrix_set_m21(matrix: number, m21: number): void;
+
+declare function matrix_set_m22(matrix: number, m22: number): void;
+
+declare function matrix_set_m23(matrix: number, m23: number): void;
+
+declare function matrix_set_m24(matrix: number, m24: number): void;
+
+declare function matrix_set_m31(matrix: number, m31: number): void;
+
+declare function matrix_set_m32(matrix: number, m32: number): void;
+
+declare function matrix_set_m33(matrix: number, m33: number): void;
+
+declare function matrix_set_m34(matrix: number, m34: number): void;
+
+declare function matrix_set_m41(matrix: number, m41: number): void;
+
+declare function matrix_set_m42(matrix: number, m42: number): void;
+
+declare function matrix_set_m43(matrix: number, m43: number): void;
+
+declare function matrix_set_m44(matrix: number, m44: number): void;
+
+declare function matrix_update(matrix: number, data: interop.Pointer | interop.Reference<number>, data_len: number): void;
 
 declare function offsetF32By(data: interop.Pointer | interop.Reference<number>, offset: number): void;
 
@@ -3150,3 +3491,81 @@ declare function offsetU16By(data: interop.Pointer | interop.Reference<number>, 
 declare function offsetU32By(data: interop.Pointer | interop.Reference<number>, offset: number): void;
 
 declare function offsetU8By(data: string | interop.Pointer | interop.Reference<any>, offset: number): void;
+
+declare function paint_style_get_color_string(color: number): string;
+
+declare function paint_style_set_fill_color_with_string(context: number, color: string | interop.Pointer | interop.Reference<any>): void;
+
+declare function paint_style_set_stroke_color_with_string(context: number, color: string | interop.Pointer | interop.Reference<any>): void;
+
+declare function path_add_path(path: number, path_to_add: number): void;
+
+declare function path_add_path_with_matrix(path: number, path_to_add: number, matrix: number): void;
+
+declare function path_arc(path: number, x: number, y: number, radius: number, start_angle: number, end_angle: number, anti_clockwise: boolean): void;
+
+declare function path_arc_to(path: number, x1: number, y1: number, x2: number, y2: number, radius: number): void;
+
+declare function path_bezier_curve_to(path: number, cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void;
+
+declare function path_close_path(path: number): void;
+
+declare function path_create(): number;
+
+declare function path_create_with_path(path: number): number;
+
+declare function path_create_with_string(string: string | interop.Pointer | interop.Reference<any>): number;
+
+declare function path_ellipse(path: number, x: number, y: number, radius_x: number, radius_y: number, rotation: number, start_angle: number, end_angle: number, anticlockwise: boolean): void;
+
+declare function path_line_to(path: number, x: number, y: number): void;
+
+declare function path_move_to(path: number, x: number, y: number): void;
+
+declare function path_quadratic_curve_to(path: number, cpx: number, cpy: number, x: number, y: number): void;
+
+declare function path_rect(path: number, x: number, y: number, width: number, height: number): void;
+
+declare function pattern_set_transform(pattern: number, matrix: number): void;
+
+declare function text_decoder_create(decoding: string | interop.Pointer | interop.Reference<any>): number;
+
+declare function text_decoder_decode(decoder: number, data: string | interop.Pointer | interop.Reference<any>, len: number): string;
+
+declare function text_decoder_decode_i16(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+
+declare function text_decoder_decode_i32(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+
+declare function text_decoder_decode_u16(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+
+declare function text_decoder_get_encoding(decoder: number): string;
+
+declare function text_encoder_create(encoding: string | interop.Pointer | interop.Reference<any>): number;
+
+declare function text_encoder_encode(encoder: number, text: string | interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<U8Array>;
+
+declare function text_encoder_get_encoding(encoder: number): string;
+
+declare function text_metrics_get_actual_bounding_box_ascent(metrics: number): number;
+
+declare function text_metrics_get_actual_bounding_box_descent(metrics: number): number;
+
+declare function text_metrics_get_actual_bounding_box_left(metrics: number): number;
+
+declare function text_metrics_get_actual_bounding_box_right(metrics: number): number;
+
+declare function text_metrics_get_alphabetic_baseline(metrics: number): number;
+
+declare function text_metrics_get_em_height_ascent(metrics: number): number;
+
+declare function text_metrics_get_em_height_descent(metrics: number): number;
+
+declare function text_metrics_get_font_bounding_box_ascent(metrics: number): number;
+
+declare function text_metrics_get_font_bounding_box_descent(metrics: number): number;
+
+declare function text_metrics_get_hanging_baseline(metrics: number): number;
+
+declare function text_metrics_get_ideographic_baseline(metrics: number): number;
+
+declare function text_metrics_get_width(metrics: number): number;

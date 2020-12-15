@@ -1,4 +1,5 @@
-import {SVGItem} from "./SVGItem";
+import { ImageAsset } from "@nativescript/canvas";
+import { SVGItem } from "./SVGItem";
 
 const b64Extensions = {
 	"/": "jpg",
@@ -27,7 +28,10 @@ function getMIMEforBase64String(b64) {
 export class Image extends SVGItem {
 	xlink: { href?: string } = {};
 	href: string;
-
+	x: any = 0;
+	y: any = 0;
+	#loadedSrc: string;
+	#asset = new ImageAsset();
 	handleValues(canvas?) {
 		let ctx: any;
 		if (canvas) {
@@ -47,8 +51,12 @@ export class Image extends SVGItem {
 			if (this.isBase64(src)) {
 				const nativeImage = this.loadSrc(src);
 				if (nativeImage) {
-					ctx.drawImage(nativeImage, 0, 0, this.width as any, this.height as any);
+					ctx.drawImage(nativeImage, this.x, this.y, this.width as any, this.height as any);
 				}
+			} else if (this.#loadedSrc === src) {
+				ctx.drawImage(this.#asset, this.x, this.y, this.width as any, this.height);
+			} else {
+				this.loadSrc(src);
 			}
 		}
 		ctx.restore();
@@ -61,6 +69,7 @@ export class Image extends SVGItem {
 	}
 
 	loadSrc(src) {
+		this.#loadedSrc = undefined;
 		if (
 			typeof src === "string" &&
 			src.startsWith &&
@@ -86,6 +95,12 @@ export class Image extends SVGItem {
 			} catch (error) {
 				return null;
 			}
+		} else if (typeof src === "string" && src.startsWith('http')) {
+			this.#asset.loadFromUrlAsync(src)
+				.then(() => {
+					this.#loadedSrc = src;
+					(this.parent as any)?._forceRedraw();
+				});
 		}
 		return null;
 	}

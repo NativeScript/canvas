@@ -20,10 +20,11 @@ export class Canvas extends CanvasBase {
 	private _isReady: boolean = false;
 	private _readyListener: any;
 
-	constructor() {
+	constructor(useCpu = false) {
 		super();
-		this._canvas = TNSCanvas.alloc().initWithFrame(
-			CGRectZero
+		this._canvas = TNSCanvas.alloc().initWithFrameUseCpu(
+			CGRectZero,
+			useCpu
 		);
 		const ref = new WeakRef(this);
 		const listener = (NSObject as any).extend({

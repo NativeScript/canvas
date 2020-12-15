@@ -191,6 +191,12 @@ long long context_create_radial_gradient(long long context,
                                          float y1,
                                          float r1);
 
+void context_custom_with_buffer_flush(long long context,
+                                      uint8_t *buf,
+                                      uintptr_t buf_size,
+                                      float width,
+                                      float height);
+
 const char *context_data_url(long long context, const char *format, float quality);
 
 void context_draw_image(long long context,
@@ -345,6 +351,14 @@ long long context_init_context(float width,
                                float ppi,
                                TextDirection direction);
 
+long long context_init_context_with_custom_surface(float width,
+                                                   float height,
+                                                   float density,
+                                                   bool alpha,
+                                                   int font_color,
+                                                   float ppi,
+                                                   TextDirection direction);
+
 bool context_is_point_in_path(long long context, long long path, float x, float y, FillRule rule);
 
 bool context_is_point_in_stroke(long long context, long long path, float x, float y);
@@ -369,6 +383,13 @@ void context_quadratic_curve_to(long long context, float cpx, float cpy, float x
 void context_rect(long long context, float x, float y, float width, float height);
 
 void context_reset_transform(long long context);
+
+void context_resize_custom_surface(long long context,
+                                   float width,
+                                   float height,
+                                   float density,
+                                   bool alpha,
+                                   float ppi);
 
 void context_resize_surface(long long context,
                             float width,

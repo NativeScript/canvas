@@ -1,6 +1,6 @@
-import {Property} from "@nativescript/core";
-import {Path2D, CanvasGradient} from "../Canvas2D";
-import {SVGItem} from "./SVGItem";
+import { Property } from "@nativescript/core";
+import { Path2D, CanvasGradient } from "../Canvas2D";
+import { SVGItem } from "./SVGItem";
 
 export const dProperty = new Property<Path, string>({
 	name: 'd'
@@ -8,7 +8,10 @@ export const dProperty = new Property<Path, string>({
 
 export class Path extends SVGItem {
 	public d: string;
-
+	constructor() {
+		super();
+		this.fill = 'black';
+	}
 	handleValues(canvas?) {
 		let ctx: CanvasRenderingContext2D;
 		if (canvas) {
@@ -27,7 +30,7 @@ export class Path extends SVGItem {
 		}
 		ctx.globalAlpha = this._realOpacity;
 		let lastOpacity;
-// @ts-ignore
+		// @ts-ignore
 		if (this._doFillOpacity()) {
 			lastOpacity = ctx.globalAlpha;
 			ctx.globalAlpha = this._realFillOpacity;

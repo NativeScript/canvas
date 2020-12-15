@@ -1,4 +1,23 @@
 
+declare class CanvasCPUView extends UIView {
+
+	static alloc(): CanvasCPUView; // inherited from NSObject
+
+	static appearance(): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceForTraitCollection(trait: UITraitCollection): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceForTraitCollectionWhenContainedIn(trait: UITraitCollection, ContainerClass: typeof NSObject): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceForTraitCollectionWhenContainedInInstancesOfClasses(trait: UITraitCollection, containerTypes: NSArray<typeof NSObject> | typeof NSObject[]): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceWhenContainedIn(ContainerClass: typeof NSObject): CanvasCPUView; // inherited from UIAppearance
+
+	static appearanceWhenContainedInInstancesOfClasses(containerTypes: NSArray<typeof NSObject> | typeof NSObject[]): CanvasCPUView; // inherited from UIAppearance
+
+	static new(): CanvasCPUView; // inherited from NSObject
+}
+
 declare const enum CanvasColorStyleType {
 
 	Color = 0,
@@ -273,6 +292,8 @@ declare class TNSCanvas extends UIView {
 
 	readonly width: number;
 
+	constructor(o: { frame: CGRect; useCpu: boolean; });
+
 	didDraw(): void;
 
 	doDraw(): void;
@@ -290,6 +311,8 @@ declare class TNSCanvas extends UIView {
 	handleMoveOffMain(): void;
 
 	handleMoveToMain(): void;
+
+	initWithFrameUseCpu(frame: CGRect, useCpu: boolean): this;
 
 	moveOffMain(): void;
 
@@ -3059,6 +3082,8 @@ declare function context_create_pattern_encoded(context: number, image_data: str
 
 declare function context_create_radial_gradient(context: number, x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): number;
 
+declare function context_custom_with_buffer_flush(context: number, buf: string | interop.Pointer | interop.Reference<any>, buf_size: number, width: number, height: number): void;
+
 declare function context_data_url(context: number, format: string | interop.Pointer | interop.Reference<any>, quality: number): string;
 
 declare function context_draw_image(context: number, image_data: string | interop.Pointer | interop.Reference<any>, image_len: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
@@ -3137,6 +3162,8 @@ declare function context_get_transform(context: number): number;
 
 declare function context_init_context(width: number, height: number, density: number, buffer_id: number, samples: number, alpha: boolean, font_color: number, ppi: number, direction: TextDirection): number;
 
+declare function context_init_context_with_custom_surface(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: TextDirection): number;
+
 declare function context_is_point_in_path(context: number, path: number, x: number, y: number, rule: FillRule): boolean;
 
 declare function context_is_point_in_stroke(context: number, path: number, x: number, y: number): boolean;
@@ -3154,6 +3181,8 @@ declare function context_quadratic_curve_to(context: number, cpx: number, cpy: n
 declare function context_rect(context: number, x: number, y: number, width: number, height: number): void;
 
 declare function context_reset_transform(context: number): void;
+
+declare function context_resize_custom_surface(context: number, width: number, height: number, density: number, alpha: boolean, ppi: number): void;
 
 declare function context_resize_surface(context: number, width: number, height: number, density: number, buffer_id: number, samples: number, alpha: boolean, ppi: number): void;
 

@@ -1,5 +1,5 @@
 import {G} from "./G";
-import {SVG} from "./SVG";
+import {Svg} from "./SVG";
 import {SVGItem} from "./SVGItem";
 import {Symbol} from './Symbol';
 import {Circle} from "./Circle";
@@ -30,10 +30,10 @@ export class Use extends SVGItem {
 			href = this.href;
 		}
 		let svg = this.parent;
-		while (!(svg instanceof SVG)) {
+		while (!(svg instanceof Svg)) {
 			svg = svg.parent;
 		}
-		if (href && svg instanceof SVG) {
+		if (href && svg instanceof Svg) {
 			this.clone = svg._children.get(href.replace('#', ''));
 			if (this.clone && this.clone.handleValues) {
 				const v = Object.assign(Object.create(Object.getPrototypeOf(this.clone)), this.clone);

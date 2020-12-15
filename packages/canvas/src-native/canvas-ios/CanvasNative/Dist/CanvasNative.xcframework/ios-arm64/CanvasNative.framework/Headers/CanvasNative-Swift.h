@@ -212,13 +212,22 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 # pragma pop_macro("any")
 #endif
 
+@class NSCoder;
+
+SWIFT_CLASS_NAMED("CanvasCPUView")
+@interface CanvasCPUView : UIView
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
+- (void)drawRect:(CGRect)rect;
+@end
+
 typedef SWIFT_ENUM_NAMED(NSInteger, CanvasColorStyleType, "CanvasColorStyleType", open) {
   CanvasColorStyleTypeColor = 0,
   CanvasColorStyleTypeGradient = 1,
   CanvasColorStyleTypePattern = 2,
 };
 
-@class NSCoder;
 @class EAGLContext;
 
 SWIFT_CLASS_NAMED("CanvasGLKView")
@@ -234,8 +243,9 @@ SWIFT_CLASS_NAMED("CanvasGLKView")
 
 SWIFT_CLASS("_TtC12CanvasNative10GLRenderer")
 @interface GLRenderer : NSObject <GLKViewDelegate>
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
 
@@ -281,7 +291,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (void)doDraw;
 - (void)flush;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
-- (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithFrame:(CGRect)frame useCpu:(BOOL)useCpu OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <TNSCanvasListener> _Nullable)listener;
 @property (nonatomic, readonly) float fps;
 - (void)layoutSubviews;
@@ -293,6 +303,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (void)handleMoveToMain;
 - (TNSCanvasRenderingContext * _Nullable)getContext:(NSString * _Nonnull)type SWIFT_WARN_UNUSED_RESULT;
 - (TNSCanvasRenderingContext * _Nullable)getContext:(NSString * _Nonnull)type contextAttributes:(NSDictionary * _Nonnull)contextAttributes SWIFT_WARN_UNUSED_RESULT;
+- (nonnull instancetype)initWithFrame:(CGRect)frame SWIFT_UNAVAILABLE;
 @end
 
 

@@ -227,7 +227,7 @@ import UIKit
   }
   @objc deinit
 }
-@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSCanvas) public class TNSCanvas : UIKit.UIView, CanvasNative.RenderListener {
+@_hasMissingDesignatedInitializers @objcMembers @objc(TNSCanvas) public class TNSCanvas : UIKit.UIView, CanvasNative.RenderListener {
   @objc public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.TNSCanvas>
   @objc public func getViewPtr() -> Swift.UnsafeMutableRawPointer?
   @objc public static func createSVGMatrix() -> CanvasNative.TNSDOMMatrix
@@ -260,7 +260,7 @@ import UIKit
   }
   @objc public func doDraw()
   @objc public func flush()
-  @objc override dynamic public init(frame: CoreGraphics.CGRect)
+  @objc public init(frame: CoreGraphics.CGRect, useCpu: Swift.Bool)
   @objc public func setListener(_ listener: CanvasNative.TNSCanvasListener?)
   @objc public var fps: Swift.Float {
     @objc get
@@ -275,6 +275,7 @@ import UIKit
   @objc public func handleMoveToMain()
   @objc public func getContext(_ type: Swift.String) -> CanvasNative.TNSCanvasRenderingContext?
   @objc public func getContext(_ type: Swift.String, contextAttributes: Foundation.NSDictionary) -> CanvasNative.TNSCanvasRenderingContext?
+  @objc override dynamic public init(frame: CoreGraphics.CGRect)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSTextEncoder) public class TNSTextEncoder : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -2688,6 +2689,12 @@ extension RangeReplaceableCollection {
   @objc deinit
   @objc override dynamic public init(frame: CoreGraphics.CGRect, context: OpenGLES.EAGLContext)
 }
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(CanvasCPUView) public class CanvasCPUView : UIKit.UIView {
+  @objc dynamic public init()
+  @objc override dynamic public init(frame: CoreGraphics.CGRect)
+  @objc override dynamic public func draw(_ rect: CoreGraphics.CGRect)
+  @objc deinit
+}
 public protocol RenderListener {
   func didDraw()
 }
@@ -2701,7 +2708,7 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
     get
   }
 }
-@objc @_inheritsConvenienceInitializers public class GLRenderer : ObjectiveC.NSObject, GLKit.GLKViewDelegate {
+@objc public class GLRenderer : ObjectiveC.NSObject, GLKit.GLKViewDelegate {
   public var attributes: Foundation.NSDictionary
   public func updateDirection(_ direction: Swift.String)
   public var isDirty: Swift.Bool {
@@ -2726,7 +2733,7 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
     get
   }
   public func setupContext()
-  @objc override dynamic public init()
+  public init(useCpu: Swift.Bool)
   public func setRenderListener(listener: CanvasNative.RenderListener?)
   public var isOpaque: Swift.Bool {
     get
@@ -2744,6 +2751,7 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   public func pause()
   public func resume()
   @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreGraphics.CGRect)
+  @objc override dynamic public init()
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSIndexedParameter) public class TNSIndexedParameter : ObjectiveC.NSObject {
   @objc deinit

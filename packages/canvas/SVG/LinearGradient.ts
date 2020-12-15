@@ -1,5 +1,5 @@
 import {SVGItem} from "./SVGItem";
-import {SVG} from "./SVG";
+import {Svg} from "./SVG";
 import {AddChildFromBuilder} from "@nativescript/core";
 import {Stop} from "./Stop";
 
@@ -25,7 +25,7 @@ export class LinearGradient extends SVGItem implements AddChildFromBuilder {
 			ctx = this._canvas.getContext('2d') as any;
 		}
 		let svg: any = this.parent;
-		while (!(svg instanceof SVG)) {
+		while (!(svg instanceof Svg)) {
 			svg = svg.parent;
 			if (svg === undefined || svg === null) {
 				break;

@@ -205,14 +205,14 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     required init?(coder: NSCoder) {
-        renderer = GLRenderer()
+        renderer = GLRenderer(useCpu: false)
+        useCpu = false
         super.init(coder: coder)
         realInit()
     }
     
     func realInit() {
         setup()
-        
         self.isOpaque = false
         self.displayLink = CADisplayLink(target: self, selector: #selector(handleAnimation))
         self.displayLink?.preferredFramesPerSecond = 60
@@ -232,11 +232,15 @@ public class TNSCanvas: UIView, RenderListener {
         }
     }
     
-    public override init(frame: CGRect) {
-        renderer = GLRenderer()
+    private var useCpu: Bool
+    
+    public init(frame: CGRect, useCpu: Bool) {
+        renderer = GLRenderer(useCpu: useCpu)
+        self.useCpu = useCpu
         super.init(frame: frame)
         realInit()
     }
+    
     
     var _fps: Float = 0
     var readyListener: TNSCanvasListener?
@@ -270,13 +274,24 @@ public class TNSCanvas: UIView, RenderListener {
                 renderer.view.layoutIfNeeded()
         }
 
-        if(renderer.drawingBufferHeight == 0 && renderer.drawingBufferWidth == 0){
-            if(!isLoaded){
-                self.isLoaded = false
-               self.readyListener?.contextReady()
+        if(useCpu){
+            if(bounds != .zero || (bounds.size.width > 0 || bounds.size.height > 0)) {
+                if(!isLoaded){
+                    self.isLoaded = true
+                    self.readyListener?.contextReady()
+                }else {
+                    renderer.resize()
+                }
             }
         }else {
-            renderer.resize()
+            if(renderer.drawingBufferHeight == 0 && renderer.drawingBufferWidth == 0){
+                if(!isLoaded){
+                    self.isLoaded = true
+                   self.readyListener?.contextReady()
+                }
+            }else {
+                renderer.resize()
+            }
         }
         lastSize = bounds
     }
@@ -362,6 +377,9 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     public func getContext(_ type: String, contextAttributes: NSDictionary) -> TNSCanvasRenderingContext? {
+        if useCpu && type != "2d" {
+            return nil
+        }
         if type.elementsEqual("2d"){
             if(renderingContext2d == nil){
                 renderer.contextType = .twoD

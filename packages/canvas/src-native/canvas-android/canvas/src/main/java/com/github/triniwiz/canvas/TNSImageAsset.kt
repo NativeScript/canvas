@@ -4,15 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * Created by triniwiz on 5/4/20
@@ -151,7 +146,7 @@ class TNSImageAsset {
 		}
 		try {
 			lock.await()
-		}catch (e: java.lang.Exception){
+		} catch (e: java.lang.Exception) {
 
 		}
 		return result
@@ -171,9 +166,9 @@ class TNSImageAsset {
 					}
 				}
 				val loaded = loadImageFromBytes(bs.buf())
-				if(loaded){
+				if (loaded) {
 					callback.onSuccess(true)
-				}else {
+				} else {
 					callback.onError(error)
 				}
 			} catch (e: Exception) {

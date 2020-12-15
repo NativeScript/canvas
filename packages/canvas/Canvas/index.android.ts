@@ -23,9 +23,8 @@ export class Canvas extends CanvasBase {
 	private _canvas;
 	private _didPause: boolean = false;
 
-	constructor() {
+	constructor(useCpu = false) {
 		super();
-		let useCpu = false;
 		if (arguments.length === 1) {
 			if (typeof arguments[0] === 'boolean') {
 				useCpu = arguments[0];

@@ -41,16 +41,118 @@ import {
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from "./webgl2";
 declare var com, java;
 let zen3d
-
+import * as Svg from '@nativescript/canvas/SVG';
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
-
+	private svg: Svg.Svg;
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		this.draw();
+		console.log('canvas ready');
+		//this.draw();
+	}
+
+	svgCanvasLoaded(args) {
+		this.svg = args.object;
+		console.log('svg ready');
+		this.svg.batch(() => {
+			this.drawSvg(this.svg);
+		});
+	}
+
+	drawSvg(args: Svg.Svg) {
+
+		const circle = new Svg.Circle();
+		circle.cx = 100;
+		circle.cy = 100;
+		circle.r = 50;
+		circle.fill = 'gold';
+		circle.id = 'circle';
+		args.addChild(circle);
+
+		const rect = new Svg.Rect();
+		rect.x = 0;
+		rect.y = 200;
+		rect.width = 300;
+		rect.height = 300;
+		rect.stroke = 'green';
+		rect.fill = 'black';
+		rect.id = 'rect';
+		args.addChild(rect);
+
+		const image = new Svg.Image();
+		image.href = 'https://source.unsplash.com/1600x900/?water';
+		image.x = 0;
+		image.y = 600;
+		image.width = 500;
+		image.height = 500;
+		args.addChild(image);
+
+		const image2 = new Svg.Image();
+		image2.href = 'https://source.unsplash.com/1600x900/?nature';
+		image2.x = 600;
+		image2.y = 600;
+		image2.width = 500;
+		image2.height = 500;
+		args.addChild(image2);
+
+		const path = new Svg.Path();
+		path.d = "M150 0 L75 200 L225 200 Z";
+		args.addChild(path);
+
+		const ellipse = new Svg.Ellipse();
+		ellipse.cx = 500;
+		ellipse.cy = 80;
+		ellipse.rx = 100;
+		ellipse.ry = 50;
+		ellipse.setInlineStyle('fill:yellow;stroke:purple;stroke-width:2');
+		args.addChild(ellipse);
+
+		const line = new Svg.Line();
+		line.x1 = 0;
+		line.y1 = 0;
+		line.x2 = 200;
+		line.y2 = 200;
+		line.setInlineStyle('stroke:rgb(255,0,0);stroke-width:2');
+		args.addChild(line);
+
+
+		const polygon = new Svg.Polygon();
+		polygon.points = "200,10 250,190 160,210";
+		polygon.setInlineStyle('fill:lime;stroke:purple;stroke-width:1');
+		args.addChild(polygon);
+
+
+		const polyline = new Svg.Polyline();
+		polyline.points = "20,20 40,25 60,40 80,120 120,140 200,180";
+		polyline.setInlineStyle("fill:none;stroke:black;stroke-width:3");
+		args.addChild(polyline);
+
+		const text = new Svg.Text();
+		text.text = "I love SVG!";
+		text.x = 0;
+		text.y = 15;
+		args.addChild(text);
+		const g = new Svg.G();
+
+		const path1 = new Svg.Path();
+		path1.d = "M5 20 l215 0";
+		path1.stroke = "red";
+
+		const path2 = new Svg.Path();
+		path2.d = "M5 40 l215 0";
+		path2.stroke = "black";
+
+		const path3 = new Svg.Path();
+		path3.d = "M5 60 l215 0";
+		path3.stroke = "blue";
+		g.addChildren(path1, path2, path3);
+		args.addChild(g);
 	}
 
 	draw() {
+		this.svg.batch(() => {
+			this.drawSvg(this.svg);
+		});
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
@@ -124,7 +226,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
 		//march(this.canvas);
-		this.putImageDataDemo(this.canvas);
+		//this.putImageDataDemo(this.canvas);
 		//	this.drawImage(this.canvas);
 		// ctx.fillStyle = 'blue';
 		// ctx.fillRect(0,0,400,400)
@@ -1302,7 +1404,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		function draw() {
 			var ctx = canvas.getContext('2d');
-			if(!ctx){
+			if (!ctx) {
 				return;
 			}
 

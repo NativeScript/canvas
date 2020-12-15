@@ -6,14 +6,11 @@ import android.os.Build
 import android.os.Build.VERSION_CODES
 import androidx.annotation.RequiresApi
 import com.github.triniwiz.canvas.TNSWebGLRenderingContext
-import kotlinx.coroutines.runBlocking
 import java.nio.*
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.CountDownLatch
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * Created by triniwiz on 5/1/20
@@ -238,9 +235,9 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 			var size = srcData.size
 			val offset = srcOffset * SIZE_OF_BYTE
 			val overrideLength = srcLengthOverride * SIZE_OF_BYTE
-			if(srcLengthOverride == 0){
+			if (srcLengthOverride == 0) {
 				size = size - offset
-			}else if(overrideLength > size - offset) {
+			} else if (overrideLength > size - offset) {
 
 			}
 			buffer.position(offset)
@@ -712,38 +709,42 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	}
 
 	fun getIndexedParameter(target: Int, index: Int): Any? {
-		return runBlocking {
-			suspendCoroutine<Any?> {
-				runOnGLThread(Runnable {
-					val binding = IndexedParameter()
-					when (target) {
-						GLES30.GL_UNIFORM_BUFFER_BINDING, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_BINDING -> {
-							val newTarget = IntBuffer.allocate(1)
-							GLES30.glGetIntegerv(target, newTarget)
-							// NO BINDING RETURN
-							if (newTarget[0] == 0) {
-								it.resume(null)
-							}
-							val buffer = IntBuffer.allocate(1)
-							GLES30.glGetIntegeri_v(newTarget[0], index, buffer)
-							binding.bufferValue = buffer[0]
-							binding.isBuffer = true
-							it.resume(binding)
-						}
-						GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_SIZE, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_START, GLES30.GL_UNIFORM_BUFFER_SIZE, GLES30.GL_UNIFORM_BUFFER_START -> {
-							val value = LongBuffer.allocate(1)
-							GLES30.glGetInteger64i_v(target, index, value)
-							binding.isBuffer = false
-							binding.value = value[0]
-							it.resume(binding)
-						}
-						else -> {
-							it.resume(null)
-						}
+		val lock = CountDownLatch(1)
+		var value: IndexedParameter? = null
+		runOnGLThread(Runnable {
+			val binding = IndexedParameter()
+			when (target) {
+				GLES30.GL_UNIFORM_BUFFER_BINDING, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_BINDING -> {
+					val newTarget = IntBuffer.allocate(1)
+					GLES30.glGetIntegerv(target, newTarget)
+					// NO BINDING RETURN
+					if (newTarget[0] == 0) {
+						value = null
 					}
-				})
+					val buffer = IntBuffer.allocate(1)
+					GLES30.glGetIntegeri_v(newTarget[0], index, buffer)
+					binding.bufferValue = buffer[0]
+					binding.isBuffer = true
+					value = binding
+				}
+				GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_SIZE, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_START, GLES30.GL_UNIFORM_BUFFER_SIZE, GLES30.GL_UNIFORM_BUFFER_START -> {
+					val ptr = LongBuffer.allocate(1)
+					GLES30.glGetInteger64i_v(target, index, ptr)
+					binding.isBuffer = false
+					binding.value = ptr[0]
+					value = binding
+				}
+				else -> {
+					value = null
+				}
 			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (e: Exception) {
 		}
+		return value
 	}
 
 	fun getInternalformatParameter(target: Int, internalformat: Int, pname: Int): Any? {

@@ -1,5 +1,5 @@
-import {SVGItem} from "./SVGItem";
-import {CanvasGradient} from '../Canvas2D';
+import { SVGItem } from "./SVGItem";
+import { CanvasGradient } from '../Canvas2D';
 
 export class Rect extends SVGItem {
 	x: any = 0;

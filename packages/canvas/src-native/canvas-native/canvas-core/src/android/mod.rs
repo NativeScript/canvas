@@ -1,11 +1,15 @@
+use std::os::raw::c_void;
+
 use android_logger::Config;
 use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JString};
+use jni::objects::{JByteBuffer, JClass, JObject, JString};
 use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
 use log::{debug, info};
 use log::Level;
-use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, ISize, PixelGeometry, Surface};
+use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry, Rect, Size, Surface};
 use skia_safe::gpu::gl::Interface;
+use skia_safe::image::CachingHint;
+use skia_safe::wrapper::PointerWrapper;
 
 use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;
@@ -126,9 +130,18 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContextWit
         alpha: alpha == JNI_TRUE,
         ppi,
     };
+    let info = ImageInfo::new(
+        ISize::new(width as i32, height as i32),
+        ColorType::RGBA8888,
+        AlphaType::Premul,
+        None,
+    );
+
     Box::into_raw(Box::new(Context {
-        surface: Surface::new_raster_n32_premul(
-            ISize::new(width as i32, height as i32)
+        surface: Surface::new_raster(
+            &info,
+            None,
+            None,
         ).unwrap(),
         path: Path::default(),
         state: State::from_device(device, TextDirection::from(direction)),
@@ -140,7 +153,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContextWit
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeDestroyContext(_: JNIEnv,
-                                                                                            _: JClass, context: jlong) {
+                                                                                 _: JClass, context: jlong) {
     if context == 0 {
         return;
     }
@@ -223,6 +236,52 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeResizeSurface(
     }
 }
 
+#[no_mangle]
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeResizeCustomSurface(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    width: jfloat,
+    height: jfloat,
+    density: jfloat,
+    alpha: jboolean,
+    ppi: jfloat,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        let mut device = Device {
+            width,
+            height,
+            density,
+            non_gpu: true,
+            samples: 0,
+            alpha: alpha == JNI_TRUE,
+            ppi,
+        };
+
+        let info = ImageInfo::new(
+            ISize::new(width as i32, height as i32),
+            ColorType::RGBA8888,
+            AlphaType::Premul,
+            None,
+        );
+
+        if let Some(surface) = Surface::new_raster(
+            &info,
+            None,
+            None,
+        ) {
+            context.surface = surface;
+            context.device = device;
+            context.path = Path::default();
+            context.reset_state();
+        }
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeDataURL(
@@ -284,65 +343,35 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeFlush(_: JNIEn
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeCustomWithBitmapFlush(env: JNIEnv, _: JNIEnv,
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeCustomWithBitmapFlush(env: JNIEnv,
                                                                                         _: JClass, context: jlong, bitmap: JObject) {
     unsafe {
         if context == 0 {
             return;
         }
-
-
-        let native_interface = env.get_native_interface();
-        let bitmap = bitmap.into_inner();
-        let bitmap_info: *mut crate::android::utils::bitmap::AndroidBitmapInfo = Box::into_raw(Box::new(crate::android::utils::bitmap::AndroidBitmapInfo::default()));
-
-        unsafe {
-            if crate::android::utils::bitmap::AndroidBitmap_getInfo(native_interface as _, bitmap, bitmap_info)
-                < crate::android::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-            {
-                debug!("nativeCustomWithBitmapFlush: Get Bitmap Info Failed");
-                return;
+        utils::image::bitmap_handler(env, bitmap, Box::new(
+            move |image_data, image_info| {
+                let info = ImageInfo::new(
+                    ISize::new(image_info.width as i32, image_info.height as i32),
+                    ColorType::RGBA8888,
+                    AlphaType::Premul,
+                    None,
+                );
+                let context: *mut Context = context as _;
+                let context = &mut *context;
+                let mut surface = Surface::new_raster_direct(
+                    &info, image_data, None, None,
+                ).unwrap();
+                let canvas = surface.canvas();
+                let mut paint = skia_safe::Paint::default();
+                paint.set_style(skia_safe::PaintStyle::Fill);
+                paint.set_blend_mode(skia_safe::BlendMode::Clear);
+                canvas.draw_rect(
+                    Rect::from_xywh(0f32, 0f32, image_info.width as f32, image_info.height as f32),
+                    &paint,
+                );
+                context.draw_on_surface(&mut surface);
             }
-        }
-        let bitmap_info = *unsafe { Box::from_raw(bitmap_info) };
-        let mut pixels = std::ptr::null_mut() as *mut std::os::raw::c_void;
-        let mut pixels_ptr: *mut *mut std::os::raw::c_void = &mut pixels;
-        unsafe {
-            if crate::android::utils::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
-                < crate::android::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-            {
-                debug!("nativeCustomWithBitmapFlush: Get Bitmap Lock Failed");
-                return;
-            }
-        }
-        let length = (bitmap_info.height * bitmap_info.stride as u32) as usize;
-        let slice: &mut [u8] =
-            unsafe { std::slice::from_raw_parts_mut(pixels as *mut u8, length as usize) };
-
-
-        let context: *mut Context = context as _;
-        let context = &mut *context;
-
-
-        let info = ImageInfo::new(
-            ISize::new(bitmap_info.width as i32, bitmap_info.height as i32),
-            ColorType::RGBA8888,
-            AlphaType::Premul,
-            None,
-        );
-        let surface = &mut context.surface;
-
-        let mut dst_surface = Surface::new_raster_direct(&info, slice, None, None).unwrap();
-        let dst_canvas = dst_surface.canvas();
-        surface.draw(dst_canvas, ISize::new(0, 0), None);
-        surface.flush_and_submit();
-        dst_surface.flush_and_submit();
-
-        unsafe {
-            if crate::android::utils::bitmap::AndroidBitmap_unlockPixels(native_interface as _, bitmap) < crate::android::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-            {
-                debug!("nativeCustomWithBitmapFlush: Unlock Bitmap Failed");
-            }
-        }
+        ))
     }
 }

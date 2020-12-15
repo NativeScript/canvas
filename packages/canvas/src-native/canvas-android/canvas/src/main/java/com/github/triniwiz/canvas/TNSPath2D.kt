@@ -11,11 +11,11 @@ class TNSPath2D {
 	}
 
 	constructor(path2D: TNSPath2D) {
-		path = nativeInitWithPath(path2D.path)
+		path = nativeCreateWithPath(path2D.path)
 	}
 
 	constructor(data: String) {
-		path = nativeInitWithData(data)
+		path = nativeCreateWithString(data)
 	}
 
 	fun addPath(path2D: TNSPath2D) {
@@ -89,10 +89,10 @@ class TNSPath2D {
 		private external fun nativeInit(): Long
 
 		@JvmStatic
-		private external fun nativeInitWithPath(path: Long): Long
+		private external fun nativeCreateWithPath(path: Long): Long
 
 		@JvmStatic
-		private external fun nativeInitWithData(data: String): Long
+		private external fun nativeCreateWithString(data: String): Long
 
 		@JvmStatic
 		private external fun nativeAddPath(path: Long, pathSrc: Long): Long

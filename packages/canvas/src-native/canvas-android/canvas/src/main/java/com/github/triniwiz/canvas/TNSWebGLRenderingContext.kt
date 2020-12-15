@@ -5,14 +5,13 @@ import android.opengl.GLES20
 import android.os.Build
 import android.os.Build.VERSION_CODES
 import com.github.triniwiz.canvas.extensions.*
-import kotlinx.coroutines.runBlocking
 import java.io.UnsupportedEncodingException
 import java.nio.*
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.CountDownLatch
-import kotlin.coroutines.suspendCoroutine
+
 
 /**
  * Created by triniwiz on 4/21/20

@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.HandlerCompat.postDelayed
 import com.github.triniwiz.canvas.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -33,6 +34,9 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
+		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
+			.addView(canvas)
+
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
 				print("Is Ready")
@@ -847,7 +851,7 @@ class MainActivity : AppCompatActivity() {
 		//addPath(canvas!!)
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
-		//ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+		ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 		//drawText(ctx!!)
 		// ballExample(ctx!!)
 		//drawPattern(canvas!!)
@@ -865,16 +869,15 @@ class MainActivity : AppCompatActivity() {
 			//canvas?.flush()
 			// ballExample(ctx!!)
 		}
-		//  ctx = canvas?.getContext("2d") as CanvasRenderingContext2D?
-
+		//getImageData(ctx!!)
 		// drawImageExample(ctx!!)
 		//drawPattern(canvas!!)
 		// ctx = canvas?.getContext("2d") as CanvasRenderingContext2D?
-		//drawImageExample(ctx!!)
-		// drawFace(ctx!!)
+		//drawImageExample(canvas!!)
+		drawFace(ctx!!)
 		//ctx?.fillStyle = Color.BLACK
 		// ctx?.fillRect(0F,0F,200f,200f)
-		// ballExample(ctx!!)
+		 //ballExample(ctx!!)
 		/* ctx?.fillStyle = CanvasColorStyle.Color(Color.BLUE)
 		 ctx?.clearRect(0F,0F, canvas!!.width.toFloat(), canvas!!.height.toFloat())
 		 ctx?.fillRect(0F,0F,200f,200f)
@@ -900,7 +903,7 @@ class MainActivity : AppCompatActivity() {
 
 		 */
 
-		//  drawHouse(ctx!!)
+		  //drawHouse(ctx!!)
 		/*canvasView.toDataURLAsync {
 				Log.d("com.test", "aaaa: " + it)
 		}
@@ -916,7 +919,7 @@ class MainActivity : AppCompatActivity() {
 
 		// drawPatterWithCanvas(canvas!!)
 		//drawImageExample(canvas!!)
-		drawImageFromUrl(canvas!!, "https://source.unsplash.com/random")
+		//drawImageFromUrl(canvas!!, "https://source.unsplash.com/random")
 		// drawImageSmoothingEnabled(ctx!!)
 		// drawElements(canvas!!)
 		//  Log.d("com.test", "ext: " +   gl!!.getExtension("ANGLE_instanced_arrays"))
@@ -1608,6 +1611,7 @@ class MainActivity : AppCompatActivity() {
 		ctx.lineTo(150f, 60f);
 		ctx.lineTo(250f, 140f);
 		ctx.closePath();
+
 		ctx.stroke();
 	}
 

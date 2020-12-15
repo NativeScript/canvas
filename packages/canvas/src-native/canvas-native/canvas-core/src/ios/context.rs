@@ -125,6 +125,94 @@ pub extern "C" fn context_init_context(
     })) as c_longlong
 }
 
+
+#[no_mangle]
+pub extern "C" fn context_init_context_with_custom_surface(
+    width: c_float,
+    height: c_float,
+    density: c_float,
+    alpha: bool,
+    font_color: c_int,
+    ppi: c_float,
+    direction: TextDirection,
+) -> c_longlong {
+    let density = 1.0;
+    let mut device = Device {
+        width,
+        height,
+        density,
+        non_gpu: true,
+        samples: 0,
+        alpha,
+        ppi,
+    };
+    let info = ImageInfo::new(
+        ISize::new(width as i32, height as i32),
+        ColorType::RGBA8888,
+        AlphaType::Premul,
+        None,
+    );
+
+    Box::into_raw(Box::new(Context {
+        surface: Surface::new_raster(
+            &info,
+            None,
+            None,
+        ).unwrap(),
+        path: Path::default(),
+        state: State::from_device(device, direction),
+        state_stack: vec![],
+        font_color: Color::new(font_color as u32),
+        device,
+    })) as c_longlong
+}
+
+#[no_mangle]
+pub extern "C" fn context_resize_custom_surface(
+    context: c_longlong,
+    width: c_float,
+    height: c_float,
+    density: c_float,
+    alpha: bool,
+    ppi: c_float,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        let mut device = Device {
+            width,
+            height,
+            density,
+            non_gpu: true,
+            samples: 0,
+            alpha,
+            ppi,
+        };
+
+        let info = ImageInfo::new(
+            ISize::new(width as i32, height as i32),
+            ColorType::RGBA8888,
+            AlphaType::Premul,
+            None,
+        );
+
+        if let Some(surface) = Surface::new_raster(
+            &info,
+            None,
+            None,
+        ) {
+            context.surface = surface;
+            context.device = device;
+            context.path = Path::default();
+            context.reset_state();
+        }
+    }
+}
+
+
 #[no_mangle]
 pub extern "C" fn context_resize_surface(
     context: c_longlong,
@@ -282,6 +370,37 @@ pub extern "C" fn context_flush(context: c_longlong) {
         let context: *mut Context = context as _;
         let context = &mut *context;
         context.flush()
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn context_custom_with_buffer_flush(context: c_longlong, buf: *mut u8, buf_size: usize, width: f32, height: f32) {
+    unsafe {
+        if context == 0 || buf.is_null() || buf_size == 0 {
+            return;
+        }
+        let info = ImageInfo::new(
+            ISize::new(width as i32, height as i32),
+            ColorType::RGBA8888,
+            AlphaType::Premul,
+            None,
+        );
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        let image_data = std::slice::from_raw_parts_mut(buf, buf_size);
+        let mut surface = Surface::new_raster_direct(
+            &info, image_data, None, None,
+        ).unwrap();
+        let canvas = surface.canvas();
+        let mut paint = skia_safe::Paint::default();
+        paint.set_style(skia_safe::PaintStyle::Fill);
+        paint.set_blend_mode(skia_safe::BlendMode::Clear);
+        canvas.draw_rect(
+            Rect::from_xywh(0f32, 0f32, width as f32, height as f32),
+            &paint,
+        );
+        context.draw_on_surface(&mut surface);
     }
 }
 

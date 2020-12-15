@@ -337,6 +337,7 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-80028d8715744c62/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/unicase-9b7a0afbeb2e03a4/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-5ecc0f84bab0d872/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-14a4ee1b083bbf61/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

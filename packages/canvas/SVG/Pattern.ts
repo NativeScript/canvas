@@ -1,7 +1,7 @@
 import {SVGItem} from "./SVGItem";
 import {Canvas} from "../Canvas";
 import {AddChildFromBuilder, PercentLength} from "@nativescript/core";
-import {SVG} from "./SVG";
+import {Svg} from "./SVG";
 
 export class Pattern extends SVGItem implements AddChildFromBuilder {
 	_pattern: Canvas;
@@ -41,7 +41,7 @@ export class Pattern extends SVGItem implements AddChildFromBuilder {
 	_getFillOrStrokeStyle() {
 		const canvas = Canvas.createCustomView();
 		let svg = this.parent;
-		while (!(svg instanceof SVG)) {
+		while (!(svg instanceof Svg)) {
 			svg = svg.parent;
 		}
 		const height = svg.getMeasuredHeight() || 0;

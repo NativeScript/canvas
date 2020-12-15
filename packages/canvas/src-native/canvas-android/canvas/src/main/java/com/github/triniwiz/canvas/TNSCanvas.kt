@@ -204,22 +204,26 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		nativeDestroyContext(nativeContext)
-		nativeContext = 0
+		if (nativeContext != 0L) {
+			nativeDestroyContext(nativeContext)
+			nativeContext = 0
+		}
 	}
 
 	var cpuHandler: Handler? = null
 	var cpuHandlerThread: HandlerThread? = null
 	fun queueEvent(runnable: Runnable?) {
-		if (useCpu) {
-			if (!cpuHandlerThread!!.isAlive || cpuHandlerThread!!.isInterrupted) {
-				cpuHandlerThread = null
-				cpuHandler = null
-				initCPUThread()
+		runnable?.let {
+			if (useCpu) {
+				if (!cpuHandlerThread!!.isAlive || cpuHandlerThread!!.isInterrupted) {
+					cpuHandlerThread = null
+					cpuHandler = null
+					initCPUThread()
+				}
+				cpuHandler?.post(it)
+			} else {
+				surface?.queueEvent(it)
 			}
-			cpuHandler!!.post(runnable!!)
-		} else {
-			surface!!.queueEvent(runnable)
 		}
 	}
 
@@ -502,7 +506,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			if (type == "2d") {
 				contextType = ContextType.CANVAS
 			}
-			if (renderingContext2d == null && webGLRenderingContext == null && webGL2RenderingContext == null) {
+			if (!useCpu && renderingContext2d == null && webGLRenderingContext == null && webGL2RenderingContext == null) {
 				surface?.setupContext()
 			}
 		}
@@ -611,6 +615,16 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		): Long
 
 		@JvmStatic
+		external fun nativeResizeCustomSurface(
+			context: Long,
+			width: Float,
+			height: Float,
+			density: Float,
+			alpha: Boolean,
+			ppi: Int,
+		)
+
+		@JvmStatic
 		external fun nativeResizeSurface(
 			context: Long,
 			width: Float,
@@ -623,13 +637,13 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		)
 
 		@JvmStatic
-		private external fun nativeDestroyContext(context: Long): Long
+		private external fun nativeDestroyContext(context: Long)
 
 		@JvmStatic
-		external fun nativeFlush(context: Long): Long
+		external fun nativeFlush(context: Long)
 
 		@JvmStatic
-		external fun nativeCustomWithBitmapFlush(context: Long, view: Bitmap?): Long
+		external fun nativeCustomWithBitmapFlush(context: Long, view: Bitmap)
 
 		@JvmStatic
 		private external fun nativeDataURL(context: Long, type: String?, quality: Float): String?

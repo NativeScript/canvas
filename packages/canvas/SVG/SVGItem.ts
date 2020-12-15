@@ -1,8 +1,9 @@
-import {PercentLength, View} from '@nativescript/core';
+import {PercentLength, View, Screen} from '@nativescript/core';
 import {Canvas} from "../Canvas";
-import {SVG} from "./SVG";
+import {Svg} from "./SVG";
 
 export class SVGItem extends View {
+	_scale: number = Screen.mainScreen.scale;
 	set stroke(value) {
 		(this.style as any).stroke = value;
 	}
@@ -145,13 +146,13 @@ export class SVGItem extends View {
 	_getRealSize(value, parent?: any, type?: string) {
 		if (!parent) {
 			parent = this.parent;
-			while (!(parent instanceof SVG)) {
+			while (!(parent instanceof Svg)) {
 				parent = parent.parent;
 				if (parent === undefined || parent === null) {
 					break;
 				}
 			}
-			if (parent instanceof SVG && (type === 'width' || type === 'height')) {
+			if (parent instanceof Svg && (type === 'width' || type === 'height')) {
 				if (type === 'width') {
 					parent = parent.getMeasuredWidth();
 				}
@@ -178,33 +179,33 @@ export class SVGItem extends View {
 
 	_appendChild(id, child) {
 		let parent = this.parent;
-		while (!(parent instanceof SVG)) {
+		while (!(parent instanceof Svg)) {
 			parent = parent.parent;
 			if (parent === undefined || parent === null) {
 				break;
 			}
 		}
-		if (parent instanceof SVG) {
+		if (parent instanceof Svg) {
 			parent._children.set(id, child);
 		}
 	}
 
 	_removeChild(id) {
 		let parent = this.parent;
-		while (!(parent instanceof SVG)) {
+		while (!(parent instanceof Svg)) {
 			parent = parent.parent;
 			if (parent === undefined || parent === null) {
 				break;
 			}
 		}
-		if (parent instanceof SVG) {
+		if (parent instanceof Svg) {
 			parent._children.delete(id);
 		}
 	}
 
 	_getViewById(name: string) {
 		let parent = (this as any).parent;
-		while (!(parent instanceof SVG)) {
+		while (!(parent instanceof Svg)) {
 			parent = parent.parent;
 			if (parent === undefined || parent == null) {
 				break;

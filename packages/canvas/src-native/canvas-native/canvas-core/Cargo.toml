@@ -1,6 +1,6 @@
 [package]
 name = "canvas-native"
-version = "0.9.7"
+version = "0.9.9"
 authors = ["Osei Fortune <fortune.osei@yahoo.com>"]
 edition = "2018"
 build = "build.rs"

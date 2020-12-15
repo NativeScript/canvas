@@ -1,9 +1,7 @@
+use std::borrow::BorrowMut;
 use std::os::raw::c_float;
 
-use skia_safe::{
-    BlendMode, BlurStyle, ClipOp, Color, EncodedImageFormat, Image, ImageInfo, MaskFilter, Matrix,
-    PathOp, Point, Rect, Surface,
-};
+use skia_safe::{AlphaType, BlendMode, BlurStyle, ClipOp, Color, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, MaskFilter, Matrix, PathOp, Pixmap, Point, Rect, Size, Surface};
 use skia_safe::canvas::SrcRectConstraint;
 use skia_safe::paint::Style;
 
@@ -140,5 +138,12 @@ impl Context {
 
     pub fn flush(&mut self) {
         self.surface.canvas().flush();
+    }
+
+    pub fn draw_on_surface(&mut self, surface: &mut Surface) {
+        let src_surface = &mut self.surface;
+        //let ss = src_surface.image_snapshot();
+       //surface.canvas().draw_image(ss, (0, 0), None);
+        src_surface.draw(surface.canvas(),(0, 0), None)
     }
 }

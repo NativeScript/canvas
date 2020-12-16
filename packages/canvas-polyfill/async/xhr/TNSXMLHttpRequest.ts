@@ -2,7 +2,7 @@ import { CancellablePromise, Http } from '../http/http';
 import { HttpError, HttpRequestOptions, ProgressEvent } from '../http/http-request-common';
 import { FileManager } from '../file/file';
 import { isNullOrUndefined, isObject, isFunction } from '@nativescript/core/utils/types';
-import { knownFolders, path as filePath, File as fsFile } from '@nativescript/core';
+import { knownFolders, path as filePath, File as fsFile, isIOS, isAndroid } from '@nativescript/core';
 
 enum XMLHttpRequestResponseType {
 	empty = '',
@@ -10,7 +10,7 @@ enum XMLHttpRequestResponseType {
 	json = 'json',
 	document = 'document',
 	arraybuffer = 'arraybuffer',
-	blob = 'blob'
+	blob = 'blob',
 }
 
 const statuses = {
@@ -53,20 +53,19 @@ const statuses = {
 	502: 'Bad Gateway',
 	503: 'Service Unavailable',
 	504: 'Gateway Timeout',
-	505: 'HTTP Version Not Supported'
+	505: 'HTTP Version Not Supported',
 };
 
 enum Status {
 	UNSENT = 0,
 	OPENED = 0,
 	LOADING = 200,
-	DONE = 200
+	DONE = 200,
 }
 
 export class TNSXMLHttpRequestUpload {
 	private _request: TNSXMLHttpRequest;
-	private _listeners: Map<string, Array<Function>> = new Map<string,
-		Array<Function>>();
+	private _listeners: Map<string, Array<Function>> = new Map<string, Array<Function>>();
 
 	constructor(req) {
 		this._request = req;
@@ -80,13 +79,13 @@ export class TNSXMLHttpRequestUpload {
 
 	public removeEventListener(eventName: string, toDetach: (e) => void) {
 		let handlers = this._listeners.get(eventName) || [];
-		handlers = handlers.filter(handler => handler !== toDetach);
+		handlers = handlers.filter((handler) => handler !== toDetach);
 		this._listeners.set(eventName, handlers);
 	}
 
 	_emitEvent(eventName: string, ...args: Array<any>) {
 		const handlers = this._listeners.get(eventName) || [];
-		handlers.forEach(handler => {
+		handlers.forEach((handler) => {
 			handler.apply(this, ...args);
 		});
 	}
@@ -132,8 +131,7 @@ export class TNSXMLHttpRequest {
 	private _responseURL: string = '';
 	private _httpContent: any;
 	private _upload: TNSXMLHttpRequestUpload;
-	private _listeners: Map<string, Array<Function>> = new Map<string,
-		Array<Function>>();
+	private _listeners: Map<string, Array<Function>> = new Map<string, Array<Function>>();
 	withCredentials: boolean;
 
 	constructor() {
@@ -155,10 +153,7 @@ export class TNSXMLHttpRequest {
 	}
 
 	get responseText() {
-		if (
-			this._responseType === XMLHttpRequestResponseType.text ||
-			this._responseType === XMLHttpRequestResponseType.json
-		) {
+		if (this._responseType === XMLHttpRequestResponseType.text || this._responseType === XMLHttpRequestResponseType.json) {
 			return this._responseText;
 		}
 		return null;
@@ -173,10 +168,7 @@ export class TNSXMLHttpRequest {
 	}
 
 	get statusText(): string {
-		if (
-			this._readyState === this.UNSENT ||
-			this._readyState === this.OPENED
-		) {
+		if (this._readyState === this.UNSENT || this._readyState === this.OPENED) {
 			return '';
 		}
 		return statuses[this.status];
@@ -186,18 +178,10 @@ export class TNSXMLHttpRequest {
 		return this._upload;
 	}
 
-	private textTypes: string[] = [
-		'text/plain',
-		'application/xml',
-		'application/rss+xml',
-		'text/html',
-		'text/xml',
-	];
+	private textTypes: string[] = ['text/plain', 'application/xml', 'application/rss+xml', 'text/html', 'text/xml'];
 
 	get responseXML(): any {
-		const header =
-			this.getResponseHeader('Content-Type') ||
-			this.getResponseHeader('content-type');
+		const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
 		const contentType = header && header.toLowerCase();
 		if (this.isTextContentType(contentType)) {
 			if (this._responseType === XMLHttpRequestResponseType.document) {
@@ -219,21 +203,13 @@ export class TNSXMLHttpRequest {
 	}
 
 	private _setResponseType() {
-		const header =
-			this.getResponseHeader('Content-Type') ||
-			this.getResponseHeader('content-type');
+		const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
 		const contentType = header && header.toLowerCase();
 		if (contentType) {
-			if (
-				contentType.indexOf('application/json') >= 0 ||
-				contentType.indexOf('+json') >= 0
-			) {
+			if (contentType.indexOf('application/json') >= 0 || contentType.indexOf('+json') >= 0) {
 				this._responseType = XMLHttpRequestResponseType.json;
 			} else if (this.isTextContentType(contentType)) {
-				if (
-					contentType.indexOf('text/html') ||
-					contentType.indexOf('text/xml')
-				) {
+				if (contentType.indexOf('text/html') || contentType.indexOf('text/xml')) {
 					this._responseType = XMLHttpRequestResponseType.document;
 				}
 				this._responseType = XMLHttpRequestResponseType.text;
@@ -261,11 +237,7 @@ export class TNSXMLHttpRequest {
 	}
 
 	public getResponseHeader(header: string): string {
-		if (
-			typeof header === 'string' &&
-			this._readyState > 1 &&
-			this._headers
-		) {
+		if (typeof header === 'string' && this._readyState > 1 && this._headers) {
 			header = header.toLowerCase();
 			if (typeof this._headers === 'object') {
 				const keys = Object.keys(this._headers);
@@ -282,14 +254,10 @@ export class TNSXMLHttpRequest {
 		return null;
 	}
 
-	public overrideMimeType(mime: string) {
-	}
+	public overrideMimeType(mime: string) {}
 
 	set responseType(value: any) {
-		if (
-			value === XMLHttpRequestResponseType.empty ||
-			value in XMLHttpRequestResponseType
-		) {
+		if (value === XMLHttpRequestResponseType.empty || value in XMLHttpRequestResponseType) {
 			this._responseType = value;
 		} else {
 			throw new Error(`Response type of '${value}' not supported.`);
@@ -323,26 +291,19 @@ export class TNSXMLHttpRequest {
 			let encodingType = encodings[i];
 			// let java decide :D
 			if (encodingType === null) {
-				value = (new java.lang.String(data)).toString();
+				value = new java.lang.String(data).toString();
 				break;
 			}
 			try {
 				let encoding = java.nio.charset.Charset.forName(encodingType);
-				value = (new java.lang.String(data, encoding)).toString();
+				value = new java.lang.String(data, encoding).toString();
 				break;
-			} catch (e) {
-			}
+			} catch (e) {}
 		}
 		return value;
 	}
 
-	open(
-		method: string,
-		url: string,
-		async: boolean = true,
-		username: string | null = null,
-		password: string | null = null
-	): void {
+	open(method: string, url: string, async: boolean = true, username: string | null = null, password: string | null = null): void {
 		this._headers = {};
 		this._responseURL = '';
 		this._httpContent = null;
@@ -358,9 +319,7 @@ export class TNSXMLHttpRequest {
 
 	setRequestHeader(header: string, value) {
 		if (this._readyState !== this.OPENED) {
-			throw new Error(
-				"Failed to execute 'setRequestHeader' on 'XMLHttpRequest': The object's state must be OPENED."
-			);
+			throw new Error("Failed to execute 'setRequestHeader' on 'XMLHttpRequest': The object's state must be OPENED.");
 		}
 		if (typeof this._headers === 'object') {
 			this._headers[header] = value;
@@ -369,27 +328,18 @@ export class TNSXMLHttpRequest {
 
 	send(body: any = null): void {
 		if (this._readyState !== this.OPENED) {
-			throw new Error(
-				"Failed to execute 'send' on 'XMLHttpRequest': The object's state must be OPENED"
-			);
+			throw new Error("Failed to execute 'send' on 'XMLHttpRequest': The object's state must be OPENED");
 		}
 
 		if (!this._headers['Accept']) {
 			this._headers['Accept'] = '*/*';
 		}
-		if (
-			typeof this._request.method === 'string' &&
-			this._request.method.toLowerCase() === 'get' &&
-			typeof this._request.url === 'string' && !this._request.url.startsWith('http')
-		) {
+		if (typeof this._request.method === 'string' && this._request.method.toLowerCase() === 'get' && typeof this._request.url === 'string' && !this._request.url.startsWith('http')) {
 			let path;
 			if (this._request.url.startsWith('file://')) {
 				path = this._request.url.replace('file://', '');
 			} else if (this._request.url.startsWith('~/')) {
-				path = filePath.join(
-					knownFolders.currentApp().path,
-					this._request.url.replace('~/', '')
-				);
+				path = filePath.join(knownFolders.currentApp().path, this._request.url.replace('~/', ''));
 			} else if (this._request.url.startsWith('/')) {
 				path = this._request.url;
 			}
@@ -409,10 +359,7 @@ export class TNSXMLHttpRequest {
 				target: this,
 			};
 
-			const startEvent = new ProgressEvent(
-				'loadstart',
-				this._lastProgress
-			);
+			const startEvent = new ProgressEvent('loadstart', this._lastProgress);
 
 			if (this.onloadstart) {
 				this.onloadstart(startEvent);
@@ -424,10 +371,7 @@ export class TNSXMLHttpRequest {
 
 			FileManager.readFile(path, {}, (error, data) => {
 				if (error) {
-					const errorEvent = new ProgressEvent(
-						'error',
-						this._lastProgress
-					);
+					const errorEvent = new ProgressEvent('error', this._lastProgress);
 					this._responseText = error.message;
 
 					if (this.onerror) {
@@ -436,10 +380,7 @@ export class TNSXMLHttpRequest {
 
 					this.emitEvent('error', errorEvent);
 
-					const loadendEvent = new ProgressEvent(
-						'loadend',
-						this._lastProgress
-					);
+					const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
 
 					if (this.onloadend) {
 						this.onloadend(loadendEvent);
@@ -456,22 +397,15 @@ export class TNSXMLHttpRequest {
 					this._httpContent = data;
 					this._responseURL = responseURL;
 
-
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {
-							if ((global as any).isAndroid) {
+							if (isAndroid) {
 								this._responseText = this._toJSString(data);
 								this._response = JSON.parse(this._responseText);
 							} else {
-								this._responseText = NSString.alloc().initWithDataEncoding(
-									data,
-									NSUTF8StringEncoding
-								);
+								this._responseText = NSString.alloc().initWithDataEncoding(data, NSUTF8StringEncoding);
 								if (!this._responseText) {
-									this._responseText = NSString.alloc().initWithDataEncoding(
-										data,
-										NSISOLatin1StringEncoding
-									);
+									this._responseText = NSString.alloc().initWithDataEncoding(data, NSISOLatin1StringEncoding);
 								}
 								this._response = JSON.parse(this._responseText);
 							}
@@ -479,72 +413,46 @@ export class TNSXMLHttpRequest {
 							console.log('json parse error', e);
 							// this should probably be caught before the promise resolves
 						}
-					} else if (
-						this.responseType === XMLHttpRequestResponseType.text
-					) {
-						if ((global as any).isIOS) {
+					} else if (this.responseType === XMLHttpRequestResponseType.text) {
+						if (isIOS) {
 							let code = NSUTF8StringEncoding; // long:4
-							let encodedString = NSString.alloc().initWithDataEncoding(
-								data,
-								code
-							);
+							let encodedString = NSString.alloc().initWithDataEncoding(data, code);
 
 							// If UTF8 string encoding fails try with ISO-8859-1
 							if (!encodedString) {
 								code = NSISOLatin1StringEncoding; // long:5
-								encodedString = NSString.alloc().initWithDataEncoding(
-									data,
-									code
-								);
+								encodedString = NSString.alloc().initWithDataEncoding(data, code);
 							}
 							this._responseText = this._response = encodedString.toString();
 						} else {
 							const response = this._toJSString(data);
-							this._responseText = this._response = response
-								? response.toString()
-								: '';
+							this._responseText = this._response = response ? response.toString() : '';
 						}
-					} else if (
-						this.responseType === XMLHttpRequestResponseType.document
-					) {
-						if ((global as any).isIOS) {
+					} else if (this.responseType === XMLHttpRequestResponseType.document) {
+						if (isIOS) {
 							let code = NSUTF8StringEncoding; // long:4
-							let encodedString = NSString.alloc().initWithDataEncoding(
-								data,
-								code
-							);
+							let encodedString = NSString.alloc().initWithDataEncoding(data, code);
 
 							// If UTF8 string encoding fails try with ISO-8859-1
 							if (!encodedString) {
 								code = NSISOLatin1StringEncoding; // long:5
-								encodedString = NSString.alloc().initWithDataEncoding(
-									data,
-									code
-								);
+								encodedString = NSString.alloc().initWithDataEncoding(data, code);
 							}
 
 							this._responseText = this._response = encodedString.toString();
 						} else {
 							let response = this._toJSString(data);
-							this._responseText = this._response = response
-								? response
-								: '';
+							this._responseText = this._response = response ? response : '';
 						}
-					} else if (
-						this.responseType === XMLHttpRequestResponseType.arraybuffer
-					) {
-						if ((global as any).isIOS) {
+					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
+						if (isIOS) {
 							this._response = interop.bufferFromData(data);
 						} else {
-							this._response = (ArrayBuffer as any).from(
-								java.nio.ByteBuffer.wrap(data)
-							);
+							this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data));
 						}
-					} else if (
-						this.responseType === XMLHttpRequestResponseType.blob
-					) {
+					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 						let buffer: ArrayBuffer;
-						if ((global as any).isIOS) {
+						if (isIOS) {
 							buffer = interop.bufferFromData(data);
 						} else {
 							const buf = java.nio.ByteBuffer.wrap(data);
@@ -555,7 +463,7 @@ export class TNSXMLHttpRequest {
 					}
 
 					let size = 0;
-					if ((global as any).isIOS) {
+					if (isIOS) {
 						if (data instanceof NSData) {
 							size = data.length;
 						}
@@ -570,10 +478,7 @@ export class TNSXMLHttpRequest {
 						target: this,
 					};
 
-					const progressEvent = new ProgressEvent(
-						'progress',
-						this._lastProgress
-					);
+					const progressEvent = new ProgressEvent('progress', this._lastProgress);
 					if (this.onprogress) {
 						this.onprogress(progressEvent);
 					}
@@ -581,10 +486,7 @@ export class TNSXMLHttpRequest {
 
 					this._addToStringOnResponse();
 
-					const loadEvent = new ProgressEvent(
-						'load',
-						this._lastProgress
-					);
+					const loadEvent = new ProgressEvent('load', this._lastProgress);
 
 					if (this.onload) {
 						this.onload(loadEvent);
@@ -592,10 +494,7 @@ export class TNSXMLHttpRequest {
 
 					this.emitEvent('load', loadEvent);
 
-					const loadendEvent = new ProgressEvent(
-						'loadend',
-						this._lastProgress
-					);
+					const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
 
 					if (this.onloadend) {
 						this.onloadend(loadendEvent);
@@ -604,7 +503,6 @@ export class TNSXMLHttpRequest {
 					this.emitEvent('loadend', loadendEvent);
 
 					this._updateReadyStateChange(this.DONE);
-
 				}
 			});
 
@@ -623,13 +521,11 @@ export class TNSXMLHttpRequest {
 				let contentLength = -1;
 				if (typeof this._headers === 'object') {
 					if (this._headers['Content-Length']) {
-						contentLength =
-							parseInt(this._headers['Content-Length'], 10) || -1;
+						contentLength = parseInt(this._headers['Content-Length'], 10) || -1;
 					}
 
 					if (this._headers['content-length']) {
-						contentLength =
-							parseInt(this._headers['content-length'], 10) || -1;
+						contentLength = parseInt(this._headers['content-length'], 10) || -1;
 					}
 				}
 				this._lastProgress = {
@@ -639,10 +535,7 @@ export class TNSXMLHttpRequest {
 					target: this,
 				};
 
-				const loadStartEvent = new ProgressEvent(
-					'loadstart',
-					this._lastProgress
-				);
+				const loadStartEvent = new ProgressEvent('loadstart', this._lastProgress);
 
 				if (this._upload && (method === 'post' || method === 'put')) {
 					this._upload._emitEvent('loadstart', loadStartEvent);
@@ -673,10 +566,7 @@ export class TNSXMLHttpRequest {
 					...event,
 				};
 				if (event.loaded > 0) {
-					const progressEvent = new ProgressEvent(
-						'progress',
-						this._lastProgress
-					);
+					const progressEvent = new ProgressEvent('progress', this._lastProgress);
 					if (this._upload && (method === 'post' || method === 'put')) {
 						this._upload._emitEvent('progress', progressEvent);
 					}
@@ -709,22 +599,16 @@ export class TNSXMLHttpRequest {
 						this._response = res.content;
 						this._responseText = res.responseText;
 					} else {
-						if ((global as any).isIOS) {
+						if (isIOS) {
 							if (res.content instanceof NSData) {
 								let code = NSUTF8StringEncoding; // long:4
 
-								let encodedString = NSString.alloc().initWithDataEncoding(
-									res.content,
-									code
-								);
+								let encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
 
 								// If UTF8 string encoding fails try with ISO-8859-1
 								if (!encodedString) {
 									code = NSISOLatin1StringEncoding; // long:5
-									encodedString = NSString.alloc().initWithDataEncoding(
-										res.content,
-										code
-									);
+									encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
 								}
 
 								this._responseText = encodedString.toString();
@@ -732,95 +616,69 @@ export class TNSXMLHttpRequest {
 							}
 						} else {
 							if (res.content instanceof java.nio.ByteBuffer) {
-								this._responseText = this._toJSString(
-									res.content.array()
-								);
+								this._responseText = this._toJSString(res.content.array());
 								this._response = JSON.parse(this._responseText);
 							}
 						}
 					}
-				} else if (
-					this.responseType === XMLHttpRequestResponseType.text
-				) {
+				} else if (this.responseType === XMLHttpRequestResponseType.text) {
 					if (typeof res.content === 'string') {
 						this._responseText = res.content;
 					} else if (typeof res.content === 'object') {
 						this._responseText = JSON.stringify(res.content); // Stringify or build manually 🧐
 					} else {
-						if ((global as any).isIOS) {
+						if (isIOS) {
 							if (res.content instanceof NSData) {
 								let code = NSUTF8StringEncoding; // long:4
 
-								let encodedString = NSString.alloc().initWithDataEncoding(
-									res.content,
-									code
-								);
+								let encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
 
 								// If UTF8 string encoding fails try with ISO-8859-1
 								if (!encodedString) {
 									code = NSISOLatin1StringEncoding; // long:5
-									encodedString = NSString.alloc().initWithDataEncoding(
-										res.content,
-										code
-									);
+									encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
 								}
 
 								this._responseText = this._response = encodedString.toString();
 							}
 						} else {
 							if (res.content instanceof java.nio.ByteBuffer) {
-								this._responseText = this._response = this._toJSString(
-									res.content.array()
-								);
+								this._responseText = this._response = this._toJSString(res.content.array());
 							}
 						}
 					}
 					this._response = this._responseText;
-				} else if (
-					this.responseType === XMLHttpRequestResponseType.document
-				) {
+				} else if (this.responseType === XMLHttpRequestResponseType.document) {
 					if (typeof res.content === 'string') {
 						this._responseText = res.content;
 					} else {
-						if ((global as any).isIOS) {
+						if (isIOS) {
 							if (res.content instanceof NSData) {
 								let code = NSUTF8StringEncoding; // long:4
 
-								let encodedString = NSString.alloc().initWithDataEncoding(
-									res.content,
-									code
-								);
+								let encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
 
 								// If UTF8 string encoding fails try with ISO-8859-1
 								if (!encodedString) {
 									code = NSISOLatin1StringEncoding; // long:5
-									encodedString = NSString.alloc().initWithDataEncoding(
-										res.content,
-										code
-									);
+									encodedString = NSString.alloc().initWithDataEncoding(res.content, code);
 								}
 
 								this._responseText = this._response = encodedString.toString();
 							}
 						} else {
 							if (res.content instanceof java.nio.ByteBuffer) {
-								this._responseText = this._response = this._toJSString(
-									res.content.array()
-								);
+								this._responseText = this._response = this._toJSString(res.content.array());
 							}
 						}
 					}
-				} else if (
-					this.responseType === XMLHttpRequestResponseType.arraybuffer
-				) {
-					if ((global as any).isIOS) {
+				} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
+					if (isIOS) {
 						this._response = interop.bufferFromData(res.content);
 					} else {
 						this._response = (ArrayBuffer as any).from(res.content);
 					}
-				} else if (
-					this.responseType === XMLHttpRequestResponseType.blob
-				) {
+				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 					const buffer = (ArrayBuffer as any).from(res.content);
 					this._response = new Blob([buffer]);
 				}
@@ -841,10 +699,7 @@ export class TNSXMLHttpRequest {
 					this.onloadend();
 				}
 
-				const loadendEvent = new ProgressEvent(
-					'loadend',
-					this._lastProgress
-				);
+				const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
 
 				if (this._upload && (method === 'post' || method === 'put')) {
 					this._upload._emitEvent('loadend', loadendEvent);
@@ -861,15 +716,9 @@ export class TNSXMLHttpRequest {
 						if (this.onabort) {
 							this.onabort();
 						}
-						const abortEvent = new ProgressEvent(
-							'abort',
-							this._lastProgress
-						);
+						const abortEvent = new ProgressEvent('abort', this._lastProgress);
 
-						if (
-							this._upload &&
-							(method === 'post' || method === 'put')
-						) {
+						if (this._upload && (method === 'post' || method === 'put')) {
 							this._upload._emitEvent('abort', abortEvent);
 						}
 						this.emitEvent('abort', abortEvent);
@@ -878,24 +727,14 @@ export class TNSXMLHttpRequest {
 							this.onloadend();
 						}
 
-						const _loadendEvent = new ProgressEvent(
-							'loadend',
-							this._lastProgress
-						);
+						const _loadendEvent = new ProgressEvent('loadend', this._lastProgress);
 
-						if (
-							this._upload &&
-							(method === 'post' || method === 'put')
-						) {
+						if (this._upload && (method === 'post' || method === 'put')) {
 							this._upload._emitEvent('loadend', _loadendEvent);
 						}
 						this.emitEvent('loadend', _loadendEvent);
 
-						if (
-							this._readyState === this.UNSENT ||
-							this._readyState === this.OPENED ||
-							this._readyState === this.DONE
-						) {
+						if (this._readyState === this.UNSENT || this._readyState === this.OPENED || this._readyState === this.DONE) {
 							this._updateReadyStateChange(this.UNSENT);
 						} else {
 							this._updateReadyStateChange(this.DONE);
@@ -906,15 +745,9 @@ export class TNSXMLHttpRequest {
 						if (this.ontimeout) {
 							this.ontimeout();
 						}
-						const timeoutEvent = new ProgressEvent(
-							'timeout',
-							this._lastProgress
-						);
+						const timeoutEvent = new ProgressEvent('timeout', this._lastProgress);
 
-						if (
-							this._upload &&
-							(method === 'post' || method === 'put')
-						) {
+						if (this._upload && (method === 'post' || method === 'put')) {
 							this._upload._emitEvent('timeout', timeoutEvent);
 						}
 						this.emitEvent('timeout', timeoutEvent);
@@ -924,15 +757,9 @@ export class TNSXMLHttpRequest {
 							this.onerror(error.message);
 						}
 
-						const errorEvent = new ProgressEvent(
-							'error',
-							this._lastProgress
-						);
+						const errorEvent = new ProgressEvent('error', this._lastProgress);
 
-						if (
-							this._upload &&
-							(method === 'post' || method === 'put')
-						) {
+						if (this._upload && (method === 'post' || method === 'put')) {
 							this._upload._emitEvent('error', errorEvent);
 						}
 						this.emitEvent('error', errorEvent);
@@ -941,15 +768,9 @@ export class TNSXMLHttpRequest {
 							this.onloadend();
 						}
 
-						const loadendEvent = new ProgressEvent(
-							'loadend',
-							this._lastProgress
-						);
+						const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
 
-						if (
-							this._upload &&
-							(method === 'post' || method === 'put')
-						) {
+						if (this._upload && (method === 'post' || method === 'put')) {
 							this._upload._emitEvent('loadend', loadendEvent);
 						}
 						this.emitEvent('loadend', loadendEvent);
@@ -996,7 +817,6 @@ export class TNSXMLHttpRequest {
 	}
 }
 
-
 export class FormData {
 	private _data: Map<string, any>;
 
@@ -1015,7 +835,7 @@ export class FormData {
 			arr.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
 		});
 
-		return arr.join("&");
+		return arr.join('&');
 	}
 }
 
@@ -1039,25 +859,18 @@ export class Blob {
 		return this._type;
 	}
 
-	constructor(
-		chunks: Array<BufferSource | DataView | Blob | string> = [],
-		opts: { type?: string } = {}
-	) {
+	constructor(chunks: Array<BufferSource | DataView | Blob | string> = [], opts: { type?: string } = {}) {
 		const dataChunks: Uint8Array[] = [];
 		for (const chunk of chunks) {
 			if (chunk instanceof Blob) {
 				dataChunks.push(chunk._buffer);
-			} else if (typeof chunk === "string") {
+			} else if (typeof chunk === 'string') {
 				const textEncoder = new TextEncoder();
 				dataChunks.push(textEncoder.encode(chunk));
 			} else if (chunk instanceof DataView) {
 				dataChunks.push(new Uint8Array(chunk.buffer.slice(0)));
 			} else if (chunk instanceof ArrayBuffer || ArrayBuffer.isView(chunk)) {
-				dataChunks.push(new Uint8Array(
-					ArrayBuffer.isView(chunk)
-						? chunk.buffer.slice(0)
-						: chunk.slice(0)
-				));
+				dataChunks.push(new Uint8Array(ArrayBuffer.isView(chunk) ? chunk.buffer.slice(0) : chunk.slice(0)));
 			} else {
 				const textEncoder = new TextEncoder();
 				dataChunks.push(textEncoder.encode(String(chunk)));
@@ -1076,9 +889,9 @@ export class Blob {
 		this._buffer = buffer;
 		this._size = this._buffer.byteLength;
 
-		this._type = opts.type || "";
+		this._type = opts.type || '';
 		if (/[^\u0020-\u007E]/.test(this._type)) {
-			this._type = "";
+			this._type = '';
 		} else {
 			this._type = this._type.toLowerCase();
 		}
@@ -1101,14 +914,14 @@ export class Blob {
 	}
 
 	public stream() {
-		throw new Error("stream is currently not supported");
+		throw new Error('stream is currently not supported');
 	}
 
 	public toString() {
-		return "[object Blob]";
+		return '[object Blob]';
 	}
 
-	[Symbol.toStringTag] = "Blob";
+	[Symbol.toStringTag] = 'Blob';
 }
 
 export class File extends Blob {
@@ -1123,24 +936,17 @@ export class File extends Blob {
 		return this._lastModified;
 	}
 
-	constructor(
-		chunks: Array<BufferSource | DataView | Blob | string>,
-		name: string,
-		opts: { type?: string, lastModified?: number } = {}
-	) {
+	constructor(chunks: Array<BufferSource | DataView | Blob | string>, name: string, opts: { type?: string; lastModified?: number } = {}) {
 		super(chunks, opts);
-		this._name = name.replace(/\//g, ":");
-		this._lastModified =
-			opts.lastModified
-				? new Date(opts.lastModified).valueOf()
-				: Date.now();
+		this._name = name.replace(/\//g, ':');
+		this._lastModified = opts.lastModified ? new Date(opts.lastModified).valueOf() : Date.now();
 	}
 
 	public toString() {
-		return "[object File]";
+		return '[object File]';
 	}
 
-	[Symbol.toStringTag] = "File";
+	[Symbol.toStringTag] = 'File';
 }
 
 export class FileReader {
@@ -1173,7 +979,7 @@ export class FileReader {
 	}
 
 	private _array2base64(input: Uint8Array): string {
-		var byteToCharMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+		var byteToCharMap = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
 		var output = [];
 
@@ -1186,8 +992,8 @@ export class FileReader {
 
 			var outByte1 = byte1 >> 2;
 			var outByte2 = ((byte1 & 0x03) << 4) | (byte2 >> 4);
-			var outByte3 = ((byte2 & 0x0F) << 2) | (byte3 >> 6);
-			var outByte4 = byte3 & 0x3F;
+			var outByte3 = ((byte2 & 0x0f) << 2) | (byte3 >> 6);
+			var outByte4 = byte3 & 0x3f;
 
 			if (!haveByte3) {
 				outByte4 = 64;
@@ -1197,13 +1003,10 @@ export class FileReader {
 				}
 			}
 
-			output.push(
-				byteToCharMap[outByte1], byteToCharMap[outByte2],
-				byteToCharMap[outByte3], byteToCharMap[outByte4]
-			);
+			output.push(byteToCharMap[outByte1], byteToCharMap[outByte2], byteToCharMap[outByte3], byteToCharMap[outByte4]);
 		}
 
-		return output.join("");
+		return output.join('');
 	}
 
 	private _read(blob, kind) {
@@ -1211,17 +1014,17 @@ export class FileReader {
 			throw new TypeError(`Failed to execute '${kind}' on 'FileReader': parameter 1 is not of type 'Blob'.`);
 		}
 
-		this._result = "";
+		this._result = '';
 		setTimeout(() => {
 			this._readyState = this.LOADING;
-			this.emitEvent("load");
-			this.emitEvent("loadend");
+			this.emitEvent('load');
+			this.emitEvent('loadend');
 		});
 	}
 
 	private emitEvent(eventName: string, ...args: Array<any>) {
-		if (isFunction(this["on" + eventName])) {
-			this["on" + eventName](...args);
+		if (isFunction(this['on' + eventName])) {
+			this['on' + eventName](...args);
 		}
 
 		let handlers = this._listeners.get(eventName) || [];
@@ -1231,8 +1034,8 @@ export class FileReader {
 	}
 
 	public addEventListener(eventName: string, handler: Function) {
-		if (["abort", "error", "load", "loadend", "loadstart", "progress"].indexOf(eventName) === -1) {
-			throw new Error("Event not supported: " + eventName);
+		if (['abort', 'error', 'load', 'loadend', 'loadstart', 'progress'].indexOf(eventName) === -1) {
+			throw new Error('Event not supported: ' + eventName);
 		}
 
 		let handlers = this._listeners.get(eventName) || [];
@@ -1247,18 +1050,18 @@ export class FileReader {
 	}
 
 	public readAsDataURL(blob: Blob) {
-		this._read(blob, "readAsDataURL");
+		this._read(blob, 'readAsDataURL');
 		this._result = `data:${blob.type};base64,${this._array2base64(Blob.InternalAccessor.getBuffer(blob))}`;
 	}
 
 	public readAsText(blob: Blob) {
-		this._read(blob, "readAsText");
+		this._read(blob, 'readAsText');
 		const textDecoder = new TextDecoder();
 		this._result = textDecoder.decode(Blob.InternalAccessor.getBuffer(blob));
 	}
 
 	public readAsArrayBuffer(blob: Blob) {
-		this._read(blob, "readAsArrayBuffer");
+		this._read(blob, 'readAsArrayBuffer');
 		this._result = Blob.InternalAccessor.getBuffer(blob).buffer.slice(0);
 	}
 
@@ -1267,8 +1070,8 @@ export class FileReader {
 	}
 
 	public toString() {
-		return "[object FileReader]";
+		return '[object FileReader]';
 	}
 
-	[Symbol.toStringTag] = "FileReader";
+	[Symbol.toStringTag] = 'FileReader';
 }

@@ -1,8 +1,7 @@
-import { View, Screen, GestureStateTypes, Utils, Application , isIOS} from '@nativescript/core';
+import { View, Screen, GestureStateTypes, Utils, Application, isIOS } from '@nativescript/core';
 import { CanvasRenderingContext, TouchList } from '../common';
 import { CSSType, PercentLength } from '@nativescript/core/ui/core/view';
 import { Pointer } from '@nativescript/core/ui/gestures';
-
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
@@ -68,7 +67,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === 'boolean') {
 				return contextOpts;
 			} else {
-				return {alpha: true};
+				return { alpha: true };
 			}
 		}
 		const setIfDefined = (prop, value) => {
@@ -134,9 +133,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 		if (name === 'touchmove') {
 			name = 'touchmove';
-			let x = 0;
-			let y = 0;
-			if (isIOS) {
+			let x = event.deltaX;
+			let y = event.deltaY;
+			/*if (isIOS) {
 				x = event.deltaX + this.__touchStart ? this.__touchStart.getX(): 0;
 				y = event.deltaY + this.__touchStart? this.__touchStart.getY() : 0;
 			} else {
@@ -150,7 +149,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					x = current.getX() / scale;
 					y = current.getY()/ scale;
 				}
-			}
+			}*/
 
 			/* mouse */
 			activePointer = {
@@ -285,10 +284,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			shiftKey: false,
 			targetTouches: pointers,
 			touches: pointers,
-			preventDefault: () => {
-			},
-			stopPropagation: () => {
-			},
+			preventDefault: () => {},
+			stopPropagation: () => {},
 			target,
 			...activePointer,
 		};

@@ -2,12 +2,14 @@ use skia_safe::Color;
 
 pub(crate) fn parse_color(value: &str) -> Option<Color> {
     match value.parse::<css_color_parser::Color>() {
-        Ok(color) => Some(Color::from_argb(
-            (color.a * 255.0) as u8,
-            color.r,
-            color.g,
-            color.b,
-        )),
+        Ok(color) => {
+            Some(Color::from_argb(
+                (color.a * 255.0) as u8,
+                color.r,
+                color.g,
+                color.b,
+            ))
+        }
         _ => None,
     }
 }

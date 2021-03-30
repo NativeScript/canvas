@@ -18,7 +18,7 @@ impl ImageData {
         (ptr, len)
     }
     pub fn new(width: c_int, height: c_int) -> Self {
-        let mut data = vec![255u8; (width * height * 4) as usize];
+        let data = vec![255u8; (width * height * 4) as usize];
         let (data, data_len) = Self::to_raw(data);
         Self {
             width,
@@ -46,6 +46,10 @@ impl ImageData {
     }
 
     pub fn data(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts_mut(self.data, self.data_len) }
+    }
+
+    pub fn data_mut(&self) -> &mut [u8] {
         unsafe { std::slice::from_raw_parts_mut(self.data, self.data_len) }
     }
 }

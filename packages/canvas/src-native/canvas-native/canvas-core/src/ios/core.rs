@@ -1,38 +1,37 @@
 extern crate libc;
 
-use std::ffi::{c_void, CStr, CString};
-use std::os::raw::{c_char, c_uchar, c_uint};
-use std::ptr::{null, null_mut};
-
 use cocoa::foundation::NSAutoreleasePool;
 use libc::{c_float, c_int, c_longlong, size_t};
-use skia_safe::gpu::{BackendRenderTarget, Context};
-use skia_safe::paint::{Cap, Join, Style};
-use skia_safe::{gpu, FilterQuality};
+use skia_safe::{FilterQuality, gpu};
 use skia_safe::{
     Color, ColorType, Font, FontStyle, Paint, Path, PixelGeometry, Surface, SurfaceProps,
     SurfacePropsFlags, Typeface,
 };
+use skia_safe::gpu::{BackendRenderTarget, Context};
+use skia_safe::paint::{Cap, Join, Style};
+use std::ffi::{c_void, CStr, CString};
+use std::os::raw::{c_char, c_uchar, c_uint};
+use std::ptr::{null, null_mut};
 
 use crate::common::{
-    add_path_to_path_with_matrix, arc, arc_to, begin_path, bezier_curve_to, clear_canvas,
-    clear_rect, clip, clip_path_rule, clip_rule, close_path, create_image_data, create_matrix,
-    create_path_2d, create_path_2d_from_path_data, create_path_from_path, create_pattern,
-    create_pattern_encoded, draw_image, draw_image_dw, draw_image_dw_encoded, draw_image_encoded,
-    draw_image_sw, draw_image_sw_encoded, draw_rect, draw_text, ellipse, fill, fill_path_rule,
-    fill_rule, flush, free_byte_array, free_char, free_path_2d, free_pattern,
-    get_current_transform, get_direction, get_image_data, get_matrix, get_measure_text,
-    is_point_in_path, is_point_in_stroke, line_to, move_to, put_image_data, quadratic_curve_to,
-    rect, reset_transform, restore, rotate, save, scale, set_current_transform, set_direction,
-    set_fill_color, set_fill_color_rgba, set_fill_pattern, set_font, set_global_alpha,
-    set_global_composite_operation, set_gradient_linear, set_gradient_radial,
-    set_image_smoothing_enabled, set_image_smoothing_quality, set_line_cap, set_line_dash,
-    set_line_dash_offset, set_line_join, set_line_width, set_matrix, set_miter_limit,
-    set_pattern_transform, set_shadow_blur, set_shadow_color, set_shadow_offset_x,
-    set_shadow_offset_y, set_stroke_color, set_stroke_color_rgba, set_stroke_pattern,
-    set_text_align, set_transform, snapshot_canvas, stroke, stroke_path, to_data_url, transform,
-    translate, CanvasArray, CanvasCompositeOperationType, CanvasNative, CanvasNativeInitialState,
-    CanvasTextMetrics, NativeByteArray, SurfaceKind, TextAlign, TextDirection, COLOR_TRANSPARENT,
+    add_path_to_path_with_matrix, arc, arc_to, begin_path, bezier_curve_to, CanvasArray,
+    CanvasCompositeOperationType, CanvasNative, CanvasNativeInitialState, CanvasTextMetrics, clear_canvas, clear_rect, clip,
+    clip_path_rule, clip_rule, close_path, COLOR_TRANSPARENT,
+    create_image_data, create_matrix, create_path_2d, create_path_2d_from_path_data, create_path_from_path,
+    create_pattern, create_pattern_encoded, draw_image, draw_image_dw, draw_image_dw_encoded, draw_image_encoded, draw_image_sw,
+    draw_image_sw_encoded, draw_rect, draw_text, ellipse, fill, fill_path_rule,
+    fill_rule, flush, free_byte_array, free_char, free_path_2d,
+    free_pattern, get_current_transform, get_direction, get_image_data, get_matrix, get_measure_text,
+    is_point_in_path, is_point_in_stroke, line_to, move_to, NativeByteArray, put_image_data, quadratic_curve_to, rect,
+    reset_transform, restore, rotate, save, scale,
+    set_current_transform, set_direction, set_fill_color,
+    set_fill_color_rgba, set_fill_pattern, set_font, set_global_alpha,
+    set_global_composite_operation, set_gradient_linear, set_gradient_radial, set_image_smoothing_enabled, set_image_smoothing_quality,
+    set_line_cap, set_line_dash, set_line_dash_offset, set_line_join,
+    set_line_width, set_matrix, set_miter_limit, set_pattern_transform,
+    set_shadow_blur, set_shadow_color, set_shadow_offset_x, set_shadow_offset_y, set_stroke_color, set_stroke_color_rgba, set_stroke_pattern,
+    set_text_align, set_transform, snapshot_canvas, stroke, stroke_path,
+    SurfaceKind, TextAlign, TextDirection, to_data_url, transform, translate,
 };
 
 pub(crate) struct AutoreleasePool(*mut objc::runtime::Object);
@@ -46,7 +45,7 @@ impl AutoreleasePool {
 impl Drop for AutoreleasePool {
     fn drop(&mut self) {
         #[allow(clippy::let_unit_value)]
-        unsafe {
+            unsafe {
             // the unit value here is needed  to type the return of msg_send().
             let () = msg_send![self.0, release];
         }
@@ -124,7 +123,7 @@ pub extern "C" fn native_get_matrix(matrix: c_longlong) -> *mut CanvasArray {
         array: ptr as *const c_void,
         length: size,
     }
-    .into_raw()
+        .into_raw()
 }
 
 #[no_mangle]

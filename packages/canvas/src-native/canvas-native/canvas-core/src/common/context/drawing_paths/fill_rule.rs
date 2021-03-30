@@ -17,8 +17,24 @@ impl Into<i32> for FillRule {
     fn into(self) -> i32 {
         match self {
             FillRule::NonZero => 0,
-            FillRule::EvenOdd => 1
+            FillRule::EvenOdd => 1,
         }
+    }
+}
+
+impl From<&str> for FillRule {
+    fn from(value: &str) -> FillRule {
+        match value {
+            "nonzero" => FillRule::NonZero,
+            "evenodd" => FillRule::EvenOdd,
+            _ => FillRule::NonZero,
+        }
+    }
+}
+
+impl From<&String> for FillRule {
+    fn from(value: &String) -> FillRule {
+        Self::from(value.as_str())
     }
 }
 
@@ -27,7 +43,7 @@ impl From<i32> for FillRule {
         match value {
             0 => FillRule::NonZero,
             1 => FillRule::EvenOdd,
-            _ => FillRule::NonZero
+            _ => FillRule::NonZero,
         }
     }
 }
@@ -37,7 +53,7 @@ impl FillRule {
         match value {
             0 => Some(Self::NonZero),
             1 => Some(Self::EvenOdd),
-            _ => None
+            _ => None,
         }
     }
     pub fn to_fill_type(&self) -> FillType {

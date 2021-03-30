@@ -52,7 +52,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageData_nativeData(env: J
     unsafe {
         let image_data: *mut ImageData = image_data as _;
         let image_data = &mut *image_data;
-        let mut slice = std::slice::from_raw_parts_mut(image_data.data, image_data.data_len);
+        let slice = std::slice::from_raw_parts_mut(image_data.data, image_data.data_len);
         if let Ok(image_data) = env.new_direct_byte_buffer(slice) {
             return image_data.into_inner();
         }

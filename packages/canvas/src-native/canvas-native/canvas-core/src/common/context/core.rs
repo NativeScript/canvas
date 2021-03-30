@@ -1,15 +1,5 @@
 extern crate libc;
 
-use std::borrow::Borrow;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::ffi::{CStr, CString, NulError};
-use std::mem;
-use std::os::raw::{c_char, c_uint, c_void};
-use std::ptr::{null, null_mut};
-use std::rc::Rc;
-use std::str::Utf8Error;
-
 use libc::{c_float, c_int, c_longlong, size_t};
 use skia_safe::{
     AlphaType,
@@ -27,6 +17,15 @@ use skia_safe::{
 };
 use skia_safe::textlayout::{ParagraphStyle, TextStyle};
 use skia_safe::wrapper::ValueWrapper;
+use std::borrow::Borrow;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::ffi::{CStr, CString, NulError};
+use std::mem;
+use std::os::raw::{c_char, c_uint, c_void};
+use std::ptr::{null, null_mut};
+use std::rc::Rc;
+use std::str::Utf8Error;
 
 use crate::common::paint::NativeCanvasPaint;
 use crate::common::typography::{

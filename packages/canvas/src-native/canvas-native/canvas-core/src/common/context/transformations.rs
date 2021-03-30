@@ -1,13 +1,13 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{Matrix, Point};
+use skia_safe::{M44, Matrix, Point};
 
 use crate::common::context::Context;
 
 impl Context {
     pub fn get_transform(&mut self) -> Matrix {
-        self.surface.canvas().total_matrix()
+        self.surface.canvas().local_to_device_as_3x3()
     }
 
     pub fn rotate(&mut self, angle: c_float) {
@@ -33,9 +33,15 @@ impl Context {
     ) {
         let affine = [a, b, c, d, e, f];
         let transform = Matrix::from_affine(&affine);
-        let mut matrix = self.surface.canvas().total_matrix().clone();
-        matrix.pre_concat(&transform);
-        self.surface.canvas().set_matrix(&matrix);
+        self.surface.canvas().concat(&transform);
+    }
+
+    pub fn transform_with_matrix(&mut self, matrix: &Matrix) {
+        let mut current = self.surface.canvas().local_to_device_as_3x3();
+        current.pre_concat(matrix);
+        // self.surface.canvas().concat(matrix);
+        let m = M44::from(&current);
+        self.surface.canvas().set_matrix(&m);
     }
 
     pub fn set_transform(
@@ -49,13 +55,14 @@ impl Context {
     ) {
         let affine = [a, b, c, d, e, f];
         let matrix = Matrix::from_affine(&affine);
-        self.surface.canvas().reset_matrix();
-        self.surface.canvas().set_matrix(&matrix);
+        let m44 = M44::from(matrix);
+        self.surface.canvas().set_matrix(&m44);
     }
 
     pub fn set_transform_matrix(&mut self, matrix: &Matrix) {
         self.surface.canvas().reset_matrix();
-        self.surface.canvas().set_matrix(matrix);
+        let m44 = M44::from(matrix);
+        self.surface.canvas().set_matrix(&m44);
     }
 
     pub fn reset_transform(&mut self) {

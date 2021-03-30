@@ -16,13 +16,13 @@ impl Default for ImageSmoothingQuality {
     }
 }
 
-impl From<i32>  for ImageSmoothingQuality {
+impl From<i32> for ImageSmoothingQuality {
     fn from(value: i32) -> Self {
         match value {
             0 => Self::Low,
             1 => Self::Medium,
             2 => Self::High,
-            _ => Self::Low
+            _ => Self::Low,
         }
     }
 }
@@ -42,7 +42,7 @@ impl Into<i32> for ImageSmoothingQuality {
         match self {
             ImageSmoothingQuality::Low => 0,
             ImageSmoothingQuality::Medium => 1,
-            ImageSmoothingQuality::High => 2
+            ImageSmoothingQuality::High => 2,
         }
     }
 }
@@ -50,33 +50,6 @@ impl Into<i32> for ImageSmoothingQuality {
 impl Context {
     pub fn set_image_smoothing_enabled(&mut self, value: bool) {
         self.state.image_smoothing_enabled = value;
-        if value {
-            self.state
-                .paint
-                .fill_paint_mut()
-                .set_filter_quality(self.state.image_smoothing_quality.into());
-            self.state
-                .paint
-                .stroke_paint_mut()
-                .set_filter_quality(self.state.image_smoothing_quality.into());
-            self.state
-                .paint
-                .image_paint_mut()
-                .set_filter_quality(self.state.image_smoothing_quality.into());
-        } else {
-            self.state
-                .paint
-                .fill_paint_mut()
-                .set_filter_quality(FilterQuality::None);
-            self.state
-                .paint
-                .stroke_paint_mut()
-                .set_filter_quality(FilterQuality::None);
-            self.state
-                .paint
-                .image_paint_mut()
-                .set_filter_quality(FilterQuality::None);
-        }
     }
 
     pub fn get_image_smoothing_enabled(&mut self) -> bool {
@@ -89,20 +62,8 @@ impl Context {
 
     pub fn set_image_smoothing_quality(&mut self, value: ImageSmoothingQuality) {
         self.state.image_smoothing_quality = value;
-        if self.state.image_smoothing_enabled {
-            self.state
-                .paint
-                .fill_paint_mut()
-                .set_filter_quality(value.into());
-
-            self.state
-                .paint
-                .stroke_paint_mut()
-                .set_filter_quality(value.into());
-            self.state
-                .paint
-                .image_paint_mut()
-                .set_filter_quality(value.into());
-        }
+        self.state
+            .paint
+            .image_smoothing_quality_set(self.state.image_filter_quality());
     }
 }

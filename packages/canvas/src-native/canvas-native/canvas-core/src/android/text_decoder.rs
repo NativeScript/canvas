@@ -2,12 +2,11 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-
 use std::str::Utf8Error;
 
-use jni::JNIEnv;
-use jni::objects::{JByteBuffer, JClass, JString, JValue};
+use jni::objects::{JByteBuffer, JClass, JString, JValue, ReleaseMode};
 use jni::sys::{jbyteArray, jlong, jstring};
+use jni::JNIEnv;
 
 use crate::common::context::text_decoder::TextDecoder;
 
@@ -41,7 +40,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDestroy(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeGetEncoding(
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeGetEncoding(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -54,7 +53,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeGe
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDecodeBuffer(
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDecodeBuffer(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -66,12 +65,8 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDe
             let decoder = &mut *decoder;
             let decoded = decoder.decode(buf.as_ptr(), buf.len());
             return match decoded.to_str() {
-                Ok(string) => {
-                    env.new_string(string).unwrap().into_inner()
-                }
-                Err(_) => {
-                    env.new_string("").unwrap().into_inner()
-                }
+                Ok(string) => env.new_string(string).unwrap().into_inner(),
+                Err(_) => env.new_string("").unwrap().into_inner(),
             };
         }
     } else {
@@ -80,26 +75,27 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDe
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDecode(
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDecode(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
     data: jbyteArray,
 ) -> jstring {
-    return if let Ok(val) = env.get_byte_array_elements(data) {
-        let length = env.get_array_length(data).unwrap_or(0) as usize;
-        let buf = std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.0), length);
+    return if let Ok(val) = env.get_byte_array_elements(data, ReleaseMode::NoCopyBack) {
+        let length = val.size().unwrap_or(0) as usize;
+        let buf = unsafe {
+            std::slice::from_raw_parts(
+                std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
+                length,
+            )
+        };
         unsafe {
             let decoder: *mut TextDecoder = decoder as _;
             let decoder = &mut *decoder;
             let decoded = decoder.decode(buf.as_ptr(), buf.len());
             return match decoded.to_str() {
-                Ok(string) => {
-                    env.new_string(string).unwrap().into_inner()
-                }
-                Err(_) => {
-                    env.new_string("").unwrap().into_inner()
-                }
+                Ok(string) => env.new_string(string).unwrap().into_inner(),
+                Err(_) => env.new_string("").unwrap().into_inner(),
             };
         }
     } else {

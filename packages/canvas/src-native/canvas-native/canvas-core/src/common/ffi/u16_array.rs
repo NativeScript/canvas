@@ -15,7 +15,7 @@ impl Into<Vec<u16>> for U16Array {
 impl From<Vec<u16>> for U16Array {
     fn from(vec: Vec<u16>) -> Self {
         let mut box_slice = vec.into_boxed_slice();
-        let mut array = Self {
+        let array = Self {
             data: box_slice.as_mut_ptr(),
             data_len: box_slice.len(),
         };

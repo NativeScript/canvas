@@ -7,7 +7,7 @@ const SIZE_PX: f32 = 1.0 / 96.0 * SIZE_INCH;
 const SIZE_POINT: f32 = 1.0 / 72.0 * SIZE_INCH;
 const SIZE_PICAS: f32 = SIZE_POINT * 12.0;
 
-pub(crate) fn parse_size(value: &str, device: &Device) -> f32 {
+pub(crate) fn parse_size(value: &str, device: Device) -> f32 {
     if value.contains("px") {
         return value.replace("px", "").parse::<f32>().unwrap_or(0.0) * device.density;
     } else if value.contains("cm") {

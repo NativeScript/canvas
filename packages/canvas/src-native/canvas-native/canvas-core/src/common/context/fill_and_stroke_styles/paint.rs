@@ -8,6 +8,7 @@ use skia_safe::paint::{Cap, Style};
 
 use crate::common::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::common::context::fill_and_stroke_styles::pattern::Pattern;
+use crate::common::context::image_smoothing::ImageSmoothingQuality;
 use crate::common::utils::color::to_parsed_color;
 
 #[derive(Clone)]
@@ -41,9 +42,13 @@ pub struct Paint {
     image_paint: skia_safe::Paint,
     fill_style: PaintStyle,
     stroke_style: PaintStyle,
+    image_smoothing_quality: FilterQuality,
 }
 
 impl Paint {
+    pub fn image_smoothing_quality_set(&mut self, image_smoothing_quality: FilterQuality) {
+        self.image_smoothing_quality = image_smoothing_quality
+    }
     fn update_paint_style(&mut self, is_fill: bool) {
         let style;
         if is_fill {
@@ -61,9 +66,15 @@ impl Paint {
             }
             PaintStyle::Pattern(pattern) => {
                 if is_fill {
-                    self.fill_paint.set_shader(Some(Pattern::to_pattern_shader(pattern)));
+                    self.fill_paint.set_shader(Pattern::to_pattern_shader(
+                        pattern,
+                        self.image_smoothing_quality,
+                    ));
                 } else {
-                    self.stroke_paint.set_shader(Some(Pattern::to_pattern_shader(pattern)));
+                    self.stroke_paint.set_shader(Pattern::to_pattern_shader(
+                        pattern,
+                        self.image_smoothing_quality,
+                    ));
                 }
             }
             PaintStyle::Gradient(gradient) => {
@@ -167,8 +178,7 @@ impl Default for Paint {
         fill_paint
             .set_anti_alias(true)
             .set_color(Color::BLACK)
-            .set_style(Style::Fill)
-            .set_filter_quality(FilterQuality::Low);
+            .set_style(Style::Fill);
 
         let mut stroke_paint = skia_safe::Paint::default();
         stroke_paint
@@ -177,13 +187,9 @@ impl Default for Paint {
             .set_style(Style::Stroke)
             .set_stroke_miter(10.0)
             .set_stroke_width(1.0)
-            .set_stroke_cap(Cap::Butt)
-            .set_filter_quality(FilterQuality::Low);
+            .set_stroke_cap(Cap::Butt);
         let mut image_paint = skia_safe::Paint::default();
-        image_paint
-            .set_anti_alias(true)
-            .set_style(Style::Fill)
-            .set_filter_quality(FilterQuality::Low);
+        image_paint.set_anti_alias(true).set_style(Style::Fill);
 
         Self {
             fill_paint,
@@ -191,6 +197,7 @@ impl Default for Paint {
             image_paint,
             fill_style: PaintStyle::Color(Color::BLACK),
             stroke_style: PaintStyle::Color(Color::BLACK),
+            image_smoothing_quality: ImageSmoothingQuality::default().into(),
         }
     }
 }

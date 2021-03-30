@@ -86,7 +86,7 @@ pub extern "C" fn context_init_context(
         ppi,
     };
     let interface = Interface::new_native();
-    let mut ctx = skia_safe::gpu::Context::new_gl(interface).unwrap();
+    let mut ctx = skia_safe::gpu::DirectContext::new_gl(interface, None).unwrap();
     let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
     if alpha {
         frame_buffer.format = GR_GL_RGBA8;
@@ -136,7 +136,7 @@ pub extern "C" fn context_init_context_with_custom_surface(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
-    let density = 1.0;
+    // let density = 1.0;
     let mut device = Device {
         width,
         height,
@@ -232,7 +232,7 @@ pub extern "C" fn context_resize_surface(
         let context: *mut Context = context as _;
         let context = &mut *context;
         let interface = skia_safe::gpu::gl::Interface::new_native();
-        let ctx = skia_safe::gpu::Context::new_gl(interface);
+        let ctx = skia_safe::gpu::DirectContext::new_gl(interface, None);
         if ctx.is_none() {
             return;
         }
@@ -394,6 +394,7 @@ pub extern "C" fn context_custom_with_buffer_flush(context: c_longlong, buf: *mu
         ).unwrap();
         let canvas = surface.canvas();
         let mut paint = skia_safe::Paint::default();
+        paint.set_anti_alias(true);
         paint.set_style(skia_safe::PaintStyle::Fill);
         paint.set_blend_mode(skia_safe::BlendMode::Clear);
         canvas.draw_rect(

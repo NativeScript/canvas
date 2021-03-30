@@ -21,7 +21,7 @@ pub fn get_bytes_from_bitmap(env: JNIEnv,
     }
     let bitmap_info = *unsafe { Box::from_raw(bitmap_info) };
     let mut pixels = std::ptr::null_mut() as *mut c_void;
-    let mut pixels_ptr: *mut *mut c_void = &mut pixels;
+    let pixels_ptr: *mut *mut c_void = &mut pixels;
     unsafe {
         if super::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
             < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
@@ -60,7 +60,7 @@ pub fn bitmap_handler(env: JNIEnv,
     }
     let bitmap_info = *unsafe { Box::from_raw(bitmap_info) };
     let mut pixels = std::ptr::null_mut() as *mut c_void;
-    let mut pixels_ptr: *mut *mut c_void = &mut pixels;
+    let pixels_ptr: *mut *mut c_void = &mut pixels;
     unsafe {
         if super::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
             != super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
@@ -89,7 +89,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_Utils_nativeGetByteBufferFromB
     _: JClass,
     bitmap: JObject,
 ) -> jbyteArray {
-    let mut bytes = get_bytes_from_bitmap(env, bitmap);
+    let bytes = get_bytes_from_bitmap(env, bitmap);
     env.byte_array_from_slice(bytes.0.as_slice()).unwrap_or(
         env.new_byte_array(0).unwrap()
     )

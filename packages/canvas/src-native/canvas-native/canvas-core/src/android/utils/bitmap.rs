@@ -5,6 +5,7 @@
 
 
 use std::os::raw::c_void;
+
 use jni::sys::jobject;
 
 #[doc = " Bitmap info, see AndroidBitmap_getInfo()."]

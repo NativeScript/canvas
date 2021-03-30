@@ -15,7 +15,7 @@ impl Into<Vec<f32>> for F32Array {
 impl From<Vec<f32>> for F32Array {
     fn from(vec: Vec<f32>) -> Self {
         let mut box_slice = vec.into_boxed_slice();
-        let mut array = Self {
+        let array = Self {
             data: box_slice.as_mut_ptr(),
             data_len: box_slice.len(),
         };

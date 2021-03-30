@@ -6,29 +6,32 @@ edition = "2018"
 build = "build.rs"
 
 [build-dependencies]
-bindgen = "0.55.1"
+bindgen = "0.57.0"
 cmake = "0.1.44"
 cc = "1.0.56"
 
 [dependencies]
-quick-xml = "0.20.0"
+roxmltree = "0.14.0"
 base64 = "0.13.0"
 image = "0.23.7"
 encoding_rs = "0.8.24"
 gl-bindings = { version = "0.1.0", path = "../gl-bindings" }
 lazy_static = "1.4.0"
 css-color-parser = "0.1.2"
-
+reqwest = { version = "0.11", features = ["blocking"] }
+openssl = { version = "0.10", features = ["vendored"] }
+phf = {version = "0.8.0", features = ["macros"]}
+rgb = "0.8.25"
+log = "0.4.8"
 
 [target.'cfg(target_os="android")'.dependencies]
-log = "0.4.8"
-jni = { version = "0.18.0", default-features = false }
+jni = { version = "0.19.0", default-features = false }
 android_logger = "0.9.0"
-skia-safe = { version = "0.36.0", features = ["gl"] }
+skia-safe = { version = "0.38.3", features = ["gl"] }
 
 
 [target.'cfg(target_os="ios")'.dependencies]
-skia-safe = { version = "0.36.0", features = ["gl"] }
+skia-safe = { version = "0.38.3", features = ["gl"] }
 cocoa = { version = "0.24.0" }
 objc = { version = "0.2.4" }
 block = "0.1.6"

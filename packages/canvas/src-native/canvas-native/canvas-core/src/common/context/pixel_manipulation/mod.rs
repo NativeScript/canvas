@@ -13,7 +13,7 @@ impl Context {
     }
 
     pub fn get_image_data(&mut self, sx: c_float, sy: c_float, sw: c_float, sh: c_float) -> ImageData {
-        let mut info = ImageInfo::new_n32_premul(ISize::new(sw as i32, sh as i32), None);
+        let info = ImageInfo::new_n32_premul(ISize::new(sw as i32, sh as i32), None);
         let row_bytes = info.width() * 4;
         let mut slice = vec![255u8; (row_bytes * info.height()) as usize];
         let _ = self.surface.canvas().read_pixels(
@@ -44,8 +44,8 @@ impl Context {
         let mut sw = sw;
         let mut sh = sh;
         let srect: Rect = Rect::from_xywh(sx, sy, sw, sh);
-        let mut info: ImageInfo;
-        let mut row_bytes: usize;
+        let info: ImageInfo;
+        let row_bytes: usize;
         if srect.is_empty() {
             info = ImageInfo::new(
                 ISize::new(data.width(), data.height()),

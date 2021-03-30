@@ -30,7 +30,7 @@ impl TextDecoder {
         let txt = unsafe { std::slice::from_raw_parts(data, len) };
         let (res, _) = self.decoder.decode_with_bom_removal(txt);
 
-        let mut utf8_src = res.as_bytes();
+        let utf8_src = res.as_bytes();
         let nul_range_end = utf8_src
             .iter()
             .position(|&c| c == b'\0')
@@ -39,6 +39,18 @@ impl TextDecoder {
         // let c_str = unsafe { CStr::from_bytes_with_nul_unchecked(data) };
         let str = unsafe { std::str::from_utf8_unchecked(data) };
         CString::new(str).unwrap()
+    }
+
+    pub(crate) fn decode_to_bytes(&mut self, txt: &str) -> Vec<u8> {
+        let (res, _) = self.decoder.decode_with_bom_removal(txt.as_bytes());
+
+        let mut utf8_src = res.as_bytes();
+        let nul_range_end = utf8_src
+            .iter()
+            .position(|&c| c == b'\0')
+            .unwrap_or(utf8_src.len()); // default to length if no `\0` present
+        let data = &utf8_src[0..nul_range_end];
+        data.to_vec()
     }
 
 

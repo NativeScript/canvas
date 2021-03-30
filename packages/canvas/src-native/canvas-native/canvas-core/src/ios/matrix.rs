@@ -275,7 +275,6 @@ pub extern "C" fn matrix_set_m14(matrix: c_longlong, m14: c_float) {
 }
 
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m21(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -474,7 +473,6 @@ pub extern "C" fn matrix_set_m34(matrix: c_longlong, m34: c_float) {
         matrix.set_m34(m34)
     }
 }
-
 
 
 #[no_mangle]

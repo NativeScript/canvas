@@ -9,7 +9,7 @@ pub enum PaintStyleValueType {
     PaintStyleValueTypePattern = 2,
 }
 
-impl Into<i32> for PaintStyleValueType{
+impl Into<i32> for PaintStyleValueType {
     fn into(self) -> i32 {
         match self {
             PaintStyleValueType::PaintStyleValueTypeColor => 0,
@@ -20,7 +20,7 @@ impl Into<i32> for PaintStyleValueType{
 }
 
 impl PaintStyleValueType {
-    pub fn from_i32(value: i32) -> Option<Self>{
+    pub fn from_i32(value: i32) -> Option<Self> {
         match value {
             0 => Some(PaintStyleValueType::PaintStyleValueTypeColor),
             1 => Some(PaintStyleValueType::PaintStyleValueTypeGradient),

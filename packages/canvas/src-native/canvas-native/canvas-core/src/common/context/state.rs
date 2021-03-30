@@ -1,9 +1,9 @@
-use crate::common::context::{Context};
+use crate::common::context::Context;
 
 impl Context {
     pub fn save(&mut self) {
         self.surface.canvas().save();
-        let mut stack = self.state.clone();
+        let stack = self.state.clone();
         self.state_stack.push(stack);
     }
 

@@ -1,5 +1,4 @@
-import {knownFolders, File as NSFile, isIOS, path} from '@nativescript/core';
-import {FileManager} from './async/async'
+import { knownFolders, File as NSFile, isIOS, path } from '@nativescript/core';
 
 export class URL {
 	public static createObjectURL(object: any): string {
@@ -10,9 +9,7 @@ export class URL {
 				NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
 			} else {
 				try {
-					const fos = new java.io.FileOutputStream(
-						new java.io.File(filePath)
-					);
+					const fos = new java.io.FileOutputStream(new java.io.File(filePath));
 					fos.write(Array.from(buf) as any);
 					fos.flush();
 					fos.close();
@@ -25,11 +22,11 @@ export class URL {
 		return null;
 	}
 
-	public static revokeObjectURL(url: string){
-		if(typeof url === 'string'){
-			if(NSFile.exists(url)){
+	public static revokeObjectURL(url: string) {
+		if (typeof url === 'string') {
+			if (NSFile.exists(url)) {
 				const file = NSFile.fromPath(url);
-				file.removeSync()
+				file.removeSync();
 			}
 		}
 	}
@@ -38,6 +35,6 @@ export class URL {
 		if (isIOS) {
 			return NSUUID.UUID().UUIDString;
 		}
-		return java.util.UUID.randomUUID().toString()
+		return java.util.UUID.randomUUID().toString();
 	}
 }

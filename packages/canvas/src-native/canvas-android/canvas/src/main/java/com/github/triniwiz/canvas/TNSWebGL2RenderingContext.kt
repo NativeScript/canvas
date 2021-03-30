@@ -231,10 +231,12 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			val buffer = ByteBuffer.wrap(srcData)
 			var size = srcData.size
-			val offset = srcOffset * SIZE_OF_BYTE
-			val overrideLength = srcLengthOverride * SIZE_OF_BYTE
+			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+			buffer.put(srcData)
+			buffer.rewind()
+			val offset = srcOffset
+			val overrideLength = srcLengthOverride
 			if (srcLengthOverride == 0) {
 				size = size - offset
 			} else if (overrideLength > size - offset) {
@@ -1204,7 +1206,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				val buffer = ByteBuffer.wrap(it)
+				val size = it.size
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.put(it)
+				buffer.rewind()
 				nativeTexImage3DBuffer(
 					target,
 					level,
@@ -1256,7 +1261,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				val buffer = ShortBuffer.wrap(it)
+				val size = it.size * SIZE_OF_SHORT
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asShortBuffer().put(it)
+				buffer.rewind()
 				nativeTexImage3DBuffer(
 					target,
 					level,
@@ -1308,7 +1316,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				val buffer = IntBuffer.wrap(it)
+				val size = it.size * SIZE_OF_INT
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asIntBuffer().put(it)
+				buffer.rewind()
 				nativeTexImage3DBuffer(
 					target,
 					level,
@@ -1360,7 +1371,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				val buffer = LongBuffer.wrap(it)
+				val size = it.size * SIZE_OF_LONG
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asLongBuffer().put(it)
+				buffer.rewind()
 				nativeTexImage3DBuffer(
 					target,
 					level,
@@ -1412,7 +1426,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				val buffer = FloatBuffer.wrap(it)
+				val size = it.size * SIZE_OF_FLOAT
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asFloatBuffer().put(it)
+				buffer.rewind()
 				nativeTexImage3DBuffer(
 					target,
 					level,
@@ -1463,7 +1480,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				val buffer = DoubleBuffer.wrap(it)
+				val size = it.size * SIZE_OF_DOUBLE
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asDoubleBuffer().put(it)
+				buffer.rewind()
 				nativeTexImage3DBuffer(
 					target,
 					level,
@@ -1549,6 +1569,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val ss = source.snapshot()
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
+			val size = ss.size
+			val buf = ByteBuffer.allocateDirect(size)
+			buf.put(ss)
+			buf.rewind()
 			nativeTexImage3DBuffer(
 				target,
 				level,
@@ -1559,7 +1583,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				border,
 				format,
 				type,
-				ByteBuffer.wrap(ss),
+				buf,
 				flipYWebGL
 			)
 			lock.countDown()
@@ -1725,6 +1749,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val ss = srcData.snapshot()
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
+			val size = ss.size
+			val buf = ByteBuffer.allocateDirect(size)
+			buf.put(ss)
+			buf.rewind()
 			nativeTexSubImage3DBuffer(
 				target,
 				level,
@@ -1736,7 +1764,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				depth,
 				format,
 				type,
-				ByteBuffer.wrap(ss),
+				buf,
 				flipYWebGL
 			)
 			lock.countDown()
@@ -1803,7 +1831,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			srcData?.let {
-				val buffer = ByteBuffer.wrap(it)
+				val size = it.size
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.put(it)
+				buffer.rewind()
 				buffer.position(srcOffset)
 				nativeTexSubImage3DBuffer(
 					target,
@@ -1860,7 +1891,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			srcData?.let {
-				val buffer = ShortBuffer.wrap(it)
+				val size = it.size * SIZE_OF_SHORT
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asShortBuffer().put(it)
+				buffer.rewind()
 				buffer.position(srcOffset)
 				nativeTexSubImage3DBuffer(
 					target,
@@ -1916,7 +1950,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			srcData?.let {
-				val buffer = IntBuffer.wrap(it)
+				val size = it.size * SIZE_OF_INT
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asIntBuffer().put(it)
+				buffer.rewind()
 				buffer.position(srcOffset)
 				nativeTexSubImage3DBuffer(
 					target,
@@ -1973,7 +2010,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			srcData?.let {
-				val buffer = LongBuffer.wrap(it)
+				val size = it.size * SIZE_OF_LONG
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asLongBuffer().put(it)
+				buffer.rewind()
 				buffer.position(srcOffset)
 				nativeTexSubImage3DBuffer(
 					target,
@@ -2030,7 +2070,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			srcData?.let {
-				val buffer = FloatBuffer.wrap(it)
+				val size = it.size * SIZE_OF_FLOAT
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asFloatBuffer().put(it)
+				buffer.rewind()
 				buffer.position(srcOffset)
 				nativeTexSubImage3DBuffer(
 					target,
@@ -2086,7 +2129,11 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			srcData?.let {
-				val buffer = DoubleBuffer.wrap(it)
+				val size = it.size * SIZE_OF_DOUBLE
+				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+				buffer.asDoubleBuffer().put(it)
+				buffer.rewind()
+				buffer.position(srcOffset)
 				nativeTexSubImage3DBuffer(
 					target,
 					level,

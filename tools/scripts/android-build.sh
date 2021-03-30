@@ -28,7 +28,7 @@ LIBCPLUSPLUS_SHARED_ARMEABI_V7A="$ANDROID_ARMEABI_V7A_NDK_DIR/sysroot/usr/lib/ar
 LIBCPLUSPLUS_SHARED_x86="$ANDROID_x86_NDK_DIR/sysroot/usr/lib/i686-linux-android/$LIBCPLUSPLUS_NAME"
 LIBCPLUSPLUS_SHARED_x86_64="$ANDROID_x86_64_NDK_DIR/sysroot/usr/lib/x86_64-linux-android/$LIBCPLUSPLUS_NAME"
 LIBCPLUSPLUS_SHARED_AARCH_64="$ANDROID_AARCH_64_NDK_DIR/sysroot/usr/lib/aarch64-linux-android/$LIBCPLUSPLUS_NAME"
-CARGO_FLAGS="-Z features=itarget"
+CARGO_FLAGS=""
 for arg in "$@"
 do
     if [[ "$arg" == "--help" ]] || [[ "$arg" == "-h" ]]

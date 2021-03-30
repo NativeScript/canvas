@@ -213,7 +213,7 @@ impl Path {
     }
 
     pub fn rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
-        let rect = Rect::new(x, y, width, height);
+        let rect = Rect::from_xywh(x, y, width, height);
         self.path.add_rect(&rect, None);
     }
 }

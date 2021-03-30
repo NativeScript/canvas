@@ -1,5 +1,6 @@
-use lazy_static::lazy_static;
 use std::collections::HashMap;
+
+use lazy_static::lazy_static;
 
 lazy_static! {
     static ref IPHONE_NAME_TO_PPI: HashMap<Vec<&'static str>, i32> = {

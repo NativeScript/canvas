@@ -24,6 +24,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
+
 /**
  * Created by triniwiz on 3/29/20
  */
@@ -419,6 +420,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		} else if (type.contains("webgl")) {
 			attributes["alpha"] = true
 			attributes["depth"] = true
+			attributes["antialias"] = true
 			attributes["failIfMajorPerformanceCaveat"] = false
 			attributes["powerPreference"] = "default"
 			attributes["premultipliedAlpha"] = true
@@ -438,52 +440,27 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				when (key) {
 					"alpha" -> {
 						contextAlpha = value as Boolean
-						contextDepth = value
-						contextFailIfMajorPerformanceCaveat = value
-						contextPremultipliedAlpha = value
-						contextPreserveDrawingBuffer = value
-						contextStencil = value
-						contextXrCompatible = value
-						contextDesynchronized = value
+					}
+					"antialias" -> {
+						contextAntialias = value as Boolean
 					}
 					"depth" -> {
 						contextDepth = value as Boolean
-						contextFailIfMajorPerformanceCaveat = value
-						contextPremultipliedAlpha = value
-						contextPreserveDrawingBuffer = value
-						contextStencil = value
-						contextXrCompatible = value
-						contextDesynchronized = value
 					}
 					"failIfMajorPerformanceCaveat" -> {
 						contextFailIfMajorPerformanceCaveat = value as Boolean
-						contextPremultipliedAlpha = value
-						contextPreserveDrawingBuffer = value
-						contextStencil = value
-						contextXrCompatible = value
-						contextDesynchronized = value
 					}
 					"premultipliedAlpha" -> {
 						contextPremultipliedAlpha = value as Boolean
-						contextPreserveDrawingBuffer = value
-						contextStencil = value
-						contextXrCompatible = value
-						contextDesynchronized = value
 					}
 					"preserveDrawingBuffer" -> {
 						contextPreserveDrawingBuffer = value as Boolean
-						contextStencil = value
-						contextXrCompatible = value
-						contextDesynchronized = value
 					}
 					"stencil" -> {
 						contextStencil = value as Boolean
-						contextXrCompatible = value
-						contextDesynchronized = value
 					}
 					"xrCompatible" -> {
 						contextXrCompatible = value as Boolean
-						contextDesynchronized = value
 					}
 					"desynchronized" -> contextDesynchronized = value as Boolean
 					"powerPreference" -> contextPowerPreference = value as String?
@@ -610,7 +587,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			density: Float,
 			alpha: Boolean,
 			fontColor: Int,
-			ppi: Int,
+			ppi: Float,
 			direction: Int
 		): Long
 
@@ -657,7 +634,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		internal const val ONE_MILLISECOND_NS: Long = 1000000
 		internal const val ONE_S_IN_NS = 1000 * ONE_MILLISECOND_NS
 		internal var lastCall: Long = 0
-		private var isLibraryLoaded = false
+		internal var isLibraryLoaded = false
 		const val TAG = "CanvasView"
 
 		@JvmStatic

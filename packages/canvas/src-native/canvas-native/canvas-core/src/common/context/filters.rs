@@ -31,7 +31,7 @@ impl Context {
             return;
         }
         let mut filters: Vec<&str> = value.split(")").collect();
-        let mut filters: Vec<FilterType> = filters
+        let filters: Vec<FilterType> = filters
             .into_iter()
             .filter(|x| {
                 let x = *x;
@@ -315,13 +315,13 @@ impl Context {
                     for (i, value) in value.into_iter().enumerate() {
                         match i {
                             0 => {
-                                offset.x = parse_size(value, &self.device);
+                                offset.x = parse_size(value, self.device);
                             }
                             1 => {
-                                offset.y = parse_size(value, &self.device);
+                                offset.y = parse_size(value, self.device);
                             }
                             2 => {
-                                blur = parse_size(value, &self.device);
+                                blur = parse_size(value, self.device);
                             }
                             3 => {
                                 if let Some(parsed_color) = parse_color(value) {

@@ -10,6 +10,7 @@ use jni::objects::{JByteBuffer, JClass, JObject};
 use jni::sys::{jboolean, jint, jlong, JNI_TRUE, jobject};
 
 use crate::common::context::image_asset::ImageAsset;
+use jni::errors::Error;
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;
@@ -80,27 +81,32 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
     buffer: JByteBuffer,
     flipY: jboolean,
 ) {
-    if let Ok(buf) = env.get_direct_buffer_address(buffer) {
-        if flipY == JNI_TRUE {
-            crate::common::utils::gl::flip_in_place(
-                buf.as_mut_ptr(),
-                buf.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                    as usize,
-                height as usize,
+    match env.get_direct_buffer_address(buffer) {
+        Ok(buf) => {
+            if flipY == JNI_TRUE {
+                crate::common::utils::gl::flip_in_place(
+                    buf.as_mut_ptr(),
+                    buf.len(),
+                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
+                        as usize,
+                    height as usize,
+                );
+            }
+            gl_bindings::glTexImage2D(
+                target as u32,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format as u32,
+                image_type as u32,
+                buf.as_ptr() as *const c_void,
             );
         }
-        gl_bindings::glTexImage2D(
-            target as u32,
-            level,
-            internalformat,
-            width,
-            height,
-            border,
-            format as u32,
-            image_type as u32,
-            buf.as_ptr() as *const c_void,
-        );
+        Err(e) => {
+            log::debug!("get_direct_buffer_address error {:?}",  e);
+        }
     }
 }
 

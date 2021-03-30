@@ -6,10 +6,13 @@ use jni::objects::{JByteBuffer, JClass, JObject, JString};
 use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
 use log::{debug, info};
 use log::Level;
-use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry, Rect, Size, Surface};
+use skia_safe::{
+    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry, Rect,
+    Size, Surface,
+};
 use skia_safe::gpu::gl::Interface;
 use skia_safe::image::CachingHint;
-use skia_safe::wrapper::PointerWrapper;
+
 
 use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;
@@ -17,7 +20,7 @@ use crate::common::context::text_styles::text_direction::TextDirection;
 use crate::common::to_data_url;
 
 pub mod context;
-pub mod utils;
+pub mod gl;
 pub mod gradient;
 pub mod image_asset;
 pub mod image_data;
@@ -25,10 +28,11 @@ pub mod matrix;
 pub mod paint;
 pub mod path;
 pub mod pattern;
+pub mod svg;
 pub mod text_decoder;
 pub mod text_encoder;
-pub mod gl;
 pub mod text_metrics;
+pub mod utils;
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -37,12 +41,11 @@ const GR_GL_RGBA8: u32 = 0x8058;
 pub extern "system" fn JNI_OnLoad() -> jint {
     {
         android_logger::init_once(Config::default().with_min_level(Level::Debug));
-        info!("Canvas Native library loaded");
+        log::info!("Canvas Native library loaded");
     }
 
     jni::sys::JNI_VERSION_1_6
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContext(
@@ -58,8 +61,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContext(
     ppi: jfloat,
     direction: jint,
 ) -> jlong {
-    let density = 1.0;
-    let mut device = Device {
+    let device = Device {
         width,
         height,
         density,
@@ -69,7 +71,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContext(
         ppi,
     };
     let interface = Interface::new_native();
-    let mut ctx = skia_safe::gpu::Context::new_gl(interface).unwrap();
+    let mut ctx = skia_safe::gpu::DirectContext::new_gl(interface, None).unwrap();
     let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
     if alpha == JNI_TRUE {
         frame_buffer.format = GR_GL_RGBA8;
@@ -83,13 +85,15 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContext(
         8,
         frame_buffer,
     );
-    let surface_props =
-        skia_safe::SurfaceProps::new(skia_safe::SurfacePropsFlags::default(), PixelGeometry::Unknown);
+    let surface_props = skia_safe::SurfaceProps::new(
+        skia_safe::SurfacePropsFlags::default(),
+        PixelGeometry::Unknown,
+    );
     let mut color_type = ColorType::RGBA8888;
     if alpha == JNI_FALSE {
         color_type = ColorType::RGB565;
     }
-    let mut surface_holder = Surface::from_backend_render_target(
+    let surface_holder = Surface::from_backend_render_target(
         &mut ctx,
         &target,
         skia_safe::gpu::SurfaceOrigin::BottomLeft,
@@ -100,6 +104,42 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContext(
 
     Box::into_raw(Box::new(Context {
         surface: surface_holder.unwrap(),
+        path: Path::default(),
+        state: State::from_device(device, TextDirection::from(direction)),
+        state_stack: vec![],
+        font_color: Color::new(font_color as u32),
+        device,
+    })) as jlong
+}
+
+pub(crate) fn init_with_custom_surface(
+    width: jfloat,
+    height: jfloat,
+    density: jfloat,
+    alpha: jboolean,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    // let density = 1.0;
+    let device = Device {
+        width,
+        height,
+        density,
+        non_gpu: true,
+        samples: 0,
+        alpha: alpha == JNI_TRUE,
+        ppi,
+    };
+    let info = ImageInfo::new(
+        ISize::new(width as i32, height as i32),
+        ColorType::RGBA8888,
+        AlphaType::Premul,
+        None,
+    );
+
+    Box::into_raw(Box::new(Context {
+        surface: Surface::new_raster(&info, None, None).unwrap(),
         path: Path::default(),
         state: State::from_device(device, TextDirection::from(direction)),
         state_stack: vec![],
@@ -120,40 +160,15 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeInitContextWit
     ppi: jfloat,
     direction: jint,
 ) -> jlong {
-    let density = 1.0;
-    let mut device = Device {
-        width,
-        height,
-        density,
-        non_gpu: true,
-        samples: 0,
-        alpha: alpha == JNI_TRUE,
-        ppi,
-    };
-    let info = ImageInfo::new(
-        ISize::new(width as i32, height as i32),
-        ColorType::RGBA8888,
-        AlphaType::Premul,
-        None,
-    );
-
-    Box::into_raw(Box::new(Context {
-        surface: Surface::new_raster(
-            &info,
-            None,
-            None,
-        ).unwrap(),
-        path: Path::default(),
-        state: State::from_device(device, TextDirection::from(direction)),
-        state_stack: vec![],
-        font_color: Color::new(font_color as u32),
-        device,
-    })) as jlong
+    init_with_custom_surface(width, height, density, alpha, font_color, ppi, direction)
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeDestroyContext(_: JNIEnv,
-                                                                                 _: JClass, context: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeDestroyContext(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
     if context == 0 {
         return;
     }
@@ -162,7 +177,6 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeDestroyContext
         let _ = Box::from_raw(context);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeResizeSurface(
@@ -184,13 +198,13 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeResizeSurface(
         let context: *mut Context = context as _;
         let context = &mut *context;
         let interface = skia_safe::gpu::gl::Interface::new_native();
-        let ctx = skia_safe::gpu::Context::new_gl(interface);
+        let ctx = skia_safe::gpu::DirectContext::new_gl(interface, None);
         if ctx.is_none() {
             return;
         }
         let mut ctx = ctx.unwrap();
         ctx.reset(None);
-        let mut device = Device {
+        let device = Device {
             width,
             height,
             density,
@@ -213,8 +227,10 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeResizeSurface(
             8,
             frame_buffer,
         );
-        let surface_props =
-            skia_safe::SurfaceProps::new(skia_safe::SurfacePropsFlags::default(), PixelGeometry::Unknown);
+        let surface_props = skia_safe::SurfaceProps::new(
+            skia_safe::SurfacePropsFlags::default(),
+            PixelGeometry::Unknown,
+        );
         let mut color_type = ColorType::RGBA8888;
 
         if alpha == JNI_FALSE {
@@ -253,7 +269,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeResizeCustomSu
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        let mut device = Device {
+        let device = Device {
             width,
             height,
             density,
@@ -270,11 +286,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeResizeCustomSu
             None,
         );
 
-        if let Some(surface) = Surface::new_raster(
-            &info,
-            None,
-            None,
-        ) {
+        if let Some(surface) = Surface::new_raster(&info, None, None) {
             context.surface = surface;
             context.device = device;
             context.path = Path::default();
@@ -299,39 +311,45 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeDataURL(
         let context = &mut *context;
         if let Ok(format) = env.get_string(format) {
             let format = format.to_string_lossy();
-            return env.new_string(
-                to_data_url(
+            return env
+                .new_string(to_data_url(
                     context,
                     format.as_ref(),
                     (quality * 100 as f32) as i32,
-                )
-            ).unwrap().into_inner();
+                ))
+                .unwrap()
+                .into_inner();
         }
         return env.new_string("").unwrap().into_inner();
     }
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeSnapshotCanvas(env: JNIEnv,
-                                                                                 _: JClass, context: jlong) -> jbyteArray {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeSnapshotCanvas(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jbyteArray {
     if context == 0 {
         return env.new_byte_array(0).unwrap();
     }
     unsafe {
         let context: *mut Context = context as _;
         let context = &mut *context;
-        context.surface.canvas().flush();
+        context.surface.flush();
         let ss = context.surface.image_snapshot();
         let data = ss.encode_to_data(EncodedImageFormat::PNG).unwrap();
-        let mut bytes = data.to_vec();
+        let bytes = data.to_vec();
         env.byte_array_from_slice(bytes.as_slice()).unwrap()
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeFlush(_: JNIEnv,
-                                                                        _: JClass, context: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeFlush(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -343,14 +361,20 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeFlush(_: JNIEn
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeCustomWithBitmapFlush(env: JNIEnv,
-                                                                                        _: JClass, context: jlong, bitmap: JObject) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeCustomWithBitmapFlush(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    bitmap: JObject,
+) {
     unsafe {
         if context == 0 {
             return;
         }
-        utils::image::bitmap_handler(env, bitmap, Box::new(
-            move |image_data, image_info| {
+        utils::image::bitmap_handler(
+            env,
+            bitmap,
+            Box::new(move |image_data, image_info| {
                 let info = ImageInfo::new(
                     ISize::new(image_info.width as i32, image_info.height as i32),
                     ColorType::RGBA8888,
@@ -359,19 +383,24 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeCustomWithBitm
                 );
                 let context: *mut Context = context as _;
                 let context = &mut *context;
-                let mut surface = Surface::new_raster_direct(
-                    &info, image_data, None, None,
-                ).unwrap();
+                let mut surface =
+                    Surface::new_raster_direct(&info, image_data, None, None).unwrap();
                 let canvas = surface.canvas();
                 let mut paint = skia_safe::Paint::default();
+                paint.set_anti_alias(true);
                 paint.set_style(skia_safe::PaintStyle::Fill);
                 paint.set_blend_mode(skia_safe::BlendMode::Clear);
                 canvas.draw_rect(
-                    Rect::from_xywh(0f32, 0f32, image_info.width as f32, image_info.height as f32),
+                    Rect::from_xywh(
+                        0f32,
+                        0f32,
+                        image_info.width as f32,
+                        image_info.height as f32,
+                    ),
                     &paint,
                 );
                 context.draw_on_surface(&mut surface);
-            }
-        ))
+            }),
+        )
     }
 }

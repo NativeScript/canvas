@@ -2,15 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-
-use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jbyteArray, jlong, jobject, jstring};
+use jni::JNIEnv;
 
 use crate::common::context::text_encoder::TextEncoder;
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeInit(
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeInit(
     env: JNIEnv,
     _: JClass,
     encoding: JString,
@@ -24,7 +23,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeIn
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeDestroy(
+pub  extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     encoder: jlong,
@@ -39,7 +38,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeDestroy(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeGetEncoding(
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeGetEncoding(
     env: JNIEnv,
     _: JClass,
     encoder: jlong,
@@ -52,7 +51,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeGe
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeEncode(
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeEncode(
     env: JNIEnv,
     _: JClass,
     encoder: jlong,
@@ -61,15 +60,15 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeEn
     if encoder == 0 {
         return env.new_byte_array(0).unwrap();
     }
-    if let Ok(text) = env.get_string(text) {
-        let text = text.to_string_lossy();
-        unsafe {
+    unsafe {
+        if let Ok(text) = env.get_string(text) {
+            let text = text.to_string_lossy();
             let encoder: *mut TextEncoder = encoder as _;
             let encoder = &mut *encoder;
-            let mut array = encoder.encode(text.as_ref());
-            return env.byte_array_from_slice(array.as_slice()).unwrap_or(
-                env.new_byte_array(0).unwrap()
-            );
+            let array = encoder.encode(text.as_ref());
+            return env
+                .byte_array_from_slice(array.as_slice())
+                .unwrap_or(env.new_byte_array(0).unwrap());
         }
     }
     env.new_byte_array(0).unwrap()

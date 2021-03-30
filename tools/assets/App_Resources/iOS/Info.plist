@@ -49,10 +49,10 @@
   <dict>
     <key>NSAllowsArbitraryLoads</key>
     <true/>
-		<key>NSAllowsArbitraryLoadsForMedia</key>
+		<!-- <key>NSAllowsArbitraryLoadsForMedia</key>
 		<true/>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
+		<true/> -->
 	</dict>
 </dict>
 </plist>

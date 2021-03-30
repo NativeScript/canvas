@@ -1,12 +1,10 @@
-use std::borrow::BorrowMut;
 use std::os::raw::c_float;
 
-use skia_safe::{AlphaType, BlendMode, BlurStyle, ClipOp, Color, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, MaskFilter, Matrix, PathOp, Pixmap, Point, Rect, Size, Surface};
+use skia_safe::{Color, Point, SamplingOptions, Surface};
 use skia_safe::canvas::SrcRectConstraint;
 use skia_safe::paint::Style;
 
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
-use crate::common::context::drawing_paths::fill_rule::FillRule;
 use crate::common::context::drawing_text::typography::Font;
 use crate::common::context::fill_and_stroke_styles::paint::Paint;
 use crate::common::context::image_smoothing::ImageSmoothingQuality;
@@ -90,6 +88,13 @@ pub(crate) struct State {
 }
 
 impl State {
+    pub(crate) fn image_filter_quality(&self) -> skia_safe::FilterQuality {
+        if self.image_smoothing_enabled {
+            self.image_smoothing_quality.into()
+        } else {
+            skia_safe::FilterQuality::None
+        }
+    }
     pub fn from_device(device: Device, direction: TextDirection) -> Self {
         let mut font = Font::new("10px sans-serif", device.density);
         Self {
@@ -127,23 +132,30 @@ pub struct Context {
 }
 
 impl Context {
+    pub fn device(&self) -> &Device {
+        &self.device
+    }
     pub fn reset_state(&mut self) {
         let direction = self.state.direction;
         self.state = State::from_device(self.device, direction);
     }
 
     pub fn clear_canvas(&mut self) {
-        self.surface.canvas().clear(Color::TRANSPARENT).flush();
+        self.surface.canvas().clear(Color::TRANSPARENT);
+        self.surface.flush();
     }
 
     pub fn flush(&mut self) {
-        self.surface.canvas().flush();
+        self.surface.flush();
     }
 
     pub fn draw_on_surface(&mut self, surface: &mut Surface) {
         let src_surface = &mut self.surface;
-        //let ss = src_surface.image_snapshot();
-       //surface.canvas().draw_image(ss, (0, 0), None);
-        src_surface.draw(surface.canvas(),(0, 0), None)
+        src_surface.draw(
+            surface.canvas(),
+            (0, 0),
+            SamplingOptions::from_filter_quality(skia_safe::FilterQuality::High, None),
+            None,
+        )
     }
 }

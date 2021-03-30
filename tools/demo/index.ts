@@ -1,6 +1,7 @@
 export * from './utils';
 export * from './canvas';
 export * from './canvas-babylon';
+export * from './canvas-media';
 export * from './canvas-phaser';
 export * from './canvas-phaser-ce';
 export * from './canvas-pixi';

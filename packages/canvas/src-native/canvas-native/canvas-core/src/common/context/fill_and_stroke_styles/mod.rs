@@ -17,6 +17,9 @@ impl Context {
     }
 
     pub fn set_stroke_style(&mut self, style: PaintStyle) {
+        self.state
+            .paint
+            .image_smoothing_quality_set(self.state.image_filter_quality());
         self.state.paint.set_style(false, style)
     }
 

@@ -105,7 +105,7 @@
 					"builder": "@nrwl/workspace:run-commands",
 					"outputs": ["dist/packages"],
 					"options": {
-						"commands": ["nx run canvas:build.all", "nx run canvas-polyfill:build.all", "nx run canvas-babylon:build.all", "nx run canvas-phaser:build.all", "nx run canvas-phaser-ce:build.all", "nx run canvas-pixi:build.all", "nx run canvas-three:build.all"],
+						"commands": ["nx run canvas:build.all", "nx run canvas-polyfill:build.all", "nx run canvas-babylon:build.all", "nx run canvas-phaser:build.all", "nx run canvas-phaser-ce:build.all", "nx run canvas-pixi:build.all", "nx run canvas-three:build.all", "nx run canvas-media:build.all"],
 						"parallel": false
 					}
 				},
@@ -554,6 +554,49 @@
 					"outputs": ["dist/packages"],
 					"options": {
 						"commands": ["nx workspace-schematic focus-packages canvas-three"],
+						"parallel": false
+					}
+				}
+			}
+		},
+		"canvas-media": {
+			"root": "packages/canvas-media",
+			"sourceRoot": "packages/canvas-media",
+			"projectType": "library",
+			"schematics": {},
+			"architect": {
+				"build": {
+					"builder": "@nrwl/node:package",
+					"options": {
+						"outputPath": "dist/packages/canvas-media",
+						"tsConfig": "packages/canvas-media/tsconfig.json",
+						"packageJson": "packages/canvas-media/package.json",
+						"main": "packages/canvas-media/index.ts",
+						"assets": [
+							"packages/canvas-media/*.md",
+							"packages/canvas-media/index.d.ts",
+							"LICENSE",
+							{
+								"glob": "**/*",
+								"input": "packages/canvas-media/platforms/",
+								"output": "./platforms/"
+							}
+						]
+					}
+				},
+				"build.all": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx run canvas-media:build", "node tools/scripts/build-finish.ts canvas-media"],
+						"parallel": false
+					}
+				},
+				"focus": {
+					"builder": "@nrwl/workspace:run-commands",
+					"outputs": ["dist/packages"],
+					"options": {
+						"commands": ["nx workspace-schematic focus-packages canvas-media"],
 						"parallel": false
 					}
 				}

@@ -8,12 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		F107B96E255AE5850094FC51 /* TNSFillRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = F107B96D255AE5850094FC51 /* TNSFillRule.swift */; };
+		F11A1ABB25C238F100E60484 /* TNSSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11A1ABA25C238F100E60484 /* TNSSVG.swift */; };
 		F11A7431255930590038B4C6 /* TNSTextDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11A7430255930590038B4C6 /* TNSTextDirection.swift */; };
 		F11C5D142524403700538D04 /* CanvasNative.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F11C5D0A2524403700538D04 /* CanvasNative.framework */; };
 		F11C5D192524403700538D04 /* CanvasNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11C5D182524403700538D04 /* CanvasNativeTests.swift */; };
 		F11C5D1B2524403700538D04 /* CanvasNative.h in Headers */ = {isa = PBXBuildFile; fileRef = F11C5D0D2524403700538D04 /* CanvasNative.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F1A87B25255BB4F000394387 /* TextBaseLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A87B24255BB4F000394387 /* TextBaseLine.swift */; };
 		F1A87C75255D00BA00394387 /* TNSCanvas.xib in Resources */ = {isa = PBXBuildFile; fileRef = F1A87C74255D00BA00394387 /* TNSCanvas.xib */; };
+		F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE2E4E2612F7CA0000D48F /* Utils.swift */; };
 		F1FF6A6A25248CFF001DAE0D /* TNSDOMMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3225248CFE001DAE0D /* TNSDOMMatrix.swift */; };
 		F1FF6A6B25248CFF001DAE0D /* TNSTextAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3325248CFE001DAE0D /* TNSTextAlignment.swift */; };
 		F1FF6A6C25248CFF001DAE0D /* TNSCanvasListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3425248CFE001DAE0D /* TNSCanvasListener.swift */; };
@@ -83,6 +85,7 @@
 
 /* Begin PBXFileReference section */
 		F107B96D255AE5850094FC51 /* TNSFillRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSFillRule.swift; sourceTree = "<group>"; };
+		F11A1ABA25C238F100E60484 /* TNSSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSSVG.swift; path = CanvasNative/Source/TNSSVG.swift; sourceTree = "<group>"; };
 		F11A7430255930590038B4C6 /* TNSTextDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSTextDirection.swift; sourceTree = "<group>"; };
 		F11C5D0A2524403700538D04 /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F11C5D0D2524403700538D04 /* CanvasNative.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CanvasNative.h; sourceTree = "<group>"; };
@@ -92,6 +95,7 @@
 		F11C5D1A2524403700538D04 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F1A87B24255BB4F000394387 /* TextBaseLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextBaseLine.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* TNSCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TNSCanvas.xib; sourceTree = "<group>"; };
+		F1DE2E4E2612F7CA0000D48F /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		F1FF6A3225248CFE001DAE0D /* TNSDOMMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSDOMMatrix.swift; path = CanvasNative/Source/TNSDOMMatrix.swift; sourceTree = "<group>"; };
 		F1FF6A3325248CFE001DAE0D /* TNSTextAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSTextAlignment.swift; path = CanvasNative/Source/TNSTextAlignment.swift; sourceTree = "<group>"; };
 		F1FF6A3425248CFE001DAE0D /* TNSCanvasListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSCanvasListener.swift; path = CanvasNative/Source/TNSCanvasListener.swift; sourceTree = "<group>"; };
@@ -199,6 +203,8 @@
 		F11C5D002524403700538D04 = {
 			isa = PBXGroup;
 			children = (
+				F1DE2E4E2612F7CA0000D48F /* Utils.swift */,
+				F11A1ABA25C238F100E60484 /* TNSSVG.swift */,
 				F1A87C74255D00BA00394387 /* TNSCanvas.xib */,
 				F1A87B24255BB4F000394387 /* TextBaseLine.swift */,
 				F107B96D255AE5850094FC51 /* TNSFillRule.swift */,
@@ -438,10 +444,12 @@
 				F1FF6A8725248CFF001DAE0D /* TNS_OES_texture_half_float.swift in Sources */,
 				F1FF6A8825248CFF001DAE0D /* TNSTextDecoder.swift in Sources */,
 				F1FF6A8925248CFF001DAE0D /* TNSWebGLActiveInfo.swift in Sources */,
+				F11A1ABB25C238F100E60484 /* TNSSVG.swift in Sources */,
 				F1FF6A8A25248CFF001DAE0D /* TNSWebGLRenderingContext.swift in Sources */,
 				F1FF6A8B25248CFF001DAE0D /* HowToClear.swift in Sources */,
 				F1FF6A8C25248CFF001DAE0D /* TNS_OES_fbo_render_mipmap.swift in Sources */,
 				F1FF6A8D25248CFF001DAE0D /* TNSImageSmoothingQuality.swift in Sources */,
+				F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */,
 				F1FF6A8E25248CFF001DAE0D /* TNSWebGLShaderPrecisionFormat.swift in Sources */,
 				F1FF6A8F25248CFF001DAE0D /* TNS_OES_texture_half_float_linear.swift in Sources */,
 				F1FF6A9025248CFF001DAE0D /* TNS_OES_texture_float_linear.swift in Sources */,

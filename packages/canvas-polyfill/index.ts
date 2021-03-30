@@ -1,12 +1,20 @@
 require('globals');
-import {TNSXMLHttpRequest, FileReader, Blob} from './async/async';
-import {Element} from './DOM/Element';
-import {Document} from './DOM/Document';
+
+if (global.android && !(global as any).__canvasLoaded) {
+	try {
+		// load canvas lib if polyfill is called before
+		java.lang.System.loadLibrary('canvasnative');
+		(global as any).__canvasLoaded = true;
+	} catch (e) {}
+}
+import { TNSXMLHttpRequest, FileReader, Blob } from './async/async';
+import { Element } from './DOM/Element';
+import { Document } from './DOM/Document';
 import './window';
 import './resize';
 import './process';
-import {TextDecoder, TextEncoder} from '@nativescript/canvas';
-import {URL} from './URL';
+import { TextDecoder, TextEncoder } from '@nativescript/canvas';
+import { URL } from './URL';
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 Object.defineProperty(global, 'Element', {
 	value: Element,
@@ -45,7 +53,6 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 		writable: true,
 	});
 }
-
 
 if (!((global as any).URL instanceof URL)) {
 	Object.defineProperty(global, 'URL', {

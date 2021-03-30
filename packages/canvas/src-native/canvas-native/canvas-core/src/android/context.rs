@@ -1,9 +1,10 @@
 use jni::errors::Error;
 use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JString, JValue};
-use jni::sys::{jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
+use jni::objects::{JClass, JObject, JString, JValue, ReleaseMode};
+use jni::sys::{
+    jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring,
+};
 use skia_safe::Rect;
-use skia_safe::wrapper::NativeTransmutableWrapper;
 
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
 use crate::common::context::Context;
@@ -26,7 +27,6 @@ use crate::common::utils::image::{from_image_slice, from_image_slice_encoded, to
 
 const JSON_CLASS: &str = "org/json/JSONObject";
 static SIG_OBJECT_CTOR: &str = "()V";
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetDirection(
@@ -57,7 +57,6 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         context.direction().into()
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetFillStyle(
@@ -93,33 +92,41 @@ fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
         } else {
             style = context.stroke_style().clone();
         }
-        let mut value_args = vec![
-            env.new_string("value").unwrap().into()
-        ];
-        let mut value_type_args = vec![
-            env.new_string("value_type").unwrap().into()
-        ];
+        let mut value_args = vec![env.new_string("value").unwrap().into()];
+        let mut value_type_args = vec![env.new_string("value_type").unwrap().into()];
         match style {
             PaintStyle::Color(_) => {
-                value_type_args.push(
-                    JValue::Int(PaintStyleValueType::PaintStyleValueTypeColor.into())
-                );
+                value_type_args.push(JValue::Int(
+                    PaintStyleValueType::PaintStyleValueTypeColor.into(),
+                ));
             }
             PaintStyle::Gradient(_) => {
-                value_type_args.push(
-                    JValue::Int(PaintStyleValueType::PaintStyleValueTypeGradient.into())
-                );
+                value_type_args.push(JValue::Int(
+                    PaintStyleValueType::PaintStyleValueTypeGradient.into(),
+                ));
             }
             PaintStyle::Pattern(_) => {
-                value_type_args.push(
-                    JValue::Int(PaintStyleValueType::PaintStyleValueTypePattern.into())
-                );
+                value_type_args.push(JValue::Int(
+                    PaintStyleValueType::PaintStyleValueTypePattern.into(),
+                ));
             }
         };
         let style = Box::into_raw(Box::new(style)) as jlong;
         value_args.push(style.into());
-        env.call_method(json, "put", "(Ljava/lang/String;I)Lorg/json/JSONObject;", value_args.as_slice()).unwrap();
-        env.call_method(json, "put", "(Ljava/lang/String;I)Lorg/json/JSONObject;", value_type_args.as_slice()).unwrap();
+        env.call_method(
+            json,
+            "put",
+            "(Ljava/lang/String;I)Lorg/json/JSONObject;",
+            value_args.as_slice(),
+        )
+            .unwrap();
+        env.call_method(
+            json,
+            "put",
+            "(Ljava/lang/String;I)Lorg/json/JSONObject;",
+            value_type_args.as_slice(),
+        )
+            .unwrap();
         json.into_inner()
     }
 }
@@ -373,7 +380,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineDashOffset(_: JNIEnv, _: JClass, context: jlong) -> jfloat {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineDashOffset(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jfloat {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -382,7 +393,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineJoin(_: JNIEnv, _: JClass, context: jlong, join: jint) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineJoin(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    join: jint,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -394,7 +410,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineJoin(_: JNIEnv, _: JClass, context: jlong) -> jint {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineJoin(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jint {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -403,7 +423,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineWidth(_: JNIEnv, _: JClass, context: jlong, width: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineWidth(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    width: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -415,7 +440,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineWidth(_: JNIEnv, _: JClass, context: jlong) -> jfloat {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineWidth(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jfloat {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -424,7 +453,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetMiterLimit(_: JNIEnv, _: JClass, context: jlong, limit: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetMiterLimit(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    limit: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -436,7 +470,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetMiterLimit(_: JNIEnv, _: JClass, context: jlong) -> jfloat {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetMiterLimit(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jfloat {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -445,7 +483,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowBlur(_: JNIEnv, _: JClass, context: jlong, blur: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowBlur(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    blur: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -457,7 +500,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowBlur(_: JNIEnv, _: JClass, context: jlong) -> jfloat {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowBlur(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jfloat {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -513,16 +560,27 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowColor(env: JNIEnv, _: JClass, context: jlong) -> jstring {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowColor(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jstring {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
-        env.new_string(to_parsed_color(context.shadow_color())).unwrap().into_inner()
+        env.new_string(to_parsed_color(context.shadow_color()))
+            .unwrap()
+            .into_inner()
     }
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetX(_: JNIEnv, _: JClass, context: jlong, x: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetX(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+) {
     unsafe {
         let context: *mut Context = context as _;
         let context = &mut *context;
@@ -531,7 +589,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetX(_: JNIEnv, _: JClass, context: jlong) -> jfloat {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetX(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jfloat {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -540,7 +602,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetY(_: JNIEnv, _: JClass, context: jlong, y: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetY(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    y: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -552,7 +619,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetY(_: JNIEnv, _: JClass, context: jlong) -> jfloat {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetY(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jfloat {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -589,7 +660,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTextAlign(_: JNIEnv, _: JClass, context: jlong, align: jint) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTextAlign(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    align: jint,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -601,7 +677,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTextAlign(_: JNIEnv, _: JClass, context: jlong) -> jint {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTextAlign(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jint {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -627,14 +707,17 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTextBaseline(_: JNIEnv, _: JClass, context: jlong) -> jint {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTextBaseline(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jint {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
         context.text_baseline().into()
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeArc(
@@ -654,7 +737,14 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        context.arc(x, y, radius, start_angle, end_angle, anti_clockwise == JNI_TRUE)
+        context.arc(
+            x,
+            y,
+            radius,
+            start_angle,
+            end_angle,
+            anti_clockwise == JNI_TRUE,
+        )
     }
 }
 
@@ -680,8 +770,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeBeginPath(_: JNIEnv,
-                                                                                              _: JClass, context: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeBeginPath(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -735,8 +828,13 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClip(_: JNIEnv,
-                                                                                         _: JClass, context: jlong, path: jlong, rule: jint) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClip(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    path: jlong,
+    rule: jint,
+) {
     unsafe {
         if context == 0 || path == 0 {
             return;
@@ -749,8 +847,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClipRule(_: JNIEnv,
-                                                                                             _: JClass, context: jlong, rule: jint) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClipRule(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    rule: jint,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -762,8 +864,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClosePath(_: JNIEnv,
-                                                                                              _: JClass, context: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClosePath(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -774,11 +879,14 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreateImageData(_: JNIEnv,
-                                                                                                    _: JClass, width: jint, height: jint) -> jlong {
-    unsafe { Box::into_raw(Box::new(Context::create_image_data(width, height))) as jlong }
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreateImageData(
+    _: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+) -> jlong {
+    Box::into_raw(Box::new(Context::create_image_data(width, height))) as jlong
 }
 
 #[no_mangle]
@@ -797,9 +905,9 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        Box::into_raw(Box::new(
-            PaintStyle::Gradient(context.create_linear_gradient(x0, y0, x1, y1))
-        )) as jlong
+        Box::into_raw(Box::new(PaintStyle::Gradient(
+            context.create_linear_gradient(x0, y0, x1, y1),
+        ))) as jlong
     }
 }
 
@@ -818,20 +926,19 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-
-        if let Ok(val) = env.get_byte_array_elements(image_data) {
-            let length = env.get_array_length(image_data).unwrap_or(0) as usize;
-            let buf = std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.0), length);
+        if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
+            let length = val.size().unwrap_or(0) as usize;
+            let buf =
+                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
             if let Some(image) = from_image_slice_encoded(buf) {
-                return Box::into_raw(Box::new(
-                    PaintStyle::Pattern(context.create_pattern(image, Repetition::from(repetition)))
-                )) as jlong;
+                return Box::into_raw(Box::new(PaintStyle::Pattern(
+                    context.create_pattern(image, Repetition::from(repetition)),
+                ))) as jlong;
             }
         }
         0
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithAsset(
@@ -853,10 +960,14 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
         let bytes = asset.rgba_internal_bytes();
-        if let Some(image) = from_image_slice(bytes.as_slice(), asset.width() as i32, asset.height() as i32) {
-            return Box::into_raw(Box::new(
-                PaintStyle::Pattern(context.create_pattern(image, Repetition::from(repetition)))
-            )) as jlong;
+        if let Some(image) = from_image_slice(
+            bytes.as_slice(),
+            asset.width() as i32,
+            asset.height() as i32,
+        ) {
+            return Box::into_raw(Box::new(PaintStyle::Pattern(
+                context.create_pattern(image, Repetition::from(repetition)),
+            ))) as jlong;
         }
         0
     }
@@ -880,25 +991,26 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        Box::into_raw(Box::new(
-            PaintStyle::Gradient(context.create_radial_gradient(x0, y0, r0, x1, y1, r1))
-        )) as jlong
+        Box::into_raw(Box::new(PaintStyle::Gradient(
+            context.create_radial_gradient(x0, y0, r0, x1, y1, r1),
+        ))) as jlong
     }
 }
 
-
-fn draw_image(context: jlong,
-              image_data: &[u8],
-              width: jfloat,
-              height: jfloat,
-              sx: jfloat,
-              sy: jfloat,
-              s_width: jfloat,
-              s_height: jfloat,
-              dx: jfloat,
-              dy: jfloat,
-              d_width: jfloat,
-              d_height: jfloat) {
+fn draw_image(
+    context: jlong,
+    image_data: &[u8],
+    width: jfloat,
+    height: jfloat,
+    sx: jfloat,
+    sy: jfloat,
+    s_width: jfloat,
+    s_height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+    d_width: jfloat,
+    d_height: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -928,9 +1040,18 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 ) {
     let bytes = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap);
     draw_image(
-        context, bytes.0.as_slice(), width,
-        height, 0.0, 0.0, width, height,
-        dx, dy, width, height,
+        context,
+        bytes.0.as_slice(),
+        width,
+        height,
+        0.0,
+        0.0,
+        width,
+        height,
+        dx,
+        dy,
+        width,
+        height,
     );
 }
 
@@ -946,13 +1067,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     dy: jfloat,
 ) {
     unsafe {
-        if let Ok(val) = env.get_byte_array_elements(image_data) {
-            let length = env.get_array_length(image_data).unwrap_or(0) as usize;
-            let buf = std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.0), length);
+        if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
+            let length = val.size().unwrap_or(0) as usize;
+            let buf =
+                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
             draw_image(
-                context, buf, width,
-                height, 0.0, 0.0, width, height,
-                dx, dy, width, height,
+                context, buf, width, height, 0.0, 0.0, width, height, dx, dy, width, height,
             );
         }
     }
@@ -977,13 +1097,21 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
-            context, bytes.as_slice(), width,
-            height, 0.0, 0.0, width, height,
-            dx, dy, width, height,
+            context,
+            bytes.as_slice(),
+            width,
+            height,
+            0.0,
+            0.0,
+            width,
+            height,
+            dx,
+            dy,
+            width,
+            height,
         );
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithBitmap(
@@ -1000,13 +1128,20 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 ) {
     let bytes = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap);
     draw_image(
-        context, bytes.0.as_slice(),
-        width, height,
-        0.0, 0.0, width, height,
-        dx, dy, d_width, d_height,
+        context,
+        bytes.0.as_slice(),
+        width,
+        height,
+        0.0,
+        0.0,
+        width,
+        height,
+        dx,
+        dy,
+        d_width,
+        d_height,
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDh(
@@ -1022,19 +1157,16 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     d_height: jfloat,
 ) {
     unsafe {
-        if let Ok(val) = env.get_byte_array_elements(image_data) {
-            let length = env.get_array_length(image_data).unwrap_or(0) as usize;
-            let buf = std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.0), length);
+        if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
+            let length = val.size().unwrap_or(0) as usize;
+            let buf =
+                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
             draw_image(
-                context, buf,
-                width, height,
-                0.0, 0.0, width, height,
-                dx, dy, d_width, d_height,
+                context, buf, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
             )
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithAsset(
@@ -1057,9 +1189,18 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
-            context, bytes.as_slice(), width,
-            height, 0.0, 0.0, width, height,
-            dx, dy, d_width, d_height,
+            context,
+            bytes.as_slice(),
+            width,
+            height,
+            0.0,
+            0.0,
+            width,
+            height,
+            dx,
+            dy,
+            d_width,
+            d_height,
         );
     }
 }
@@ -1082,7 +1223,20 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     d_height: jfloat,
 ) {
     let bytes = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap);
-    draw_image(context, bytes.0.as_slice(), width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height)
+    draw_image(
+        context,
+        bytes.0.as_slice(),
+        width,
+        height,
+        sx,
+        sy,
+        s_width,
+        s_height,
+        dx,
+        dy,
+        d_width,
+        d_height,
+    )
 }
 
 #[no_mangle]
@@ -1110,13 +1264,21 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
-            context, bytes.as_slice(), width,
-            height, sx, sy, s_width, s_height,
-            dx, dy, d_width, d_height,
+            context,
+            bytes.as_slice(),
+            width,
+            height,
+            sx,
+            sy,
+            s_width,
+            s_height,
+            dx,
+            dy,
+            d_width,
+            d_height,
         );
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImage(
@@ -1136,14 +1298,16 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     d_height: jfloat,
 ) {
     unsafe {
-        if let Ok(val) = env.get_byte_array_elements(image_data) {
-            let length = env.get_array_length(image_data).unwrap_or(0) as usize;
-            let buf = std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.0), length);
-            draw_image(context, buf, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height)
+        if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
+            let length = val.size().unwrap_or(0) as usize;
+            let buf =
+                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
+            draw_image(
+                context, buf, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+            )
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeEllipse(
@@ -1179,8 +1343,13 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeFill(_: JNIEnv,
-                                                                                         _: JClass, context: jlong, path: jlong, rule: jint) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeFill(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    path: jlong,
+    rule: jint,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1261,21 +1430,28 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineDash(env: JNIEnv,
-                                                                                                _: JClass, context: jlong) -> jfloatArray {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineDash(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jfloatArray {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
-        let mut line_dash = context.line_dash();
+        let line_dash = context.line_dash();
         let array = env.new_float_array(line_dash.len() as i32).unwrap();
-        env.set_float_array_region(array, 0, line_dash).unwrap_or(());
+        env.set_float_array_region(array, 0, line_dash)
+            .unwrap_or(());
         array
     }
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTansform(_: JNIEnv,
-                                                                                                _: JClass, context: jlong) -> jlong {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTansform(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) -> jlong {
     unsafe {
         if context == 0 {
             return 0;
@@ -1339,8 +1515,13 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeLineTo(_: JNIEnv,
-                                                                                           _: JClass, context: jlong, x: jfloat, y: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeLineTo(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+    y: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1352,8 +1533,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeMeasureText(env: JNIEnv,
-                                                                                                _: JClass, context: jlong, text: JString) -> jlong {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeMeasureText(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    text: JString,
+) -> jlong {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -1364,8 +1549,13 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeMoveTo(_: JNIEnv,
-                                                                                           _: JClass, context: jlong, x: jfloat, y: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeMoveTo(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+    y: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1449,8 +1639,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeResetTransform(_: JNIEnv,
-                                                                                                   _: JClass, context: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeResetTransform(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1462,8 +1655,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeRestore(_: JNIEnv,
-                                                                                            _: JClass, context: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeRestore(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1475,8 +1671,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeRotate(_: JNIEnv,
-                                                                                           _: JClass, context: jlong, angle: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeRotate(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    angle: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1488,8 +1688,11 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSave(_: JNIEnv,
-                                                                                         _: JClass, context: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSave(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1501,8 +1704,13 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeScale(_: JNIEnv,
-                                                                                          _: JClass, context: jlong, x: jfloat, y: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeScale(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+    y: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1514,8 +1722,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineDash(env: JNIEnv,
-                                                                                                _: JClass, context: jlong, dash: jfloatArray) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineDash(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    dash: jfloatArray,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1554,8 +1766,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTransformMatrix(_: JNIEnv,
-                                                                                                       _: JClass, context: jlong, matrix: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTransformMatrix(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    matrix: jlong,
+) {
     unsafe {
         if context == 0 || matrix == 0 {
             return;
@@ -1569,8 +1785,12 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeStroke(_: JNIEnv,
-                                                                                           _: JClass, context: jlong, path: jlong) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeStroke(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    path: jlong,
+) {
     unsafe {
         if context == 0 {
             return;
@@ -1652,8 +1872,13 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeTranslate(_: JNIEnv,
-                                                                                              _: JClass, context: jlong, x: jfloat, y: jfloat) {
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeTranslate(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+    y: jfloat,
+) {
     unsafe {
         if context == 0 {
             return;

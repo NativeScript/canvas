@@ -6,7 +6,7 @@ use crate::common::context::matrix::Matrix;
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeInit(_: JNIEnv,
-                                                                      _: JClass) -> jlong {
+                                                                          _: JClass) -> jlong {
     Box::into_raw(
         Box::new(
             Matrix::new()
@@ -17,7 +17,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeInit(_: JNI
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeUpdate(env: JNIEnv,
-                                                                      _: JClass, matrix: jlong, data: jfloatArray) {
+                                                                            _: JClass, matrix: jlong, data: jfloatArray) {
     if matrix == 0 {
         return;
     }
@@ -34,7 +34,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeUpdate(env:
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeA(_: JNIEnv,
-                                                                 _: JClass, matrix: jlong) -> jfloat {
+                                                                       _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }

@@ -20,33 +20,6 @@ export class Ellipse extends SVGItem {
 	cy: any;
 	rx: any;
 	ry: any;
-
-	constructor() {
-		super();
-		this.stroke = 'transparent';
-	}
-
-	handleValues(canvas?) {
-		let ctx: any;
-		if (canvas) {
-			ctx = canvas.getContext('2d');
-		} else {
-			ctx = this._canvas.getContext('2d') as any;
-		}
-		const ellipse = new Path2D();
-		ellipse.ellipse(this.cx, this.cy, this.rx, this.ry, 0, 0, 2 * Math.PI);
-		ctx.save();
-		if (this._doFill()) {
-			ctx.fillStyle = this._realFill;
-			ctx.stroke(ellipse);
-		}
-
-		if (this._doStroke()) {
-			ctx.strokeStyle = this._realStroke;
-			ctx.fill(ellipse);
-		}
-		ctx.restore();
-	}
 }
 
 cxProperty.register(Ellipse);

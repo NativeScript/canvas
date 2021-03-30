@@ -267,6 +267,7 @@ module.exports = (env) => {
 					{ from: '**/*.jpeg',  dot: false },
 					{ from: '**/*.gif',  dot: false },
 					{ from: '**/*.svg',  dot: false },
+					{ from: '**/*.mp4',  dot: false },
 					{ from: '../../../tools/demo/canvas/assets', to: 'assets/file-assets', dot: false  },
 					{ from: '../../../tools/demo/canvas-babylon/assets', to: 'assets/babylon', dot: false  },
 					{ from: '../../../tools/demo/canvas-phaser/assets', to: 'assets/phaser', dot: false  },

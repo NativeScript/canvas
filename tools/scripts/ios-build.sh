@@ -12,7 +12,7 @@ OUTPUT_LIB_NAME="libcanvasnative.a"
 IS_RELEASE=false
 BUILD_FLAG=""
 BITCODE_ENABLED=false
-FEATURE_FLAGS="-Z features=itarget"
+FEATURE_FLAGS=""
 ##CARGO_FLAGS="-C link-arg=-s -Z embed-bitcode features=itarget target-cpu=native"
 CARGO_FLAGS="-C target-cpu=native"
 ##CARGO_FLAGS=""

@@ -42,11 +42,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.group(this.canvas);
 		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
-		this.threeCrate(this.canvas);
+		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
 		//this.threeOcean(this.canvas);
-		//this.threeCube(this.canvas);
+		this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
 		//this.geoTextShapes(this.canvas);
@@ -59,6 +59,23 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
+		//this.renderVideo();
+	}
+
+	renderVideo(){
+		const ctx = this.canvas.getContext('webgl');
+		const video = document.createElement('video');
+		video.loop = true;
+		video.autoplay = true;
+		video.src = "https://github.com/mdn/webgl-examples/blob/gh-pages/tutorial/sample8/Firefox.mp4?raw=true";
+		function update(){
+			//@ts-ignore
+			video.requestVideoFrameCallback(update);
+			//@ts-ignore
+		video._video.getCurrentFrame(ctx.native);
+		}
+		//@ts-ignore
+		video.requestVideoFrameCallback(update);
 
 	}
 
@@ -1266,23 +1283,32 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 	}
 
+	// http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+
 	threeCube(canvas) {
 		var camera, scene, renderer;
 		var geometry, material, mesh;
-
+		var texture;
+		const src = 'https://github.com/mdn/webgl-examples/blob/gh-pages/tutorial/sample8/Firefox.mp4?raw=true' //this.root + '/textures/Firefox.mp4'
 		init();
 		animate();
 
 		function init() {
 			const context = canvas.getContext('webgl2');
-
-			camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
+			texture = document.createElement('video');
+			texture.loop = true;
+			texture.muted = true;
+			texture.src = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+			texture.play();
+			camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 1000);
 			camera.position.z = 1;
 
 			scene = new THREE.Scene();
 
+			
 			geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-			material = new THREE.MeshNormalMaterial();
+			material = new THREE.MeshBasicMaterial();
+			material.map = new THREE.VideoTexture(texture)
 
 			mesh = new THREE.Mesh(geometry, material);
 			scene.add(mesh);
@@ -1296,6 +1322,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			requestAnimationFrame(animate);
 
 			mesh.rotation.x += 0.01;
+			mesh.rotation.y += 0.01;
 
 			renderer.render(scene, camera);
 		}
@@ -1405,6 +1432,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			loader.setDRACOLoader(dracoLoader);
 
 			loader.load(root + '/models/gltf/ferrari.glb', function (gltf) {
+				console.log('ferrari.glb');
 				const carModel: any = gltf.scene.children[0];
 
 				carModel.getObjectByName('body').material = bodyMaterial;
@@ -2720,8 +2748,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var container, stats;
 		var camera, scene, renderer;
 		var controls, water, sun, mesh;
-		const context = canvas.getContext('webgl2') as any;
-		renderer = new THREE.WebGLRenderer({ context, antialias: true });
+		const context = canvas.getContext('webgl2', {antialias: false}) as any;
+		renderer = new THREE.WebGLRenderer({ context, antialias: false });
 		renderer.setPixelRatio(1);
 		renderer.setSize(context.drawingBufferWidth, context.drawingBufferHeight);
 		scene = new THREE.Scene();

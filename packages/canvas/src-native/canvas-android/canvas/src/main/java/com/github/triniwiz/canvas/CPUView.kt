@@ -29,7 +29,7 @@ class CPUView @JvmOverloads constructor(
 								metrics.density,
 								true,
 								Color.BLACK,
-								metrics.densityDpi * 160,
+								metrics.densityDpi * 160F,
 								TNSCanvas.direction.toNative()
 							)
 							handler?.post {

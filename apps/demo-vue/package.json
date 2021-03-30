@@ -3,7 +3,15 @@
   "dependencies": {
     "nativescript-theme-core": "file:../../node_modules/nativescript-theme-core",
     "nativescript-vue": "file:../../node_modules/nativescript-vue",
-    "@nativescript/core": "file:../../node_modules/@nativescript/core"
+    "@nativescript/core": "file:../../node_modules/@nativescript/core",
+    "@nativescript/canvas-media": "file:../../packages/canvas-media",
+    "@nativescript/canvas": "file:../../packages/canvas",
+    "@nativescript/canvas-babylon": "file:../../packages/canvas-babylon",
+    "@nativescript/canvas-phaser": "file:../../packages/canvas-phaser",
+    "@nativescript/canvas-phaser-ce": "file:../../packages/canvas-phaser-ce",
+    "@nativescript/canvas-pixi": "file:../../packages/canvas-pixi",
+    "@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
+    "@nativescript/canvas-three": "file:../../packages/canvas-three"
   },
   "devDependencies": {
     "@types/chai": "^4.1.4",

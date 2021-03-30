@@ -8,7 +8,6 @@ pub enum LineCap {
     CapSquare = 2,
 }
 
-
 impl Into<Cap> for LineCap {
     fn into(self) -> Cap {
         match self {
@@ -24,7 +23,18 @@ impl Into<i32> for LineCap {
         match self {
             LineCap::CapButt => 0,
             LineCap::CapRound => 1,
-            LineCap::CapSquare => 2
+            LineCap::CapSquare => 2,
+        }
+    }
+}
+
+impl From<&str> for LineCap {
+    fn from(value: &str) -> LineCap {
+        match value {
+            "butt" => LineCap::CapButt,
+            "round" => LineCap::CapRound,
+            "square" => LineCap::CapSquare,
+            _ => LineCap::CapButt,
         }
     }
 }
@@ -35,9 +45,7 @@ impl From<i32> for LineCap {
             0 => LineCap::CapButt,
             1 => LineCap::CapRound,
             2 => LineCap::CapSquare,
-            _ => {
-                LineCap::CapButt
-            }
+            _ => LineCap::CapButt,
         }
     }
 }

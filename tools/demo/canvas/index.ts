@@ -1,66 +1,230 @@
 import { DemoSharedBase } from '../utils';
-import { ImageSource, ObservableArray, Screen, Color } from '@nativescript/core';
+import { ImageSource, ObservableArray, Screen, Color, Application } from '@nativescript/core';
 import Chart from 'chart.js';
 
 let Matter;
 import { Canvas, ImageAsset } from '@nativescript/canvas';
-import {
-	arc,
-	arcTo,
-	cancelParticlesColor,
-	cancelParticlesLarge,
-	cancelRain,
-	cancelRainbowOctopus,
-	cancelSwarm, clip,
-	colorRain, createLinearGradient, createRadialGradient, ellipse, fillRule, imageBlock, imageSmoothingEnabled,
-	imageSmoothingQuality,
-	isPointInStrokeTouch,
-	march, multiStrokeStyle,
-	particlesColor,
-	particlesLarge,
-	patternWithCanvas,
-	rainbowOctopus, shadowBlur,
-	swarm,
-	touchParticles
-} from "./canvas2d";
-
+import { arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, colorRain, createLinearGradient, createRadialGradient, ellipse, fillRule, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, shadowBlur, swarm, touchParticles } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import Vex from 'vexflow';
-import {
-	cancelInteractiveCube,
-	cancelMain, cubeRotation,
-	cubeRotationRotation,
-	drawElements,
-	drawModes, imageFilter,
-	interactiveCube,
-	main,
-	textures
-} from "./webgl";
-import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from "./webgl2";
+import { handleVideo,cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures } from './webgl';
+import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 declare var com, java;
-let zen3d
+let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
 	private svg: Svg.Svg;
+	private svg2: Svg.Svg;
+	private svg3: Svg.Svg;
+	private svg4: Svg.Svg;
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		//this.draw();
+		this.draw();
 	}
 
-	svgCanvasLoaded(args) {
-		this.svg = args.object;
-		console.log('svg ready');
-		this.svg.batch(() => {
-			this.drawSvg(this.svg);
-		});
+	svgViewLoaded(args) {
+		const view = args.object;
+		console.log('svg ready', view.id);
+		this.drawSvg(this.svg, view.id);
 	}
 
-	drawSvg(args: Svg.Svg) {
+	svg2ViewLoaded(args) {
+		this.svg2 = args.object;
+		console.log('svg2 ready');
+		this.set('src2', 'http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg');
+	}
 
+	drawTransformMatrixSvg() {
+		this.set(
+			'src',
+			`
+			<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+		<rect x="10" y="10" width="30" height="20" fill="green" />
+
+		<!--
+		In the following example we are applying the matrix:
+		[a c e]    [3 -1 30]
+		[b d f] => [1  3 40]
+		[0 0 1]    [0  0  1]
+
+		which transform the rectangle as such:
+
+		top left corner: oldX=10 oldY=10
+		newX = a * oldX + c * oldY + e = 3 * 10 - 1 * 10 + 30 = 50
+		newY = b * oldX + d * oldY + f = 1 * 10 + 3 * 10 + 40 = 80
+
+		top right corner: oldX=40 oldY=10
+		newX = a * oldX + c * oldY + e = 3 * 40 - 1 * 10 + 30 = 140
+		newY = b * oldX + d * oldY + f = 1 * 40 + 3 * 10 + 40 = 110
+
+		bottom left corner: oldX=10 oldY=30
+		newX = a * oldX + c * oldY + e = 3 * 10 - 1 * 30 + 30 = 30
+		newY = b * oldX + d * oldY + f = 1 * 10 + 3 * 30 + 40 = 140
+
+		bottom right corner: oldX=40 oldY=30
+		newX = a * oldX + c * oldY + e = 3 * 40 - 1 * 30 + 30 = 120
+		newY = b * oldX + d * oldY + f = 1 * 40 + 3 * 30 + 40 = 170
+		-->
+		<rect x="10" y="10" width="30" height="20" fill="red"
+		transform="matrix(3 1 -1 3 30 40)" />
+		</svg>`
+		);
+	}
+
+	drawTransformTranslateSvg() {
+		/// translate transform
+
+		this.set(
+			'src',
+			`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- No translation -->
+  <rect x="5" y="5" width="40" height="40" fill="green" />
+
+  <!-- Horizontal translation -->
+  <rect x="5" y="5" width="40" height="40" fill="blue"
+        transform="translate(50)" />
+
+  <!-- Vertical translation -->
+  <rect x="5" y="5" width="40" height="40" fill="red"
+        transform="translate(0 50)" />
+
+  <!-- Both horizontal and vertical translation -->
+  <rect x="5" y="5" width="40" height="40" fill="yellow"
+         transform="translate(50,50)" />
+</svg>
+			`
+		);
+	}
+
+	drawTransformScaleSvg() {
+		this.set(
+			'src',
+			`
+				<svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+				  <!-- uniform scale -->
+				  <circle cx="0" cy="0" r="10" fill="red"
+				          transform="scale(4)" />
+
+				  <!-- vertical scale -->
+				  <circle cx="0" cy="0" r="10" fill="yellow"
+				          transform="scale(1,4)" />
+
+				  <!-- horizontal scale -->
+				  <circle cx="0" cy="0" r="10" fill="pink"
+				          transform="scale(4,1)" />
+
+				  <!-- No scale -->
+				  <circle cx="0" cy="0" r="10" fill="black" />
+				</svg>
+			`
+		);
+	}
+
+	drawTransformRotateSvg() {
+		this.set(
+			'src',
+			`
+			<svg viewBox="-12 -2 34 14" xmlns="http://www.w3.org/2000/svg">
+			  <rect x="0" y="0" width="10" height="10" />
+
+			  <!-- rotation is done around the point 0,0 -->
+			  <rect x="0" y="0" width="10" height="10" fill="red"
+			        transform="rotate(100)" />
+
+			  <!-- rotation is done around the point 10,10 -->
+			  <rect x="0" y="0" width="10" height="10" fill="green"
+			        transform="rotate(100,10,10)" />
+			</svg>
+		`
+		);
+	}
+
+	drawTransformSkewX() {
+		this.set(
+			'src',
+			`
+			<svg viewBox="-5 -5 10 10" xmlns="http://www.w3.org/2000/svg">
+			  <rect x="-3" y="-3" width="6" height="6" />
+
+			  <rect x="-3" y="-3" width="6" height="6" fill="red"
+			        transform="skewX(30)" />
+			</svg>
+		`
+		);
+	}
+
+	drawTransformSkewY() {
+		this.set(
+			'src',
+			`
+			<svg viewBox="-5 -5 10 10" xmlns="http://www.w3.org/2000/svg">
+			  <rect x="-3" y="-3" width="6" height="6" />
+
+			  <rect x="-3" y="-3" width="6" height="6" fill="red"
+			        transform="skewY(30)" />
+			</svg>
+		`
+		);
+	}
+
+	drawSvg(args: Svg.Svg, id) {
+		switch (id) {
+			case '1':
+				this.set('src1','https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg');
+				break;
+			case '2':
+				this.set('src2','https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg');
+				break;
+			case '3':
+				this.set('src3', 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg');
+				break;
+			case '4':
+				this.set('src4', 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Plan_des_Forts_de_Lyon_premi%C3%A8re_ceinture_-_OSM.svg');
+				break;
+		}
+		//this.drawTransformSkewY();
+		//this.set('src','https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg');
+		//this.set('src','http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg');
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Location_map_San_Francisco_Bay_Area.svg');
+		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg');
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Trajans-Column-lower-animated.svg');
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg');
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/b/b6/Moldova_%281483%29-en.svg');
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/9/95/Kaiserstandarte_Version1.svg');
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/f/ff/1_42_polytope_7-cube.svg');
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/1/1c/KINTETSU23000_20140424A.svg');
+		//this.set('src', 'https://raw.githubusercontent.com/RazrFalcon/resvg/7b26adbcc9698dcca687214c84d216794f60a5be/tests/svg/e-radialGradient-013.svg');
+		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/c/c1/Propane_flame_contours-en.svg')
+		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg')
+		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg');
+		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/7/78/61453-Planeta_berria_2006an.svg')
+		// https://upload.wikimedia.org/wikipedia/commons/6/61/Figure_in_Manga_style.svg
+		// https://upload.wikimedia.org/wikipedia/commons/a/a0/Plan_des_Forts_de_Lyon_premi%C3%A8re_ceinture_-_OSM.svg
+
+		/*this.set('src', `
+		<svg viewBox="0 0 100 100">
+  <!-- No translation -->
+  <rect x="5" y="5" width="40" height="40" fill="green" />
+
+  <!-- Horizontal translation -->
+  <rect x="5" y="5" width="40" height="40" fill="blue"
+        transform="translate(50)" />
+
+  <!-- Vertical translation -->
+  <rect x="5" y="5" width="40" height="40" fill="red"
+        transform="translate(0 50)" />
+
+  <!-- Both horizontal and vertical translation -->
+  <rect x="5" y="5" width="40" height="40" fill="yellow"
+         transform="translate(50,50)" />
+</svg>
+		`) */
+
+		/*
 		const circle = new Svg.Circle();
 		circle.cx = 100;
 		circle.cy = 100;
@@ -147,12 +311,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		path3.stroke = "blue";
 		g.addChildren(path1, path2, path3);
 		args.addChild(g);
+		*/
 	}
 
+
+
 	draw() {
-		this.svg.batch(() => {
-			this.drawSvg(this.svg);
-		});
+		handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
@@ -175,11 +340,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// worker.onerror = msg => {
 		//     console.log('error', msg);
 		// }
-
 		// swarm(canvas);
-
 		// touchParticles(canvas);
-
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -208,15 +370,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
 		//textAlign(this.canvas)
-
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
-
 		//arcTo(this.canvas);
 		// arcToAnimation(this.canvas);
-
 		// ellipse(this.canvas);
-
 		// fillPath(this.canvas);
 		//imageBlock(this.canvas);
 		// scale(this.canvas);
@@ -245,7 +403,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.bubbleChart(this.canvas);
 		//this.dataSets(this.canvas);
 		//this.chartJS(this.canvas);
-
 		//clear(null)
 		//points(this.canvas)
 		//textures(this.canvas);
@@ -301,7 +458,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const image = new Image();
 		image.onload = () => {
 			ctx.drawImage(image, 0, 0);
-		}
+		};
 		image.src = `https://source.unsplash.com/random/${width}x${height}`;
 	}
 
@@ -320,14 +477,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// create box entity
 		const box = new pc.Entity('cube');
 		box.addComponent('model', {
-			type: 'box'
+			type: 'box',
 		});
 		app.root.addChild(box);
 
 		// create camera entity
 		const camera = new pc.Entity('camera');
 		camera.addComponent('camera', {
-			clearColor: new pc.Color(0.1, 0.1, 0.1)
+			clearColor: new pc.Color(0.1, 0.1, 0.1),
 		});
 		app.root.addChild(camera);
 		camera.setPosition(0, 0, 3);
@@ -339,7 +496,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		light.setEulerAngles(45, 0, 0);
 
 		// rotate the box according to the delta time since the last frame
-		app.on('update', dt => box.rotate(10 * dt, 20 * dt, 30 * dt));
+		app.on('update', (dt) => box.rotate(10 * dt, 20 * dt, 30 * dt));
 
 		app.start();
 	}
@@ -362,7 +519,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			if (view.nativeView.setClipToPadding) {
 				view.nativeView.setClipToPadding(false);
 			}
-
 		}
 	}
 
@@ -376,16 +532,15 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	ctx: CanvasRenderingContext2D;
 
-
 	zen3dCube(canvas) {
 		if (zen3d === undefined) {
 			zen3d = require('zen-3d');
 			(global as any).zen3d = zen3d;
 		}
-		var gl = canvas.getContext("webgl2", {
+		var gl = canvas.getContext('webgl2', {
 			antialias: true,
 			alpha: false,
-			stencil: true
+			stencil: true,
 		});
 		const { drawingBufferWidth, drawingBufferHeight } = gl;
 		let width = drawingBufferWidth;
@@ -413,13 +568,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var camera = new zen3d.Camera();
 		camera.position.set(0, 10, 30);
 		camera.lookAt(new zen3d.Vector3(0, 0, 0), new zen3d.Vector3(0, 1, 0));
-		camera.setPerspective(45 / 180 * Math.PI, width / height, 1, 1000);
+		camera.setPerspective((45 / 180) * Math.PI, width / height, 1, 1000);
 		scene.add(camera);
 
 		function loop(count) {
 			requestAnimationFrame(loop);
 
-			mesh.euler.y = count / 1000 * .5; // rotate cube
+			mesh.euler.y = (count / 1000) * 0.5; // rotate cube
 
 			scene.updateMatrix();
 			scene.updateLights();
@@ -437,23 +592,22 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			width = window.innerWidth || 2;
 			height = window.innerHeight || 2;
 
-			camera.setPerspective(45 / 180 * Math.PI, width / height, 1, 1000);
+			camera.setPerspective((45 / 180) * Math.PI, width / height, 1, 1000);
 
 			backRenderTarget.resize(width, height);
 		}
 
-		window.addEventListener("resize", onWindowResize, false);
+		window.addEventListener('resize', onWindowResize, false);
 	}
 
 	zen3dGeometryLoaderGltf(canvas) {
-
 		if (zen3d === undefined) {
 			zen3d = require('zen-3d');
 			(global as any).zen3d = zen3d;
 		}
 
 		const zen3dRoot = '~/assets/file-assets/zen3d/';
-		require("./zen3d/js/objects/SkyBox.js");
+		require('./zen3d/js/objects/SkyBox.js');
 		require('./zen3d/js/loaders/GLTFLoader.js');
 		require('./zen3d/js/controls/OrbitControls.js');
 
@@ -468,33 +622,27 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		let height = drawingBufferHeight;
 		var scene = new zen3d.Scene();
 
-		var file = "~/assets/three/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf";
-		var cube_texture = zen3d.TextureCube.fromSrc([
-			zen3dRoot + "Bridge2/posx.jpg",
-			zen3dRoot + "Bridge2/negx.jpg",
-			zen3dRoot + "Bridge2/posy.jpg",
-			zen3dRoot + "Bridge2/negy.jpg",
-			zen3dRoot + "Bridge2/posz.jpg",
-			zen3dRoot + "Bridge2/negz.jpg"
-		]);
+		var file = '~/assets/three/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf';
+		var cube_texture = zen3d.TextureCube.fromSrc([zen3dRoot + 'Bridge2/posx.jpg', zen3dRoot + 'Bridge2/negx.jpg', zen3dRoot + 'Bridge2/posy.jpg', zen3dRoot + 'Bridge2/negy.jpg', zen3dRoot + 'Bridge2/posz.jpg', zen3dRoot + 'Bridge2/negz.jpg']);
 		var sky_box = new zen3d.SkyBox(cube_texture);
 		sky_box.level = 4;
 
 		let objectMaterial;
 
-
 		// var nanobar = new Nanobar();
 		// nanobar.el.style.background = "gray";
 
-		var loadingManager = new zen3d.LoadingManager(function () {
-			//  nanobar.go(100);
-			//  nanobar.el.style.background = "transparent";
-		}, function (url, itemsLoaded, itemsTotal) {
-			if (itemsLoaded < itemsTotal) {
-				// nanobar.go(itemsLoaded / itemsTotal * 100);
+		var loadingManager = new zen3d.LoadingManager(
+			function () {
+				//  nanobar.go(100);
+				//  nanobar.el.style.background = "transparent";
+			},
+			function (url, itemsLoaded, itemsTotal) {
+				if (itemsLoaded < itemsTotal) {
+					// nanobar.go(itemsLoaded / itemsTotal * 100);
+				}
 			}
-		});
-
+		);
 
 		var loader = new zen3d.GLTFLoader(loadingManager);
 		loader.load(file, function (result) {
@@ -526,7 +674,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		camera.outputEncoding = zen3d.TEXEL_ENCODING_TYPE.GAMMA;
 		camera.position.set(-15, 10, 90);
 		camera.lookAt(new zen3d.Vector3(0, 0, 0), new zen3d.Vector3(0, 1, 0));
-		camera.setPerspective(45 / 180 * Math.PI, width / height, 1, 8000);
+		camera.setPerspective((45 / 180) * Math.PI, width / height, 1, 8000);
 		camera.add(sky_box);
 		scene.add(camera);
 
@@ -534,7 +682,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		controller.enablePan = false;
 
 		function loop(count) {
-
 			requestAnimationFrame(loop);
 
 			controller.update();
@@ -548,18 +695,16 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			width = drawingBufferWidth;
 			height = drawingBufferHeight;
 
-			camera.setPerspective(45 / 180 * Math.PI, width / height, 1, 8000);
+			camera.setPerspective((45 / 180) * Math.PI, width / height, 1, 8000);
 
 			renderer.backRenderTarget.resize(width, height);
 		}
 
-		window.addEventListener("resize", onWindowResize, false);
+		window.addEventListener('resize', onWindowResize, false);
 	}
 
 	async drawImage(context) {
-		var sun = await ImageSource.fromUrl(
-			'https://mdn.mozillademos.org/files/1456/Canvas_sun.png'
-		);
+		var sun = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
 		context.drawImage(sun, 0, 0);
 	}
 
@@ -567,7 +712,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// let uint8Array = new Uint8Array([228, 189, 160, 229, 165, 189]);
 		//
 		// console.log( new TextDecoder().decode(uint8Array) ); // 你好
-
 
 		let utf8decoder = new TextDecoder(); // default 'utf-8' or 'utf8'
 		console.log(utf8decoder.encoding);
@@ -584,12 +728,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		console.log(utf8decoder.decode(i16arr));
 		console.log(utf8decoder.decode(i32arr));
 
-
 		let win1251decoder = new TextDecoder('windows-1251');
 		let bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
 		console.log(win1251decoder.decode(bytes)); // Привет, мир!
 	}
-
 
 	putImageDataDemo(canvas) {
 		const ctx = canvas.getContext('2d');
@@ -598,7 +740,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		let imageData = ctx.getImageData(60, 60, 200, 100);
 		ctx.putImageData(imageData, 150, 10);
-
 	}
 
 	onLayout(args) {
@@ -649,7 +790,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				var factor = 1;
 
 				for (var j = 0; j < patriclesNum; j++) {
-
 					var temp2 = particles[j];
 					ctx.lineWidth = 0.5;
 
@@ -663,7 +803,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 					}
 				}
 
-
 				ctx.fillStyle = temp.rgba;
 				ctx.strokeStyle = temp.rgba;
 
@@ -676,7 +815,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				ctx.arc(temp.x, temp.y, (temp.rad + 5) * factor, 0, Math.PI * 2, true);
 				ctx.stroke();
 				ctx.closePath();
-
 
 				temp.x += temp.vx;
 				temp.y += temp.vy;
@@ -694,7 +832,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		function init() {
 			for (var i = 0; i < patriclesNum; i++) {
-				particles.push(new Factory);
+				particles.push(new Factory());
 			}
 		}
 
@@ -725,7 +863,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				ctx.closePath();
 				ctx.fillStyle = this.color;
 				ctx.fill();
-			}
+			},
 		};
 
 		function clear() {
@@ -750,7 +888,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 
 		ball.draw();
-
 
 		raf = window.requestAnimationFrame(draw);
 		running = true;
@@ -802,16 +939,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			]);
 
 			let scale = 0.9;
-			World.add(
-				world,
-				Composites.car(150, 100, 150 * scale, 30 * scale, 30 * scale)
-			);
+			World.add(world, Composites.car(150, 100, 150 * scale, 30 * scale, 30 * scale));
 
 			scale = 0.8;
-			World.add(
-				world,
-				Composites.car(350, 300, 150 * scale, 30 * scale, 30 * scale)
-			);
+			World.add(world, Composites.car(350, 300, 150 * scale, 30 * scale, 30 * scale));
 
 			World.add(world, [
 				Bodies.rectangle(200, 150, 400, 20, {
@@ -924,30 +1055,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			return {
 				type: 'line',
 				data: {
-					labels: [
-						'January',
-						'February',
-						'March',
-						'April',
-						'May',
-						'June',
-						'July',
-					],
+					labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
 					datasets: [
 						{
 							label: 'My First dataset',
-							data: [
-								this.randomScalingFactor(),
-								this.randomScalingFactor(),
-								this.randomScalingFactor(),
-								this.randomScalingFactor(),
-								this.randomScalingFactor(),
-								this.randomScalingFactor(),
-								this.randomScalingFactor(),
-							],
-							backgroundColor: color(this.chartColors[colorName])
-								.alpha(0.5)
-								.rgbString(),
+							data: [this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor()],
+							backgroundColor: color(this.chartColors[colorName]).alpha(0.5).rgbString(),
 							borderColor: this.chartColors[colorName],
 							borderWidth: 1,
 							pointStyle: 'rectRot',
@@ -989,7 +1102,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 					},
 				},
 			};
-		}
+		};
 
 		function createPointStyleConfig(colorName) {
 			var config = createConfig(colorName);
@@ -1025,7 +1138,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		const generateData = (config?) => {
 			return this.utils.numbers(Chart.helpers.merge(inputs, config || {}));
-		}
+		};
 
 		const generateLabels = (config?) => {
 			return this.utils.months(
@@ -1037,7 +1150,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 					config || {}
 				)
 			);
-		}
+		};
 
 		var options = {
 			maintainAspectRatio: false,
@@ -1111,9 +1224,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 				chart.update();
 			});
-		}
+		};
 	}
-
 
 	drawPatternWithCanvas(canvas) {
 		const patternCanvas = Canvas.createCustomView();
@@ -1149,20 +1261,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			data: {
 				datasets: [
 					{
-						data: [
-							randomScalingFactor(),
-							randomScalingFactor(),
-							randomScalingFactor(),
-							randomScalingFactor(),
-							randomScalingFactor(),
-						],
-						backgroundColor: [
-							this.chartColors.red,
-							this.chartColors.orange,
-							this.chartColors.yellow,
-							this.chartColors.green,
-							this.chartColors.blue,
-						],
+						data: [randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor(), randomScalingFactor()],
+						backgroundColor: [this.chartColors.red, this.chartColors.orange, this.chartColors.yellow, this.chartColors.green, this.chartColors.blue],
 						label: 'Dataset 1',
 					},
 				],
@@ -1215,16 +1315,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			config.data.datasets.push(newDataset);
 			myDoughnut.update();
-		}
+		};
 
 		const addData = () => {
 			if (config.data.datasets.length > 0) {
 				config.data.labels.push('data #' + config.data.labels.length);
 
-				var colorName =
-					colorNames[
-					config.data.datasets[0].data.length % colorNames.length
-					];
+				var colorName = colorNames[config.data.datasets[0].data.length % colorNames.length];
 				var newColor = this.chartColors[colorName];
 
 				config.data.datasets.forEach(function (dataset) {
@@ -1234,7 +1331,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 				myDoughnut.update();
 			}
-		}
+		};
 
 		function removeDataset() {
 			config.data.datasets.splice(0, 1);
@@ -1320,9 +1417,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			// write Hours
 			ctx.save();
-			ctx.rotate(
-				hr * (Math.PI / 6) + (Math.PI / 360) * min + (Math.PI / 21600) * sec
-			);
+			ctx.rotate(hr * (Math.PI / 6) + (Math.PI / 360) * min + (Math.PI / 21600) * sec);
 			ctx.lineWidth = 14;
 			ctx.beginPath();
 			ctx.moveTo(-20, 0);
@@ -1376,22 +1471,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	async solar(canvas) {
-
 		var sun = new ImageAsset();
 		var moon = new ImageAsset();
 		var earth = new ImageAsset();
 
 		try {
-			await sun.loadFromUrlAsync(
-				'https://mdn.mozillademos.org/files/1456/Canvas_sun.png'
-			);
-			await moon.loadFromUrlAsync(
-				'https://mdn.mozillademos.org/files/1443/Canvas_moon.png'
-			);
-			await earth.loadFromUrlAsync(
-				'https://mdn.mozillademos.org/files/1429/Canvas_earth.png'
-			)
-
+			await sun.loadFromUrlAsync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+			await moon.loadFromUrlAsync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
+			await earth.loadFromUrlAsync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
 		} catch (e) {
 			console.log('solar error:', e);
 		}
@@ -1418,20 +1505,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			// Earth
 			var time = new Date();
-			ctx.rotate(
-				((2 * Math.PI) / 60) * time.getSeconds() +
-				((2 * Math.PI) / 60000) * time.getMilliseconds()
-			);
+			ctx.rotate(((2 * Math.PI) / 60) * time.getSeconds() + ((2 * Math.PI) / 60000) * time.getMilliseconds());
 			ctx.translate(105, 0);
 			ctx.fillRect(0, -12, 40, 24); // Shadow
 			ctx.drawImage(earth, -12, -12);
 
 			// Moon
 			ctx.save();
-			ctx.rotate(
-				((2 * Math.PI) / 6) * time.getSeconds() +
-				((2 * Math.PI) / 6000) * time.getMilliseconds()
-			);
+			ctx.rotate(((2 * Math.PI) / 6) * time.getSeconds() + ((2 * Math.PI) / 6000) * time.getMilliseconds());
 			ctx.translate(0, 28.5);
 			ctx.drawImage(moon, -3.5, -3.5);
 			ctx.restore();
@@ -1509,32 +1590,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		grey: 'rgb(201, 203, 207)',
 	};
 
-	MONTHS = [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December',
-	];
+	MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-	COLORS = [
-		'#4dc9f6',
-		'#f67019',
-		'#f53794',
-		'#537bc4',
-		'#acc236',
-		'#166a8f',
-		'#00a950',
-		'#58595b',
-		'#8549ba',
-	];
+	COLORS = ['#4dc9f6', '#f67019', '#f53794', '#537bc4', '#acc236', '#166a8f', '#00a950', '#58595b', '#8549ba'];
 
 	utils = {
 		// Adapted from http://indiegamr.com/generate-repeatable-random-numbers-in-js/
@@ -1616,10 +1674,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			var alpha = (opacity === undefined ? 0.5 : 1 - opacity) * 255;
 			const c = new Color(color);
 			const newColor = new Color(alpha, c.r, c.g, c.b);
-			return `rgba(${newColor.r},${newColor.g},${newColor.b},${newColor.a / 255
-				})`;
+			return `rgba(${newColor.r},${newColor.g},${newColor.b},${newColor.a / 255})`;
 		},
-	}
+	};
 
 	randomScalingFactor() {
 		return Math.round(Math.random() * 100);
@@ -1632,18 +1689,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		function colorize(opaque, hover, ctx) {
 			var v = ctx.dataset.data[ctx.dataIndex];
-			var c =
-				v < 35
-					? '#D60000'
-					: v < 55
-						? '#F46300'
-						: v < 75
-							? '#0358B6'
-							: '#44DE28';
+			var c = v < 35 ? '#D60000' : v < 55 ? '#F46300' : v < 75 ? '#0358B6' : '#44DE28';
 
-			var opacity = hover
-				? 1 - Math.abs(v / 150) - 0.2
-				: 1 - Math.abs(v / 150);
+			var opacity = hover ? 1 - Math.abs(v / 150) - 0.2 : 1 - Math.abs(v / 150);
 
 			return opaque ? c : this.utils.transparentize(c, opacity);
 		}
@@ -1750,7 +1798,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			}
 
 			return data;
-		}
+		};
 
 		var data = {
 			datasets: [
@@ -1836,44 +1884,20 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	hBarChart(canvas) {
 		var color = Chart.helpers.color;
 		var horizontalBarChartData = {
-			labels: [
-				'January',
-				'February',
-				'March',
-				'April',
-				'May',
-				'June',
-				'July',
-			],
+			labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
 			datasets: [
 				{
 					label: 'Dataset 1',
 					backgroundColor: this.utils.transparentize(this.chartColors.red, 0.5),
 					borderColor: this.chartColors.red,
 					borderWidth: 1,
-					data: [
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-					],
+					data: [this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor()],
 				},
 				{
 					label: 'Dataset 2',
 					backgroundColor: this.utils.transparentize(this.chartColors.blue, 0.5),
 					borderColor: this.chartColors.blue,
-					data: [
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-						this.randomScalingFactor(),
-					],
+					data: [this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor()],
 				},
 			],
 		};
@@ -1909,15 +1933,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				});
 			});
 			myHorizontalBar.update();
-		}
+		};
 
 		var colorNames = Object.keys(this.chartColors);
 
 		const addDataset = () => {
-			var colorName =
-				colorNames[
-				horizontalBarChartData.datasets.length % colorNames.length
-				];
+			var colorName = colorNames[horizontalBarChartData.datasets.length % colorNames.length];
 			var dsColor = this.chartColors[colorName];
 			var newDataset = {
 				label: 'Dataset ' + (horizontalBarChartData.datasets.length + 1),
@@ -1926,37 +1947,26 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				data: [],
 			};
 
-			for (
-				var index = 0;
-				index < horizontalBarChartData.labels.length;
-				++index
-			) {
+			for (var index = 0; index < horizontalBarChartData.labels.length; ++index) {
 				newDataset.data.push(this.randomScalingFactor());
 			}
 
 			horizontalBarChartData.datasets.push(newDataset);
 			myHorizontalBar.update();
-		}
+		};
 
 		const addData = () => {
 			if (horizontalBarChartData.datasets.length > 0) {
-				var month =
-					this.MONTHS[horizontalBarChartData.labels.length % this.MONTHS.length];
+				var month = this.MONTHS[horizontalBarChartData.labels.length % this.MONTHS.length];
 				horizontalBarChartData.labels.push(month);
 
-				for (
-					var index = 0;
-					index < horizontalBarChartData.datasets.length;
-					++index
-				) {
-					horizontalBarChartData.datasets[index].data.push(
-						this.randomScalingFactor()
-					);
+				for (var index = 0; index < horizontalBarChartData.datasets.length; ++index) {
+					horizontalBarChartData.datasets[index].data.push(this.randomScalingFactor());
 				}
 
 				myHorizontalBar.update();
 			}
-		}
+		};
 
 		function removeDataset() {
 			horizontalBarChartData.datasets.pop();
@@ -1986,11 +1996,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		const generateData = () => {
 			return this.utils.numbers(inputs);
-		}
+		};
 
 		const generateLabels = () => {
 			return this.utils.months({ count: inputs.count });
-		}
+		};
 
 		this.utils.srand(42);
 
@@ -2125,20 +2135,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			data: {
 				datasets: [
 					{
-						data: [
-							this.randomScalingFactor(),
-							this.randomScalingFactor(),
-							this.randomScalingFactor(),
-							this.randomScalingFactor(),
-							this.randomScalingFactor(),
-						],
-						backgroundColor: [
-							this.chartColors.red,
-							this.chartColors.orange,
-							this.chartColors.yellow,
-							this.chartColors.green,
-							this.chartColors.blue,
-						],
+						data: [this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor(), this.randomScalingFactor()],
+						backgroundColor: [this.chartColors.red, this.chartColors.orange, this.chartColors.yellow, this.chartColors.green, this.chartColors.blue],
 						label: 'Dataset 1',
 					},
 				],
@@ -2168,22 +2166,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 						{
 							label: '# of Votes',
 							data: [12, 19, 3, 5, 2, 3],
-							backgroundColor: [
-								'rgba(255, 99, 132, 0.2)',
-								'rgba(54, 162, 235, 0.2)',
-								'rgba(255, 206, 86, 0.2)',
-								'rgba(75, 192, 192, 0.2)',
-								'rgba(153, 102, 255, 0.2)',
-								'rgba(255, 159, 64, 0.2)',
-							],
-							borderColor: [
-								'rgba(255, 99, 132, 1)',
-								'rgba(54, 162, 235, 1)',
-								'rgba(255, 206, 86, 1)',
-								'rgba(75, 192, 192, 1)',
-								'rgba(153, 102, 255, 1)',
-								'rgba(255, 159, 64, 1)',
-							],
+							backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)', 'rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)'],
+							borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'],
 							borderWidth: 1,
 						},
 					],
@@ -2216,7 +2200,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.strokeColor = 'black';
 		ctx.clearRect(0, 0, canvas.getMeasuredWidth(), canvas.getMeasuredHeight());
 	}
-
 
 	clearGL(canvas) {
 		const ctx = canvas.getContext('webgl');
@@ -2278,13 +2261,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 	}
 
-
 	save2D() {
 		if (!this.last) {
 			this.canvas.getContext('2d').save();
 		}
 	}
-
 
 	restore2D() {
 		this.canvas.getContext('2d').restore();
@@ -2416,34 +2397,32 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		*/
 	}
 
-
 	show: boolean = true;
 	textColor: string = 'black';
 
 	items = new ObservableArray([
-		{ name: "2D Swarm", type: "swarm" },
-		{ name: "2D ColorRain", type: "colorRain" },
-		{ name: "2D Particles Large", type: "particlesLarge" },
-		{ name: "2D Rainbow Octopus", type: "rainbowOctopus" },
-		{ name: "2D Particles Color", type: "particlesColor" },
-		{ name: "WEBGL textures", type: "textures" },
-		{ name: "WEBGL Draw Elements", type: "drawElements" },
-		{ name: "WEBGL Draw Modes", type: "drawModes" },
-		{ name: "WEBGL InteractiveCube", type: "interactiveCube" },
-		{ name: "WEBGL Cube Rotation With Image", type: "main" },
-		{ name: "WEBGL2 Draw Instanced", type: "draw_instanced" },
-		{ name: "WEBGL2 Draw ImageSpace", type: "draw_image_space" },
+		{ name: '2D Swarm', type: 'swarm' },
+		{ name: '2D ColorRain', type: 'colorRain' },
+		{ name: '2D Particles Large', type: 'particlesLarge' },
+		{ name: '2D Rainbow Octopus', type: 'rainbowOctopus' },
+		{ name: '2D Particles Color', type: 'particlesColor' },
+		{ name: 'WEBGL textures', type: 'textures' },
+		{ name: 'WEBGL Draw Elements', type: 'drawElements' },
+		{ name: 'WEBGL Draw Modes', type: 'drawModes' },
+		{ name: 'WEBGL InteractiveCube', type: 'interactiveCube' },
+		{ name: 'WEBGL Cube Rotation With Image', type: 'main' },
+		{ name: 'WEBGL2 Draw Instanced', type: 'draw_instanced' },
+		{ name: 'WEBGL2 Draw ImageSpace', type: 'draw_image_space' },
 		{
-			name: "WEBGL2 Cube Rotation With Cube Roating inside",
-			type: "cubeRotationRotation",
+			name: 'WEBGL2 Cube Rotation With Cube Roating inside',
+			type: 'cubeRotationRotation',
 		},
-		{ name: "WEBGL2 Fog", type: "fog" },
+		{ name: 'WEBGL2 Fog', type: 'fog' },
 		{
-			name: "WEBGL2 Environment Map Roatating Cube",
-			type: "environmentMap",
+			name: 'WEBGL2 Environment Map Roatating Cube',
+			type: 'environmentMap',
 		},
 	]);
-
 
 	arcAnimation(ctx) {
 		ctx.scale(2, 2);
@@ -2489,12 +2468,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			a = t0 % PI2;
 			rr = Math.abs(Math.cos(a) * r);
 
-			ctx.clearRect(
-				0,
-				0,
-				this.canvas.getMeasuredWidth(),
-				this.canvas.getMeasuredHeight()
-			);
+			ctx.clearRect(0, 0, this.canvas.getMeasuredWidth(), this.canvas.getMeasuredHeight());
 
 			drawArc([p1, p2, p3], rr);
 			drawPoints([p1, p2, p3]);
@@ -2503,5 +2477,4 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		loop(0);
 	}
-
 }

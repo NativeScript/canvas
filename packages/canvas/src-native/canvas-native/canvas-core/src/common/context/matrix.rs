@@ -3,6 +3,7 @@ use std::os::raw::c_float;
 
 use skia_safe::M44;
 
+#[derive(Clone)]
 pub struct Matrix {
     pub(crate) matrix: skia_safe::M44,
 }
@@ -10,6 +11,14 @@ pub struct Matrix {
 impl Default for Matrix {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<&skia_safe::Matrix> for Matrix {
+    fn from(matrix: &skia_safe::Matrix) -> Self {
+        Self {
+            matrix: M44::from(matrix)
+        }
     }
 }
 
@@ -57,6 +66,20 @@ enum Member2D {
     F = 13,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum Member2DName {
+    ScaleX = 0,
+    SkewX = 4,
+    TransX = 12,
+    SkewY = 1,
+    ScaleY = 5,
+    TransY = 13,
+    Persp0 = 3,
+    Persp1 = 7,
+    Persp2 = 15,
+}
+
+
 impl Index<Member2D> for [f32] {
     type Output = f32;
 
@@ -67,6 +90,21 @@ impl Index<Member2D> for [f32] {
 
 impl IndexMut<Member2D> for [f32] {
     fn index_mut(&mut self, index: Member2D) -> &mut Self::Output {
+        &mut self[index as usize]
+    }
+}
+
+
+impl Index<Member2DName> for [f32] {
+    type Output = f32;
+
+    fn index(&self, index: Member2DName) -> &Self::Output {
+        &self[index as usize]
+    }
+}
+
+impl IndexMut<Member2DName> for [f32] {
+    fn index_mut(&mut self, index: Member2DName) -> &mut Self::Output {
         &mut self[index as usize]
     }
 }
@@ -95,6 +133,25 @@ impl Matrix {
         m[member] = value;
         self.matrix = M44::row_major(&m);
     }
+
+
+    fn member_2d_name(&self, member: Member2DName) -> c_float {
+        let mut m = [
+            1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ];
+        self.matrix.get_col_major(&mut m);
+        m[member]
+    }
+
+    fn set_member_2d_name(&mut self, member: Member2DName, value: c_float) {
+        let mut m = [
+            1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ];
+        self.matrix.get_col_major(&mut m);
+        m[member] = value;
+        self.matrix = M44::row_major(&m);
+    }
+
 
     fn member_3d(&self, member: Member3D) -> c_float {
         let mut m = [
@@ -145,6 +202,23 @@ impl Matrix {
 
     pub fn set_b(&mut self, b: c_float) {
         self.set_member_2d(Member2D::B, b)
+    }
+
+    pub fn skew_x(&mut self) -> c_float {
+        self.member_2d_name(Member2DName::SkewX)
+    }
+
+    pub fn set_skew_x(&mut self, x: c_float) {
+        self.set_member_2d_name(Member2DName::SkewX, x)
+    }
+
+
+    pub fn skew_y(&mut self) -> c_float {
+        self.member_2d_name(Member2DName::SkewY)
+    }
+
+    pub fn set_skew_y(&mut self, y: c_float) {
+        self.set_member_2d_name(Member2DName::SkewY, y)
     }
 
     pub fn c(&self) -> c_float {

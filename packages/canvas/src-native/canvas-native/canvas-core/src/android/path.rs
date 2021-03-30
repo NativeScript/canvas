@@ -1,13 +1,13 @@
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
-use jni::sys::{jlong, jfloat};
+use jni::sys::{jfloat, jlong};
 
 use crate::common::context::matrix::Matrix;
 use crate::common::context::paths::path::Path;
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeInit(_: JNIEnv,
-                                                                  _: JClass) -> jlong {
+                                                                       _: JClass) -> jlong {
     Box::into_raw(
         Box::new(
             Path::new()
@@ -17,7 +17,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeInit(_: JNIEnv
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeCreateWithPath(_: JNIEnv,
-                                        _: JClass, path: jlong) -> jlong {
+                                                                                 _: JClass, path: jlong) -> jlong {
     if path == 0 {
         return Box::into_raw(
             Box::new(
@@ -38,7 +38,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeCreateWithPath
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeCreateWithString(env: JNIEnv,
-                                          _: JClass, string: JString) -> jlong {
+                                                                                   _: JClass, string: JString) -> jlong {
     if let Ok(string) = env.get_string(string) {
         let string = string.to_string_lossy();
         Box::into_raw(
@@ -58,7 +58,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeCreateWithStri
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeAddPath(_: JNIEnv,
-                                _: JClass,path: jlong, path_to_add: jlong) {
+                                                                          _: JClass, path: jlong, path_to_add: jlong) {
     if path == 0 || path_to_add == 0 {
         return;
     }
@@ -73,7 +73,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeAddPath(_: JNI
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeAddPathWithMatrix(_: JNIEnv,
-                                            _: JClass,path: jlong, path_to_add: jlong, matrix: jlong) {
+                                                                                    _: JClass, path: jlong, path_to_add: jlong, matrix: jlong) {
     if path == 0 || path_to_add == 0 || matrix == 0 {
         return;
     }
@@ -90,7 +90,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeAddPathWithMat
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeClosePath(_: JNIEnv,
-                                  _: JClass,path: jlong) {
+                                                                            _: JClass, path: jlong) {
     if path == 0 {
         return;
     }
@@ -103,7 +103,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeClosePath(_: J
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeMoveTo(_: JNIEnv,
-                               _: JClass,path: jlong, x: jfloat, y: jfloat) {
+                                                                         _: JClass, path: jlong, x: jfloat, y: jfloat) {
     if path == 0 {
         return;
     }
@@ -116,7 +116,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeMoveTo(_: JNIE
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPath2D_nativeLineTo(_: JNIEnv,
-                               _: JClass,path: jlong, x: jfloat, y: jfloat) {
+                                                                         _: JClass, path: jlong, x: jfloat, y: jfloat) {
     if path == 0 {
         return;
     }

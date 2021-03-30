@@ -8,7 +8,7 @@ use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasGradient_nativeAddColorStop(env: JNIEnv,
-                                                                              _: JClass, style: c_longlong, stop: c_float, color: JString) {
+                                                                                       _: JClass, style: c_longlong, stop: c_float, color: JString) {
     if style == 0 {
         return;
     }

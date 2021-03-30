@@ -1,10 +1,9 @@
+use libc::size_t;
+use std::ffi::{CStr, CString};
+use std::mem;
 //use gl_bindings;
 use std::os::raw::{c_char, c_void};
-use std::mem;
 use std::ptr::{null, null_mut};
-use std::ffi::{CStr, CString};
-use libc::size_t;
-
 
 pub type GLbitfield = u32;
 pub type GLboolean = u8;
@@ -182,7 +181,7 @@ pub extern "C" fn gl_buffer_data_i8(target: GLuint, data: *const i8, size: isize
 
 #[no_mangle]
 pub extern "C" fn gl_buffer_data_u16(target: GLuint, data: *const u16, size: isize, usage: GLuint) {
-   let count = std::mem::size_of::<u16>() * (size as usize);
+    let count = std::mem::size_of::<u16>() * (size as usize);
     let buffer = unsafe { std::slice::from_raw_parts(data, size as usize) };
     unsafe {
         gl_bindings::glBufferData(target, count as isize, buffer.as_ptr() as *const c_void, usage)
@@ -191,7 +190,7 @@ pub extern "C" fn gl_buffer_data_u16(target: GLuint, data: *const u16, size: isi
 
 #[no_mangle]
 pub extern "C" fn gl_buffer_data_i16(target: GLuint, data: *const i16, size: isize, usage: GLuint) {
-   let count = std::mem::size_of::<i16>() * (size as usize);
+    let count = std::mem::size_of::<i16>() * (size as usize);
     let buffer = unsafe { std::slice::from_raw_parts(data, size as usize) };
     unsafe {
         gl_bindings::glBufferData(target, count as isize, buffer.as_ptr() as *const c_void, usage)
@@ -210,7 +209,7 @@ pub extern "C" fn gl_buffer_data_u32(target: GLuint, data: *const GLuint, size: 
 
 #[no_mangle]
 pub extern "C" fn gl_buffer_data_i32(target: GLuint, data: *const i32, size: isize, usage: GLuint) {
-   let count = std::mem::size_of::<i32>() * (size as usize);
+    let count = std::mem::size_of::<i32>() * (size as usize);
     let buffer = unsafe { std::slice::from_raw_parts(data, size as usize) };
     unsafe {
         gl_bindings::glBufferData(target, count as isize, buffer.as_ptr() as *const c_void, usage)
@@ -706,7 +705,7 @@ pub extern "C" fn gl_draw_arrays(mode: GLuint, first: GLint, count: GLsizei) {
 #[no_mangle]
 pub extern "C" fn gl_draw_elements(mode: GLuint, count: GLint, element_type: GLuint, offset: isize) {
     let mut os = null() as *const c_void;
-    unsafe { gl_bindings::glDrawElements(mode, count, element_type, null() ) }
+    unsafe { gl_bindings::glDrawElements(mode, count, element_type, null()) }
 }
 
 #[no_mangle]
@@ -1261,7 +1260,7 @@ pub extern "C" fn gl_get_parameter(pname: GLuint) -> NativeAnyValue {
             let mut param: Vec<GLboolean> = Vec::with_capacity(4);
             unsafe { gl_bindings::glGetBooleanv(pname, param.as_mut_ptr()) };
             let mut param = param.into_boxed_slice();
-            let value =  NativeAnyValue::BoolArray(param.as_ptr() as *const u8, param.len());
+            let value = NativeAnyValue::BoolArray(param.as_ptr() as *const u8, param.len());
             Box::into_raw(param);
             return value;
         }
@@ -1496,7 +1495,7 @@ pub extern "C" fn gl_get_uniform(program: GLuint, location: GLint) -> NativeAnyV
                 gl_bindings::glGetUniformfv(program, location, vec4.as_mut_ptr())
             }
             let value = vec4.into_boxed_slice();
-            let array =  NativeAnyValue::F32Array(value.as_ptr(), value.len());
+            let array = NativeAnyValue::F32Array(value.as_ptr(), value.len());
             Box::into_raw(value);
             return array;
         }
@@ -1514,7 +1513,7 @@ pub extern "C" fn gl_get_uniform(program: GLuint, location: GLint) -> NativeAnyV
                 gl_bindings::glGetUniformiv(program, location, int_vec2.as_mut_ptr())
             }
             let value = int_vec2.into_boxed_slice();
-            let array =  NativeAnyValue::I32Array(value.as_ptr(), value.len());
+            let array = NativeAnyValue::I32Array(value.as_ptr(), value.len());
             Box::into_raw(value);
             return array;
         }
@@ -1534,7 +1533,7 @@ pub extern "C" fn gl_get_uniform(program: GLuint, location: GLint) -> NativeAnyV
                 gl_bindings::glGetUniformiv(program, location, int_vec4.as_mut_ptr())
             }
             let value = int_vec4.into_boxed_slice();
-            let array =  NativeAnyValue::I32Array(value.as_ptr(), value.len());
+            let array = NativeAnyValue::I32Array(value.as_ptr(), value.len());
             Box::into_raw(value);
             return array;
         }
@@ -1551,7 +1550,7 @@ pub extern "C" fn gl_get_uniform(program: GLuint, location: GLint) -> NativeAnyV
                 gl_bindings::glGetUniformiv(program, location, bool_vec2.as_mut_ptr())
             }
             let mut value = bool_vec2.into_boxed_slice();
-            let array =  NativeAnyValue::BoolArray(value.as_ptr() as *const u8, value.len());
+            let array = NativeAnyValue::BoolArray(value.as_ptr() as *const u8, value.len());
             Box::into_raw(value);
             return array;
         }

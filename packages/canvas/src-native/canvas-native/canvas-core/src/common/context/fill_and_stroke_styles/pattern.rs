@@ -1,5 +1,6 @@
-use skia_safe::{Data, Image, Shader, TileMode};
+use skia_safe::{Data, Image, SamplingOptions, Shader, TileMode};
 
+use crate::common::context::image_smoothing::ImageSmoothingQuality;
 use crate::common::context::matrix::Matrix;
 
 #[repr(C)]
@@ -12,13 +13,13 @@ pub enum Repetition {
 }
 
 impl From<i32> for Repetition {
-     fn from(value: i32) -> Self {
+    fn from(value: i32) -> Self {
         match value {
             0 => Repetition::Repeat,
             1 => Repetition::RepeatX,
             2 => Repetition::RepeatY,
             3 => Repetition::NoRepeat,
-            _ => Repetition::Repeat
+            _ => Repetition::Repeat,
         }
     }
 }
@@ -29,7 +30,7 @@ impl Into<i32> for Repetition {
             Repetition::Repeat => 0,
             Repetition::RepeatX => 1,
             Repetition::RepeatY => 2,
-            Repetition::NoRepeat => 3
+            Repetition::NoRepeat => 3,
         }
     }
 }
@@ -42,29 +43,39 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    pub fn to_pattern_shader(pattern: &Pattern) -> Shader {
+    pub fn to_pattern_shader(pattern: &Pattern, image_smoothing_quality: skia_safe::FilterQuality) -> Option<Shader> {
         let mode: (TileMode, TileMode) = match pattern.repetition {
             Repetition::NoRepeat => (TileMode::Clamp, TileMode::Clamp),
             Repetition::RepeatX => (TileMode::Repeat, TileMode::Clamp),
             Repetition::RepeatY => (TileMode::Clamp, TileMode::Repeat),
             _ => (TileMode::Repeat, TileMode::Repeat),
         };
-        pattern.image().to_shader(mode, pattern.matrix())
+        pattern.image().to_shader(
+            Some(mode),
+            SamplingOptions::from_filter_quality(image_smoothing_quality, None),
+            Some(&pattern.matrix),
+        )
     }
 
     pub fn new(image: Image, repetition: Repetition) -> Self {
         Self {
             image,
             repetition,
-            matrix: skia_safe::Matrix::new_identity(),
+            matrix: skia_safe::Matrix::default(),
         }
     }
 
     pub fn set_pattern_transform(&mut self, matrix: &Matrix) {
-        let mut affine: [f32; 6] = [0f32; 6];
+        /* let mut affine: [f32; 6] = [0f32; 6];
         let slice = matrix.affine();
         affine.copy_from_slice(slice.as_slice());
-        self.matrix.set_affine(&affine);
+        self.matrix.set_affine(&affine);*/
+        let matrix = matrix.matrix.to_m33();
+        self.matrix.pre_concat(&matrix);
+    }
+
+    pub(crate) fn matrix_mut(&mut self) -> &mut skia_safe::Matrix {
+        &mut self.matrix
     }
 
     pub fn image(&self) -> &Image {

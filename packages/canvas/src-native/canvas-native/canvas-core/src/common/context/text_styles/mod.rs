@@ -19,7 +19,7 @@ impl Context {
     }
 
     pub fn set_font(&mut self, font: &str) {
-        if let Ok(font) = parse_font(font, &self.device) {
+        if let Ok(font) = parse_font(font, self.device) {
             self.state.font.font_details = font.0;
         }
     }

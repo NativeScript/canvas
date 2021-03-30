@@ -28,20 +28,27 @@ impl Into<i32> for LineJoin {
     }
 }
 
-
 impl From<i32> for LineJoin {
     fn from(value: i32) -> LineJoin {
         match value {
             0 => LineJoin::JoinRound,
             1 => LineJoin::JoinBevel,
             2 => LineJoin::JoinMiter,
-            _ => {
-                LineJoin::JoinMiter
-            }
+            _ => LineJoin::JoinMiter,
         }
     }
 }
 
+impl From<&str> for LineJoin {
+    fn from(value: &str) -> LineJoin {
+        match value {
+            "round" => LineJoin::JoinRound,
+            "bevel" => LineJoin::JoinBevel,
+            "miter" => LineJoin::JoinMiter,
+            _ => LineJoin::JoinMiter,
+        }
+    }
+}
 
 impl Default for LineJoin {
     fn default() -> Self {

@@ -5,14 +5,14 @@
   <StackLayout class="p-20">
     <ScrollView class="h-full">
       <StackLayout>
-        <Button text="add a package first" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
-<Button text="canvas" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
-<Button text="canvas-babylon" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
-<Button text="canvas-polyfill" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
-<Button text="canvas-phaser" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
-<Button text="canvas-phaser-ce" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
-<Button text="canvas-pixi" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
-<Button text="canvas-three" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-babylon" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-media" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-phaser" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-phaser-ce" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-pixi" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-polyfill" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+        <Button text="canvas-three" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
       </StackLayout>
     </ScrollView>
   </StackLayout>

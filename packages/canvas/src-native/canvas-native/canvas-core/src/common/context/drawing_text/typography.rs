@@ -86,12 +86,12 @@ impl Font {
         self.font_details.as_str()
     }
 
-    pub fn get_font(&self, device: &Device) -> skia_safe::Font {
+    pub fn get_font(&self, device: Device) -> skia_safe::Font {
         parse_font(self.get_font_details(), device).unwrap().1
     }
 }
 
-pub(crate) fn parse_font(font: &str, device: &Device) -> Result<(String, skia_safe::Font), ()> {
+pub(crate) fn parse_font(font: &str, device: Device) -> Result<(String, skia_safe::Font), ()> {
     let mut data: Vec<_> = font.split(' ').collect();
     let mut data: Vec<String> = data.into_iter().map(|x| x.trim().to_string()).collect();
     let size = data.len();
@@ -105,6 +105,7 @@ pub(crate) fn parse_font(font: &str, device: &Device) -> Result<(String, skia_sa
         let mut width = "normal".to_string();
         let mut line_height = "normal".to_string();
         let mut family = "sans-serif";
+
 
         match (font_size_line_height, font_families) {
             (Some(font_size_line_height), Some(_)) => {

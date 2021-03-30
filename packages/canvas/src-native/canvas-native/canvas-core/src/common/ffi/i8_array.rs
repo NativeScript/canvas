@@ -15,7 +15,7 @@ impl Into<Vec<i8>> for I8Array {
 impl From<Vec<i8>> for I8Array {
     fn from(vec: Vec<i8>) -> Self {
         let mut box_slice = vec.into_boxed_slice();
-        let mut array = Self {
+        let array = Self {
             data: box_slice.as_mut_ptr(),
             data_len: box_slice.len(),
         };

@@ -2,8 +2,8 @@ use std::ffi::CString;
 use std::os::raw::{c_char, c_longlong};
 
 use crate::common::context::Context;
-use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::drawing_text::text_metrics::TextMetrics;
+use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 
 pub mod context;
 pub mod gl;
@@ -18,6 +18,7 @@ pub mod paint;
 pub mod gradient;
 pub mod pattern;
 pub mod text_metrics;
+pub mod svg;
 
 #[no_mangle]
 pub extern "C" fn destroy_string(string: *const c_char) {

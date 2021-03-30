@@ -46,6 +46,9 @@
 		},
 		"canvas-three": {
 			"tags": []
+		},
+		"canvas-media": {
+			"tags": []
 		}
 	},
 	"workspaceLayout": {

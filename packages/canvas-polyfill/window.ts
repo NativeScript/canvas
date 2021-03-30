@@ -10,8 +10,11 @@ import {
 	WebGLRenderingContext,
 	WebGL2RenderingContext
 } from "@nativescript/canvas";
+import { HTMLVideoElement } from './DOM/HTMLVideoElement';
+import { XMLDocument } from './DOM/XMLDocument';
+import { Device, fromObject, View } from '@nativescript/core';
+import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } from '@nativescript/canvas';
 
-(global as any).CANVAS_RENDERER = "true";
 (global as any).WEBGL_RENDERER = "true";
 (global as any).window = (global as any).window || {
 	console: console,

@@ -6,26 +6,29 @@ import { Component } from '@angular/core';
 })
 export class HomeComponent {
 	demos = [
-		{
-			name: 'canvas',
-		},
-		{
-			name: 'canvas-babylon',
-		},
-		{
-			name: 'canvas-phaser',
-		},
-		{
-			name: 'canvas-phaser-ce',
-		},
-		{
-			name: 'canvas-pixi',
-		},
-		{
-			name: 'canvas-polyfill',
-		},
-		{
-			name: 'canvas-three',
-		},
-	];
+	{
+		name: 'canvas'
+	},
+	{
+		name: 'canvas-babylon'
+	},
+	{
+		name: 'canvas-media'
+	},
+	{
+		name: 'canvas-phaser'
+	},
+	{
+		name: 'canvas-phaser-ce'
+	},
+	{
+		name: 'canvas-pixi'
+	},
+	{
+		name: 'canvas-polyfill'
+	},
+	{
+		name: 'canvas-three'
+	}
+];
 }

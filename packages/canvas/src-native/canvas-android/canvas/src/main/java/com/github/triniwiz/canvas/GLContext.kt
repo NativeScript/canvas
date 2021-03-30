@@ -9,7 +9,6 @@ import android.opengl.GLES20
 import android.opengl.GLUtils
 import android.util.Log
 import java.lang.ref.WeakReference
-import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 import javax.microedition.khronos.egl.*
@@ -25,7 +24,7 @@ internal class GLContext {
 	@JvmField
 	var mGLThread: GLThread? = null
 	private var mEGLDisplay: EGLDisplay? = null
-	private var mEGLSurface: EGLSurface? = null
+	internal var mEGLSurface: EGLSurface? = null
 	private var offscreenTexture: SurfaceTexture? = null
 	private var textureId = 0
 	private var mEGLContext: EGLContext? = null
@@ -164,6 +163,18 @@ internal class GLContext {
 				}
 			}
 		})
+	}
+
+	fun createEglSurface(surface: Any): EGLSurface {
+		val surfaceAttribs = intArrayOf(
+			EGL14.EGL_NONE
+		)
+		return mEGL!!.eglCreateWindowSurface(mEGLDisplay, mEGLConfig, surface, surfaceAttribs)
+	}
+
+
+	fun makeEglSurfaceCurrent(surface: EGLSurface) {
+		mEGL!!.eglMakeCurrent(mEGLDisplay, surface, surface, mEGLContext)
 	}
 
 	fun createSurface(config: EGLConfig?, surface: Any?): EGLSurface {
@@ -334,7 +345,7 @@ internal class GLContext {
 					view.contextAntialias
 				}
 			}
-			if(!useAlpha){
+			if (!useAlpha) {
 				alpha = 0
 			}
 			var configSpec = intArrayOf(
@@ -347,7 +358,7 @@ internal class GLContext {
 				EGL10.EGL_STENCIL_SIZE, stencilSize
 			)
 			if (antialias) {
-				configSpec = Arrays.copyOf(configSpec, configSpec.size + 5)
+				configSpec = configSpec.copyOf(configSpec.size + 5)
 				val last = configSpec.size - 1
 				configSpec[last - 4] = EGL10.EGL_SAMPLE_BUFFERS
 				configSpec[last - 3] = 1
@@ -355,7 +366,7 @@ internal class GLContext {
 				configSpec[last - 1] = 4
 				configSpec[last] = EGL10.EGL_NONE
 			} else {
-				configSpec = Arrays.copyOf(configSpec, configSpec.size + 1)
+				configSpec = configSpec.copyOf(configSpec.size + 1)
 				val last = configSpec.size - 1
 				configSpec[last] = EGL10.EGL_NONE
 			}

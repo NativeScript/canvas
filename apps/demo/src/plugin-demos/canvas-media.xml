@@ -1,0 +1,21 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" xmlns:ui="@nativescript/canvas-media" navigatingTo="navigatingTo"
+			class="page">
+	<Page.actionBar>
+		<ActionBar title="canvas-media" icon="" class="action-bar">
+		</ActionBar>
+	</Page.actionBar>
+	<GridLayout rows="*,*" loaded="{{loaded}}">
+		<!--<ui:Video playsinline="true" height="300">
+			<ui:source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm"
+								 type="video/webm"/>
+
+			<ui:source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+								 type="video/mp4"/>
+		</ui:Video>
+
+		<ui:Audio margin="0 10" controls="true" row="1" playsinline="true" height="300">
+			<ui:source src="https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3"
+								 type="audio/mp3"/>
+		</ui:Audio> -->
+	</GridLayout>
+</Page>

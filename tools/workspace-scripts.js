@@ -112,6 +112,13 @@ module.exports = {
 					description: '@nativescript/canvas-three: Build',
 				},
 			},
+			// @nativescript/canvas-media
+			'canvas-media': {
+				build: {
+					script: 'nx run canvas-media:build.all',
+					description: '@nativescript/canvas-media: Build',
+				},
+			},
 			'build-all': {
 				script: 'nx run all:build',
 				description: 'Build all packages',
@@ -159,6 +166,10 @@ module.exports = {
 			'canvas-three': {
 				script: 'nx run canvas-three:focus',
 				description: 'Focus on @nativescript/canvas-three',
+			},
+			'canvas-media': {
+				script: 'nx run canvas-media:focus',
+				description: 'Focus on @nativescript/canvas-media',
 			},
 			reset: {
 				script: 'nx run all:focus',

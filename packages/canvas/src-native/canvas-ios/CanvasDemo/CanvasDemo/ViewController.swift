@@ -12,14 +12,156 @@ class ViewController: UIViewController, TNSCanvasListener {
     let PI: Float = .pi
     let TWO_PI: Float = .pi * 2
     var tapped = 0
-    
+    var svg: TNSSVG?
     override func viewDidLoad() {
         super.viewDidLoad()
         scale = Int(UIScreen.main.scale)
         // Do any additional setup after loading the view.
         canvas1.setListener(self)
+        canvas1.isHidden = true
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
+        svg = TNSSVG(frame: view.bounds)
+        canvas1.addSubview(svg!)
+        svg?.bringSubviewToFront(canvas1)
+        svg!.backgroundColor = .white
+//        svg?.src = """
+//<svg width="660" height="220" style="outline: 1px solid red">
+// <defs>
+//   <clipPath id="text-2">
+//    <text x="50" y="133" font-family="Georgia" font-weight="bold" font-size="4px" >Clipping Path</text>
+//   </clipPath>
+// </defs>
+//
+// <g transform="translate(300 300)" clip-path="url(#text-2)">
+//   <polygon points="110 10, 660 110, 110,210" fill="#c99" />
+//   <circle cx="110" cy="110" r="100" fill="#9c6" />
+// </g>
+//</svg>
+//"""
+        
+//        svg?.src = """
+//                    <svg xmlns="http://www.w3.org/2000/svg">
+//                     <defs>
+//                       <linearGradient id="Gradient1">
+//                         <stop offset="5%" stop-color="white"/>
+//                         <stop offset="95%" stop-color="blue"/>
+//                       </linearGradient>
+//                       <linearGradient id="Gradient2" x1="0" x2="0" y1="0" y2="1">
+//                         <stop offset="5%" stop-color="red"/>
+//                         <stop offset="95%" stop-color="orange"/>
+//                       </linearGradient>
+//                       <pattern id="Pattern" x="0" y="0" width="1" height="1">
+//                         <rect x="0" y="0" width="50" height="50" fill="skyblue"/>
+//                         <rect x="0" y="0" width="25" height="25" fill="url(#Gradient2)"/>
+//                         <circle cx="25" cy="25" r="20" fill="url(#Gradient1)" fill-opacity="0.5"/>
+//                       </pattern>
+//                     </defs>
+//                     <rect fill="url(#Pattern)" stroke="black" width="200" height="200"/>
+//                    </svg>
+//                    """
+        
+        
+       /* svg.src = """
+                    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+                     <defs>
+                       <linearGradient id="Gradient1">
+                         <stop offset="5%" stop-color="white"/>
+                         <stop offset="95%" stop-color="blue"/>
+                       </linearGradient>
+                       <linearGradient id="Gradient2" x1="0" x2="0" y1="0" y2="1">
+                         <stop offset="5%" stop-color="red"/>
+                         <stop offset="95%" stop-color="orange"/>
+                       </linearGradient>
+                       <pattern id="Pattern" x="0" y="0" width=".25" height=".25">
+                         <rect x="0" y="0" width="50" height="50" fill="skyblue"/>
+                         <rect x="0" y="0" width="25" height="25" fill="url(#Gradient2)"/>
+                         <circle cx="25" cy="25" r="20" fill="url(#Gradient1)" fill-opacity="0.5"/>
+                       </pattern>
+                     </defs>
+                     <rect fill="url(#Pattern)" stroke="black" width="200" height="200"/>
+                    </svg>
+                    """*/
+        
+//      svg.src = """
+// <svg viewBox="0 0 230 100" xmlns="http://www.w3.org/2000/svg">
+//  <defs>
+//    <pattern fill="red" id="star" viewBox="0,0,10,10" width="10%" height="10%">
+//      <polygon points="0,0 2,5 0,10 5,8 10,10 8,5 10,0 5,2"/>
+//    </pattern>
+//  </defs>
+//  <circle cx="50"  cy="50" r="50" fill="url(#star)"/>
+//  <circle cx="180" cy="50" r="40" fill="none" stroke-width="20" stroke="url(#star)"/>
+// </svg>
+// """
+
+//        svg.src = """
+//                    <svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg"
+//                         xmlns:xlink="http://www.w3.org/1999/xlink">
+//                      <!-- Our symbol in its own coordinate system -->
+//                      <symbol id="myDot" width="10" height="10" viewBox="0 0 2 2">
+//                        <circle cx="1" cy="1" r="1" />
+//                      </symbol>
+//
+//                       <!-- A grid to materialize our symbol positioning -->
+//                      <path transform="translate(10)" d="M0,10 h80 M10,0 v20 M25,0 v20 M40,0 v20 M55,0 v20 M70,0 v20" fill="none" stroke="pink" />
+//
+//                      <!-- All instances of our symbol -->
+//                      <use xlink:href="#myDot" x="5"  y="50" style="opacity:1.0" />
+//                      <use xlink:href="#myDot" x="20" y="50" />
+//                      <use xlink:href="#myDot" x="35" y="50"  />
+//                      <use xlink:href="#myDot" x="50" y="50" />
+//                      <use xlink:href="#myDot" x="65" y="50" style="opacity:0.2" />
+//                    </svg>
+//                    """
+        
+        
+        // https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg
+        // https://upload.wikimedia.org/wikipedia/commons/6/6c/Trajans-Column-lower-animated.svg
+
+        // https://upload.wikimedia.org/wikipedia/commons/b/b1/Cluse_de_Chamb%C3%A9ry_-_Carte_de_l%27occupation_des_sols_%28CORINE%29.svg
+
+
+        //https://upload.wikimedia.org/wikipedia/commons/b/b6/Moldova_%281483%29-en.svg
+
+        // https://upload.wikimedia.org/wikipedia/commons/a/a0/Location_map_San_Francisco_Bay_Area.svg // 40mb
+
+        // https://upload.wikimedia.org/wikipedia/commons/c/c1/Propane_flame_contours-en.svg
+
+        // https://upload.wikimedia.org/wikipedia/commons/9/95/Kaiserstandarte_Version1.svg
+
+        // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg
+
+        // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/lineargradient1.svg
+
+        //http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg
+
+        // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/AJ_Digital_Camera.svg
+
+        // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg
+
+        // https://upload.wikimedia.org/wikipedia/commons/f/ff/1_42_polytope_7-cube.svg
+
+        // https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg
+
+        // https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg
+
+        // https://upload.wikimedia.org/wikipedia/commons/1/1c/KINTETSU23000_20140424A.svg
+        
+//        do{
+//            let svg_file = NSURL(fileURLWithPath: NSTemporaryDirectory() + UUID().uuidString + "_svg_file.svg")
+//            let svg_data = try Data(contentsOf: URL(string: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")!)
+//            try svg_data.write(to: svg_file.absoluteURL!, options: .atomicWrite)
+//            //let svgContents = String(data: svg_data, encoding: .utf8)
+//            svg?.srcPath = svg_file.path
+//            //svg?.src = svgContents
+//
+//        }catch {
+//            print(error)
+//        }
+        
+        
+    
     }
     
     var drawn = false
@@ -145,6 +287,61 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     
     func drawAll() {
+        
+        svg?.src  = """
+                <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"
+                xmlns:xlink="http://www.w3.org/1999/xlink">
+                <defs>
+                <radialGradient id="myGradient">
+                <stop offset="10%" stop-color="gold" />
+                <stop offset="95%" stop-color="red" />
+                </radialGradient>
+                </defs>
+
+                <!-- using my radial gradient -->
+                <circle transform="scale(10 10)" cx="5" cy="5" r="4" />
+                </svg>
+                """
+        
+        
+//                do{
+//                    let svg_file = NSURL(fileURLWithPath: NSTemporaryDirectory() + UUID().uuidString + "_svg_file.svg")
+//                    let svg_data = try Data(contentsOf: URL(string: "http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg")!)
+//                    try svg_data.write(to: svg_file.absoluteURL!, options: .atomicWrite)
+//                    //let svgContents = String(data: svg_data, encoding: .utf8)
+//                    svg?.srcPath = svg_file.path
+//                    //svg?.src = svgContents
+//
+//                }catch {
+//                    print(error)
+//                }
+                
+        
+        
+//
+//        svg?.src = """
+//                    <svg xmlns="http://www.w3.org/2000/svg">
+//                     <defs>
+//                       <linearGradient id="Gradient1">
+//                         <stop offset="5%" stop-color="white"/>
+//                         <stop offset="95%" stop-color="blue"/>
+//                       </linearGradient>
+//                       <linearGradient id="Gradient2" x1="0" x2="0" y1="0" y2="1">
+//                         <stop offset="5%" stop-color="red"/>
+//                         <stop offset="95%" stop-color="orange"/>
+//                       </linearGradient>
+//                       <pattern id="Pattern" x="0" y="0" width=".25" height=".25">
+//                         <rect x="0" y="0" width="50" height="50" fill="skyblue"/>
+//                         <rect x="0" y="0" width="25" height="25" fill="url(#Gradient2)"/>
+//                         <circle cx="25" cy="25" r="20" fill="url(#Gradient1)" fill-opacity="0.5"/>
+//                       </pattern>
+//                     </defs>
+//                     <rect fill="url(#Pattern)" stroke="black" width="200" height="200"/>
+//                    </svg>
+//                    """
+    
+        
+        
         //  let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
         //canvas1?.handleInvalidationManually = true
         

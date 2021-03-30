@@ -830,6 +830,10 @@ void path_rect(long long path, float x, float y, float width, float height);
 
 void pattern_set_transform(long long pattern, long long matrix);
 
+void svg_draw_from_path(long long context, const int8_t *path);
+
+void svg_draw_from_string(long long context, const int8_t *svg);
+
 long long text_decoder_create(const char *decoding);
 
 const char *text_decoder_decode(long long decoder, const uint8_t *data, uintptr_t len);

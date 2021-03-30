@@ -1,16 +1,17 @@
 package com.github.triniwiz.canvas
 
 import android.graphics.Bitmap
+import android.graphics.SurfaceTexture
 import android.opengl.GLES20
 import android.os.Build
 import android.os.Environment
 import java.io.File
-import java.nio.ByteBuffer
+import java.util.concurrent.CountDownLatch
 
 object Utils {
 
 	@JvmStatic
-	private external fun nativeGetBytesFromBitmap(bitmap: Bitmap?): ByteArray
+	private external fun nativeGetByteBufferFromBitmap(bitmap: Bitmap?): ByteArray
 	private var rating = -1
 	val isEmulator: Boolean
 		get() {
@@ -112,6 +113,105 @@ object Utils {
 		}
 
 	fun getBytesFromBitmap(bitmap: Bitmap?): ByteArray {
-		return nativeGetBytesFromBitmap(bitmap)
+		return nativeGetByteBufferFromBitmap(bitmap)
+	}
+
+
+	@JvmStatic
+	fun createSurfaceTexture(context: TNSWebGLRenderingContext): Array<Any> {
+		val render = TextureRender()
+		val lock = CountDownLatch(1)
+		context.canvas.queueEvent {
+			render.surfaceCreated()
+			lock.countDown()
+		}
+
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+
+		return arrayOf(SurfaceTexture(render.getTextureId()), render)
+
+	}
+
+
+	@JvmStatic
+	fun createRenderAndAttachToGLContext(
+		context: TNSWebGLRenderingContext,
+		texture: SurfaceTexture,
+	): TextureRender {
+		val render = TextureRender()
+		val lock = CountDownLatch(1)
+		context.canvas.queueEvent {
+			render.surfaceCreated()
+			texture.attachToGLContext(render.getTextureId())
+			lock.countDown()
+		}
+
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+		return render
+	}
+
+
+	@JvmStatic
+	fun attachToGLContext(
+		context: TNSWebGLRenderingContext,
+		texture: SurfaceTexture,
+		render: TextureRender
+	) {
+		val lock = CountDownLatch(1)
+		context.canvas.queueEvent {
+			texture.attachToGLContext(render.getTextureId())
+			lock.countDown()
+		}
+
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	@JvmStatic
+	fun detachFromGLContext(context: TNSWebGLRenderingContext, texture: SurfaceTexture) {
+		val lock = CountDownLatch(1)
+		context.canvas.queueEvent {
+			texture.detachFromGLContext()
+			lock.countDown()
+		}
+
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	@JvmStatic
+	fun updateTexImage(
+		context: TNSWebGLRenderingContext,
+		texture: SurfaceTexture,
+		render: TextureRender
+	) {
+		val lock = CountDownLatch(1)
+		context.runOnGLThread {
+			val canvas = context.canvas
+			texture.updateTexImage()
+			canvas.mClearColor[0] = 0f
+			canvas.mClearColor[1] = 0f
+			canvas.mClearColor[2] = 0f
+			canvas.mClearColor[3] = 1f
+			render.drawFrame(texture)
+			context.updateCanvas()
+			lock.countDown()
+		}
+
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+
 	}
 }

@@ -1,5 +1,5 @@
-import {View} from "@nativescript/core";
-import {Property} from "@nativescript/core/ui/core/view";
+import { View } from '@nativescript/core';
+import { Property } from '@nativescript/core/ui/core/view';
 
 export class Source extends View {
 	public src: string;
@@ -7,13 +7,13 @@ export class Source extends View {
 }
 
 export const srcProperty = new Property<Source, string>({
-	name: 'src'
+	name: 'src',
 });
 
 srcProperty.register(Source);
 
 export const typeProperty = new Property<Source, string>({
-	name: 'type'
+	name: 'type',
 });
 
 typeProperty.register(Source);

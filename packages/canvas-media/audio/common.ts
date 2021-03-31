@@ -1,5 +1,5 @@
-import {AddChildFromBuilder, booleanConverter, ContentView, CSSType} from "@nativescript/core";
-import {Property} from "@nativescript/core/ui/core/view";
+import { AddChildFromBuilder, booleanConverter, ContentView } from '@nativescript/core';
+import { Property, CSSType } from '@nativescript/core/ui/core/view';
 
 @CSSType('Audio')
 export abstract class AudioBase extends ContentView implements AddChildFromBuilder {
@@ -11,14 +11,14 @@ export abstract class AudioBase extends ContentView implements AddChildFromBuild
 export const controlsProperty = new Property<AudioBase, boolean>({
 	name: 'controls',
 	valueConverter: booleanConverter,
-	defaultValue: false
+	defaultValue: false,
 });
 controlsProperty.register(AudioBase);
 
 export const loopProperty = new Property<AudioBase, boolean>({
 	name: 'loop',
 	valueConverter: booleanConverter,
-	defaultValue: false
+	defaultValue: false,
 });
 
 loopProperty.register(AudioBase);
@@ -26,8 +26,7 @@ loopProperty.register(AudioBase);
 export const autoplayProperty = new Property<AudioBase, boolean>({
 	name: 'autoplay',
 	valueConverter: booleanConverter,
-	defaultValue: false
+	defaultValue: false,
 });
 
 autoplayProperty.register(AudioBase);
-

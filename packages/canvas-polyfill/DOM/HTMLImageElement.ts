@@ -76,7 +76,7 @@ export class HTMLImageElement extends Element {
 	}
 
 	constructor(props?) {
-		super('image');
+		super('img');
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
 		this._onload = () => { };

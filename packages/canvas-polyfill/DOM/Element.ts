@@ -1,30 +1,21 @@
-import { Node } from "./Node";
-import { Canvas } from '@nativescript/canvas';
+import { Node } from './Node';
 
 export class Element extends Node {
 	private doc: any;
 	private _classList: any;
-	private _width: number;
-	private _height: number;
 	namespaceURI: any;
 	nativeElement: any;
-
-	constructor(tagName, canvas = undefined) {
+	private _width: number;
+	private _height: number;
+	constructor(tagName) {
 		super(tagName.toUpperCase());
 
 		this.doc = {
 			body: {
-				innerHTML: "",
+				innerHTML: '',
 			},
 		};
 		this._classList = new Set();
-		if (tagName.toLowerCase() === 'canvas') {
-			if (canvas instanceof Canvas) {
-				this._canvas = canvas;
-			} else {
-				this._canvas = Canvas.createCustomView();
-			}
-		}
 	}
 
 	get classList() {
@@ -35,17 +26,13 @@ export class Element extends Node {
 		return this.nodeName;
 	}
 
-	setAttribute() {
-	}
+	setAttribute() {}
 
-	removeAttribute() {
-	}
+	removeAttribute() {}
 
-	setAttributeNS() {
-	}
+	setAttributeNS() {}
 
-	removeAttributeNS() {
-	}
+	removeAttributeNS() {}
 
 	get clientWidth() {
 		return this.innerWidth;
@@ -71,45 +58,20 @@ export class Element extends Node {
 		return this.height;
 	}
 
-	set width(value) {
-		this._width = value as any;
-		if (this._canvas) {
-			this._canvas.width = value;
-		}
-	}
-
 	get width() {
-		if (this._canvas) {
-			return this._canvas.width;
-		}
 		return this._width;
 	}
 
-	set height(value) {
-		this._height = value as any;
-		if (this._canvas) {
-			this._canvas.height = value;
-		}
+	set width(value: number) {
+		this._width = value;
 	}
 
 	get height() {
-		if (this._canvas) {
-			return this._canvas.height;
-		}
 		return this._height;
 	}
 
-
-	toDataURL(type, encoderOptions) {
-		if (!this._canvas) {
-			return "";
-		}
-		return this._canvas.toDataURL(type, encoderOptions);
-	}
-
-
-	getContext(contextType, contextOptions, context) {
-		return this._canvas.getContext(contextType, contextOptions);
+	set height(value: number) {
+		this._height = value;
 	}
 
 	get ontouchstart() {

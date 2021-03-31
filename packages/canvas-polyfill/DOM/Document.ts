@@ -1,10 +1,10 @@
-import {Element} from "./Element";
-import {HTMLVideoElement} from "./HTMLVideoElement";
-import {HTMLImageElement} from "./HTMLImageElement";
-import {HTMLCanvasElement} from "./HTMLCanvasElement";
-import {Text} from "./Text";
-import {Canvas} from "@nativescript/canvas";
-import {Frame} from '@nativescript/core';
+import { Element } from './Element';
+import { HTMLVideoElement } from './HTMLVideoElement';
+import { HTMLImageElement } from './HTMLImageElement';
+import { HTMLCanvasElement } from './HTMLCanvasElement';
+import { Text } from './Text';
+import { Canvas } from '@nativescript/canvas';
+import { Frame } from '@nativescript/core';
 
 export class Document extends Element {
 	private body: any;
@@ -14,25 +14,23 @@ export class Document extends Element {
 	private defaultView: any;
 
 	constructor() {
-		super("#document");
-		this.body = new Element("BODY");
-		this.documentElement = new Element("HTML");
-		this.readyState = "complete";
-		this.head = new Element("HEAD");
+		super('#document');
+		this.body = new Element('BODY');
+		this.documentElement = new Element('HTML');
+		this.readyState = 'complete';
+		this.head = new Element('HEAD');
 		this.defaultView = (global as any).window;
 	}
 
 	createElement(tagName) {
-		switch ((tagName || "").toLowerCase()) {
-			case "video":
+		switch ((tagName || '').toLowerCase()) {
+			case 'video':
 				return new HTMLVideoElement();
-			case "img":
+			case 'img':
 				return new HTMLImageElement();
-			case "canvas":
-				const canvas = new HTMLCanvasElement();
-				canvas._canvas = Canvas.createCustomView();
-				return canvas;
-			case "iframe":
+			case 'canvas':
+				return new HTMLCanvasElement();
+			case 'iframe':
 				// Return nothing to keep firebase working.
 				return null;
 			default:
@@ -71,15 +69,15 @@ export class Document extends Element {
 		if (topmost) {
 			const nativeElement = topmost.getViewById(id);
 			if (nativeElement) {
-				const element = new Element("div");
+				const element = new Element('div');
 				element.nativeElement = nativeElement;
 				return element;
 			}
 		}
-		return new Element("div");
+		return new Element('div');
 	}
 
-	querySelector(selector){
+	querySelector(selector) {
 		return new Element(selector);
 	}
 }

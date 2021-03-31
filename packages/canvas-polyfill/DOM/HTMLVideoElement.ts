@@ -15,7 +15,7 @@ export class HTMLVideoElement extends Element {
 		this._video.removeEventListener(type, listener, useCapture);
 	}
 
-	requestVideoFrameCallback(callback: Function){
+	requestVideoFrameCallback(callback: Function) {
 		this._video.requestVideoFrameCallback(callback);
 	}
 
@@ -66,23 +66,15 @@ export class HTMLVideoElement extends Element {
 	}
 
 	get width() {
-		if (this._video) {
-			return this._video.width;
-		}
-		return this._video;
+		return this._video.width as any;
 	}
 
 	set height(value) {
-		if (this._video) {
-			this._video.height = value as any;
-		}
+		this._video.height = value as any;
 	}
 
 	get height() {
-		if (this._video) {
-			return this._video.height;
-		}
-		return this._video;
+		return this._video.height as any;
 	}
 
 	play() {

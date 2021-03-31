@@ -322,15 +322,9 @@ export class Video extends VideoBase {
 				this._assetOutput = AVPlayerItemVideoOutput.alloc().initWithOutputSettings(settings);
 				item.addOutput(this._assetOutput);
 				item.addObserverForKeyPathOptionsContext(this.#protocols, 'status', 0, null);
-				this._ctx = new interop.Reference(0);
-				item.addObserverForKeyPathOptionsContext(this.#protocols, 'loadedTimeRanges', NSKeyValueObservingOptions.Initial | NSKeyValueObservingOptions.New, this._ctx);
+				item.addObserverForKeyPathOptionsContext(this.#protocols, 'loadedTimeRanges', NSKeyValueObservingOptions.Initial | NSKeyValueObservingOptions.New, null);
 				this._playEndNotificationId = NSNotificationCenter.defaultCenter.addObserverForNameObjectQueueUsingBlock(AVPlayerItemDidPlayToEndTimeNotification, item, null, (notfi) => {
 					if (this.loop) {
-						if (this._assetReader && this._assetReader.status === AVAssetReaderStatus.Reading) {
-							this._assetReader.cancelReading();
-							this._assetReader = undefined;
-							this._assetOutput = undefined;
-						}
 						this.#player.seekToTime(kCMTimeZero);
 						this.#player.play();
 						this._isPlaying = true;

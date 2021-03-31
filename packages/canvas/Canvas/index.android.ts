@@ -28,6 +28,7 @@ export class Canvas extends CanvasBase {
 		const activity =
 			Application.android.foregroundActivity || Application.android.startActivity;
 		this._canvas = new com.github.triniwiz.canvas.TNSCanvas(activity, false);
+		(global as any).__canvasLoaded = true;
 	}
 
 	get android() {

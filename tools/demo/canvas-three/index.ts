@@ -40,7 +40,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoColors(this.canvas);
-		this.threeDepth(this.canvas);
+		//this.threeDepth(this.canvas);
 		// this.threeCrate(this.canvas);
 	//	this.skinningAndMorphing(this.canvas);
 		// this.nearestNeighbour(this.canvas);
@@ -54,6 +54,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.ThreeDS(this.canvas);
 		// this.ThreeMF(this.canvas);
 		// this.gtlfTonemapping(this.canvas);
+		this.threeVideoCube(this.canvas);
 	}
 
 	gtlfLoader(canvas) {
@@ -1450,6 +1451,53 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 	};
 
+
+	threeVideoCube(canvas) {
+		var camera, scene, renderer;
+		var geometry, material, mesh;
+
+		init();
+		animate();
+
+		function init() {
+			const context = canvas.getContext("webgl2");
+
+			camera = new THREE.PerspectiveCamera(
+				70,
+				window.innerWidth / window.innerHeight,
+				0.01,
+				1000
+			);
+			camera.position.z = 1;
+
+			scene = new THREE.Scene();
+
+			geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+			const texture = document.createElement('video');
+			texture.loop = true;
+			texture.muted = true;
+			texture.src = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+			texture.play();
+			material = new THREE.MeshBasicMaterial();
+			material.map = new THREE.VideoTexture(texture)
+
+			mesh = new THREE.Mesh(geometry, material);
+			scene.add(mesh);
+
+			renderer = new THREE.WebGLRenderer({context, antialias: true});
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+
+			mesh.rotation.x += 0.01;
+
+			renderer.render(scene, camera);
+
+
+		}
+	};
 	animationKkinningblending(canvas) {
 		const context = canvas.getContext("webgl2") as any;
 	};

@@ -1,4 +1,11 @@
 require('globals');
+if (global.android && !(global as any).__canvasLoaded) {
+	try {
+		// load canvas lib if polyfill is called before
+		java.lang.System.loadLibrary('canvasnative');
+		(global as any).__canvasLoaded = true;
+	} catch (e) {}
+}
 import { TNSXMLHttpRequest, FileReader, Blob } from './async/async';
 import { Element } from './DOM/Element';
 import { Document } from './DOM/Document';

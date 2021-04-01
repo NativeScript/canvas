@@ -156,17 +156,15 @@ export class Video extends VideoBase {
 					const GL_BGRA_EXT = 32993;
 					const GL_UNSIGNED_BYTE = 5121;
 
-					const pixel_buffer = sampleBuffer; //CMSampleBufferGetImageBuffer(sampleBuffer);
-
 					//const startTime = CFAbsoluteTimeGetCurrent();
-					CVPixelBufferLockBaseAddress(pixel_buffer, 0);
+					CVPixelBufferLockBaseAddress(sampleBuffer, 0);
 					//const bpr = CVPixelBufferGetBytesPerRow(pixel_buffer);
-					const width = CVPixelBufferGetWidth(pixel_buffer);
-					const height = CVPixelBufferGetHeight(pixel_buffer);
-					const line_base = CVPixelBufferGetBaseAddress(pixel_buffer);
+					const width = CVPixelBufferGetBytesPerRow(sampleBuffer) / 4;
+					const height = CVPixelBufferGetHeight(sampleBuffer);
+					const line_base = CVPixelBufferGetBaseAddress(sampleBuffer);
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, line_base);
 
-					CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
+					CVPixelBufferUnlockBaseAddress(sampleBuffer, 0);
 					// CMSampleBufferInvalidate(sampleBuffer);
 
 					/*const currentFrameTime = CFAbsoluteTimeGetCurrent() - startTime;

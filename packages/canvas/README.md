@@ -52,7 +52,6 @@ export function canvasReady(args) {
 	// Clear the context with the newly set color. This is
 	// the function call that actually does the drawing.
 	gl.clear(gl.COLOR_BUFFER_BIT);
-	canvas.flush(); // must be called to draw on screen
 }
 ```
 

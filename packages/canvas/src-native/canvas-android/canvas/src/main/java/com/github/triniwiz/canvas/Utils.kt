@@ -8,7 +8,9 @@ import android.os.Environment
 import java.io.File
 import java.util.concurrent.CountDownLatch
 
+
 object Utils {
+	private const val TAG = "Utils"
 
 	@JvmStatic
 	private external fun nativeGetByteBufferFromBitmap(bitmap: Bitmap?): ByteArray
@@ -131,7 +133,7 @@ object Utils {
 		} catch (ignored: InterruptedException) {
 		}
 
-		return arrayOf(SurfaceTexture(render.getTextureId()), render)
+		return arrayOf(SurfaceTexture(render.textureId), render)
 
 	}
 
@@ -145,7 +147,7 @@ object Utils {
 		val lock = CountDownLatch(1)
 		context.canvas.queueEvent {
 			render.surfaceCreated()
-			texture.attachToGLContext(render.getTextureId())
+			texture.attachToGLContext(render.textureId)
 			lock.countDown()
 		}
 
@@ -165,7 +167,7 @@ object Utils {
 	) {
 		val lock = CountDownLatch(1)
 		context.canvas.queueEvent {
-			texture.attachToGLContext(render.getTextureId())
+			texture.attachToGLContext(render.textureId)
 			lock.countDown()
 		}
 
@@ -189,22 +191,25 @@ object Utils {
 		}
 	}
 
+
 	@JvmStatic
 	fun updateTexImage(
 		context: TNSWebGLRenderingContext,
 		texture: SurfaceTexture,
-		render: TextureRender
+		render: TextureRender,
+		width: Int,
+		height: Int,
+		internalFormat: Int,
+		format: Int,
 	) {
 		val lock = CountDownLatch(1)
 		context.runOnGLThread {
-			val canvas = context.canvas
-			texture.updateTexImage()
-			canvas.mClearColor[0] = 0f
-			canvas.mClearColor[1] = 0f
-			canvas.mClearColor[2] = 0f
-			canvas.mClearColor[3] = 1f
-			render.drawFrame(texture)
-			context.updateCanvas()
+			render.drawFrame(texture, width, height, internalFormat, format)
+
+			if (render.width != width || render.height != width) {
+				render.width = width
+				render.height = height
+			}
 			lock.countDown()
 		}
 
@@ -214,4 +219,6 @@ object Utils {
 		}
 
 	}
+
+
 }

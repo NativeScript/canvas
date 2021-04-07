@@ -2,18 +2,35 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-
 use std::os::raw::c_void;
 
-use jni::JNIEnv;
+use jni::errors::Error;
 use jni::objects::{JByteBuffer, JClass, JObject};
-use jni::sys::{jboolean, jint, jlong, JNI_TRUE, jobject};
+use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE};
+use jni::JNIEnv;
+use skia_safe::RCHandle;
 
 use crate::common::context::image_asset::ImageAsset;
-use jni::errors::Error;
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexImage2DTexture(
+    _env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    src_texture: jint,
+) {
+    let mut previous_view_port = [-1_i32; 4];
+    let mut previous_active_texture = [-1_i32; 1];
+    let mut previous_texture = [-1_i32; 1];
+    let mut previous_program = [-1_i32; 1];
+    let mut previous_frame_buffer = [-1_i32; 1];
+
+
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeFlipBufferInPlace(
@@ -32,7 +49,6 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
         );
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeGetVertexAttribOffset(
@@ -67,6 +83,28 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeReadPixels(
+    _env: JNIEnv,
+    _: JClass,
+    x: jint,
+    y: jint,
+    width: jint,
+    height: jint,
+    format: jint,
+    pixel_type: jint,
+) {
+    gl_bindings::glReadPixels(
+        x,
+        y,
+        width,
+        height,
+        format as std::os::raw::c_uint,
+        pixel_type as std::os::raw::c_uint,
+        0 as *mut c_void,
+    );
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexImage2DBuffer(
     env: JNIEnv,
     _: JClass,
@@ -87,8 +125,9 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
                 crate::common::utils::gl::flip_in_place(
                     buf.as_mut_ptr(),
                     buf.len(),
-                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                        as usize,
+                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                        as i32
+                        * width) as usize,
                     height as usize,
                 );
             }
@@ -105,7 +144,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
             );
         }
         Err(e) => {
-            log::debug!("get_direct_buffer_address error {:?}",  e);
+            log::debug!("get_direct_buffer_address error {:?}", e);
         }
     }
 }
@@ -127,20 +166,16 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
     let asset = &mut *asset;
     let mut data;
     match format as u32 {
-        RGBA | RGBA_INTEGER => {
-            data = asset.rgba_internal_bytes()
-        }
-        _ => {
-            data = asset.rgb_internal_bytes()
-        }
+        RGBA | RGBA_INTEGER => data = asset.rgba_internal_bytes(),
+        _ => data = asset.rgb_internal_bytes(),
     }
     let data_array = data.as_mut_slice();
     if flipY == JNI_TRUE {
         crate::common::utils::gl::flip_in_place(
             data_array.as_mut_ptr(),
             data_array.len(),
-            (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) * asset.width() as u32) as i32
-                as usize,
+            (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                * asset.width() as u32) as i32 as usize,
             asset.height() as usize,
         );
     }
@@ -178,8 +213,8 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
             crate::common::utils::gl::flip_in_place(
                 data.0.as_mut_ptr(),
                 data.0.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) * data.1.width as u32) as i32
-                    as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                    * data.1.width as u32) as i32 as usize,
                 data.1.height as usize,
             );
         }
@@ -196,7 +231,6 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
         );
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexSubImage2DBuffer(
@@ -218,8 +252,8 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
             crate::common::utils::gl::flip_in_place(
                 data_array.as_mut_ptr(),
                 data_array.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width as i32)
-                    as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
+                    * width as i32) as usize,
                 height as usize,
             );
         }
@@ -256,20 +290,16 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
     let asset = &mut *asset;
     let mut data;
     match format as u32 {
-        RGBA | RGBA_INTEGER => {
-            data = asset.rgba_internal_bytes()
-        }
-        _ => {
-            data = asset.rgb_internal_bytes()
-        }
+        RGBA | RGBA_INTEGER => data = asset.rgba_internal_bytes(),
+        _ => data = asset.rgb_internal_bytes(),
     }
     let data_array = data.as_mut_slice();
     if flip_y == JNI_TRUE {
         crate::common::utils::gl::flip_in_place(
             data_array.as_mut_ptr(),
             data_array.len(),
-            (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) * asset.width() as u32) as i32
-                as usize,
+            (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                * asset.width() as u32) as i32 as usize,
             asset.height() as usize,
         );
     }
@@ -307,8 +337,8 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
             crate::common::utils::gl::flip_in_place(
                 data.0.as_mut_ptr(),
                 data.0.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * data.1.width as i32) as i32
-                    as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
+                    * data.1.width as i32) as i32 as usize,
                 data.1.height as usize,
             );
         }

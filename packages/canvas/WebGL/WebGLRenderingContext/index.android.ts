@@ -133,10 +133,20 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this.context.bindRenderbuffer(target, value);
 	}
 
+	_lastTexture : {
+		target: number,
+		texture: number
+	} = {target: 0, texture: 0}
 	bindTexture(target: number, texture: WebGLTexture): void {
 		this._glCheckError('bindTexture');
 		this._checkArgs('bindTexture', arguments);
 		const value = texture ? texture.native : 0;
+		if(value > 0){
+			this._lastTexture = {
+				target, texture: value
+			};
+		}
+
 		this.context.bindTexture(target, value);
 	}
 
@@ -1026,9 +1036,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			}
 		} else if (arguments.length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && typeof border._video.getCurrentFrame === 'function') {
-				border._video.getCurrentFrame(this.context);
+				border._video.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
-				border.getCurrentFrame(this.context);
+				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				this.context.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof android.graphics.Bitmap) {

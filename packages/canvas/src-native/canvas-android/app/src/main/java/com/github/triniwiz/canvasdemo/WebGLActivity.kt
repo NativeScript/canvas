@@ -28,12 +28,9 @@ class WebGLActivity : AppCompatActivity() {
 			val gl = canvas.getContext("webgl") as? TNSWebGLRenderingContext
 			canvas.queueEvent {
 				val vertex = floatArrayOf(
-					-0.5f, 0.5f, 0f,
-					-0.5f, -0.5f, 0f,
-					0.5f, 0.5f, 0f,
-					0.5f, 0.5f, 0f,
-					0.5f, -0.5f, 0f,
-					-0.5f, -0.5f, 0f,
+					-1f, 1f, 0f,
+					-1f, -1f, 0f,
+					1f, -1f, 0f
 
 				)
 
@@ -96,9 +93,11 @@ class WebGLActivity : AppCompatActivity() {
 				GLES20.glEnableVertexAttribArray(0)
 				GLES20.glUseProgram(program)
 
-			}
+			//	GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
+			//	gl?.updateCanvas()
 
-			gl?.drawArrays(GLES20.GL_TRIANGLES, 0, 6)
+			}
+			gl?.drawArrays(GLES20.GL_TRIANGLES, 0, 3)
 		}
 	}
 }

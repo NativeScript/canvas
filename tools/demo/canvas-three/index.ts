@@ -63,11 +63,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	renderVideo(){
-		const ctx = this.canvas.getContext('webgl');
+		const ctx = this.canvas.getContext('webgl2');
 		const video = document.createElement('video');
 		video.loop = true;
 		video.autoplay = true;
-		video.src = "https://github.com/mdn/webgl-examples/blob/gh-pages/tutorial/sample8/Firefox.mp4?raw=true";
+		video.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
 		function update(){
 			//@ts-ignore
 			video.requestVideoFrameCallback(update);
@@ -1283,7 +1283,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 	}
 
-	// http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+	// https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
 
 	threeCube(canvas) {
 		var camera, scene, renderer;
@@ -1298,9 +1298,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			texture = document.createElement('video');
 			texture.loop = true;
 			texture.muted = true;
-			texture.src = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+			texture.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
 			texture.play();
-			camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 1000);
+			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000);
 			camera.position.z = 1;
 
 			scene = new THREE.Scene();
@@ -1313,7 +1313,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mesh = new THREE.Mesh(geometry, material);
 			scene.add(mesh);
 
-			renderer = new THREE.WebGLRenderer({ context, antialias: true });
+			renderer = new THREE.WebGLRenderer({ context, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
 		}
@@ -1565,7 +1565,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			animate();
 
 		}, undefined, function (e) {
-			console.log('e', e)
 			console.error(e);
 
 		});
@@ -2207,7 +2206,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 	bufferGeo(canvas) {
 
-		const context = canvas.getContext('webgl2') as any;
+		const context = canvas.getContext('webgl2',{ antialias: false}) as any;
 
 
 		let container, stats;

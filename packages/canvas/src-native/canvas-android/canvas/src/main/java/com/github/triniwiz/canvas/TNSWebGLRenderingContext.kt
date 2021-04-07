@@ -36,7 +36,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		canvas.queueEvent(runnable)
 	}
 
-	internal fun updateCanvas() {
+	fun updateCanvas() {
 		// synchronized (canvasView.lock) {
 		canvas.pendingInvalidate = true
 		//}
@@ -3705,6 +3705,16 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		const val SIZE_OF_CHAR = 2
 
 		@JvmStatic
+		internal external fun nativeReadPixels(
+			x: Int,
+			y: Int,
+			width: Int,
+			height: Int,
+			format: Int,
+			type: Int
+		)
+
+		@JvmStatic
 		private external fun nativeVertexAttribPointer(
 			index: Int,
 			size: Int,
@@ -3795,6 +3805,14 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			type: Int,
 			pixels: Bitmap,
 			flipYWebGL: Boolean
+		)
+
+		@JvmStatic
+		external fun nativeTexImage2DTexture(
+			width: Int,
+			height: Int,
+			src: Int,
+			dst: Int,
 		)
 
 	}

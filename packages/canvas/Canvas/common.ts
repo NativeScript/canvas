@@ -1,6 +1,6 @@
 import {CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application} from '@nativescript/core';
 import {CanvasRenderingContext, TouchList} from '../common';
-import {Pointer} from '@nativescript/core/ui/gestures';
+import {PinchGestureEventData, Pointer} from '@nativescript/core/ui/gestures';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
@@ -92,6 +92,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	__touchStart?: Pointer;
 
+	_isPinching = false;
 	_touchEventsFN(event: any) {
 		if (event.eventName === 'touch') {
 			switch (event.action) {
@@ -114,8 +115,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					break;
 			}
 		} else if (event.eventName === 'pinch') {
+			this._isPinching = true;
 			this._emitEvent('touchmove:pinch', event);
+			if(event.state === GestureStateTypes.ended || event.state === GestureStateTypes.cancelled){
+				this._isPinching = false;
+			}
 		} else if (event.eventName === 'pan') {
+			if(this._isPinching){
+				return;
+			}
 			if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
 				this._emitEvent('touchmove', event);
 			}
@@ -205,19 +213,20 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			};
 
 			pointers.push({
-				clientX: this.__touchStart.getX(),
-				clientY: this.__touchStart.getY(),
+				clientX: this.__touchStart?.getX() ?? 0,
+				clientY: this.__touchStart?.getY() ?? 0,
 				force: 0.0,
 				identifier: 0,
-				pageX: this.__touchStart.getX(),
-				pageY: this.__touchStart.getY(),
+				pageX: this.__touchStart?.getX() ?? 0,
+				pageY: this.__touchStart?.getY() ?? 0,
 				radiusX: 0,
 				radiusY: 0,
 				rotationAngle: 0,
-				screenX: this.__touchStart.getX(),
-				screenY: this.__touchStart.getY(),
+				screenX: this.__touchStart?.getX() ?? 0,
+				screenY: this.__touchStart?.getY() ?? 0,
 				target,
 			});
+
 
 			pointers.push({
 				clientX: x,
@@ -233,6 +242,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				screenY: y,
 				target,
 			});
+
 		} else {
 			const count = event.getAllPointers().length;
 			const point = event.getActivePointers()[0];

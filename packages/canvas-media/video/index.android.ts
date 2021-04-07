@@ -22,11 +22,11 @@ export class Video extends VideoBase {
 	#playerView: com.google.android.exoplayer2.ui.PlayerView;
 	#player: com.google.android.exoplayer2.SimpleExoPlayer;
 	#playerListener: com.google.android.exoplayer2.Player.EventListener;
+	#videoListener: com.google.android.exoplayer2.video.VideoListener;
 	#src: string;
 	#autoplay: boolean;
 	#loop: boolean;
 	#textureView: android.view.TextureView;
-
 	_isCustom: boolean = false;
 	_playing: boolean = false;
 	_timer: any;
@@ -37,9 +37,12 @@ export class Video extends VideoBase {
 	_canvas: any;
 	_frameTimer: any;
 	_readyState: number = 0;
+	_videoWidth = 0;
+	_videoHeight = 0;
 	constructor() {
 		super();
 		java.lang.System.loadLibrary('canvasnative');
+		//@ts-ignore
 		const builder = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(Utils.ad.getApplicationContext());
 		this.#player = builder.build();
 		const ref = new WeakRef(this);
@@ -102,6 +105,17 @@ export class Video extends VideoBase {
 			onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, reason: number) {},
 			onTracksChanged: function (trackGroups, trackSelections) {},
 		});
+		this.#videoListener = new com.google.android.exoplayer2.video.VideoListener({
+			onRenderedFirstFrame() {},
+			onVideoSizeChanged(width: number, height: number, unappliedRotationDegrees: number, pixelWidthHeightRatio: number) {
+				const owner = ref.get();
+				if (owner) {
+					owner._videoWidth = width;
+					owner._videoHeight = height;
+				}
+			},
+			onSurfaceSizeChanged(width: number, height: number) {},
+		});
 		const activity: androidx.appcompat.app.AppCompatActivity = Application.android.foregroundActivity || Application.android.startActivity;
 		const inflator = activity.getLayoutInflater();
 		const layout = Video.getResourceId(Application.android.foregroundActivity || Application.android.startActivity, 'player');
@@ -111,9 +125,8 @@ export class Video extends VideoBase {
 		const params = new android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, android.widget.LinearLayout.LayoutParams.MATCH_PARENT);
 		this.#textureView = new android.view.TextureView(Application.android.foregroundActivity || Application.android.startActivity);
 		this.#container.addView(this.#textureView as any, params);
-		//this.#playerView.setPlayer(this.#player);
-		//this.#player.setVideoTextureView(this.#textureView);
 		this.setNativeView(this.#container);
+		this.#player.addVideoListener(this.#videoListener);
 	}
 
 	get readyState() {
@@ -139,7 +152,6 @@ export class Video extends VideoBase {
 	}
 	static st_count = 0;
 	static createCustomView() {
-		const canvas = require('@nativescript/canvas');
 		const video = new Video();
 		video._isCustom = true;
 		video.width = 300;
@@ -164,40 +176,48 @@ export class Video extends VideoBase {
 
 	_hasFrame = false;
 	getCurrentFrame(context?: WebGLRenderingContext) {
-		const surfaceView = this.#playerView.getVideoSurfaceView();
-		if (surfaceView instanceof android.view.TextureView) {
-			if (!this._st) {
-				// @ts-ignore
-				const result = com.github.triniwiz.canvas.Utils.createSurfaceTexture(context);
-				this._st = result[0];
-				const ref = new WeakRef(this);
-				this._frameListener = new android.graphics.SurfaceTexture.OnFrameAvailableListener({
-					onFrameAvailable(param0: android.graphics.SurfaceTexture) {
-						const owner = ref.get();
-						if (owner) {
-							owner._hasFrame = true;
-							owner._notifyVideoFrameCallbacks();
-						}
-					},
-				});
-				this._st.setOnFrameAvailableListener(this._frameListener);
-
-				//this.#textureView.setSurfaceTexture(this._st);
-				this._surface = new android.view.Surface(this._st);
-				this.#player.setVideoSurface(this._surface);
-				this._render = result[1];
-			}
-
-			if (this._st) {
-				if (!this._hasFrame) {
-					return;
+		if (this.isLoaded) {
+			const surfaceView = this.#playerView.getVideoSurfaceView();
+			if (surfaceView instanceof android.view.TextureView) {
+				const st = surfaceView.getSurfaceTexture();
+				if (st) {
+					// @ts-ignore
+					this._render = com.github.triniwiz.canvas.Utils.createRenderAndAttachToGLContext(context, st);
+					this._st = st;
 				}
-
-				// @ts-ignore
-				com.github.triniwiz.canvas.Utils.updateTexImage(context, this._st, this._render);
-
-				this._hasFrame = false;
 			}
+		}
+
+		if (!this._st) {
+			// @ts-ignore
+			const result = com.github.triniwiz.canvas.Utils.createSurfaceTexture(context);
+			this._st = result[0];
+			const ref = new WeakRef(this);
+			this._frameListener = new android.graphics.SurfaceTexture.OnFrameAvailableListener({
+				onFrameAvailable(param0: android.graphics.SurfaceTexture) {
+					const owner = ref.get();
+					if (owner) {
+						owner._hasFrame = true;
+						owner._notifyVideoFrameCallbacks();
+					}
+				},
+			});
+
+			this._st.setOnFrameAvailableListener(this._frameListener);
+
+			this._surface = new android.view.Surface(this._st);
+			this.#player.setVideoSurface(this._surface);
+			this._render = result[1];
+		}
+
+		if (this._st) {
+			if (!this._hasFrame) {
+				return;
+			}
+			// @ts-ignore
+			com.github.triniwiz.canvas.Utils.updateTexImage(context, this._st, this._render, this._videoWidth, this._videoHeight, arguments[4], arguments[5]);
+
+			this._hasFrame = false;
 		}
 	}
 
@@ -274,6 +294,7 @@ export class Video extends VideoBase {
 		if (!this.#playerView) {
 			this.#playerView = new com.google.android.exoplayer2.ui.PlayerView(this._context);
 		}
+		this.#playerView.setPlayer(this.#player);
 		return this.#playerView;
 	}
 

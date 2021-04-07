@@ -3,13 +3,17 @@ import { knownFolders, File as NSFile, isIOS, path } from '@nativescript/core';
 export class URL {
 	public static createObjectURL(object: any): string {
 		if (object instanceof Blob || object instanceof File) {
-			const filePath = path.join(knownFolders.temp().path, this.getUUID() + '.js');
+			let filePath = path.join(knownFolders.documents().path, this.getUUID());
+			if (object && object.type === 'text/javascript') {
+				filePath = filePath + '.js';
+			}
 			const buf = (Blob as any).InternalAccessor.getBuffer(object);
 			if (isIOS) {
 				NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
 			} else {
 				try {
-					const fos = new java.io.FileOutputStream(new java.io.File(filePath));
+					const file = new java.io.File(filePath);
+					const fos = new java.io.FileOutputStream(file);
 					fos.write(Array.from(buf) as any);
 					fos.flush();
 					fos.close();

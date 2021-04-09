@@ -6,10 +6,7 @@ use jni::objects::{JByteBuffer, JClass, JObject, JString};
 use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
 use log::{debug, info};
 use log::Level;
-use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry, Rect,
-    Size, Surface,
-};
+use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry, Rect, Size, Surface, RCHandle};
 use skia_safe::gpu::gl::Interface;
 use skia_safe::image::CachingHint;
 
@@ -338,9 +335,15 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvas_nativeSnapshotCanvas
         let context = &mut *context;
         context.surface.flush();
         let ss = context.surface.image_snapshot();
-        let data = ss.encode_to_data(EncodedImageFormat::PNG).unwrap();
-        let bytes = data.to_vec();
-        env.byte_array_from_slice(bytes.as_slice()).unwrap()
+        match ss.encode_to_data(EncodedImageFormat::PNG) {
+            None => {
+                env.byte_array_from_slice(&[]).unwrap()
+            }
+            Some(data) => {
+                let bytes = data.to_vec();
+                env.byte_array_from_slice(bytes.as_slice()).unwrap()
+            }
+        }
     }
 }
 

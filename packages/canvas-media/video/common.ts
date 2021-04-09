@@ -1,5 +1,6 @@
-import { Screen, AddChildFromBuilder, Application, booleanConverter, ContentView, PercentLength, Utils } from '@nativescript/core';
-import { Property, CSSType } from '@nativescript/core/ui/core/view';
+import { Screen, AddChildFromBuilder, Application, booleanConverter, ContentView, Utils } from '@nativescript/core';
+import { Property, CSSType} from '@nativescript/core/ui/core/view';
+import { PercentLength } from '@nativescript/core/ui/styling/style-properties';
 
 @CSSType('Video')
 export abstract class VideoBase extends ContentView implements AddChildFromBuilder {

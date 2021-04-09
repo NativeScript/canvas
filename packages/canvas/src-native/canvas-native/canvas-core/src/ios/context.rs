@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_float, c_int, c_longlong, c_uint};
 use std::panic::catch_unwind;
 use std::ptr::null;
-use std::str::Utf8Error;
+use std::str::{Utf8Error, FromStr};
 use std::sync::{Arc, Mutex};
 
 use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, M44, PixelGeometry, Rect, Surface};
@@ -750,7 +750,7 @@ pub extern "C" fn context_set_shadow_color_string(context: c_longlong, color: *c
         let context: *mut Context = context as _;
         let context = &mut *context;
         let color = CStr::from_ptr(color).to_string_lossy();
-        if let Ok(color) = color.as_ref().parse::<css_color_parser::Color>() {
+        if let Ok(color) = css_color_parser::Color::from_str(color.as_ref()) {
             context.set_shadow_color(skia_safe::Color::from_argb((color.a * 255.0) as u8, color.r, color.g, color.b))
         }
     }

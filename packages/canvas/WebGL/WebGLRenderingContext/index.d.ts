@@ -19,6 +19,8 @@ export declare class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug: boolean;
 	public static filter: 'both' | 'error' | 'args';
 	private context;
+	protected _glCheckError(message: string): void;
+	protected _checkArgs(message, args): void;
 
 	constructor(context: any);
 

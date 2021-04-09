@@ -204,7 +204,7 @@ object Utils {
 	) {
 		val lock = CountDownLatch(1)
 		context.runOnGLThread {
-			render.drawFrame(texture, width, height, internalFormat, format)
+			render.drawFrame(texture, width, height, internalFormat, format, context.flipYWebGL)
 
 			if (render.width != width || render.height != width) {
 				render.width = width

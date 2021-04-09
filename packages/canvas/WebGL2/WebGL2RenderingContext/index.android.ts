@@ -521,6 +521,29 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		return WebGL2RenderingContext.toPrimitive(result);
 	}
 
+
+	//@ts-ignore
+	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
+		this._glCheckError('getParameter');
+		this._checkArgs('activeTexture', arguments);
+		const value = this.native.getParameter(pname);
+		switch (pname) {
+			case this.COPY_READ_BUFFER_BINDING:
+			case this.COPY_WRITE_BUFFER_BINDING:
+				if (value) {
+					new WebGLBuffer(WebGL2RenderingContext.toPrimitive(value));
+				}
+				return null;
+			case this.DRAW_FRAMEBUFFER_BINDING:
+				if (value) {
+					return new WebGLFramebuffer(WebGL2RenderingContext.toPrimitive(value));
+				}
+				return null;
+			default:
+				return super.getParameter(pname);
+		}
+	}
+
 	getQuery(target: number, pname: number): any {
 		this._glCheckError('getQuery');
 		const query = this.native.getQuery(target, pname);
@@ -1105,7 +1128,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	uniform1uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform1uiv');
 		const value = location ? location.native : 0;
-		this.native.uniform1uiv(value, data as any);
+		this.native.uniform1uiv(value, Array.from(data as any));
 	}
 
 	uniform2ui(location: WebGLUniformLocation, v0: number, v1: number): void {
@@ -1117,7 +1140,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	uniform2uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform2uiv');
 		const value = location ? location.native : 0;
-		this.native.uniform2uiv(value, data as any);
+		this.native.uniform2uiv(value, Array.from(data as any));
 	}
 
 	/* Sync objects */
@@ -1133,7 +1156,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	uniform3uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform3uiv');
 		const value = location ? location.native : 0;
-		this.native.uniform3uiv(value, data as any);
+		this.native.uniform3uiv(value, Array.from(data as any));
 	}
 
 	uniform4ui(
@@ -1151,7 +1174,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	uniform4uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform4uiv');
 		const value = location ? location.native : 0;
-		this.native.uniform4uiv(value, data as any);
+		this.native.uniform4uiv(value, Array.from(data as any));
 	}
 
 	uniformBlockBinding(
@@ -1174,7 +1197,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		data: Float32Array
 	): void {
 		if (data instanceof Float32Array) {
-			data = this.toNativeArray(data as any, 'float');
+			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
 		this._glCheckError('uniformMatrix2x3fv');
 		const value = location ? location.native : 0;
@@ -1187,7 +1210,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		data: Float32Array
 	): void {
 		if (data instanceof Float32Array) {
-			data = this.toNativeArray(data as any, 'float');
+			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
 		this._glCheckError('uniformMatrix2x4fv');
 		const value = location ? location.native : 0;
@@ -1200,7 +1223,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		data: Float32Array
 	): void {
 		if (data instanceof Float32Array) {
-			data = this.toNativeArray(data as any, 'float');
+			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
 		this._glCheckError('uniformMatrix3x2fv');
 		const value = location ? location.native : 0;
@@ -1213,7 +1236,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		data: Float32Array
 	): void {
 		if (data instanceof Float32Array) {
-			data = this.toNativeArray(data as any, 'float');
+			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
 		this._glCheckError('uniformMatrix3x4fv');
 		const value = location ? location.native : 0;
@@ -1226,7 +1249,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		data: Float32Array
 	): void {
 		if (data instanceof Float32Array) {
-			data = this.toNativeArray(data as any, 'float');
+			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
 		this._glCheckError('uniformMatrix4x2fv');
 		const value = location ? location.native : 0;
@@ -1239,7 +1262,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		data: Float32Array
 	): void {
 		if (data instanceof Float32Array) {
-			data = this.toNativeArray(data as any, 'float');
+			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
 		this._glCheckError('uniformMatrix4x3fv');
 		const value = location ? location.native : 0;
@@ -1264,7 +1287,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	vertexAttribI4iv(index: number, value: number[] | Int32Array): void {
 		if (value instanceof Int32Array) {
-			value = this.toNativeArray(value as any, 'int');
+			value = Array.from(value) as any; //this.toNativeArray(value as any, 'int');
 		}
 		this._glCheckError('vertexAttribI4iv');
 		this.native.vertexAttribI4uiv(index, value as any);
@@ -1283,17 +1306,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	vertexAttribI4uiv(index: number, value: number[] | Uint32Array): void {
 		if (value instanceof Uint32Array) {
-			value = this.toNativeArray(value as any, 'int');
+			value = Array.from(value) as any; //this.toNativeArray(value as any, 'int');
 		}
 		this._glCheckError('vertexAttribI4uiv');
 		this.native.vertexAttribI4uiv(index, value as any);
-	}
-
-	protected _glCheckError(message: string) {
-		if (!WebGL2RenderingContext.isDebug) {
-			return;
-		}
-		console.log(message, this.getError());
 	}
 
 	/* Miscellaneous constants */

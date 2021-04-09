@@ -593,7 +593,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (typeof args[0] === 'string') {
 			// browser throws for invalid enum
 			const rule = this._fillRuleFromString(args[0]);
-			console.log(rule);
 			this.context.clip(rule);
 		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
 			const rule = this._fillRuleFromString(args[1]);

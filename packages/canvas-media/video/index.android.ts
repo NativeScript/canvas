@@ -41,9 +41,12 @@ export class Video extends VideoBase {
 	_videoHeight = 0;
 	constructor() {
 		super();
-		java.lang.System.loadLibrary('canvasnative');
+		try {
+			java.lang.System.loadLibrary('canvasnative');
+		} catch (ex) {}
 		//@ts-ignore
-		const builder = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(Utils.ad.getApplicationContext());
+		const activity: androidx.appcompat.app.AppCompatActivity = Application.android.foregroundActivity || Application.android.startActivity;
+		const builder = new com.google.android.exoplayer2.SimpleExoPlayer.Builder(activity);
 		this.#player = builder.build();
 		const ref = new WeakRef(this);
 		this.#playerListener = new com.google.android.exoplayer2.Player.EventListener({
@@ -82,15 +85,15 @@ export class Video extends VideoBase {
 				}
 			},
 			onLoadingChanged: function (isLoading) {
-				console.log('onLoadingChanged', isLoading);
+				//console.log('onLoadingChanged', isLoading);
 			},
 			onPlaybackParametersChanged: function (playbackParameters) {},
 			onPlaybackSuppressionReasonChanged: function (playbackSuppressionReason) {},
 			onPlayerError: function (error) {
-				console.log('PlayerError', error);
+				//console.log('PlayerError', error);
 			},
 			onPlayerStateChanged: function (playWhenReady, playbackState) {
-				console.log('onPlayerStateChanged', Date.now());
+				//console.log('onPlayerStateChanged', Date.now());
 				// if (playbackState === STATE_READY) {
 				// 	playerReady = true;
 				// } else if (playbackState === STATE_ENDED) {
@@ -116,7 +119,6 @@ export class Video extends VideoBase {
 			},
 			onSurfaceSizeChanged(width: number, height: number) {},
 		});
-		const activity: androidx.appcompat.app.AppCompatActivity = Application.android.foregroundActivity || Application.android.startActivity;
 		const inflator = activity.getLayoutInflater();
 		const layout = Video.getResourceId(Application.android.foregroundActivity || Application.android.startActivity, 'player');
 		this.#player.addListener(this.#playerListener);
@@ -216,7 +218,6 @@ export class Video extends VideoBase {
 			}
 			// @ts-ignore
 			com.github.triniwiz.canvas.Utils.updateTexImage(context, this._st, this._render, this._videoWidth, this._videoHeight, arguments[4], arguments[5]);
-
 			this._hasFrame = false;
 		}
 	}

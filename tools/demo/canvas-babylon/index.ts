@@ -19,23 +19,23 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		const gl = this.canvas.getContext('webgl2');
+		const gl = this.canvas.getContext('webgl2', {antialias: false});
 
 		const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
 		var engine: BABYLON.Engine = null;
 		var scene: BABYLON.Scene = null;
 		var sceneToRender: BABYLON.Scene = null;
 		var createDefaultEngine = function () {
-			return new BABYLON.Engine(gl, true, { preserveDrawingBuffer: false, stencil: true, antialias: true });
+			return new BABYLON.Engine(gl, true, { preserveDrawingBuffer: false, stencil: true, antialias: false });
 		};
 		// You have to create a function called createScene. This function must return a BABYLON.Scene object
 		// You can reference the following variables: scene, canvas
 		// You must at least define a camera
 		engine = createDefaultEngine();
 		if (!engine) throw 'engine should not be null.';
-		 this.createMDN(engine)
+		 //this.createMDN(engine)
 
-		// sceneToRender = this.createChart(engine);
+		 sceneToRender = this.createChart(engine);
 		// sceneToRender = this.createWaterScene(engine);
 		//sceneToRender = this.createScene(engine);
 		//sceneToRender = this.createSkullScene(engine);

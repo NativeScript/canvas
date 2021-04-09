@@ -571,6 +571,22 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         }
     }
     
+    public override func getParameter(_ pname: UInt32) -> Any?{
+        canvas.renderer.ensureIsContextIsCurrent()
+        switch pname {
+        case COPY_READ_BUFFER_BINDING, COPY_WRITE_BUFFER_BINDING, DRAW_FRAMEBUFFER_BINDING:
+            var param = GLint()
+            glGetIntegerv(GLenum(pname), &param)
+            
+            if((pname == COPY_READ_BUFFER_BINDING || pname == COPY_WRITE_BUFFER_BINDING || pname == DRAW_FRAMEBUFFER_BINDING) && param == 0){
+                return nil
+            }
+            return param
+        default:
+            return super.getParameter(pname)
+        }
+    }
+    
     public func getQuery(_ target: UInt32, _ pname: UInt32)-> Any {
         let _ = canvas.renderer.ensureIsContextIsCurrent()
         if(pname == GL_CURRENT_QUERY){

@@ -238,9 +238,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun bufferData(target: Int, srcData: ByteArray, usage: Int) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			val buffer = ByteBuffer.allocateDirect(srcData.size).order(ByteOrder.nativeOrder())
-			buffer.put(srcData)
-			buffer.rewind()
+			val buffer = ByteBuffer.wrap(srcData)
 			GLES20.glBufferData(target, srcData.size, buffer, usage)
 			lock.countDown()
 		})
@@ -254,9 +252,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = srcData.size * SIZE_OF_SHORT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asShortBuffer().put(srcData)
-			buffer.rewind()
+			val buffer = ShortBuffer.wrap(srcData)
 			GLES20.glBufferData(target, size, buffer, usage)
 			lock.countDown()
 		})
@@ -270,10 +266,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = srcData.size * SIZE_OF_FLOAT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				.order(ByteOrder.nativeOrder())
-			buffer.asFloatBuffer().put(srcData)
-			buffer.rewind()
+			val buffer = FloatBuffer.wrap(srcData)
 			GLES20.glBufferData(target, size, buffer, usage)
 			lock.countDown()
 		})
@@ -287,9 +280,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = srcData.size * SIZE_OF_INT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asIntBuffer().put(srcData)
-			buffer.rewind()
+			val buffer = IntBuffer.wrap(srcData)
 			GLES20.glBufferData(target, size, buffer, usage)
 			lock.countDown()
 		})
@@ -303,9 +294,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = srcData.size
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.put(srcData)
-			buffer.rewind()
+			val buffer = ByteBuffer.wrap(srcData)
 			GLES20.glBufferSubData(target, offset, size, buffer)
 			lock.countDown()
 		})
@@ -319,9 +308,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = srcData.size * SIZE_OF_SHORT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asShortBuffer().put(srcData)
-			buffer.rewind()
+			val buffer = ShortBuffer.wrap(srcData)
 			val os = SIZE_OF_SHORT * offset
 			GLES20.glBufferSubData(target, os, size, buffer)
 			lock.countDown()
@@ -336,9 +323,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = srcData.size * SIZE_OF_INT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asIntBuffer().put(srcData)
-			buffer.rewind()
+			val buffer = IntBuffer.wrap(srcData)
 			val os = SIZE_OF_INT * offset
 			GLES20.glBufferSubData(target, os, size, buffer)
 			lock.countDown()
@@ -353,9 +338,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = srcData.size * SIZE_OF_FLOAT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asFloatBuffer().put(srcData)
-			buffer.rewind()
+			val buffer = FloatBuffer.wrap(srcData)
 			val os = SIZE_OF_FLOAT * offset
 			GLES20.glBufferSubData(target, os, size, buffer)
 			lock.countDown()
@@ -560,9 +543,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.put(pixels)
-			buffer.rewind()
+			val buffer = ByteBuffer.wrap(pixels)
 			GLES20.glCompressedTexImage2D(
 				target,
 				level,
@@ -593,9 +574,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size * SIZE_OF_SHORT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asShortBuffer().put(pixels)
-			buffer.rewind()
+			val buffer = ShortBuffer.wrap(pixels)
 			GLES20.glCompressedTexImage2D(
 				target,
 				level,
@@ -626,9 +605,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size * SIZE_OF_INT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asIntBuffer().put(pixels)
-			buffer.rewind()
+			val buffer = IntBuffer.wrap(pixels)
 			GLES20.glCompressedTexImage2D(
 				target,
 				level,
@@ -659,9 +636,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size * SIZE_OF_FLOAT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asFloatBuffer().put(pixels)
-			buffer.rewind()
+			val buffer = FloatBuffer.wrap(pixels)
 			GLES20.glCompressedTexImage2D(
 				target,
 				level,
@@ -693,9 +668,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.put(pixels)
-			buffer.rewind()
+			val buffer = ByteBuffer.wrap(pixels)
 			GLES20.glCompressedTexSubImage2D(
 				target,
 				level,
@@ -728,9 +701,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size * SIZE_OF_SHORT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asShortBuffer().put(pixels)
-			buffer.rewind()
+			val buffer = ShortBuffer.wrap(pixels)
 			GLES20.glCompressedTexSubImage2D(
 				target,
 				level,
@@ -763,9 +734,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size * SIZE_OF_INT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asIntBuffer().put(pixels)
-			buffer.rewind()
+			val buffer = IntBuffer.wrap(pixels)
 			GLES20.glCompressedTexSubImage2D(
 				target,
 				level,
@@ -798,9 +767,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			val size = pixels.size * SIZE_OF_FLOAT
-			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-			buffer.asFloatBuffer().put(pixels)
-			buffer.rewind()
+			val buffer = FloatBuffer.wrap(pixels)
 			GLES20.glCompressedTexSubImage2D(
 				target,
 				level,
@@ -1536,7 +1503,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		return value == GLES20.GL_TRUE
 	}
 
-	fun getParameter(pname: Int): Any? {
+	open fun getParameter(pname: Int): Any? {
 		val lock = CountDownLatch(1)
 		val parameter = arrayOfNulls<Any>(1)
 		runOnGLThread(Runnable {
@@ -1546,7 +1513,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 //                        GLES20.glGetIntegerv(pname, param);
 					val param = IntArray(1)
 					GLES20.glGetIntegerv(pname, param, 0)
-					if ((pname == TEXTURE_BINDING_2D || pname == TEXTURE_BINDING_CUBE_MAP || pname == RENDERBUFFER_BINDING || pname == FRAMEBUFFER_BINDING) && param[0] == 0) {
+					if ((pname == CURRENT_PROGRAM || pname == ARRAY_BUFFER_BINDING || pname == ELEMENT_ARRAY_BUFFER_BINDING || pname == TEXTURE_BINDING_2D || pname == TEXTURE_BINDING_CUBE_MAP || pname == RENDERBUFFER_BINDING || pname == FRAMEBUFFER_BINDING) && param[0] == 0) {
 						parameter[0] = null
 					} else {
 						parameter[0] = param[0]
@@ -2409,10 +2376,10 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val buf = ByteBuffer.allocateDirect(it.size).order(ByteOrder.nativeOrder())
-				buf.put(pixels)
-				buf.rewind()
-				nativeTexImage2DBuffer(
+//				val buf = ByteBuffer.allocateDirect(it.size).order(ByteOrder.nativeOrder())
+//				buf.put(pixels)
+//				buf.rewind()
+				nativeTexImage2DByteArray(
 					target,
 					level,
 					internalformat,
@@ -2421,7 +2388,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					border,
 					format,
 					type,
-					buf,
+					it,
 					flipYWebGL
 				)
 			} ?: run {
@@ -2608,10 +2575,10 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val ss = canvas.snapshot()
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			val buf = ByteBuffer.allocateDirect(ss.size).order(ByteOrder.nativeOrder())
-			buf.put(ss)
-			buf.rewind()
-			nativeTexImage2DBuffer(
+//			val buf = ByteBuffer.allocateDirect(ss.size).order(ByteOrder.nativeOrder())
+//			buf.put(ss)
+//			buf.rewind()
+			nativeTexImage2DByteArray(
 				target,
 				level,
 				internalformat,
@@ -2620,7 +2587,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				0,
 				format,
 				type,
-				buf,
+				ss,
 				flipYWebGL
 			)
 			lock.countDown()
@@ -3705,7 +3672,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		const val SIZE_OF_CHAR = 2
 
 		@JvmStatic
-		internal external fun nativeReadPixels(
+		external fun nativeReadPixels(
 			x: Int,
 			y: Int,
 			width: Int,
@@ -3738,6 +3705,20 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			format: Int,
 			type: Int,
 			buffer: Buffer,
+			flipYWebGL: Boolean
+		)
+
+		@JvmStatic
+		private external fun nativeTexImage2DByteArray(
+			target: Int,
+			level: Int,
+			internalformat: Int,
+			width: Int,
+			height: Int,
+			i: Int,
+			format: Int,
+			type: Int,
+			byteArray: ByteArray,
 			flipYWebGL: Boolean
 		)
 

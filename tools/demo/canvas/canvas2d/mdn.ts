@@ -185,6 +185,14 @@ export function miterLimit(canvas) {
 	ctx.stroke();
 }
 
+export function filterBlur(canvas){
+const ctx = canvas.getContext('2d');
+
+ctx.filter = 'blur(4px)';
+ctx.font = '48px serif';
+ctx.fillText('Hello world', 50, 100);
+}
+
 
 export function shadowColor(canvas) {
 	const ctx = canvas.getContext('2d');

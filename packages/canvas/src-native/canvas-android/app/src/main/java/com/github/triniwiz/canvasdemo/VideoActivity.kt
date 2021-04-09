@@ -44,6 +44,17 @@ class VideoActivity : AppCompatActivity() {
 		1f, -1f, 0f, 1f, 0f,
 		-1f, -1f, 0f, 0f, 0f
 	)
+
+
+	val vextexCoordsInner = floatArrayOf(
+		// position    // texture
+		-.5f, .5f, 0f, 0f, 1f,
+		.5f, .5f, 0f, 1f, 1f,
+		.5f, -.5f, 0f, 1f, 0f,
+		-.5f, -.5f, 0f, 0f, 0f
+	)
+
+
 	var indexCoords = intArrayOf(
 		0, 1, 2,
 		2, 3, 0
@@ -51,6 +62,7 @@ class VideoActivity : AppCompatActivity() {
 
 	var indices: IntBuffer
 	var vextexBuf: FloatBuffer
+	var vextexBufInner: FloatBuffer
 
 
 	var vs = """
@@ -72,6 +84,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 	""".trimIndent()
 
 
+
 	init {
 		val index =
 			ByteBuffer.allocateDirect(indexCoords.size * SIZE_OF_INT).order(ByteOrder.nativeOrder())
@@ -81,6 +94,11 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 			ByteBuffer.allocateDirect(vextexCoords.size * SIZE_OF_FLOAT).order(ByteOrder.nativeOrder())
 		vextexBuf = vb.asFloatBuffer().put(vextexCoords)
 		vextexBuf.position(0)
+
+		val vbi =
+			ByteBuffer.allocateDirect(vextexCoordsInner.size * SIZE_OF_FLOAT).order(ByteOrder.nativeOrder())
+		vextexBufInner = vbi.asFloatBuffer().put(vextexCoordsInner)
+		vextexBufInner.position(0)
 	}
 
 
@@ -91,6 +109,51 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 	var pos = -1
 	var texPos = -1
 
+
+	var ab2 = -1
+	var ebo2 = -1
+	var texture2 = -1
+	var program2 = -1
+	var pos2 = -1
+	var texPos2 = -1
+
+
+	fun createProgram(vs:String, fs: String): Int {
+		val program = GLES20.glCreateProgram()
+
+		val vs1 = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
+		GLES20.glShaderSource(vs1, vs)
+		GLES20.glCompileShader(vs1)
+
+		val compiled1 = IntArray(1)
+		GLES20.glGetShaderiv(vs1, GLES20.GL_COMPILE_STATUS, compiled1, 0)
+
+		if (compiled1[0] == 0) {
+			Log.e("com.test", "Could not compile shader GL_VERTEX_SHADER:")
+			Log.e("com.test", " " + GLES20.glGetShaderInfoLog(vs1))
+			GLES20.glDeleteShader(vs1)
+		}
+
+
+		val fs1 = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER)
+		GLES20.glShaderSource(fs1, fs)
+		GLES20.glCompileShader(fs1)
+
+
+		val compiled2 = IntArray(1)
+		GLES20.glGetShaderiv(fs1, GLES20.GL_COMPILE_STATUS, compiled2, 0)
+		if (compiled2[0] == 0) {
+			Log.e("com.test", "Could not compile shader GL_FRAGMENT_SHADER:")
+			Log.e("com.test", " " + GLES20.glGetShaderInfoLog(fs1))
+			GLES20.glDeleteShader(fs1)
+
+		}
+
+		GLES20.glAttachShader(program, vs1)
+		GLES20.glAttachShader(program, fs1)
+		GLES20.glLinkProgram(program)
+		return program
+	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -111,48 +174,23 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 				val ctx = canvas?.getContext("webgl2") as? TNSWebGLRenderingContext
 				canvas?.let {
 					it.queueEvent {
-						val textures = IntArray(1)
-						val abs = IntArray(2)
-						GLES20.glGenTextures(1, textures, 0)
-						GLES20.glGenBuffers(2, abs, 0)
+						val textures = IntArray(2)
+						val abs = IntArray(4)
+						GLES20.glGenTextures(2, textures, 0)
+						GLES20.glGenBuffers(4, abs, 0)
 
-						program = GLES20.glCreateProgram()
-
-						val vs1 = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
-						GLES20.glShaderSource(vs1, vs)
-						GLES20.glCompileShader(vs1)
-
-						val compiled1 = IntArray(1)
-						GLES20.glGetShaderiv(vs1, GLES20.GL_COMPILE_STATUS, compiled1, 0)
-						if (compiled1[0] == 0) {
-							Log.e("com.test", "Could not compile shader GL_VERTEX_SHADER:")
-							Log.e("com.test", " " + GLES20.glGetShaderInfoLog(vs1))
-							GLES20.glDeleteShader(vs1)
-						}
-
-
-						val fs1 = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER)
-						GLES20.glShaderSource(fs1, fs)
-						GLES20.glCompileShader(fs1)
-
-
-						val compiled2 = IntArray(1)
-						GLES20.glGetShaderiv(fs1, GLES20.GL_COMPILE_STATUS, compiled2, 0)
-						if (compiled2[0] == 0) {
-							Log.e("com.test", "Could not compile shader GL_FRAGMENT_SHADER:")
-							Log.e("com.test", " " + GLES20.glGetShaderInfoLog(fs1))
-							GLES20.glDeleteShader(fs1)
-
-						}
-
-						GLES20.glAttachShader(program, vs1)
-						GLES20.glAttachShader(program, fs1)
-						GLES20.glLinkProgram(program)
-
+						program = createProgram(vs, fs)
+						program2 = createProgram(vs, fs)
 
 						ab = abs[0]
-						ebo = abs[1]
+						ab2 = abs[1]
+
 						texture = textures[0]
+						texture2 = textures[1]
+
+						ebo = abs[2]
+						ebo2 = abs[3]
+
 
 						GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab)
 						GLES20.glBufferData(
@@ -179,7 +217,6 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 
 						GLES20.glEnableVertexAttribArray(texPos)
 
-
 						GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ebo)
 						GLES20.glBufferData(
 							GLES20.GL_ELEMENT_ARRAY_BUFFER,
@@ -189,9 +226,11 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 						)
 
 
-						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
-						val blue = byteArrayOf(0, 0, 255.toByte(), 255.toByte())
 
+						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
+
+
+						val blue = byteArrayOf(0, 0, 255.toByte(), 255.toByte())
 						val buf = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder())
 						buf.put(blue)
 						buf.position(0)
@@ -228,25 +267,175 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 							GLES20.GL_CLAMP_TO_EDGE
 						)
 
+						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
+
+
+
+						/*
+						GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab2)
+						GLES20.glBufferData(
+							GLES20.GL_ARRAY_BUFFER,
+							vextexBufInner.capacity() * SIZE_OF_FLOAT,
+							vextexBufInner,
+							GLES20.GL_STATIC_DRAW
+						)
+
+						pos2 = GLES20.glGetAttribLocation(program2, "aPos")
+						GLES20.glVertexAttribPointer(pos2, 3, GLES20.GL_FLOAT, false, 5 * SIZE_OF_FLOAT, 0)
+						GLES20.glEnableVertexAttribArray(pos2)
+
+
+						texPos2 = GLES20.glGetAttribLocation(program2, "aTexCoord")
+						GLES20.glVertexAttribPointer(
+							texPos2,
+							2,
+							GLES20.GL_FLOAT,
+							false,
+							5 * SIZE_OF_FLOAT,
+							3 * SIZE_OF_FLOAT
+						)
+
+						GLES20.glEnableVertexAttribArray(texPos2)
+
+
+
+						GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ebo2)
+						GLES20.glBufferData(
+							GLES20.GL_ELEMENT_ARRAY_BUFFER,
+							indices.capacity() * SIZE_OF_INT,
+							indices,
+							GLES20.GL_STATIC_DRAW
+						)
+
+
+
+
+
+						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture2)
+
+						val red = byteArrayOf(255.toByte(), 0,0, 255.toByte())
+						val redBuf = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder())
+						redBuf.put(red)
+						redBuf.position(0)
+						GLES20.glTexImage2D(
+							GLES20.GL_TEXTURE_2D,
+							0,
+							GLES20.GL_RGBA,
+							1,
+							1,
+							0,
+							GLES20.GL_RGBA,
+							GLES20.GL_UNSIGNED_BYTE,
+							redBuf
+						)
+
+						GLES20.glTexParameteri(
+							GLES20.GL_TEXTURE_2D,
+							GLES20.GL_TEXTURE_MIN_FILTER,
+							GLES20.GL_LINEAR
+						)
+						GLES20.glTexParameteri(
+							GLES20.GL_TEXTURE_2D,
+							GLES20.GL_TEXTURE_MAG_FILTER,
+							GLES20.GL_LINEAR
+						)
+						GLES20.glTexParameteri(
+							GLES20.GL_TEXTURE_2D,
+							GLES20.GL_TEXTURE_WRAP_S,
+							GLES20.GL_CLAMP_TO_EDGE
+						)
+						GLES20.glTexParameteri(
+							GLES20.GL_TEXTURE_2D,
+							GLES20.GL_TEXTURE_WRAP_T,
+							GLES20.GL_CLAMP_TO_EDGE
+						)
+
+						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
+
+						 */
+
+						// draw bg
+
+
+						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
 
 						GLES20.glUseProgram(program)
+
+						GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab)
+
+						GLES20.glVertexAttribPointer(pos, 3, GLES20.GL_FLOAT, false, 5 * SIZE_OF_FLOAT, 0)
+
+						GLES20.glEnableVertexAttribArray(pos)
+
+
+						GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ebo)
+
+						texPos = GLES20.glGetAttribLocation(program, "aTexCoord")
+						GLES20.glVertexAttribPointer(
+							texPos,
+							2,
+							GLES20.GL_FLOAT,
+							false,
+							5 * SIZE_OF_FLOAT,
+							3 * SIZE_OF_FLOAT
+						)
+
+						GLES20.glEnableVertexAttribArray(texPos)
 
 						//GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "uSampler"), 0)
 
 
-							GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
+						GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
+
+
+
+						/*
+						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture2)
+
+						GLES20.glUseProgram(program2)
+
+						GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab2)
+
+						GLES20.glVertexAttribPointer(pos2, 3, GLES20.GL_FLOAT, false, 5 * SIZE_OF_FLOAT, 0)
+						GLES20.glEnableVertexAttribArray(pos2)
+
+
+						GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ebo2)
+
+						texPos2 = GLES20.glGetAttribLocation(program2, "aTexCoord")
+						GLES20.glVertexAttribPointer(
+							texPos2,
+							2,
+							GLES20.GL_FLOAT,
+							false,
+							5 * SIZE_OF_FLOAT,
+							3 * SIZE_OF_FLOAT
+						)
+
+						GLES20.glEnableVertexAttribArray(texPos2)
+
+
+						//GLES20.glUniform1i(GLES20.glGetUniformLocation(program, "uSampler"), 0)
+
+
+						GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
+
+
+						 */
 
 						ctx?.updateCanvas()
 
 					}
-				//	ctx?.drawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
+					//	ctx?.drawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
 					//	ctx?.drawArrays(GLES20.GL_TRIANGLES, 0, 3)
 				}
-			//	setup()
+				//	setup()
 			}
 		}
-			initPlayer()
+		initPlayer()
 	}
+
+
 
 	fun setup() {
 		if (width == -1 && height == -1 || didInit) {
@@ -272,13 +461,61 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 
 	fun renderFrame() {
 		val ctx = canvas?.getContext("webgl2") as? TNSWebGLRenderingContext
-		Utils.updateTexImage(ctx!!,surfaceTexture!!, render!!, width, height, 32849, GLES20.GL_RGB)
+	//GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
+		Utils.updateTexImage(ctx!!, surfaceTexture!!, render!!, width, height, GLES20.GL_RGBA, GLES20.GL_RGBA)
 		canvas?.queueEvent {
 			GLES20.glUseProgram(program)
-		//	GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, render!!.fboTexture)
 			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab)
+
+			GLES20.glVertexAttribPointer(pos, 3, GLES20.GL_FLOAT, false, 5 * SIZE_OF_FLOAT, 0)
+			GLES20.glEnableVertexAttribArray(pos)
+
+
 			GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ebo)
+
+			GLES20.glVertexAttribPointer(
+				texPos,
+				2,
+				GLES20.GL_FLOAT,
+				false,
+				5 * SIZE_OF_FLOAT,
+				3 * SIZE_OF_FLOAT
+			)
+
+			GLES20.glEnableVertexAttribArray(texPos)
+
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
+
+
+
+			/*
+
+			GLES20.glUseProgram(program2)
+			GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture2)
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab2)
+
+			GLES20.glVertexAttribPointer(pos2, 3, GLES20.GL_FLOAT, false, 5 * SIZE_OF_FLOAT, 0)
+			GLES20.glEnableVertexAttribArray(pos2)
+
+
+
+			GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ebo2)
+
+			GLES20.glVertexAttribPointer(
+				texPos2,
+				2,
+				GLES20.GL_FLOAT,
+				false,
+				5 * SIZE_OF_FLOAT,
+				3 * SIZE_OF_FLOAT
+			)
+
+			GLES20.glEnableVertexAttribArray(texPos2)
+
+			GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
+			*/
+
+
 
 			ctx.updateCanvas()
 			//	render?.drawFrame(surfaceTexture!!)

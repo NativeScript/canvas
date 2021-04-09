@@ -92,6 +92,7 @@ fn main() {
             include_dir.push_str("/sysroot/usr/include");
             println!("cargo:rustc-link-search=native={}", include_dir);
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
+            println!("cargo:rustc-link-lib=android"); // the "-l" flag
             // the resulting bindings.
             let bindings = bindgen::Builder::default()
                 // The input header we would like to generate

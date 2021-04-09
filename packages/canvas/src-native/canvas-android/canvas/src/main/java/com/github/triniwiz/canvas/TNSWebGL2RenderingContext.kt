@@ -801,6 +801,37 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		return value[0]
 	}
 
+
+	override fun getParameter(pname: Int): Any? {
+		when (pname) {
+			COPY_READ_BUFFER_BINDING, COPY_WRITE_BUFFER_BINDING -> {
+				val lock = CountDownLatch(1)
+				val parameter = arrayOfNulls<Any>(1)
+				runOnGLThread(Runnable {
+					when (pname) {
+						COPY_READ_BUFFER_BINDING, COPY_WRITE_BUFFER_BINDING, DRAW_FRAMEBUFFER_BINDING -> {
+							val param = IntArray(1)
+							GLES30.glGetIntegerv(pname, param, 0)
+							if ((pname == COPY_READ_BUFFER_BINDING || pname == COPY_WRITE_BUFFER_BINDING || pname == DRAW_FRAMEBUFFER_BINDING) && param[0] == 0) {
+								parameter[0] = null
+							} else {
+								parameter[0] = param[0]
+							}
+						}
+					}
+				})
+				try {
+					lock.await()
+				} catch (ignored: InterruptedException) {
+				}
+				return parameter[0]
+			}
+			else -> {
+				return super.getParameter(pname)
+			}
+		}
+	}
+
 	fun getQuery(target: Int, pname: Int): Any? {
 		val lock = CountDownLatch(1)
 		val value = arrayOfNulls<Any>(1)

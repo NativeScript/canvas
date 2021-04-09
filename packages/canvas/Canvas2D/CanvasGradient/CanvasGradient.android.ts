@@ -18,6 +18,6 @@ export class CanvasGradient extends CanvasGradientBase {
     }
 
     public addColorStop(offset: number, color: any): void {
-        this.nativeInstance.addColorStop(offset, new Color(color).android);
+        this.nativeInstance.addColorStop(offset, color);
     }
 }

@@ -609,13 +609,22 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				return new Float32Array(Utils.toJSArray(value));
 			case this.ARRAY_BUFFER_BINDING:
 			case this.ELEMENT_ARRAY_BUFFER_BINDING:
-				return new WebGLBuffer(value);
+				if(value){
+					return new WebGLBuffer(value);
+				}
+				return null;
 			case this.CURRENT_PROGRAM:
-				return new WebGLProgram(value);
+				if(value){
+					return new WebGLProgram(value);
+				}
+				return null;
 			case this.COMPRESSED_TEXTURE_FORMATS:
 				return new Uint32Array(Utils.toJSArray(value));
 			case this.RENDERBUFFER_BINDING:
-				return new WebGLRenderbuffer(value);
+				if(value){
+					return new WebGLRenderbuffer(value);
+				}
+				return null;
 			case this.FRAMEBUFFER_BINDING:
 				if (value) {
 					return new WebGLFramebuffer(value);
@@ -969,7 +978,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels as any);
 			}
 		} else if (arguments.length === 6) {
-			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && typeof border._video.getCurrentFrame === 'function') {
+			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
 				border._video.getCurrentFrame(this.context);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
 				border.getCurrentFrame(this.context);

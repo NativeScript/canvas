@@ -191,13 +191,13 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		// }
 
 		let length = 0;
-		if (value instanceof Int8Array || value instanceof Uint8Array || value instanceof Int16Array || value instanceof Uint16Array || value instanceof Int32Array || value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array) {
+		if (value instanceof Int8Array || value instanceof Uint8Array || value instanceof Uint8ClampedArray || value instanceof Int16Array || value instanceof Uint16Array || value instanceof Int32Array || value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array) {
 			length = value.length;
 		} else if (Array.isArray(value)) {
 			length = value.length;
 		}
 
-		if (length && typeof type === 'string') {
+		if (typeof type === 'string') {
 			const array = Array.from(value as any) as any;
 			let nativeArray;
 			switch (type) {
@@ -260,7 +260,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (srcData instanceof ArrayBuffer) {
 			this.context.bufferSubData(target, offset, this.toNativeArray(new Uint8Array(srcData as any) as any, 'byte'));
 		} else if (srcData && srcData.buffer instanceof ArrayBuffer) {
-			if (srcData instanceof Uint8Array) {
+			if (srcData instanceof Uint8Array || srcData instanceof Uint8ClampedArray) {
 				this.context.bufferSubData(target, offset, this.toNativeArray(srcData as any, 'byte'));
 			} else if (srcData instanceof Uint16Array || srcData instanceof Int16Array) {
 				this.context.bufferSubData(target, offset, this.toNativeArray(srcData as any, 'short'));
@@ -695,13 +695,22 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				return new Float32Array(this.getJSArray(value));
 			case this.ARRAY_BUFFER_BINDING:
 			case this.ELEMENT_ARRAY_BUFFER_BINDING:
-				return new WebGLBuffer(WebGLRenderingContext.toPrimitive(value));
+				if(value){
+					new WebGLBuffer(WebGLRenderingContext.toPrimitive(value));
+				}
+				return null;
 			case this.CURRENT_PROGRAM:
-				return new WebGLProgram(WebGLRenderingContext.toPrimitive(value));
+				if(value){
+					return new WebGLProgram(WebGLRenderingContext.toPrimitive(value));
+				}
+				return null;
 			case this.COMPRESSED_TEXTURE_FORMATS:
 				return new Uint32Array(this.getJSArray(value));
 			case this.RENDERBUFFER_BINDING:
-				return new WebGLRenderbuffer(WebGLRenderingContext.toPrimitive(value));
+				if(value){
+					return new WebGLRenderbuffer(WebGLRenderingContext.toPrimitive(value));
+				}
+				return null;
 			case this.FRAMEBUFFER_BINDING:
 				if (value) {
 					return new WebGLFramebuffer(WebGLRenderingContext.toPrimitive(value));
@@ -1035,7 +1044,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels as any);
 			}
 		} else if (arguments.length === 6) {
-			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && typeof border._video.getCurrentFrame === 'function') {
+			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
 				border._video.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
@@ -1130,7 +1139,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform1iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform1iv');
 		this._checkArgs('uniform1iv', arguments);
-		value = this.toNativeArray(value, 'int');
+		value = Array.from(value); //this.toNativeArray(value, 'int');
 		const loc = location ? location.native : 0;
 		this.context.uniform1iv(loc, value);
 	}
@@ -1138,7 +1147,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform1fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform1fv');
 		this._checkArgs('uniform1fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		const loc = location ? location.native : 0;
 		this.context.uniform1fv(loc, value);
 	}
@@ -1160,7 +1169,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform2iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform2iv');
 		this._checkArgs('uniform2iv', arguments);
-		value = this.toNativeArray(value, 'int');
+		value = Array.from(value);//this.toNativeArray(value, 'int');
 		const loc = location ? location.native : 0;
 		this.context.uniform2iv(loc, value);
 	}
@@ -1168,7 +1177,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform2fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform2fv');
 		this._checkArgs('uniform2fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		const loc = location ? location.native : 0;
 		this.context.uniform2fv(loc, value);
 	}
@@ -1190,7 +1199,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform3iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform3iv');
 		this._checkArgs('uniform3iv', arguments);
-		value = this.toNativeArray(value, 'int');
+		value = Array.from(value);//this.toNativeArray(value, 'int');
 		const loc = location ? location.native : 0;
 		this.context.uniform3iv(loc, value);
 	}
@@ -1198,7 +1207,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform3fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform3fv');
 		this._checkArgs('uniform3fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		const loc = location ? location.native : 0;
 		this.context.uniform3fv(loc, value);
 	}
@@ -1220,7 +1229,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform4iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform4iv');
 		this._checkArgs('uniform4iv', arguments);
-		value = this.toNativeArray(value, 'int');
+		value = Array.from(value);//this.toNativeArray(value, 'int');
 		const loc = location ? location.native : 0;
 		this.context.uniform4iv(loc, value);
 	}
@@ -1228,7 +1237,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform4fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform4fv');
 		this._checkArgs('uniform4fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		const loc = location ? location.native : 0;
 		this.context.uniform4fv(loc, value);
 	}
@@ -1243,7 +1252,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniformMatrix2fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix2fv');
 		this._checkArgs('uniformMatrix2fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		const loc = location ? location.native : 0;
 		this.context.uniformMatrix2fv(loc, transpose, value);
 	}
@@ -1251,7 +1260,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniformMatrix3fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix3fv');
 		this._checkArgs('uniformMatrix3fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		const loc = location ? location.native : 0;
 		this.context.uniformMatrix3fv(loc, transpose, value);
 	}
@@ -1259,7 +1268,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniformMatrix4fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix4fv');
 		this._checkArgs('uniformMatrix4fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		const loc = location ? location.native : 0;
 		this.context.uniformMatrix4fv(loc, transpose, value);
 	}
@@ -1287,7 +1296,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	vertexAttrib1fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib1fv');
 		this._checkArgs('vertexAttrib1fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		this.context.vertexAttrib1fv(index, value);
 	}
 
@@ -1300,7 +1309,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	vertexAttrib2fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib2fv');
 		this._checkArgs('vertexAttrib2fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		this.context.vertexAttrib2fv(index, value);
 	}
 
@@ -1313,7 +1322,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	vertexAttrib3fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib3fv');
 		this._checkArgs('vertexAttrib3fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		this.context.vertexAttrib3fv(index, value);
 	}
 
@@ -1326,7 +1335,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	vertexAttrib4fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib4fv');
 		this._checkArgs('vertexAttrib4fv', arguments);
-		value = this.toNativeArray(value, 'float');
+		value = Array.from(value);//this.toNativeArray(value, 'float');
 		this.context.vertexAttrib4fv(index, value);
 	}
 

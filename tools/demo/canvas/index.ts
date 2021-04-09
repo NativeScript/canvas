@@ -4,7 +4,7 @@ import Chart from 'chart.js';
 
 let Matter;
 import { Canvas, ImageAsset } from '@nativescript/canvas';
-import { arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, colorRain, createLinearGradient, createRadialGradient, ellipse, fillRule, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, shadowBlur, swarm, touchParticles } from './canvas2d';
+import { arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, colorRain, createLinearGradient, createRadialGradient, ellipse, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, shadowBlur, shadowColor, swarm, touchParticles } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
@@ -317,6 +317,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 
 	draw() {
+		//filterBlur(this.canvas);
 		handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {

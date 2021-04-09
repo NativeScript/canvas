@@ -27,6 +27,7 @@ import java.nio.FloatBuffer
  */
 class TextureRender {
 	private var mProgram = 0
+	var rbo = -1
 	var fbo = -1
 	var textureId = -1
 	var width: Int = -1
@@ -34,6 +35,7 @@ class TextureRender {
 	var ab = -1
 	var pos = -1
 	var matrixPos = -1
+	var samplerPos = -1
 	var matrix = FloatArray(16)
 
 
@@ -42,14 +44,19 @@ class TextureRender {
 		width: Int,
 		height: Int,
 		internalFormat: Int,
-		format: Int
+		format: Int,
+		flipYWebGL: Boolean
 	) {
 		nativeDrawFrame(
 			st,
+			flipYWebGL,
 			fbo,
+			rbo,
 			mProgram,
 			textureId,
+			samplerPos,
 			ab,
+			pos,
 			matrix,
 			matrixPos,
 			width,
@@ -58,7 +65,7 @@ class TextureRender {
 			this.height,
 			internalFormat,
 			format,
-			vextexCoords.size / 2
+			4
 		)
 	}
 
@@ -82,6 +89,9 @@ class TextureRender {
 		GLES20.glGenBuffers(1, buffers, 0)
 		ab = buffers[0]
 
+		val rbos = IntArray(1)
+		GLES20.glGenRenderbuffers(1, rbos, 0)
+		rbo = rbos[0]
 
 		val fbos = IntArray(1)
 		GLES20.glGenFramebuffers(1, fbos, 0)
@@ -99,12 +109,18 @@ class TextureRender {
 			GLES20.GL_STATIC_DRAW
 		)
 
+		samplerPos = GLES20.glGetUniformLocation(mProgram, "uSampler")
 		matrixPos = GLES20.glGetUniformLocation(mProgram, "uTextureMatrix")
+		pos = GLES20.glGetAttribLocation(mProgram, "aPosition")
 
-		pos = GLES20.glGetAttribLocation(mProgram, "aTexCoord")
 		GLES20.glVertexAttribPointer(pos, 2, GLES20.GL_FLOAT, false, 2 * SIZE_OF_FLOAT, 0)
 		GLES20.glEnableVertexAttribArray(pos)
 
+		val previousTexture = IntArray(1)
+		GLES20.glGetIntegerv(
+			GLES20.GL_TEXTURE_BINDING_2D,
+			previousTexture, 0
+		)
 
 		GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
 
@@ -125,16 +141,25 @@ class TextureRender {
 			GLES20.GL_CLAMP_TO_EDGE
 		)
 
+		GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
+
+		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, previousTexture[0])
+
+
 	}
 
 	companion object {
 		@JvmStatic
 		private external fun nativeDrawFrame(
 			surfaceTexture: SurfaceTexture,
+			flipYWebGL: Boolean,
 			fbo: Int,
+			rbo: Int,
 			program: Int,
 			externalTexture: Int,
+			samplerPos: Int,
 			arrayBuffer: Int,
+			pos: Int,
 			matrix: FloatArray,
 			matrixPos: Int,
 			width: Int,
@@ -146,8 +171,8 @@ class TextureRender {
 			drawCount: Int,
 		)
 
-
-		val vextexCoords = floatArrayOf(
+		/*
+		* 		val vextexCoords = floatArrayOf(
 			0f, 1f,
 			1f, 1f,
 			0f, 0f,
@@ -155,6 +180,17 @@ class TextureRender {
 			1f, 1f,
 			1f, 0f,
 			0f, 0f
+		)
+		* */
+
+
+
+
+		val vextexCoords = floatArrayOf(
+			0f, 0f,
+			1f, 0f,
+			0f, 1f,
+			1f, 1f,
 		)
 
 
@@ -174,7 +210,8 @@ gl_Position = vec4(clipSpace, 0.0, 1.0);
 		"""
 		private const val FRAGMENT_SHADER = """
 			#extension GL_OES_EGL_image_external : require
-			varying highp vec2 TexCoord;
+			precision highp float;
+			varying vec2 TexCoord;
 uniform samplerExternalOES uSampler;
 void main(){
 gl_FragColor = texture2D(uSampler, TexCoord);
@@ -183,6 +220,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 
 
 		init {
+			GLES20.GL_VERTEX_ATTRIB_ARRAY_ENABLED
 			val vb =
 				ByteBuffer.allocateDirect(vextexCoords.size * SIZE_OF_FLOAT).order(ByteOrder.nativeOrder())
 			vextexBuf = vb.asFloatBuffer().put(vextexCoords)

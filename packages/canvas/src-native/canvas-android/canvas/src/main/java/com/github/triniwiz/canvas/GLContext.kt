@@ -449,6 +449,7 @@ internal class GLContext {
 				bit = bit or GLES20.GL_STENCIL_BUFFER_BIT
 			}
 			GLES20.glClear(bit)
+
 		}
 
 		private fun deInitEGL() {

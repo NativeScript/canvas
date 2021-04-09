@@ -312,6 +312,28 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		return result;
 	}
 
+	//@ts-ignore
+	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
+		this._glCheckError('getParameter');
+		this._checkArgs('getParameter', arguments);
+		const value = this.native.getParameter(pname);
+		switch (pname) {
+			case this.COPY_READ_BUFFER_BINDING:
+			case this.COPY_WRITE_BUFFER_BINDING:
+				if (value) {
+					new WebGLBuffer(value);
+				}
+				return null;
+			case this.DRAW_FRAMEBUFFER_BINDING:
+				if (value) {
+					return new WebGLFramebuffer(value);
+				}
+				return null;
+			default:
+				return super.getParameter(pname);
+		}
+	}
+
 	getQuery(target: number, pname: number): any {
 		this._glCheckError('getQuery');
 		const query = this.native.getQuery(target, pname);
@@ -644,13 +666,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this._glCheckError('vertexAttribI4uiv');
 		this.native.vertexAttribI4uiv(index, Array.from(value as any));
 	}
-
-	protected _glCheckError(message: string) {
-		if (!WebGL2RenderingContext.isDebug) {
-			return;
-		}
-		console.log(message, this.getError());
-	}
-
+	
 	/* Miscellaneous constants */
 }

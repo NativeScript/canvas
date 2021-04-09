@@ -1,62 +1,80 @@
 import { Element } from './Element';
-import { Video } from '@nativescript/canvas-media';
+let Video: any;
 export class HTMLVideoElement extends Element {
-	_video: Video;
+	_video;
 	constructor() {
 		super('video');
-		// @ts-ignore
-		this._video = Video.createCustomView();
+		if (!Video) {
+			try {
+				// @ts-ignore
+				const video = require('@nativescript/canvas-media');
+				Video = video.Video;
+			} catch (e) {}
+		}
+		if (Video) {
+			this._video = Video.createCustomView();
+		}
 	}
 
 	addEventListener(type: string, listener: Function, useCapture: boolean | any) {
-		this._video.addEventListener(type, listener, useCapture);
+		this._video?.addEventListener(type, listener, useCapture);
 	}
 	removeEventListener(type: string, listener: Function, useCapture: boolean | any) {
-		this._video.removeEventListener(type, listener, useCapture);
+		this._video?.removeEventListener(type, listener, useCapture);
 	}
 
 	requestVideoFrameCallback(callback: Function) {
-		this._video.requestVideoFrameCallback(callback);
+		this._video?.requestVideoFrameCallback(callback);
 	}
 
 	get autoplay() {
-		return this._video.autoplay;
+		return this._video?.autoplay ?? false;
 	}
 
 	set autoplay(value: boolean) {
-		this._video.autoplay = value;
+		if (this._video) {
+			this._video.autoplay = value;
+		}
 	}
 
 	get muted() {
-		return this._video.muted;
+		return this._video?.muted ?? false;
 	}
 
 	set muted(value: boolean) {
-		this._video.muted = value;
+		if (this._video) {
+			this._video.muted = value;
+		}
 	}
 
 	get controls() {
-		return this._video.controls;
+		return this._video?.controls ?? false;
 	}
 
 	set controls(value: boolean) {
-		this._video.controls = value;
+		if (this._video) {
+			this._video.controls = value;
+		}
 	}
 
 	get loop() {
-		return this._video.muted;
+		return this._video?.loop ?? false;
 	}
 
 	set loop(value: boolean) {
-		this._video.loop = value;
+		if (this._video) {
+			this._video.loop = value;
+		}
 	}
 
 	get src() {
-		return this._video.src;
+		return this._video?.src ?? '';
 	}
 
 	set src(value: string) {
-		this._video.src = value;
+		if (this._video) {
+			this._video.src = value;
+		}
 	}
 
 	set width(value) {
@@ -66,22 +84,28 @@ export class HTMLVideoElement extends Element {
 	}
 
 	get width() {
-		return this._video.width as any;
+		return (this._video?.width as any) ?? 0;
 	}
 
 	set height(value) {
-		this._video.height = value as any;
+		if (this._video) {
+			this._video.height = value as any;
+		}
 	}
 
 	get height() {
-		return this._video.height as any;
+		return (this._video?.height as any) ?? 0;
 	}
 
 	play() {
-		this._video.play();
+		if (this._video) {
+			this._video.play();
+		}
 	}
 
 	pause() {
-		this._video.pause();
+		if (this._video) {
+			this._video.pause();
+		}
 	}
 }

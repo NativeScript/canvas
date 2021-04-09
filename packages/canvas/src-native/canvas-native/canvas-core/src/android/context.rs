@@ -1,13 +1,14 @@
+use std::str::FromStr;
+
 use jni::errors::Error;
-use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JString, JValue, ReleaseMode};
 use jni::sys::{
-    jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring,
+    jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE,
 };
+use jni::JNIEnv;
 use skia_safe::Rect;
 
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
-use crate::common::context::Context;
 use crate::common::context::drawing_paths::fill_rule::FillRule;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::fill_and_stroke_styles::pattern::Repetition;
@@ -21,6 +22,7 @@ use crate::common::context::pixel_manipulation::image_data::ImageData;
 use crate::common::context::text_styles::text_align::TextAlign;
 use crate::common::context::text_styles::text_baseline::TextBaseLine;
 use crate::common::context::text_styles::text_direction::TextDirection;
+use crate::common::context::Context;
 use crate::common::ffi::paint_style_value::{PaintStyleValue, PaintStyleValueType};
 use crate::common::utils::color::to_parsed_color;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded, to_image};
@@ -112,21 +114,21 @@ fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
             }
         };
         let style = Box::into_raw(Box::new(style)) as jlong;
-        value_args.push(style.into());
+        value_args.push(JValue::Long(style));
         env.call_method(
             json,
             "put",
-            "(Ljava/lang/String;I)Lorg/json/JSONObject;",
+            "(Ljava/lang/String;J)Lorg/json/JSONObject;",
             value_args.as_slice(),
         )
-            .unwrap();
+        .unwrap();
         env.call_method(
             json,
             "put",
             "(Ljava/lang/String;I)Lorg/json/JSONObject;",
             value_type_args.as_slice(),
         )
-            .unwrap();
+        .unwrap();
         json.into_inner()
     }
 }
@@ -547,7 +549,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         let context = &mut *context;
         if let Ok(color) = env.get_string(color) {
             let color = color.to_string_lossy();
-            if let Ok(color) = color.as_ref().parse::<css_color_parser::Color>() {
+            if let Ok(color) = css_color_parser::Color::from_str(color.as_ref()) {
                 context.set_shadow_color(skia_safe::Color::from_argb(
                     (color.a * 255.0) as u8,
                     color.r,
@@ -928,8 +930,10 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
         let context = &mut *context;
         if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
             let length = val.size().unwrap_or(0) as usize;
-            let buf =
-                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
+            let buf = std::slice::from_raw_parts(
+                std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
+                length,
+            );
             if let Some(image) = from_image_slice_encoded(buf) {
                 return Box::into_raw(Box::new(PaintStyle::Pattern(
                     context.create_pattern(image, Repetition::from(repetition)),
@@ -1069,8 +1073,10 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     unsafe {
         if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
             let length = val.size().unwrap_or(0) as usize;
-            let buf =
-                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
+            let buf = std::slice::from_raw_parts(
+                std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
+                length,
+            );
             draw_image(
                 context, buf, width, height, 0.0, 0.0, width, height, dx, dy, width, height,
             );
@@ -1159,8 +1165,10 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     unsafe {
         if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
             let length = val.size().unwrap_or(0) as usize;
-            let buf =
-                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
+            let buf = std::slice::from_raw_parts(
+                std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
+                length,
+            );
             draw_image(
                 context, buf, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
             )
@@ -1300,8 +1308,10 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
     unsafe {
         if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
             let length = val.size().unwrap_or(0) as usize;
-            let buf =
-                std::slice::from_raw_parts(std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()), length);
+            let buf = std::slice::from_raw_parts(
+                std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
+                length,
+            );
             draw_image(
                 context, buf, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
             )

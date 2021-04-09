@@ -5,8 +5,8 @@
 use std::os::raw::c_void;
 
 use jni::errors::Error;
-use jni::objects::{JByteBuffer, JClass, JObject};
-use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE};
+use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode, AutoPrimitiveArray};
+use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE, jbyteArray};
 use jni::JNIEnv;
 use skia_safe::RCHandle;
 
@@ -103,6 +103,54 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
         0 as *mut c_void,
     );
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexImage2DByteArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    internalformat: jint,
+    width: jint,
+    height: jint,
+    border: jint,
+    format: jint,
+    image_type: jint,
+    byteArray: jbyteArray,
+    flipY: jboolean,
+) {
+    match env.get_primitive_array_critical(byteArray, ReleaseMode::NoCopyBack){
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(array.as_ptr() as *mut u8, size);
+            if flipY == JNI_TRUE {
+                crate::common::utils::gl::flip_in_place(
+                    buf.as_mut_ptr(),
+                    buf.len(),
+                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                        as i32
+                        * width) as usize,
+                    height as usize,
+                );
+            }
+            gl_bindings::glTexImage2D(
+                target as u32,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format as u32,
+                image_type as u32,
+                buf.as_ptr() as *const c_void,
+            );
+        }
+        Err(e) => {
+            log::debug!("get_primitive_array_critical error {:?}", e);
+        }
+    }
+}
+
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexImage2DBuffer(

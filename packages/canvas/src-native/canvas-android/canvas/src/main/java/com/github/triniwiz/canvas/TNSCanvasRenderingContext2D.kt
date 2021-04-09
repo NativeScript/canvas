@@ -50,6 +50,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				val style = nativeGetFillStyle(
 					canvas.nativeContext
 				)
+
 				try {
 					val styleValue = style.getLong("value")
 					value = when (style.getInt("value_type")) {
@@ -59,6 +60,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 						else -> TNSColor("black")
 					}
 				} catch (e: JSONException) {
+					e.printStackTrace()
 				}
 				lock.countDown()
 			}
@@ -87,6 +89,26 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				}
 			}
 		}
+
+	var filter: String
+	get() {
+		printLog("getFilter")
+		val lock = CountDownLatch(1)
+		var value = "none"
+		canvas.queueEvent {
+			value = nativeGetFilter(canvas.nativeContext)
+			lock.countDown()
+		}
+		try {
+			lock.await()
+		} catch (e: Exception) {
+		}
+		return value
+	}
+	set(value) {
+		printLog("setFilter")
+		canvas.queueEvent { nativeSetFilter(canvas.nativeContext, value) }
+	}
 
 	var strokeStyle: TNSColorStyle
 		get() {
@@ -364,7 +386,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(color) {
 			printLog("setShadowColor")
-			canvas.queueEvent { nativeSetShadowColor(canvas.nativeContext, color) }
+			canvas.queueEvent { nativeSetShadowColorString(canvas.nativeContext, color) }
 		}
 
 	var shadowOffsetX: Float
@@ -528,8 +550,11 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		})
 	}
 
-	@JvmOverloads
-	fun fillText(text: String, x: Float, y: Float, width: Float = 0f) {
+	fun fillText(text: String, x: Float, y: Float) {
+		fillText(text, x, y, 0f)
+	}
+
+	fun fillText(text: String, x: Float, y: Float, width: Float) {
 		printLog("fillText")
 		canvas.queueEvent(Runnable {
 			nativeFillText(canvas.nativeContext, text, x, y, width)
@@ -537,8 +562,12 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		})
 	}
 
-	@JvmOverloads
-	fun strokeText(text: String, x: Float, y: Float, width: Float = 0f) {
+
+	fun strokeText(text: String, x: Float, y: Float) {
+		strokeText(text, x, y, 0f)
+	}
+
+	fun strokeText(text: String, x: Float, y: Float, width: Float) {
 		printLog("strokeText")
 		canvas.queueEvent(Runnable {
 			nativeStrokeText(canvas.nativeContext, text, x, y, width)
@@ -551,13 +580,21 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		canvas.queueEvent(Runnable { nativeRect(canvas.nativeContext, x, y, width, height) })
 	}
 
-	@JvmOverloads
-	fun fill(rule: TNSFillRule = TNSFillRule.NonZero) {
+
+	fun fill() {
+		fill(TNSFillRule.NonZero)
+	}
+
+
+	fun fill(rule: TNSFillRule) {
 		fill(0, rule.toNative())
 	}
 
-	@JvmOverloads
-	fun fill(path: TNSPath2D, rule: TNSFillRule = TNSFillRule.NonZero) {
+	fun fill(path: TNSPath2D) {
+		fill(path, TNSFillRule.NonZero)
+	}
+
+	fun fill(path: TNSPath2D, rule: TNSFillRule) {
 		fill(path.path, rule.toNative())
 	}
 
@@ -605,7 +642,18 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		canvas.queueEvent(Runnable { nativeClosePath(canvas.nativeContext) })
 	}
 
-	@JvmOverloads
+
+	fun arc(
+		x: Float,
+		y: Float,
+		radius: Float,
+		startAngle: Float,
+		endAngle: Float
+	) {
+		arc(x, y, radius, startAngle, endAngle, false)
+	}
+
+
 	fun arc(
 		x: Float,
 		y: Float,
@@ -648,7 +696,20 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		})
 	}
 
-	@JvmOverloads
+
+	fun ellipse(
+		x: Float,
+		y: Float,
+		radiusX: Float,
+		radiusY: Float,
+		rotation: Float,
+		startAngle: Float,
+		endAngle: Float
+	) {
+		ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, false)
+	}
+
+
 	fun ellipse(
 		x: Float,
 		y: Float,
@@ -657,7 +718,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		rotation: Float,
 		startAngle: Float,
 		endAngle: Float,
-		anticlockwise: Boolean = false
+		anticlockwise: Boolean
 	) {
 		printLog("ellipse")
 		canvas.queueEvent(Runnable {
@@ -1133,17 +1194,25 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		)
 	}
 
-	@JvmOverloads
+	fun putImageData(
+		data: TNSImageData,
+		x: Float,
+		y: Float
+	) {
+		putImageData(data, x, y, 0f, 0f, 0f, 0f)
+	}
+
+
 	fun putImageData(
 		data: TNSImageData,
 		x: Float,
 		y: Float,
-		dirtyX: Float = 0f,
-		dirtyY: Float = 0f,
-		dirtyWidth: Float = 0f,
-		dirtyHeight: Float = 0f
+		dirtyX: Float,
+		dirtyY: Float,
+		dirtyWidth: Float,
+		dirtyHeight: Float
 	) {
-		canvas.queueEvent{
+		canvas.queueEvent {
 			nativePutImageData(
 				canvas.nativeContext,
 				data.nativeImageData,
@@ -1263,6 +1332,12 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 		@JvmStatic
 		private external fun nativeGetFillStyle(context: Long): JSONObject
+
+		@JvmStatic
+		private external fun nativeSetFilter(context: Long, filter: String)
+
+		@JvmStatic
+		private external fun nativeGetFilter(context: Long): String
 
 		@JvmStatic
 		private external fun nativeSetStrokeColorWithString(context: Long, color: String)
@@ -1647,7 +1722,10 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		private external fun nativeGetShadowColor(context: Long): String
 
 		@JvmStatic
-		private external fun nativeSetShadowColor(context: Long, color: String)
+		private external fun nativeSetShadowColor(context: Long, r: Int, g: Int, b: Int, a: Int): String
+
+		@JvmStatic
+		private external fun nativeSetShadowColorString(context: Long, color: String)
 
 		@JvmStatic
 		private external fun nativeGetShadowOffsetX(context: Long): Float

@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-polyfill",
-	"version": "1.0.0-alpha19",
+	"version": "1.0.0-alpha20",
 	"description": "Polyfill for making NativeScript compatible with web libs like pixi.js, three.js, phaser.js, babylon.js, etc....",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -32,9 +32,6 @@
 	"homepage": "https://github.com/NativeScript/canvas",
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
-	"peerDependencies": {
-		
-	},
 	"dependencies": {
 		"xmldom-qsa": "^1.0.3"
 	}

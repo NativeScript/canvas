@@ -364,15 +364,18 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	get fillStyle() {
 		this.log('fillStyle');
-		switch (this.context.getFillStyle().getStyleType()) {
-			case CanvasColorStyleType.Color:
-				const color = this.context.getFillStyle() as com.github.triniwiz.canvas.TNSColor;
-				return color.getColor();
-			case CanvasColorStyleType.Gradient:
-				return CanvasGradient.fromNative(this.context.getFillStyle());
-			case CanvasColorStyleType.Pattern:
-				return new CanvasPattern(this.context.getFillStyle());
+		if(this.context){
+			switch (this.context.getFillStyle().getStyleType()) {
+				case com.github.triniwiz.canvas.TNSColorStyleType.Color:
+					const color = this.context.getFillStyle() as com.github.triniwiz.canvas.TNSColor;
+					return color.getColor();
+				case com.github.triniwiz.canvas.TNSColorStyleType.Gradient:
+					return CanvasGradient.fromNative(this.context.getFillStyle());
+				case com.github.triniwiz.canvas.TNSColorStyleType.Pattern:
+					return new CanvasPattern(this.context.getFillStyle());
+			}
 		}
+		return 'black';
 	}
 
 	set fillStyle(color: string | CanvasGradient | CanvasPattern) {
@@ -389,6 +392,23 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			this.context.setFillStyle(color.native);
 		}
 	}
+
+
+
+	get filter(): string {
+		this.log('get filter');
+		//@ts-ignore
+		return this.context.getFilter();
+	}
+
+	set filter(value: string) {
+		this.log('set filter', value);
+		if (this.context) {
+			//@ts-ignore
+			this.context.setFilter(value);
+		}
+	}
+	
 
 	get strokeStyle() {
 		this.log('strokeStyle');
@@ -491,9 +511,11 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('clip value:', ...args);
 		this._ensureLayoutBeforeDraw();
 		if (typeof args[0] === 'string') {
-			this.context.clip(args[0]);
+			const rule = this._fillRuleFromString(args[0]);
+			this.context.clip(rule);
 		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
-			this.context.clip(args[0].native, args[1]);
+			const rule = this._fillRuleFromString(args[1]);
+			this.context.clip(args[0].native, rule);
 		} else if (args[0] instanceof Path2D) {
 			this.context.clip(args[0].native);
 		} else {
@@ -710,6 +732,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		);
 	}
 
+
 	fill(): void;
 
 	fill(fillRule: string): void;
@@ -720,9 +743,11 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('fill value:', ...args);
 		this._ensureLayoutBeforeDraw();
 		if (typeof args[0] === 'string') {
-			this.context.fill(args[0]);
+			const rule = this._fillRuleFromString(args[0]);
+			this.context.fill(rule);
 		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
-			this.context.fill(args[0].native, args[1]);
+			const rule = this._fillRuleFromString(args[1]);
+			this.context.fill(args[0].native, rule);
 		} else if (args[0] instanceof Path2D) {
 			this.context.fill(args[0].native);
 		} else {

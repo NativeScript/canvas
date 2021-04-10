@@ -2371,6 +2371,75 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		border: Int,
 		format: Int,
 		type: Int,
+		pixels: ByteBuffer?
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			pixels?.let {
+//				val buf = ByteBuffer.allocateDirect(it.size).order(ByteOrder.nativeOrder())
+//				buf.put(pixels)
+//				buf.rewind()
+				if(it.isDirect){
+					nativeTexImage2DBuffer(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it,
+						flipYWebGL
+					)
+				}else {
+					nativeTexImage2DByteArray(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it.array(),
+						flipYWebGL
+					)
+				}
+
+			} ?: run {
+				GLES20.glTexImage2D(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					border,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+
+
+	fun texImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
 		pixels: ByteArray?
 	) {
 		val lock = CountDownLatch(1)

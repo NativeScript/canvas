@@ -9,9 +9,6 @@ import { Video } from '@nativescript/canvas-media';
 //
 export function handleVideo(canvas) {
 	const gl = canvas.getContext('webgl2') as WebGLRenderingContext;
-	android.util.Log.d('com.test',`${gl.getSupportedExtensions()}`);
-
-
 	// If we don't have a GL context, give up now
 
 	if (!gl) {
@@ -84,7 +81,7 @@ export function handleVideo(canvas) {
 
 	const texture = initTexture(gl);
 
-  //https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample8/Firefox.mp4
+	//https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample8/Firefox.mp4
 	const video = setupVideo('~/assets/file-assets/webgl/Firefox.mp4');
 
 	var then = 0;
@@ -138,7 +135,6 @@ function setupVideo(url) {
 		true
 	);
 
-
 	video.src = url;
 	video.play();
 
@@ -147,7 +143,6 @@ function setupVideo(url) {
 			copyVideo = true;
 		}
 	}
-
 
 	// setTimeout(()=>{
 	// 	video.pause();

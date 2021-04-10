@@ -1240,6 +1240,7 @@ SWIFT_CLASS_NAMED("TNSWebGL2RenderingContext")
 - (int32_t)getFragDataLocation:(uint32_t)program :(NSString * _Nonnull)name SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)getIndexedParameter:(uint32_t)target :(uint32_t)index SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)getInternalformatParameter:(uint32_t)target :(uint32_t)internalformat :(uint32_t)pname SWIFT_WARN_UNUSED_RESULT;
+- (id _Nullable)getParameter:(uint32_t)pname SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)getQuery:(uint32_t)target :(uint32_t)pname SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)getQueryParameter:(uint32_t)query :(uint32_t)pname SWIFT_WARN_UNUSED_RESULT;
 - (id _Nonnull)getSamplerParameter:(uint32_t)sampler :(uint32_t)pname SWIFT_WARN_UNUSED_RESULT;
@@ -1836,11 +1837,14 @@ SWIFT_CLASS_NAMED("TNS_WEBGL_lose_context")
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
 
+@class AVPlayer;
+@class AVPlayerItemVideoOutput;
 
 SWIFT_CLASS_NAMED("Utils")
 @interface Utils : NSObject
 + (CVOpenGLESTextureCacheRef _Nullable)createTextureCache:(TNSWebGLRenderingContext * _Nonnull)context SWIFT_WARN_UNUSED_RESULT;
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 

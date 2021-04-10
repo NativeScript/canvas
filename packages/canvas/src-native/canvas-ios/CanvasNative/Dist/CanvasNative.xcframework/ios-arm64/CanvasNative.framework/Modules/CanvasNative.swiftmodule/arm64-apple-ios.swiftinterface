@@ -1,6 +1,7 @@
 // swift-interface-format-version: 1.0
 // swift-compiler-version: Apple Swift version 5.3.2 (swiftlang-1200.0.45 clang-1200.0.32.28)
 // swift-module-flags: -target arm64-apple-ios10.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
+import AVFoundation
 @_exported import CanvasNative
 import CoreVideo
 import Foundation
@@ -391,6 +392,7 @@ extension RangeReplaceableCollection {
   @objc public func getFragDataLocation(_ program: Swift.UInt32, _ name: Swift.String) -> Swift.Int32
   @objc public func getIndexedParameter(_ target: Swift.UInt32, _ index: Swift.UInt32) -> Any
   @objc public func getInternalformatParameter(_ target: Swift.UInt32, _ internalformat: Swift.UInt32, _ pname: Swift.UInt32) -> Any
+  @objc override public func getParameter(_ pname: Swift.UInt32) -> Any?
   @objc public func getQuery(_ target: Swift.UInt32, _ pname: Swift.UInt32) -> Any
   @objc public func getQueryParameter(_ query: Swift.UInt32, _ pname: Swift.UInt32) -> Any
   @objc public func getSamplerParameter(_ sampler: Swift.UInt32, _ pname: Swift.UInt32) -> Any
@@ -2454,6 +2456,7 @@ extension RangeReplaceableCollection {
 @_inheritsConvenienceInitializers @objc(Utils) public class Utils : ObjectiveC.NSObject {
   @objc public static func createTextureCache(_ context: CanvasNative.TNSWebGLRenderingContext) -> CoreVideo.CVOpenGLESTextureCache?
   @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
+  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreGraphics.CGSize)
   @objc deinit
   @objc override dynamic public init()
 }

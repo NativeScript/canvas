@@ -1,6 +1,7 @@
 import { controlsProperty, VideoBase, playsinlineProperty, mutedProperty, srcProperty, currentTimeProperty } from './common';
 import { Source } from '../common';
 import { knownFolders, path } from '@nativescript/core';
+declare const Utils;
 @NativeClass()
 class NativeObject extends NSObject {
 	_owner: WeakRef<Video>;
@@ -26,7 +27,9 @@ class NativeObject extends NSObject {
 
 				*/
 				} else if (owner._player.currentItem.status === AVPlayerItemStatus.ReadyToPlay) {
-					console.log('ready');
+					if (!owner._videoSize) {
+						owner._videoSize = owner._asset.tracksWithMediaType(AVMediaTypeVideo)?.[0].naturalSize ?? undefined;
+					}
 				}
 			}
 		} else if (path === 'loadedTimeRanges') {
@@ -83,6 +86,7 @@ export class Video extends VideoBase {
 	_fps: number;
 	_ctx: any;
 	_asset: AVURLAsset;
+	_videoSize: any;
 	get _player() {
 		return this.#player;
 	}
@@ -125,60 +129,39 @@ export class Video extends VideoBase {
 		}
 		if (this._assetOutput) {
 			try {
-				const currentTime = this.#player.currentTime();
-				if (!this._assetOutput.hasNewPixelBufferForItemTime(currentTime)) {
-					return;
-				}
-				const sampleBuffer = this._assetOutput.copyPixelBufferForItemTimeItemTimeForDisplay(currentTime, null);
-				if (sampleBuffer !== 0) {
-					/*	const currentSampleTime = CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
-								const differenceFromLastFrame = CMTimeSubtract(currentSampleTime, this['previousFrameTime']);
-								const currentActualTime = CFAbsoluteTimeGetCurrent();
-	
-								const frameTimeDifference = CMTimeGetSeconds(differenceFromLastFrame);
-								const actualTimeDifference = currentActualTime - this['previousActualFrameTime'];
-								
-			
-								if (frameTimeDifference > actualTimeDifference) {
-									usleep(1000000.0 * (frameTimeDifference - actualTimeDifference));
-								}
-	
-								this['previousFrameTime'] = currentSampleTime;
-								this['previousActualFrameTime'] = CFAbsoluteTimeGetCurrent();
-								*/
-
-					//const pixel_buffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-
-					//const startTime = CFAbsoluteTimeGetCurrent();
-
-					const GL_TEXTURE_2D = 3553;
-					const GL_RGBA = 6408;
-					const GL_BGRA_EXT = 32993;
-					const GL_UNSIGNED_BYTE = 5121;
-
-					//const startTime = CFAbsoluteTimeGetCurrent();
-					CVPixelBufferLockBaseAddress(sampleBuffer, 0);
-					//const bpr = CVPixelBufferGetBytesPerRow(pixel_buffer);
-					const width = CVPixelBufferGetBytesPerRow(sampleBuffer) / 4;
-					const height = CVPixelBufferGetHeight(sampleBuffer);
-					const line_base = CVPixelBufferGetBaseAddress(sampleBuffer);
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, line_base);
-
-					CVPixelBufferUnlockBaseAddress(sampleBuffer, 0);
-					// CMSampleBufferInvalidate(sampleBuffer);
-
-					/*const currentFrameTime = CFAbsoluteTimeGetCurrent() - startTime;
-							console.log('fps', currentFrameTime * 1000);
-							*/
-					//this._previousTS = currentTS;
-					// may not need to release
+					// _ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize
+					Utils.drawFrame(this.#player, this._assetOutput, this._videoSize);
 					/*
-								 Unlike regular Core Foundation objects, toll-free bridged types are automatically memory managed by NativeScript,
-								  so there is no need to retain or release them using CFRetain and CFRelease.
-								*/
-					// https://docs.nativescript.org/core-concepts/ios-runtime/marshalling-overview#corefoundation-objects
-					//CFRelease(sampleBuffer);
-				}
+					const currentTime = this.#player.currentTime();
+					if (!this._assetOutput.hasNewPixelBufferForItemTime(currentTime)) {
+						return;
+					}
+					const pixel_buffer = this._assetOutput.copyPixelBufferForItemTimeItemTimeForDisplay(currentTime, null);
+					if (pixel_buffer !== 0) {
+						CVPixelBufferLockBaseAddress(pixel_buffer, 0);
+						const bytesPerRow = CVPixelBufferGetBytesPerRow(pixel_buffer);
+						const line_base = CVPixelBufferGetBaseAddress(pixel_buffer) as any;
+	
+						if (bytesPerRow / BYTES_PER_TEXEL === this._videoSize.width) {
+							glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this._videoSize.width, this._videoSize.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, line_base);
+						} else {
+							glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this._videoSize.width, this._videoSize.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, null);
+							for (let i = 0; i < this._videoSize.height; ++i) {
+								glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, this._videoSize.width, 1, GL_BGRA, GL_UNSIGNED_BYTE, line_base.add(i * bytesPerRow));
+							}
+						}
+	
+						CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
+						// may not need to release
+						
+								//	 Unlike regular Core Foundation objects, toll-free bridged types are automatically memory managed by NativeScript,
+								//	  so there is no need to retain or release them using CFRetain and CFRelease.
+									
+						// https://docs.nativescript.org/core-concepts/ios-runtime/marshalling-overview#corefoundation-objects
+						//CFRelease(sampleBuffer);
+					}
+	
+					*/
 			} catch (e) {
 				console.log('getCurrentFrame error:', e);
 			}
@@ -305,6 +288,8 @@ export class Video extends VideoBase {
 			this._asset = AVURLAsset.assetWithURL(url);
 			const keys = ['tracks', 'duration'];
 			this._asset.loadValuesAsynchronouslyForKeysCompletionHandler(keys, () => {
+				this._videoSize = this._asset.tracksWithMediaType(AVMediaTypeVideo)?.[0].naturalSize ?? undefined;
+
 				const fps = this._asset.tracks.firstObject?.nominalFrameRate ?? 30;
 
 				const _interval = CMTimeMake(1, fps);

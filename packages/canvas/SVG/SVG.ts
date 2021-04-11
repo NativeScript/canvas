@@ -55,62 +55,61 @@ export const srcProperty = new Property<Svg, string>({
 });
 
 import { File } from '@nativescript/core';
-import { DOMParser } from 'xmldom';
 import { layout } from '@nativescript/core/utils';
 @CSSType('Svg')
 export class Svg extends View {
 	public static readyEvent = 'ready';
 	_svg: any;
 	src: string;
-	_domParser: DOMParser;
 	constructor() {
 		super();
-		this._domParser = new DOMParser();
 		if (global.isAndroid) {
 			const activity = Application.android.foregroundActivity || Application.android.startActivity;
 			this._svg = new (com as any).github.triniwiz.canvas.TNSSVG(activity);
 		} else if (global.isIOS) {
-		//	this._svg = TNSSVG.new();
-		//	this._svg.backgroundColor = UIColor.clearColor;
+			//	this._svg = TNSSVG.new();
+			//	this._svg.backgroundColor = UIColor.clearColor;
 		}
 	}
 
 	[srcProperty.setNative](value: string) {
 		if (typeof value === 'string') {
 			if (value.indexOf('<svg') > -1) {
-				if(global.isAndroid){
+				if (global.isAndroid) {
 					this._svg.setSrc(value);
-				}else if(global.isIOS){
-					setTimeout(()=>{
+				} else if (global.isIOS) {
+					setTimeout(() => {
 						this._svg.src = value;
 					}, 1000);
 				}
 			} else {
 				if (value.startsWith('~')) {
-					if(global.isAndroid){
+					if (global.isAndroid) {
 						this._svg.setSrcPath(path.join(knownFolders.currentApp().path, value.replace('~', '')));
-					}else if(global.isIOS){
+					} else if (global.isIOS) {
 						this._svg.srcPath = path.join(knownFolders.currentApp().path, value.replace('~', ''));
 					}
 				} else if (value.startsWith('/')) {
-					if(global.isAndroid){
+					if (global.isAndroid) {
 						this._svg.setSrcPath(value);
-					}else if(global.isIOS){
+					} else if (global.isIOS) {
 						this._svg.srcPath = value;
 					}
 				} else if (value.startsWith('http')) {
-					Http.getString(value).then((res) => {
-						if(global.isAndroid){
-							this._svg.setSrc(res);
-						}else if(global.isIOS){
-							setTimeout(()=>{
-								console.log(!!res);
-								this._svg.src = res;
-							}, 1000);
-						}
-					}).catch(e=>{
-						console.log(e);
-					});
+					Http.getString(value)
+						.then((res) => {
+							if (global.isAndroid) {
+								this._svg.setSrc(res);
+							} else if (global.isIOS) {
+								setTimeout(() => {
+									console.log(!!res);
+									this._svg.src = res;
+								}, 1000);
+							}
+						})
+						.catch((e) => {
+							console.log(e);
+						});
 				}
 			}
 		}

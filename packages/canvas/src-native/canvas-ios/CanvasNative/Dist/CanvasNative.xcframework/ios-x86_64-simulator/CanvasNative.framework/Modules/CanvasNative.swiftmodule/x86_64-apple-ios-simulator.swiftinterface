@@ -1354,6 +1354,11 @@ extension RangeReplaceableCollection {
   @objc override dynamic public init()
   @objc deinit
 }
+@_inheritsConvenienceInitializers @objcMembers @objc(TNSRender) public class TNSRender : ObjectiveC.NSObject {
+  @objc override dynamic public init()
+  @objc public func createSurface()
+  @objc deinit
+}
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSSVG) public class TNSSVG : UIKit.UIView {
   @objc public var src: Swift.String? {
     @objc get
@@ -2438,6 +2443,19 @@ extension RangeReplaceableCollection {
   @objc override dynamic public init()
   @objc deinit
 }
+@_hasMissingDesignatedInitializers @objcMembers @objc(TNSImageBitmap) public class TNSImageBitmap : ObjectiveC.NSObject {
+  @objc public var width: Swift.Int32 {
+    @objc get
+  }
+  @objc public var height: Swift.Int32 {
+    @objc get
+  }
+  @objc public var error: Swift.String? {
+    @objc get
+  }
+  @objc deinit
+  @objc override dynamic public init()
+}
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_OES_fbo_render_mipmap) public class TNS_OES_fbo_render_mipmap : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc deinit
@@ -2456,7 +2474,8 @@ extension RangeReplaceableCollection {
 @_inheritsConvenienceInitializers @objc(Utils) public class Utils : ObjectiveC.NSObject {
   @objc public static func createTextureCache(_ context: CanvasNative.TNSWebGLRenderingContext) -> CoreVideo.CVOpenGLESTextureCache?
   @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
-  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreGraphics.CGSize)
+  @objc public static func setupRender() -> CanvasNative.TNSRender
+  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreGraphics.CGSize, _ render: CanvasNative.TNSRender, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
   @objc deinit
   @objc override dynamic public init()
 }

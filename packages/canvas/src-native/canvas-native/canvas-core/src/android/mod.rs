@@ -30,6 +30,7 @@ pub mod text_decoder;
 pub mod text_encoder;
 pub mod text_metrics;
 pub mod utils;
+pub mod image_bitmap;
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;

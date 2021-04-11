@@ -794,6 +794,32 @@ bool image_asset_scale(long long asset, unsigned int x, unsigned int y);
 
 unsigned int image_asset_width(long long asset);
 
+long long image_bitmap_create_from_bytes(const uint8_t *image_bytes,
+                                         uintptr_t image_size,
+                                         float image_width,
+                                         float image_height,
+                                         bool flip_y,
+                                         int32_t premultiply_alpha,
+                                         int32_t color_space_conversion,
+                                         int32_t resize_quality,
+                                         float resize_width,
+                                         float resize_height);
+
+long long image_bitmap_create_from_bytes_src_rect(const uint8_t *image_bytes,
+                                                  uintptr_t image_size,
+                                                  float image_width,
+                                                  float image_height,
+                                                  float sx,
+                                                  float sy,
+                                                  float s_width,
+                                                  float s_height,
+                                                  bool flip_y,
+                                                  int32_t premultiply_alpha,
+                                                  int32_t color_space_conversion,
+                                                  int32_t resize_quality,
+                                                  float resize_width,
+                                                  float resize_height);
+
 long long image_data_create(int width, int height);
 
 uint8_t *image_data_data(long long image_data);

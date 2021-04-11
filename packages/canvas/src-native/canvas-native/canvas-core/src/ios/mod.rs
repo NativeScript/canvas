@@ -19,6 +19,7 @@ pub mod gradient;
 pub mod pattern;
 pub mod text_metrics;
 pub mod svg;
+pub mod image_bitmap;
 
 #[no_mangle]
 pub extern "C" fn destroy_string(string: *const c_char) {

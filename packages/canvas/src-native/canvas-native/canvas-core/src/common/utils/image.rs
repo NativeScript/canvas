@@ -1,6 +1,6 @@
 use std::os::raw::c_int;
 
-use skia_safe::{AlphaType, ColorType, Data, Image, ImageInfo, ISize};
+use skia_safe::{AlphaType, ColorSpace, ColorType, Data, Image, ImageInfo, ISize, RCHandle};
 
 pub(crate) fn to_image(
     image_array: *const u8,

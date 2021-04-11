@@ -21,10 +21,10 @@ class ViewController: UIViewController, TNSCanvasListener {
         canvas1.isHidden = true
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
-        svg = TNSSVG(frame: view.bounds)
-        canvas1.addSubview(svg!)
-        svg?.bringSubviewToFront(canvas1)
-        svg!.backgroundColor = .white
+        //svg = TNSSVG(frame: view.bounds)
+        //canvas1.addSubview(svg!)
+        //svg?.bringSubviewToFront(canvas1)
+        //svg!.backgroundColor = .white
 //        svg?.src = """
 //<svg width="660" height="220" style="outline: 1px solid red">
 // <defs>

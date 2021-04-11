@@ -12,6 +12,7 @@ pub mod context;
 pub mod ffi;
 pub(crate) mod svg;
 pub(crate) mod utils;
+pub mod image_bitmap;
 
 pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -> String {
     let surface = &mut context.surface;

@@ -440,6 +440,16 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde-5590c4ed10d96b75/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-557df7c82c751a8b/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-68ec26c28a5ae472/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-ec8b4b007788b2de/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/gl-bindings-616de059fba473c5/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/httparse-94d7d7798523309b/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/indexmap-f7a012fffbfa7252/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libc-e6766e0c0541ddd6/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/openssl-ff63aa2e053e97d1/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/openssl-sys-3a56352844566b7d/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro2-7bde3dc3aa29a2bf/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-c51eea3a707969ff/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-30b6382b33d64f56/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

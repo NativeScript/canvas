@@ -74,7 +74,6 @@ export class Video extends VideoBase {
 	_suspendListenerId: any;
 	_isInForground = true;
 	_assetOutput: AVPlayerItemVideoOutput;
-	_previousTS: any;
 	_isPlaying = false;
 	#src: string;
 	#muted: boolean;
@@ -87,6 +86,7 @@ export class Video extends VideoBase {
 	_ctx: any;
 	_asset: AVURLAsset;
 	_videoSize: any;
+	_render: any;
 	get _player() {
 		return this.#player;
 	}
@@ -129,39 +129,11 @@ export class Video extends VideoBase {
 		}
 		if (this._assetOutput) {
 			try {
-					// _ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize
-					Utils.drawFrame(this.#player, this._assetOutput, this._videoSize);
-					/*
-					const currentTime = this.#player.currentTime();
-					if (!this._assetOutput.hasNewPixelBufferForItemTime(currentTime)) {
-						return;
-					}
-					const pixel_buffer = this._assetOutput.copyPixelBufferForItemTimeItemTimeForDisplay(currentTime, null);
-					if (pixel_buffer !== 0) {
-						CVPixelBufferLockBaseAddress(pixel_buffer, 0);
-						const bytesPerRow = CVPixelBufferGetBytesPerRow(pixel_buffer);
-						const line_base = CVPixelBufferGetBaseAddress(pixel_buffer) as any;
-	
-						if (bytesPerRow / BYTES_PER_TEXEL === this._videoSize.width) {
-							glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this._videoSize.width, this._videoSize.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, line_base);
-						} else {
-							glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this._videoSize.width, this._videoSize.height, 0, GL_BGRA, GL_UNSIGNED_BYTE, null);
-							for (let i = 0; i < this._videoSize.height; ++i) {
-								glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, this._videoSize.width, 1, GL_BGRA, GL_UNSIGNED_BYTE, line_base.add(i * bytesPerRow));
-							}
-						}
-	
-						CVPixelBufferUnlockBaseAddress(pixel_buffer, 0);
-						// may not need to release
-						
-								//	 Unlike regular Core Foundation objects, toll-free bridged types are automatically memory managed by NativeScript,
-								//	  so there is no need to retain or release them using CFRetain and CFRelease.
-									
-						// https://docs.nativescript.org/core-concepts/ios-runtime/marshalling-overview#corefoundation-objects
-						//CFRelease(sampleBuffer);
-					}
-	
-					*/
+				if (!this._render) {
+					this._render = Utils.setupRender();
+					this._render.createSurface();
+				}
+				Utils.drawFrame(this.#player, this._assetOutput, this._videoSize, this._render, arguments[4], arguments[5], false);
 			} catch (e) {
 				console.log('getCurrentFrame error:', e);
 			}
@@ -242,8 +214,10 @@ export class Video extends VideoBase {
 	}
 
 	set src(value: string) {
-		this.#src = value;
-		this._loadSrc(value);
+		if(value !== this._currentUrl){
+			this.#src = value;
+			this._loadSrc(value);
+		}
 	}
 
 	get controls() {
@@ -298,7 +272,8 @@ export class Video extends VideoBase {
 						this._notifyVideoFrameCallbacks();
 					}
 				});
-
+				this._render?.destroy();
+				this._render = undefined;
 				const item = AVPlayerItem.alloc().initWithAsset(this._asset);
 				const settings: any = {};
 				settings[kCVPixelBufferPixelFormatTypeKey] = NSNumber.numberWithUnsignedInt(kCVPixelFormatType_32BGRA);
@@ -317,7 +292,6 @@ export class Video extends VideoBase {
 				this.#player.replaceCurrentItemWithPlayerItem(item);
 				this._readyState = Video.HAVE_METADATA;
 				this._currentUrl = src;
-				this._previousTS = undefined;
 				if (this.autoplay) {
 					this.play();
 				}

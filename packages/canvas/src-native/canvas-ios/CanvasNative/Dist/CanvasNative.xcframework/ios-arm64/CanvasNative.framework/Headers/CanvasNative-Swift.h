@@ -567,6 +567,16 @@ typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageAssetFormat, "TNSImageAssetFormat", 
   TNSImageAssetFormatTIFF = 4,
 };
 
+
+SWIFT_CLASS_NAMED("TNSImageBitmap")
+@interface TNSImageBitmap : NSObject
+@property (nonatomic, readonly) int32_t width;
+@property (nonatomic, readonly) int32_t height;
+@property (nonatomic, readonly, copy) NSString * _Nullable error;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
 @class NSData;
 
 SWIFT_CLASS_NAMED("TNSImageData")
@@ -630,6 +640,13 @@ typedef SWIFT_ENUM(NSInteger, TNSPatternRepetition, open) {
   TNSPatternRepetitionRepeatY = 2,
   TNSPatternRepetitionNoRepeat = 3,
 };
+
+
+SWIFT_CLASS_NAMED("TNSRender")
+@interface TNSRender : NSObject
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+- (void)createSurface;
+@end
 
 
 SWIFT_CLASS_NAMED("TNSSVG")
@@ -1844,7 +1861,8 @@ SWIFT_CLASS_NAMED("Utils")
 @interface Utils : NSObject
 + (CVOpenGLESTextureCacheRef _Nullable)createTextureCache:(TNSWebGLRenderingContext * _Nonnull)context SWIFT_WARN_UNUSED_RESULT;
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize;
++ (TNSRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(TNSRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 

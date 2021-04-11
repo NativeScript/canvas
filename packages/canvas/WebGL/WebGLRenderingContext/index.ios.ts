@@ -979,9 +979,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			}
 		} else if (arguments.length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
-				border._video.getCurrentFrame(this.context);
+				border._video.getCurrentFrame(this.context,this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
-				border.getCurrentFrame(this.context);
+				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				this.context.texImage2DAsset(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageSource) {

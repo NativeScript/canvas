@@ -68,7 +68,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TextureRender_nativeDra
     gl_bindings::glBindFramebuffer(gl_bindings::GL_FRAMEBUFFER, fbo as u32);
     gl_bindings::glBindRenderbuffer(gl_bindings::GL_RENDERBUFFER, rbo as u32);
 
-    if render_width != width || render_height != width {
+    if render_width != width || render_height != height {
         gl_bindings::glRenderbufferStorage(gl_bindings::GL_RENDERBUFFER, gl_bindings::GL_DEPTH24_STENCIL8, width, height);
         gl_bindings::glFramebufferRenderbuffer(gl_bindings::GL_FRAMEBUFFER, gl_bindings::GL_DEPTH_STENCIL_ATTACHMENT, gl_bindings::GL_RENDERBUFFER, rbo as u32);
         gl_bindings::glBindTexture(gl_bindings::GL_TEXTURE_2D, previous_texture[0] as u32);

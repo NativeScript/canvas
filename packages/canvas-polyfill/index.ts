@@ -16,6 +16,11 @@ import './process';
 import { TextDecoder, TextEncoder } from '@nativescript/canvas';
 import { URL } from './URL';
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
+
+(global as any).window.createImageBitmap = (global as any).createImageBitmap = (image) =>{
+
+}
+
 Object.defineProperty(global, 'Element', {
 	value: Element,
 	configurable: true,

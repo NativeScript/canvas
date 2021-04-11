@@ -284,6 +284,11 @@ class TNSImageAsset {
 		@JvmStatic
 		private external fun nativeDestroy(asset: Long)
 
+		@JvmStatic
+		internal fun nativeDestroyImpl(asset: Long) {
+			nativeDestroy(asset)
+		}
+
 		private val executorService = Executors.newCachedThreadPool()
 	}
 

@@ -5,5 +5,5 @@ allprojects {
 }
 
 dependencies {
-	implementation 'com.github.triniwiz:canvas:0.9.13'
+	implementation 'com.github.triniwiz:canvas:0.9.14'
 }

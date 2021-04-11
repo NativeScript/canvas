@@ -1,58 +1,47 @@
-import {
-	WebGLRenderingContextBase,
-} from './common';
+import { WebGLRenderingContextBase } from './common';
 
-import {WebGLShader} from '../WebGLShader';
-import {WebGLFramebuffer} from '../WebGLFramebuffer';
-import {WebGLTexture} from '../WebGLTexture';
-import {WebGLProgram} from '../WebGLProgram';
-import {WebGLUniformLocation} from '../WebGLUniformLocation';
-import {WebGLActiveInfo} from '../WebGLActiveInfo';
-import {WebGLRenderbuffer} from '../WebGLRenderbuffer';
-import {WebGLShaderPrecisionFormat} from '../WebGLShaderPrecisionFormat';
-import {WebGLBuffer} from '../WebGLBuffer';
-import {ImageSource} from '@nativescript/core';
-import {
-	ANGLE_instanced_arrays,
-	EXT_blend_minmax,
-	EXT_color_buffer_float,
-	EXT_color_buffer_half_float,
-	EXT_shader_texture_lod,
-	EXT_sRGB,
-	EXT_texture_filter_anisotropic,
-	OES_element_index_uint,
-	OES_fbo_render_mipmap,
-	OES_standard_derivatives,
-	OES_texture_float,
-	OES_texture_float_linear,
-	OES_texture_half_float,
-	OES_texture_half_float_linear,
-	OES_vertex_array_object,
-	WEBGL_color_buffer_float,
-	WEBGL_compressed_texture_etc,
-	WEBGL_compressed_texture_etc1,
-	WEBGL_compressed_texture_pvrtc,
-	WEBGL_depth_texture,
-	WEBGL_draw_buffers,
-	WEBGL_lose_context
-} from '../WebGLExtensions';
-import {ImageAsset} from '../../ImageAsset';
-import {Canvas} from '../../Canvas';
-import {Utils} from '../../utils'
+import { WebGLShader } from '../WebGLShader';
+import { WebGLFramebuffer } from '../WebGLFramebuffer';
+import { WebGLTexture } from '../WebGLTexture';
+import { WebGLProgram } from '../WebGLProgram';
+import { WebGLUniformLocation } from '../WebGLUniformLocation';
+import { WebGLActiveInfo } from '../WebGLActiveInfo';
+import { WebGLRenderbuffer } from '../WebGLRenderbuffer';
+import { WebGLShaderPrecisionFormat } from '../WebGLShaderPrecisionFormat';
+import { WebGLBuffer } from '../WebGLBuffer';
+import { ImageSource } from '@nativescript/core';
+import { ANGLE_instanced_arrays, EXT_blend_minmax, EXT_color_buffer_float, EXT_color_buffer_half_float, EXT_shader_texture_lod, EXT_sRGB, EXT_texture_filter_anisotropic, OES_element_index_uint, OES_fbo_render_mipmap, OES_standard_derivatives, OES_texture_float, OES_texture_float_linear, OES_texture_half_float, OES_texture_half_float_linear, OES_vertex_array_object, WEBGL_color_buffer_float, WEBGL_compressed_texture_etc, WEBGL_compressed_texture_etc1, WEBGL_compressed_texture_pvrtc, WEBGL_depth_texture, WEBGL_draw_buffers, WEBGL_lose_context } from '../WebGLExtensions';
+import { ImageAsset } from '../../ImageAsset';
+import { Canvas } from '../../Canvas';
+import { Utils } from '../../utils';
 
-declare const TNS_EXT_blend_minmax, TNS_EXT_color_buffer_float, TNS_EXT_color_buffer_half_float,
-	TNS_EXT_sRGB, TNS_EXT_shader_texture_lod, TNS_EXT_texture_filter_anisotropic,
-	TNS_OES_element_index_uint, TNS_OES_fbo_render_mipmap, TNS_OES_standard_derivatives,
-	TNS_OES_texture_float, TNS_OES_texture_float_linear, TNS_OES_texture_half_float,
-	TNS_OES_texture_half_float_linear, TNS_OES_vertex_array_object, TNS_WEBGL_color_buffer_float,
-	TNS_WEBGL_compressed_texture_etc, TNS_WEBGL_compressed_texture_etc1, TNS_WEBGL_compressed_texture_pvrtc,
-	TNS_WEBGL_depth_texture, TNS_WEBGL_lose_context, TNS_ANGLE_instanced_arrays, TNS_WEBGL_draw_buffers;
+declare const TNS_EXT_blend_minmax,
+	TNS_EXT_color_buffer_float,
+	TNS_EXT_color_buffer_half_float,
+	TNS_EXT_sRGB,
+	TNS_EXT_shader_texture_lod,
+	TNS_EXT_texture_filter_anisotropic,
+	TNS_OES_element_index_uint,
+	TNS_OES_fbo_render_mipmap,
+	TNS_OES_standard_derivatives,
+	TNS_OES_texture_float,
+	TNS_OES_texture_float_linear,
+	TNS_OES_texture_half_float,
+	TNS_OES_texture_half_float_linear,
+	TNS_OES_vertex_array_object,
+	TNS_WEBGL_color_buffer_float,
+	TNS_WEBGL_compressed_texture_etc,
+	TNS_WEBGL_compressed_texture_etc1,
+	TNS_WEBGL_compressed_texture_pvrtc,
+	TNS_WEBGL_depth_texture,
+	TNS_WEBGL_lose_context,
+	TNS_ANGLE_instanced_arrays,
+	TNS_WEBGL_draw_buffers;
 
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
-	private context//: WebGLRenderingContext;
-
+	private context; //: WebGLRenderingContext;
 
 	constructor(context) {
 		super(context);
@@ -265,43 +254,18 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	compressedTexImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, pixels?: ArrayBufferView): void {
 		this._glCheckError('compressedTexImage2D');
 		this._checkArgs('compressedTexImage2D', arguments);
-		if (pixels && pixels.buffer instanceof ArrayBuffer || pixels instanceof ArrayBuffer) {
-			this.context.compressedTexImage2D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				border,
-				NSData.dataWithData(pixels as any)
-			);
+		if ((pixels && pixels.buffer instanceof ArrayBuffer) || pixels instanceof ArrayBuffer) {
+			this.context.compressedTexImage2D(target, level, internalformat, width, height, border, NSData.dataWithData(pixels as any));
 		} else {
-			this.context.compressedTexImage2D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				border,
-				pixels as any
-			);
+			this.context.compressedTexImage2D(target, level, internalformat, width, height, border, pixels as any);
 		}
 	}
 
 	compressedTexSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, pixels: ArrayBufferView): void {
 		this._glCheckError('compressedTexSubImage2D');
 		this._checkArgs('compressedTexSubImage2D', arguments);
-		if (pixels && pixels.buffer instanceof ArrayBuffer || pixels instanceof ArrayBuffer) {
-			this.context.compressedTexSubImage2D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				width,
-				height,
-				format,
-				NSData.dataWithData(pixels as any)
-			);
+		if ((pixels && pixels.buffer instanceof ArrayBuffer) || pixels instanceof ArrayBuffer) {
+			this.context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, NSData.dataWithData(pixels as any));
 		}
 	}
 
@@ -527,9 +491,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		const length = shaders.count;
 		const attachedShaders = [];
 		for (let i = 0; i < length; i++) {
-			attachedShaders.push(
-				new WebGLShader(shaders.objectAtIndex(i))
-			);
+			attachedShaders.push(new WebGLShader(shaders.objectAtIndex(i)));
 		}
 		return attachedShaders;
 	}
@@ -908,7 +870,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void {
 		this._glCheckError('readPixels');
 		this._checkArgs('readPixels', arguments);
-		if (pixels && pixels.buffer instanceof ArrayBuffer || pixels instanceof ArrayBuffer) {
+		if ((pixels && pixels.buffer instanceof ArrayBuffer) || pixels instanceof ArrayBuffer) {
 			this.context.readPixels(x, y, width, height, format, type, NSData.dataWithData(pixels as any));
 		}
 	}
@@ -920,7 +882,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			// DEPTH24_STENCIL8 = 35056
 			// DEPTH24_STENCIL8_OES = 0x88F0
 			// 35056;
-			internalFormat = 0x88F0;
+			internalFormat = 0x88f0;
 		}
 		this.context.renderbufferStorage(target, internalFormat, width, height);
 	}
@@ -990,86 +952,34 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		// this.enable(this.BLEND);
 		/* TODO */
 		if (arguments.length === 9) {
-			if (pixels && pixels.buffer || pixels instanceof ArrayBuffer) {
+			if ((pixels && pixels.buffer) || pixels instanceof ArrayBuffer) {
 				if (pixels instanceof ArrayBuffer) {
 					const array = new Uint8Array(pixels);
-					this.context.texImage2DU8(target,
-						level,
-						internalformat,
-						width,
-						height,
-						border,
-						format,
-						type,
-						Array.from(array as any));
+					this.context.texImage2DU8(target, level, internalformat, width, height, border, format, type, Array.from(array as any));
 				} else if (pixels instanceof Uint8Array || pixels instanceof Uint8ClampedArray) {
-					this.context.texImage2DU8(target,
-						level,
-						internalformat,
-						width,
-						height,
-						border,
-						format,
-						type,
-						Array.from(pixels as any));
+					this.context.texImage2DU8(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Uint16Array) {
-					this.context.texImage2DU16(target,
-						level,
-						internalformat,
-						width,
-						height,
-						border,
-						format,
-						type,
-						Array.from(pixels as any));
+					this.context.texImage2DU16(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Uint32Array) {
-					this.context.texImage2DU32(target,
-						level,
-						internalformat,
-						width,
-						height,
-						border,
-						format,
-						type,
-						Array.from(pixels as any));
+					this.context.texImage2DU32(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Float32Array) {
-					this.context.texImage2DF32(target,
-						level,
-						internalformat,
-						width,
-						height,
-						border,
-						format,
-						type,
-						Array.from(pixels as any));
+					this.context.texImage2DF32(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
 				}
 			} else {
-				this.context.texImage2D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					border,
-					format,
-					type,
-					pixels as any
-				);
+				this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels as any);
 			}
 		} else if (arguments.length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && typeof border._video && typeof border._video.getCurrentFrame === 'function') {
-				border._video.getCurrentFrame(this.context);
+				border._video.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
-				border.getCurrentFrame(this.context);
+				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				this.context.texImage2DAsset(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageSource) {
 				this.context.texImage2DPixels(target, level, internalformat, width, height, border.ios);
 			} else if (border instanceof UIImage) {
 				this.context.texImage2DPixels(target, level, internalformat, width, height, border);
-			} else if (border &&
-				typeof border.tagName === 'string' &&
-				(border.tagName === 'IMG' || border.tagName === 'IMAGE')) {
+			} else if (border && typeof border.tagName === 'string' && (border.tagName === 'IMG' || border.tagName === 'IMAGE')) {
 				if (border._asset instanceof ImageAsset) {
 					this.context.texImage2DAsset(target, level, internalformat, width, height, border._asset.native);
 				} else if (border._imageSource instanceof ImageSource) {
@@ -1080,14 +990,10 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 					const asset = ImageSource.fromFileSync(border.src);
 					this.context.texImage2DPixels(target, level, internalformat, width, height, asset.ios);
 				}
-			} else if (border &&
-				typeof border.tagName === 'string' &&
-				border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
+			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
 				this.context.texImage2DCanvas(target, level, internalformat, width, height, border._canvas.ios);
 			} else {
-				this.context.texImage2D(
-					target, level, internalformat, width, height, border as any
-				);
+				this.context.texImage2D(target, level, internalformat, width, height, border as any);
 			}
 		}
 		// this.blendFunc(this.SRC_ALPHA, this.ZERO);
@@ -1112,166 +1018,42 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._glCheckError('texSubImage2D');
 		this._checkArgs('texSubImage2D', arguments);
 		if (arguments.length === 9) {
-			if (pixels && pixels.buffer || pixels instanceof ArrayBuffer) {
+			if ((pixels && pixels.buffer) || pixels instanceof ArrayBuffer) {
 				if (pixels instanceof ArrayBuffer) {
 					const array = new Uint8Array(pixels);
-					this.context.texSubImage2DU8(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						format,
-						type,
-						Array.from(array as any)
-					);
+					this.context.texSubImage2DU8(target, level, xoffset, yoffset, width, height, format, type, Array.from(array as any));
 				} else if (pixels instanceof Uint8Array || pixels instanceof Uint8ClampedArray) {
-					this.context.texSubImage2DU8(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						format,
-						type,
-						Array.from(pixels as any)
-					);
+					this.context.texSubImage2DU8(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Uint16Array) {
-					this.context.texSubImage2DU16(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						format,
-						type,
-						Array.from(pixels as any));
+					this.context.texSubImage2DU16(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Float32Array) {
-					this.context.texSubImage2DF32(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						format,
-						type,
-						Array.from(pixels as any));
+					this.context.texSubImage2DF32(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels as any));
 				}
 			} else {
-				this.context.texSubImage2D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					width,
-					height,
-					format,
-					type,
-					pixels as any
-				);
+				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels as any);
 			}
 		} else if (arguments.length === 7) {
 			if (format instanceof ImageAsset) {
-				this.context.texSubImage2DAsset(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					width,
-					height,
-					format.native
-				);
+				this.context.texSubImage2DAsset(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof UIImage) {
-				this.context.texSubImage2DPixels(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					width,
-					height,
-					format
-				);
+				this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, format);
 			} else if (format instanceof ImageSource) {
-				this.context.texSubImage2DPixels(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					width,
-					height,
-					format.ios
-				);
-			} else if (format &&
-				typeof format.tagName === 'string' &&
-				(format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
+				this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, format.ios);
+			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
 				if (format._imageSource instanceof ImageSource) {
-					this.context.texSubImage2DPixels(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						format._imageSource.ios
-					);
+					this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, format._imageSource.ios);
 				} else if (format._image instanceof UIImage) {
-					this.context.texSubImage2DPixels(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						format._image
-					);
+					this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, format._image);
 				} else if (format._asset instanceof ImageAsset) {
-					this.context.texSubImage2DAsset(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						format._asset.native
-					);
+					this.context.texSubImage2DAsset(target, level, xoffset, yoffset, width, height, format._asset.native);
 				} else if (typeof format.src === 'string') {
 					const result = ImageSource.fromFileSync(format.src);
-					this.context.texSubImage2DPixels(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						width,
-						height,
-						result ? result.ios : null
-					);
+					this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, result ? result.ios : null);
 				}
-			} else if (format &&
-				typeof format.tagName === 'string' &&
-				format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {
-				this.context.texSubImage2DCanvas(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					width,
-					height,
-					format._canvas.ios
-				);
+			} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {
+				this.context.texSubImage2DCanvas(target, level, xoffset, yoffset, width, height, format._canvas.ios);
 			} else {
-				this.context.texSubImage2D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					width,
-					height,
-					format as any
-				);
+				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format as any);
 			}
 		}
 	}
@@ -1529,9 +1311,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			return;
 		}
 		if (WebGLRenderingContext.filter === 'both' || WebGLRenderingContext.filter === 'args') {
-			console.log('\/**** ', message, ' ****\/');
+			console.log('/**** ', message, ' ****/');
 			console.dir(args);
-			console.log('\/**** ', message, ' ****\/');
+			console.log('/**** ', message, ' ****/');
 		}
 	}
 }

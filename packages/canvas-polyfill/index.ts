@@ -75,9 +75,17 @@ if (!((global as any).TextDecoder instanceof TextDecoder)) {
 	});
 }
 
-if (!((global as any).TextEncoder instanceof TextEncoder)) {
-	Object.defineProperty(global, 'TextEncoder', {
-		value: TextEncoder,
+if (!((global as any).TextDecoder instanceof TextDecoder)) {
+	Object.defineProperty(global, 'TextDecoder', {
+		value: TextDecoder,
+		configurable: true,
+		writable: true,
+	});
+}
+
+if (!((global as any).ImageBitmap instanceof ImageBitmap)) {
+	Object.defineProperty(global, 'ImageBitmap', {
+		value: ImageBitmap,
 		configurable: true,
 		writable: true,
 	});

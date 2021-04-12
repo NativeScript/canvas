@@ -1,3 +1,5 @@
+/// <reference path="android-declarations.d.ts"/>
+
 declare module com {
 	export module github {
 		export module triniwiz {
@@ -1011,28 +1013,32 @@ declare module com {
 				export class TNSImageBitmap {
 					public static class: java.lang.Class<com.github.triniwiz.canvas.TNSImageBitmap>;
 					public static Companion: com.github.triniwiz.canvas.TNSImageBitmap.Companion;
+					public static createFromBuffer(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: com.github.triniwiz.canvas.TNSImageBitmap.Options, param4: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public static createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: com.github.triniwiz.canvas.TNSImageBitmap.Options, param4: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public finalize(): void;
+					public getNativeImageAsset(): number;
+					public static createFromBitmap(param0: globalAndroid.graphics.Bitmap, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public static createFromCanvas(param0: com.github.triniwiz.canvas.TNSCanvas, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public close(): void;
+					public static createFromBuffer(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: com.github.triniwiz.canvas.TNSImageBitmap.Options, param8: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public static createFromImageData(param0: com.github.triniwiz.canvas.TNSImageData, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public constructor(param0: number);
+					public static createFromBufferEncoded(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromCanvas(param0: com.github.triniwiz.canvas.TNSCanvas, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromBitmap(param0: globalAndroid.graphics.Bitmap, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
-					public static createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: com.github.triniwiz.canvas.TNSImageBitmap.Options, param4: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public getHeight(): number;
-					public finalize(): void;
 					public getWidth(): number;
 					public static createFromImageBitmap(param0: com.github.triniwiz.canvas.TNSImageBitmap, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromImageData(param0: com.github.triniwiz.canvas.TNSImageData, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
-					public getNativeImageAsset$canvas_release(): number;
 					public static createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: com.github.triniwiz.canvas.TNSImageBitmap.Options, param8: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromImageAsset(param0: com.github.triniwiz.canvas.TNSImageAsset, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromImageAsset(param0: com.github.triniwiz.canvas.TNSImageAsset, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public static createFromBufferEncoded(param0: java.nio.ByteBuffer, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromBytesEncoded(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
-					public static createFromBitmap(param0: globalAndroid.graphics.Bitmap, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
-					public static createFromCanvas(param0: com.github.triniwiz.canvas.TNSCanvas, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					public static createFromBytesEncoded(param0: native.Array<number>, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
-					public close(): void;
-					public static createFromImageData(param0: com.github.triniwiz.canvas.TNSImageData, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+					public setNativeImageAsset(param0: number): void;
 					public static createFromImageBitmap(param0: com.github.triniwiz.canvas.TNSImageBitmap, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
-					public setNativeImageAsset$canvas_release(param0: number): void;
-					public constructor(param0: number);
 				}
 				export module TNSImageBitmap {
 					export class Callback {
@@ -1054,9 +1060,12 @@ declare module com {
 						public createFromImageAsset(param0: com.github.triniwiz.canvas.TNSImageAsset, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromImageAsset(param0: com.github.triniwiz.canvas.TNSImageAsset, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+						public createFromBufferEncoded(param0: java.nio.ByteBuffer, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromCanvas(param0: com.github.triniwiz.canvas.TNSCanvas, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromImageBitmap(param0: com.github.triniwiz.canvas.TNSImageBitmap, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+						public createFromBuffer(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: com.github.triniwiz.canvas.TNSImageBitmap.Options, param8: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromImageBitmap(param0: com.github.triniwiz.canvas.TNSImageBitmap, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+						public createFromBuffer(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: com.github.triniwiz.canvas.TNSImageBitmap.Options, param4: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromImageData(param0: com.github.triniwiz.canvas.TNSImageData, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: com.github.triniwiz.canvas.TNSImageBitmap.Options, param4: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromCanvas(param0: com.github.triniwiz.canvas.TNSCanvas, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
@@ -1065,6 +1074,7 @@ declare module com {
 						public createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: com.github.triniwiz.canvas.TNSImageBitmap.Options, param8: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromBytesEncoded(param0: native.Array<number>, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromBitmap(param0: globalAndroid.graphics.Bitmap, param1: com.github.triniwiz.canvas.TNSImageBitmap.Options, param2: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
+						public createFromBufferEncoded(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 						public createFromImageData(param0: com.github.triniwiz.canvas.TNSImageData, param1: number, param2: number, param3: number, param4: number, param5: com.github.triniwiz.canvas.TNSImageBitmap.Options, param6: com.github.triniwiz.canvas.TNSImageBitmap.Callback): void;
 					}
 					export class Options {

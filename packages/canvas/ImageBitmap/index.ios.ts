@@ -148,6 +148,14 @@ export class ImageBitmap extends ImageBitmapBase {
 						reject(error);
 					}
 				});
+			} else if (source instanceof ArrayBuffer) {
+				TNSImageBitmap.createFromDataEncoded(NSData.dataWithData(source as any), opts, (bitmap, error) => {
+					if (bitmap) {
+						resolve(ImageBitmap.fromNative(bitmap));
+					} else {
+						reject(error);
+					}
+				});
 			}
 		});
 	}
@@ -199,6 +207,14 @@ export class ImageBitmap extends ImageBitmapBase {
 				});
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 				(TNSImageBitmap as any).createFromImageAsset(source._asset.native, sx, sy, sWidth, sHeight, opts, (bitmap, error) => {
+					if (bitmap) {
+						resolve(ImageBitmap.fromNative(bitmap));
+					} else {
+						reject(error);
+					}
+				});
+			} else if (source instanceof ArrayBuffer) {
+				(TNSImageBitmap as any).createFromDataEncoded(NSData.dataWithData(source as any), sx, sy, sWidth, sHeight,  opts, (bitmap, error) => {
 					if (bitmap) {
 						resolve(ImageBitmap.fromNative(bitmap));
 					} else {

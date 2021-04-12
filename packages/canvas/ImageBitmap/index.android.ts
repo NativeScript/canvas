@@ -179,6 +179,36 @@ export class ImageBitmap extends ImageBitmapBase {
 						},
 					})
 				);
+			}else if (source instanceof ArrayBuffer){
+				//@ts-ignore
+				if(source.nativeObject){
+					com.github.triniwiz.canvas.TNSImageBitmap.createFromBufferEncoded(
+						//@ts-ignore
+						source.nativeObject,
+						opts,
+						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				}else {
+					com.github.triniwiz.canvas.TNSImageBitmap.createFromBytesEncoded(
+						Array.from(new Uint8Array(source as any) as any),
+						opts,
+						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				}
 			}
 		});
 	}
@@ -293,6 +323,44 @@ export class ImageBitmap extends ImageBitmapBase {
 						},
 					})
 				);
+			}else if (source instanceof ArrayBuffer){
+				//@ts-ignore
+				if(source.nativeObject){
+					com.github.triniwiz.canvas.TNSImageBitmap.createFromBufferEncoded(
+						//@ts-ignore
+						source.nativeObject,
+						sx,
+						sy,
+						sWidth,
+						sHeight,
+						opts,
+						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				}else {
+					com.github.triniwiz.canvas.TNSImageBitmap.createFromBytesEncoded(
+						Array.from(new Uint8Array(source as any) as any),
+						sx,
+						sy,
+						sWidth,
+						sHeight,
+						opts,
+						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				}
 			}
 		});
 	}

@@ -154,6 +154,66 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageBitmap_nativeCreateFro
     }
 }
 
+
+
+#[no_mangle]
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageBitmap_nativeCreateFromBufferEncoded(
+    env: JNIEnv,
+    _: JClass,
+    image_buffer: JByteBuffer,
+    flip_y: jboolean,
+    premultiply_alpha: jint,
+    color_space_conversion: jint,
+    resize_quality: jint,
+    resize_width: jfloat,
+    resize_height: jfloat,
+) -> jlong {
+    match env.get_direct_buffer_address(image_buffer) {
+        Ok(buf) => image_bitmap::create_image_asset_encoded(
+            buf,
+            None,
+            flip_y == JNI_TRUE,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+        ),
+        Err(_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageBitmap_nativeCreateFromBufferEncodedSrcRect(
+    env: JNIEnv,
+    _: JClass,
+    image_buffer: JByteBuffer,
+    sx: jfloat,
+    sy: jfloat,
+    s_width: jfloat,
+    s_height: jfloat,
+    flip_y: jboolean,
+    premultiply_alpha: jint,
+    color_space_conversion: jint,
+    resize_quality: jint,
+    resize_width: jfloat,
+    resize_height: jfloat,
+) -> jlong {
+    match env.get_direct_buffer_address(image_buffer) {
+        Ok(buf) => image_bitmap::create_image_asset_encoded(
+            buf,
+            Some(skia_safe::Rect::from_xywh(sx, sy, s_width, s_height)),
+            flip_y == JNI_TRUE,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+        ),
+        Err(_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageBitmap_nativeCreateFromBytes(
     env: JNIEnv,

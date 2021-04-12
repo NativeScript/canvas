@@ -754,6 +754,11 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
     }
     
     
+    public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,data: NSData) {
+        let bytes = [UInt8](data)
+        texImage3D(target, level, internalformat, width, height, depth, border, format, type, u8: bytes, 0)
+    }
+    
     public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32, offset: Int) {
         let _ = canvas.renderer.ensureIsContextIsCurrent()
         var pixels = offset
@@ -938,6 +943,11 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         glTexStorage3D(target, levels, internalformat, width, height, depth)
     }
     
+    
+    public func texSubImage3D(_ target: UInt32, _ level: Int32,_ xoffset: Int32, _ yoffset: Int32,_ zoffset: Int32,_ width: Int32, _ height: Int32,_ depth: Int32,_ format: UInt32, _ type: UInt32, data: NSData){
+        let bytes = [UInt8](data)
+        texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format,type, u8: bytes, 0)
+    }
     
     
     public func texSubImage3D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ zoffset: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ format: UInt32, _ type: UInt32 ,offset: Int32){

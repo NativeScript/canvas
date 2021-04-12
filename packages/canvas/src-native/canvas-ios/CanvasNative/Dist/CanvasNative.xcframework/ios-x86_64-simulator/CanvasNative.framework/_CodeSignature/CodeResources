@@ -6,7 +6,7 @@
 	<dict>
 		<key>Headers/CanvasNative-Swift.h</key>
 		<data>
-		4G613I2qOm5hTUWdCrKwXjmrZBc=
+		zLl7jqLVPj/ujg5T0j3a3GhcNFQ=
 		</data>
 		<key>Headers/CanvasNative.h</key>
 		<data>
@@ -30,11 +30,11 @@
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftinterface</key>
 		<data>
-		HxDwDVmDtfxHMtRZ+eq7EcovUxU=
+		LoeRs4pTwle+CI1qfMaXeV73n9I=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		DPW8nQyJ5shg0H0JQRHZZsfUxq0=
+		pd+qByKF/PvAf3P1/OAlKwlCz04=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64.swiftdoc</key>
 		<data>
@@ -42,11 +42,11 @@
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64.swiftinterface</key>
 		<data>
-		HxDwDVmDtfxHMtRZ+eq7EcovUxU=
+		LoeRs4pTwle+CI1qfMaXeV73n9I=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64.swiftmodule</key>
 		<data>
-		DPW8nQyJ5shg0H0JQRHZZsfUxq0=
+		pd+qByKF/PvAf3P1/OAlKwlCz04=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -54,7 +54,7 @@
 		</data>
 		<key>TNSCanvas.nib</key>
 		<data>
-		TaahO8+V5ugx8ZFXzgZ3ZDnbvh8=
+		CLnVmWDPUGf/yS/sZwxpjQMj9Lg=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -63,11 +63,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			4G613I2qOm5hTUWdCrKwXjmrZBc=
+			zLl7jqLVPj/ujg5T0j3a3GhcNFQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			oVdB8NqY0gGOY8nukbVlHOrEGWaxsycMZZmVvEZ7Kmk=
+			MIlS4Vvv9MLoL1fSSFZtuVTporMqgE7bnWpa2UR96Qk=
 			</data>
 		</dict>
 		<key>Headers/CanvasNative.h</key>
@@ -118,22 +118,22 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			HxDwDVmDtfxHMtRZ+eq7EcovUxU=
+			LoeRs4pTwle+CI1qfMaXeV73n9I=
 			</data>
 			<key>hash2</key>
 			<data>
-			e3y8Mjca95ZyFLL8xeDSW4fNZBzR4IiyIbByXp5/AtY=
+			koPxijraVPIGqhlYrIpo/nV9HXvuqeX+Bg+/Eov9aiw=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			DPW8nQyJ5shg0H0JQRHZZsfUxq0=
+			pd+qByKF/PvAf3P1/OAlKwlCz04=
 			</data>
 			<key>hash2</key>
 			<data>
-			Uca/70y+Kc3ski5JhGn6PKdfAI/BWKX24ZmjxXD1584=
+			yImhg4Oxs7zLEHLe4lTmlfOWtnqeYcmbW5qBCy7kJZs=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64.swiftdoc</key>
@@ -151,22 +151,22 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			HxDwDVmDtfxHMtRZ+eq7EcovUxU=
+			LoeRs4pTwle+CI1qfMaXeV73n9I=
 			</data>
 			<key>hash2</key>
 			<data>
-			e3y8Mjca95ZyFLL8xeDSW4fNZBzR4IiyIbByXp5/AtY=
+			koPxijraVPIGqhlYrIpo/nV9HXvuqeX+Bg+/Eov9aiw=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64.swiftmodule</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			DPW8nQyJ5shg0H0JQRHZZsfUxq0=
+			pd+qByKF/PvAf3P1/OAlKwlCz04=
 			</data>
 			<key>hash2</key>
 			<data>
-			Uca/70y+Kc3ski5JhGn6PKdfAI/BWKX24ZmjxXD1584=
+			yImhg4Oxs7zLEHLe4lTmlfOWtnqeYcmbW5qBCy7kJZs=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>
@@ -184,11 +184,11 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			TaahO8+V5ugx8ZFXzgZ3ZDnbvh8=
+			CLnVmWDPUGf/yS/sZwxpjQMj9Lg=
 			</data>
 			<key>hash2</key>
 			<data>
-			qLgoOmcwKtyXXyL1TMJimeD5xoC1FalDABuQae+zOvk=
+			KG6K761zEi4gm8K90d0JsEUbwEPymh+947qwyhoIvxk=
 			</data>
 		</dict>
 	</dict>

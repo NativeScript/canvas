@@ -246,6 +246,125 @@ public class TNSImageBitmap: NSObject {
     }
     
     
+    public static func createFromData(
+        _ data: NSData,
+        _ imageWidth: Float32,
+        _ imageHeight: Float32,
+        _ options: TNSImageBitmapOptions,
+        _ callback:@escaping (TNSImageBitmap?, String?) -> Void
+    ) {
+        TNSImageBitmap.queue.async {
+            var bytes = [UInt8](data)
+            let result = image_bitmap_create_from_bytes(&bytes, UInt(bytes.count), imageWidth, imageHeight, options.flipY,
+                                                        options.premultiplyAlpha.rawValue,
+                                                        options.colorSpaceConversion.rawValue,
+                                                        options.resizeQuality.rawValue,
+                                                        options.resizeWidth,
+                                                        options.resizeHeight)
+            DispatchQueue.main.async {
+                if (result > 0) {
+                    callback(TNSImageBitmap(result),nil)
+                } else {
+                    callback(nil,TNSImageBitmap.FAILED_TO_LOAD)
+                }
+            }
+        }
+    }
+    
+    public static func createFromData(
+        _ data: NSData,
+        _ imageWidth: Float32,
+        _ imageHeight: Float32,
+        _ sx: Float32,
+        _ sy: Float32,
+        _ sWidth: Float32,
+        _ sHeight: Float32,
+        _ options: TNSImageBitmapOptions,
+        _ callback:@escaping (TNSImageBitmap?, String?) -> Void
+    ) {
+        TNSImageBitmap.queue.async {
+            var bytes = [UInt8](data)
+            let result = image_bitmap_create_from_bytes_src_rect(&bytes, UInt(bytes.count), imageWidth, imageHeight,
+                                                                 sx,
+                                                                 sy,
+                                                                 sWidth,
+                                                                 sHeight,
+                                                                 options.flipY,
+                                                                 options.premultiplyAlpha.rawValue,
+                                                                 options.colorSpaceConversion.rawValue,
+                                                                 options.resizeQuality.rawValue,
+                                                                 options.resizeWidth,
+                                                                 options.resizeHeight)
+            DispatchQueue.main.async {
+                if (result > 0) {
+                    callback(TNSImageBitmap(result),nil)
+                } else {
+                    callback(nil,TNSImageBitmap.FAILED_TO_LOAD)
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    public static func createFromDataEncoded(
+        _ data: NSData,
+        _ options: TNSImageBitmapOptions,
+        _ callback:@escaping (TNSImageBitmap?, String?) -> Void
+    ) {
+        TNSImageBitmap.queue.async {
+            var bytes = [UInt8](data)
+            let result = image_bitmap_create_from_bytes_encoded(&bytes, UInt(bytes.count),options.flipY,
+                                                        options.premultiplyAlpha.rawValue,
+                                                        options.colorSpaceConversion.rawValue,
+                                                        options.resizeQuality.rawValue,
+                                                        options.resizeWidth,
+                                                        options.resizeHeight)
+            DispatchQueue.main.async {
+                if (result > 0) {
+                    callback(TNSImageBitmap(result),nil)
+                } else {
+                    callback(nil,TNSImageBitmap.FAILED_TO_LOAD)
+                }
+            }
+        }
+    }
+    
+    public static func createFromDataEncoded(
+        _ data: NSData,
+        _ sx: Float32,
+        _ sy: Float32,
+        _ sWidth: Float32,
+        _ sHeight: Float32,
+        _ options: TNSImageBitmapOptions,
+        _ callback:@escaping (TNSImageBitmap?, String?) -> Void
+    ) {
+        TNSImageBitmap.queue.async {
+            var bytes = [UInt8](data)
+            let result = image_bitmap_create_from_bytes_encoded_src_rect(&bytes, UInt(bytes.count),
+                                                                 sx,
+                                                                 sy,
+                                                                 sWidth,
+                                                                 sHeight,
+                                                                 options.flipY,
+                                                                 options.premultiplyAlpha.rawValue,
+                                                                 options.colorSpaceConversion.rawValue,
+                                                                 options.resizeQuality.rawValue,
+                                                                 options.resizeWidth,
+                                                                 options.resizeHeight)
+            DispatchQueue.main.async {
+                if (result > 0) {
+                    callback(TNSImageBitmap(result),nil)
+                } else {
+                    callback(nil,TNSImageBitmap.FAILED_TO_LOAD)
+                }
+            }
+        }
+    }
+    
+    
     
     
     public static func createFromBytes(

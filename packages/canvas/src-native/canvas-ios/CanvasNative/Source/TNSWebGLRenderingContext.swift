@@ -1451,7 +1451,16 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         canvas.renderer.ensureIsContextIsCurrent()
         glStencilOpSeparate(face, fail, zfail, zpass)
     }
-
+    
+    
+    public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,data: NSData) {
+        canvas.renderer.ensureIsContextIsCurrent()
+        var bytes = [UInt8](data)
+        if(flipYWebGL){
+            GLUtils.flipYInPlace(&bytes,bytes.count, Int(width * bytes_per_pixel(pixel_type: type, format: format)), Int(height))
+        }
+        glTexImage2D(target, level, internalformat, width, height, border, format, type, &bytes)
+    }
 
 
     public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,u8 pixels: [UInt8]) {
@@ -1557,7 +1566,19 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         canvas.renderer.ensureIsContextIsCurrent()
         glTexParameteri(target, pname, param)
     }
+    
 
+    
+    public func texSubImage2D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ width: Int32,_ height: Int32, _ format: UInt32,_ type: UInt32,data: NSData){
+        canvas.renderer.ensureIsContextIsCurrent()
+        var bytes = [UInt8](data)
+        if(flipYWebGL){
+            GLUtils.flipYInPlace(&bytes,bytes.count, Int(width * bytes_per_pixel(pixel_type: type, format: format)), Int(height))
+        }
+        glTexSubImage2D(GLenum(target), level, xoffset, yoffset, width, height, GLenum(format), GLenum(type), &bytes)
+
+    }
+    
 
     public func texSubImage2D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ width: Int32,_ height: Int32, _ format: UInt32,_ type: UInt32,u8 pixels: [UInt8]){
         canvas.renderer.ensureIsContextIsCurrent()

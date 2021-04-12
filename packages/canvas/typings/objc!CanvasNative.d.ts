@@ -709,6 +709,10 @@ declare class TNSImageBitmap extends NSObject {
 
 	static createFromCanvas(canvas: TNSCanvas, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
 
+	static createFromData(data: NSData, imageWidth: number, imageHeight: number, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static createFromDataEncoded(data: NSData, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
 	static createFromImageAsset(imageAsset: TNSImageAsset, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
 
 	static createFromImageBitmap(imageBitmap: TNSImageBitmap, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
@@ -1708,6 +1712,8 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texImage3DCanvas(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, canvas: TNSCanvas): void;
 
+	texImage3DData(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, data: NSData): void;
+
 	texImage3DF32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
 
 	texImage3DF64(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
@@ -1737,6 +1743,8 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 	texSubImage3DBitmap(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, bitmap: TNSImageBitmap): void;
 
 	texSubImage3DCanvas(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, canvas: TNSCanvas): void;
+
+	texSubImage3DData(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, data: NSData): void;
 
 	texSubImage3DF32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
 
@@ -2672,6 +2680,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	texImage2DCanvas(target: number, level: number, internalformat: number, format: number, type: number, canvas: TNSCanvas): void;
 
+	texImage2DData(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, data: NSData): void;
+
 	texImage2DF32(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: NSArray<number> | number[]): void;
 
 	texImage2DPixels(target: number, level: number, internalformat: number, format: number, type: number, pixels: UIImage): void;
@@ -2693,6 +2703,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 	texSubImage2DBitmap(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, bitmap: TNSImageBitmap): void;
 
 	texSubImage2DCanvas(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, canvas: TNSCanvas): void;
+
+	texSubImage2DData(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, data: NSData): void;
 
 	texSubImage2DF32(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: NSArray<number> | number[]): void;
 

@@ -449,7 +449,12 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		if (typeof source === 'number') {
 			this.native.texImage3DOffset(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source instanceof ArrayBuffer) {
-			this.native.texImage3DU8(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
+			const data = NSData.dataWithData(source as any);
+			if (data) {
+				this.native.texImage3DData(target, level, internalformat, width, height, depth, border, format, type, data, srcOffset);
+			} else {
+				this.native.texImage3DU8(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
+			}
 		} else if (source && source.buffer) {
 			if (source instanceof Int8Array) {
 				this.native.texImage3DI8(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
@@ -515,7 +520,12 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		if (typeof srcData === 'number') {
 			this.native.texSubImage3DOffset(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData instanceof ArrayBuffer) {
-			this.native.texSubImage3DU8(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset);
+			const data = NSData.dataWithData(srcData as any);
+			if (data) {
+				this.native.texSubImage3DData(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, data, srcOffset);
+			} else {
+				this.native.texSubImage3DU8(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset);
+			}
 		} else if (srcData && srcData.buffer) {
 			if (srcData instanceof Int8Array) {
 				this.native.texSubImage3DI8(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset);

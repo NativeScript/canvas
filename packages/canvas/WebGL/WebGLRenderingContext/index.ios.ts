@@ -42,7 +42,7 @@ declare const TNS_EXT_blend_minmax,
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
-	private context; //: WebGLRenderingContext;
+	private context//: TNSWebGLRenderingContext;
 
 	constructor(context) {
 		super(context);
@@ -963,10 +963,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		/* TODO */
 		if (arguments.length === 9) {
 			if ((pixels && pixels.buffer) || pixels instanceof ArrayBuffer) {
-				if (pixels instanceof ArrayBuffer) {
-					const array = new Uint8Array(pixels);
-					this.context.texImage2DU8(target, level, internalformat, width, height, border, format, type, Array.from(array as any));
-				} else if (pixels instanceof Uint8Array || pixels instanceof Uint8ClampedArray) {
+				if (pixels instanceof Uint8Array || pixels instanceof Uint8ClampedArray) {
 					this.context.texImage2DU8(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Uint16Array) {
 					this.context.texImage2DU16(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
@@ -974,6 +971,14 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 					this.context.texImage2DU32(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Float32Array) {
 					this.context.texImage2DF32(target, level, internalformat, width, height, border, format, type, Array.from(pixels as any));
+				} else if (pixels instanceof ArrayBuffer) {
+					const data = NSData.dataWithData(pixels as any);
+					if (data) {
+						this.context.texImage2DData(target, level, internalformat, width, height, border, format, type, data);
+					} else {
+						const array = new Uint8Array(pixels);
+						this.context.texImage2DU8(target, level, internalformat, width, height, border, format, type, Array.from(array as any));
+					}
 				}
 			} else {
 				this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels as any);
@@ -1031,15 +1036,20 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._checkArgs('texSubImage2D', arguments);
 		if (arguments.length === 9) {
 			if ((pixels && pixels.buffer) || pixels instanceof ArrayBuffer) {
-				if (pixels instanceof ArrayBuffer) {
-					const array = new Uint8Array(pixels);
-					this.context.texSubImage2DU8(target, level, xoffset, yoffset, width, height, format, type, Array.from(array as any));
-				} else if (pixels instanceof Uint8Array || pixels instanceof Uint8ClampedArray) {
+				if (pixels instanceof Uint8Array || pixels instanceof Uint8ClampedArray) {
 					this.context.texSubImage2DU8(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Uint16Array) {
 					this.context.texSubImage2DU16(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels as any));
 				} else if (pixels instanceof Float32Array) {
 					this.context.texSubImage2DF32(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels as any));
+				} else if (pixels instanceof ArrayBuffer) {
+					const data = NSData.dataWithData(pixels as any);
+					if (data) {
+						this.context.texSubImage2DData(target, level, xoffset, yoffset, width, height, format, type, data);
+					} else {
+						const array = new Uint8Array(pixels);
+						this.context.texSubImage2DU8(target, level, xoffset, yoffset, width, height, format, type, Array.from(array as any));
+					}
 				}
 			} else {
 				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels as any);

@@ -14,6 +14,7 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.github.triniwiz.canvas.*
+import com.github.triniwiz.canvas.TNSImageAsset.Callback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -38,9 +39,39 @@ class MainActivity : AppCompatActivity() {
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
 
+		System.loadLibrary("canvasnative")
+
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
 				print("Is Ready")
+				val ctx = canvas?.getContext("2d") as? TNSCanvasRenderingContext2D
+				val asset = TNSImageAsset()
+				asset.loadImageFromUrlAsync("https://www.downloadclipart.net/large/naruto-shippuden-png-hd.png" , object :
+					Callback {
+					override fun onSuccess(value: Any?) {
+						val opts = TNSImageBitmap.Options()
+						opts.resizeWidth  = 200f
+						opts.resizeHeight = 200f
+						TNSImageBitmap.createFromImageAsset(asset,0f,0f,128f,128f, opts, object:
+							TNSImageBitmap.Callback {
+							override fun onSuccess(result: TNSImageBitmap) {
+								Log.d("com.test", "ImageBitmap ${result.width} ${result.height}" )
+								ctx?.fillStyle = TNSColor("red")
+								ctx?.fillRect(0f,0f,128f,128f)
+								ctx?.drawImage(result, 0f,0f)
+							}
+
+							override fun onError(message: String) {
+								Log.d("com.test", "bitmap onError $message")
+							}
+						})
+					}
+
+					override fun onError(error: String?) {
+						Log.d("com.test", "onError $error")
+					}
+				})
+
 			}
 		}
 //		svg?.setSrc(
@@ -822,7 +853,7 @@ class MainActivity : AppCompatActivity() {
 				}
 			}
 			val asset = TNSImageAsset()
-			asset.loadImageFromPathAsync(downloader.absolutePath, object : TNSImageAsset.Callback {
+			asset.loadImageFromPathAsync(downloader.absolutePath, object : Callback {
 				override fun onSuccess(value: Any?) {
 					drawGLImage(canvas, asset)
 				}
@@ -2394,7 +2425,7 @@ class MainActivity : AppCompatActivity() {
 	fun drawImageFromUrl(canvas: TNSCanvas, src: String) {
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		val asset = TNSImageAsset()
-		asset.loadImageFromUrlAsync(src, object : TNSImageAsset.Callback {
+		asset.loadImageFromUrlAsync(src, object : Callback {
 			override fun onSuccess(value: Any?) {
 				ctx.clearRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
 				ctx.drawImage(asset, 0f, 0f)
@@ -2427,7 +2458,7 @@ class MainActivity : AppCompatActivity() {
 					}
 				}
 				val asset = TNSImageAsset()
-				asset.loadImageFromPathAsync(file.absolutePath, object : TNSImageAsset.Callback {
+				asset.loadImageFromPathAsync(file.absolutePath, object : Callback {
 					override fun onSuccess(value: Any?) {
 						ctx.drawImage(asset, 0f, 0f)
 					}

@@ -249,7 +249,18 @@ class TNSImageAsset {
 		private external fun nativeInit(): Long
 
 		@JvmStatic
+		internal fun nativeGetWidthImpl(asset: Long): Int {
+			return nativeGetWidth(asset)
+		}
+
+		@JvmStatic
 		private external fun nativeGetWidth(asset: Long): Int
+
+
+		@JvmStatic
+		internal fun nativeGetHeightImpl(asset: Long): Int {
+			return nativeGetHeight(asset)
+		}
 
 		@JvmStatic
 		private external fun nativeGetHeight(asset: Long): Int

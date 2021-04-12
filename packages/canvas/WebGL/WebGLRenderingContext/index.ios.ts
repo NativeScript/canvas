@@ -14,6 +14,7 @@ import { ANGLE_instanced_arrays, EXT_blend_minmax, EXT_color_buffer_float, EXT_c
 import { ImageAsset } from '../../ImageAsset';
 import { Canvas } from '../../Canvas';
 import { Utils } from '../../utils';
+import { ImageBitmap } from '../../ImageBitmap';
 
 declare const TNS_EXT_blend_minmax,
 	TNS_EXT_color_buffer_float,
@@ -984,7 +985,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				this.context.texImage2DAsset(target, level, internalformat, width, height, border.native);
-			} else if (border instanceof ImageSource) {
+			} else if (border instanceof ImageBitmap) {
+				this.context.texImage2DBitmap(target, level, internalformat, width, height, border.native);
+			}  else if (border instanceof ImageSource) {
 				this.context.texImage2DPixels(target, level, internalformat, width, height, border.ios);
 			} else if (border instanceof UIImage) {
 				this.context.texImage2DPixels(target, level, internalformat, width, height, border);
@@ -1044,6 +1047,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		} else if (arguments.length === 7) {
 			if (format instanceof ImageAsset) {
 				this.context.texSubImage2DAsset(target, level, xoffset, yoffset, width, height, format.native);
+			}if (format instanceof ImageBitmap) {
+				this.context.texSubImage2DBitmap(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof UIImage) {
 				this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, format);
 			} else if (format instanceof ImageSource) {

@@ -38,6 +38,7 @@ import {
 } from '../WebGLExtensions';
 import { ImageAsset } from '../../ImageAsset';
 import { Canvas } from '../../Canvas';
+import { ImageBitmap } from '../../ImageBitmap';
 
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug = false;
@@ -1056,6 +1057,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			} else if (border && typeof border.getCurrentFrame === 'function') {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
+				this.context.texImage2D(target, level, internalformat, width, height, border.native);
+			} else if (border instanceof ImageBitmap) {
 				this.context.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof android.graphics.Bitmap) {
 				this.context.texImage2D(target, level, internalformat, width, height, border);

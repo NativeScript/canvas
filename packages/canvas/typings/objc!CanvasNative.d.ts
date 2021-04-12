@@ -699,6 +699,83 @@ declare const enum TNSImageAssetFormat {
 	TIFF = 4
 }
 
+declare class TNSImageBitmap extends NSObject {
+
+	static alloc(): TNSImageBitmap; // inherited from NSObject
+
+	static createFromBytes(bytes: NSArray<number> | number[], imageWidth: number, imageHeight: number, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static createFromBytesEncoded(bytes: NSArray<number> | number[], options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static createFromCanvas(canvas: TNSCanvas, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static createFromImageAsset(imageAsset: TNSImageAsset, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static createFromImageBitmap(imageBitmap: TNSImageBitmap, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static createFromImageData(imageData: TNSImageData, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static createFromUIImage(canvas: UIImage, options: TNSImageBitmapOptions, callback: (p1: TNSImageBitmap, p2: string) => void): void;
+
+	static new(): TNSImageBitmap; // inherited from NSObject
+
+	readonly error: string;
+
+	readonly height: number;
+
+	readonly width: number;
+
+	static readonly queue: NSObject;
+
+	close(): void;
+}
+
+declare const enum TNSImageBitmapColorSpaceConversion {
+
+	Default = 0,
+
+	None = 1
+}
+
+declare class TNSImageBitmapOptions extends NSObject {
+
+	static alloc(): TNSImageBitmapOptions; // inherited from NSObject
+
+	static new(): TNSImageBitmapOptions; // inherited from NSObject
+
+	colorSpaceConversion: TNSImageBitmapColorSpaceConversion;
+
+	flipY: boolean;
+
+	premultiplyAlpha: TNSImageBitmapPremultiplyAlpha;
+
+	resizeHeight: number;
+
+	resizeQuality: TNSImageBitmapResizeQuality;
+
+	resizeWidth: number;
+}
+
+declare const enum TNSImageBitmapPremultiplyAlpha {
+
+	Default = 0,
+
+	Premultiply = 1,
+
+	None = 2
+}
+
+declare const enum TNSImageBitmapResizeQuality {
+
+	Low = 0,
+
+	Medium = 1,
+
+	High = 2,
+
+	Pixelated = 3
+}
+
 declare class TNSImageData extends NSObject {
 
 	static alloc(): TNSImageData; // inherited from NSObject
@@ -815,6 +892,15 @@ declare class TNSRadialGradient extends TNSGradient {
 	static alloc(): TNSRadialGradient; // inherited from NSObject
 
 	static new(): TNSRadialGradient; // inherited from NSObject
+}
+
+declare class TNSRender extends NSObject {
+
+	static alloc(): TNSRender; // inherited from NSObject
+
+	static new(): TNSRender; // inherited from NSObject
+
+	createSurface(): void;
 }
 
 declare class TNSSVG extends UIView {
@@ -1618,6 +1704,8 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texImage3DAsset(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, asset: TNSImageAsset): void;
 
+	texImage3DBitmap(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, bitmap: TNSImageBitmap): void;
+
 	texImage3DCanvas(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, canvas: TNSCanvas): void;
 
 	texImage3DF32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
@@ -1646,13 +1734,15 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texSubImage3DAsset(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, asset: TNSImageAsset): void;
 
+	texSubImage3DBitmap(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, bitmap: TNSImageBitmap): void;
+
 	texSubImage3DCanvas(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, canvas: TNSCanvas): void;
 
 	texSubImage3DF32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
 
 	texSubImage3DF64(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
-	texSubImage3DI16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
+	texSubImage3DI16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
 
 	texSubImage3DI32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
@@ -2578,6 +2668,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	texImage2DAsset(target: number, level: number, internalformat: number, format: number, type: number, asset: TNSImageAsset): void;
 
+	texImage2DBitmap(target: number, level: number, internalformat: number, format: number, type: number, bitmap: TNSImageBitmap): void;
+
 	texImage2DCanvas(target: number, level: number, internalformat: number, format: number, type: number, canvas: TNSCanvas): void;
 
 	texImage2DF32(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: NSArray<number> | number[]): void;
@@ -2597,6 +2689,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, pixels: NSNull): void;
 
 	texSubImage2DAsset(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, asset: TNSImageAsset): void;
+
+	texSubImage2DBitmap(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, bitmap: TNSImageBitmap): void;
 
 	texSubImage2DCanvas(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, canvas: TNSCanvas): void;
 
@@ -3083,9 +3177,13 @@ declare class Utils extends NSObject {
 
 	static createImage(texturecache: any, buffer: any, textureAttributes: NSDictionary<any, any>, target: number, internalFormat: number, width: number, height: number, format: number, type: number, planeIndex: number): any;
 
-	static createTextureCache(context: EAGLContext): any;
+	static createTextureCache(context: TNSWebGLRenderingContext): any;
+
+	static drawFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, render: TNSRender, internalFormat: number, format: number, flipYWebGL: boolean): void;
 
 	static new(): Utils; // inherited from NSObject
+
+	static setupRender(): TNSRender;
 }
 
 declare function context_arc(context: number, x: number, y: number, radius: number, start_angle: number, end_angle: number, anti_clockwise: boolean): void;
@@ -3407,6 +3505,22 @@ declare function image_asset_save_path(asset: number, path: string | interop.Poi
 declare function image_asset_scale(asset: number, x: number, y: number): boolean;
 
 declare function image_asset_width(asset: number): number;
+
+declare function image_bitmap_create_from_bytes(image_bytes: string | interop.Pointer | interop.Reference<any>, image_size: number, image_width: number, image_height: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
+
+declare function image_bitmap_create_from_bytes_encoded(image_bytes: string | interop.Pointer | interop.Reference<any>, image_size: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
+
+declare function image_bitmap_create_from_bytes_encoded_src_rect(image_bytes: string | interop.Pointer | interop.Reference<any>, image_size: number, sx: number, sy: number, s_width: number, s_height: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
+
+declare function image_bitmap_create_from_bytes_src_rect(image_bytes: string | interop.Pointer | interop.Reference<any>, image_size: number, image_width: number, image_height: number, sx: number, sy: number, s_width: number, s_height: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
+
+declare function image_bitmap_create_from_image_asset(asset: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
+
+declare function image_bitmap_create_from_image_asset_src_rect(asset: number, sx: number, sy: number, s_width: number, s_height: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
+
+declare function image_bitmap_create_from_image_data(image_data: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
+
+declare function image_bitmap_create_from_image_data_src_rect(image_data: number, sx: number, sy: number, s_width: number, s_height: number, flip_y: boolean, premultiply_alpha: number, color_space_conversion: number, resize_quality: number, resize_width: number, resize_height: number): number;
 
 declare function image_data_create(width: number, height: number): number;
 

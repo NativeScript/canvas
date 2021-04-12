@@ -1,38 +1,27 @@
 package com.github.triniwiz.canvas
 
+import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import java.nio.ByteBuffer
+import java.util.concurrent.Executors
 
-class TNSImageBitmap {
-	internal var nativeImageAsset: Long
+class TNSImageBitmap internal constructor(asset: Long) {
 
-	internal constructor(asset: Long) {
-		nativeImageAsset = asset
-	}
+	var nativeImageAsset: Long = asset
 
-	fun createFromBytes(bytes: ByteArray) {
-		// TNSImageBitmap(asset)
-	}
-
-	fun createFromBytes(bytes: ByteArray, sx: Float, sy: Float,sWidth: Float,sHeight: Float) {
-		// TNSImageBitmap(asset)
-	}
-
-	private var widthCache: Int = 0
 	val width: Int
-		get() {
-			return widthCache
-		}
-
-	private var heightCache: Int = 0
+		get() = if (nativeImageAsset == 0L) {
+			0
+		} else TNSImageAsset.nativeGetWidthImpl(nativeImageAsset)
 	val height: Int
-		get() {
-			return heightCache
-		}
+		get() = if (nativeImageAsset == 0L) {
+			0
+		} else TNSImageAsset.nativeGetHeightImpl(nativeImageAsset)
 
 	fun close() {
 		TNSImageAsset.nativeDestroyImpl(nativeImageAsset)
-		widthCache = 0
-		heightCache = 0
 		nativeImageAsset = 0
 	}
 
@@ -45,8 +34,523 @@ class TNSImageBitmap {
 		}
 	}
 
+	interface Callback {
+		fun onSuccess(result: TNSImageBitmap)
+		fun onError(message: String)
+	}
 
-	object Companion {
+	class Options {
+		var flipY = false
+		var premultiplyAlpha = TNSImageBitmapPremultiplyAlpha.Default
+		var colorSpaceConversion = TNSImageBitmapColorSpaceConversion.Default
+		var resizeQuality = TNSImageBitmapResizeQuality.Low
+		var resizeWidth = 0f
+		var resizeHeight = 0f
+	}
+
+	companion object {
+		val FAILED_TO_LOAD: String = "Failed to load image"
+
+		private val handler = Handler(Looper.getMainLooper())
+
+		@JvmStatic
+		private val executor = Executors.newCachedThreadPool()
+
+
+		@JvmStatic
+		fun createFromImageData(
+			imageData: TNSImageData,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromAsset(
+					imageData.nativeImageData,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+		@JvmStatic
+		fun createFromImageData(
+			imageData: TNSImageData,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromAssetSrcRect(
+					imageData.nativeImageData,
+					sx, sy, sWidth, sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun createFromCanvas(
+			canvas: TNSCanvas,
+			options: Options,
+			callback: Callback
+		) {
+			val bytes = canvas.snapshot()
+			createFromBytes(
+				bytes, canvas.width.toFloat(), canvas.height.toFloat(), options, callback
+			)
+		}
+
+		@JvmStatic
+		fun createFromCanvas(
+			canvas: TNSCanvas,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			val bytes = canvas.snapshot()
+			createFromBytes(
+				bytes, sx,
+				sy,
+				sWidth,
+				sHeight, canvas.width.toFloat(), canvas.height.toFloat(), options, callback
+			)
+		}
+
+
+		@JvmStatic
+		fun createFromBytes(
+			bytes: ByteArray,
+			imageWidth: Float,
+			imageHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val asset = nativeCreateFromBytes(
+					bytes,
+					imageWidth,
+					imageHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+				handler.post {
+					if (asset > 0) {
+						callback.onSuccess(TNSImageBitmap(asset))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+		@JvmStatic
+		fun createFromBytes(
+			bytes: ByteArray,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val asset = nativeCreateFromBytesEncodedSrcRect(
+					bytes,
+					sx,
+					sy,
+					sWidth,
+					sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+				handler.post {
+					if (asset > 0) {
+						callback.onSuccess(TNSImageBitmap(asset))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun createFromBytesEncoded(
+			bytes: ByteArray,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val asset = nativeCreateFromBytesEncodedSrcRect(
+					bytes,
+					sx,
+					sy,
+					sWidth,
+					sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+				handler.post {
+					if (asset > 0) {
+						callback.onSuccess(TNSImageBitmap(asset))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun createFromBytesEncoded(
+			bytes: ByteArray,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val asset = nativeCreateFromBytesEncoded(
+					bytes,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+				handler.post {
+					if (asset > 0) {
+						callback.onSuccess(TNSImageBitmap(asset))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+
+
+		@JvmStatic
+		fun createFromBytes(
+			bytes: ByteArray,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			imageWidth: Float,
+			imageHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val asset = nativeCreateFromBytesSrcRect(
+					bytes,
+					imageWidth,
+					imageHeight,
+					sx,
+					sy,
+					sWidth,
+					sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+				handler.post {
+					if (asset > 0) {
+						callback.onSuccess(TNSImageBitmap(asset))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun createFromImageBitmap(
+			bitmap: TNSImageBitmap,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromAsset(
+					bitmap.nativeImageAsset,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+		@JvmStatic
+		fun createFromImageBitmap(
+			bitmap: TNSImageBitmap,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromAssetSrcRect(
+					bitmap.nativeImageAsset,
+					sx, sy, sWidth, sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun createFromImageAsset(
+			asset: TNSImageAsset,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromAsset(
+					asset.nativeImageAsset,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+		@JvmStatic
+		fun createFromImageAsset(
+			asset: TNSImageAsset,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromAssetSrcRect(
+					asset.nativeImageAsset,
+					sx, sy, sWidth, sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun createFromBitmap(
+			bitmap: Bitmap,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromBitmap(
+					bitmap,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+		@JvmStatic
+		fun createFromBitmap(
+			bitmap: Bitmap,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val result = nativeCreateFromBitmapSrcRect(
+					bitmap,
+					sx, sy, sWidth, sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result > 0) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		private external fun nativeCreateFromBitmap(
+			bitmap: Bitmap,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float
+		): Long
+
+
+		@JvmStatic
+		private external fun nativeCreateFromBitmapSrcRect(
+			bitmap: Bitmap,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromAsset(
+			asset: Long,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromAssetSrcRect(
+			asset: Long,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
+		): Long
+
+
 		@JvmStatic
 		private external fun nativeCreateFromBuffer(
 			imageBuffer: ByteBuffer,
@@ -58,7 +562,7 @@ class TNSImageBitmap {
 			resizeQuality: Int,
 			resizeWidth: Float,
 			resizeHeight: Float,
-		)
+		): Long
 
 		@JvmStatic
 		private external fun nativeCreateFromBufferSrcRect(
@@ -75,7 +579,33 @@ class TNSImageBitmap {
 			resizeQuality: Int,
 			resizeWidth: Float,
 			resizeHeight: Float,
-		)
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromBytesEncoded(
+			imageBuffer: ByteArray,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromBytesEncodedSrcRect(
+			imageBuffer: ByteArray,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
+		): Long
 
 		@JvmStatic
 		private external fun nativeCreateFromBytes(
@@ -88,7 +618,7 @@ class TNSImageBitmap {
 			resizeQuality: Int,
 			resizeWidth: Float,
 			resizeHeight: Float,
-		)
+		): Long
 
 		@JvmStatic
 		private external fun nativeCreateFromBytesSrcRect(
@@ -105,6 +635,6 @@ class TNSImageBitmap {
 			resizeQuality: Int,
 			resizeWidth: Float,
 			resizeHeight: Float,
-		)
+		): Long
 	}
 }

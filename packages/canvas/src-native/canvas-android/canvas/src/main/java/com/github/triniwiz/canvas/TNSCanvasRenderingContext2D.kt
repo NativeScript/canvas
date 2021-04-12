@@ -865,6 +865,31 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		return value
 	}
 
+	fun createPattern(
+		src: TNSImageBitmap?,
+		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
+	): TNSPattern? {
+		printLog("createPattern: asset")
+		if (src == null) return null
+		val lock = CountDownLatch(1)
+		var value: TNSPattern? = null
+		canvas.queueEvent {
+			val id = nativeCreatePatternWithAsset(
+				canvas.nativeContext,
+				src.nativeImageAsset, repetition.toNative()
+			)
+			if (id > 0L) {
+				value = TNSPattern(id)
+			}
+			lock.countDown()
+		}
+		try {
+			lock.await()
+		} catch (e: java.lang.Exception) {
+		}
+		return value
+	}
+
 
 	fun save() {
 		printLog("save")
@@ -984,6 +1009,20 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		})
 	}
 
+
+	fun drawImage(bitmap: TNSImageBitmap, dx: Float, dy: Float) {
+		printLog("drawImage: bitmap")
+		canvas.queueEvent(Runnable {
+			nativeDrawImageDxDyWithAsset(
+				canvas.nativeContext,
+				bitmap.nativeImageAsset,
+				dx,
+				dy
+			)
+			updateCanvas()
+		})
+	}
+
 	fun drawImage(image: TNSCanvas, dx: Float, dy: Float, dWidth: Float, dHeight: Float) {
 		printLog("drawImage: canvas")
 		val ss = image.snapshot()
@@ -1049,6 +1088,22 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			nativeDrawImageDxDyDwDhWithAsset(
 				canvas.nativeContext,
 				asset.nativeImageAsset,
+				dx,
+				dy,
+				dWidth,
+				dHeight
+			)
+			updateCanvas()
+		})
+	}
+
+
+	fun drawImage(bitmap: TNSImageBitmap, dx: Float, dy: Float, dWidth: Float, dHeight: Float) {
+		printLog("drawImage: bitmap")
+		canvas.queueEvent(Runnable {
+			nativeDrawImageDxDyDwDhWithAsset(
+				canvas.nativeContext,
+				bitmap.nativeImageAsset,
 				dx,
 				dy,
 				dWidth,
@@ -1161,6 +1216,36 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			nativeDrawImageWithAsset(
 				canvas.nativeContext,
 				asset.nativeImageAsset,
+				sx,
+				sy,
+				sWidth,
+				sHeight,
+				dx,
+				dy,
+				dWidth,
+				dHeight
+			)
+			updateCanvas()
+		})
+	}
+
+
+	fun drawImage(
+		bitmap: TNSImageBitmap,
+		sx: Float,
+		sy: Float,
+		sWidth: Float,
+		sHeight: Float,
+		dx: Float,
+		dy: Float,
+		dWidth: Float,
+		dHeight: Float
+	) {
+		printLog("drawImage: bitmap")
+		canvas.queueEvent(Runnable {
+			nativeDrawImageWithAsset(
+				canvas.nativeContext,
+				bitmap.nativeImageAsset,
 				sx,
 				sy,
 				sWidth,

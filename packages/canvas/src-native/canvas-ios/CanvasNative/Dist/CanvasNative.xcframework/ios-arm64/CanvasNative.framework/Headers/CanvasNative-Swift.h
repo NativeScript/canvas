@@ -567,15 +567,65 @@ typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageAssetFormat, "TNSImageAssetFormat", 
   TNSImageAssetFormatTIFF = 4,
 };
 
+@class TNSImageBitmapOptions;
 
 SWIFT_CLASS_NAMED("TNSImageBitmap")
 @interface TNSImageBitmap : NSObject
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) dispatch_queue_t _Nonnull queue;)
++ (dispatch_queue_t _Nonnull)queue SWIFT_WARN_UNUSED_RESULT;
++ (void)createFromImageBitmap:(TNSImageBitmap * _Nonnull)imageBitmap :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromImageBitmap:(TNSImageBitmap * _Nonnull)imageBitmap :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromImageAsset:(TNSImageAsset * _Nonnull)imageAsset :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromImageAsset:(TNSImageAsset * _Nonnull)imageAsset :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromImageData:(TNSImageData * _Nonnull)imageData :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromImageData:(TNSImageData * _Nonnull)imageData :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromCanvas:(TNSCanvas * _Nonnull)canvas :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromCanvas:(TNSCanvas * _Nonnull)canvas :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromBytes:(NSArray<NSNumber *> * _Nonnull)bytes :(float)imageWidth :(float)imageHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromBytes:(NSArray<NSNumber *> * _Nonnull)bytes :(float)imageWidth :(float)imageHeight :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromBytesEncoded:(NSArray<NSNumber *> * _Nonnull)bytes :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromBytesEncoded:(NSArray<NSNumber *> * _Nonnull)bytes :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromUIImage:(UIImage * _Nonnull)canvas :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
++ (void)createFromUIImage:(UIImage * _Nonnull)canvas :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(TNSImageBitmapOptions * _Nonnull)options :(void (^ _Nonnull)(TNSImageBitmap * _Nullable, NSString * _Nullable))callback;
 @property (nonatomic, readonly) int32_t width;
 @property (nonatomic, readonly) int32_t height;
+- (void)close;
 @property (nonatomic, readonly, copy) NSString * _Nullable error;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 + (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
 @end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageBitmapColorSpaceConversion, "TNSImageBitmapColorSpaceConversion", open) {
+  TNSImageBitmapColorSpaceConversionDefault = 0,
+  TNSImageBitmapColorSpaceConversionNone = 1,
+};
+
+enum TNSImageBitmapPremultiplyAlpha : NSInteger;
+enum TNSImageBitmapResizeQuality : NSInteger;
+
+SWIFT_CLASS_NAMED("TNSImageBitmapOptions")
+@interface TNSImageBitmapOptions : NSObject
+@property (nonatomic) BOOL flipY;
+@property (nonatomic) enum TNSImageBitmapPremultiplyAlpha premultiplyAlpha;
+@property (nonatomic) enum TNSImageBitmapColorSpaceConversion colorSpaceConversion;
+@property (nonatomic) enum TNSImageBitmapResizeQuality resizeQuality;
+@property (nonatomic) float resizeWidth;
+@property (nonatomic) float resizeHeight;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageBitmapPremultiplyAlpha, "TNSImageBitmapPremultiplyAlpha", open) {
+  TNSImageBitmapPremultiplyAlphaDefault = 0,
+  TNSImageBitmapPremultiplyAlphaPremultiply = 1,
+  TNSImageBitmapPremultiplyAlphaNone = 2,
+};
+
+typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageBitmapResizeQuality, "TNSImageBitmapResizeQuality", open) {
+  TNSImageBitmapResizeQualityLow = 0,
+  TNSImageBitmapResizeQualityMedium = 1,
+  TNSImageBitmapResizeQualityHigh = 2,
+  TNSImageBitmapResizeQualityPixelated = 3,
+};
 
 @class NSData;
 
@@ -861,6 +911,7 @@ SWIFT_CLASS_NAMED("TNSWebGLRenderingContext")
 - (void)texImage2D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)width :(int32_t)height :(int32_t)border :(uint32_t)format :(uint32_t)type :(NSNull * _Nonnull)pixels;
 - (void)texImage2D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(uint32_t)format :(uint32_t)type pixels:(UIImage * _Nonnull)pixels;
 - (void)texImage2D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(uint32_t)format :(uint32_t)type asset:(TNSImageAsset * _Nonnull)asset;
+- (void)texImage2D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(uint32_t)format :(uint32_t)type bitmap:(TNSImageBitmap * _Nonnull)bitmap;
 - (void)texImage2D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(uint32_t)format :(uint32_t)type :(NSNull * _Nonnull)pixels;
 - (void)texImage2D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(uint32_t)format :(uint32_t)type canvas:(TNSCanvas * _Nonnull)canvas;
 - (void)texParameterf:(uint32_t)target :(uint32_t)pname :(float)param;
@@ -871,6 +922,7 @@ SWIFT_CLASS_NAMED("TNSWebGLRenderingContext")
 - (void)texSubImage2D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)width :(int32_t)height :(uint32_t)format :(uint32_t)type :(NSNull * _Nonnull)pixels;
 - (void)texSubImage2D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(uint32_t)format :(uint32_t)type pixels:(UIImage * _Nonnull)pixels;
 - (void)texSubImage2D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(uint32_t)format :(uint32_t)type asset:(TNSImageAsset * _Nonnull)asset;
+- (void)texSubImage2D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(uint32_t)format :(uint32_t)type bitmap:(TNSImageBitmap * _Nonnull)bitmap;
 - (void)texSubImage2D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(uint32_t)format :(uint32_t)type canvas:(TNSCanvas * _Nonnull)canvas;
 - (void)texSubImage2D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(uint32_t)format :(uint32_t)type :(NSNull * _Nonnull)pixels;
 - (void)uniform1f:(int32_t)location :(float)v0;
@@ -1297,6 +1349,7 @@ SWIFT_CLASS_NAMED("TNSWebGL2RenderingContext")
 - (void)texImage3D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(uint32_t)format :(uint32_t)type f64:(NSArray<NSNumber *> * _Nonnull)source :(int32_t)srcOffset;
 - (void)texImage3D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(uint32_t)format :(uint32_t)type source:(UIImage * _Nonnull)source;
 - (void)texImage3D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(uint32_t)format :(uint32_t)type asset:(TNSImageAsset * _Nonnull)asset;
+- (void)texImage3D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(uint32_t)format :(uint32_t)type bitmap:(TNSImageBitmap * _Nonnull)bitmap;
 - (void)texImage3D:(uint32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(uint32_t)format :(uint32_t)type canvas:(TNSCanvas * _Nonnull)canvas;
 - (void)texStorage2D:(uint32_t)target :(int32_t)levels :(uint32_t)internalformat :(int32_t)width :(int32_t)height;
 - (void)texStorage3D:(uint32_t)target :(int32_t)levels :(uint32_t)internalformat :(int32_t)width :(int32_t)height :(int32_t)depth;
@@ -1320,6 +1373,7 @@ SWIFT_CLASS_NAMED("TNSWebGL2RenderingContext")
 - (void)texSubImage3D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(uint32_t)format :(uint32_t)type srcData:(UIImage * _Nonnull)srcData;
 - (void)texSubImage3D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(uint32_t)format :(uint32_t)type canvas:(TNSCanvas * _Nonnull)canvas;
 - (void)texSubImage3D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(uint32_t)format :(uint32_t)type asset:(TNSImageAsset * _Nonnull)asset;
+- (void)texSubImage3D:(uint32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(uint32_t)format :(uint32_t)type bitmap:(TNSImageBitmap * _Nonnull)bitmap;
 - (void)transformFeedbackVaryings:(uint32_t)program :(NSArray<NSString *> * _Nonnull)varyings :(uint32_t)bufferMode;
 - (void)uniform1ui:(int32_t)location :(uint32_t)v0;
 - (void)uniform2ui:(int32_t)location :(uint32_t)v0 :(uint32_t)v1;

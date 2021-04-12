@@ -84,6 +84,7 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		mListener = listener
 	}
 
+	@Synchronized
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
 		drawingBufferHeight = height
 		drawingBufferWidth = width
@@ -101,6 +102,7 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		}
 	}
 
+	@Synchronized
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
 		drawingBufferHeight = height
 		drawingBufferWidth = width

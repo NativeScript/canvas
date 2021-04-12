@@ -516,7 +516,15 @@
                 drawImage(image: image, dx: dx, dy: dy)
             }else if let image = image as? TNSCanvas {
                 drawImage(canvas: image, dx: dx, dy: dy)
+            }else if let image = image as? TNSImageBitmap {
+                drawImage(bitmap: image, dx: dx, dy: dy)
             }
+        }
+        
+        @nonobjc func drawImage(bitmap: TNSImageBitmap, dx: Float, dy: Float){
+            ensureIsContextIsCurrent()
+            context_draw_image_dx_dy_asset(canvas.context, bitmap.asset, dx, dy)
+            canvas.doDraw()
         }
         
         @nonobjc func drawImage(image: TNSImageAsset, dx: Float, dy: Float){
@@ -537,7 +545,6 @@
         
     
         
-        
         @nonobjc func drawImage(canvas : TNSCanvas, dx: Float,dy: Float){
                    var ss = canvas.snapshot()
                    ensureIsContextIsCurrent()
@@ -553,7 +560,15 @@
                 drawImage(image: image, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight)
             }else if let image = image as? TNSCanvas {
                 drawImage(canvas: image, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight)
+            }else if let image = image as? TNSImageBitmap {
+                drawImage(bitmap: image, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight)
             }
+        }
+        
+        @nonobjc func drawImage(bitmap: TNSImageBitmap, dx: Float, dy: Float, dWidth: Float, dHeight: Float){
+            ensureIsContextIsCurrent()
+            context_draw_image_dx_dy_dw_dh_asset(canvas.context, bitmap.asset, dx, dy,dWidth,dHeight)
+            canvas.doDraw()
         }
         
         
@@ -591,13 +606,21 @@
                 drawImage(image: image, sx: sx, sy: sy, sWidth: sWidth, sHeight: sHeight, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight)
             }else if let image = image as? TNSCanvas {
                 drawImage(canvas: image, sx: sx, sy: sy, sWidth: sWidth, sHeight: sHeight, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight)
+            }else if let image = image as? TNSImageBitmap {
+                drawImage(bitmap: image, sx: sx, sy: sy, sWidth: sWidth, sHeight: sHeight, dx: dx, dy: dy, dWidth: dWidth, dHeight: dHeight)
             }
         }
-        
         
         @nonobjc func drawImage(image: TNSImageAsset, sx: Float, sy: Float, sWidth: Float, sHeight: Float, dx: Float, dy: Float, dWidth: Float, dHeight: Float){
             ensureIsContextIsCurrent()
             context_draw_image_asset(canvas.context, image.asset,sx, sy,sWidth, sHeight, dx, dy, dWidth, dHeight)
+            canvas.doDraw()
+        }
+        
+        
+        @nonobjc func drawImage(bitmap: TNSImageBitmap, sx: Float, sy: Float, sWidth: Float, sHeight: Float, dx: Float, dy: Float, dWidth: Float, dHeight: Float){
+            ensureIsContextIsCurrent()
+            context_draw_image_asset(canvas.context, bitmap.asset,sx, sy,sWidth, sHeight, dx, dy, dWidth, dHeight)
             canvas.doDraw()
         }
         

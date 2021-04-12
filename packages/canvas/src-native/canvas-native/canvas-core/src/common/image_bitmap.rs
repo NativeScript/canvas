@@ -1,12 +1,11 @@
 use core::convert::{From, Into};
-use core::default::Default;
-use core::option::Option;
-use core::option::Option::{None, Some};
 
-use skia_safe::{Point, RCHandle, Rect};
+use image as image_rs;
+use skia_safe::{EncodedImageFormat, Point, RCHandle, Rect};
 
 use crate::common::context::image_asset::ImageAsset;
-use crate::common::utils::image::from_image_slice;
+use crate::common::context::pixel_manipulation::image_data::ImageData;
+use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -125,6 +124,37 @@ impl ImageBitmapResizeQuality {
     }
 }
 
+pub(crate) fn create_from_image_data(
+    image_data: i64,
+    rect: Option<skia_safe::Rect>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+) -> i64 {
+    unsafe {
+        let data: *mut ImageData = image_data as _;
+        let data = &mut *data;
+        let bytes = data.data();
+        let width = data.width() as f32;
+        let height = data.height() as f32;
+        create_image_asset(
+            bytes,
+            width,
+            height,
+            rect,
+            flip_y,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+        )
+    }
+}
+
 pub(crate) fn create_image_bitmap(
     image: skia_safe::Image,
     rect: Option<skia_safe::Rect>,
@@ -136,95 +166,89 @@ pub(crate) fn create_image_bitmap(
     resize_height: f32,
 ) -> i64 {
     let mut output = ImageAsset::new();
-    let mut original_surface_buffer = vec![0_u8; (image.width() * image.height() * 4) as usize];
+    let mut out_width = image.width() as f32;
+    let mut out_height = image.height() as f32;
+
+    if resize_width <= 0. && resize_height > 0. {
+        out_width = image.width() as f32 + resize_height / image.height() as f32;
+    }
+
+    if resize_height <= 0. || resize_width > 0. {
+        out_height = image.height() as f32 + resize_width / image.width() as f32;
+    }
+
+    if resize_width > 0. && resize_height > 0. {
+        out_width = resize_width;
+        out_height = resize_height;
+    }
+
+    let source_rect;
+
+    match rect {
+        None => {
+            source_rect =
+                skia_safe::Rect::from_xywh(0., 0., image.width() as f32, image.height() as f32);
+        }
+        Some(rect) => {
+            source_rect = rect;
+            if resize_width == 0. && resize_height == 0. {
+                out_width = rect.width();
+                out_height = rect.height();
+            }
+        }
+    }
+
     let image_info = skia_safe::ImageInfo::new(
-        image.dimensions(),
-        skia_safe::ColorType::RGBA8888,
+        (source_rect.width() as i32, source_rect.height() as i32),
+        skia_safe::ColorType::n32(),
         ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into(),
         ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
     );
-    match skia_safe::Surface::new_raster_direct(
+    match skia_safe::Surface::new_raster(
         &image_info,
-        original_surface_buffer.as_mut_slice(),
-        Some((image.width() * 4) as usize),
+        Some((source_rect.width() * 4.) as usize),
         None,
     ) {
         None => {}
         Some(mut surface) => {
             let canvas = surface.canvas();
             if flip_y {
-                canvas.translate(skia_safe::Vector::new(0., image.height() as f32));
+                canvas.translate(skia_safe::Vector::new(0., source_rect.height() as f32));
                 canvas.scale((1., -1.));
             }
+
             let mut paint = skia_safe::Paint::default();
             paint.set_anti_alias(true);
-            match rect {
-                None => {
-                    surface.canvas().draw_image_with_sampling_options(
-                        &image,
-                        (0, 0),
-                        skia_safe::SamplingOptions::default(),
-                        Some(&paint),
-                    );
-                }
-                Some(rect) => {
-                    surface.canvas().draw_image_rect_with_sampling_options(
-                        &image,
-                        None,
-                        &rect,
-                        skia_safe::SamplingOptions::default(),
-                        &paint,
-                        skia_safe::canvas::SrcRectConstraint::Fast,
-                    );
-                }
-            }
 
-            let mut out_width = image.width() as f32;
-            let mut out_height = image.height() as f32;
-            if resize_width <= 0. && resize_height > 0. {
-                out_width = image.width() as f32 + resize_height / image.height() as f32;
-            }
+            surface
+                .canvas()
+                .draw_image(&image, (source_rect.x(), source_rect.y()), Some(&paint));
 
-            if resize_height <= 0. || resize_width > 0. {
-                out_height = image.height() as f32 + resize_width / image.width() as f32;
-            }
+            let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
+            let image = surface.image_snapshot();
 
-            if resize_width > 0. && resize_height > 0. {
-                out_width = resize_width;
-                out_height = resize_height;
-            }
+            let mut bytes = vec![0_u8; (out_width * out_height * 4.) as usize];
+            let mut pixel_map = skia_safe::Pixmap::new(
+                &resize_info,
+                bytes.as_mut_slice(),
+                (out_width * 4.) as usize,
+            );
+            image.scale_pixels(
+                &pixel_map,
+                ImageBitmapResizeQuality::from(resize_quality).to_quality(),
+                None,
+            );
 
-            if image.width() as f32 > resize_width || image.height() as f32 > resize_height {
-                let mut resized_surface_buffer =
-                    vec![0_u8; (resize_width * resize_height * 4.) as usize];
-                let new_image_info = image_info.with_dimensions((out_width.round() as i32, out_height.round() as i32));
-                let mut resized_surface = skia_safe::Surface::new_raster_direct(
-                    &new_image_info,
-                    resized_surface_buffer.as_mut_slice(),
-                    Some((out_width.round() * 4.) as usize),
-                    None,
-                );
-                match resized_surface {
-                    None => {}
-                    Some(mut resized_surface) => {
-                        surface.draw(
-                            resized_surface.canvas(),
-                            (0, 0),
-                            ImageBitmapResizeQuality::from(resize_quality).to_quality(),
-                            None,
-                        );
-                        output.load_from_bytes(resized_surface_buffer.as_slice());
-                    }
-                }
-            } else {
-                output.load_from_bytes(original_surface_buffer.as_slice());
-            }
+            let data = pixel_map.encode(EncodedImageFormat::PNG, 100);
+            if let Some(data) = data {
+                output.load_from_bytes(data.as_bytes());
+            };
         }
     }
     Box::into_raw(Box::new(output)) as i64
 }
 
-pub fn create_image_asset(
+pub(crate) fn create_image_asset(
     buf: &[u8],
     image_width: f32,
     image_height: f32,
@@ -263,7 +287,7 @@ pub fn create_image_asset(
     }
 }
 
-fn create_from_image_asset_src_rect(
+pub(crate) fn create_from_image_asset_src_rect(
     image_asset: i64,
     rect: Option<skia_safe::Rect>,
     flip_y: bool,
@@ -291,5 +315,42 @@ fn create_from_image_asset_src_rect(
             resize_width,
             resize_height,
         )
+    }
+}
+
+pub(crate) fn create_image_asset_encoded(
+    buf: &[u8],
+    rect: Option<skia_safe::Rect>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+) -> i64 {
+    match from_image_slice_encoded(buf) {
+        None => Box::into_raw(Box::new(ImageAsset::new())) as i64,
+        Some(image) => match rect {
+            None => create_image_bitmap(
+                image,
+                None,
+                flip_y,
+                premultiply_alpha,
+                color_space_conversion,
+                resize_quality,
+                resize_width,
+                resize_height,
+            ),
+            Some(rect) => create_image_bitmap(
+                image,
+                Some(rect),
+                flip_y,
+                premultiply_alpha,
+                color_space_conversion,
+                resize_quality,
+                resize_width,
+                resize_height,
+            ),
+        },
     }
 }

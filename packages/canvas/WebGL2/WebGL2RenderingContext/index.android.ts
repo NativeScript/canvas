@@ -17,7 +17,7 @@ import {ImageAsset} from '../../ImageAsset';
 import {ImageSource} from '@nativescript/core';
 import {WebGL2RenderingContextBase} from "./common";
 import {Canvas} from '../../Canvas';
-
+import { ImageBitmap } from '../../ImageBitmap';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	constructor(context) {
@@ -788,6 +788,19 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				type,
 				source.native
 			);
+		} else if (source instanceof ImageBitmap) {
+			this.native.texImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				source.native
+			);
 		} else if (
 			source &&
 			typeof source.tagName === 'string' &&
@@ -1014,6 +1027,20 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				srcData.android
 			);
 		} else if (srcData instanceof ImageAsset) {
+			this.native.texSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				srcData.native
+			);
+		} else if (srcData instanceof ImageBitmap) {
 			this.native.texSubImage3D(
 				target,
 				level,

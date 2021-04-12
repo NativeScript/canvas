@@ -18,7 +18,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         scale = Int(UIScreen.main.scale)
         // Do any additional setup after loading the view.
         canvas1.setListener(self)
-        canvas1.isHidden = true
+       // canvas1.isHidden = true
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
         //svg = TNSSVG(frame: view.bounds)

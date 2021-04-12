@@ -912,6 +912,11 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         gl_tex_image_3D_asset(target, level, internalformat, width, height, depth, border, format, target, asset.asset, flipYWebGL)
     }
     
+    public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32, bitmap: TNSImageBitmap) {
+        let _ = canvas.renderer.ensureIsContextIsCurrent()
+        gl_tex_image_3D_asset(target, level, internalformat, width, height, depth, border, format, target, bitmap.asset, flipYWebGL)
+    }
+    
     public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32, _ height: Int32,_ depth: Int32, _ border: Int32,_ format: UInt32,_ type: UInt32, canvas: TNSCanvas) {
         var snapshot = canvas.snapshot()
         let _ = self.canvas.renderer.ensureIsContextIsCurrent()
@@ -1096,6 +1101,13 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         let _ = canvas.renderer.ensureIsContextIsCurrent()
         gl_tex_sub_image_3D_asset(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, asset.asset, flipYWebGL)
     }
+    
+    
+    public func texSubImage3D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ zoffset: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ format: UInt32, _ type: UInt32, bitmap: TNSImageBitmap){
+        let _ = canvas.renderer.ensureIsContextIsCurrent()
+        gl_tex_sub_image_3D_asset(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, bitmap.asset, flipYWebGL)
+    }
+    
     
     
     public func transformFeedbackVaryings(_ program: UInt32,_ varyings: [String],_ bufferMode: UInt32){

@@ -289,6 +289,17 @@ import UIKit
   @objc public func encode(pointer text: Swift.UnsafePointer<Swift.Int8>?) -> Foundation.NSData
   @objc deinit
 }
+@objc(TNSImageBitmapPremultiplyAlpha) public enum TNSImageBitmapPremultiplyAlpha : Swift.Int, Swift.RawRepresentable {
+  case Default
+  case Premultiply
+  case None
+  public typealias RawValue = Swift.Int32
+  public var rawValue: CanvasNative.TNSImageBitmapPremultiplyAlpha.RawValue {
+    get
+  }
+  public init?(rawValue: CanvasNative.TNSImageBitmapPremultiplyAlpha.RawValue)
+  public init?(string: Swift.String)
+}
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_WEBGL_compressed_texture_etc1) public class TNS_WEBGL_compressed_texture_etc1 : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc public var COMPRESSED_RGB_ETC1_WEBGL: Swift.Int32 {
@@ -319,6 +330,16 @@ extension RangeReplaceableCollection {
   }
   public init?(rawValue: CanvasNative.TNSLineJoin.RawValue)
   public init?(string: Swift.String)
+}
+@_inheritsConvenienceInitializers @objcMembers @objc(TNSImageBitmapOptions) public class TNSImageBitmapOptions : ObjectiveC.NSObject {
+  @objc public var flipY: Swift.Bool
+  @objc public var premultiplyAlpha: CanvasNative.TNSImageBitmapPremultiplyAlpha
+  @objc public var colorSpaceConversion: CanvasNative.TNSImageBitmapColorSpaceConversion
+  @objc public var resizeQuality: CanvasNative.TNSImageBitmapResizeQuality
+  @objc public var resizeWidth: Swift.Float32
+  @objc public var resizeHeight: Swift.Float32
+  @objc override dynamic public init()
+  @objc deinit
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSFramebufferAttachmentParameter) public class TNSFramebufferAttachmentParameter : ObjectiveC.NSObject {
   @objc public var isTexture: Swift.Bool {
@@ -432,6 +453,7 @@ extension RangeReplaceableCollection {
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, f64 source: [Swift.Float64], _ srcOffset: Swift.Int32)
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, source: UIKit.UIImage)
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, asset: CanvasNative.TNSImageAsset)
+  @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, bitmap: CanvasNative.TNSImageBitmap)
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, canvas: CanvasNative.TNSCanvas)
   @objc public func texStorage2D(_ target: Swift.UInt32, _ levels: Swift.Int32, _ internalformat: Swift.UInt32, _ width: Swift.Int32, _ height: Swift.Int32)
   @objc public func texStorage3D(_ target: Swift.UInt32, _ levels: Swift.Int32, _ internalformat: Swift.UInt32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32)
@@ -455,6 +477,7 @@ extension RangeReplaceableCollection {
   @objc public func texSubImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, srcData: UIKit.UIImage)
   @objc public func texSubImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, canvas: CanvasNative.TNSCanvas)
   @objc public func texSubImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, asset: CanvasNative.TNSImageAsset)
+  @objc public func texSubImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, bitmap: CanvasNative.TNSImageBitmap)
   @objc public func transformFeedbackVaryings(_ program: Swift.UInt32, _ varyings: [Swift.String], _ bufferMode: Swift.UInt32)
   @objc public func uniform1ui(_ location: Swift.Int32, _ v0: Swift.UInt32)
   @objc public func uniform2ui(_ location: Swift.Int32, _ v0: Swift.UInt32, _ v1: Swift.UInt32)
@@ -1509,6 +1532,7 @@ extension RangeReplaceableCollection {
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Foundation.NSNull)
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: UIKit.UIImage)
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, asset: CanvasNative.TNSImageAsset)
+  @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, bitmap: CanvasNative.TNSImageBitmap)
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Foundation.NSNull)
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, canvas: CanvasNative.TNSCanvas)
   @objc public func texParameterf(_ target: Swift.UInt32, _ pname: Swift.UInt32, _ param: Swift.Float32)
@@ -1519,6 +1543,7 @@ extension RangeReplaceableCollection {
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Foundation.NSNull)
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: UIKit.UIImage)
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, asset: CanvasNative.TNSImageAsset)
+  @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, bitmap: CanvasNative.TNSImageBitmap)
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, canvas: CanvasNative.TNSCanvas)
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Foundation.NSNull)
   @objc public func uniform1f(_ location: Swift.Int32, _ v0: Swift.Float32)
@@ -2444,12 +2469,30 @@ extension RangeReplaceableCollection {
   @objc deinit
 }
 @_hasMissingDesignatedInitializers @objcMembers @objc(TNSImageBitmap) public class TNSImageBitmap : ObjectiveC.NSObject {
+  @objc public static var queue: Dispatch.DispatchQueue {
+    @objc get
+  }
+  @objc public static func createFromImageBitmap(_ imageBitmap: CanvasNative.TNSImageBitmap, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromImageBitmap(_ imageBitmap: CanvasNative.TNSImageBitmap, _ sx: Swift.Float32, _ sy: Swift.Float32, _ sWidth: Swift.Float32, _ sHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromImageAsset(_ imageAsset: CanvasNative.TNSImageAsset, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromImageAsset(_ imageAsset: CanvasNative.TNSImageAsset, _ sx: Swift.Float32, _ sy: Swift.Float32, _ sWidth: Swift.Float32, _ sHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromImageData(_ imageData: CanvasNative.TNSImageData, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromImageData(_ imageData: CanvasNative.TNSImageData, _ sx: Swift.Float32, _ sy: Swift.Float32, _ sWidth: Swift.Float32, _ sHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromCanvas(_ canvas: CanvasNative.TNSCanvas, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromCanvas(_ canvas: CanvasNative.TNSCanvas, _ sx: Swift.Float32, _ sy: Swift.Float32, _ sWidth: Swift.Float32, _ sHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromBytes(_ bytes: [Swift.UInt8], _ imageWidth: Swift.Float32, _ imageHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromBytes(_ bytes: [Swift.UInt8], _ imageWidth: Swift.Float32, _ imageHeight: Swift.Float32, _ sx: Swift.Float32, _ sy: Swift.Float32, _ sWidth: Swift.Float32, _ sHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromBytesEncoded(_ bytes: [Swift.UInt8], _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromBytesEncoded(_ bytes: [Swift.UInt8], _ sx: Swift.Float32, _ sy: Swift.Float32, _ sWidth: Swift.Float32, _ sHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromUIImage(_ canvas: UIKit.UIImage, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
+  @objc public static func createFromUIImage(_ canvas: UIKit.UIImage, _ sx: Swift.Float32, _ sy: Swift.Float32, _ sWidth: Swift.Float32, _ sHeight: Swift.Float32, _ options: CanvasNative.TNSImageBitmapOptions, _ callback: @escaping (CanvasNative.TNSImageBitmap?, Swift.String?) -> Swift.Void)
   @objc public var width: Swift.Int32 {
     @objc get
   }
   @objc public var height: Swift.Int32 {
     @objc get
   }
+  @objc public func close()
   @objc public var error: Swift.String? {
     @objc get
   }
@@ -2886,6 +2929,28 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   }
   @objc deinit
 }
+@objc(TNSImageBitmapColorSpaceConversion) public enum TNSImageBitmapColorSpaceConversion : Swift.Int, Swift.RawRepresentable {
+  case Default
+  case None
+  public typealias RawValue = Swift.Int32
+  public var rawValue: CanvasNative.TNSImageBitmapColorSpaceConversion.RawValue {
+    get
+  }
+  public init?(rawValue: CanvasNative.TNSImageBitmapColorSpaceConversion.RawValue)
+  public init?(string: Swift.String)
+}
+@objc(TNSImageBitmapResizeQuality) public enum TNSImageBitmapResizeQuality : Swift.Int, Swift.RawRepresentable {
+  case Low
+  case Medium
+  case High
+  case Pixelated
+  public typealias RawValue = Swift.Int32
+  public var rawValue: CanvasNative.TNSImageBitmapResizeQuality.RawValue {
+    get
+  }
+  public init?(rawValue: CanvasNative.TNSImageBitmapResizeQuality.RawValue)
+  public init?(string: Swift.String)
+}
 @_inheritsConvenienceInitializers @objc(TNSCanvasRenderingContext) public class TNSCanvasRenderingContext : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc deinit
@@ -3106,6 +3171,8 @@ extension CanvasNative.TNSFillRule : Swift.Equatable {}
 extension CanvasNative.TNSFillRule : Swift.Hashable {}
 extension CanvasNative.TNSTextDirection : Swift.Equatable {}
 extension CanvasNative.TNSTextDirection : Swift.Hashable {}
+extension CanvasNative.TNSImageBitmapPremultiplyAlpha : Swift.Equatable {}
+extension CanvasNative.TNSImageBitmapPremultiplyAlpha : Swift.Hashable {}
 extension CanvasNative.TNSLineJoin : Swift.Equatable {}
 extension CanvasNative.TNSLineJoin : Swift.Hashable {}
 extension CanvasNative.TNSLineCap : Swift.Equatable {}
@@ -3120,6 +3187,10 @@ extension CanvasNative.ContextType : Swift.Equatable {}
 extension CanvasNative.ContextType : Swift.Hashable {}
 extension CanvasNative.TNSCompositeOperationType : Swift.Equatable {}
 extension CanvasNative.TNSCompositeOperationType : Swift.Hashable {}
+extension CanvasNative.TNSImageBitmapColorSpaceConversion : Swift.Equatable {}
+extension CanvasNative.TNSImageBitmapColorSpaceConversion : Swift.Hashable {}
+extension CanvasNative.TNSImageBitmapResizeQuality : Swift.Equatable {}
+extension CanvasNative.TNSImageBitmapResizeQuality : Swift.Hashable {}
 extension CanvasNative.CanvasColorStyleType : Swift.Equatable {}
 extension CanvasNative.CanvasColorStyleType : Swift.Hashable {}
 extension CanvasNative.TNSPatternRepetition : Swift.Equatable {}

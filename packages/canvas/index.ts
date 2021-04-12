@@ -13,6 +13,8 @@ export * from './WebGL';
 export * from './WebGL2';
 export * from './SVG';
 
+export * from './ImageBitmap';
+
 export {CanvasRenderingContext2D} from './Canvas2D/CanvasRenderingContext2D';
 export {WebGLRenderingContext} from './WebGL/WebGLRenderingContext';
 export {WebGL2RenderingContext} from './WebGL2/WebGL2RenderingContext';

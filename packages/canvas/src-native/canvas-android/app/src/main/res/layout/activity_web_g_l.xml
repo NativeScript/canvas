@@ -6,12 +6,14 @@
 	android:layout_height="match_parent"
 	tools:context=".WebGLActivity">
 
+	<!--
 	<com.github.triniwiz.canvas.TNSCanvas
 		android:id="@+id/canvasView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		tools:layout_editor_absoluteX="8dp"
 		tools:layout_editor_absoluteY="8dp" />
+	-->
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -2379,7 +2379,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 //				val buf = ByteBuffer.allocateDirect(it.size).order(ByteOrder.nativeOrder())
 //				buf.put(pixels)
 //				buf.rewind()
-				if(it.isDirect){
+				if (it.isDirect) {
 					nativeTexImage2DBuffer(
 						target,
 						level,
@@ -2392,7 +2392,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 						it,
 						flipYWebGL
 					)
-				}else {
+				} else {
 					nativeTexImage2DByteArray(
 						target,
 						level,
@@ -2427,8 +2427,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		} catch (ignored: InterruptedException) {
 		}
 	}
-
-
 
 
 	fun texImage2D(
@@ -2657,6 +2655,34 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				format,
 				type,
 				ss,
+				flipYWebGL
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun texImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		format: Int,
+		type: Int,
+		bitmap: TNSImageBitmap
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			nativeTexImage2DAsset(
+				target,
+				level,
+				internalformat,
+				0,
+				format,
+				type,
+				bitmap.nativeImageAsset,
 				flipYWebGL
 			)
 			lock.countDown()
@@ -2968,6 +2994,35 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				format,
 				type,
 				pixels,
+				flipYWebGL
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun texSubImage2D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		format: Int,
+		type: Int,
+		bitmap: TNSImageBitmap
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			nativeTexSubImage2DAsset(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				format,
+				type,
+				bitmap.nativeImageAsset,
 				flipYWebGL
 			)
 			lock.countDown()

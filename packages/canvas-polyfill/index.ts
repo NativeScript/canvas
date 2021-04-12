@@ -13,13 +13,37 @@ import { Document } from './DOM/Document';
 import './window';
 import './resize';
 import './process';
-import { TextDecoder, TextEncoder } from '@nativescript/canvas';
+import { TextDecoder, TextEncoder, ImageBitmap } from '@nativescript/canvas';
 import { URL } from './URL';
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 
-(global as any).window.createImageBitmap = (global as any).createImageBitmap = (image) =>{
+(global as any).window.createImageBitmap = (global as any).createImageBitmap = (...args) => {
+	const image = args[0];
+	const sx_or_options = args[1];
+	const sy = args[2];
+	const sw = args[3];
+	const sh = args[4];
+	if(typeof sw === 'number' && sw === 0 || typeof sh === 'number' && sh === 0 ){
+		return Promise.reject(
+			new RangeError(`Failed to execute 'createImageBitmap' : The crop rect width is 0`)
+		)
+	}
 
-}
+	if (args.length === 1) {
+		//@ts-ignore
+		return ImageBitmap.createFrom(image);
+	} else if (args.length === 2) {
+		//@ts-ignore
+		return ImageBitmap.createFrom(image, sx_or_options);
+	} else if (args.length === 5) {
+		
+		//@ts-ignore
+		return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh);
+	} else if (args.length === 6) {
+		//@ts-ignore
+		return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh, args[5]);
+	}
+};
 
 Object.defineProperty(global, 'Element', {
 	value: Element,

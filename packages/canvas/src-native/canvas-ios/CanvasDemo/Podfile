@@ -1,5 +1,6 @@
 use_frameworks!
 platform :ios, '11.0'
+install! 'cocoapods', :disable_input_output_paths => true
 target 'CanvasDemo' do
 pod 'CanvasNative', :path => '../'
 #pod 'CanvasNative', :git => 'https://github.com/triniwiz/canvas-native-ios'

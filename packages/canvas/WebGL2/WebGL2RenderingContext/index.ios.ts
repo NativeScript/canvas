@@ -17,6 +17,7 @@ import {ImageSource} from '@nativescript/core';
 import {ImageAsset} from '../../ImageAsset';
 import {WebGL2RenderingContextBase} from "./common";
 import {Canvas} from '../../Canvas';
+import { ImageBitmap } from '../../ImageBitmap';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	constructor(context) {
@@ -473,7 +474,9 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3DSource(target, level, internalformat, width, height, depth, border, format, type, source.ios);
 		} else if (source instanceof ImageAsset) {
 			this.native.texImage3DAsset(target, level, internalformat, width, height, depth, border, format, type, source.native);
-		} else if (source &&
+		} else if (source instanceof ImageBitmap) {
+			this.native.texImage3DBitmap(target, level, internalformat, width, height, depth, border, format, type, source.native);
+		}  else if (source &&
 			typeof source.tagName === 'string' &&
 			(source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 			if (source._imageSource instanceof ImageSource) {
@@ -537,6 +540,8 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3DSrcData(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.ios);
 		} else if (srcData instanceof ImageAsset) {
 			this.native.texSubImage3DAsset(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
+		} else if (srcData instanceof ImageBitmap) {
+			this.native.texSubImage3DBitmap(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData &&
 			typeof srcData.tagName === 'string' &&
 			(srcData.tagName === 'IMG' || srcData.tagName === 'IMAGE')) {

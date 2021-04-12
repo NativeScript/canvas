@@ -344,7 +344,7 @@ pub extern "C" fn context_snapshot_canvas(context: c_longlong) -> *mut U8Array {
     unsafe {
         let context: *mut Context = context as _;
         let context = &mut *context;
-        context.surface.canvas().flush();
+        context.surface.flush_and_submit();
         let ss = context.surface.image_snapshot();
         let data = ss.encode_to_data(EncodedImageFormat::PNG).unwrap();
         let len = data.len();

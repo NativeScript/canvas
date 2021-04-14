@@ -450,6 +450,11 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro2-7bde3dc3aa29a2bf/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-c51eea3a707969ff/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/tokio-30b6382b33d64f56/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/bindgen-165bd50fdc28ebde/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/v8-bindings-267e4fe24b5bc126/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/v8-bindings-2807dd67f609efa6/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/v8-bindings-d439e4eb7154a1ce/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/v8-bindings/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

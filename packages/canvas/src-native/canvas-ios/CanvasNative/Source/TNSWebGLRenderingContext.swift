@@ -155,7 +155,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
 
     public func bindFramebuffer(_ target: UInt32,_ framebuffer: UInt32){
         canvas.renderer.ensureIsContextIsCurrent()
-        if(framebuffer == 0){
+        if(framebuffer == 0 && target == GL_FRAMEBUFFER){
             glBindFramebuffer(target, canvas.renderer.displayFramebuffer)
             return
         }
@@ -164,6 +164,10 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
 
     public func bindRenderbuffer(_ target: UInt32, _ renderbuffer: UInt32){
         canvas.renderer.ensureIsContextIsCurrent()
+        if(renderbuffer == 0 && target == GL_RENDERER){
+            glBindRenderbuffer(target, canvas.renderer.displayRenderbuffer)
+            return
+        }
         glBindRenderbuffer(target, renderbuffer)
     }
 
@@ -482,14 +486,14 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
 
     public func createBuffer() -> UInt32 {
         canvas.renderer.ensureIsContextIsCurrent()
-        var bufferId: GLuint = 0
+        var bufferId = GLuint()
         glGenBuffers(1, &bufferId)
         return bufferId
     }
 
     public func createFramebuffer() -> UInt32 {
         canvas.renderer.ensureIsContextIsCurrent()
-        var frameBufferId: GLuint = 0
+        var frameBufferId = GLuint()
         glGenFramebuffers(1, &frameBufferId)
         return frameBufferId
     }
@@ -501,7 +505,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
 
     public func createRenderbuffer() -> UInt32 {
         canvas.renderer.ensureIsContextIsCurrent()
-        var renderBufferId: GLuint = 0
+        var renderBufferId = GLuint()
         glGenRenderbuffers(1, &renderBufferId)
         return renderBufferId
     }
@@ -514,7 +518,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
 
     public func createTexture() -> UInt32 {
         canvas.renderer.ensureIsContextIsCurrent()
-        var textureId:GLuint = 0
+        var textureId = GLuint()
         glGenTextures(1, &textureId)
         return textureId
     }

@@ -324,6 +324,9 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                     var binding = GLint(0)
                     glGetIntegerv(GLenum(GL_FRAMEBUFFER_BINDING), &binding)
                     displayFramebuffer = GLuint(binding)
+                    var renderBufferBinding = GLint()
+                    glGetIntegerv(GLenum(GL_RENDERBUFFER_BINDING), &renderBufferBinding)
+                    displayRenderbuffer = GLuint(renderBufferBinding)
                     if(contextType == .webGL){
                         if let gl = canvasView?.renderingContextWebGL as? TNSWebGLRenderingContext {
                             gl.reset()
@@ -390,9 +393,12 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                     glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/scale), height: CGFloat(1/scale))
                 }
                 glkView.bindDrawable()
-                var binding = GLint(0)
+                var binding = GLint()
                 glGetIntegerv(GLenum(GL_FRAMEBUFFER_BINDING), &binding)
                 displayFramebuffer = GLuint(binding)
+                var renderBufferBinding = GLint()
+                glGetIntegerv(GLenum(GL_RENDERBUFFER_BINDING), &renderBufferBinding)
+                displayRenderbuffer = GLuint(renderBufferBinding)
                 if(contextType == .webGL){
                     if let gl = canvasView?.renderingContextWebGL as? TNSWebGLRenderingContext {
                         gl.reset()

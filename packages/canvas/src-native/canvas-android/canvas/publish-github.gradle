@@ -1,0 +1,53 @@
+apply plugin: 'maven-publish'
+
+def LIB_GROUP_ID = 'com.github.triniwiz'
+def LIB_ARTIFACT_ID = 'canvas'
+def LIB_VERSION = '0.9.16'
+
+task sourceJar(type: Jar) {
+	from android.sourceSets.main.java.srcDirs
+	classifier "sources"
+}
+
+def properties = new Properties()
+properties.load(new FileInputStream(project.rootProject.file('local.properties')))
+
+afterEvaluate {
+	publishing {
+		repositories {
+			maven {
+				name = "GithubPackages"
+				url = uri("https://maven.pkg.github.com/NativeScript/canvas")
+				credentials {
+					username = properties.getProperty("GITHUB_USER")
+					password = properties.getProperty("GITHUB_PERSONAL_ACCESS_TOKEN")
+				}
+			}
+			maven {
+				name = 'CustomMavenRepo'
+				url = "file://${buildDir}/repo"
+			}
+		}
+		publications {
+			canvas(MavenPublication) {
+				groupId LIB_GROUP_ID
+				artifactId LIB_ARTIFACT_ID
+				version LIB_VERSION
+				artifact("$buildDir/outputs/aar/canvas-release.aar")
+				artifact(sourceJar)
+
+				pom.withXml {
+					def dependenciesNode = asNode().appendNode('dependencies')
+
+					//Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
+					configurations.api.allDependencies.each {
+						def dependencyNode = dependenciesNode.appendNode('dependency')
+						dependencyNode.appendNode('groupId', it.group)
+						dependencyNode.appendNode('artifactId', it.name)
+						dependencyNode.appendNode('version', it.version)
+					}
+				}
+			}
+		}
+	}
+}

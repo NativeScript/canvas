@@ -1,6 +1,5 @@
 use core::convert::{From, Into};
 
-use image as image_rs;
 use skia_safe::{EncodedImageFormat, Point, RCHandle, Rect};
 
 use crate::common::context::image_asset::ImageAsset;
@@ -224,22 +223,28 @@ pub(crate) fn create_image_bitmap(
                 .canvas()
                 .draw_image(&image, (source_rect.x(), source_rect.y()), Some(&paint));
 
-            let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
             let image = surface.image_snapshot();
+            let data;
+            if image.width() != out_width && image.height() != out_height {
+                let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
 
-            let mut bytes = vec![0_u8; (out_width * out_height * 4.) as usize];
-            let mut pixel_map = skia_safe::Pixmap::new(
-                &resize_info,
-                bytes.as_mut_slice(),
-                (out_width * 4.) as usize,
-            );
-            image.scale_pixels(
-                &pixel_map,
-                ImageBitmapResizeQuality::from(resize_quality).to_quality(),
-                None,
-            );
+                let mut bytes = vec![0_u8; (out_width * out_height * 4.) as usize];
+                let mut pixel_map = skia_safe::Pixmap::new(
+                    &resize_info,
+                    bytes.as_mut_slice(),
+                    (out_width * 4.) as usize,
+                );
+                image.scale_pixels(
+                    &pixel_map,
+                    ImageBitmapResizeQuality::from(resize_quality).to_quality(),
+                    None,
+                );
 
-            let data = pixel_map.encode(EncodedImageFormat::PNG, 100);
+                data = pixel_map.encode(EncodedImageFormat::PNG, 100);
+            } else {
+                data = image.encode_to_data(EncodedImageFormat::PNG);
+            }
+
             if let Some(data) = data {
                 output.load_from_bytes(data.as_bytes());
             };

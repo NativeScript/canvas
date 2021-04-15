@@ -50,7 +50,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// });
 		// if (isAndroid) {
 		//     canvas.android.setHandleInvalidationManually(true);
-		//     (com.github.triniwiz.canvas.CanvasView as any).getViews().put(
+		//     (org.nativescript.canvas.CanvasView as any).getViews().put(
 		//         `${canvas._domId}`, new java.lang.ref.WeakReference(canvas.android)
 		//     );
 		// } else {
@@ -157,7 +157,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
-		// interactiveCube(this.canvas);
+		 interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'line_strip')
@@ -174,7 +174,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		this.zen3dGeometryLoaderGltf(this.canvas);
+		//this.zen3dGeometryLoaderGltf(this.canvas);
 	}
 
 	gridLoaded(args) {

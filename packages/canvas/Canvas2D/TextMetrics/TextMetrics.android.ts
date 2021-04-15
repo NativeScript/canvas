@@ -1,7 +1,7 @@
 import { TextMetricsBase } from './common';
 
 export class TextMetrics extends TextMetricsBase {
-	nativeInstance: com.github.triniwiz.canvas.TNSTextMetrics
+	nativeInstance: org.nativescript.canvas.TNSTextMetrics
 	constructor(instance: any) {
 		super(instance);
 	}

@@ -1,19 +1,18 @@
 import {Path2DBase} from './common';
 import {DOMMatrix} from '../DOMMatrix';
 
-declare var com;
 
 export class Path2D extends Path2DBase {
 	constructor(instance?: any) {
 		let nativeInstance;
 		if (typeof instance === 'string') {
-			nativeInstance = new com.github.triniwiz.canvas.TNSPath2D(instance);
+			nativeInstance = new org.nativescript.canvas.TNSPath2D(instance);
 		} else if (instance instanceof Path2D) {
-			nativeInstance = new com.github.triniwiz.canvas.TNSPath2D(instance.native);
-		} else if (instance instanceof com.github.triniwiz.canvas.TNSPath2D) {
-			nativeInstance = new com.github.triniwiz.canvas.TNSPath2D(instance);
+			nativeInstance = new org.nativescript.canvas.TNSPath2D(instance.native);
+		} else if (instance instanceof org.nativescript.canvas.TNSPath2D) {
+			nativeInstance = new org.nativescript.canvas.TNSPath2D(instance);
 		} else {
-			nativeInstance = new com.github.triniwiz.canvas.TNSPath2D();
+			nativeInstance = new org.nativescript.canvas.TNSPath2D();
 		}
 		super(nativeInstance);
 	}

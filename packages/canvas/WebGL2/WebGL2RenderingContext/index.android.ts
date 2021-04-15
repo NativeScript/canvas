@@ -24,7 +24,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		super(context);
 	}
 
-	// native: com.github.triniwiz.canvas.WebGL2RenderingContext;
+	// native: org.nativescript.canvas.WebGL2RenderingContext;
 	/* Transform feedback */
 
 	static toPrimitive(value): any {

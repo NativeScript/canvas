@@ -42,7 +42,7 @@ import { Canvas } from '../../Canvas';
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
-	private context; //: com.github.triniwiz.canvas.WebGLRenderingContext;
+	private context: org.nativescript.canvas.TNSWebGLRenderingContext;
 
 	constructor(context) {
 		super(context);
@@ -608,51 +608,51 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			const clazz = ext && ext.getClass();
 			const classObjName = clazz && clazz.getName();
 			switch (classObjName) {
-				case 'com.github.triniwiz.canvas.extensions.ANGLE_instanced_arrays':
+				case 'org.nativescript.canvas.extensions.ANGLE_instanced_arrays':
 					return new ANGLE_instanced_arrays(ext);
-				case 'com.github.triniwiz.canvas.extensions.EXT_blend_minmax':
+				case 'org.nativescript.canvas.extensions.EXT_blend_minmax':
 					return new EXT_blend_minmax(ext);
-				case 'com.github.triniwiz.canvas.extensions.EXT_color_buffer_half_float':
+				case 'org.nativescript.canvas.extensions.EXT_color_buffer_half_float':
 					return new EXT_color_buffer_half_float(ext);
-				case 'com.github.triniwiz.canvas.extensions.EXT_disjoint_timer_query':
+				case 'org.nativescript.canvas.extensions.EXT_disjoint_timer_query':
 					return new EXT_disjoint_timer_query(ext);
-				case 'com.github.triniwiz.canvas.extensions.EXT_sRGB':
+				case 'org.nativescript.canvas.extensions.EXT_sRGB':
 					return new EXT_sRGB(ext);
-				case 'com.github.triniwiz.canvas.extensions.EXT_shader_texture_lod':
+				case 'org.nativescript.canvas.extensions.EXT_shader_texture_lod':
 					return new EXT_shader_texture_lod(ext);
-				case 'com.github.triniwiz.canvas.extensions.EXT_texture_filter_anisotropic':
+				case 'org.nativescript.canvas.extensions.EXT_texture_filter_anisotropic':
 					return new EXT_texture_filter_anisotropic(ext);
-				case 'com.github.triniwiz.canvas.extensions.OES_element_index_uint':
+				case 'org.nativescript.canvas.extensions.OES_element_index_uint':
 					return new OES_element_index_uint(ext);
-				case 'com.github.triniwiz.canvas.extensions.OES_standard_derivatives':
+				case 'org.nativescript.canvas.extensions.OES_standard_derivatives':
 					return new OES_standard_derivatives(ext);
-				case 'com.github.triniwiz.canvas.extensions.OES_texture_float':
+				case 'org.nativescript.canvas.extensions.OES_texture_float':
 					return new OES_texture_float(ext);
-				case 'com.github.triniwiz.canvas.extensions.OES_texture_float_linear':
+				case 'org.nativescript.canvas.extensions.OES_texture_float_linear':
 					return new OES_texture_float_linear(ext);
-				case 'com.github.triniwiz.canvas.extensions.OES_texture_half_float':
+				case 'org.nativescript.canvas.extensions.OES_texture_half_float':
 					return new OES_texture_half_float(ext);
-				case 'com.github.triniwiz.canvas.extensions.OES_texture_half_float_linear':
+				case 'org.nativescript.canvas.extensions.OES_texture_half_float_linear':
 					return new OES_texture_half_float_linear(ext);
-				case 'com.github.triniwiz.canvas.extensions.OES_vertex_array_object':
+				case 'org.nativescript.canvas.extensions.OES_vertex_array_object':
 					return new OES_vertex_array_object(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_color_buffer_float':
+				case 'org.nativescript.canvas.extensions.WEBGL_color_buffer_float':
 					return new WEBGL_color_buffer_float(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_compressed_texture_atc':
+				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_atc':
 					return new WEBGL_compressed_texture_atc(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_compressed_texture_etc':
+				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_etc':
 					return new WEBGL_compressed_texture_etc(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_compressed_texture_etc1':
+				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_etc1':
 					return new WEBGL_compressed_texture_etc1(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_compressed_texture_pvrtc':
+				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_pvrtc':
 					return new WEBGL_compressed_texture_pvrtc(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_compressed_texture_s3tc':
+				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_s3tc':
 					return new WEBGL_compressed_texture_s3tc(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_lose_context':
+				case 'org.nativescript.canvas.extensions.WEBGL_lose_context':
 					return new WEBGL_lose_context(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_depth_texture':
+				case 'org.nativescript.canvas.extensions.WEBGL_depth_texture':
 					return new WEBGL_depth_texture(ext);
-				case 'com.github.triniwiz.canvas.extensions.WEBGL_draw_buffers':
+				case 'org.nativescript.canvas.extensions.WEBGL_draw_buffers':
 					return new WEBGL_draw_buffers(ext);
 			}
 		}

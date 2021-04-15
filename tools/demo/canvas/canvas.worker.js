@@ -24,7 +24,7 @@ onmessage = ev => {
     let ref;
     let nativeCanvas;
     if (global.android) {
-        const contexts = com.github.triniwiz.canvas.CanvasView.getViews();
+        const contexts = org.nativescript.canvas.CanvasView.getViews();
         ref = contexts.get(data.id);
         nativeCanvas = ref.get();
     } else {

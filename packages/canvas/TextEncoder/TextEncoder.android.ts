@@ -4,7 +4,7 @@ declare var com;
 
 export class TextEncoder extends TextEncoderBase {
 	constructor(encoding: string = 'utf8') {
-		super(new com.github.triniwiz.canvas.TNSTextEncoder(encoding));
+		super(new org.nativescript.canvas.TNSTextEncoder(encoding));
 	}
 
 	get encoding(): string {

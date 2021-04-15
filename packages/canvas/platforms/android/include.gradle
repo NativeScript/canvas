@@ -1,9 +1,9 @@
 allprojects {
     repositories {
-        maven { url "https://dl.bintray.com/triniwiz/maven" }
+        maven { url "https://repo1.maven.org/maven2/" }
     }
 }
 
 dependencies {
-	implementation 'com.github.triniwiz:canvas:0.9.14'
+    implementation 'org.nativescript:canvas:0.9.17'
 }

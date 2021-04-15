@@ -3,7 +3,7 @@ import {knownFolders, path as filePath} from '@nativescript/core';
 
 export class ImageAsset extends ImageAssetBase {
     constructor() {
-        super(new com.github.triniwiz.canvas.TNSImageAsset());
+        super(new org.nativescript.canvas.TNSImageAsset());
     }
 
     get width() {
@@ -47,7 +47,7 @@ export class ImageAsset extends ImageAssetBase {
         return new Promise((resolve, reject) => {
             this.native.loadImageFromUrlAsync(
                 path,
-                new com.github.triniwiz.canvas.TNSImageAsset.Callback({
+                new org.nativescript.canvas.TNSImageAsset.Callback({
                     onError(error) {
                         reject(error);
                     },
@@ -86,7 +86,7 @@ export class ImageAsset extends ImageAssetBase {
             }
             this.native.loadImageFromPathAsync(
                 path,
-                new com.github.triniwiz.canvas.TNSImageAsset.Callback({
+                new org.nativescript.canvas.TNSImageAsset.Callback({
                     onError(error) {
                         reject(error);
                     },
@@ -106,7 +106,7 @@ export class ImageAsset extends ImageAssetBase {
         return new Promise((resolve, reject) => {
             this.native.loadImageFromImageAsync(
                 image,
-                new com.github.triniwiz.canvas.TNSImageAsset.Callback({
+                new org.nativescript.canvas.TNSImageAsset.Callback({
                     onError(error) {
                         reject(error);
                     },
@@ -127,7 +127,7 @@ export class ImageAsset extends ImageAssetBase {
 
     loadFromBytesAsync(bytes: Uint8Array | Uint8ClampedArray) {
         return new Promise((resolve, reject) => {
-            const callback = new com.github.triniwiz.canvas.TNSImageAsset.Callback({
+            const callback = new org.nativescript.canvas.TNSImageAsset.Callback({
                 onError(error) {
                     reject(error);
                 },
@@ -151,19 +151,19 @@ export class ImageAsset extends ImageAssetBase {
         let realFormat;
         switch (format) {
             case ImageAssetSaveFormat.PNG:
-                realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.PNG;
+                realFormat = org.nativescript.canvas.TNSImageAssetFormat.PNG;
                 break;
             case ImageAssetSaveFormat.ICO:
-                realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.ICO;
+                realFormat = org.nativescript.canvas.TNSImageAssetFormat.ICO;
                 break;
             case ImageAssetSaveFormat.BMP:
-                realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.BMP;
+                realFormat = org.nativescript.canvas.TNSImageAssetFormat.BMP;
                 break;
             case ImageAssetSaveFormat.TIFF:
-                realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.TIFF;
+                realFormat = org.nativescript.canvas.TNSImageAssetFormat.TIFF;
                 break;
             default:
-                realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.JPG;
+                realFormat = org.nativescript.canvas.TNSImageAssetFormat.JPG;
                 break;
         }
         return this.native.save(path, realFormat);
@@ -174,25 +174,25 @@ export class ImageAsset extends ImageAssetBase {
             let realFormat;
             switch (format) {
                 case ImageAssetSaveFormat.PNG:
-                    realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.PNG;
+                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.PNG;
                     break;
                 case ImageAssetSaveFormat.ICO:
-                    realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.ICO;
+                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.ICO;
                     break;
                 case ImageAssetSaveFormat.BMP:
-                    realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.BMP;
+                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.BMP;
                     break;
                 case ImageAssetSaveFormat.TIFF:
-                    realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.TIFF;
+                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.TIFF;
                     break;
                 default:
-                    realFormat = com.github.triniwiz.canvas.TNSImageAssetFormat.JPG;
+                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.JPG;
                     break;
             }
-            (this.native as com.github.triniwiz.canvas.TNSImageAsset).saveAsync(
+            (this.native as org.nativescript.canvas.TNSImageAsset).saveAsync(
                 path,
                 realFormat,
-                new com.github.triniwiz.canvas.TNSImageAsset.Callback({
+                new org.nativescript.canvas.TNSImageAsset.Callback({
                     onError(error) {
                         reject(error);
                     },

@@ -225,7 +225,7 @@ pub(crate) fn create_image_bitmap(
 
             let image = surface.image_snapshot();
             let data;
-            if image.width() != out_width && image.height() != out_height {
+            if image.width() != out_width as i32 && image.height() != out_height as i32 {
                 let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
 
                 let mut bytes = vec![0_u8; (out_width * out_height * 4.) as usize];

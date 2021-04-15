@@ -4,7 +4,7 @@ import Chart from 'chart.js';
 
 let Matter;
 import { Canvas, ImageAsset } from '@nativescript/canvas';
-import { arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, colorRain, createLinearGradient, createRadialGradient, ellipse, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, shadowBlur, shadowColor, swarm, touchParticles } from './canvas2d';
+import {flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
@@ -318,7 +318,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	draw() {
 		//filterBlur(this.canvas);
-		handleVideo(this.canvas);
+		//handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
@@ -347,7 +347,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
 		// });
-		// this.vexFlow(this.canvas);
+		//this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
 		//	fillRule(this.canvas);
@@ -376,11 +376,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arcTo(this.canvas);
 		// arcToAnimation(this.canvas);
 		// ellipse(this.canvas);
-		// fillPath(this.canvas);
+		//fillPath(this.canvas);
 		//imageBlock(this.canvas);
-		// scale(this.canvas);
+		//scale(this.canvas);
 		//pattern(this.canvas);
-		// patternWithCanvas(this.canvas);
+		 //patternWithCanvas(this.canvas);
 		//isPointInStrokeTouch(this.canvas);
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
@@ -392,7 +392,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		// drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		//this.solar(this.canvas);
+		this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -424,7 +424,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// canvas.nativeView.handleInvalidationManually = true;
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
-		// draw_image_space(this.canvas);
+		 //draw_image_space(this.canvas);
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
@@ -433,7 +433,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
-		//drawModes(this.canvas,'line_strip')
+		//drawModes(this.canvas,'triangles')
 		//fog(this.canvas);
 		// }, 1000);
 		//cubeRotation(this.canvas);
@@ -1475,7 +1475,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var sun = new ImageAsset();
 		var moon = new ImageAsset();
 		var earth = new ImageAsset();
-
 		try {
 			await sun.loadFromUrlAsync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
 			await moon.loadFromUrlAsync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
@@ -1483,6 +1482,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		} catch (e) {
 			console.log('solar error:', e);
 		}
+		var ctx = canvas.getContext('2d');
+		ctx.scale(3,3);
 
 		function init() {
 			window.requestAnimationFrame(draw);
@@ -1491,7 +1492,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		let didScale = false;
 
 		function draw() {
-			var ctx = canvas.getContext('2d');
 			if (!ctx) {
 				return;
 			}

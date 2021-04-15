@@ -2,7 +2,22 @@ import { ImageAsset } from '../ImageAsset';
 import { ImageData } from '../Canvas2D';
 import { ImageBitmapBase } from './common';
 import { Canvas } from '../Canvas';
-
+import lazy from '../utils';
+const ImageBitmapPremultiplyAlpha = {
+	Default: lazy(() => org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha.Default),
+	None: lazy(() => org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha.None),
+	Premultiply: lazy(() => org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha.Premultiply),
+};
+const ImageBitmapColorSpaceConversion = {
+	Default: lazy(() => org.nativescript.canvas.TNSImageBitmapColorSpaceConversion.Default),
+	None: lazy(() => org.nativescript.canvas.TNSImageBitmapColorSpaceConversion.None),
+};
+const ImageBitmapResizeQuality = {
+	Low: lazy(() => org.nativescript.canvas.TNSImageBitmapResizeQuality.Low),
+	Medium: lazy(() => org.nativescript.canvas.TNSImageBitmapResizeQuality.Medium),
+	High: lazy(() => org.nativescript.canvas.TNSImageBitmapResizeQuality.High),
+	Pixelated: lazy(() => org.nativescript.canvas.TNSImageBitmapResizeQuality.Pixelated),
+}
 export class ImageBitmap extends ImageBitmapBase {
 	private constructor(bitmap: any) {
 		super(bitmap);
@@ -27,7 +42,7 @@ export class ImageBitmap extends ImageBitmapBase {
 	}
 
 	static fromNative(value) {
-		if (value instanceof com.github.triniwiz.canvas.TNSImageBitmap) {
+		if (value instanceof org.nativescript.canvas.TNSImageBitmap) {
 			return new ImageBitmap(value);
 		}
 		return null;
@@ -46,38 +61,38 @@ export class ImageBitmap extends ImageBitmapBase {
 					case 'premultiplyAlpha':
 						switch (value) {
 							case 'default':
-								nativeOptions.setPremultiplyAlpha(com.github.triniwiz.canvas.TNSImageBitmapPremultiplyAlpha.Default);
+								nativeOptions.setPremultiplyAlpha(ImageBitmapPremultiplyAlpha.Default());
 								break;
 							case 'Premultiply':
-								nativeOptions.setPremultiplyAlpha(com.github.triniwiz.canvas.TNSImageBitmapPremultiplyAlpha.Premultiply);
+								nativeOptions.setPremultiplyAlpha(ImageBitmapPremultiplyAlpha.Premultiply());
 							case 'none':
-								nativeOptions.setPremultiplyAlpha(com.github.triniwiz.canvas.TNSImageBitmapPremultiplyAlpha.None);
+								nativeOptions.setPremultiplyAlpha(ImageBitmapPremultiplyAlpha.None());
 								break;
 						}
 						break;
 					case 'colorSpaceConversion':
 						switch (value) {
 							case 'default':
-								nativeOptions.setColorSpaceConversion(com.github.triniwiz.canvas.TNSImageBitmapColorSpaceConversion.Default);
+								nativeOptions.setColorSpaceConversion(ImageBitmapColorSpaceConversion.Default());
 								break;
 							case 'none':
-								nativeOptions.setColorSpaceConversion(com.github.triniwiz.canvas.TNSImageBitmapColorSpaceConversion.None);
+								nativeOptions.setColorSpaceConversion(ImageBitmapColorSpaceConversion.None());
 								break;
 						}
 						break;
 					case 'resizeQuality':
 						switch (value) {
 							case 'low':
-								nativeOptions.setResizeQuality(com.github.triniwiz.canvas.TNSImageBitmapResizeQuality.Low);
+								nativeOptions.setResizeQuality(ImageBitmapResizeQuality.Low());
 								break;
 							case 'medium':
-								nativeOptions.setResizeQuality(com.github.triniwiz.canvas.TNSImageBitmapResizeQuality.Medium);
+								nativeOptions.setResizeQuality(ImageBitmapResizeQuality.Medium());
 								break;
 							case 'high':
-								nativeOptions.setResizeQuality(com.github.triniwiz.canvas.TNSImageBitmapResizeQuality.High);
+								nativeOptions.setResizeQuality(ImageBitmapResizeQuality.High());
 								break;
 							case 'pixelated':
-								nativeOptions.setResizeQuality(com.github.triniwiz.canvas.TNSImageBitmapResizeQuality.Pixelated);
+								nativeOptions.setResizeQuality(ImageBitmapResizeQuality.Pixelated());
 								break;
 						}
 						break;
@@ -98,13 +113,13 @@ export class ImageBitmap extends ImageBitmapBase {
 
 	static createFrom(source: any, options: any) {
 		return new Promise((resolve, reject) => {
-			const opts = new com.github.triniwiz.canvas.TNSImageBitmap.Options();
+			const opts = new org.nativescript.canvas.TNSImageBitmap.Options();
 			ImageBitmap.handleOptions(options, opts);
 			if (source instanceof Canvas) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromCanvas(
+				org.nativescript.canvas.TNSImageBitmap.createFromCanvas(
 					source.android,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -114,10 +129,10 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageBitmap) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageBitmap(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageBitmap(
 					source.native,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -127,10 +142,10 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageAsset) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source.native,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -140,10 +155,10 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageData) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source.native,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -154,10 +169,10 @@ export class ImageBitmap extends ImageBitmapBase {
 				);
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromBytesEncoded(
+				org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
 					Array.from(bytes),
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -167,10 +182,10 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source._asset.native,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -182,11 +197,11 @@ export class ImageBitmap extends ImageBitmapBase {
 			}else if (source instanceof ArrayBuffer){
 				//@ts-ignore
 				if(source.nativeObject){
-					com.github.triniwiz.canvas.TNSImageBitmap.createFromBufferEncoded(
+					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
 						//@ts-ignore
 						source.nativeObject,
 						opts,
-						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
 							onError(error) {
 								reject(error);
 							},
@@ -196,10 +211,10 @@ export class ImageBitmap extends ImageBitmapBase {
 						})
 					);
 				}else {
-					com.github.triniwiz.canvas.TNSImageBitmap.createFromBytesEncoded(
+					org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
 						Array.from(new Uint8Array(source as any) as any),
 						opts,
-						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
 							onError(error) {
 								reject(error);
 							},
@@ -215,17 +230,17 @@ export class ImageBitmap extends ImageBitmapBase {
 
 	static createFromRect(source: any, sx: number, sy: number, sWidth: number, sHeight: number, options: any) {
 		return new Promise((resolve, reject) => {
-			const opts = new com.github.triniwiz.canvas.TNSImageBitmap.Options();
+			const opts = new org.nativescript.canvas.TNSImageBitmap.Options();
 			ImageBitmap.handleOptions(options, opts);
 			if (source instanceof Canvas) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromCanvas(
+				org.nativescript.canvas.TNSImageBitmap.createFromCanvas(
 					source.android,
 					sx,
 					sy,
 					sWidth,
 					sHeight,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -235,14 +250,14 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageBitmap) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageBitmap(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageBitmap(
 					source.native,
 					sx,
 					sy,
 					sWidth,
 					sHeight,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -252,14 +267,14 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageAsset) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source.native,
 					sx,
 					sy,
 					sWidth,
 					sHeight,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -269,14 +284,14 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageData) {
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source.native,
 					sx,
 					sy,
 					sWidth,
 					sHeight,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -287,14 +302,14 @@ export class ImageBitmap extends ImageBitmapBase {
 				);
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromBytesEncoded(
+				org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
 					Array.from(bytes),
 					sx,
 					sy,
 					sWidth,
 					sHeight,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							reject(error);
 						},
@@ -305,14 +320,14 @@ export class ImageBitmap extends ImageBitmapBase {
 				);
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 				console.log(source._asset.native)
-				com.github.triniwiz.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source._asset.native,
 					sx,
 					sy,
 					sWidth,
 					sHeight,
 					opts,
-					new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
 							console.log('error',error);
 							reject(error);
@@ -326,7 +341,7 @@ export class ImageBitmap extends ImageBitmapBase {
 			}else if (source instanceof ArrayBuffer){
 				//@ts-ignore
 				if(source.nativeObject){
-					com.github.triniwiz.canvas.TNSImageBitmap.createFromBufferEncoded(
+					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
 						//@ts-ignore
 						source.nativeObject,
 						sx,
@@ -334,7 +349,7 @@ export class ImageBitmap extends ImageBitmapBase {
 						sWidth,
 						sHeight,
 						opts,
-						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
 							onError(error) {
 								reject(error);
 							},
@@ -344,14 +359,14 @@ export class ImageBitmap extends ImageBitmapBase {
 						})
 					);
 				}else {
-					com.github.triniwiz.canvas.TNSImageBitmap.createFromBytesEncoded(
+					org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
 						Array.from(new Uint8Array(source as any) as any),
 						sx,
 						sy,
 						sWidth,
 						sHeight,
 						opts,
-						new com.github.triniwiz.canvas.TNSImageBitmap.Callback({
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
 							onError(error) {
 								reject(error);
 							},

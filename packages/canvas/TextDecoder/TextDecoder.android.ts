@@ -1,11 +1,10 @@
 import { TextDecoderBase } from './common';
 
-declare var com;
 
 export class TextDecoder extends TextDecoderBase {
 
 	constructor(encoding: string = 'utf-8') {
-		super(new com.github.triniwiz.canvas.TNSTextDecoder(encoding));
+		super(new org.nativescript.canvas.TNSTextDecoder(encoding));
 	}
 
 	get encoding(): string {

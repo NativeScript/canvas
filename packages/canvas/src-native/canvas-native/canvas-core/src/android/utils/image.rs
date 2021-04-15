@@ -84,7 +84,7 @@ pub fn bitmap_handler(env: JNIEnv,
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_Utils_nativeGetByteBufferFromBitmap(
+pub extern "C" fn Java_org_nativescript_canvas_Utils_nativeGetByteBufferFromBitmap(
     env: JNIEnv,
     _: JClass,
     bitmap: JObject,

@@ -9,7 +9,7 @@ use jni::JNIEnv;
 use crate::common::context::text_encoder::TextEncoder;
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeInit(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeInit(
     env: JNIEnv,
     _: JClass,
     encoding: JString,
@@ -23,7 +23,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeInit(
 }
 
 #[no_mangle]
-pub  extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeDestroy(
+pub  extern "C" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     encoder: jlong,
@@ -38,7 +38,7 @@ pub  extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeDestroy(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeGetEncoding(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeGetEncoding(
     env: JNIEnv,
     _: JClass,
     encoder: jlong,
@@ -51,7 +51,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeGetEncodi
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextEncoder_nativeEncode(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeEncode(
     env: JNIEnv,
     _: JClass,
     encoder: jlong,

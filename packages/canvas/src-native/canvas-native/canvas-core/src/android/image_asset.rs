@@ -9,7 +9,7 @@ use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, 
 use crate::common::context::image_asset::{ImageAsset, OutputFormat};
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeInit(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeInit(
     _: JNIEnv,
     _: JClass,
 ) -> jlong {
@@ -17,7 +17,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeInit(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetBytes(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetBytes(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -39,7 +39,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetBytes(
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetWidth(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetWidth(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -55,7 +55,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetWidth(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetHeight(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetHeight(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -71,7 +71,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetHeight(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeScale(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeScale(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -92,7 +92,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeScale(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeFlipX(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeFlipX(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -111,7 +111,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeFlipX(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeFlipY(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeFlipY(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -130,7 +130,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeFlipY(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeSave(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeSave(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -155,7 +155,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeSave(
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetError(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetError(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -174,7 +174,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeGetError(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeHasError(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeHasError(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -193,7 +193,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeHasError(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeDestroy(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeDestroy(
     _env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -208,7 +208,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeDestroy(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeLoadAssetPath(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetPath(
     env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -232,7 +232,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeLoadAssetP
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSImageAsset_nativeLoadAssetBytes(
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetBytes(
     env: JNIEnv,
     _: JClass,
     asset: jlong,

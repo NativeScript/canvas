@@ -36,17 +36,17 @@ pub(crate) fn paint_style_set_color_with_string(env: JNIEnv, context: jlong, is_
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetFillColorWithString(env: JNIEnv, _: JClass, context: jlong, color: JString) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetFillColorWithString(env: JNIEnv, _: JClass, context: jlong, color: JString) {
     paint_style_set_color_with_string(env, context, true, color);
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetStrokeColorWithString(env: JNIEnv, _: JClass, context: jlong, color: JString) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetStrokeColorWithString(env: JNIEnv, _: JClass, context: jlong, color: JString) {
     paint_style_set_color_with_string(env, context, false, color);
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSColorStyle_nativeDestroy(_: JNIEnv, _: JClass, style: jlong) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSColorStyle_nativeDestroy(_: JNIEnv, _: JClass, style: jlong) {
     if style == 0 {
         return;
     }
@@ -57,7 +57,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSColorStyle_nativeDestroy(_:
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSColor_nativeGetColorString(env: JNIEnv, _: JClass, color: jlong) -> jstring {
+pub extern "C" fn Java_org_nativescript_canvas_TNSColor_nativeGetColorString(env: JNIEnv, _: JClass, color: jlong) -> jstring {
     if color == 0 {
         return env.new_string("").unwrap().into_inner();
     }

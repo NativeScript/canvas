@@ -5,12 +5,8 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, profile } from '@nativescript/core';
 
-declare var com;
-
 export function createSVGMatrix(): DOMMatrix {
-	return new DOMMatrix(
-		com.github.triniwiz.canvas.CanvasView.createSVGMatrix()
-	);
+	return new DOMMatrix(org.nativescript.canvas.TNSCanvas.createSVGMatrix());
 }
 
 export * from './common';
@@ -30,9 +26,8 @@ export class Canvas extends CanvasBase {
 				useCpu = arguments[0];
 			}
 		}
-		const activity =
-			Application.android.foregroundActivity || Application.android.startActivity;
-		this._canvas = new com.github.triniwiz.canvas.TNSCanvas(activity, useCpu);
+		const activity = Application.android.foregroundActivity || Application.android.startActivity;
+		this._canvas = new org.nativescript.canvas.TNSCanvas(activity, useCpu);
 		(global as any).__canvasLoaded = true;
 	}
 
@@ -52,7 +47,7 @@ export class Canvas extends CanvasBase {
 	// @ts-ignore
 	get width() {
 		if (this.getMeasuredWidth() > 0) {
-			return this.getMeasuredWidth()
+			return this.getMeasuredWidth();
 		}
 		const width = this._canvas.getWidth();
 		if (width === 0) {
@@ -109,24 +104,24 @@ export class Canvas extends CanvasBase {
 		super.initNativeView();
 		const ref = new WeakRef(this);
 		this.__handleGestures();
-		this.on(View.layoutChangedEvent, args => {
+		this.on(View.layoutChangedEvent, (args) => {
 			const parent = this.parent as any;
 			// TODO change DIPs once implemented
 			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 				Object.defineProperty(parent, 'clientWidth', {
 					get: function () {
 						return parent.getMeasuredWidth();
-					}
+					},
 				});
 				Object.defineProperty(parent, 'clientHeight', {
 					get: function () {
 						return parent.getMeasuredHeight();
-					}
+					},
 				});
 			}
 		});
 		this._canvas.setListener(
-			new com.github.triniwiz.canvas.TNSCanvas.Listener({
+			new org.nativescript.canvas.TNSCanvas.Listener({
 				contextReady() {
 					const owner = ref.get() as any;
 					if (owner && !owner._ready) {
@@ -180,10 +175,7 @@ export class Canvas extends CanvasBase {
 
 	_layoutNative() {
 		if (!this.parent) {
-			if (
-				(typeof this.width === 'string' && this.width.indexOf('%')) ||
-				(typeof this.height === 'string' && this.height.indexOf('%'))
-			) {
+			if ((typeof this.width === 'string' && this.width.indexOf('%')) || (typeof this.height === 'string' && this.height.indexOf('%'))) {
 				return;
 			}
 			if (!this._isCustom) {
@@ -193,11 +185,7 @@ export class Canvas extends CanvasBase {
 			const size = this._realSize;
 			let rootParams = this._canvas.getLayoutParams();
 
-			if (
-				rootParams &&
-				(size.width || 0) === rootParams.width &&
-				(size.height || 0) === rootParams.height
-			) {
+			if (rootParams && (size.width || 0) === rootParams.width && (size.height || 0) === rootParams.height) {
 				return;
 			}
 
@@ -207,7 +195,7 @@ export class Canvas extends CanvasBase {
 				}
 				rootParams.width = size.width;
 				rootParams.height = size.height;
-				let surfaceParams// = this._canvas.getSurface().getLayoutParams();
+				let surfaceParams; // = this._canvas.getSurface().getLayoutParams();
 				if (!surfaceParams) {
 					surfaceParams = new android.widget.FrameLayout.LayoutParams(0, 0);
 				}
@@ -217,28 +205,15 @@ export class Canvas extends CanvasBase {
 				this._canvas.setLayoutParams(rootParams);
 				//this._canvas.getSurface().setLayoutParams(surfaceParams);
 
-				const w = android.view.View.MeasureSpec.makeMeasureSpec(
-					size.width,
-					android.view.View.MeasureSpec.EXACTLY
-				);
-				const h = android.view.View.MeasureSpec.makeMeasureSpec(
-					size.height,
-					android.view.View.MeasureSpec.EXACTLY
-				);
+				const w = android.view.View.MeasureSpec.makeMeasureSpec(size.width, android.view.View.MeasureSpec.EXACTLY);
+				const h = android.view.View.MeasureSpec.makeMeasureSpec(size.height, android.view.View.MeasureSpec.EXACTLY);
 				this._canvas.measure(w, h);
 				this._canvas.layout(0, 0, size.width || 0, size.height || 0);
 			}
 		}
 	}
 
-	getContext(
-		type: string,
-		options?: any
-	):
-		| CanvasRenderingContext2D
-		| WebGLRenderingContext
-		| WebGL2RenderingContext
-		| null {
+	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null {
 		if (!this._canvas) {
 			return null;
 		}
@@ -247,7 +222,7 @@ export class Canvas extends CanvasBase {
 			const opts = new java.util.HashMap();
 			Object.keys(jsOptions).forEach((key) => {
 				let val = jsOptions[key];
-				if (typeof val === "boolean") {
+				if (typeof val === 'boolean') {
 					opts.put(key, java.lang.Boolean.valueOf(String(val)));
 				} else {
 					opts.put(key, val);
@@ -262,9 +237,7 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._2dContext) {
-					this._2dContext = new CanvasRenderingContext2D(
-						this._canvas.getContext(type, getNativeOptions(options))
-					);
+					this._2dContext = new CanvasRenderingContext2D(this._canvas.getContext(type, getNativeOptions(options)));
 					// @ts-ignore
 					this._2dContext._canvas = this;
 				} else {
@@ -278,26 +251,19 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					this._webglContext = new WebGLRenderingContext(
-						this._canvas.getContext('webgl', getNativeOptions(options))
-					);
+					this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl', getNativeOptions(options)));
 					this._webglContext._canvas = this;
 				} else {
 					this._canvas.getContext('webgl', getNativeOptions(options));
 				}
 				this._webglContext._type = 'webgl';
 				return this._webglContext;
-			} else if (
-				type &&
-				(type === 'webgl2' || type === 'experimental-webgl2')
-			) {
+			} else if (type && (type === 'webgl2' || type === 'experimental-webgl2')) {
 				if (this._2dContext || this._webglContext) {
 					return null;
 				}
 				if (!this._webgl2Context) {
-					this._webgl2Context = new WebGL2RenderingContext(
-						this.android.getContext('webgl2', getNativeOptions(options))
-					);
+					this._webgl2Context = new WebGL2RenderingContext(this.android.getContext('webgl2', getNativeOptions(options)));
 					(this._webgl2Context as any)._canvas = this;
 				} else {
 					this.android.getContext('webgl2', getNativeOptions(options));

@@ -1,50 +1,68 @@
-apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
-group 'com.github.triniwiz'
-version '0.9.16'
+tasks.withType(Javadoc) {
+	failOnError false
+	options.addStringOption('Xdoclint:none', '-quiet')
+	options.addStringOption('encoding', 'UTF-8')
+	options.addStringOption('charSet', 'UTF-8')
+}
 
-afterEvaluate {
-	publishing {
-		publications {
-			// Creates a Maven publication called "release".
-			release(MavenPublication) {
-				// Applies the component for the release build variant.
-				from components.release
+task sourceJar(type: Jar) {
+	from android.sourceSets.main.java.srcDirs
+	classifier "sources"
+}
 
-				// You can then customize attributes of the publication as shown below.
-				groupId = 'com.github.triniwiz'
-				artifactId = 'canvas'
-				version = '0.9.16'
+
+signing {
+	sign configurations.archives
+}
+
+
+group = "org.nativescript"
+archivesBaseName = "canvas"
+version = "0.9.17"
+
+uploadArchives {
+	repositories {
+		mavenDeployer {
+			beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+			repository(url: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			snapshotRepository(url: "https://s01.oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			pom.project {
+				name "CanvasNative"
+				packaging 'aar'
+				description "DOM Canvas API for Android"
+				url 'https://github.com/NativeScript/canvas'
+
+				scm {
+					connection 'scm:git@github.com:nativescript/canvas.git'
+					developerConnection 'scm:git@github.com:nativescript/canvas.git'
+					url 'https://github.com/NativeScript/canvas'
+				}
+
+				licenses {
+					license {
+						name 'The Apache License, Version 2.0'
+						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+
+				developers {
+					developer {
+						id 'triniwiz'
+						name 'Osei Fortune'
+						email 'fortune.osei@yahoo.com'
+					}
+				}
 			}
 		}
 	}
 }
-
-
-def properties = new Properties()
-properties.load(new FileInputStream(project.rootProject.file('local.properties')))
-
-bintray {
-	user = properties.getProperty("bintray.user")
-	key = properties.getProperty("bintray.apikey")
-	publications = ['release']
-	dryRun = false
-	publish = true
-	pkg {
-		repo = 'maven'
-		name = 'canvas'
-		description = "DOM Canvas API for Android"
-		publicDownloadNumbers = true
-		licenses = ['MIT']
-		issueTrackerUrl = 'https://github.com/NativeScript/canvas/issues'
-		vcsUrl = 'https://github.com/NativeScript/canvas'
-		version {
-			name = this.version
-			desc = "Version ${this.version}"
-			released = new Date()
-			vcsTag = this.version
-		}
-	}
-}
-

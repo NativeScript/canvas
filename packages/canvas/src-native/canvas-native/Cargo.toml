@@ -3,7 +3,7 @@
 members = [
     "gl-bindings",
     "canvas-core",
-    "v8-bindings"
+   #"v8-bindings"
 ]
 
 

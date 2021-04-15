@@ -6,7 +6,7 @@ use crate::common::context::Context;
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSSVG_nativeDrawSVG(env: JNIEnv,
+pub extern "C" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVG(env: JNIEnv,
                                                                               _: JClass, context: jlong, svg: JString) {
    unsafe {
        let context: *mut Context = context as _;
@@ -20,7 +20,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSSVG_nativeDrawSVG(env: JNIE
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSSVG_nativeDrawSVGFromPath(env: JNIEnv,
+pub extern "C" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVGFromPath(env: JNIEnv,
                                                                                       _: JClass, context: jlong, path: JString) {
     unsafe {
         let context: *mut Context = context as _;

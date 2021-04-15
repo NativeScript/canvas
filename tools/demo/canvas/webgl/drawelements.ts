@@ -595,7 +595,8 @@ export function points(canvas) {
   gl.drawArrays(gl.POINTS, 0, 3);
 }
 
-export function drawModes(canvas, mode = "line") {
+
+export function drawModes(canvas, mode: 'line' | 'points' | 'line_strip' | 'triangle_strip' | 'triangle_fan' | 'triangles' | 'line_loop' = "line") {
   /*======= Creating a canvas =========*/
 
   var gl = canvas.getContext("experimental-webgl");

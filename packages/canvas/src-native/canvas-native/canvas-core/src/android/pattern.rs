@@ -6,7 +6,7 @@ use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::matrix::Matrix;
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSPattern_nativeSetTransform(_: JNIEnv,
+pub extern "C" fn Java_org_nativescript_canvas_TNSPattern_nativeSetTransform(_: JNIEnv,
                                                                                 _: JClass, pattern: jlong, matrix: jlong) {
     if pattern == 0 || matrix == 0 {
         return;

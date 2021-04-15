@@ -4,9 +4,9 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	tools:context=".VideoActivity">
+	tools:context="org.nativescript.canvasdemo.VideoActivity">
 
-	<com.github.triniwiz.canvas.TNSCanvas
+	<org.nativescript.canvas.TNSCanvas
 		android:id="@+id/canvasView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"

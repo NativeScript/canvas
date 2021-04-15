@@ -7,13 +7,84 @@ import {Color, ImageSource} from '@nativescript/core';
 import {ImageAsset} from '../../ImageAsset';
 import {CanvasPattern} from '../CanvasPattern';
 import {Canvas} from '../../Canvas';
+import lazy from '@nativescript/canvas/utils';
 
-//declare var com;
+const FillRule = {
+	EvenOdd: lazy(() => org.nativescript.canvas.TNSFillRule.EvenOdd),
+	NonZero: lazy(() => org.nativescript.canvas.TNSFillRule.NonZero),
+};
+
+const TextDirection = {
+	Ltr: lazy(() => org.nativescript.canvas.TNSTextDirection.Ltr),
+	Rtl: lazy(() => org.nativescript.canvas.TNSTextDirection.Rtl),
+};
+
+const ImageSmoothingQuality = {
+	Low: lazy(() => org.nativescript.canvas.TNSImageSmoothingQuality.Low),
+	Medium: lazy(() => org.nativescript.canvas.TNSImageSmoothingQuality.Medium),
+	High: lazy(() => org.nativescript.canvas.TNSImageSmoothingQuality.High),
+};
+
+const LineJoin = {
+	Bevel: lazy(() => org.nativescript.canvas.TNSLineJoin.Bevel),
+	Miter: lazy(() => org.nativescript.canvas.TNSLineJoin.Miter),
+	Round: lazy(() => org.nativescript.canvas.TNSLineJoin.Round),
+};
+
+const LineCap = {
+	Round: lazy(() => org.nativescript.canvas.TNSLineCap.Round),
+	Butt: lazy(() => org.nativescript.canvas.TNSLineCap.Butt),
+	Square: lazy(() => org.nativescript.canvas.TNSLineCap.Square),
+};
+
+const TextAlignment = {
+	Start: lazy(() => org.nativescript.canvas.TNSTextAlignment.Start),
+	Left: lazy(() => org.nativescript.canvas.TNSTextAlignment.Left),
+	Center: lazy(() => org.nativescript.canvas.TNSTextAlignment.Center),
+	Right: lazy(() => org.nativescript.canvas.TNSTextAlignment.Right),
+	End: lazy(() => org.nativescript.canvas.TNSTextAlignment.End),
+};
+
+const CompositeOperationType = {
+	SourceOver: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.SourceOver),
+	SourceIn: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.SourceIn),
+	SourceOut: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.SourceOut),
+	SourceAtop: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.SourceAtop),
+	DestinationOver: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.DestinationOver),
+	DestinationIn: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.DestinationIn),
+	DestinationOut: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.DestinationOut),
+	DestinationAtop: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.DestinationAtop),
+	Lighter: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Lighter),
+	Copy: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Copy),
+	Xor: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Xor),
+	Multiply: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Multiply),
+	Screen: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Screen),
+	Overlay: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Overlay),
+	Darken: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Darken),
+	Lighten: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Lighten),
+	ColorDodge: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.ColorDodge),
+	ColorBurn: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.ColorBurn),
+	HardLight: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.HardLight),
+	SoftLight: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.SoftLight),
+	Difference: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Difference),
+	Exclusion: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Exclusion),
+	Hue: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Hue),
+	Saturation: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Saturation),
+	Color: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Color),
+	Luminosity: lazy(() => org.nativescript.canvas.TNSCompositeOperationType.Luminosity),
+};
+
+const PatternRepetition = {
+	NoRepeat: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.NoRepeat),
+	Repeat: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.Repeat),
+	RepeatX: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.RepeatX),
+	RepeatY: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.RepeatY)
+}
 
 export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	public static isDebug = false;
 	static colorCache = {};
-	private context: com.github.triniwiz.canvas.TNSCanvasRenderingContext2D;
+	private context: org.nativescript.canvas.TNSCanvasRenderingContext2D;
 
 	constructor(context: any) {
 		super();
@@ -22,9 +93,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	_fillRuleFromString(string: string) {
 		if (string === 'evenodd') {
-			return com.github.triniwiz.canvas.TNSFillRule.EvenOdd;
+			return FillRule.EvenOdd();
 		} else if (string === 'nonzero') {
-			return com.github.triniwiz.canvas.TNSFillRule.NonZero;
+			return FillRule.NonZero();
 		}
 		return null;
 	}
@@ -36,8 +107,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	get canvas() {
 		return this._canvas;
 	}
-
-	private _shadowColor: string = 'transparent';
 
 	get shadowColor() {
 		this.log('shadowColor');
@@ -66,7 +135,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	get direction(): string {
 		this.log('direction');
-		return this.context.getDirection() === com.github.triniwiz.canvas.TNSTextDirection.Ltr ? "ltr" : "rtl";
+		return this.context.getDirection() === TextDirection.Ltr() ? "ltr" : "rtl";
 	}
 
 	set direction(value: string) {
@@ -74,7 +143,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this._ensureLayoutBeforeDraw();
 		if (this.context) {
 			this.context.setDirection(
-				value === "rtl" ? com.github.triniwiz.canvas.TNSTextDirection.Rtl : com.github.triniwiz.canvas.TNSTextDirection.Ltr
+				value === "rtl" ? TextDirection.Rtl() : TextDirection.Ltr()
 			);
 		}
 	}
@@ -116,13 +185,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (quality) {
 				case 'high':
-					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.TNSImageSmoothingQuality.High);
+					this.context.setImageSmoothingQuality(ImageSmoothingQuality.High());
 					break;
 				case 'medium':
-					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.TNSImageSmoothingQuality.Medium);
+					this.context.setImageSmoothingQuality(ImageSmoothingQuality.Medium());
 					break;
 				default:
-					this.context.setImageSmoothingQuality(com.github.triniwiz.canvas.TNSImageSmoothingQuality.Low);
+					this.context.setImageSmoothingQuality(ImageSmoothingQuality.Low());
 					break;
 			}
 		}
@@ -152,13 +221,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (join) {
 				case 'bevel':
-					this.context.setLineJoin(com.github.triniwiz.canvas.TNSLineJoin.Bevel);
+					this.context.setLineJoin(LineJoin.Bevel());
 					break;
 				case 'round':
-					this.context.setLineJoin(com.github.triniwiz.canvas.TNSLineJoin.Round);
+					this.context.setLineJoin(LineJoin.Round());
 					break;
 				default:
-					this.context.setLineJoin(com.github.triniwiz.canvas.TNSLineJoin.Miter);
+					this.context.setLineJoin(LineJoin.Miter());
 					break;
 			}
 		}
@@ -175,13 +244,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (cap) {
 				case 'round':
-					this.context.setLineCap(com.github.triniwiz.canvas.TNSLineCap.Round);
+					this.context.setLineCap(LineCap.Round());
 					break;
 				case 'square':
-					this.context.setLineCap(com.github.triniwiz.canvas.TNSLineCap.Square);
+					this.context.setLineCap(LineCap.Square());
 					break;
 				default:
-					this.context.setLineCap(com.github.triniwiz.canvas.TNSLineCap.Butt);
+					this.context.setLineCap(LineCap.Butt());
 			}
 		}
 	}
@@ -249,19 +318,19 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (alignment) {
 				case 'start':
-					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Start);
+					this.context.setTextAlign(TextAlignment.Start());
 					break;
 				case 'center':
-					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Center);
+					this.context.setTextAlign(TextAlignment.Center());
 					break;
 				case 'end':
-					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.End);
+					this.context.setTextAlign(TextAlignment.End());
 					break;
 				case 'right':
-					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Right);
+					this.context.setTextAlign(TextAlignment.Right());
 					break;
 				default:
-					this.context.setTextAlign(com.github.triniwiz.canvas.TNSTextAlignment.Left);
+					this.context.setTextAlign(TextAlignment.Left());
 					break;
 			}
 		}
@@ -279,82 +348,82 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			let operation;
 			switch (composite.toLowerCase()) {
 				case 'source-over':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceOver;
+					operation = CompositeOperationType.SourceOver();
 					break;
 				case 'source-in':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceIn;
+					operation = CompositeOperationType.SourceIn();
 					break;
 				case 'source-out':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceOut;
+					operation = CompositeOperationType.SourceOut();
 					break;
 				case 'source-atop':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SourceAtop;
+					operation = CompositeOperationType.SourceAtop();
 					break;
 				case 'destination-over':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationOver;
+					operation = CompositeOperationType.DestinationOver();
 					break;
 				case 'destination-in':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationIn;
+					operation = CompositeOperationType.DestinationIn();
 					break;
 				case 'destination-out':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationOut;
+					operation = CompositeOperationType.DestinationOut();
 					break;
 				case 'destination-atop':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.DestinationAtop;
+					operation = CompositeOperationType.DestinationAtop();
 					break;
 				case 'lighter':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Lighter;
+					operation = CompositeOperationType.Lighter();
 					break;
 				case 'copy':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Copy;
+					operation = CompositeOperationType.Copy();
 					break;
 				case 'xor':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Xor;
+					operation = CompositeOperationType.Xor();
 					break;
 				case 'multiply':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Multiply;
+					operation = CompositeOperationType.Multiply();
 					break;
 				case 'screen':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Screen;
+					operation = CompositeOperationType.Screen();
 					break;
 				case 'overlay':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Overlay;
+					operation = CompositeOperationType.Overlay();
 					break;
 				case 'darken':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Darken;
+					operation = CompositeOperationType.Darken();
 					break;
 				case 'lighten':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Lighten;
+					operation = CompositeOperationType.Lighten();
 					break;
 				case 'color-dodge':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.ColorDodge;
+					operation = CompositeOperationType.ColorDodge();
 					break;
 				case 'color-burn':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.ColorBurn;
+					operation = CompositeOperationType.ColorBurn();
 					break;
 				case 'hard-light':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.HardLight;
+					operation = CompositeOperationType.HardLight();
 					break;
 				case 'soft-light':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.SoftLight;
+					operation = CompositeOperationType.SoftLight();
 					break;
 				case 'difference':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Difference;
+					operation = CompositeOperationType.Difference();
 					break;
 				case 'exclusion':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Exclusion;
+					operation = CompositeOperationType.Exclusion();
 					break;
 				case 'hue':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Hue;
+					operation = CompositeOperationType.Hue();
 					break;
 				case 'saturation':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Saturation;
+					operation = CompositeOperationType.Saturation();
 					break;
 				case 'color':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Color;
+					operation = CompositeOperationType.Color();
 					break;
 				case 'luminosity':
-					operation = com.github.triniwiz.canvas.TNSCompositeOperationType.Luminosity;
+					operation = CompositeOperationType.Luminosity();
 					break;
 			}
 			this.context.setGlobalCompositeOperation(operation);
@@ -366,12 +435,12 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('fillStyle');
 		if(this.context){
 			switch (this.context.getFillStyle().getStyleType()) {
-				case com.github.triniwiz.canvas.TNSColorStyleType.Color:
-					const color = this.context.getFillStyle() as com.github.triniwiz.canvas.TNSColor;
+				case org.nativescript.canvas.TNSColorStyleType.Color:
+					const color = this.context.getFillStyle() as org.nativescript.canvas.TNSColor;
 					return color.getColor();
-				case com.github.triniwiz.canvas.TNSColorStyleType.Gradient:
+				case org.nativescript.canvas.TNSColorStyleType.Gradient:
 					return CanvasGradient.fromNative(this.context.getFillStyle());
-				case com.github.triniwiz.canvas.TNSColorStyleType.Pattern:
+				case org.nativescript.canvas.TNSColorStyleType.Pattern:
 					return new CanvasPattern(this.context.getFillStyle());
 			}
 		}
@@ -385,7 +454,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
-			this.context.setFillStyle(new com.github.triniwiz.canvas.TNSColor(color));
+			this.context.setFillStyle(new org.nativescript.canvas.TNSColor(color));
 		} else if (color instanceof CanvasGradient) {
 			this.context.setFillStyle(color.native);
 		} else if (color instanceof CanvasPattern) {
@@ -397,14 +466,12 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	get filter(): string {
 		this.log('get filter');
-		//@ts-ignore
 		return this.context.getFilter();
 	}
 
 	set filter(value: string) {
 		this.log('set filter', value);
 		if (this.context) {
-			//@ts-ignore
 			this.context.setFilter(value);
 		}
 	}
@@ -414,7 +481,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('strokeStyle');
 		switch (this.context.getStrokeStyle().getStyleType()) {
 			case CanvasColorStyleType.Color:
-				const color = this.context.getStrokeStyle() as com.github.triniwiz.canvas.TNSColor;
+				const color = this.context.getStrokeStyle() as org.nativescript.canvas.TNSColor;
 				return color.getColor();
 			case CanvasColorStyleType.Gradient:
 				return CanvasGradient.fromNative(this.context.getStrokeStyle());
@@ -430,7 +497,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
-			this.context.setStrokeStyle(new com.github.triniwiz.canvas.TNSColor(color));
+			this.context.setStrokeStyle(new org.nativescript.canvas.TNSColor(color));
 		} else if (color instanceof CanvasGradient) {
 			this.context.setStrokeStyle(color.native);
 		} else if (color instanceof CanvasPattern) {
@@ -593,16 +660,16 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		let rep;
 		switch (repetition) {
 			case 'no-repeat':
-				rep = com.github.triniwiz.canvas.TNSPatternRepetition.NoRepeat;
+				rep = PatternRepetition.NoRepeat();
 				break;
 			case 'repeat-x':
-				rep = com.github.triniwiz.canvas.TNSPatternRepetition.RepeatX;
+				rep = PatternRepetition.RepeatX();
 				break;
 			case 'repeat-y':
-				rep = com.github.triniwiz.canvas.TNSPatternRepetition.RepeatY;
+				rep = PatternRepetition.RepeatY();
 				break;
 			default:
-				rep = com.github.triniwiz.canvas.TNSPatternRepetition.Repeat;
+				rep = PatternRepetition.Repeat();
 				break;
 		}
 		return new CanvasPattern(this.context.createPattern(img, rep));
@@ -867,12 +934,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			return;
 		}
 		let data = args[0] as any;
-		// Would be nice not to update the native backing array each time ... but since buffers don't use pointers ... we are here 😅
 		if (args.length === 3) {
-			//data.native.updateData(Array.from(data.data));
 			this.context.putImageData(data.native, args[1], args[2]);
 		} else if (args.length === 7) {
-			// data.native.updateData(Array.from(data.data));
 			this.context.putImageData(data.native, args[1], args[2], args[3], args[4], args[5], args[6]);
 		}
 	}

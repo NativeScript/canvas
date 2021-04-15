@@ -7,7 +7,7 @@ use jni::JNIEnv;
 const SURFACE_TEXTURE_CLASS: &'static str = "android/graphics/SurfaceTexture";
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TextureRender_nativeDrawFrame(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFrame(
     env: JNIEnv,
     _: JClass,
     surface_texture_object: JObject,

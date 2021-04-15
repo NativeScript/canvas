@@ -82,7 +82,7 @@ export function handleVideo(canvas) {
 	const texture = initTexture(gl);
 
 	//https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample8/Firefox.mp4
-	const video = setupVideo('~/assets/file-assets/webgl/Firefox.mp4');
+	const video = setupVideo('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
 
 	var then = 0;
 
@@ -111,7 +111,7 @@ function setupVideo(url) {
 	var playing = false;
 	var timeupdate = false;
 
-	video.autoplay = true;
+	video.autoplay = false;
 	//video.muted = true;
 	video.loop = true;
 

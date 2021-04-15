@@ -4,6 +4,7 @@ def LIB_GROUP_ID = 'com.github.triniwiz'
 def LIB_ARTIFACT_ID = 'canvas'
 def LIB_VERSION = '0.9.16'
 
+
 task sourceJar(type: Jar) {
 	from android.sourceSets.main.java.srcDirs
 	classifier "sources"

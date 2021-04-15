@@ -11,7 +11,7 @@ use jni::JNIEnv;
 use crate::common::context::text_decoder::TextDecoder;
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeInit(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeInit(
     env: JNIEnv,
     _: JClass,
     decoding: JString,
@@ -25,7 +25,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeInit(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDestroy(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -40,7 +40,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDestroy(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeGetEncoding(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeGetEncoding(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -53,7 +53,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeGetEncodi
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDecodeBuffer(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeBuffer(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -75,7 +75,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDecodeBuf
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSTextDecoder_nativeDecode(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecode(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,

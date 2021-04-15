@@ -31,7 +31,7 @@ const JSON_CLASS: &str = "org/json/JSONObject";
 static SIG_OBJECT_CTOR: &str = "()V";
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetDirection(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetDirection(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -48,7 +48,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetDirection(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetDirection(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -61,7 +61,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetFillStyle(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetFillStyle(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -134,7 +134,7 @@ fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetFillStyle(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetFillStyle(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -143,7 +143,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetFilter(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetFilter(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -163,7 +163,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetFilter(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetFilter(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -177,7 +177,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetFont(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetFont(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -197,7 +197,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetFont(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetFont(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -211,7 +211,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetGlobalAlpha(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetGlobalAlpha(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -228,7 +228,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetGlobalAlpha(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetGlobalAlpha(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -241,7 +241,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetGlobalCompositeOperation(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetGlobalCompositeOperation(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -258,7 +258,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetGlobalCompositeOperation(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetGlobalCompositeOperation(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -271,7 +271,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetImageSmoothingEnabled(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetImageSmoothingEnabled(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -288,7 +288,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetImageSmoothingEnabled(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetImageSmoothingEnabled(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -305,7 +305,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetImageSmoothingQuality(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetImageSmoothingQuality(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -322,7 +322,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetImageSmoothingQuality(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetImageSmoothingQuality(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -335,7 +335,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineCap(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetLineCap(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -352,7 +352,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineCap(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetLineCap(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -365,7 +365,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineDashOffset(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetLineDashOffset(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -382,7 +382,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineDashOffset(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetLineDashOffset(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -395,7 +395,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineJoin(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetLineJoin(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -412,7 +412,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineJoin(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetLineJoin(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -425,7 +425,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineWidth(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetLineWidth(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -442,7 +442,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineWidth(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetLineWidth(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -455,7 +455,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetMiterLimit(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetMiterLimit(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -472,7 +472,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetMiterLimit(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetMiterLimit(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -485,7 +485,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowBlur(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetShadowBlur(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -502,7 +502,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowBlur(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetShadowBlur(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -515,7 +515,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowColor(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetShadowColor(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -535,7 +535,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowColorString(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetShadowColorString(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -562,7 +562,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowColor(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetShadowColor(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -577,7 +577,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetX(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetX(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -591,7 +591,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetX(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetX(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -604,7 +604,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetY(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetShadowOffsetY(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -621,7 +621,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetY(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetShadowOffsetY(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -634,7 +634,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetStrokeStyle(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetStrokeStyle(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -653,7 +653,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetStrokeStyle(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetStrokeStyle(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -662,7 +662,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTextAlign(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetTextAlign(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -679,7 +679,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTextAlign(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetTextAlign(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -692,7 +692,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTextBaseline(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetTextBaseline(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -709,7 +709,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTextBaseline(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetTextBaseline(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -722,7 +722,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeArc(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeArc(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -751,7 +751,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeArcTo(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeArcTo(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -772,7 +772,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeBeginPath(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeBeginPath(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -788,7 +788,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeBezierCurveTo(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeBezierCurveTo(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -810,7 +810,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClearRect(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeClearRect(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -830,7 +830,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClip(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeClip(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -849,7 +849,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClipRule(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeClipRule(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -866,7 +866,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeClosePath(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeClosePath(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -882,7 +882,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreateImageData(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreateImageData(
     _: JNIEnv,
     _: JClass,
     width: jint,
@@ -892,7 +892,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreateLinearGradient(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreateLinearGradient(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -914,7 +914,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreatePattern(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePattern(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -945,7 +945,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithAsset(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithAsset(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -978,7 +978,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeCreateRadialGradient(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreateRadialGradient(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1032,7 +1032,7 @@ fn draw_image(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithBitmap(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithBitmap(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1060,7 +1060,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDy(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDy(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1085,7 +1085,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithAsset(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithAsset(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1120,7 +1120,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithBitmap(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithBitmap(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1150,7 +1150,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDh(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDh(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1177,7 +1177,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithAsset(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithAsset(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1214,7 +1214,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageWithBitmap(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageWithBitmap(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1248,7 +1248,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImageWithAsset(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageWithAsset(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1289,7 +1289,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeDrawImage(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImage(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1320,7 +1320,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeEllipse(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeEllipse(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1353,7 +1353,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeFill(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeFill(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1376,7 +1376,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeFillRect(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeFillRect(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1397,7 +1397,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeFillText(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeFillText(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1420,7 +1420,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetImageData(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetImageData(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1440,7 +1440,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetLineDash(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetLineDash(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1457,7 +1457,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeGetTansform(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetTansform(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1476,7 +1476,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeIsPointInPath(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeIsPointInPath(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1501,7 +1501,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeIsPointInStroke(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeIsPointInStroke(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1525,7 +1525,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeLineTo(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeLineTo(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1543,7 +1543,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeMeasureText(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeMeasureText(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1559,7 +1559,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeMoveTo(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeMoveTo(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1577,7 +1577,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativePutImageData(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativePutImageData(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1609,7 +1609,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeQuadraticCurveTo(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeQuadraticCurveTo(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1629,7 +1629,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeRect(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeRect(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1649,7 +1649,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeResetTransform(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeResetTransform(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1665,7 +1665,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeRestore(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeRestore(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1681,7 +1681,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeRotate(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeRotate(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1698,7 +1698,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSave(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSave(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1714,7 +1714,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeScale(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeScale(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1732,7 +1732,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetLineDash(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetLineDash(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1754,7 +1754,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTransform(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetTransform(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1776,7 +1776,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeSetTransformMatrix(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetTransformMatrix(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1795,7 +1795,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeStroke(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeStroke(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1817,7 +1817,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeStrokeRect(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeStrokeRect(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1838,7 +1838,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeStrokeText(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeStrokeText(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1860,7 +1860,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeTransform(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeTransform(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -1882,7 +1882,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_na
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSCanvasRenderingContext2D_nativeTranslate(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeTranslate(
     _: JNIEnv,
     _: JClass,
     context: jlong,

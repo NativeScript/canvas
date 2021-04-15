@@ -4,7 +4,7 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	tools:context=".MainActivity">
+	tools:context="org.nativescript.canvasdemo.MainActivity">
 
 <LinearLayout
 	android:layout_width="match_parent"
@@ -60,7 +60,7 @@
 
 
 
-	<com.github.triniwiz.canvas.TNSCanvas
+	<org.nativescript.canvas.TNSCanvas
 		android:id="@+id/canvasView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
@@ -72,7 +72,7 @@
 
 
 
-<!--	<com.github.triniwiz.canvas.TNSSVG
+<!--	<org.nativescript.canvas.TNSSVG
 		android:id="@+id/svgView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"

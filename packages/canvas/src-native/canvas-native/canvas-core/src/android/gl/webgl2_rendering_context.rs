@@ -15,7 +15,7 @@ const RGBA_INTEGER: u32 = 0x8D99;
 
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeFlipInPlace3D(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeFlipInPlace3D(
     env: JNIEnv,
     _: JClass,
     pixels: JByteBuffer,
@@ -35,7 +35,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexImage3DBuffer(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage3DBuffer(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -77,7 +77,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexImage3DAsset(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage3DAsset(
     _env: JNIEnv,
     _: JClass,
     target: jint,
@@ -129,7 +129,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexImage3DBitmap(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage3DBitmap(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -172,7 +172,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexSubImage3DBuffer(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage3DBuffer(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -216,7 +216,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexSubImage3DAsset(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage3DAsset(
     _env: JNIEnv,
     _: JClass,
     target: jint,
@@ -270,7 +270,7 @@ pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContex
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_com_github_triniwiz_canvas_TNSWebGLRenderingContext_nativeTexSubImage3DBitmap(
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage3DBitmap(
     env: JNIEnv,
     _: JClass,
     target: jint,

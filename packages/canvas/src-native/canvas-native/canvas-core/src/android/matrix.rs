@@ -5,7 +5,7 @@ use jni::sys::{jfloat, jfloatArray, jlong};
 use crate::common::context::matrix::Matrix;
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeInit(_: JNIEnv,
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeInit(_: JNIEnv,
                                                                           _: JClass) -> jlong {
     Box::into_raw(
         Box::new(
@@ -16,7 +16,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeInit(_: JNI
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeUpdate(env: JNIEnv,
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeUpdate(env: JNIEnv,
                                                                             _: JClass, matrix: jlong, data: jfloatArray) {
     if matrix == 0 {
         return;
@@ -33,7 +33,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeUpdate(env:
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeA(_: JNIEnv,
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeA(_: JNIEnv,
                                                                        _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
@@ -46,7 +46,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeA(_: JNIEnv
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetA(_: JNIEnv, _: JClass, matrix: jlong, a: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetA(_: JNIEnv, _: JClass, matrix: jlong, a: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -59,7 +59,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetA(_: JNI
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeB(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeB(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -71,7 +71,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeB(_: JNIEnv
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetB(_: JNIEnv, _: JClass, matrix: jlong, b: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetB(_: JNIEnv, _: JClass, matrix: jlong, b: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -84,7 +84,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetB(_: JNI
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeC(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeC(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -96,7 +96,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeC(_: JNIEnv
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetC(_: JNIEnv, _: JClass, matrix: jlong, c: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetC(_: JNIEnv, _: JClass, matrix: jlong, c: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -108,7 +108,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetC(_: JNI
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeD(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeD(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -120,7 +120,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeD(_: JNIEnv
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetD(_: JNIEnv, _: JClass, matrix: jlong, d: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetD(_: JNIEnv, _: JClass, matrix: jlong, d: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -132,7 +132,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetD(_: JNI
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeE(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeE(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -144,7 +144,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeE(_: JNIEnv
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetE(_: JNIEnv, _: JClass, matrix: jlong, e: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetE(_: JNIEnv, _: JClass, matrix: jlong, e: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -156,7 +156,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetE(_: JNI
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeF(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeF(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -168,7 +168,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeF(_: JNIEnv
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetF(_: JNIEnv, _: JClass, matrix: jlong, f: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetF(_: JNIEnv, _: JClass, matrix: jlong, f: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -181,7 +181,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetF(_: JNI
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM11(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM11(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -193,7 +193,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM11(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM11(_: JNIEnv, _: JClass, matrix: jlong, m11: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM11(_: JNIEnv, _: JClass, matrix: jlong, m11: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -206,7 +206,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM11(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM12(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM12(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -218,7 +218,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM12(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM12(_: JNIEnv, _: JClass, matrix: jlong, m12: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM12(_: JNIEnv, _: JClass, matrix: jlong, m12: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -231,7 +231,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM12(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM13(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM13(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -243,7 +243,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM13(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM13(_: JNIEnv, _: JClass, matrix: jlong, m13: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM13(_: JNIEnv, _: JClass, matrix: jlong, m13: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -256,7 +256,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM13(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM14(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM14(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -268,7 +268,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM14(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM14(_: JNIEnv, _: JClass, matrix: jlong, m14: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM14(_: JNIEnv, _: JClass, matrix: jlong, m14: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -281,7 +281,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM14(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM21(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM21(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -293,7 +293,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM21(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM21(_: JNIEnv, _: JClass, matrix: jlong, m21: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM21(_: JNIEnv, _: JClass, matrix: jlong, m21: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -306,7 +306,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM21(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM22(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM22(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -318,7 +318,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM22(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM22(_: JNIEnv, _: JClass, matrix: jlong, m22: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM22(_: JNIEnv, _: JClass, matrix: jlong, m22: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -331,7 +331,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM22(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM23(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM23(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -343,7 +343,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM23(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM23(_: JNIEnv, _: JClass, matrix: jlong, m23: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM23(_: JNIEnv, _: JClass, matrix: jlong, m23: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -356,7 +356,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM23(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM24(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM24(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -368,7 +368,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM24(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM24(_: JNIEnv, _: JClass, matrix: jlong, m24: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM24(_: JNIEnv, _: JClass, matrix: jlong, m24: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -381,7 +381,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM24(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM31(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM31(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -393,7 +393,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM31(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM31(_: JNIEnv, _: JClass, matrix: jlong, m31: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM31(_: JNIEnv, _: JClass, matrix: jlong, m31: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -406,7 +406,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM31(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM32(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM32(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -418,7 +418,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM32(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM32(_: JNIEnv, _: JClass, matrix: jlong, m32: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM32(_: JNIEnv, _: JClass, matrix: jlong, m32: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -431,7 +431,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM32(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM33(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM33(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -443,7 +443,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM33(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM33(_: JNIEnv, _: JClass, matrix: jlong, m33: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM33(_: JNIEnv, _: JClass, matrix: jlong, m33: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -456,7 +456,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM33(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM34(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM34(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -468,7 +468,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM34(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM34(_: JNIEnv, _: JClass, matrix: jlong, m34: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM34(_: JNIEnv, _: JClass, matrix: jlong, m34: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -481,7 +481,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM34(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM41(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM41(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -493,7 +493,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM41(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM41(_: JNIEnv, _: JClass, matrix: jlong, m41: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM41(_: JNIEnv, _: JClass, matrix: jlong, m41: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -506,7 +506,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM41(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM42(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM42(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -518,7 +518,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM42(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM42(_: JNIEnv, _: JClass, matrix: jlong, m42: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM42(_: JNIEnv, _: JClass, matrix: jlong, m42: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -531,7 +531,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM42(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM43(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM43(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -543,7 +543,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM43(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM43(_: JNIEnv, _: JClass, matrix: jlong, m43: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM43(_: JNIEnv, _: JClass, matrix: jlong, m43: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -556,7 +556,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM43(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM44(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM44(_: JNIEnv, _: JClass, matrix: jlong) -> jfloat {
     if matrix == 0 {
         return 0.0;
     }
@@ -568,7 +568,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeM44(_: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM44(_: JNIEnv, _: JClass, matrix: jlong, m44: jfloat) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM44(_: JNIEnv, _: JClass, matrix: jlong, m44: jfloat) {
     if matrix == 0 {
         return;
     }
@@ -581,7 +581,7 @@ pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeSetM44(_: J
 
 
 #[no_mangle]
-pub extern "C" fn Java_com_github_triniwiz_canvas_TNSDOMMatrix_nativeDestroy(_: JNIEnv, _: JClass, matrix: jlong) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeDestroy(_: JNIEnv, _: JClass, matrix: jlong) {
     if matrix == 0 {
         return;
     }

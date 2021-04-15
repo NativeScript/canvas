@@ -1,3 +1,10 @@
+android {
+    compileOptions {
+		sourceCompatibility JavaVersion.VERSION_1_8
+		targetCompatibility JavaVersion.VERSION_1_8
+	}
+}
+
 dependencies {
     implementation 'com.google.android.exoplayer:exoplayer:2.13.2'
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.2'

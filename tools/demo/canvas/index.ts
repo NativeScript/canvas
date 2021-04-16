@@ -318,7 +318,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	draw() {
 		//filterBlur(this.canvas);
-		//handleVideo(this.canvas);
+		handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
@@ -392,7 +392,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		// drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		this.solar(this.canvas);
+		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)

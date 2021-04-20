@@ -21,7 +21,7 @@ signing {
 
 group = "org.nativescript"
 archivesBaseName = "canvas"
-version = "0.9.17"
+version = "0.9.18"
 
 uploadArchives {
 	repositories {

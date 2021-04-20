@@ -36,12 +36,13 @@ pub struct Image {
 
 impl Default for Image {
     fn default() -> Self {
+        let data: Option<skia_safe::Image> = None;
         Self {
             x: Length::zero(),
             y: Length::zero(),
             width: Length::zero(),
             height: Length::zero(),
-            data: None,
+            data,
             style: StyleMap::default(),
             bounding_box: Default::default(),
             preserve_aspect_ratio: Default::default(),

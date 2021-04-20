@@ -455,6 +455,9 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/v8-bindings-2807dd67f609efa6/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/v8-bindings-d439e4eb7154a1ce/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/v8-bindings/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_json-4618c75073c05a2e/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wasm-bindgen-0e67f380a5e2a6c7/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wasm-bindgen-shared-f6d1af1aa7d11a0b/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

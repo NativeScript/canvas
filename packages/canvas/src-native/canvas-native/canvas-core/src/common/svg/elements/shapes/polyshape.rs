@@ -187,6 +187,7 @@ impl Renderer for PolyShape {
                             return;
                         }
                         if let Some(next_point) = points.get(position + 1) {
+                            let next_point = *next_point;
                             angles.push((next_point.y - point.y).atan2(next_point.x - point.x));
                         }
 

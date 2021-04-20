@@ -24,7 +24,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		super(context);
 	}
 
-	// native: org.nativescript.canvas.TNSWebGL2RenderingContext;
+	 native: org.nativescript.canvas.TNSWebGL2RenderingContext;
 	/* Transform feedback */
 
 	static toPrimitive(value): any {
@@ -735,19 +735,104 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				source
 			);
 		} else if (source && source.buffer) {
-			if (source instanceof Uint8Array) {
-				this.native.texImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					this.toNativeArray(source as any, 'byte')
-				);
+			if (source && source.buffer) {
+				if (source instanceof Uint8Array || source instanceof Uint8ClampedArray) {
+					this.native.texImage3DByte(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						depth,
+						border,
+						format,
+						type,
+						Array.from(source)
+					);
+				} else if (source instanceof Uint16Array || source instanceof Int16Array) {
+					this.native.texImage3DShort(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						depth,
+						border,
+						format,
+						type,
+						Array.from(source)
+					);
+				} else if (source instanceof Uint32Array || source instanceof Int32Array) {
+					this.native.texImage3DInt(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						depth,
+						border,
+						format,
+						type,
+						Array.from(source)
+					);
+				} else if (source instanceof Float32Array) {
+					this.native.texImage3DFloat(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						depth,
+						border,
+						format,
+						type,
+						Array.from(source)
+					);
+				} else if (source instanceof Float64Array) {
+					this.native.texImage3DDouble(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						depth,
+						border,
+						format,
+						type,
+						Array.from(source)
+					);
+				}
+			} else if (source instanceof ArrayBuffer) {
+				// @ts-ignore
+				if(source.nativeObject){
+					// @ts-ignore
+					this.native.texImage3D(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						depth,
+						border,
+						format,
+						type,
+						// @ts-ignore
+						source.nativeObject
+					);
+				}else {
+					this.native.texImage3DByte(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						depth,
+						border,
+						format,
+						type,
+						Array.from(new Uint8Array(source))
+					);
+				}
 			}
 		} else if (source instanceof android.graphics.Bitmap) {
 			this.native.texImage3D(
@@ -998,6 +1083,124 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 					);
 				}
 			}
+
+
+			if (srcData && srcData.buffer) {
+				if (srcData instanceof Uint8Array || srcData instanceof Uint8ClampedArray) {
+					this.native.texSubImage3DByte(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						zoffset,
+						width,
+						height,
+						depth,
+						format,
+						type,
+						Array.from(srcData),
+						srcOffset
+					);
+				} else if (srcData instanceof Uint16Array || srcData instanceof Int16Array) {
+					this.native.texSubImage3DShort(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						zoffset,
+						width,
+						height,
+						depth,
+						format,
+						type,
+						Array.from(srcData),
+						srcOffset
+					);
+				} else if (srcData instanceof Uint32Array || srcData instanceof Int32Array) {
+					this.native.texSubImage3DInt(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						zoffset,
+						width,
+						height,
+						depth,
+						format,
+						type,
+						Array.from(srcData),
+						srcOffset
+					);
+				} else if (srcData instanceof Float32Array) {
+					this.native.texSubImage3DFloat(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						zoffset,
+						width,
+						height,
+						depth,
+						format,
+						type,
+						Array.from(srcData),
+						srcOffset
+					);
+				} else if (srcData instanceof Float64Array) {
+					this.native.texSubImage3DDouble(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						zoffset,
+						width,
+						height,
+						depth,
+						format,
+						type,
+						Array.from(srcData),
+						srcOffset
+					);
+				}
+			} else if (srcData instanceof ArrayBuffer) {
+				// @ts-ignore
+				if(source.nativeObject){
+					
+					this.native.texSubImage3DByte(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						zoffset,
+						width,
+						height,
+						depth,
+						format,
+						type,
+						// @ts-ignore
+						source.nativeObject,
+						srcOffset
+					);
+				}else {
+					this.native.texSubImage3DDouble(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						zoffset,
+						width,
+						height,
+						depth,
+						format,
+						type,
+						Array.from(new Uint8Array(srcData)),
+						srcOffset
+					);
+				}
+			}
+
+
+
 		} else if (srcData instanceof android.graphics.Bitmap) {
 			this.native.texSubImage3D(
 				target,

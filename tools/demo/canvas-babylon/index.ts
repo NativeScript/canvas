@@ -35,11 +35,11 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		if (!engine) throw 'engine should not be null.';
 		 //this.createMDN(engine)
 
-		 sceneToRender = this.createChart(engine);
+		 //sceneToRender = this.createChart(engine);
 		// sceneToRender = this.createWaterScene(engine);
 		//sceneToRender = this.createScene(engine);
 		//sceneToRender = this.createSkullScene(engine);
-		//sceneToRender = this.createLightTexture(engine);
+		sceneToRender = this.createLightTexture(engine);
 		// sceneToRender = this.createParticleScene(engine);
 		engine.runRenderLoop(function () {
 			if (sceneToRender) {

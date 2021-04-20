@@ -24,6 +24,7 @@ pub struct LinearGradient {
 
 impl Default for LinearGradient {
     fn default() -> Self {
+        let stop_colors: Vec<(f32, Color)> = vec![];
         Self {
             id: "".to_owned(),
             x1: Length::zero(),
@@ -33,7 +34,7 @@ impl Default for LinearGradient {
             gradient_units: Units::ObjectBoundingBox,
             gradient_transform: String::new(),
             spread_method: SpreadMethod::Pad,
-            stop_colors: vec![],
+            stop_colors,
         }
     }
 }

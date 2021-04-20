@@ -30,6 +30,7 @@ pub struct RadialGradient {
 
 impl Default for RadialGradient {
     fn default() -> Self {
+        let stop_colors: Vec<(f32, Color)> = vec![];
         Self {
             id: "".to_string(),
             cx: Length::new(50.0, LengthUnit::Percent),
@@ -41,7 +42,7 @@ impl Default for RadialGradient {
             spread_method: SpreadMethod::Pad,
             gradient_units: Units::ObjectBoundingBox,
             gradient_transform: String::new(),
-            stop_colors: vec![],
+            stop_colors,
         }
     }
 }

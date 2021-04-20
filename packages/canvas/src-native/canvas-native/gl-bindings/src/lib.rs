@@ -5,6 +5,7 @@
 
 
 #[cfg(target_os = "android")]
+#[cfg(target_os = "android")]
 #[allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/android_bindings.rs"));
 

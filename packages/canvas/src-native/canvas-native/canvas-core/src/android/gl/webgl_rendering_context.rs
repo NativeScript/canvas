@@ -5,8 +5,10 @@
 use std::os::raw::c_void;
 
 use jni::errors::Error;
-use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode, AutoPrimitiveArray};
-use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE, jbyteArray};
+use jni::objects::{AutoPrimitiveArray, JByteBuffer, JClass, JObject, ReleaseMode};
+use jni::sys::{
+    jboolean, jbyteArray, jfloatArray, jint, jintArray, jlong, jobject, jshortArray, JNI_TRUE,
+};
 use jni::JNIEnv;
 use skia_safe::RCHandle;
 
@@ -28,8 +30,6 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_n
     let mut previous_texture = [-1_i32; 1];
     let mut previous_program = [-1_i32; 1];
     let mut previous_frame_buffer = [-1_i32; 1];
-
-
 }
 
 #[no_mangle]
@@ -104,6 +104,42 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_n
     );
 }
 
+fn texImage2D(
+    target: jint,
+    level: jint,
+    internalformat: jint,
+    width: jint,
+    height: jint,
+    border: jint,
+    format: jint,
+    image_type: jint,
+    flipY: bool,
+    buf: &mut [u8],
+) {
+    unsafe {
+        if flipY {
+            crate::common::utils::gl::flip_in_place(
+                buf.as_mut_ptr(),
+                buf.len(),
+                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
+                    * width) as usize,
+                height as usize,
+            );
+        }
+        gl_bindings::glTexImage2D(
+            target as u32,
+            level,
+            internalformat,
+            width,
+            height,
+            border,
+            format as u32,
+            image_type as u32,
+            buf.as_ptr() as *const c_void,
+        );
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage2DByteArray(
     env: JNIEnv,
@@ -119,38 +155,151 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_n
     byteArray: jbyteArray,
     flipY: jboolean,
 ) {
-    match env.get_primitive_array_critical(byteArray, ReleaseMode::NoCopyBack){
+    match env.get_primitive_array_critical(byteArray, ReleaseMode::NoCopyBack) {
         Ok(array) => {
             let size = array.size().unwrap_or(0) as usize;
             let buf = std::slice::from_raw_parts_mut(array.as_ptr() as *mut u8, size);
-            if flipY == JNI_TRUE {
-                crate::common::utils::gl::flip_in_place(
-                    buf.as_mut_ptr(),
-                    buf.len(),
-                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
-                        as i32
-                        * width) as usize,
-                    height as usize,
-                );
-            }
-            gl_bindings::glTexImage2D(
-                target as u32,
+            texImage2D(
+                target,
                 level,
                 internalformat,
                 width,
                 height,
                 border,
-                format as u32,
-                image_type as u32,
-                buf.as_ptr() as *const c_void,
+                format,
+                image_type,
+                flipY == JNI_TRUE,
+                buf,
             );
         }
         Err(e) => {
-            log::debug!("get_primitive_array_critical error {:?}", e);
+            log::debug!("byte get_primitive_array_critical error {:?}", e);
         }
     }
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage2DShortArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    internalformat: jint,
+    width: jint,
+    height: jint,
+    border: jint,
+    format: jint,
+    image_type: jint,
+    shortArray: jshortArray,
+    flipY: jboolean,
+) {
+    match env.get_primitive_array_critical(shortArray, ReleaseMode::NoCopyBack) {
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(
+                array.as_ptr() as *mut u8,
+                size * std::mem::size_of::<i16>(),
+            );
+            texImage2D(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format,
+                image_type,
+                flipY == JNI_TRUE,
+                buf,
+            );
+        }
+        Err(e) => {
+            log::debug!("short get_primitive_array_critical error {:?}", e);
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage2DIntArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    internalformat: jint,
+    width: jint,
+    height: jint,
+    border: jint,
+    format: jint,
+    image_type: jint,
+    intArray: jintArray,
+    flipY: jboolean,
+) {
+    match env.get_primitive_array_critical(intArray, ReleaseMode::NoCopyBack) {
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(
+                array.as_ptr() as *mut u8,
+                size * std::mem::size_of::<i32>(),
+            );
+            texImage2D(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format,
+                image_type,
+                flipY == JNI_TRUE,
+                buf,
+            );
+        }
+        Err(e) => {
+            log::debug!("short get_primitive_array_critical error {:?}", e);
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage2DFloatArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    internalformat: jint,
+    width: jint,
+    height: jint,
+    border: jint,
+    format: jint,
+    image_type: jint,
+    floatArray: jfloatArray,
+    flipY: jboolean,
+) {
+    match env.get_primitive_array_critical(floatArray, ReleaseMode::NoCopyBack) {
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(
+                array.as_ptr() as *mut u8,
+                size * std::mem::size_of::<f32>(),
+            );
+            texImage2D(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format,
+                image_type,
+                flipY == JNI_TRUE,
+                buf,
+            );
+        }
+        Err(e) => {
+            log::debug!("short get_primitive_array_critical error {:?}", e);
+        }
+    }
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage2DBuffer(
@@ -169,26 +318,17 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_n
 ) {
     match env.get_direct_buffer_address(buffer) {
         Ok(buf) => {
-            if flipY == JNI_TRUE {
-                crate::common::utils::gl::flip_in_place(
-                    buf.as_mut_ptr(),
-                    buf.len(),
-                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
-                        as i32
-                        * width) as usize,
-                    height as usize,
-                );
-            }
-            gl_bindings::glTexImage2D(
-                target as u32,
+            texImage2D(
+                target,
                 level,
                 internalformat,
                 width,
                 height,
                 border,
-                format as u32,
-                image_type as u32,
-                buf.as_ptr() as *const c_void,
+                format,
+                image_type,
+                flipY == JNI_TRUE,
+                buf,
             );
         }
         Err(e) => {
@@ -280,6 +420,215 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_n
     }
 }
 
+fn texSubImage2D(
+    target: jint,
+    level: jint,
+    xoffset: jint,
+    yoffset: jint,
+    width: jint,
+    height: jint,
+    format: jint,
+    image_type: jint,
+    flip_y: bool,
+    buf: &mut [u8],
+) {
+    if flip_y {
+        crate::common::utils::gl::flip_in_place(
+            buf.as_mut_ptr(),
+            buf.len(),
+            (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
+                * width as i32) as usize,
+            height as usize,
+        );
+    }
+    unsafe {
+        gl_bindings::glTexSubImage2D(
+            target as u32,
+            level,
+            xoffset,
+            yoffset,
+            width,
+            height,
+            format as u32,
+            image_type as u32,
+            buf.as_ptr() as *const c_void,
+        );
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage2DByteArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    xoffset: jint,
+    yoffset: jint,
+    width: jint,
+    height: jint,
+    format: jint,
+    image_type: jint,
+    byteArray: jbyteArray,
+    flip_y: jboolean,
+) {
+    match env.get_primitive_array_critical(byteArray, ReleaseMode::NoCopyBack) {
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(array.as_ptr() as *mut u8, size);
+            texSubImage2D(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                width,
+                height,
+                format,
+                image_type,
+                flip_y == JNI_TRUE,
+                buf,
+            );
+        }
+        Err(e) => {
+            log::debug!(
+                "texSubImage2D: byte get_primitive_array_critical error {:?}",
+                e
+            );
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage2DShortArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    xoffset: jint,
+    yoffset: jint,
+    width: jint,
+    height: jint,
+    format: jint,
+    image_type: jint,
+    shortArray: jshortArray,
+    flip_y: jboolean,
+) {
+    match env.get_primitive_array_critical(shortArray, ReleaseMode::NoCopyBack) {
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(
+                array.as_ptr() as *mut u8,
+                size * std::mem::size_of::<i16>(),
+            );
+            texSubImage2D(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                width,
+                height,
+                format,
+                image_type,
+                flip_y == JNI_TRUE,
+                buf,
+            );
+        }
+        Err(e) => {
+            log::debug!(
+                "texSubImage2D: short get_primitive_array_critical error {:?}",
+                e
+            );
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage2DIntArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    xoffset: jint,
+    yoffset: jint,
+    width: jint,
+    height: jint,
+    format: jint,
+    image_type: jint,
+    intArray: jintArray,
+    flip_y: jboolean,
+) {
+    match env.get_primitive_array_critical(intArray, ReleaseMode::NoCopyBack) {
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(
+                array.as_ptr() as *mut u8,
+                size * std::mem::size_of::<i32>(),
+            );
+            texSubImage2D(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                width,
+                height,
+                format,
+                image_type,
+                flip_y == JNI_TRUE,
+                buf,
+            );
+        }
+        Err(e) => {
+            log::debug!(
+                "texSubImage2D: int get_primitive_array_critical error {:?}",
+                e
+            );
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage2DFloatArray(
+    env: JNIEnv,
+    _: JClass,
+    target: jint,
+    level: jint,
+    xoffset: jint,
+    yoffset: jint,
+    width: jint,
+    height: jint,
+    format: jint,
+    image_type: jint,
+    floatArray: jfloatArray,
+    flip_y: jboolean,
+) {
+    match env.get_primitive_array_critical(floatArray, ReleaseMode::NoCopyBack) {
+        Ok(array) => {
+            let size = array.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts_mut(
+                array.as_ptr() as *mut u8,
+                size * std::mem::size_of::<f32>(),
+            );
+            texSubImage2D(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                width,
+                height,
+                format,
+                image_type,
+                flip_y == JNI_TRUE,
+                buf,
+            );
+        }
+        Err(e) => {
+            log::debug!(
+                "texSubImage2D: int get_primitive_array_critical error {:?}",
+                e
+            );
+        }
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexSubImage2DBuffer(
     env: JNIEnv,
@@ -296,25 +645,17 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_n
     flip_y: jboolean,
 ) {
     if let Ok(data_array) = env.get_direct_buffer_address(buffer) {
-        if flip_y == JNI_TRUE {
-            crate::common::utils::gl::flip_in_place(
-                data_array.as_mut_ptr(),
-                data_array.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
-                    * width as i32) as usize,
-                height as usize,
-            );
-        }
-        gl_bindings::glTexSubImage2D(
-            target as u32,
+        texSubImage2D(
+            target,
             level,
             xoffset,
             yoffset,
             width,
             height,
-            format as u32,
-            image_type as u32,
-            data_array.as_ptr() as *const c_void,
+            format,
+            image_type,
+            flip_y == JNI_TRUE,
+            data_array,
         );
     }
 }

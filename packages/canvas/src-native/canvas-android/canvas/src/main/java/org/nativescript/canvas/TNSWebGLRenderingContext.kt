@@ -235,6 +235,22 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		}
 	}
 
+	fun bufferDataByte(target: Int, srcData: ByteArray, usage: Int){
+		bufferData(target, srcData, usage);
+	}
+
+	fun bufferDataShort(target: Int, srcData: ShortArray, usage: Int){
+		bufferData(target, srcData, usage)
+	}
+
+	fun bufferDataFloat(target: Int, srcData: FloatArray, usage: Int){
+		bufferData(target, srcData, usage)
+	}
+
+	fun bufferDataInt(target: Int, srcData: IntArray, usage: Int){
+		bufferData(target, srcData, usage)
+	}
+
 	fun bufferData(target: Int, srcData: ByteArray, usage: Int) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -290,6 +306,70 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		}
 	}
 
+	fun bufferData(target: Int, srcData: ByteBuffer, usage: Int) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferData(target, srcData.capacity(), srcData, usage)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferData(target: Int, srcData: ShortBuffer, usage: Int) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferData(target, srcData.capacity() * SIZE_OF_SHORT, srcData, usage)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferData(target: Int, srcData: IntBuffer, usage: Int) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferData(target, srcData.capacity() * SIZE_OF_INT, srcData, usage)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferData(target: Int, srcData: FloatBuffer, usage: Int) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferData(target, srcData.capacity() * SIZE_OF_FLOAT, srcData, usage)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferSubDataByte(target: Int, offset: Int, srcData: ByteArray){
+		bufferSubData(target, offset, srcData)
+	}
+
+	fun bufferSubDataShort(target: Int, offset: Int, srcData: ShortArray){
+		bufferSubData(target, offset, srcData)
+	}
+
+	fun bufferSubDataInt(target: Int, offset: Int, srcData: IntArray){
+		bufferSubData(target, offset, srcData)
+	}
+
+	fun bufferSubDataFloat(target: Int, offset: Int, srcData: FloatArray){
+		bufferSubData(target, offset, srcData)
+	}
+
 	fun bufferSubData(target: Int, offset: Int, srcData: ByteArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -341,6 +421,54 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			val buffer = FloatBuffer.wrap(srcData)
 			val os = SIZE_OF_FLOAT * offset
 			GLES20.glBufferSubData(target, os, size, buffer)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferSubData(target: Int, offset: Int, srcData: ByteBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferSubData(target, offset, srcData.capacity(), srcData)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferSubData(target: Int, offset: Int, srcData: ShortBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferSubData(target, offset, srcData.capacity() * SIZE_OF_SHORT, srcData)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferSubData(target: Int, offset: Int, srcData: IntBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferSubData(target, offset, srcData.capacity() * SIZE_OF_INT, srcData)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bufferSubData(target: Int, offset: Int, srcData: FloatBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glBufferSubData(target, offset, srcData.capacity() * SIZE_OF_FLOAT, srcData)
 			lock.countDown()
 		})
 		try {
@@ -531,6 +659,172 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		}
 	}
 
+	fun compressedTexImage2DByte(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: ByteArray
+	){
+		compressedTexImage2D(target, level, internalformat, width, height, border, pixels)
+	}
+
+	fun compressedTexImage2DShort(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: ShortArray
+	){
+		compressedTexImage2D(target, level, internalformat, width, height, border, pixels)
+	}
+
+
+	fun compressedTexImage2DInt(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: IntArray
+	){
+		compressedTexImage2D(target, level, internalformat, width, height, border, pixels)
+	}
+
+
+	fun compressedTexImage2DFloat(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: FloatArray
+	){
+		compressedTexImage2D(target, level, internalformat, width, height, border, pixels)
+	}
+
+	fun compressedTexImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: ByteBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexImage2D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				border,
+				pixels.capacity(),
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun compressedTexImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: ShortBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexImage2D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				border,
+				pixels.capacity() * SIZE_OF_SHORT,
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun compressedTexImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: IntBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexImage2D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				border,
+				pixels.capacity() * SIZE_OF_INT,
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun compressedTexImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		pixels: FloatBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexImage2D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				border,
+				pixels.capacity() * SIZE_OF_FLOAT,
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
 	fun compressedTexImage2D(
 		target: Int,
 		level: Int,
@@ -654,6 +948,187 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		} catch (ignored: InterruptedException) {
 		}
 	}
+
+
+	fun compressedTexSubImage2DByte(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: ByteArray
+	) {
+		compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels)
+	}
+
+
+	fun compressedTexSubImage2DShort(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: ShortArray
+	) {
+		compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels)
+	}
+
+	fun compressedTexSubImage2DInt(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: IntArray
+	) {
+		compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels)
+	}
+
+	fun compressedTexSubImage2DFloat(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: FloatArray
+	) {
+		compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels)
+	}
+
+	fun compressedTexSubImage2D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: ByteBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexSubImage2D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				width,
+				height,
+				format,
+				pixels.capacity(),
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun compressedTexSubImage2D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: ShortBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexSubImage2D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				width,
+				height,
+				format,
+				pixels.capacity() * SIZE_OF_SHORT,
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun compressedTexSubImage2D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: IntBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexSubImage2D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				width,
+				height,
+				format,
+				pixels.capacity() * SIZE_OF_INT,
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun compressedTexSubImage2D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		pixels: FloatBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES20.glCompressedTexSubImage2D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				width,
+				height,
+				format,
+				pixels.capacity() * SIZE_OF_FLOAT,
+				pixels
+			)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
 
 	fun compressedTexSubImage2D(
 		target: Int,
@@ -2122,7 +2597,55 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		}
 	}
 
-	// Does it need a lock ??
+	fun readPixelsByte(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: ByteArray
+	) {
+		readPixels(x, y, width, height, format, type, pixels)
+	}
+
+	fun readPixelsShort(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: ShortArray
+	) {
+		readPixels(x, y, width, height, format, type, pixels)
+	}
+
+	fun readPixelsFloat(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: FloatArray
+	) {
+		readPixels(x, y, width, height, format, type, pixels)
+	}
+
+
+	fun readPixelsInt(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: IntArray
+	) {
+		readPixels(x, y, width, height, format, type, pixels)
+	}
+
 	fun readPixels(
 		x: Int,
 		y: Int,
@@ -2130,7 +2653,93 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		height: Int,
 		format: Int,
 		type: Int,
-		pixels: ByteArray?
+		pixels: ByteBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			clearIfComposited()
+			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun readPixels(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: ShortBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			clearIfComposited()
+			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun readPixels(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: IntBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			clearIfComposited()
+			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun readPixels(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: FloatBuffer
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			clearIfComposited()
+			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun readPixels(
+		x: Int,
+		y: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: ByteArray
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -2151,7 +2760,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		height: Int,
 		format: Int,
 		type: Int,
-		pixels: ShortArray?
+		pixels: ShortArray
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -2172,7 +2781,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		height: Int,
 		format: Int,
 		type: Int,
-		pixels: FloatArray?
+		pixels: FloatArray
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -2193,7 +2802,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		height: Int,
 		format: Int,
 		type: Int,
-		pixels: IntArray?
+		pixels: IntArray
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -2376,9 +2985,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-//				val buf = ByteBuffer.allocateDirect(it.size).order(ByteOrder.nativeOrder())
-//				buf.put(pixels)
-//				buf.rewind()
 				if (it.isDirect) {
 					nativeTexImage2DBuffer(
 						target,
@@ -2438,14 +3044,259 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		border: Int,
 		format: Int,
 		type: Int,
+		pixels: ShortBuffer?
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			pixels?.let {
+				if (it.isDirect) {
+					nativeTexImage2DBuffer(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it,
+						flipYWebGL
+					)
+				} else {
+					nativeTexImage2DShortArray(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it.array(),
+						flipYWebGL
+					)
+				}
+
+			} ?: run {
+				GLES20.glTexImage2D(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					border,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun texImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		pixels: IntBuffer?
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			pixels?.let {
+				if (it.isDirect) {
+					nativeTexImage2DBuffer(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it,
+						flipYWebGL
+					)
+				} else {
+					nativeTexImage2DIntArray(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it.array(),
+						flipYWebGL
+					)
+				}
+
+			} ?: run {
+				GLES20.glTexImage2D(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					border,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun texImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		pixels: FloatBuffer?
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			pixels?.let {
+				if (it.isDirect) {
+					nativeTexImage2DBuffer(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it,
+						flipYWebGL
+					)
+				} else {
+					nativeTexImage2DFloatArray(
+						target,
+						level,
+						internalformat,
+						width,
+						height,
+						border,
+						format,
+						type,
+						it.array(),
+						flipYWebGL
+					)
+				}
+			} ?: run {
+				GLES20.glTexImage2D(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					border,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun texImage2DByte(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		pixels: ByteArray?
+	){
+		texImage2D(target, level, internalformat, width, height, border, format, type, pixels)
+	}
+
+	fun texImage2DShort(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		pixels: ShortArray?
+	){
+		texImage2D(target, level, internalformat, width, height, border, format, type, pixels)
+	}
+
+
+	fun texImage2DInt(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		pixels: IntArray?
+	){
+		texImage2D(target, level, internalformat, width, height, border, format, type, pixels)
+	}
+
+	fun texImage2DFloat(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		pixels: FloatArray?
+	){
+		texImage2D(target, level, internalformat, width, height, border, format, type, pixels)
+	}
+
+
+
+	fun texImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		border: Int,
+		format: Int,
+		type: Int,
 		pixels: ByteArray?
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-//				val buf = ByteBuffer.allocateDirect(it.size).order(ByteOrder.nativeOrder())
-//				buf.put(pixels)
-//				buf.rewind()
 				nativeTexImage2DByteArray(
 					target,
 					level,
@@ -2493,11 +3344,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val buffer =
-					ByteBuffer.allocateDirect(it.size * SIZE_OF_SHORT).order(ByteOrder.nativeOrder())
-				buffer.asShortBuffer().put(pixels)
-				buffer.rewind()
-				nativeTexImage2DBuffer(
+				nativeTexImage2DShortArray(
 					target,
 					level,
 					internalformat,
@@ -2506,7 +3353,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					border,
 					format,
 					type,
-					buffer,
+					it,
 					flipYWebGL
 				)
 			} ?: kotlin.run {
@@ -2544,10 +3391,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val buffer = ByteBuffer.allocateDirect(it.size * SIZE_OF_INT).order(ByteOrder.nativeOrder())
-				buffer.asIntBuffer().put(it)
-				buffer.rewind()
-				nativeTexImage2DBuffer(
+				nativeTexImage2DIntArray(
 					target,
 					level,
 					internalformat,
@@ -2556,7 +3400,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					border,
 					format,
 					type,
-					buffer,
+					it,
 					flipYWebGL
 				)
 			} ?: kotlin.run {
@@ -2594,11 +3438,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val buffer =
-					ByteBuffer.allocateDirect(it.size * SIZE_OF_FLOAT).order(ByteOrder.nativeOrder())
-				buffer.asFloatBuffer().put(it)
-				buffer.rewind()
-				nativeTexImage2DBuffer(
+				nativeTexImage2DFloatArray(
 					target,
 					level,
 					internalformat,
@@ -2607,7 +3447,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					border,
 					format,
 					type,
-					buffer,
+					it,
 					flipYWebGL
 				)
 			} ?: kotlin.run {
@@ -2642,9 +3482,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val ss = canvas.snapshot()
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-//			val buf = ByteBuffer.allocateDirect(ss.size).order(ByteOrder.nativeOrder())
-//			buf.put(ss)
-//			buf.rewind()
 			nativeTexImage2DByteArray(
 				target,
 				level,
@@ -2775,6 +3612,117 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		}
 	}
 
+
+	fun texSubImage2DByte(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: ByteArray?
+	) {
+		texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
+	}
+
+	fun texSubImage2DShort(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: ShortArray?
+	) {
+		texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
+	}
+
+	fun texSubImage2DInt(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: IntArray?
+	) {
+		texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
+	}
+
+	fun texSubImage2DFloat(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: FloatArray?
+	) {
+		texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels)
+	}
+
+
+	fun texSubImage2D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		pixels: ByteBuffer?
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			pixels?.let {
+				if(it.isDirect){
+					nativeTexSubImage2DBuffer(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						width,
+						height,
+						format,
+						type,
+						it,
+						flipYWebGL
+					)
+				}else {
+					nativeTexSubImage2DByteArray(
+						target,
+						level,
+						xoffset,
+						yoffset,
+						width,
+						height,
+						format,
+						type,
+						it.array(),
+						flipYWebGL
+					)
+
+				}
+			} ?: run {
+				GLES20.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, null)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
 	fun texSubImage2D(
 		target: Int,
 		level: Int,
@@ -2789,10 +3737,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val buffer = ByteBuffer.allocateDirect(it.size).order(ByteOrder.nativeOrder())
-				buffer.put(it)
-				buffer.rewind()
-				nativeTexSubImage2DBuffer(
+				nativeTexSubImage2DByteArray(
 					target,
 					level,
 					xoffset,
@@ -2801,7 +3746,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					height,
 					format,
 					type,
-					buffer,
+					it,
 					flipYWebGL
 				)
 			} ?: run {
@@ -2829,11 +3774,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val size = it.size * SIZE_OF_SHORT
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asShortBuffer().put(it)
-				buffer.rewind()
-				nativeTexSubImage2DBuffer(
+				nativeTexSubImage2DShortArray(
 					target,
 					level,
 					xoffset,
@@ -2842,7 +3783,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					height,
 					format,
 					type,
-					buffer,
+					it,
 					flipYWebGL
 				)
 			} ?: run {
@@ -2870,11 +3811,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val size = it.size * SIZE_OF_INT
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asIntBuffer().put(it)
-				buffer.rewind()
-				nativeTexSubImage2DBuffer(
+				nativeTexSubImage2DIntArray(
 					target,
 					level,
 					xoffset,
@@ -2883,7 +3820,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					height,
 					format,
 					type,
-					buffer,
+					it,
 					flipYWebGL
 				)
 			} ?: run {
@@ -2911,11 +3848,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			pixels?.let {
-				val size = it.size * SIZE_OF_FLOAT
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asFloatBuffer().put(it)
-				buffer.rewind()
-				nativeTexSubImage2DBuffer(
+				nativeTexSubImage2DFloatArray(
 					target,
 					level,
 					xoffset,
@@ -2924,7 +3857,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 					height,
 					format,
 					type,
-					buffer,
+					it,
 					flipYWebGL
 				)
 			} ?: run {
@@ -2950,10 +3883,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		val buffer = canvas.snapshot()
 		runOnGLThread(Runnable {
-			val buf = ByteBuffer.allocateDirect(buffer.size)
-			buf.put(buffer)
-			buf.rewind()
-			nativeTexSubImage2DBuffer(
+			nativeTexSubImage2DByteArray(
 				target,
 				level,
 				xoffset,
@@ -2962,7 +3892,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				canvas.height,
 				format,
 				type,
-				buf,
+				buffer,
 				flipYWebGL
 			)
 			lock.countDown()
@@ -3847,6 +4777,48 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		)
 
 		@JvmStatic
+		private external fun nativeTexImage2DShortArray(
+			target: Int,
+			level: Int,
+			internalformat: Int,
+			width: Int,
+			height: Int,
+			i: Int,
+			format: Int,
+			type: Int,
+			shortArray: ShortArray,
+			flipYWebGL: Boolean
+		)
+
+		@JvmStatic
+		private external fun nativeTexImage2DIntArray(
+			target: Int,
+			level: Int,
+			internalformat: Int,
+			width: Int,
+			height: Int,
+			i: Int,
+			format: Int,
+			type: Int,
+			intArray: IntArray,
+			flipYWebGL: Boolean
+		)
+
+		@JvmStatic
+		private external fun nativeTexImage2DFloatArray(
+			target: Int,
+			level: Int,
+			internalformat: Int,
+			width: Int,
+			height: Int,
+			i: Int,
+			format: Int,
+			type: Int,
+			floatArray: FloatArray,
+			flipYWebGL: Boolean
+		)
+
+		@JvmStatic
 		private external fun nativeTexImage2DAsset(
 			target: Int,
 			level: Int,
@@ -3857,6 +4829,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			asset: Long,
 			flipY: Boolean
 		)
+
 
 		@JvmStatic
 		private external fun nativeTexImage2DBitmap(
@@ -3896,6 +4869,64 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			type: Int,
 			buffer: Buffer,
 			flipYWebGL: Boolean
+		)
+
+
+		@JvmStatic
+		private external fun nativeTexSubImage2DByteArray(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		width: Int,
+		height: Int,
+		format: Int,
+		type: Int,
+		byteArray: ByteArray,
+		flipY: Boolean
+		)
+
+
+		@JvmStatic
+		private external fun nativeTexSubImage2DShortArray(
+			target: Int,
+			level: Int,
+			xoffset: Int,
+			yoffset: Int,
+			width: Int,
+			height: Int,
+			format: Int,
+			type: Int,
+			shortArray: ShortArray,
+			flipY: Boolean,
+		)
+
+		@JvmStatic
+		private external fun nativeTexSubImage2DIntArray(
+			target: Int,
+			level: Int,
+			xoffset: Int,
+			yoffset: Int,
+			width: Int,
+			height: Int,
+			format: Int,
+			type: Int,
+			intArray: IntArray,
+			flipY: Boolean,
+		)
+
+		@JvmStatic
+		private external fun nativeTexSubImage2DFloatArray(
+			target: Int,
+			level: Int,
+			xoffset: Int,
+			yoffset: Int,
+			width: Int,
+			height: Int,
+			format: Int,
+			type: Int,
+			floatArray: FloatArray,
+			flipY: Boolean,
 		)
 
 		@JvmStatic

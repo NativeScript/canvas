@@ -2,8 +2,8 @@ import { ImageAssetBase, ImageAssetSaveFormat } from './common';
 import { knownFolders, path as filePath } from '@nativescript/core';
 
 export class ImageAsset extends ImageAssetBase {
-    constructor() {
-        super(new org.nativescript.canvas.TNSImageAsset());
+    constructor(native?: org.nativescript.canvas.TNSImageAsset) {
+        super(native || new org.nativescript.canvas.TNSImageAsset());
     }
 
     get width() {

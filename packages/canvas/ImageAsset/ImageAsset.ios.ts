@@ -7,9 +7,10 @@ const main_queue = dispatch_get_current_queue();
 const background_queue = dispatch_get_global_queue(21, 0);
 
 export class ImageAsset extends ImageAssetBase {
+	//@ts-ignore
 	native: TNSImageAsset
-	constructor() {
-		super(TNSImageAsset.alloc().init());
+    constructor(native?: TNSImageAsset) {
+		super(native || TNSImageAsset.alloc().init());
 	}
 
 	get width() {

@@ -5,7 +5,7 @@ export declare class ImageAsset extends ImageAssetBase {
 	height: number;
 	error: string;
 
-	constructor();
+	constructor(native?: any);
 
 	loadFromUrl(url: string): boolean;
 

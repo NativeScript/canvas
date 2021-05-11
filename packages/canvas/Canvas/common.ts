@@ -1,15 +1,17 @@
 import {CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application} from '@nativescript/core';
 import {CanvasRenderingContext, TouchList} from '../common';
-import {PinchGestureEventData, Pointer} from '@nativescript/core/ui/gestures';
+import {GestureTypes, GestureEventData, PinchGestureEventData, Pointer} from '@nativescript/core/ui/gestures';
+import {observe as gestureObserve} from '@nativescript-community/gesturehandler/gestures_override';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
 }
 
+const WEB_GESTURE_EVENTS = ['touchmove', 'touchstart', 'touchcancel', 'touchend']
+
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
-	_touchEvents: any;
 	_isCustom: boolean = false;
 
 	protected constructor() {
@@ -17,13 +19,35 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		this._classList = new Set();
 	}
 
-	__handleGestures() {
-		if (this._touchEvents) {
-			this.off('touch, pan, pinch', this._touchEvents);
-			this._touchEvents = undefined;
+	_gesturesRegistered = false;
+	__ensureGestures() {
+		if (!this._gesturesRegistered) {
+			this._gesturesRegistered = true;
+			this.on('touch, pan, pinch', this._touchEvent, this);
 		}
-		this._touchEvents = this._touchEventsFN.bind(this);
-		this.on('touch, pan, pinch', this._touchEvents);
+	}
+	__unregisterGestures() {
+		if (this._gesturesRegistered) {
+			this._gesturesRegistered = false;
+			this.off('touch, pan, pinch', this._touchEvent, this);
+		}
+	}
+	public addEventListener(arg: string, callback: any, thisArg?: any) {
+		super.addEventListener(arg, callback, thisArg);
+		if (WEB_GESTURE_EVENTS.indexOf(arg) !== -1) {
+			this.__ensureGestures();
+		}
+
+	}
+
+	public removeEventListener(arg: string, callback: any, thisArg?: any) {
+		super.removeEventListener(arg, callback, thisArg);
+		if (WEB_GESTURE_EVENTS.indexOf(arg) !== -1) {
+			// if we dont have any other web gestures we can unregister gestures
+			if (!WEB_GESTURE_EVENTS.some(e=>this.hasListeners(e))){
+				this.__unregisterGestures();
+			}
+		}
 	}
 
 	_classList: Set<any>;
@@ -93,12 +117,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	__touchStart?: Pointer;
 
 	_isPinching = false;
-	_touchEventsFN(event: any) {
+	_touchEvent(event: any) {
 		if (event.eventName === 'touch') {
 			switch (event.action) {
 				case 'down':
-					this.__touchStart = event.getActivePointers()[0];
-					this._emitEvent('touchstart', event);
+					// ensure we dont have multiple touchstart
+					// on the web seems to be called only on first touch
+					if (! this.__touchStart) {
+						this.__touchStart = event.getActivePointers()[0];
+						this._emitEvent('touchstart', event);
+					}
 					break;
 				case 'up':
 					this._emitEvent('touchend', event);
@@ -115,13 +143,19 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					break;
 			}
 		} else if (event.eventName === 'pinch') {
-			this._isPinching = true;
-			this._emitEvent('touchmove:pinch', event);
-			if(event.state === GestureStateTypes.ended || event.state === GestureStateTypes.cancelled){
+			if (event.getPointerCount() >= 2 && event.state === GestureStateTypes.began) {
+				this._previousPinchDistance = 0;
+				this._isPinching = true;
+			}
+			if (this._isPinching) {
+				this._emitEvent('touchmove:pinch', event);
+			}
+			if (event.state === GestureStateTypes.ended || event.state === GestureStateTypes.cancelled) {
 				this._isPinching = false;
 			}
-		} else if (event.eventName === 'pan') {
-			if(this._isPinching){
+		}
+		else if (event.eventName === 'pan') {
+			if (this._isPinching) {
 				return;
 			}
 			if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
@@ -132,117 +166,94 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	_previousX = 0;
 	_previousY = 0;
+	_previousPinchDistance = 0;
 
-	_getTouchEvent(name, event, target) {
+	_getTouchEvent(name, event, target): TouchEvent {
 		const pointers = new TouchList();
 		let scale = 1;
 		let activePointer: {};
 
 		if (name === 'touchmove') {
 			name = 'touchmove';
-			let x = 0;
-			let y = 0;
-			if (global.isIOS) {
-				x = event.deltaX + this.__touchStart?.getX() ?? 0;
-				y = event.deltaY + this.__touchStart?.getY() ?? 0;
-			} else {
-				const initial: android.view.MotionEvent = event.android.initial;
-				const current: android.view.MotionEvent = event.android.current;
-				scale = Screen.mainScreen.scale;
-				if(initial){
-					x = initial.getX() / scale;
-					y = initial.getY() / scale;
-				}else {
-					x = current.getX() / scale;
-					y = current.getY()/ scale;
-				}
+
+			activePointer = {
+				clientX: event.getX() * scale,
+				clientY: event.getY() * scale,
+				force: 0.0,
+				identifier: 0,
+				pageX: event.getX() * scale,
+				pageY: event.getY() * scale,
+				radiusX: 0,
+				radiusY: 0,
+				rotationAngle: 0,
+				screenX: event.getX() * scale,
+				screenY: event.getY() * scale,
+				target
+			};
+
+			const count = event.getAllPointers().length;
+			for (let i = 0; i < count; i++) {
+				const point = event.getAllPointers()[i];
+				pointers.push({
+					clientX: point.getX(),
+					clientY: point.getY(),
+					force: 0.0,
+					identifier: i,
+					pageX: point.getX(),
+					pageY: point.getY(),
+					radiusX: 0,
+					radiusY: 0,
+					rotationAngle: 0,
+					screenX: point.getX(),
+					screenY: point.getY(),
+					target,
+				});
 			}
 
 			/* mouse */
-			activePointer = {
-				clientX: x,
-				clientY: y,
-				force: 0.0,
-				identifier: 0,
-				pageX: x,
-				pageY: y,
-				radiusX: 0,
-				radiusY: 0,
-				rotationAngle: 0,
-				screenX: x,
-				screenY: y,
-				target,
-			};
-
-			/* mouse */
-			pointers.push({
-				// * SCALE ??
-				clientX: x,
-				clientY: y,
-				force: 0.0,
-				identifier: 0,
-				pageX: x,
-				pageY: y,
-				radiusX: 0,
-				radiusY: 0,
-				rotationAngle: 0,
-				screenX: x,
-				screenY: y,
-				target,
-			});
+			// pointers.push({
+			// 	// * SCALE ??
+			// 	clientX: x,
+			// 	clientY: y,
+			// 	force: 0.0,
+			// 	identifier: 0,
+			// 	pageX: x,
+			// 	pageY: y,
+			// 	radiusX: 0,
+			// 	radiusY: 0,
+			// 	rotationAngle: 0,
+			// 	screenX: x,
+			// 	screenY: y,
+			// 	target,
+			// });
 			this._previousX = event.deltaX;
 			this._previousY = event.deltaY;
 		} else if (name === 'touchmove:pinch') {
-			name = 'touchmove';
+			const dx = event.extraData.positions[2] - event.extraData.positions[0];
+			const dy = event.extraData.positions[3] - event.extraData.positions[1];
+			let delta =0 ;
+
+			var distance = Math.sqrt(dx * dx + dy * dy);
+			if (this._previousPinchDistance) {
+				delta  = this._previousPinchDistance - distance;
+			}
+			this._previousPinchDistance= distance;
+			name = 'wheel';
 			const x = event.getFocusX();
 			const y = event.getFocusY();
 			const scale = event.scale;
 			// mouse event
-			activePointer = {
-				clientX: x * scale,
-				clientY: y * scale,
-				force: 0.0,
-				identifier: 0,
-				pageX: x * scale,
-				pageY: y * scale,
-				radiusX: 0,
-				radiusY: 0,
-				rotationAngle: 0,
-				screenX: x * scale,
-				screenY: x * scale,
-			};
-
-			pointers.push({
-				clientX: this.__touchStart?.getX() ?? 0,
-				clientY: this.__touchStart?.getY() ?? 0,
-				force: 0.0,
-				identifier: 0,
-				pageX: this.__touchStart?.getX() ?? 0,
-				pageY: this.__touchStart?.getY() ?? 0,
-				radiusX: 0,
-				radiusY: 0,
-				rotationAngle: 0,
-				screenX: this.__touchStart?.getX() ?? 0,
-				screenY: this.__touchStart?.getY() ?? 0,
-				target,
-			});
-
-
-			pointers.push({
+			let data = {
+				deltaMode:0,
 				clientX: x,
 				clientY: y,
-				force: 0.0,
-				identifier: 1,
-				pageX: x,
-				pageY: y,
-				radiusX: 0,
-				radiusY: 0,
-				rotationAngle: 0,
-				screenX: x,
-				screenY: y,
-				target,
-			});
-
+				screenX: x ,
+				screenY: x,
+				deltaX:0,
+				deltaY:delta,
+				deltaZ:0,
+			};
+			return Object.assign(new TouchEvent(name), { eventName: name, object: null, defaultPrevented: false, cancelable: false, altKey: false, ctrlKey: true, metaKey: false, shiftKey: false, target }, data);
 		} else {
 			const count = event.getAllPointers().length;
 			const point = event.getActivePointers()[0];
@@ -281,9 +292,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 
-		return {
+		return Object.assign(new TouchEvent(name),{
 			eventName: name,
-			object: null,
 			defaultPrevented: false,
 			cancelable: false,
 			altKey: false,
@@ -293,17 +303,13 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			shiftKey: false,
 			targetTouches: pointers,
 			touches: pointers,
-			preventDefault: () => {
-			},
-			stopPropagation: () => {
-			},
 			target,
 			...activePointer,
-		};
+		});
 	}
 
 	_emitEvent(name, event) {
-		this.notify(this._getTouchEvent(name, event, this));
+		this.notify(this._getTouchEvent(name, event, this) as any );
 	}
 
 	_readyEvent() {
@@ -384,3 +390,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 }
+
+(CanvasBase.prototype as any)._observe = function (type: GestureTypes, callback: (args: GestureEventData) => void, thisArg?: any): void {
+	if (!this._gestureObservers[type]) {
+		this._gestureObservers[type] = [];
+	}
+
+	this._gestureObservers[type].push(gestureObserve(this, type, callback, thisArg));
+	if (global.isAndroid) {
+		if (this.isLoaded && !this.touchListenerIsSet) {
+			this.setOnTouchListener();
+		}
+	}
+};

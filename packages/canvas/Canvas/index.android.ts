@@ -103,7 +103,6 @@ export class Canvas extends CanvasBase {
 	initNativeView(): void {
 		super.initNativeView();
 		const ref = new WeakRef(this);
-		this.__handleGestures();
 		this.on(View.layoutChangedEvent, (args) => {
 			const parent = this.parent as any;
 			// TODO change DIPs once implemented
@@ -162,7 +161,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	disposeNativeView(): void {
-		this.off('touch, pan', this._touchEvents);
 		this._canvas.setListener(null);
 		this._canvas = undefined;
 		this.setNativeView(undefined);

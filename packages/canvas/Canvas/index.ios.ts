@@ -139,7 +139,6 @@ export class Canvas extends CanvasBase {
 
 	initNativeView() {
 		super.initNativeView();
-		this.__handleGestures();
 	}
 
 	flush() {
@@ -164,7 +163,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	disposeNativeView(): void {
-		this.off('touch, pan', this._touchEvents);
 		this._canvas.setListener(null);
 		this._readyListener = undefined;
 		this._canvas = undefined;

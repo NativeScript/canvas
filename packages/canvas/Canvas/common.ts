@@ -129,8 +129,11 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					}
 					break;
 				case 'up':
-					this._emitEvent('touchend', event);
-					this.__touchStart = undefined;
+					if (event.getPointerCount() === 1 && this.__touchStart) {
+						this._emitEvent('touchend', event);
+						this._isPinching = false;
+						this.__touchStart = undefined;
+					}
 					break;
 				case 'cancel':
 					this._emitEvent('touchcancel', event);

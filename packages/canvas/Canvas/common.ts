@@ -146,7 +146,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					break;
 			}
 		} else if (event.eventName === 'pinch') {
-			if (event.getPointerCount() >= 2 && event.state === GestureStateTypes.began) {
+			if (!this._isPinching && event.getPointerCount() >= 2 && (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed)) {
 				this._previousPinchDistance = 0;
 				this._isPinching = true;
 			}

@@ -187,9 +187,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			this._previousY = event.deltaY;
 		} else if (name === 'touchmove:pinch') {
 			name = 'touchmove';
+			if (!this.__touchStart) {
+				return null;
+			}
 			const x = event.getFocusX();
 			const y = event.getFocusY();
 			const scale = event.scale;
+			const startX = this.__touchStart.getX();
+			const startY = this.__touchStart.getY();
 			// mouse event
 			activePointer = {
 				clientX: x * scale,
@@ -206,17 +211,17 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			};
 
 			pointers.push({
-				clientX: this.__touchStart.getX(),
-				clientY: this.__touchStart.getY(),
+				clientX: startX,
+				clientY: startY,
 				force: 0.0,
 				identifier: 0,
-				pageX: this.__touchStart.getX(),
-				pageY: this.__touchStart.getY(),
+				pageX: startX,
+				pageY: startY,
 				radiusX: 0,
 				radiusY: 0,
 				rotationAngle: 0,
-				screenX: this.__touchStart.getX(),
-				screenY: this.__touchStart.getY(),
+				screenX: startX,
+				screenY: startY,
 				target,
 			});
 
@@ -237,7 +242,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		} else {
 			const count = event.getAllPointers().length;
 			const point = event.getActivePointers()[0];
-
+			if (!point) {
+				return null;
+			}
 			// mouse event
 			activePointer = {
 				clientX: point.getX() * scale,
@@ -292,7 +299,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	_emitEvent(name, event) {
-		this.notify(this._getTouchEvent(name, event, this));
+		const args = this._getTouchEvent(name, event, this);
+		if (args) {
+			this.notify(args);
+		}
 	}
 
 	_readyEvent() {

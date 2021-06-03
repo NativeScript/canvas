@@ -143,8 +143,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			let x = 0;
 			let y = 0;
 			if (global.isIOS) {
-				x = event.deltaX + this.__touchStart?.getX() ?? 0;
-				y = event.deltaY + this.__touchStart?.getY() ?? 0;
+				x = event.deltaX + this.__touchStart?.getX?.() ?? 0;
+				y = event.deltaY + this.__touchStart?.getY?.() ?? 0;
 			} else {
 				const initial: android.view.MotionEvent = event.android.initial;
 				const current: android.view.MotionEvent = event.android.current;
@@ -194,6 +194,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			this._previousY = event.deltaY;
 		} else if (name === 'touchmove:pinch') {
 			name = 'touchmove';
+			if (!this.__touchStart) {
+				return null;
+			}
 			const x = event.getFocusX();
 			const y = event.getFocusY();
 			const scale = event.scale;
@@ -213,17 +216,17 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			};
 
 			pointers.push({
-				clientX: this.__touchStart?.getX() ?? 0,
-				clientY: this.__touchStart?.getY() ?? 0,
+				clientX: this.__touchStart?.getX?.() ?? 0,
+				clientY: this.__touchStart?.getY?.() ?? 0,
 				force: 0.0,
 				identifier: 0,
-				pageX: this.__touchStart?.getX() ?? 0,
-				pageY: this.__touchStart?.getY() ?? 0,
+				pageX: this.__touchStart?.getX?.() ?? 0,
+				pageY: this.__touchStart?.getY?.() ?? 0,
 				radiusX: 0,
 				radiusY: 0,
 				rotationAngle: 0,
-				screenX: this.__touchStart?.getX() ?? 0,
-				screenY: this.__touchStart?.getY() ?? 0,
+				screenX: this.__touchStart?.getX?.() ?? 0,
+				screenY: this.__touchStart?.getY?.() ?? 0,
 				target,
 			});
 
@@ -246,7 +249,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		} else {
 			const count = event.getAllPointers().length;
 			const point = event.getActivePointers()[0];
-
+			if (!point) {
+				return null;
+			}
 			// mouse event
 			activePointer = {
 				clientX: point.getX() * scale,
@@ -303,7 +308,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	_emitEvent(name, event) {
-		this.notify(this._getTouchEvent(name, event, this));
+		const data = this._getTouchEvent(name, event, this);
+		if (data) {
+			this.notify(data);
+		}
 	}
 
 	_readyEvent() {

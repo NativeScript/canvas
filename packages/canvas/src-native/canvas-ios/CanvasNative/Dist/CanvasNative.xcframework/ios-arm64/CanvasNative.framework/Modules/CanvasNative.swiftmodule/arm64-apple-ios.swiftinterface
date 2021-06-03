@@ -1,5 +1,5 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 5.3.2 (swiftlang-1200.0.45 clang-1200.0.32.28)
+// swift-compiler-version: Apple Swift version 5.4 (swiftlang-1205.0.26.9 clang-1205.0.19.55)
 // swift-module-flags: -target arm64-apple-ios10.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
 import AVFoundation
 @_exported import CanvasNative
@@ -140,8 +140,8 @@ import UIKit
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSAnimationFrame) public class TNSAnimationFrame : ObjectiveC.NSObject {
   @objc public static func requestAnimationFrame(toLoop: @escaping (Swift.Float) -> Swift.Void)
   @objc public static func cancelAnimationFrame(id: Swift.String)
-  @objc deinit
   @objc override dynamic public init()
+  @objc deinit
 }
 @objc(TNSFillRule) public enum TNSFillRule : Swift.Int, Swift.RawRepresentable {
   case NonZero
@@ -216,8 +216,8 @@ import UIKit
   @objc public func drawArraysInstancedANGLE(mode: Swift.Int32, first: Swift.Int32, count: Swift.Int32, primcount: Swift.Int32)
   @objc public func drawElementsInstancedANGLE(mode: Swift.Int32, count: Swift.Int32, type: Swift.Int32, offset: Swift.Int32, primcount: Swift.Int32)
   @objc public func vertexAttribDivisorANGLE(index: Swift.Int32, divisor: Swift.Int32)
-  @objc deinit
   @objc override dynamic public init()
+  @objc deinit
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_EXT_blend_minmax) public class TNS_EXT_blend_minmax : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -2527,8 +2527,8 @@ extension RangeReplaceableCollection {
   @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
   @objc public static func setupRender() -> CanvasNative.TNSRender
   @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreGraphics.CGSize, _ render: CanvasNative.TNSRender, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
-  @objc deinit
   @objc override dynamic public init()
+  @objc deinit
 }
 @objcMembers @objc(TNSWebGLShaderPrecisionFormat) public class TNSWebGLShaderPrecisionFormat : ObjectiveC.NSObject {
   @objc public var rangeMin: Swift.Int32 {
@@ -2780,8 +2780,8 @@ extension RangeReplaceableCollection {
   @objc override dynamic public init(frame: CoreGraphics.CGRect)
   @objc override dynamic public func setNeedsDisplay()
   @objc override dynamic public func setNeedsDisplay(_ rect: CoreGraphics.CGRect)
-  @objc deinit
   @objc override dynamic public init(frame: CoreGraphics.CGRect, context: OpenGLES.EAGLContext)
+  @objc deinit
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(CanvasCPUView) public class CanvasCPUView : UIKit.UIView {
   @objc dynamic public init()
@@ -2796,8 +2796,8 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   case none
   case webGL
   case twoD
-  public typealias RawValue = Swift.Int
   public init?(rawValue: Swift.Int)
+  public typealias RawValue = Swift.Int
   public var rawValue: Swift.Int {
     get
   }
@@ -3130,8 +3130,8 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
     @objc public func getStyleType() -> CanvasNative.CanvasColorStyleType
     @objc override dynamic public init()
   }
-  @objc deinit
   @objc override dynamic public init()
+  @objc deinit
 }
 @_hasMissingDesignatedInitializers @objcMembers @objc(TNSTextMetrics) public class TNSTextMetrics : ObjectiveC.NSObject {
   @objc deinit

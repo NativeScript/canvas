@@ -1346,9 +1346,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
             glPixelStorei(pname, anyToInt(param, 4))
             break;
         case UNPACK_FLIP_Y_WEBGL:
-            flipYWebGL = anyToBoolean(param, false)
+            flipYWebGL = anyToBoolean(param == 1, false)
         case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
-            premultiplyAlphaWebGL = anyToBoolean(param, false)
+            premultiplyAlphaWebGL = anyToBoolean(param == 1, false)
         case UNPACK_COLORSPACE_CONVERSION_WEBGL:
             colorSpaceConversionWebGL = anyToColorSpace(param, BROWSER_DEFAULT_WEBGL)
         default:

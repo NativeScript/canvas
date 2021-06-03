@@ -1,5 +1,5 @@
 import { Screen, AddChildFromBuilder, Application, booleanConverter, ContentView, Utils } from '@nativescript/core';
-import { Property, CSSType} from '@nativescript/core/ui/core/view';
+import { Property, CSSType } from '@nativescript/core/ui/core/view';
 import { PercentLength } from '@nativescript/core/ui/styling/style-properties';
 
 @CSSType('Video')
@@ -90,7 +90,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		}
 	}
 	_removeListener(type: string, listener: Function, listeners: any) {
-		if (listener && typeof listeners === 'object') {
+		if (listener && listeners && typeof listeners === 'object') {
 			const currentEvents = listeners[type];
 			if (Array.isArray(currentEvents)) {
 				const size = currentEvents.length;
@@ -111,7 +111,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 
 	_listenerExist(type: string, listener: Function, listeners: any): boolean {
 		let has = false;
-		if (listener && typeof listeners === 'object') {
+		if (listener && listeners && typeof listeners === 'object') {
 			const currentEvents = listeners[type];
 			if (Array.isArray(currentEvents)) {
 				const size = currentEvents.length;
@@ -137,7 +137,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		if (isCapture) {
 			if (!this._listenerExist(type, listener, this._capturedListeners)) {
 				if (Array.isArray(this._capturedListeners[type])) {
-					this._capturedListeners[type].push(listener);
+					this._capturedListeners[type]?.push?.(listener);
 				} else {
 					this._capturedListeners[type] = [listener];
 				}
@@ -145,7 +145,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		} else {
 			if (!this._listenerExist(type, listener, this._listeners)) {
 				if (Array.isArray(this._listeners[type])) {
-					this._listeners[type].push(listener);
+					this._listeners[type]?.push?.(listener);
 				} else {
 					this._listeners[type] = [listener];
 				}
@@ -163,7 +163,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		if (isCapture) {
 			if (!this._listenerExist(type, listener, this._capturedListeners)) {
 				if (Array.isArray(this._capturedListeners[type])) {
-					this._capturedListeners[type].push(listener);
+					this._capturedListeners[type]?.push?.(listener);
 				} else {
 					this._capturedListeners[type] = [listener];
 				}
@@ -171,7 +171,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		} else {
 			if (!this._listenerExist(type, listener, this._listeners)) {
 				if (Array.isArray(this._listeners[type])) {
-					this._listeners[type].push(listener);
+					this._listeners[type]?.push?.(listener);
 				} else {
 					this._listeners[type] = [listener];
 				}
@@ -182,7 +182,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 	_videoFrameCallbacks: Function[] = [];
 	requestVideoFrameCallback(callback: Function) {
 		if (typeof callback === 'function') {
-			this._videoFrameCallbacks.push(callback);
+			this._videoFrameCallbacks?.push?.(callback);
 		}
 	}
 	_notifyVideoFrameCallbacks() {

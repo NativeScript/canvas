@@ -31,7 +31,7 @@ export class Canvas extends CanvasBase {
 		(global as any).__canvasLoaded = true;
 	}
 
-	[ignorePixelScalingProperty.setNative](value: boolean){
+	[ignorePixelScalingProperty.setNative](value: boolean) {
 		this._canvas.setIgnorePixelScaling(value);
 	}
 
@@ -169,9 +169,8 @@ export class Canvas extends CanvasBase {
 
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
-		this._canvas = undefined;
-		this.setNativeView(undefined);
 		super.disposeNativeView();
+		this._canvas = undefined;
 	}
 
 	toDataURL(type = 'png', encoderOptions = 0.92) {

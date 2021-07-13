@@ -11,6 +11,7 @@ import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
 import android.util.Base64
+import android.util.Log
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import android.view.ViewGroup
@@ -32,10 +33,16 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	internal var nativeContext: Long = 0L
 	internal var surface: GLView? = null
 	internal var cpuView: CPUView? = null
-	internal var isHandleInvalidationManually = false
+	var isHandleInvalidationManually = false
 	internal var renderingContext2d: TNSCanvasRenderingContext? = null
 	internal var scale = 1f
 	internal var ctx: Context? = null
+
+	var ignorePixelScaling: Boolean = false
+		set(value) {
+			field = value
+			surface?.ignorePixelScaling = value
+		}
 
 	@JvmField
 	internal var pendingInvalidate = false
@@ -383,10 +390,18 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			if (newSize == null || newSize!!.width == 0 && newSize!!.height == 0) {
 				newSize = Size(width, height)
 			}
-			val finalWidth = width
-			val finalHeight = height
-			surface!!.queueEvent(Runnable {
+			var finalWidth = width
+			var finalHeight = height
+			if (ignorePixelScaling) {
+				if (width != 1 || height != 1){
+					val density = resources.displayMetrics.density
+					finalWidth = (finalWidth / density).toInt()
+					finalHeight = (finalHeight / density).toInt()
+				}
+			}
+			surface!!.queueEvent {
 				if (nativeContext == 0L && finalWidth > 0 && finalHeight > 0) {
+					Log.d("com.test", "$finalWidth $finalHeight")
 					// GLES20.glClearColor(1F, 1F, 1F, 1F);
 					// GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 					val frameBuffers = IntArray(1)
@@ -408,7 +423,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 						direction.toNative()
 					)
 				}
-			})
+			}
 		}
 	}
 
@@ -566,6 +581,30 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 	companion object {
 		var views: ConcurrentHashMap<*, *> = ConcurrentHashMap<Any?, Any?>()
+
+		@JvmStatic
+		fun layoutView(width: Int, height: Int, tnsCanvas: TNSCanvas) {
+			var rootParams = tnsCanvas.layoutParams
+
+			if (rootParams != null && width == rootParams.width && height == rootParams.height) {
+				return;
+			}
+
+			if (width != 0 && height != 0) {
+				if (rootParams == null) {
+					rootParams = LayoutParams(0, 0)
+				}
+				rootParams.width = width
+				rootParams.height = height
+
+				tnsCanvas.layoutParams = rootParams
+
+				val w = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
+				val h = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+				tnsCanvas.measure(w, h)
+				tnsCanvas.layout(0, 0, width, height)
+			}
+		}
 
 		@JvmStatic
 		external fun nativeInitContext(

@@ -95,7 +95,7 @@ pub fn convert_length(
     let value = length.value;
     let dpi = device.ppi;
     match length.unit {
-        LengthUnit::None | LengthUnit::Px => value * device.density,
+        LengthUnit::None | LengthUnit::Px => value,
         LengthUnit::Pt => value * dpi / 72.0,
         LengthUnit::Pc => value * dpi / 6.0,
         LengthUnit::Em => value * 10.0, //(need to get parent font size)

@@ -4,12 +4,12 @@ import Chart from 'chart.js';
 
 let Matter;
 import { Canvas, ImageAsset } from '@nativescript/canvas';
-import {flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles } from './canvas2d';
+import { flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import Vex from 'vexflow';
-import { handleVideo,cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures } from './webgl';
+import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 declare var com, java;
 let zen3d;
@@ -20,6 +20,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	private svg2: Svg.Svg;
 	private svg3: Svg.Svg;
 	private svg4: Svg.Svg;
+
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
@@ -41,8 +42,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	drawTransformMatrixSvg() {
 		this.set(
 			'src',
-			`
-			<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+			`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 		<rect x="10" y="10" width="30" height="20" fill="green" />
 
 		<!--
@@ -174,16 +174,16 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	drawSvg(args: Svg.Svg, id) {
 		switch (id) {
 			case '1':
-				this.set('src1','https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg');
+				this.set('src1', 'https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg');
 				break;
 			case '2':
-				this.set('src2','https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg');
+				this.set('src2', 'https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg');
 				break;
 			case '3':
 				this.set('src3', 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg');
 				break;
 			case '4':
-				this.set('src4', 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Plan_des_Forts_de_Lyon_premi%C3%A8re_ceinture_-_OSM.svg');
+				this.set('src4', 'https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg');
 				break;
 		}
 		//this.drawTransformSkewY();
@@ -314,9 +314,29 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		*/
 	}
 
-
-
 	draw() {
+
+
+		// const ctx = this.canvas.getContext('2d');
+		// ctx.font = '50px serif';
+		// ctx.fillText('Hello world', 50, 90);
+
+
+		const ctx = this.canvas.getContext('2d');
+
+// Moved square
+ctx.translate(110, 30);
+ctx.fillStyle = 'red';
+ctx.fillRect(0, 0, 80, 80);
+
+// Reset current transformation matrix to the identity matrix
+ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+// Unmoved square
+ctx.fillStyle = 'gray';
+ctx.fillRect(0, 0, 80, 80);
+
+
 		//filterBlur(this.canvas);
 		//handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
@@ -380,7 +400,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
-		 //patternWithCanvas(this.canvas);
+		//patternWithCanvas(this.canvas);
 		//isPointInStrokeTouch(this.canvas);
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
@@ -390,7 +410,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillStyle = 'blue';
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
-		// drawPatternWithCanvas(this.canvas);
+		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
@@ -424,13 +444,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// canvas.nativeView.handleInvalidationManually = true;
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
-		 //draw_image_space(this.canvas);
+		//draw_image_space(this.canvas);
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
-		 interactiveCube(this.canvas);
+		// interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
@@ -505,6 +525,21 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	gridLoaded(args) {
 		const grid = args.object;
 		this.removeClipping(grid);
+
+		// d3 example
+		/*
+		const d3 = require('d3');
+		const svg = d3.create('svg')
+		.attr("viewBox", [0, 0, 975, 610])
+		.attr("stroke-linejoin", "round")
+		.attr("stroke-linecap", "round");
+		svg.append('circle').attr('cx', 2).attr('cy', 2).attr('r', 40).style('fill', 'blue');
+		svg.append('circle').attr('cx', 140).attr('cy', 70).attr('r', 40).style('fill', 'red');
+		svg.append('circle').attr('cx', 300).attr('cy', 100).attr('r', 40).style('fill', 'green');
+
+		grid.addChild(svg['_groups'][0][0].nativeElement);
+
+		*/
 	}
 
 	svgLoaded(args) {
@@ -1242,7 +1277,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const scale = Screen.mainScreen.scale;
 		// Give the pattern a background color and draw an arc
 		patternContext.fillStyle = '#fec';
-		patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
+		patternContext.fillRect(0, 0, patternCanvas.width * scale, patternCanvas.height * scale);
 		patternContext.arc(0, 0, 50 * scale, 0, 0.5 * Math.PI);
 		patternContext.stroke();
 
@@ -1483,7 +1518,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			console.log('solar error:', e);
 		}
 		var ctx = canvas.getContext('2d');
-		ctx.scale(3,3);
+		//ctx.scale(3, 3);
 
 		function init() {
 			window.requestAnimationFrame(draw);

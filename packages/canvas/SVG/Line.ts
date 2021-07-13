@@ -14,12 +14,17 @@ export const x2Property = new Property<Line, any>({
 export const y2Property = new Property<Line, any>({
 	name: 'y2'
 });
-
+import { DOMParser } from 'xmldom';
 export class Line extends SVGItem {
 	x1: any;
 	y1: any;
 	x2: any;
 	y2: any;
+
+	constructor(){
+		super();
+		this._dom = new DOMParser().parseFromString('<line></line>');
+	}
 }
 
 x1Property.register(Line);

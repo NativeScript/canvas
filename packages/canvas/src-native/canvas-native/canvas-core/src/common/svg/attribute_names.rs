@@ -4,15 +4,15 @@ use std::str::FromStr;
 use phf::phf_map;
 use roxmltree::Node;
 
-use crate::common::{context::drawing_paths::fill_rule, svg::elements::element_names::ElementName};
 use crate::common::svg::elements::parser::StyleMap;
 use crate::common::svg::elements::prelude::*;
 use crate::common::svg::enums::preserve_aspect_ratio::{
     AlignMeetOrSlice, AspectRatioAlign, AspectRatioMeetOrSlice,
 };
-use crate::common::svg::error::Error;
+
 use crate::common::svg::units::length::Length;
 use crate::common::svg::view_box::ViewBox;
+use crate::common::{svg::elements::element_names::ElementName};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Attribute {

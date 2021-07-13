@@ -1,27 +1,27 @@
 use std::collections::HashMap;
-use std::str::FromStr;
 
-use roxmltree::{Document, Node};
+
+use roxmltree::{Node};
 
 use crate::common::context::{Context, Device};
-use crate::common::context::drawing_paths::fill_rule::FillRule;
-use crate::common::svg::attribute_names::{Attribute, NodeExt};
+
+use crate::common::svg::attribute_names::{Attribute};
 use crate::common::svg::bounding_box::BoundingBox;
-use crate::common::svg::elements::{clip_path::ClipPath, element_names::ElementName};
-use crate::common::svg::elements::filter::filter::Filter;
-use crate::common::svg::elements::filter::filter_element::FilterElement;
-use crate::common::svg::elements::filter::filter_in::FilterIn;
-use crate::common::svg::elements::gradients::linear::LinearGradient;
-use crate::common::svg::elements::gradients::radial::RadialGradient;
-use crate::common::svg::elements::parser::{parse_transform, Parser, StyleMap};
-use crate::common::svg::elements::reference_element::ReferenceElement;
+
+
+
+
+
+
+use crate::common::svg::elements::parser::{Parser, StyleMap};
+
 use crate::common::svg::elements::renderer::{
-    handle_clip, handle_color, handle_filter, handle_style, handle_style_data, render_mask,
+    handle_style_data, render_mask,
     Renderer, set_filters, set_mask,
 };
-use crate::common::svg::elements::svg::Svg;
-use crate::common::svg::enums::display::Display;
-use crate::common::svg::enums::visibility::Visibility;
+
+
+
 use crate::common::svg::units::length::{convert_length, Length};
 use crate::common::svg::units::Units;
 use crate::common::svg::view_box::ViewBox;

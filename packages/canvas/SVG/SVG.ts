@@ -1,4 +1,4 @@
-import { Http, View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders, CSSType, Screen, Application } from '@nativescript/core';
+import { Http, View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders, CSSType, Screen, Application, Utils } from '@nativescript/core';
 
 export const strokeProperty = new CssProperty<Style, any>({
 	name: 'stroke',
@@ -54,22 +54,29 @@ export const srcProperty = new Property<Svg, string>({
 	name: 'src',
 });
 
-import { File } from '@nativescript/core';
-import { layout } from '@nativescript/core/utils';
+declare const TNSSVG;
+import { SVGItem } from './SVGItem';
+import { DOMParser, XMLSerializer } from 'xmldom';
 @CSSType('Svg')
 export class Svg extends View {
 	public static readyEvent = 'ready';
+	_dom;
+	_serializer;
 	_svg: any;
 	src: string;
+	__children = [];
+	__attachedToDom = false;
 	constructor() {
 		super();
 		if (global.isAndroid) {
 			const activity = Application.android.foregroundActivity || Application.android.startActivity;
-			this._svg = new (com as any).github.triniwiz.canvas.TNSSVG(activity);
+			this._svg = new org.nativescript.canvas.TNSSVG(activity);
 		} else if (global.isIOS) {
-			//	this._svg = TNSSVG.new();
-			//	this._svg.backgroundColor = UIColor.clearColor;
+			this._svg = TNSSVG.alloc().initWithFrame(CGRectZero);
+			this._svg.backgroundColor = UIColor.clearColor;
 		}
+		this._dom = new DOMParser().parseFromString('<svg width="auto" height="auto" xmlns="http://www.w3.org/2000/svg"></svg>');
+		this._serializer = new XMLSerializer();
 	}
 
 	[srcProperty.setNative](value: string) {
@@ -78,9 +85,7 @@ export class Svg extends View {
 				if (global.isAndroid) {
 					this._svg.setSrc(value);
 				} else if (global.isIOS) {
-					setTimeout(() => {
-						this._svg.src = value;
-					}, 1000);
+					this._svg.src = value;
 				}
 			} else {
 				if (value.startsWith('~')) {
@@ -101,10 +106,7 @@ export class Svg extends View {
 							if (global.isAndroid) {
 								this._svg.setSrc(res);
 							} else if (global.isIOS) {
-								setTimeout(() => {
-									console.log(!!res);
-									this._svg.src = res;
-								}, 1000);
+								this._svg.src = res;
 							}
 						})
 						.catch((e) => {
@@ -115,11 +117,59 @@ export class Svg extends View {
 		}
 	}
 
-	#inBatch = false;
-	batch(action: () => void) {}
+	public onLayout(left: number, top: number, right: number, bottom: number): void {
+		super.onLayout(left, top, right, bottom);
+		this.__redraw();
+	}
+
+	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
+		const nativeView = this.nativeView;
+		if (nativeView) {
+			const width = Utils.layout.getMeasureSpecSize(widthMeasureSpec);
+			const height = Utils.layout.getMeasureSpecSize(heightMeasureSpec);
+			this.setMeasuredDimension(width, height);
+		}
+	}
+
+	__redraw() {
+		if (this.__attachedToDom) {
+			const domCopy = this._dom.valueOf();
+			const width = domCopy.documentElement.getAttribute('width');
+			const height = domCopy.documentElement.getAttribute('height');
+			if (width === 'auto') {
+				domCopy.documentElement.setAttribute('width', `${this.getMeasuredWidth()}px`);
+			}
+			if (height === 'auto') {
+				domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}px`);
+			}
+			const serialized = this._serializer.serializeToString(domCopy);
+			if (serialized !== '<svg xmlns="http://www.w3.org/2000/svg"></svg>') {
+				this.src = serialized;
+			}
+		}
+	}
 
 	createNativeView(): Object {
+		this.__attachedToDom = true;
 		return this._svg;
+	}
+
+	initNativeView() {
+		super.initNativeView();
+	}
+
+	addChild(view: SVGItem) {
+		this._addView(view);
+		view.__attached = true;
+		this.__children.push(view);
+	}
+
+	removeChild(view: SVGItem) {
+		if (view.__attached) {
+			this._removeView(view);
+			view.__attached = false;
+			this.__children = this.__children.filter((item) => item !== view);
+		}
 	}
 }
 

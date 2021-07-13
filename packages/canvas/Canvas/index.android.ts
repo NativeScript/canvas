@@ -1,4 +1,4 @@
-import { CanvasBase } from './common';
+import { CanvasBase, ignorePixelScalingProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -29,6 +29,10 @@ export class Canvas extends CanvasBase {
 		const activity = Application.android.foregroundActivity || Application.android.startActivity;
 		this._canvas = new org.nativescript.canvas.TNSCanvas(activity, useCpu);
 		(global as any).__canvasLoaded = true;
+	}
+
+	[ignorePixelScalingProperty.setNative](value: boolean){
+		this._canvas.setIgnorePixelScaling(value);
 	}
 
 	// @ts-ignore
@@ -102,8 +106,10 @@ export class Canvas extends CanvasBase {
 
 	initNativeView(): void {
 		super.initNativeView();
+		if (this.ignorePixelScaling) {
+			this._canvas.setIgnorePixelScaling(this.ignorePixelScaling);
+		}
 		const ref = new WeakRef(this);
-		this.__handleGestures();
 		this.on(View.layoutChangedEvent, (args) => {
 			const parent = this.parent as any;
 			// TODO change DIPs once implemented
@@ -162,7 +168,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	disposeNativeView(): void {
-		this.off('touch, pan', this._touchEvents);
 		this._canvas.setListener(null);
 		this._canvas = undefined;
 		this.setNativeView(undefined);
@@ -183,33 +188,7 @@ export class Canvas extends CanvasBase {
 			}
 
 			const size = this._realSize;
-			let rootParams = this._canvas.getLayoutParams();
-
-			if (rootParams && (size.width || 0) === rootParams.width && (size.height || 0) === rootParams.height) {
-				return;
-			}
-
-			if ((size.width || 0) !== 0 && (size.height || 0) !== 0) {
-				if (!rootParams) {
-					rootParams = new android.widget.FrameLayout.LayoutParams(0, 0);
-				}
-				rootParams.width = size.width;
-				rootParams.height = size.height;
-				let surfaceParams; // = this._canvas.getSurface().getLayoutParams();
-				if (!surfaceParams) {
-					surfaceParams = new android.widget.FrameLayout.LayoutParams(0, 0);
-				}
-				//	surfaceParams.width = size.width;
-				//	surfaceParams.height = size.height;
-
-				this._canvas.setLayoutParams(rootParams);
-				//this._canvas.getSurface().setLayoutParams(surfaceParams);
-
-				const w = android.view.View.MeasureSpec.makeMeasureSpec(size.width, android.view.View.MeasureSpec.EXACTLY);
-				const h = android.view.View.MeasureSpec.makeMeasureSpec(size.height, android.view.View.MeasureSpec.EXACTLY);
-				this._canvas.measure(w, h);
-				this._canvas.layout(0, 0, size.width || 0, size.height || 0);
-			}
+			org.nativescript.canvas.TNSCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 		}
 	}
 

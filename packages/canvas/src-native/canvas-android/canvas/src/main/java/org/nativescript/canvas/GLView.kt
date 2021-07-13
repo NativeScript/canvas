@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.content.Context
+import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
 import android.util.Log
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit
 internal class GLView : TextureView, SurfaceTextureListener {
 	private var isCreated = false
 	private var isCreatedWithZeroSized = false
+
 	var gLContext: GLContext? = null
 		private set
 	private var mListener: TNSCanvas.Listener? = null
@@ -28,6 +30,23 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	constructor(context: Context?) : super(context!!) {
 		init()
 	}
+
+	private fun setScaling(){
+		val matrix = Matrix()
+		val density = resources.displayMetrics.density
+		if(ignorePixelScaling){
+			matrix.postScale(density, density)
+		}
+		setTransform(matrix)
+	}
+
+	var ignorePixelScaling: Boolean = false
+		set(value) {
+			field = value
+			setScaling()
+		}
+
+
 
 	fun resize(width: Int, height: Int) {
 		drawingBufferWidth = width

@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::{ CString};
 
 use encoding_rs::UTF_8;
 
@@ -14,17 +14,6 @@ impl TextDecoder {
         Self { decoder }
     }
 
-    // fn handle_slice(&self, res: Vec<u8>) -> &'static str {
-    //     unsafe {
-    //         let mut utf8_src = res.as_slice();
-    //         let nul_range_end = utf8_src
-    //             .iter()
-    //             .position(|&c| c == b'\0')
-    //             .unwrap_or(utf8_src.len()); // default to length if no `\0` present
-    //         let data = &utf8_src[0..nul_range_end];
-    //         std::str::from_utf8_unchecked(data)
-    //     }
-    // }
 
     pub fn decode(&mut self, data: *const u8, len: usize) -> CString {
         let txt = unsafe { std::slice::from_raw_parts(data, len) };
@@ -36,7 +25,6 @@ impl TextDecoder {
             .position(|&c| c == b'\0')
             .unwrap_or(utf8_src.len()); // default to length if no `\0` present
         let data = &utf8_src[0..nul_range_end];
-        // let c_str = unsafe { CStr::from_bytes_with_nul_unchecked(data) };
         let str = unsafe { std::str::from_utf8_unchecked(data) };
         CString::new(str).unwrap()
     }

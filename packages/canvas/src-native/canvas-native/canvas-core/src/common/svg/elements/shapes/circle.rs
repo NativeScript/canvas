@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 use std::f32::consts::PI;
 
-use roxmltree::{Document, Node};
+use roxmltree::{Node};
 
 use crate::common::context::{Context, Device};
-use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
-use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
-use crate::common::context::fill_and_stroke_styles::pattern::Repetition;
-use crate::common::context::paths::path::Path;
+
+
+
+
 use crate::common::svg::attribute_names::Attribute;
 use crate::common::svg::bounding_box::BoundingBox;
 use crate::common::svg::elements::parser::{Parser, StyleMap};
 use crate::common::svg::elements::renderer::{
-    handle_mask, handle_style_data, render_mask, Renderer, set_filters, set_mask,
+    handle_style_data, render_mask, Renderer, set_filters, set_mask,
 };
-use crate::common::svg::elements::svg::{create_context, Svg};
-use crate::common::svg::prelude::ColorConversation;
+
+
 use crate::common::svg::units::length::{convert_length, Length};
 use crate::common::svg::units::Units;
 use crate::common::svg::view_box::ViewBox;

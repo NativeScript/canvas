@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use skia_safe::{Paint, Point, Rect, Size};
+use skia_safe::{Paint, Point, Size};
 use skia_safe::paint::{Cap, Join};
 
 pub fn almost_equal(a: f32, b: f32) -> bool {

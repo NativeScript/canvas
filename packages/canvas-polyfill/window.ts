@@ -68,7 +68,7 @@ function checkEmitter() {
 	}
 };
 
-(global as any).window.DOMParser = (global as any).DOMParser = (global as any).DOMParser || require('xmldom-qsa').DOMParser;
+(global as any).window.DOMParser = (global as any).DOMParser = (global as any).DOMParser || require('xmldom').DOMParser;
 
 (global as any).window.XMLDocument = (global as any).XMLDocument = XMLDocument;
 

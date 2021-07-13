@@ -1,5 +1,5 @@
-use skia_safe::{Image, Point, Rect};
 use skia_safe::canvas::SrcRectConstraint;
+use skia_safe::{Image, Rect};
 
 use crate::common::context::Context;
 
@@ -18,14 +18,13 @@ impl Context {
         let mut paint = self.state.paint.image_paint().clone();
         self.surface.canvas().draw_image_rect_with_sampling_options(
             image,
-            Some(&src_rect),
+            Some((&src_rect, SrcRectConstraint::Strict)),
             dst_rect,
             skia_safe::SamplingOptions::from_filter_quality(
                 self.state.image_smoothing_quality.into(),
                 None,
             ),
             &paint,
-            SrcRectConstraint::Strict,
         );
     }
 
@@ -44,7 +43,6 @@ impl Context {
                 None,
             ),
             &paint,
-            SrcRectConstraint::Strict,
         );
     }
 

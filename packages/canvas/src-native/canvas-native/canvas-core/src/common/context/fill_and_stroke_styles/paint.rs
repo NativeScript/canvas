@@ -1,10 +1,7 @@
 use std::os::raw::c_float;
 
-use skia_safe::{
-    BlurStyle, Color, FilterQuality, Image, MaskFilter, PathEffect, Point, Shader, TileMode,
-};
-use skia_safe::gradient_shader::GradientShaderColors;
 use skia_safe::paint::{Cap, Style};
+use skia_safe::{Color, FilterQuality, Point};
 
 use crate::common::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::common::context::fill_and_stroke_styles::pattern::Pattern;
@@ -49,6 +46,7 @@ impl Paint {
     pub fn image_smoothing_quality_set(&mut self, image_smoothing_quality: FilterQuality) {
         self.image_smoothing_quality = image_smoothing_quality
     }
+
     fn update_paint_style(&mut self, is_fill: bool) {
         let style;
         if is_fill {

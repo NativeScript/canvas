@@ -7,6 +7,7 @@ pub struct ImageData {
     pub(crate) data_len: usize,
     width: c_int,
     height: c_int,
+    pub(crate) scale: f32
 }
 
 impl ImageData {
@@ -25,6 +26,7 @@ impl ImageData {
             height,
             data,
             data_len,
+            scale: 1.
         }
     }
 
@@ -38,11 +40,11 @@ impl ImageData {
     }
 
     pub fn width(&self) -> i32 {
-        self.width
+        (self.width as f32 / self.scale) as i32
     }
 
     pub fn height(&self) -> i32 {
-        self.height
+        (self.height as f32 / self.scale) as i32
     }
 
     pub fn data(&self) -> &[u8] {

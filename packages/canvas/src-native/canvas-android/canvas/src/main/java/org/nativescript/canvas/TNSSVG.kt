@@ -4,8 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import java.util.concurrent.Executors
 
@@ -21,6 +21,7 @@ class TNSSVG : View {
 	private val executor = Executors.newSingleThreadExecutor()
 	private var src: String = ""
 	private var srcPath: String = ""
+	private var mMatrix = Matrix()
 
 	constructor(context: Context) : super(context, null) {
 		init(context)
@@ -45,12 +46,57 @@ class TNSSVG : View {
 	}
 
 
+	var ignorePixelScaling: Boolean = false
+		set(value) {
+			field = value
+			if (value) {
+				val density = resources.displayMetrics.density
+				mMatrix.postScale(density, density)
+			} else {
+				mMatrix.reset()
+			}
+			if (width > 0 || height > 0) {
+				invalidate()
+			}
+		}
+
+	private fun resize(w: Int, h: Int) {
+		executor.execute {
+			val metrics = resources.displayMetrics
+			TNSCanvas.nativeResizeCustomSurface(
+				svgCanvas,
+				w.toFloat(),
+				h.toFloat(),
+				metrics.density,
+				true,
+				metrics.densityDpi,
+			)
+
+			if (srcPath.isNotEmpty() || src.isNotEmpty()) {
+				if (srcPath.isNotEmpty()) {
+					nativeDrawSVGFromPath(svgCanvas, srcPath)
+				} else {
+					nativeDrawSVG(svgCanvas, src)
+				}
+				bitmap?.let {
+					TNSCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+					handler!!.post {
+						pendingInvalidate = false
+						invalidate()
+					}
+				}
+			}
+		}
+	}
+
+
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
 		if (w != 0 && h != 0) {
 			val metrics = resources.displayMetrics
+
 			bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-			Log.d("com.test", "bm ${Canvas(bitmap!!).maximumBitmapWidth} x ${Canvas(bitmap!!).maximumBitmapHeight}")
+
 			if (svgCanvas == 0L) {
 				executor.execute {
 					synchronized(lock) {
@@ -83,39 +129,14 @@ class TNSSVG : View {
 					}
 				}
 			} else {
-				executor.execute {
-					val metrics = resources.displayMetrics
-					TNSCanvas.nativeResizeCustomSurface(
-						svgCanvas,
-						w.toFloat(),
-						h.toFloat(),
-						metrics.density,
-						true,
-						metrics.densityDpi,
-					)
-
-					if (srcPath.isNotEmpty() || src.isNotEmpty()) {
-						if (srcPath.isNotEmpty()) {
-							nativeDrawSVGFromPath(svgCanvas, srcPath)
-						} else {
-							nativeDrawSVG(svgCanvas, src)
-						}
-						bitmap?.let {
-							TNSCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
-							handler!!.post {
-								pendingInvalidate = false
-								invalidate()
-							}
-						}
-					}
-				}
+				resize(w, h)
 			}
 		}
 	}
 
 	override fun onDraw(canvas: Canvas) {
 		bitmap?.let {
-			canvas.drawBitmap(it, 0f, 0f, null)
+			canvas.drawBitmap(it, mMatrix, null)
 		}
 	}
 

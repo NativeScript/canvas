@@ -16,13 +16,18 @@ export const dxProperty = new Property<Text, any>({
 export const dyProperty = new Property<Text, any>({
     name: 'dy'
 });
-
+import { DOMParser } from 'xmldom';
 export class Text extends SVGItem {
     x: any;
     y: any;
     dx: any;
     dy: any;
     text: string;
+
+    constructor(){
+		super();
+		this._dom = new DOMParser().parseFromString('<text></text>');
+	}
 }
 
 

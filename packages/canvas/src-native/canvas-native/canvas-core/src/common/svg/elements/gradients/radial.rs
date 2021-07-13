@@ -6,12 +6,12 @@ use skia_safe::{Color, Matrix};
 use crate::common::svg::attribute_names::{Attribute, NodeExt};
 use crate::common::svg::elements::element_names::ElementName;
 use crate::common::svg::elements::gradients::utils::handle_stop;
-use crate::common::svg::elements::parser::parse_transform;
+
 use crate::common::svg::elements::reference_element::ReferenceElement;
 use crate::common::svg::enums::spread_method::SpreadMethod;
 use crate::common::svg::units::length::{Length, LengthUnit};
 use crate::common::svg::units::Units;
-use crate::common::utils::color::parse_color;
+
 
 #[derive(Clone, Debug)]
 pub struct RadialGradient {

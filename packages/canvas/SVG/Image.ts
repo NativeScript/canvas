@@ -24,7 +24,7 @@ function getMIMEforBase64String(b64) {
 	}
 	return mime;
 }
-
+import { DOMParser } from 'xmldom';
 export class Image extends SVGItem {
 	xlink: { href?: string } = {};
 	href: string;
@@ -32,4 +32,9 @@ export class Image extends SVGItem {
 	y: any = 0;
 	#loadedSrc: string;
 	#asset = new ImageAsset();
+
+	constructor(){
+		super();
+		this._dom = new DOMParser().parseFromString('<image></image>');
+	}
 }

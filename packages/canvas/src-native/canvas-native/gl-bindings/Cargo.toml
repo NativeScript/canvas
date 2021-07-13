@@ -9,14 +9,14 @@ build="build.rs"
 rustc-wrapper = "sccache"
 
 [build-dependencies]
-bindgen = "0.55.1"
-cmake = "0.1.44"
-cc = "1.0.56"
+bindgen = "0.58.1"
+cmake = "0.1.45"
+cc = "1.0.68"
 
 [dependencies]
 
 
 [target.'cfg(target_os="ios")'.dependencies]
-cocoa = { version = "0.20"}
-objc = { version = "0.2.4"}
+cocoa = { version = "0.24"}
+objc = { version = "0.2.7"}
 block = "0.1.6"

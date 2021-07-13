@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{PathDirection, Point, Rect};
+use skia_safe::{Point, Rect};
 
 use crate::common::context::matrix::Matrix;
 use crate::common::utils::geometry::{almost_equal, to_degrees};
@@ -21,6 +21,13 @@ impl Path {
     pub fn path(&self) -> &skia_safe::Path {
         &self.path
     }
+
+    pub fn make_scale(&mut self, (sx, sy): (f32, f32)) -> Self {
+        Self {
+            path: self.path.make_scale((sx, sy)),
+        }
+    }
+
     pub fn new() -> Self {
         Self {
             path: skia_safe::Path::default(),
@@ -109,7 +116,6 @@ impl Path {
 
         self.path.transform(&rotated);
     }
-
 
     pub fn add_path(&mut self, path: &Path, matrix: Option<&Matrix>) {
         match matrix {

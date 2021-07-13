@@ -105,10 +105,8 @@ impl Renderer for Use {
             );
 
             if node.tag_name().name() == ElementName::Symbol.to_str() {
-                log::debug!("from_id");
                 Symbol::from_id(context, view_box, node, root_element);
             } else {
-                log::debug!("handle_render_child");
                 handle_render_child(
                     context,
                     node,

@@ -1,9 +1,9 @@
-use crate::{
-    common::context::Context,
-    common::context::text_styles::text_align::TextAlign,
-    common::context::text_styles::text_baseline::TextBaseLine, common::context::text_styles::text_direction::TextDirection,
-};
 use crate::common::context::drawing_text::typography::parse_font;
+use crate::{
+    common::context::text_styles::text_align::TextAlign,
+    common::context::text_styles::text_baseline::TextBaseLine,
+    common::context::text_styles::text_direction::TextDirection, common::context::Context,
+};
 
 pub mod text_align;
 pub mod text_baseline;
@@ -20,7 +20,7 @@ impl Context {
 
     pub fn set_font(&mut self, font: &str) {
         if let Ok(font) = parse_font(font, self.device) {
-            self.state.font.font_details = font.0;
+            self.state.font.font_details = font.0.into();
         }
     }
 

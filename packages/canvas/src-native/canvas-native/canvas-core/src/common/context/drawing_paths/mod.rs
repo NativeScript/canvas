@@ -1,12 +1,10 @@
 use std::borrow::BorrowMut;
 
-use skia_safe::{ClipOp, Matrix, PathOp, Point};
-use skia_safe::image_filters::drop_shadow;
-use skia_safe::path::FillType;
+use skia_safe::{ClipOp, Matrix, Point};
 
-use crate::common::context::Context;
 use crate::common::context::drawing_paths::fill_rule::FillRule;
 use crate::common::context::paths::path::Path;
+use crate::common::context::Context;
 
 pub mod fill_rule;
 
@@ -25,7 +23,7 @@ impl Context {
         }
 
         if let Some(rule) = fill_rule {
-            let path = path.unwrap_or(self.path.borrow_mut());
+            let mut path = path.unwrap_or(self.path.borrow_mut());
             path.path.set_fill_type(rule.to_fill_type());
 
             if let Some(paint) = self.state.paint.fill_shadow_paint(
@@ -87,7 +85,7 @@ impl Context {
         y: f32,
         rule: FillRule,
     ) -> bool {
-        let path = path.unwrap_or(&self.path);
+        let mut path = path.unwrap_or(&self.path).clone();
         let total_matrix = self.surface.canvas().local_to_device_as_3x3();
         let invertible = is_invertible(&total_matrix);
         if !invertible {
@@ -98,7 +96,7 @@ impl Context {
         }
         let matrix = total_matrix.clone();
         let inverse = matrix.invert().unwrap();
-        let point: Point = (x, y).into();
+        let mut point: Point = (x, y).into();
         let transformed_point = inverse.map_point(point);
         let mut path_to_compare = path.path.clone();
         path_to_compare.set_fill_type(rule.to_fill_type());
@@ -106,7 +104,7 @@ impl Context {
     }
 
     pub fn is_point_in_stroke(&mut self, path: Option<&Path>, x: f32, y: f32) -> bool {
-        let path = path.unwrap_or(&self.path);
+        let path = path.unwrap_or(&self.path).clone();
         let matrix = self.surface.canvas().local_to_device_as_3x3();
         let invertible = is_invertible(&matrix);
         if !invertible {
@@ -116,7 +114,7 @@ impl Context {
             return false;
         }
         let inverse = matrix.invert().unwrap();
-        let point: Point = (x, y).into();
+        let mut point: Point = (x, y).into();
         let transformed_point = inverse.map_point(point);
         let path_to_compare = path.path.clone();
         path_to_compare.contains(transformed_point)

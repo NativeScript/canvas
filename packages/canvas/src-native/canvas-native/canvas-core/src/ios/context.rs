@@ -1,22 +1,18 @@
-use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_float, c_int, c_longlong, c_uint};
-use std::panic::catch_unwind;
-use std::ptr::null;
-use std::str::{Utf8Error, FromStr};
-use std::sync::{Arc, Mutex};
+use std::str::{FromStr};
 
-use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, M44, PixelGeometry, Rect, Surface};
 use skia_safe::gpu::gl::Interface;
 use skia_safe::image::CachingHint;
+use skia_safe::{
+    AlphaType, Color, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, PixelGeometry, Rect,
+    Surface, M44,
+};
 
-use crate::common::context::{Context, Device, State};
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
 use crate::common::context::drawing_paths::fill_rule::FillRule;
-use crate::common::context::drawing_text::text_metrics::TextMetrics;
-use crate::common::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
-use crate::common::context::fill_and_stroke_styles::pattern::{Pattern, Repetition};
+use crate::common::context::fill_and_stroke_styles::pattern::{ Repetition};
 use crate::common::context::image_asset::ImageAsset;
 use crate::common::context::image_smoothing::ImageSmoothingQuality;
 use crate::common::context::line_styles::line_cap::LineCap;
@@ -27,6 +23,7 @@ use crate::common::context::pixel_manipulation::image_data::ImageData;
 use crate::common::context::text_styles::text_align::TextAlign;
 use crate::common::context::text_styles::text_baseline::TextBaseLine;
 use crate::common::context::text_styles::text_direction::TextDirection;
+use crate::common::context::{Context, Device, State};
 use crate::common::ffi::f32_array::F32Array;
 use crate::common::ffi::paint_style_value::{PaintStyleValue, PaintStyleValueType};
 use crate::common::ffi::u8_array::U8Array;
@@ -75,7 +72,6 @@ pub extern "C" fn context_init_context(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
-    let density = 1.0;
     let mut device = Device {
         width,
         height,
@@ -100,8 +96,10 @@ pub extern "C" fn context_init_context(
         8,
         frame_buffer,
     );
-    let surface_props =
-        skia_safe::SurfaceProps::new(skia_safe::SurfacePropsFlags::default(), PixelGeometry::Unknown);
+    let surface_props = skia_safe::SurfaceProps::new(
+        skia_safe::SurfacePropsFlags::default(),
+        PixelGeometry::Unknown,
+    );
     let mut color_type = ColorType::RGBA8888;
     if !alpha {
         color_type = ColorType::RGB565;
@@ -125,7 +123,6 @@ pub extern "C" fn context_init_context(
     })) as c_longlong
 }
 
-
 #[no_mangle]
 pub extern "C" fn context_init_context_with_custom_surface(
     width: c_float,
@@ -136,7 +133,6 @@ pub extern "C" fn context_init_context_with_custom_surface(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
-    // let density = 1.0;
     let mut device = Device {
         width,
         height,
@@ -149,16 +145,12 @@ pub extern "C" fn context_init_context_with_custom_surface(
     let info = ImageInfo::new(
         ISize::new(width as i32, height as i32),
         ColorType::RGBA8888,
-        AlphaType::Premul,
+        AlphaType::Unpremul,
         None,
     );
 
     Box::into_raw(Box::new(Context {
-        surface: Surface::new_raster(
-            &info,
-            None,
-            None,
-        ).unwrap(),
+        surface: Surface::new_raster(&info, None, None).unwrap(),
         path: Path::default(),
         state: State::from_device(device, direction),
         state_stack: vec![],
@@ -195,15 +187,11 @@ pub extern "C" fn context_resize_custom_surface(
         let info = ImageInfo::new(
             ISize::new(width as i32, height as i32),
             ColorType::RGBA8888,
-            AlphaType::Premul,
+            AlphaType::Unpremul,
             None,
         );
 
-        if let Some(surface) = Surface::new_raster(
-            &info,
-            None,
-            None,
-        ) {
+        if let Some(surface) = Surface::new_raster(&info, None, None) {
             context.surface = surface;
             context.device = device;
             context.path = Path::default();
@@ -211,7 +199,6 @@ pub extern "C" fn context_resize_custom_surface(
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn context_resize_surface(
@@ -224,7 +211,6 @@ pub extern "C" fn context_resize_surface(
     alpha: bool,
     ppi: c_float,
 ) {
-    let density = 1.0;
     unsafe {
         if context == 0 {
             return;
@@ -261,8 +247,10 @@ pub extern "C" fn context_resize_surface(
             8,
             frame_buffer,
         );
-        let surface_props =
-            skia_safe::SurfaceProps::new(skia_safe::SurfacePropsFlags::default(), PixelGeometry::Unknown);
+        let surface_props = skia_safe::SurfaceProps::new(
+            skia_safe::SurfacePropsFlags::default(),
+            PixelGeometry::Unknown,
+        );
         let mut color_type = ColorType::RGBA8888;
 
         if !alpha {
@@ -302,8 +290,8 @@ pub extern "C" fn context_data_url(
             format.as_ref(),
             (quality * 100 as f32) as i32,
         ))
-            .unwrap()
-            .into_raw()
+        .unwrap()
+        .into_raw()
     }
 }
 
@@ -355,9 +343,7 @@ pub extern "C" fn context_snapshot_canvas(context: c_longlong) -> *mut U8Array {
             data: ptr.as_mut_ptr(),
         };
         Box::into_raw(ptr);
-        Box::into_raw(
-            Box::new(raw)
-        )
+        Box::into_raw(Box::new(raw))
     }
 }
 
@@ -373,9 +359,14 @@ pub extern "C" fn context_flush(context: c_longlong) {
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn context_custom_with_buffer_flush(context: c_longlong, buf: *mut u8, buf_size: usize, width: f32, height: f32) {
+pub extern "C" fn context_custom_with_buffer_flush(
+    context: c_longlong,
+    buf: *mut u8,
+    buf_size: usize,
+    width: f32,
+    height: f32,
+) {
     unsafe {
         if context == 0 || buf.is_null() || buf_size == 0 {
             return;
@@ -383,15 +374,13 @@ pub extern "C" fn context_custom_with_buffer_flush(context: c_longlong, buf: *mu
         let info = ImageInfo::new(
             ISize::new(width as i32, height as i32),
             ColorType::RGBA8888,
-            AlphaType::Premul,
+            AlphaType::Unpremul,
             None,
         );
         let context: *mut Context = context as _;
         let context = &mut *context;
         let image_data = std::slice::from_raw_parts_mut(buf, buf_size);
-        let mut surface = Surface::new_raster_direct(
-            &info, image_data, None, None,
-        ).unwrap();
+        let mut surface = Surface::new_raster_direct(&info, image_data, None, None).unwrap();
         let canvas = surface.canvas();
         let mut paint = skia_safe::Paint::default();
         paint.set_anti_alias(true);
@@ -450,15 +439,17 @@ pub extern "C" fn context_get_fill_style(context: c_longlong) -> *mut PaintStyle
         let context = &mut *context;
         let fill_style = context.fill_style().clone();
         let result = match fill_style {
-            PaintStyle::Color(_) => PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypeColor),
-            PaintStyle::Gradient(_) => PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypeGradient),
-            PaintStyle::Pattern(_) => PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypePattern)
+            PaintStyle::Color(_) => {
+                PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypeColor)
+            }
+            PaintStyle::Gradient(_) => {
+                PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypeGradient)
+            }
+            PaintStyle::Pattern(_) => {
+                PaintStyleValue::new(fill_style, PaintStyleValueType::PaintStyleValueTypePattern)
+            }
         };
-        Box::into_raw(
-            Box::new(
-                result
-            )
-        )
+        Box::into_raw(Box::new(result))
     }
 }
 
@@ -556,10 +547,7 @@ pub extern "C" fn context_get_global_composite_operation(
 }
 
 #[no_mangle]
-pub extern "C" fn context_set_image_smoothing_enabled(
-    context: c_longlong,
-    enabled: bool,
-) {
+pub extern "C" fn context_set_image_smoothing_enabled(context: c_longlong, enabled: bool) {
     unsafe {
         if context == 0 {
             return;
@@ -595,7 +583,9 @@ pub extern "C" fn context_set_image_smoothing_quality(
 }
 
 #[no_mangle]
-pub extern "C" fn context_get_image_smoothing_quality(context: c_longlong) -> ImageSmoothingQuality {
+pub extern "C" fn context_get_image_smoothing_quality(
+    context: c_longlong,
+) -> ImageSmoothingQuality {
     unsafe {
         let context: *const Context = context as _;
         let context = &*context;
@@ -751,7 +741,12 @@ pub extern "C" fn context_set_shadow_color_string(context: c_longlong, color: *c
         let context = &mut *context;
         let color = CStr::from_ptr(color).to_string_lossy();
         if let Ok(color) = css_color_parser::Color::from_str(color.as_ref()) {
-            context.set_shadow_color(skia_safe::Color::from_argb((color.a * 255.0) as u8, color.r, color.g, color.b))
+            context.set_shadow_color(skia_safe::Color::from_argb(
+                (color.a * 255.0) as u8,
+                color.r,
+                color.g,
+                color.b,
+            ))
         }
     }
 }
@@ -829,15 +824,19 @@ pub extern "C" fn context_get_stroke_style(context: c_longlong) -> *mut PaintSty
         let context: *mut Context = context as _;
         let context = &mut *context;
         let stroke_style = context.stroke_style().clone();
-        Box::into_raw(
-            Box::new(
-                match stroke_style {
-                    PaintStyle::Color(_) => PaintStyleValue::new(stroke_style, PaintStyleValueType::PaintStyleValueTypeColor),
-                    PaintStyle::Gradient(_) => PaintStyleValue::new(stroke_style, PaintStyleValueType::PaintStyleValueTypeGradient),
-                    PaintStyle::Pattern(_) => PaintStyleValue::new(stroke_style, PaintStyleValueType::PaintStyleValueTypePattern)
-                }
-            )
-        )
+        Box::into_raw(Box::new(match stroke_style {
+            PaintStyle::Color(_) => {
+                PaintStyleValue::new(stroke_style, PaintStyleValueType::PaintStyleValueTypeColor)
+            }
+            PaintStyle::Gradient(_) => PaintStyleValue::new(
+                stroke_style,
+                PaintStyleValueType::PaintStyleValueTypeGradient,
+            ),
+            PaintStyle::Pattern(_) => PaintStyleValue::new(
+                stroke_style,
+                PaintStyleValueType::PaintStyleValueTypePattern,
+            ),
+        }))
     }
 }
 
@@ -1009,7 +1008,6 @@ pub extern "C" fn context_close_path(context: c_longlong) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn context_create_image_data(width: c_int, height: c_int) -> c_longlong {
     unsafe { Box::into_raw(Box::new(Context::create_image_data(width, height))) as c_longlong }
@@ -1029,9 +1027,9 @@ pub extern "C" fn context_create_linear_gradient(
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        Box::into_raw(Box::new(
-            PaintStyle::Gradient(context.create_linear_gradient(x0, y0, x1, y1))
-        )) as c_longlong
+        Box::into_raw(Box::new(PaintStyle::Gradient(
+            context.create_linear_gradient(x0, y0, x1, y1),
+        ))) as c_longlong
     }
 }
 
@@ -1051,9 +1049,9 @@ pub extern "C" fn context_create_pattern(
         let context: *mut Context = context as _;
         let context = &mut *context;
         if let Some(image) = to_image(image_data, image_len, width, height) {
-            return Box::into_raw(Box::new(
-                PaintStyle::Pattern(context.create_pattern(image, repetition))
-            )) as c_longlong;
+            return Box::into_raw(Box::new(PaintStyle::Pattern(
+                context.create_pattern(image, repetition),
+            ))) as c_longlong;
         }
         0
     }
@@ -1074,10 +1072,14 @@ pub extern "C" fn context_create_pattern_asset(
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
         let bytes = asset.rgba_internal_bytes();
-        if let Some(image) = from_image_slice(bytes.as_slice(), asset.width() as i32, asset.height() as i32) {
-            return Box::into_raw(Box::new(
-                PaintStyle::Pattern(context.create_pattern(image, repetition))
-            )) as c_longlong;
+        if let Some(image) = from_image_slice(
+            bytes.as_slice(),
+            asset.width() as i32,
+            asset.height() as i32,
+        ) {
+            return Box::into_raw(Box::new(PaintStyle::Pattern(
+                context.create_pattern(image, repetition),
+            ))) as c_longlong;
         }
         0
     }
@@ -1097,7 +1099,9 @@ pub extern "C" fn context_create_pattern_encoded(
         let context: *mut Context = context as _;
         let context = &mut *context;
         if let Some(image) = to_image_encoded(image_data, image_len) {
-            return Box::into_raw(Box::new(PaintStyle::Pattern(context.create_pattern(image, repetition)))) as c_longlong;
+            return Box::into_raw(Box::new(PaintStyle::Pattern(
+                context.create_pattern(image, repetition),
+            ))) as c_longlong;
         }
         0
     }
@@ -1119,9 +1123,9 @@ pub extern "C" fn context_create_radial_gradient(
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        Box::into_raw(Box::new(
-            PaintStyle::Gradient(context.create_radial_gradient(x0, y0, r0, x1, y1, r1))
-        )) as c_longlong
+        Box::into_raw(Box::new(PaintStyle::Gradient(
+            context.create_radial_gradient(x0, y0, r0, x1, y1, r1),
+        ))) as c_longlong
     }
 }
 
@@ -1136,12 +1140,10 @@ pub extern "C" fn context_draw_image_dx_dy(
     dy: c_float,
 ) {
     context_draw_image(
-        context, image_data, image_len, width,
-        height, 0.0, 0.0, width, height,
-        dx, dy, width, height,
+        context, image_data, image_len, width, height, 0.0, 0.0, width, height, dx, dy, width,
+        height,
     );
 }
-
 
 #[no_mangle]
 pub extern "C" fn context_draw_image_dx_dy_dw_dh(
@@ -1156,13 +1158,10 @@ pub extern "C" fn context_draw_image_dx_dy_dw_dh(
     d_height: c_float,
 ) {
     context_draw_image(
-        context, image_data, image_len,
-        width, height,
-        0.0, 0.0, width, height,
-        dx, dy, d_width, d_height,
+        context, image_data, image_len, width, height, 0.0, 0.0, width, height, dx, dy, d_width,
+        d_height,
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn context_draw_image(
@@ -1196,7 +1195,6 @@ pub extern "C" fn context_draw_image(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn context_draw_image_encoded_dx_dy(
     context: c_longlong,
@@ -1222,7 +1220,6 @@ pub extern "C" fn context_draw_image_encoded_dx_dy(
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn context_draw_image_encoded_dx_dy_dw_dh(
@@ -1251,7 +1248,6 @@ pub extern "C" fn context_draw_image_encoded_dx_dy_dw_dh(
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn context_draw_image_encoded(
@@ -1283,7 +1279,6 @@ pub extern "C" fn context_draw_image_encoded(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn context_draw_image_dx_dy_asset(
     context: c_longlong,
@@ -1302,12 +1297,10 @@ pub extern "C" fn context_draw_image_dx_dy_asset(
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         context_draw_image_asset(
-            ctx_ptr, asset_ptr, 0.0, 0.0, width, height,
-            dx, dy, width, height,
+            ctx_ptr, asset_ptr, 0.0, 0.0, width, height, dx, dy, width, height,
         );
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn context_draw_image_dx_dy_dw_dh_asset(
@@ -1329,8 +1322,7 @@ pub extern "C" fn context_draw_image_dx_dy_dw_dh_asset(
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         context_draw_image_asset(
-            ctx_ptr, asset_ptr, 0.0, 0.0, width, height,
-            dx, dy, d_width, d_height,
+            ctx_ptr, asset_ptr, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
         );
     }
 }
@@ -1357,7 +1349,11 @@ pub extern "C" fn context_draw_image_asset(
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
         let bytes = asset.rgba_internal_bytes();
-        if let Some(image) = from_image_slice(bytes.as_slice(), asset.width() as i32, asset.height() as i32) {
+        if let Some(image) = from_image_slice(
+            bytes.as_slice(),
+            asset.width() as i32,
+            asset.height() as i32,
+        ) {
             context.draw_image(
                 &image,
                 Rect::from_xywh(sx, sy, s_width, s_height),
@@ -1707,7 +1703,11 @@ pub extern "C" fn context_scale(context: c_longlong, x: c_float, y: c_float) {
 }
 
 #[no_mangle]
-pub extern "C" fn context_set_line_dash(context: c_longlong, data: *const c_float, data_length: usize) {
+pub extern "C" fn context_set_line_dash(
+    context: c_longlong,
+    data: *const c_float,
+    data_length: usize,
+) {
     unsafe {
         if context == 0 {
             return;

@@ -1,7 +1,6 @@
 import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
-import { CanvasGradient, Path2D } from '../Canvas2D';
-
+import { DOMParser } from 'xmldom';
 export const cxProperty = new Property<Circle, any>({
 	name: 'cx',
 });
@@ -18,6 +17,10 @@ export class Circle extends SVGItem {
 	cx: any;
 	cy: any;
 	r: any;
+	constructor(){
+		super();
+		this._dom = new DOMParser().parseFromString('<circle></circle>');
+	}
 }
 
 cxProperty.register(Circle);

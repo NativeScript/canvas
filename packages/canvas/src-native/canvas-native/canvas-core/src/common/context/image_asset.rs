@@ -2,7 +2,7 @@ use std::ffi::{CStr, CString};
 use std::io::{Read, Seek, SeekFrom};
 use std::os::raw::{c_char, c_uint};
 use std::ptr::{null, null_mut};
-use std::str::FromStr;
+
 
 use image::{GenericImageView, ImageFormat};
 use image::imageops::FilterType;
@@ -57,11 +57,6 @@ enum ByteType {
     Default,
     RGBA,
     RGB,
-}
-
-#[allow(unused)]
-pub(crate) fn to_byte_slice(buf: &mut [i8]) -> &mut [u8] {
-    unsafe { std::mem::transmute(buf) }
 }
 
 
@@ -282,7 +277,6 @@ impl ImageAsset {
             }
         }
     }
-
 
     pub fn bytes_internal(&mut self) -> Vec<u8> {
         self.bytes_internal_with(ByteType::Default)

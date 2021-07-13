@@ -1,7 +1,7 @@
 use std::os::raw::c_float;
 
 #[repr(C)]
-#[derive(Clone)]
+#[derive(Clone,Copy, Debug)]
 pub struct TextMetrics {
     pub(crate) width: c_float,
     pub(crate) actual_bounding_box_left: c_float,

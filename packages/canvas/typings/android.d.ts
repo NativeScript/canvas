@@ -335,6 +335,8 @@ declare module org {
 				public static ONE_S_IN_NS: number;
 				public static TAG: string;
 				public static Companion: org.nativescript.canvas.TNSCanvas.Companion;
+				public static layoutView(param0: number, param1: number, param2: org.nativescript.canvas.TNSCanvas): void;
+				public setIgnorePixelScaling(param0: boolean): void;
 				public setCpuHandler(param0: globalAndroid.os.Handler): void;
 				public getCpuHandlerThread(): globalAndroid.os.HandlerThread;
 				public setWebGL$canvas_release(param0: boolean): void;

@@ -40,6 +40,7 @@ public class CanvasGLKView: GLKView {
 public class CanvasCPUView: UIView {
     var isDirty: Bool = false
     weak var renderer: GLRenderer?
+    public var ignorePixelScaling = false
     public init() {
         super.init(frame: .zero)
     }
@@ -53,13 +54,19 @@ public class CanvasCPUView: UIView {
         contentMode = .redraw
     }
     
+    func deviceScale() -> Float32 {
+        if !(renderer?.canvasView?.ignorePixelScaling ?? false)  {
+            return Float32(UIScreen.main.nativeScale)
+        }
+        return 1
+    }
+    
     
     public override func draw(_ rect: CGRect) {
         if let renderer = renderer {
             if(renderer.context > 0){
-                let scale = Float(UIScreen.main.nativeScale)
-                let width = Int(Float(frame.size.width) * scale)
-                let height = Int(Float(frame.size.height) * scale)
+                let width = Int(Float(frame.size.width) * deviceScale())
+                let height = Int(Float(frame.size.height) * deviceScale())
                 let size = width * height * 4
                 let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: size)
                 let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -154,11 +161,18 @@ public class GLRenderer: NSObject, GLKViewDelegate {
     
     var glkView: CanvasGLKView
     var cpuView: CanvasCPUView
-    var scale: Float
     var didExit: Bool = false
     var glContext: EAGLContext
     var currentOrientation: UIDeviceOrientation
     var cachedDirection: String = "ltr"
+    
+    func deviceScale() -> Float32 {
+        if !(canvasView?.ignorePixelScaling ?? false) {
+            return Float32(UIScreen.main.nativeScale)
+        }
+        return 1
+    }
+    
     func initAttributes(){
         self.isOpaque = !self.canvasView!.contextAlpha
         if(!useCpu){
@@ -214,6 +228,16 @@ public class GLRenderer: NSObject, GLKViewDelegate {
         }
     }
     
+    var forceResize = false
+    func handlePixelScale(){
+        forceResize = true
+        if(!useCpu){
+            glkView.contentScaleFactor = CGFloat(deviceScale())
+        }else {
+            cpuView.contentScaleFactor = CGFloat(deviceScale())
+        }
+        resize()
+    }
     
     private var useCpu: Bool
     public init(useCpu: Bool) {
@@ -223,7 +247,6 @@ public class GLRenderer: NSObject, GLKViewDelegate {
         displayRenderbuffer = GLuint()
         depthRenderbuffer = GLuint()
         cpuView = CanvasCPUView()
-        scale = Float(UIScreen.main.nativeScale)
         currentOrientation = UIDevice.current.orientation
         var glContext = EAGLContext(api: .openGLES3)
         if glContext == nil {
@@ -236,7 +259,6 @@ public class GLRenderer: NSObject, GLKViewDelegate {
             //self.context.isMultiThreaded = true
             // glkView.layer.masksToBounds = true
             glkView.context = glContext!
-            glkView.contentScaleFactor = CGFloat(scale)
             glkView.layer.isOpaque = false
             glkView.delegate = self
             // glkView.contentMode = .bottomLeft
@@ -311,14 +333,14 @@ public class GLRenderer: NSObject, GLKViewDelegate {
         let _ = ensureIsContextIsCurrent()
         if(contextType == .twoD || contextType == .webGL){
             if(useCpu){
-                let width = Float(cpuView.frame.size.width) * scale
-                let height = Float(cpuView.frame.size.height) * scale
-                if(width != 0 && height != 0){
-                    context_resize_custom_surface(context,width, height, scale, true, 0)
+                let width = Float(cpuView.frame.size.width) * deviceScale()
+                let height = Float(cpuView.frame.size.height) * deviceScale()
+                if((width != 0 && height != 0) || forceResize){
+                    context_resize_custom_surface(context,width, height, deviceScale(), true, 0)
                     cpuView.setNeedsDisplay()
                 }
             } else {
-                if(glkView.drawableWidth != Int(Float(glkView.frame.size.width) * scale) && glkView.drawableHeight != Int(Float(glkView.frame.size.height) * scale)){
+                if(forceResize || (glkView.drawableWidth != Int(Float(glkView.frame.size.width) * deviceScale()) && glkView.drawableHeight != Int(Float(glkView.frame.size.height) * deviceScale()))){
                     glkView.deleteDrawable()
                     glkView.bindDrawable()
                     var binding = GLint(0)
@@ -341,8 +363,9 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         glClearStencil(0)
                         glClearDepthf(1)
                         glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
+                        print("buffer dim", drawingBufferWidth, drawingBufferHeight)
                         glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                        context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, binding, 4,canvasView?.contextAlpha ?? true, 100.0)
+                        context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),deviceScale(), binding, 4,canvasView?.contextAlpha ?? true, 100.0)
                     }
                     glkView.display()
                     
@@ -358,6 +381,9 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                 }
             }
         }
+        if forceResize {
+            forceResize = false
+        }
     }
     
     public func setup() {
@@ -365,7 +391,7 @@ public class GLRenderer: NSObject, GLKViewDelegate {
         if((contextType == .twoD || contextType == .webGL)){
             if(useCpu){
                 if(cpuView.frame.size.width == 0 && cpuView.frame.size.height == 0){
-                    cpuView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/scale), height: CGFloat(1/scale))
+                    cpuView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/deviceScale()), height: CGFloat(1/deviceScale()))
                 }
                 
                 if(context == 0 && contextType == .twoD){
@@ -382,15 +408,14 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         }
                         
                     }
-                    let width = Float(cpuView.frame.size.width) * scale
-                    let height = Float(cpuView.frame.size.height) * scale
-                    context = context_init_context_with_custom_surface(width, height,scale, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
-                    
+                    let width = Float(cpuView.frame.size.width) * deviceScale()
+                    let height = Float(cpuView.frame.size.height) * deviceScale()
+                    context = context_init_context_with_custom_surface(width, height,deviceScale(), canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
                 }
                 
             }else {
                 if(glkView.frame.size.width == 0 && glkView.frame.size.height == 0){
-                    glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/scale), height: CGFloat(1/scale))
+                    glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/deviceScale()), height: CGFloat(1/deviceScale()))
                 }
                 glkView.bindDrawable()
                 var binding = GLint()
@@ -426,7 +451,7 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         
                     }
                     glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                    context = context_init_context(Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, Int32(displayFramebuffer), 4, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    context = context_init_context(Float32(drawingBufferWidth), Float32(drawingBufferHeight),deviceScale(), Int32(displayFramebuffer), 4, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
                     
                 }
                 

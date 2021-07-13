@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-babylon",
-	"version": "1.0.0-alpha4",
+	"version": "1.0.0-beta.0",
 	"description": "",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -33,7 +33,7 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
 	"peerDependencies": {
-		"@nativescript/canvas": "~1.0.0-alpha.0",
+		"@nativescript/canvas": "alpha",
 		"babylonjs": "^4.1.0"
 	}
 }

@@ -33,7 +33,7 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
 	"peerDependencies": {
-		"@nativescript/canvas": "~1.0.0-alpha.0",
+		"@nativescript/canvas": "alpha",
 		"phaser": "^3.24.1"
 	}
 }

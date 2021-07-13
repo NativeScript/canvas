@@ -1,4 +1,4 @@
-import { Http, View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders, CSSType, Screen, Application, Utils } from '@nativescript/core';
+import { Http, View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders, CSSType, Application, Utils } from '@nativescript/core';
 
 export const strokeProperty = new CssProperty<Style, any>({
 	name: 'stroke',
@@ -54,9 +54,10 @@ export const srcProperty = new Property<Svg, string>({
 	name: 'src',
 });
 
-declare const TNSSVG;
+declare const TNSSVG, org;
 import { SVGItem } from './SVGItem';
 import { DOMParser, XMLSerializer } from 'xmldom';
+const initialSVG = '<svg width="auto" height="auto" xmlns="http://www.w3.org/2000/svg"></svg>';
 @CSSType('Svg')
 export class Svg extends View {
 	public static readyEvent = 'ready';
@@ -75,7 +76,7 @@ export class Svg extends View {
 			this._svg = TNSSVG.alloc().initWithFrame(CGRectZero);
 			this._svg.backgroundColor = UIColor.clearColor;
 		}
-		this._dom = new DOMParser().parseFromString('<svg width="auto" height="auto" xmlns="http://www.w3.org/2000/svg"></svg>');
+		this._dom = new DOMParser().parseFromString(initialSVG);
 		this._serializer = new XMLSerializer();
 	}
 
@@ -143,7 +144,7 @@ export class Svg extends View {
 				domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}px`);
 			}
 			const serialized = this._serializer.serializeToString(domCopy);
-			if (serialized !== '<svg xmlns="http://www.w3.org/2000/svg"></svg>') {
+			if (serialized !== initialSVG) {
 				this.src = serialized;
 			}
 		}

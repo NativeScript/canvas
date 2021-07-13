@@ -1,17 +1,16 @@
 use std::collections::HashMap;
 
-use roxmltree::{Document, Node};
+use roxmltree::{ Node};
 
 use crate::common::context::{Context, Device};
 use crate::common::svg::attribute_names::Attribute;
 use crate::common::svg::bounding_box::BoundingBox;
-use crate::common::svg::elements::mask::Mask;
+
 use crate::common::svg::elements::parser::{Parser, StyleMap};
 use crate::common::svg::elements::renderer::{
-    handle_mask, handle_style_data, render_mask, Renderer, set_filters, set_mask,
+     handle_style_data, render_mask, Renderer, set_filters, set_mask,
 };
-use crate::common::svg::elements::svg::{create_context, Svg};
-use crate::common::svg::prelude::ColorConversation;
+
 use crate::common::svg::view_box::ViewBox;
 
 #[derive(Clone, Debug)]

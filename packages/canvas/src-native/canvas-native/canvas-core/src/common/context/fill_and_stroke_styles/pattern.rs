@@ -1,6 +1,6 @@
-use skia_safe::{Data, Image, SamplingOptions, Shader, TileMode};
+use skia_safe::{ Image, SamplingOptions, Shader, TileMode};
 
-use crate::common::context::image_smoothing::ImageSmoothingQuality;
+
 use crate::common::context::matrix::Matrix;
 
 #[repr(C)]
@@ -43,7 +43,10 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    pub fn to_pattern_shader(pattern: &Pattern, image_smoothing_quality: skia_safe::FilterQuality) -> Option<Shader> {
+    pub fn to_pattern_shader(
+        pattern: &Pattern,
+        image_smoothing_quality: skia_safe::FilterQuality,
+    ) -> Option<Shader> {
         let mode: (TileMode, TileMode) = match pattern.repetition {
             Repetition::NoRepeat => (TileMode::Clamp, TileMode::Clamp),
             Repetition::RepeatX => (TileMode::Repeat, TileMode::Clamp),

@@ -565,14 +565,14 @@ pub fn get_handle_mask(value: &str, root: Node) -> Option<Mask> {
     None
 }
 
-pub fn set_mask(
+pub fn set_mask<'a>(
     mask: &Mask,
     context: &mut Context,
     view_box: ViewBox,
     bounding_box: BoundingBox,
     root_element: Node,
     style: &StyleMap,
-) -> Option<(Context, skia_safe::Image, skia_safe::Rect)> {
+) -> Option<(Context<'a>, skia_safe::Image, skia_safe::Rect)> {
     if let Some(mask) = mask.create_mask(context, view_box, bounding_box, root_element) {
         let density = context.device.density;
         let alpha = context.device.alpha;
@@ -1004,7 +1004,6 @@ pub fn handle_render_child(
     let height = context.surface.height() as f32;
     let node = child;
     let tag = node.tag_name().name();
-    log::debug!("rendering tag {}", tag);
     if node.is_element() {
         match ElementName::from_str(tag) {
             None => {}

@@ -214,10 +214,12 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 # pragma pop_macro("any")
 #endif
 
+@class NSNumber;
 @class NSCoder;
 
 SWIFT_CLASS_NAMED("CanvasCPUView")
 @interface CanvasCPUView : UIView
+@property (nonatomic) BOOL ignorePixelScaling;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
@@ -256,7 +258,6 @@ SWIFT_PROTOCOL("_TtP12CanvasNative17ICanvasColorStyle_")
 - (enum CanvasColorStyleType)getStyleType SWIFT_WARN_UNUSED_RESULT;
 @end
 
-@class NSNumber;
 @class NSString;
 
 SWIFT_CLASS_NAMED("TNSAnimationFrame")
@@ -275,6 +276,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 @interface TNSCanvas : UIView
 + (NSMapTable<NSString *, TNSCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nullable)getViewPtr SWIFT_WARN_UNUSED_RESULT;
+@property (nonatomic) BOOL ignorePixelScaling;
 + (TNSDOMMatrix * _Nonnull)createSVGMatrix SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL handleInvalidationManually;
 - (void)didDraw;
@@ -706,6 +708,7 @@ SWIFT_CLASS_NAMED("TNSRender")
 
 SWIFT_CLASS_NAMED("TNSSVG")
 @interface TNSSVG : UIView
+@property (nonatomic) BOOL ignorePixelScaling;
 @property (nonatomic, copy) NSString * _Nullable src;
 @property (nonatomic, copy) NSString * _Nullable srcPath;
 - (void)layoutSubviews;

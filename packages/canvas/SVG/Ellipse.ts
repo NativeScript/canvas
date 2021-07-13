@@ -14,12 +14,17 @@ export const rxProperty = new Property<Ellipse, any>({
 export const ryProperty = new Property<Ellipse, any>({
 	name: 'ry'
 });
-
+import { DOMParser } from 'xmldom';
 export class Ellipse extends SVGItem {
 	cx: any;
 	cy: any;
 	rx: any;
 	ry: any;
+
+	constructor(){
+		super();
+		this._dom = new DOMParser().parseFromString('<ellipse></ellipse>');
+	}
 }
 
 cxProperty.register(Ellipse);

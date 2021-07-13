@@ -1,9 +1,7 @@
-use std::mem::MaybeUninit;
 use std::os::raw::{c_int, c_longlong, c_uint, c_void};
-use std::ptr::null_mut;
 
 use crate::common::context::image_asset::ImageAsset;
-use crate::common::ffi::u8_array::{destroy_u8_array, U8Array};
+use crate::common::ffi::u8_array::{destroy_u8_array};
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;

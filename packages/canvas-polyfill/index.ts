@@ -23,10 +23,8 @@ import { URL } from './URL';
 	const sy = args[2];
 	const sw = args[3];
 	const sh = args[4];
-	if(typeof sw === 'number' && sw === 0 || typeof sh === 'number' && sh === 0 ){
-		return Promise.reject(
-			new RangeError(`Failed to execute 'createImageBitmap' : The crop rect width is 0`)
-		)
+	if ((typeof sw === 'number' && sw === 0) || (typeof sh === 'number' && sh === 0)) {
+		return Promise.reject(new RangeError(`Failed to execute 'createImageBitmap' : The crop rect width is 0`));
 	}
 
 	if (args.length === 1) {
@@ -36,7 +34,6 @@ import { URL } from './URL';
 		//@ts-ignore
 		return ImageBitmap.createFrom(image, sx_or_options);
 	} else if (args.length === 5) {
-		
 		//@ts-ignore
 		return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh);
 	} else if (args.length === 6) {
@@ -98,4 +95,17 @@ if (!((global as any).URL instanceof URL)) {
 		writable: true,
 	});
 	(global as any).window.URL = (global as any).URL;
+}
+class TouchEvent {
+	preventDefault() {}
+	stopPropagation() {}
+}
+
+if (!((global as any).TouchEvent instanceof TouchEvent)) {
+	Object.defineProperty(global, 'TouchEvent', {
+		value: TouchEvent,
+		configurable: true,
+		writable: true,
+	});
+	(global as any).window.TouchEvent = (global as any).TouchEvent;
 }

@@ -1,9 +1,6 @@
 use std::os::raw::c_int;
 
-use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, SamplingOptions, Size,
-    Surface,
-};
+use skia_safe::{AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, SamplingOptions, Surface, Point};
 use skia_safe::image::CachingHint;
 
 use crate::common::context::Context;
@@ -13,6 +10,7 @@ pub mod ffi;
 pub(crate) mod svg;
 pub(crate) mod utils;
 pub mod image_bitmap;
+pub mod prelude;
 
 pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -> String {
     let surface = &mut context.surface;
@@ -62,7 +60,7 @@ pub(crate) fn to_data(context: &mut Context) -> Vec<u8> {
     let mut info = ImageInfo::new(
         ISize::new(width, height),
         ColorType::RGBA8888,
-        AlphaType::Premul,
+        AlphaType::Unpremul,
         None,
     );
     let row_bytes = info.width() * 4;
@@ -92,7 +90,7 @@ pub(crate) fn flush_custom_surface(context: *mut Context, width: i32, height: i3
             let dst_canvas = dst_surface.canvas();
             context.surface.draw(
                 dst_canvas,
-                Size::new(0.0, 0.0),
+                Point::new(0., 0.),
                 SamplingOptions::from_filter_quality(skia_safe::FilterQuality::High, None),
                 None,
             );
@@ -135,7 +133,7 @@ pub(crate) fn snapshot_canvas_raw(context: *mut Context) -> Vec<u8> {
         let mut dst_canvas = dst_surface.canvas();
         surface.draw(
             dst_canvas,
-            Size::new(0.0, 0.0),
+            Point::new(0., 0.),
             SamplingOptions::from_filter_quality(skia_safe::FilterQuality::High, None),
             None,
         );

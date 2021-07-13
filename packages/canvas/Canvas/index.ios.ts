@@ -1,4 +1,4 @@
-import { CanvasBase } from './common';
+import { CanvasBase, ignorePixelScalingProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -26,6 +26,7 @@ export class Canvas extends CanvasBase {
 			CGRectZero,
 			useCpu
 		);
+		console.dir(this._canvas);
 		const ref = new WeakRef(this);
 		const listener = (NSObject as any).extend({
 			contextReady() {
@@ -42,6 +43,10 @@ export class Canvas extends CanvasBase {
 		});
 		this._readyListener = listener.new();
 		this._canvas.setListener(this._readyListener);
+	}
+
+	[ignorePixelScalingProperty.setNative](value: boolean){
+		this._canvas.ignorePixelScaling = value;
 	}
 
 	// @ts-ignore
@@ -139,7 +144,7 @@ export class Canvas extends CanvasBase {
 
 	initNativeView() {
 		super.initNativeView();
-		this.__handleGestures();
+		this._canvas.ignorePixelScaling = this.ignorePixelScaling;
 	}
 
 	flush() {
@@ -164,7 +169,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	disposeNativeView(): void {
-		this.off('touch, pan', this._touchEvents);
 		this._canvas.setListener(null);
 		this._readyListener = undefined;
 		this._canvas = undefined;

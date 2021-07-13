@@ -1,7 +1,4 @@
-use skia_safe::Color;
-
-use crate::common::context::Context;
-use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
+use crate::{common::context::fill_and_stroke_styles::paint::PaintStyle, common::context::Context};
 
 pub mod gradient;
 pub mod paint;

@@ -35,43 +35,18 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		//svg = findViewById(R.id.svgView)
+		svg = findViewById(R.id.svgView)
+		svg?.ignorePixelScaling = true
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
 
 		System.loadLibrary("canvasnative")
-
+		canvas?.ignorePixelScaling = false
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
 				print("Is Ready")
-				val ctx = canvas?.getContext("2d") as? TNSCanvasRenderingContext2D
-				val asset = TNSImageAsset()
-				asset.loadImageFromUrlAsync("https://www.downloadclipart.net/large/naruto-shippuden-png-hd.png" , object :
-					Callback {
-					override fun onSuccess(value: Any?) {
-						val opts = TNSImageBitmap.Options()
-						opts.resizeWidth  = 200f
-						opts.resizeHeight = 200f
-						TNSImageBitmap.createFromImageAsset(asset,0f,0f,128f,128f, opts, object:
-							TNSImageBitmap.Callback {
-							override fun onSuccess(result: TNSImageBitmap) {
-								Log.d("com.test", "ImageBitmap ${result.width} ${result.height}" )
-								ctx?.fillStyle = TNSColor("red")
-								ctx?.fillRect(0f,0f,128f,128f)
-								ctx?.drawImage(result, 0f,0f)
-							}
 
-							override fun onError(message: String) {
-								Log.d("com.test", "bitmap onError $message")
-							}
-						})
-					}
-
-					override fun onError(error: String?) {
-						Log.d("com.test", "onError $error")
-					}
-				})
-
+				drawFill(canvas!!)
 			}
 		}
 //		svg?.setSrc(
@@ -249,16 +224,16 @@ class MainActivity : AppCompatActivity() {
 //			                scale(1 0.5)">
 //			    <path id="heart" d="M 10,30 A 20,20 0,0,1 50,30 A 20,20 0,0,1 90,30 Q 90,60 50,90 Q 10,60 10,30 z" />
 //			  </g>
-//
-//			  <use xlink:href="#heart" fill="none" stroke="red"/>
-//			</svg>
-//		""".trimIndent())
+////
+////			  <use xlink:href="#heart" fill="none" stroke="red"/>
+////			</svg>
+////		""".trimIndent())
 
 		//drawTransformMatrixSvg()
 		//drawTransformRotateSvg()
 		//drawTransformScaleSvg()
 		//drawTransformTranslateSvg()
-		//drawTransformSkewX()
+	//	drawTransformSkewX()
 		//drawTransformSkewY()
 
 		//drawLinearGradientSvg()
@@ -268,8 +243,8 @@ class MainActivity : AppCompatActivity() {
 
 		//	drawTransformGradientSvg()
 
-		//drawClipPathUnitsSvg()
-	//	downloadSvg()
+			//	drawClipPathUnitsSvg()
+		downloadSvg()
 //		svg?.setSrc("""
 //			<svg xmlns="http://www.w3.org/2000/svg">
 //			  <!-- Using g to inherit presentation attributes -->
@@ -518,7 +493,7 @@ class MainActivity : AppCompatActivity() {
 				}
 
 				val url =
-					URL("https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg")
+					URL("https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")
 				val fs = FileOutputStream(svgFile)
 				url.openStream().use { input ->
 					fs.use { output ->
@@ -534,24 +509,15 @@ class MainActivity : AppCompatActivity() {
 
 	fun drawClipPathUnitsSvg() {
 		svg?.setSrc(
-			"""
-			<svg viewBox="0 0 100 100">
-			  <clipPath id="myClip1" clipPathUnits="userSpaceOnUse">
-			    <circle cx="50" cy="50" r="35" />
-			  </clipPath>
+			"""<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 
-			  <clipPath id="myClip2" clipPathUnits="objectBoundingBox">
-			    <circle cx=".50" cy=".6" r=".35" />
-			  </clipPath>
-
-
-			  <rect id="r4" x="0" y="0"  width="100" height="100" />
-
-
-
-			  <!-- The last rect is clipped with objectBoundingBox units -->
-			  <use clip-path="url(#myClip2)" xlink:href="#r4" fill="red" />
-			</svg>
+<svg xmlns="http://www.w3.org/2000/svg"
+      width="526" height="233">
+  <rect x="13" y="14" width="500" height="200" rx="50" ry="100"
+      fill="none" stroke="blue" stroke-width="10" />
+</svg>
 		""".trimIndent()
 		)
 	}
@@ -608,8 +574,7 @@ class MainActivity : AppCompatActivity() {
 		newX = a * oldX + c * oldY + e = 3 * 40 - 1 * 30 + 30 = 120
 		newY = b * oldX + d * oldY + f = 1 * 40 + 3 * 30 + 40 = 170
 		-->
-		<rect x="10" y="10" width="30" height="20" fill="red"
-		transform="matrix(3 1 -1 3 30 40)" />
+
 		</svg>
 			""".trimIndent()
 		)
@@ -1518,7 +1483,7 @@ class MainActivity : AppCompatActivity() {
 		//drawText(ctx!!)
 		// ballExample(ctx!!)
 		//drawPattern(canvas!!)
-		// drawFace(ctx!!)
+		 drawFace(ctx!!)
 		//drawPattern(canvas!!)
 		// drawElements(canvas!!)
 		// drawPatterWithCanvas(canvas!!)
@@ -1537,7 +1502,7 @@ class MainActivity : AppCompatActivity() {
 		//drawPattern(canvas!!)
 		// ctx = canvas?.getContext("2d") as CanvasRenderingContext2D?
 		//drawImageExample(canvas!!)
-		drawFace(ctx!!)
+		//drawFace(ctx!!)
 		//ctx?.fillStyle = Color.BLACK
 		// ctx?.fillRect(0F,0F,200f,200f)
 		//ballExample(ctx!!)
@@ -1661,10 +1626,9 @@ class MainActivity : AppCompatActivity() {
 		patternContext.fillStyle = TNSColor("#fec")
 		val style = patternContext.fillStyle as TNSColor
 		patternContext.fillRect(
-			0f, 0f, patternCanvas.width.toFloat(),
-			patternCanvas.height.toFloat()
+			0f, 0f, 50f, 50f
 		);
-		patternContext.arc(0f, 0f, 50 * scale, 0f, (0.5 * Math.PI).toFloat());
+		patternContext.arc(0f, 0f, 50f, 0f, (0.5 * Math.PI).toFloat());
 		patternContext.stroke()
 
 
@@ -1674,7 +1638,8 @@ class MainActivity : AppCompatActivity() {
 		pattern?.let {
 			ctx.fillStyle = it
 		}
-		ctx.fillRect(0f, 0f, canvas.width * scale, canvas.height * scale);
+		val density = resources.displayMetrics.density
+		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
 	}
 
 

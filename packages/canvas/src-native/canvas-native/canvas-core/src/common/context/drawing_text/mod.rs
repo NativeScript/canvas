@@ -1,12 +1,12 @@
 use std::os::raw::c_float;
 
-use skia_safe::{Paint, Point, Size};
 use skia_safe::paint::Style;
+use skia_safe::{Point, Size};
 
-use crate::common::context::Context;
 use crate::common::context::drawing_text::text_metrics::TextMetrics;
 use crate::common::context::drawing_text::typography::{get_font_baseline, to_real_text_align};
 use crate::common::context::text_styles::text_align::TextAlign;
+use crate::common::context::Context;
 use crate::common::utils::geometry::inflate_stroke_rect;
 
 pub mod text_metrics;
@@ -124,20 +124,19 @@ impl Context {
         let ascent = metrics.ascent;
         let descent = metrics.descent;
         let baseline_y = get_font_baseline(metrics, self.state.text_baseline);
-
         TextMetrics {
             width,
             actual_bounding_box_left: -bounds.x(),
             actual_bounding_box_right: bounds.right(),
-            font_bounding_box_ascent: ascent - baseline_y,
-            font_bounding_box_descent: descent + baseline_y,
-            actual_bounding_box_ascent: -bounds.y() - baseline_y,
-            actual_bounding_box_descent: bounds.bottom() + baseline_y,
+            font_bounding_box_ascent: (ascent - baseline_y),
+            font_bounding_box_descent: (descent + baseline_y),
+            actual_bounding_box_ascent: (-bounds.y() - baseline_y),
+            actual_bounding_box_descent: (bounds.bottom() + baseline_y),
             em_height_ascent: 0.0,
             em_height_descent: 0.0,
-            hanging_baseline: -0.8 * ascent + baseline_y,
+            hanging_baseline: (-0.8 * ascent + baseline_y),
             alphabetic_baseline: baseline_y,
-            ideographic_baseline: descent + baseline_y,
+            ideographic_baseline: (descent + baseline_y),
         }
     }
 }

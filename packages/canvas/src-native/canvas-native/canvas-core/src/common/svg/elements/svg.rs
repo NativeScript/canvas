@@ -1,14 +1,13 @@
-
-use roxmltree::{Node};
+use roxmltree::Node;
 use skia_safe::{Color, ISize, Point, SamplingOptions, Surface, Vector};
 
-use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;
 use crate::common::context::text_styles::text_direction::TextDirection;
+use crate::common::context::{Context, Device, State};
 use crate::common::svg::attribute_names::{Attribute, NodeExt};
 use crate::common::svg::elements::element_names::ElementName;
-use crate::common::svg::elements::renderer::{handle_render_children};
-use crate::common::svg::enums::preserve_aspect_ratio::{AlignMeetOrSlice, view_box_to_transform};
+use crate::common::svg::elements::renderer::handle_render_children;
+use crate::common::svg::enums::preserve_aspect_ratio::{view_box_to_transform, AlignMeetOrSlice};
 use crate::common::svg::units::length::{convert_length, Length, LengthUnit};
 use crate::common::svg::units::Units;
 use crate::common::svg::view_box::ViewBox;
@@ -19,13 +18,13 @@ pub struct Svg<'a> {
     width: Length,
     height: Length,
     view_box: Option<ViewBox>,
-    context: Context,
+    context: Context<'a>,
     root_element: Node<'a, 'a>,
     preserve_aspect_ratio: AlignMeetOrSlice,
     needs_render: bool,
 }
 
-pub fn create_context(
+pub fn create_context<'a>(
     width: f32,
     height: f32,
     density: f32,
@@ -33,8 +32,7 @@ pub fn create_context(
     font_color: i32,
     ppi: f32,
     direction: TextDirection,
-) -> Context {
-    // let density = 1.0;
+) -> Context<'a> {
     let device = Device {
         width,
         height,
@@ -45,17 +43,20 @@ pub fn create_context(
         ppi,
     };
 
-    log::debug!("create ctx");
     let mut context = Context {
-        surface: Surface::new_raster_n32_premul(ISize::new(width as i32, height as i32)).unwrap(),
+        surface: Surface::new_raster_n32_premul(ISize::new(
+            (width * density) as i32,
+            (height * density) as i32,
+        ))
+        .unwrap(),
         path: Path::default(),
         state: State::from_device(device, direction),
         state_stack: vec![],
         font_color: Color::new(font_color as u32),
         device,
     };
-    log::debug!("done ctx");
-    context.set_miter_limit(4.0);
+
+    context.set_miter_limit(4.0 * density);
 
     context
 }
@@ -177,20 +178,21 @@ impl<'a> Svg<'a> {
                 &max_view_box,
             );
 
-            let mut context =
-                create_context(width, height, density, alpha, font_color, ppi, direction);
-
+            let mut context;
             let preserve_aspect_ratio = node.get_preserve_aspect_ratio();
 
             let mut vb = ViewBox::new(x, y, width, height);
             if let Some(view_box) = node.get_view_box() {
-                vb.x_set(view_box.x() * density);
-                vb.y_set(view_box.y() * density);
-                vb.width_set(view_box.width() * density);
-                vb.height_set(view_box.height() * density);
-
+                vb.x_set(view_box.x());
+                vb.y_set(view_box.y());
+                vb.width_set(view_box.width());
+                vb.height_set(view_box.height());
                 let mat = view_box_to_transform(&vb, preserve_aspect_ratio, max_width, max_height);
-                context.transform_with_matrix(&mat);
+                context = create_context(width, height, density, alpha, font_color, ppi, direction);
+
+                // context.transform_with_matrix(&mat);
+            } else {
+                context = create_context(width, height, density, alpha, font_color, ppi, direction);
             }
 
             let mut svg = Svg {
@@ -233,7 +235,7 @@ impl<'a> Svg<'a> {
         &self.context
     }
 
-    pub fn context_mut(&mut self) -> &mut Context {
+    pub fn context_mut(&mut self) -> &'a mut Context {
         &mut self.context
     }
 

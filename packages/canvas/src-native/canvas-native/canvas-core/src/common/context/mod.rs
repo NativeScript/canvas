@@ -1,18 +1,18 @@
 use std::os::raw::c_float;
 
 use skia_safe::{Color, Point, SamplingOptions, Surface};
-use skia_safe::canvas::SrcRectConstraint;
-use skia_safe::paint::Style;
 
-use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
-use crate::common::context::drawing_text::typography::Font;
-use crate::common::context::fill_and_stroke_styles::paint::Paint;
-use crate::common::context::image_smoothing::ImageSmoothingQuality;
-use crate::common::context::line_styles::line_cap::LineCap;
-use crate::common::context::line_styles::line_join::LineJoin;
-use crate::common::context::paths::path::Path;
-use crate::common::context::text_styles::{
-    text_align::TextAlign, text_baseline::TextBaseLine, text_direction::TextDirection,
+use crate::{
+    common::context::compositing::composite_operation_type::CompositeOperationType,
+    common::context::drawing_text::typography::Font,
+    common::context::fill_and_stroke_styles::paint::Paint,
+    common::context::image_smoothing::ImageSmoothingQuality,
+    common::context::line_styles::line_cap::LineCap,
+    common::context::line_styles::line_join::LineJoin,
+    common::context::paths::path::Path,
+    common::context::text_styles::{
+        text_align::TextAlign, text_baseline::TextBaseLine, text_direction::TextDirection,
+    },
 };
 
 pub mod drawing_images;
@@ -96,10 +96,15 @@ impl State {
         }
     }
     pub fn from_device(device: Device, direction: TextDirection) -> Self {
-        let mut font = Font::new("10px sans-serif", device.density);
+        let mut font = Font::new("10px sans-serif");
+        let mut paint = Paint::default();
+        paint
+            .stroke_paint_mut()
+            .set_stroke_width(1.)
+            .set_stroke_miter(10.);
         Self {
             direction,
-            paint: Paint::default(),
+            paint,
             font,
             text_align: TextAlign::default(),
             text_baseline: TextBaseLine::default(),
@@ -112,9 +117,9 @@ impl State {
             line_cap: LineCap::default(),
             line_join: LineJoin::default(),
             miter_limit: 10.0,
-            line_dash_list: vec![],
+            line_dash_list: Default::default(),
             line_dash_offset: 0.0,
-            filter: "none".to_string(),
+            filter: "none".into(),
             global_alpha: 1.0,
             global_composite_operation: CompositeOperationType::default(),
         }
@@ -135,6 +140,7 @@ impl Context {
     pub fn device(&self) -> &Device {
         &self.device
     }
+
     pub fn reset_state(&mut self) {
         let direction = self.state.direction;
         self.state = State::from_device(self.device, direction);
@@ -153,7 +159,7 @@ impl Context {
         let src_surface = &mut self.surface;
         src_surface.draw(
             surface.canvas(),
-            (0, 0),
+            Point::new(0., 0.),
             SamplingOptions::from_filter_quality(skia_safe::FilterQuality::High, None),
             None,
         )

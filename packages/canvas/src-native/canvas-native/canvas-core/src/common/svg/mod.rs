@@ -1,21 +1,21 @@
 use std::io::{Read, Seek, SeekFrom};
-use skia_safe::{
-    AlphaType, Color, ColorType, ImageFilter, ImageInfo, ISize, Paint, Point, Rect, Surface, Vector,
-};
-use skia_safe::paint::Style;
+// use skia_safe::{
+//     AlphaType, Color, ColorType, ImageFilter, ImageInfo, ISize, Paint, Point, Rect, Surface, Vector,
+// };
+// use skia_safe::paint::Style;
 
 use crate::common::context::{Context};
-mod attribute_names;
-mod bounding_box;
-mod elements;
-mod enums;
-mod error;
-mod prelude;
-mod units;
-mod view_box;
-use crate::common::svg::prelude::*;
+// mod attribute_names;
+// mod bounding_box;
+// mod elements;
+// mod enums;
+// mod error;
+// mod prelude;
+// mod units;
+// mod view_box;
+//use crate::common::svg::prelude::*;
 
-use self::elements::{element_names::ElementName, svg::Svg};
+//use self::elements::{element_names::ElementName, svg::Svg};
 
 pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
     let file = std::fs::File::open(path);
@@ -27,18 +27,19 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
             match result {
                 Ok(_) => {
                     let _ = reader.seek(SeekFrom::Start(0));
-                    // TODO check bytes to verify it's an svg
-
-                    let mut svg = Vec::new();
-                    match reader.read_to_end(&mut svg) {
-                        Ok(_) => {
-                            let svg = std::string::String::from_utf8_lossy(&svg);
-                            draw_svg(context, &svg);
+                    match skia_safe::svg::SvgDom::read(reader) {
+                        Ok(svg) => {
+                            let device = context.device;
+                            let canvas = context.surface.canvas();
+                            //canvas.scale((device.density, device.density));
+                            svg.render(canvas)
                         }
                         Err(e) => {
                             println!("svg read to string error: {}", e);
                         }
                     }
+                    // TODO check bytes to verify it's an svg
+
                 }
                 Err(e) => {
                     println!("svg file read error: {}", e);
@@ -52,7 +53,19 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
 }
 
 pub(crate) fn draw_svg(context: &mut Context, svg: &str) {
-    let mut svg = String::from(svg);
+    match skia_safe::svg::SvgDom::from_bytes(svg.as_bytes()) {
+        Ok(svg) => {
+            let device = context.device;
+            let canvas = context.surface.canvas();
+           // canvas.scale((device.density, device.density));
+            svg.render(canvas)
+        }
+        Err(e) => {
+            log::debug!("svg read to string error: {}", e);
+        }
+    }
+
+    /*
     if !svg.contains(r#"xmlns:xlink="http://www.w3.org/1999/xlink""#) {
         svg = svg.replace(
             "<svg ",
@@ -85,5 +98,5 @@ pub(crate) fn draw_svg(context: &mut Context, svg: &str) {
         Err(error) => {
             log::debug!("document parse error: {}", error);
         }
-    }
+    } */
 }

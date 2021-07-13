@@ -1,7 +1,5 @@
 use std::os::raw::c_float;
 
-use skia_safe::BlendMode;
-
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
 use crate::common::context::Context;
 

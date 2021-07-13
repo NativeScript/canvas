@@ -9,18 +9,18 @@ const SIZE_PICAS: f32 = SIZE_POINT * 12.0;
 
 pub(crate) fn parse_size(value: &str, device: Device) -> f32 {
     if value.contains("px") {
-        return value.replace("px", "").parse::<f32>().unwrap_or(0.0) * device.density;
+        return value.replace("px", "").parse::<f32>().unwrap_or(0.0);
     } else if value.contains("cm") {
-        let cm = (device.density * 96.0) / 2.54;
+        let cm = 96. / 2.54;
         return value.replace("cm", "").parse::<f32>().unwrap_or(0.0) * cm;
     } else if value.contains("in") {
-        let inch = device.density * 96.0;
+        let inch = 96.;
         return value.replace("in", "").parse::<f32>().unwrap_or(0.0) * inch;
     } else if value.contains("pt") {
-        let pt = (device.density * 96.0) * (1.0 / 72.0);
+        let pt = 96. * (1.0 / 72.0);
         return value.replace("pt", "").parse::<f32>().unwrap_or(0.0) * pt;
     } else if value.contains("pc") {
-        let pc = ((device.density * 96.0) * (1.0 / 72.0)) * 12.0;
+        let pc = (96. * (1.0 / 72.0)) * 12.0;
         return value.replace("pt", "").parse::<f32>().unwrap_or(0.0) * pc;
     } else if value.contains("vh") {
         let vh = value.replace("vh", "").parse::<f32>().unwrap_or(0.0) / 100.0;

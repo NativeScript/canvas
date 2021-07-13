@@ -29,7 +29,11 @@ public class TNSCanvas: UIView, RenderListener {
         return ptr
     }
     
-    
+    public var ignorePixelScaling = false {
+        didSet {
+            renderer.handlePixelScale()
+        }
+    }
     var contextAlpha = true;
     var contextAntialias = true;
     var contextDepth = true;

@@ -4,8 +4,8 @@ use std::fmt::{Display, Formatter};
 
 use bindgen;
 
-const _IOS_SRC_BINDINGS_RS: &str = "src/ios_bindings.rs";
-const _ANDROID_SRC_BINDINGS_RS: &str = "src/android_bindings.rs";
+const _IOS_SRC_BINDINGS_RS: &str = "src/bindings.rs";
+const _ANDROID_SRC_BINDINGS_RS: &str = "src/bindings.rs";
 
 #[derive(Clone, Debug)]
 pub struct Target {
@@ -113,7 +113,7 @@ fn main() {
 
             let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
             bindings
-                .write_to_file(out_path.join("android_bindings.rs"))
+                .write_to_file(out_path.join("bindings.rs"))
                 .expect("Couldn't write bindings!");
 
             // fs::copy(out_path.join("android_bindings.rs"), ANDROID_SRC_BINDINGS_RS).expect("Couldn't copy bindings!");;;
@@ -199,19 +199,12 @@ fn build(sdk_path: Option<&str>, target: &str) {
     }
     if target.contains("apple-ios") {
         // builder = builder.clang_args(&["-x", "objective-c", "-fblocks"]);
-        builder = builder.clang_args(&["-x", "objective-c", "-fblocks"]);
-        builder = builder.objc_extern_crate(true);
-        builder = builder.block_extern_crate(true);
-        builder = builder.generate_block(true);
-        //builder = builder.rustfmt_bindings(true);
-
-        // time.h as has a variable called timezone that conflicts with some of the objective-c
-        // calls from NSCalendar.h in the Foundation framework. This removes that one variable.
-        builder = builder.blacklist_item("timezone");
-        // https://github.com/rust-lang/rust-bindgen/issues/1705
-        builder = builder.blacklist_item("IUIStepper");
-        builder = builder.blacklist_function("dividerImageForLeftSegmentState_rightSegmentState_");
-        builder = builder.blacklist_item("objc_object");
+        builder = 
+        builder.clang_args(&["-x","objective-c", "-fblocks"])
+        .objc_extern_crate(true)
+        .block_extern_crate(true)
+        .allowlist_function("gl.*")
+        .allowlist_type("GL_.*")
     }
 
     let meta_header: Vec<_> = headers
@@ -228,8 +221,6 @@ fn build(sdk_path: Option<&str>, target: &str) {
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
-        .write_to_file(out_path.join("ios_bindings.rs"))
+        .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
-
-    // fs::copy(out_path.join("ios_bindings.rs"), IOS_SRC_BINDINGS_RS).expect("Couldn't copy bindings!");;
 }

@@ -28,7 +28,7 @@ use crate::common::utils::color::to_parsed_color;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded, to_image};
 
 const JSON_CLASS: &str = "org/json/JSONObject";
-static SIG_OBJECT_CTOR: &str = "()V";
+const SIG_OBJECT_CTOR: &str = "()V";
 
 #[no_mangle]
 pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetDirection(

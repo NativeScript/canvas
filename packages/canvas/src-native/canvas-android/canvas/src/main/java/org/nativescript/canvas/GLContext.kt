@@ -69,12 +69,12 @@ internal class GLContext {
 		if (reference != null) {
 			val canvasView = reference!!.get()
 			if (canvasView != null) {
-				queueEvent(Runnable {
+				queueEvent {
 					if (offscreenTexture != null) {
 						GLES20.glClearColor(0f, 0f, 0f, 0f)
 						GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 						if (!swapBuffers(mEGLSurface)) {
-							Log.e("GLContext", "Cannot swap buffers!")
+							Log.e("JS", "GLContext: Cannot swap buffers!")
 						}
 						offscreenTexture!!.release()
 						offscreenTexture = null
@@ -116,7 +116,7 @@ internal class GLContext {
 						GLES20.glClearColor(0f, 0f, 0f, 0f)
 						GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 						if (!swapBuffers(mEGLSurface)) {
-							Log.e("GLContext", "Cannot swap buffers!")
+							Log.e("JS", "GLContext: Cannot swap buffers!")
 						}
 						if (canvasView.nativeContext > 0) {
 							GLES20.glViewport(0, 0, width, height)
@@ -140,7 +140,7 @@ internal class GLContext {
 							swapBuffers(mEGLSurface)
 						}
 					}
-				})
+				}
 			}
 		}
 	}
@@ -152,13 +152,13 @@ internal class GLContext {
 				if (canvasView != null && canvasView.nativeContext != 0L && canvasView.pendingInvalidate) {
 					TNSCanvas.nativeFlush(canvasView.nativeContext)
 					if (!swapBuffers(mEGLSurface)) {
-						Log.e("GLContext", "Cannot swap buffers!")
+						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
 					canvasView.pendingInvalidate = false
 				} else {
 					// WebGL
 					if (!swapBuffers(mEGLSurface)) {
-						Log.e("GLContext", "Cannot swap buffers!")
+						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
 					if (canvasView != null) {
 						canvasView.pendingInvalidate = false
@@ -258,7 +258,7 @@ internal class GLContext {
 				mGLThread!!.interrupt()
 				mGLThread!!.join()
 			} catch (e: InterruptedException) {
-				Log.e("GLContext", "Can't interrupt GL thread.", e)
+				Log.e("JS", "GLContext: Can't interrupt GL thread.", e)
 			}
 			mGLThread = null
 		}
@@ -363,13 +363,13 @@ internal class GLContext {
 							EGL10.EGL_RENDERABLE_TYPE, value
 						)
 					) {
-						if (checkES3 && value[0] and EGL_OPENGL_ES3_BIT_KHR ===
+						if (checkES3 && value[0] and EGL_OPENGL_ES3_BIT_KHR ==
 							EGL_OPENGL_ES3_BIT_KHR
 						) {
 							if (highestEsVersion < 3) highestEsVersion = 3
-						} else if (value[0] and EGL_OPENGL_ES2_BIT === EGL_OPENGL_ES2_BIT) {
+						} else if (value[0] and EGL_OPENGL_ES2_BIT == EGL_OPENGL_ES2_BIT) {
 							if (highestEsVersion < 2) highestEsVersion = 2
-						} else if (value[0] and EGL_OPENGL_ES_BIT === EGL_OPENGL_ES_BIT) {
+						} else if (value[0] and EGL_OPENGL_ES_BIT == EGL_OPENGL_ES_BIT) {
 							if (highestEsVersion < 1) highestEsVersion = 1
 						}
 					} else {
@@ -381,7 +381,6 @@ internal class GLContext {
 				}
 
 				DID_CHECK_WEBGL_SUPPORT = true
-
 
 
 				if (view.glVersion > 2 && view.actualContextType == "webgl2" && highestEsVersion >= 3) {
@@ -503,7 +502,7 @@ internal class GLContext {
 			}
 			GLES20.glClear(bit)
 			if (!swapBuffers(mEGLSurface)) {
-				Log.e("GLContext", "Cannot swap buffers!")
+				Log.e("JS", "GLContext: Cannot swap buffers!")
 			}
 
 		}
@@ -556,12 +555,14 @@ internal class GLContext {
 					type = ref.contextType
 					makeEGLContextCurrent()
 					if (type == TNSCanvas.ContextType.CANVAS && ref.nativeContext == 0L) {
+						val width = view.width
+						val height = view.height
 						val frameBuffers = IntArray(1)
 						if (view.drawingBufferWidth == 0) {
-							view.drawingBufferWidth = view.width
+							view.drawingBufferWidth = width
 						}
 						if (view.drawingBufferHeight == 0) {
-							view.drawingBufferHeight = view.height
+							view.drawingBufferHeight = height
 						}
 						if (view.drawingBufferWidth == 0) {
 							view.drawingBufferWidth = 1
@@ -569,6 +570,8 @@ internal class GLContext {
 						if (view.drawingBufferHeight == 0) {
 							view.drawingBufferHeight = 1
 						}
+
+						Log.d("com.test", "${view.drawingBufferWidth} ${view.drawingBufferHeight}")
 						GLES20.glViewport(0, 0, view.drawingBufferWidth, view.drawingBufferHeight)
 						GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)
 						var samples = 0

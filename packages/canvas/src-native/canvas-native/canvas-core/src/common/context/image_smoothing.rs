@@ -47,7 +47,7 @@ impl Into<i32> for ImageSmoothingQuality {
     }
 }
 
-impl Context {
+impl Context{
     pub fn set_image_smoothing_enabled(&mut self, value: bool) {
         self.state.image_smoothing_enabled = value;
     }

@@ -1,10 +1,10 @@
 use skia_safe::{Rect, Size};
 
-use crate::common::svg::attribute_names::NodeExt;
+
 use crate::common::svg::enums::preserve_aspect_ratio::{
     AlignMeetOrSlice, AspectRatioAlign, AspectRatioMeetOrSlice,
 };
-use crate::common::svg::error;
+
 use crate::common::svg::view_box::ViewBox;
 
 pub trait ColorConversation {
@@ -57,12 +57,10 @@ impl SizeUtils for skia_safe::Size {
 
         if aspect.align() == AspectRatioAlign::None {
             s
+        } else if aspect.meet_or_slice() == AspectRatioMeetOrSlice::Slice {
+            self.expand_to(s)
         } else {
-            if aspect.meet_or_slice() == AspectRatioMeetOrSlice::Slice {
-                self.expand_to(s)
-            } else {
-                self.scale_to(s)
-            }
+            self.scale_to(s)
         }
     }
 

@@ -3,7 +3,6 @@ pub mod common;
 
 
 #[cfg(target_os = "ios")]
-#[macro_use]
 extern crate objc;
 
 #[cfg(target_os = "android")]

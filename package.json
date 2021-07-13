@@ -22,6 +22,7 @@
 		"@nativescript/core": "~7.0.0",
 		"@nativescript/types": "~7.0.0",
 		"@nativescript/webpack": "~3.0.0",
+		"@nativescript-community/gesturehandler": "^0.1.45",
 		"@ngtools/webpack": "~10.1.0",
 		"@nrwl/eslint-plugin-nx": "~10.1.0",
 		"@nrwl/jest": "~10.1.0",
@@ -73,8 +74,7 @@
 		"typescript": "~3.9.3",
 		"vexflow": "^3.0.9",
 		"xml2js": "^0.4.23",
-		"xmldom": "^0.3.0",
-		"xmldom-qsa": "^1.0.3",
+		"xmldom": "~0.6.0",
 		"zen-3d": "0.0.3",
 		"zone.js": "0.11.1"
 	},
@@ -87,6 +87,5 @@
 		"**/*": [
 			"nx format:write --files"
 		]
-	},
-	"dependencies": {}
+	}
 }

@@ -2,6 +2,7 @@ import { Element } from './Element';
 import { HTMLVideoElement } from './HTMLVideoElement';
 import { HTMLImageElement } from './HTMLImageElement';
 import { HTMLCanvasElement } from './HTMLCanvasElement';
+import { SVGElement, SVGCircleElement, SVGRectElement , SVGGElement, SVGPathElement} from './svg';
 import { Text } from './Text';
 import { Canvas } from '@nativescript/canvas';
 import { Frame } from '@nativescript/core';
@@ -33,6 +34,16 @@ export class Document extends Element {
 			case 'iframe':
 				// Return nothing to keep firebase working.
 				return null;
+			case 'svg':
+				return new SVGElement();
+			case 'rect':
+				return new SVGRectElement();
+			case 'circle':
+				return new SVGCircleElement();
+			case 'g':
+				return new SVGGElement();
+			case 'path':
+				return new SVGPathElement();
 			default:
 				return new Element(tagName);
 		}
@@ -75,9 +86,5 @@ export class Document extends Element {
 			}
 		}
 		return new Element('div');
-	}
-
-	querySelector(selector) {
-		return new Element(selector);
 	}
 }

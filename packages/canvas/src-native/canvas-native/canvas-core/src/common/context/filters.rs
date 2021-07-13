@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use skia_safe::{color_filters, image_filters, ImageFilter, Point, table_color_filter, TileMode};
+use skia_safe::{color_filters, image_filters, table_color_filter, Point, TileMode};
 
 use crate::common::context::Context;
 use crate::common::utils::color::parse_color;
@@ -301,11 +301,8 @@ impl Context {
                     }
                 }
                 FilterType::DropShadow(shadow) => {
-                    let shadow = shadow
-                        .replace("drop-shadow(", "")
-                        .replace(")", "");
-                    let value: Vec<&str> = shadow.split(" ")
-                        .collect();
+                    let shadow = shadow.replace("drop-shadow(", "").replace(")", "");
+                    let value: Vec<&str> = shadow.split(" ").collect();
                     if value.len() < 3 {
                         return chain;
                     }
@@ -349,8 +346,14 @@ impl Context {
             });
 
         self.state.filter = value.to_string();
-        self.state.paint.fill_paint_mut().set_image_filter(filter.clone());
-        self.state.paint.stroke_paint_mut().set_image_filter(filter.clone());
+        self.state
+            .paint
+            .fill_paint_mut()
+            .set_image_filter(filter.clone());
+        self.state
+            .paint
+            .stroke_paint_mut()
+            .set_image_filter(filter.clone());
         self.state.paint.image_paint_mut().set_image_filter(filter);
     }
 

@@ -127,7 +127,6 @@ impl Symbol {
         }
 
 
-        log::debug!("symbol_ctx");
         let preserve_aspect_ratio = node.get_preserve_aspect_ratio();
 
         let mut vb = ViewBox::new(x, y, width, height);
@@ -149,18 +148,14 @@ impl Symbol {
             symbol_ctx.translate(0.0, -1.0);
         }
 
-        log::debug!("before");
         for child in node.children().into_iter() {
             if child.is_element() {
-                log::debug!("rendering symbol {:?}", child.tag_name().name());
                 handle_render_child(&mut symbol_ctx, child, root_element, None, None)
             }
         }
 
         let ss = symbol_ctx.surface.image_snapshot();
-
-        log::debug!("image");
-
+        
         context.draw_image_with_points(&ss, 0.0, 0.0)
     }
 }

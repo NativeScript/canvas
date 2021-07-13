@@ -1,25 +1,25 @@
 use std::os::raw::c_float;
 
 use skia_safe::{
-    BlurStyle,
     font_style::{Slant, Weight, Width},
-    FontMetrics, FontMgr, FontStyle, FontStyleSet, MaskFilter, Paint, Point, Size, typeface::Typeface,
+    typeface::Typeface,
+     FontMetrics, FontMgr, FontStyle
 };
-use skia_safe::paint::Style;
 
-use crate::common::context::Device;
-use crate::common::context::text_styles::text_align::TextAlign;
-use crate::common::context::text_styles::text_baseline::TextBaseLine;
-use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::utils::dimensions::parse_size;
+use crate::{
+    common::context::text_styles::text_align::TextAlign,
+    common::context::text_styles::text_baseline::TextBaseLine,
+    common::context::text_styles::text_direction::TextDirection, common::context::Device,
+    common::utils::dimensions::parse_size,
+};
 
-const XX_SMALL: &'static str = "9px";
-const X_SMALL: &'static str = "10px";
-const SMALL: &'static str = "13px";
-const MEDIUM: &'static str = "16px";
-const LARGE: &'static str = "18px";
-const X_LARGE: &'static str = "24px";
-const XX_LARGE: &'static str = "32px";
+const XX_SMALL: &str = "9px";
+const X_SMALL: &str = "10px";
+const SMALL: &str = "13px";
+const MEDIUM: &str = "16px";
+const LARGE: &str = "18px";
+const X_LARGE: &str = "24px";
+const XX_LARGE: &str = "32px";
 
 pub(crate) fn get_font_baseline(metrics: FontMetrics, baseline: TextBaseLine) -> f32 {
     match baseline {
@@ -66,24 +66,20 @@ pub(crate) fn to_real_text_align(align: TextAlign, direction: TextDirection) -> 
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Font {
     pub(crate) font_details: String,
-    density: c_float,
 }
 
 impl Font {
-    pub fn new(font_details: &str, density: c_float) -> Self {
-        // setting as 1 for now
-        let density = 1.0;
+    pub fn new(font_details: &str) -> Self {
         Self {
-            font_details: font_details.to_string(),
-            density,
+            font_details: font_details.into(),
         }
     }
 
     pub fn get_font_details(&self) -> &str {
-        self.font_details.as_str()
+        self.font_details.as_ref()
     }
 
     pub fn get_font(&self, device: Device) -> skia_safe::Font {
@@ -104,14 +100,13 @@ pub(crate) fn parse_font(font: &str, device: Device) -> Result<(String, skia_saf
         let mut weight = "normal".to_string();
         let mut width = "normal".to_string();
         let mut line_height = "normal".to_string();
-        let mut family = "sans-serif";
-
+        let mut family = "sans-serif".to_string();
 
         match (font_size_line_height, font_families) {
             (Some(font_size_line_height), Some(_)) => {
                 if let Ok(result) = to_size_line_height(font_size_line_height) {
-                    font_size = result.0;
-                    line_height = result.1;
+                    font_size = result.0.into();
+                    line_height = result.1.into();
                 } else {
                     return Err(());
                 }
@@ -123,19 +118,19 @@ pub(crate) fn parse_font(font: &str, device: Device) -> Result<(String, skia_saf
 
         for prop in data.into_iter().take(size - 2) {
             match prop.as_str() {
-                "italic" | "oblique" => style = prop,
-                "small-caps" => variant = prop,
+                "italic" | "oblique" => style = prop.into(),
+                "small-caps" => variant = prop.into(),
                 "bold" | "bolder" | "lighter" | "thin" | "100" | "200" | "300" | "400" | "500"
-                | "600" | "700" | "800" | "900" => weight = prop,
+                | "600" | "700" | "800" | "900" => weight = prop.into(),
                 "ultra-condensed" | "extra-condensed" | "condensed" | "semi-condensed"
                 | "semi-expanded" | "expanded" | "extra-expanded" | "ultra-expanded" => {
-                    width = prop
+                    width = prop.into()
                 }
                 _ => {}
             }
         }
 
-        let style = to_font_style(weight.as_str(), width.as_str(), style.as_str());
+        let style = to_font_style(weight.as_ref(), width.as_ref(), style.as_ref());
         let mut families: Vec<_> = family.split("/").collect();
         let mut families: Vec<String> = families
             .into_iter()
@@ -156,7 +151,10 @@ pub(crate) fn parse_font(font: &str, device: Device) -> Result<(String, skia_saf
         }
         return Ok((
             font.to_string(),
-            skia_safe::Font::from_typeface(default_typeface, Some(parse_size(font_size.as_str(), device))),
+            skia_safe::Font::from_typeface(
+                default_typeface,
+                Some(parse_size(font_size.as_ref(), device)),
+            ),
         ));
     }
     Err(())
@@ -211,7 +209,7 @@ fn to_size_line_height(value: &str) -> Result<(String, String), ()> {
     }
 
     if let Some(size) = size {
-        return Ok((size.to_string(), line_height.to_string()));
+        return Ok((size.into(), line_height.into()));
     }
 
     Err(())

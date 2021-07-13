@@ -18,13 +18,17 @@ class ViewController: UIViewController, TNSCanvasListener {
         scale = Int(UIScreen.main.scale)
         // Do any additional setup after loading the view.
         canvas1.setListener(self)
+        
+        canvas1?.ignorePixelScaling = true
+        canvas1.backgroundColor = .white
        // canvas1.isHidden = true
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
-        //svg = TNSSVG(frame: view.bounds)
-        //canvas1.addSubview(svg!)
-        //svg?.bringSubviewToFront(canvas1)
-        //svg!.backgroundColor = .white
+        svg = TNSSVG(frame: view.bounds)
+        canvas1.addSubview(svg!)
+        svg?.bringSubviewToFront(canvas1)
+        svg?.ignorePixelScaling = true
+       // svg!.backgroundColor = .white
 //        svg?.src = """
 //<svg width="660" height="220" style="outline: 1px solid red">
 // <defs>
@@ -83,7 +87,7 @@ class ViewController: UIViewController, TNSCanvasListener {
                     </svg>
                     """*/
         
-//      svg.src = """
+//      svg?.src = """
 // <svg viewBox="0 0 230 100" xmlns="http://www.w3.org/2000/svg">
 //  <defs>
 //    <pattern fill="red" id="star" viewBox="0,0,10,10" width="10%" height="10%">
@@ -94,26 +98,21 @@ class ViewController: UIViewController, TNSCanvasListener {
 //  <circle cx="180" cy="50" r="40" fill="none" stroke-width="20" stroke="url(#star)"/>
 // </svg>
 // """
+        
+        
+//        svg?.src = """
+//<svg  xmlns="http://www.w3.org/2000/svg">
+//  <rect width="1000" height="1000">
+//    <animate attributeName="rx" values="0;5;0" dur="10s" repeatCount="indefinite" />
+//  </rect>
+//</svg>
+//""".trimmingCharacters(in: .whitespacesAndNewlines)
+        
+//        svg?.src = """
+//                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0,0,975,610" stroke-linejoin="round" stroke-linecap="round"><circle cx="2" cy="2" r="40"/><circle cx="140" cy="70" r="40"/><circle cx="300" cy="100" r="40"/></svg>
+//                    """.trimmingCharacters(in: .whitespacesAndNewlines)
 
-//        svg.src = """
-//                    <svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg"
-//                         xmlns:xlink="http://www.w3.org/1999/xlink">
-//                      <!-- Our symbol in its own coordinate system -->
-//                      <symbol id="myDot" width="10" height="10" viewBox="0 0 2 2">
-//                        <circle cx="1" cy="1" r="1" />
-//                      </symbol>
-//
-//                       <!-- A grid to materialize our symbol positioning -->
-//                      <path transform="translate(10)" d="M0,10 h80 M10,0 v20 M25,0 v20 M40,0 v20 M55,0 v20 M70,0 v20" fill="none" stroke="pink" />
-//
-//                      <!-- All instances of our symbol -->
-//                      <use xlink:href="#myDot" x="5"  y="50" style="opacity:1.0" />
-//                      <use xlink:href="#myDot" x="20" y="50" />
-//                      <use xlink:href="#myDot" x="35" y="50"  />
-//                      <use xlink:href="#myDot" x="50" y="50" />
-//                      <use xlink:href="#myDot" x="65" y="50" style="opacity:0.2" />
-//                    </svg>
-//                    """
+    
         
         
         // https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg
@@ -148,19 +147,34 @@ class ViewController: UIViewController, TNSCanvasListener {
 
         // https://upload.wikimedia.org/wikipedia/commons/1/1c/KINTETSU23000_20140424A.svg
         
-//        do{
-//            let svg_file = NSURL(fileURLWithPath: NSTemporaryDirectory() + UUID().uuidString + "_svg_file.svg")
-//            let svg_data = try Data(contentsOf: URL(string: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")!)
-//            try svg_data.write(to: svg_file.absoluteURL!, options: .atomicWrite)
-//            //let svgContents = String(data: svg_data, encoding: .utf8)
-//            svg?.srcPath = svg_file.path
-//            //svg?.src = svgContents
-//
-//        }catch {
-//            print(error)
-//        }
+        // https://upload.wikimedia.org/wikipedia/commons/7/7e/Cranium_color.svg
         
+        // https://upload.wikimedia.org/wikipedia/commons/1/1c/KINTETSU23000_20140424A.svg
         
+        // https://upload.wikimedia.org/wikipedia/commons/2/23/Koppen-Geiger_Map_A_present.svg
+        
+        // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/gallardo.svg
+        
+        DispatchQueue.global(qos: .background).async {
+            do{
+                let start = CACurrentMediaTime()
+                print("Started", start)
+                let svg_file = NSURL(fileURLWithPath: NSTemporaryDirectory() + UUID().uuidString + "_svg_file.svg")
+                let svg_data = try Data(contentsOf: URL(string: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")!)
+                try svg_data.write(to: svg_file.absoluteURL!, options: .atomicWrite)
+                let mid = CACurrentMediaTime()
+                print("Finished Downloading", mid , mid - start)
+                //let svgContents = String(data: svg_data, encoding: .utf8)
+                self.svg?.srcPath = svg_file.path
+                let end = CACurrentMediaTime()
+                print("Finished Setting path", end , end - start)
+                //svg?.src = svgContents
+
+            }catch {
+                print(error)
+            }
+
+        }
     
     }
     
@@ -288,20 +302,20 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     func drawAll() {
         
-        svg?.src  = """
-                <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"
-                xmlns:xlink="http://www.w3.org/1999/xlink">
-                <defs>
-                <radialGradient id="myGradient">
-                <stop offset="10%" stop-color="gold" />
-                <stop offset="95%" stop-color="red" />
-                </radialGradient>
-                </defs>
-
-                <!-- using my radial gradient -->
-                <circle transform="scale(10 10)" cx="5" cy="5" r="4" />
-                </svg>
-                """
+//        svg?.src  = """
+//                <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"
+//                xmlns:xlink="http://www.w3.org/1999/xlink">
+//                <defs>
+//                <radialGradient id="myGradient">
+//                <stop offset="10%" stop-color="gold" />
+//                <stop offset="95%" stop-color="red" />
+//                </radialGradient>
+//                </defs>
+//
+//                <!-- using my radial gradient -->
+//                <circle transform="scale(10 10)" cx="5" cy="5" r="4" />
+//                </svg>
+//                """
         
         
 //                do{
@@ -342,7 +356,7 @@ class ViewController: UIViewController, TNSCanvasListener {
     
         
         
-        //  let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
+          let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
         //canvas1?.handleInvalidationManually = true
         
         //        let q = DispatchQueue(label: "bg", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
@@ -353,10 +367,10 @@ class ViewController: UIViewController, TNSCanvasListener {
         
         
         
-        //drawRotatingCube(gl: gl)
+       // drawRotatingCube(gl: gl)
         
         //drawRotatingCube(gl: gl)
-        // drawTextures(canvas: canvas1)
+         drawTextures(canvas: canvas1)
         
         
         // self.drawGL(canvas: self.canvas1!) // sun
@@ -378,11 +392,26 @@ class ViewController: UIViewController, TNSCanvasListener {
          
          }
          */
-        let scale = Float(UIScreen.main.scale)
+        //canvas1?.useDeviceScale = true
+        _ = Float(UIScreen.main.scale)
+       // let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
         
-        let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
         
-        drawImageFromUrl(ctx: ctx, url: "https://source.unsplash.com/random")
+//
+//// Moved square
+//ctx.translate(110, 30);
+//        ctx.fillStyle = TNSColorStyle.TNSColor("red");
+//ctx.fillRect(0, 0, 80, 80);
+//
+//// Reset current transformation matrix to the identity matrix
+//ctx.setTransform(1, 0, 0, 1, 0, 0);
+//
+//// Unmoved square
+//        ctx.fillStyle = TNSColorStyle.TNSColor("gray");
+//ctx.fillRect(0, 0, 80, 80);
+
+        
+        //drawImageFromUrl(ctx: ctx, url: "https://source.unsplash.com/random")
         // Create circular clipping region
         /*ctx.beginPath()
          ctx.arc(Float(100 * scale), Float(75 * scale), Float(50 * scale), 0, PI * 2)
@@ -444,7 +473,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         // doSolarAnimation(ctx: ctx)
         //drawFace(ctx: ctx)
         // fontExample(ctx: ctx)
-        //textBaseLine(ctx: ctx)
+       // textBaseLine(ctx: ctx)
         //arcToAnimationExample(ctx: ctx)
         //  saveRestoreExample(ctx: ctx)
         //ballExample(ctx: ctx)

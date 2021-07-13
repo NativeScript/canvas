@@ -232,6 +232,10 @@ import UIKit
 @_hasMissingDesignatedInitializers @objcMembers @objc(TNSCanvas) public class TNSCanvas : UIKit.UIView, CanvasNative.RenderListener {
   @objc public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.TNSCanvas>
   @objc public func getViewPtr() -> Swift.UnsafeMutableRawPointer?
+  @objc public var ignorePixelScaling: Swift.Bool {
+    @objc get
+    @objc set
+  }
   @objc public static func createSVGMatrix() -> CanvasNative.TNSDOMMatrix
   @objc public var handleInvalidationManually: Swift.Bool {
     @objc get
@@ -1385,6 +1389,10 @@ extension RangeReplaceableCollection {
   @objc deinit
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSSVG) public class TNSSVG : UIKit.UIView {
+  @objc public var ignorePixelScaling: Swift.Bool {
+    @objc get
+    @objc set
+  }
   @objc public var src: Swift.String? {
     @objc get
     @objc set
@@ -2784,6 +2792,7 @@ extension RangeReplaceableCollection {
   @objc deinit
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(CanvasCPUView) public class CanvasCPUView : UIKit.UIView {
+  @objc public var ignorePixelScaling: Swift.Bool
   @objc dynamic public init()
   @objc override dynamic public init(frame: CoreGraphics.CGRect)
   @objc override dynamic public func draw(_ rect: CoreGraphics.CGRect)

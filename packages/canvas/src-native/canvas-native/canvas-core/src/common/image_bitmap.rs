@@ -234,7 +234,7 @@ pub(crate) fn create_image_bitmap(
                     bytes.as_mut_slice(),
                     (out_width * 4.) as usize,
                 );
-                image.scale_pixels(
+                let _ = image.scale_pixels(
                     &pixel_map,
                     ImageBitmapResizeQuality::from(resize_quality).to_quality(),
                     None,

@@ -7,14 +7,14 @@
 #[cfg(target_os = "android")]
 #[cfg(target_os = "android")]
 #[allow(non_snake_case)]
-include!(concat!(env!("OUT_DIR"), "/android_bindings.rs"));
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // #[cfg(target_os = "ios")]
 // #[macro_use]
 // extern crate objc;
 
 #[cfg(target_os = "ios")]
-include!(concat!(env!("OUT_DIR"), "/ios_bindings.rs"));
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 //
 // #[cfg(target_os = "android")]

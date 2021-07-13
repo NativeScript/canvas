@@ -1,9 +1,9 @@
 use std::os::raw::{c_float, c_int};
 
-use skia_safe::{AlphaType, Bitmap, ColorType, Image, ImageInfo, IPoint, ISize, IVector, Point, Rect};
+use skia_safe::{AlphaType, ColorType, IPoint, ISize, IVector, ImageInfo, Rect};
 
-use crate::common::context::Context;
 use crate::common::context::pixel_manipulation::image_data::ImageData;
+use crate::common::context::Context;
 
 pub mod image_data;
 
@@ -12,8 +12,19 @@ impl Context {
         ImageData::new(width, height)
     }
 
-    pub fn get_image_data(&mut self, sx: c_float, sy: c_float, sw: c_float, sh: c_float) -> ImageData {
-        let info = ImageInfo::new_n32_premul(ISize::new(sw as i32, sh as i32), None);
+    pub fn get_image_data(
+        &mut self,
+        sx: c_float,
+        sy: c_float,
+        sw: c_float,
+        sh: c_float,
+    ) -> ImageData {
+        let info = ImageInfo::new(
+            ISize::new(sw as i32, sh as i32),
+            ColorType::RGBA8888,
+            AlphaType::Unpremul,
+            None,
+        );
         let row_bytes = info.width() * 4;
         let mut slice = vec![255u8; (row_bytes * info.height()) as usize];
         let _ = self.surface.canvas().read_pixels(
@@ -84,8 +95,11 @@ impl Context {
 
             row_bytes = (sw * 4.0) as usize;
         }
-        let _ = self.surface
-            .canvas()
-            .write_pixels(&info, &data.data(), row_bytes, IVector::new(dx as i32, dy as i32));
+        let _ = self.surface.canvas().write_pixels(
+            &info,
+            &data.data(),
+            row_bytes,
+            IVector::new(dx as i32, dy as i32),
+        );
     }
 }

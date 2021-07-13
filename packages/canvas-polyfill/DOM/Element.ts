@@ -26,9 +26,13 @@ export class Element extends Node {
 		return this.nodeName;
 	}
 
-	setAttribute() {}
+	setAttribute(key, value) {
+		console.log(this.className,'setAttribute', key, value);
+	}
 
-	removeAttribute() {}
+	removeAttribute(key, value) {
+		console.log(this.className,'removeAttribute', key, value);
+	}
 
 	setAttributeNS() {}
 
@@ -76,5 +80,15 @@ export class Element extends Node {
 
 	get ontouchstart() {
 		return {};
+	}
+
+	querySelectorAll(selector) {
+		console.log('querySelectorAll', 'selector', selector);
+		return [];
+	}
+
+	querySelector(selector) {
+	///	return new Element(selector);
+	console.log(this.__internalElement._dom);
 	}
 }

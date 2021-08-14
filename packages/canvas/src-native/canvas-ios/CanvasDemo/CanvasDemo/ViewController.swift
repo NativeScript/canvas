@@ -27,7 +27,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         svg = TNSSVG(frame: view.bounds)
         canvas1.addSubview(svg!)
         svg?.bringSubviewToFront(canvas1)
-        svg?.ignorePixelScaling = true
+        svg?.ignorePixelScaling = false
        // svg!.backgroundColor = .white
 //        svg?.src = """
 //<svg width="660" height="220" style="outline: 1px solid red">
@@ -160,7 +160,7 @@ class ViewController: UIViewController, TNSCanvasListener {
                 let start = CACurrentMediaTime()
                 print("Started", start)
                 let svg_file = NSURL(fileURLWithPath: NSTemporaryDirectory() + UUID().uuidString + "_svg_file.svg")
-                let svg_data = try Data(contentsOf: URL(string: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")!)
+                let svg_data = try Data(contentsOf: URL(string: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/gallardo.svg")!)
                 try svg_data.write(to: svg_file.absoluteURL!, options: .atomicWrite)
                 let mid = CACurrentMediaTime()
                 print("Finished Downloading", mid , mid - start)

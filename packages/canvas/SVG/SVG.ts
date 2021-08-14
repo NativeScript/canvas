@@ -135,6 +135,7 @@ export class Svg extends View {
 	__redraw() {
 		if (this.__attachedToDom) {
 			const domCopy = this._dom.valueOf();
+			const serialized = this._serializer.serializeToString(domCopy);
 			const width = domCopy.documentElement.getAttribute('width');
 			const height = domCopy.documentElement.getAttribute('height');
 			if (width === 'auto') {
@@ -143,15 +144,23 @@ export class Svg extends View {
 			if (height === 'auto') {
 				domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}px`);
 			}
-			const serialized = this._serializer.serializeToString(domCopy);
 			if (serialized !== initialSVG) {
 				this.src = serialized;
 			}
 		}
 	}
 
-	createNativeView(): Object {
+	onLoaded() {
+		super.onLoaded();
 		this.__attachedToDom = true;
+	}
+
+	onUnloaded() {
+		this.__attachedToDom = false;
+		super.onUnloaded();
+	}
+
+	createNativeView(): Object {
 		return this._svg;
 	}
 

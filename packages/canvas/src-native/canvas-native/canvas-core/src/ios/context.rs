@@ -145,7 +145,7 @@ pub extern "C" fn context_init_context_with_custom_surface(
     let info = ImageInfo::new(
         ISize::new(width as i32, height as i32),
         ColorType::RGBA8888,
-        AlphaType::Unpremul,
+        AlphaType::Premul,
         None,
     );
 
@@ -187,7 +187,7 @@ pub extern "C" fn context_resize_custom_surface(
         let info = ImageInfo::new(
             ISize::new(width as i32, height as i32),
             ColorType::RGBA8888,
-            AlphaType::Unpremul,
+            AlphaType::Premul,
             None,
         );
 
@@ -374,7 +374,7 @@ pub extern "C" fn context_custom_with_buffer_flush(
         let info = ImageInfo::new(
             ISize::new(width as i32, height as i32),
             ColorType::RGBA8888,
-            AlphaType::Unpremul,
+            AlphaType::Premul,
             None,
         );
         let context: *mut Context = context as _;

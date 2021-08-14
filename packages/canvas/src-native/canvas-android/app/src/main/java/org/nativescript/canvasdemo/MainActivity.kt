@@ -34,9 +34,9 @@ class MainActivity : AppCompatActivity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
-		canvas = findViewById(R.id.canvasView)
+		//canvas = findViewById(R.id.canvasView)
 		svg = findViewById(R.id.svgView)
-		svg?.ignorePixelScaling = true
+		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
 

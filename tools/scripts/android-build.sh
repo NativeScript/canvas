@@ -19,15 +19,8 @@ ANDROID_ARMEABI_V7A_OUTPUT="$ANDROID_ARMEABI_V7A_OUTPUT_DIR/debug/$OUTPUT_LIB_NA
 ANDROID_x86_OUTPUT="$ANDROID_x86_OUTPUT_DIR/debug/$OUTPUT_LIB_NAME"
 ANDROID_AARCH_64_OUTPUT="$ANDROID_AARCH_64_OUTPUT_DIR/debug/$OUTPUT_LIB_NAME"
 ANDROID_x86_64_OUTPUT="$ANDROID_x86_64_OUTPUT_DIR/debug/$OUTPUT_LIB_NAME"
-ANDROID_ARMEABI_V7A_NDK_DIR="/tmp/ndk_arm"
-ANDROID_AARCH_64_NDK_DIR="/tmp/ndk_arm64"
-ANDROID_x86_64_NDK_DIR="/tmp/ndk_x86_64"
-ANDROID_x86_NDK_DIR="/tmp/ndk_x86"
+ANDROID_NDK_SYSROOT_LIB="$ANDROID_NDK/sysroot/usr/lib"
 LIBCPLUSPLUS_NAME="libc++_shared.so"
-LIBCPLUSPLUS_SHARED_ARMEABI_V7A="$ANDROID_ARMEABI_V7A_NDK_DIR/sysroot/usr/lib/arm-linux-androideabi/$LIBCPLUSPLUS_NAME"
-LIBCPLUSPLUS_SHARED_x86="$ANDROID_x86_NDK_DIR/sysroot/usr/lib/i686-linux-android/$LIBCPLUSPLUS_NAME"
-LIBCPLUSPLUS_SHARED_x86_64="$ANDROID_x86_64_NDK_DIR/sysroot/usr/lib/x86_64-linux-android/$LIBCPLUSPLUS_NAME"
-LIBCPLUSPLUS_SHARED_AARCH_64="$ANDROID_AARCH_64_NDK_DIR/sysroot/usr/lib/aarch64-linux-android/$LIBCPLUSPLUS_NAME"
 CARGO_FLAGS="-C target-cpu=native"
 for arg in "$@"
 do
@@ -58,30 +51,32 @@ if ! cargo --version >/dev/null 2>&1; then
     exit
 fi
 
-if [[ ! -d "$ANDROID_ARMEABI_V7A_NDK_DIR" ]];then
-"$ANDROID_NDK/build/tools/make_standalone_toolchain.py" --arch arm --install-dir "$ANDROID_ARMEABI_V7A_NDK_DIR"
+
+NAME="$(uname -s)"
+if [[ "$NAME" == "Darwin" ]];then 
+PRE_BUILT_PATH="$ANDROID_NDK/toolchains/llvm/prebuilt/darwin-x86_64"
+export PATH=$PATH:/"$PRE_BUILT_PATH/bin"
+ANDROID_NDK_SYSROOT_LIB="$PRE_BUILT_PATH/sysroot/usr/lib"
+else if [[ "$NAME" == "Linux" ]];then 
+PRE_BUILT_PATH="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64"
+export PATH=$PATH:/"$PRE_BUILT_PATH/bin"
+ANDROID_NDK_SYSROOT_LIB="$PRE_BUILT_PATH/sysroot/usr/lib"
 fi
 
-if [[ ! -d "$ANDROID_x86_NDK_DIR" ]];then
-"$ANDROID_NDK/build/tools/make_standalone_toolchain.py" --arch x86 --install-dir "$ANDROID_x86_NDK_DIR"
-fi
 
-if [[ ! -d "$ANDROID_AARCH_64_NDK_DIR" ]];then
-"$ANDROID_NDK/build/tools/make_standalone_toolchain.py" --arch arm64 --install-dir "$ANDROID_AARCH_64_NDK_DIR"
-fi
+LIBCPLUSPLUS_SHARED_ARMEABI_V7A="$ANDROID_NDK_SYSROOT_LIB/arm-linux-androideabi/$LIBCPLUSPLUS_NAME"
+LIBCPLUSPLUS_SHARED_x86="$ANDROID_NDK_SYSROOT_LIB/i686-linux-android/$LIBCPLUSPLUS_NAME"
+LIBCPLUSPLUS_SHARED_x86_64="$ANDROID_NDK_SYSROOT_LIB/x86_64-linux-android/$LIBCPLUSPLUS_NAME"
+LIBCPLUSPLUS_SHARED_AARCH_64="$ANDROID_NDK_SYSROOT_LIB/aarch64-linux-android/$LIBCPLUSPLUS_NAME"
 
-if [[ ! -d "$ANDROID_x86_64_NDK_DIR" ]];then
-"$ANDROID_NDK/build/tools/make_standalone_toolchain.py" --arch x86_64 --install-dir "$ANDROID_x86_64_NDK_DIR"
-fi
 
-export PATH=$PATH:/"$ANDROID_AARCH_64_NDK_DIR/bin":"$ANDROID_x86_64_NDK_DIR/bin":"$ANDROID_ARMEABI_V7A_NDK_DIR/bin":"$ANDROID_x86_NDK_DIR/bin"
 
 export RUSTFLAGS="$CARGO_FLAGS"
 
 cd "$NATIVE_SRC"
 
 # Build arm
-cargo build --target armv7-linux-androideabi  $BUILD_FLAG -vv
+cargo build --target armv7-linux-androideabi  $BUILD_FLAG
 
 if [[ -f "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME"
@@ -96,7 +91,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_ARMEABI_V7A" "$ANDROID_ARMEABI_V7A_DIR/$LIBCPLUSPLUS
 
 
 # Build arm64
-cargo build --target aarch64-linux-android  $BUILD_FLAG -vv
+cargo build --target aarch64-linux-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_AARCH_64_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_AARCH_64_DIR/$OUTPUT_LIB_NAME"
@@ -113,7 +108,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_AARCH_64" "$ANDROID_AARCH_64_DIR/$LIBCPLUSPLUS_NAME"
 
 # Build x86
 
-cargo build --target i686-linux-android $BUILD_FLAG -vv
+cargo build --target i686-linux-android $BUILD_FLAG
 
 if [[ -f "$ANDROID_x86_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_x86_DIR/$OUTPUT_LIB_NAME"
@@ -130,7 +125,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_x86" "$ANDROID_x86_DIR/$LIBCPLUSPLUS_NAME"
 
 # Build x86_64
 
-cargo build --target x86_64-linux-android  $BUILD_FLAG -vv
+cargo build --target x86_64-linux-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_x86_64_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_x86_64_DIR/$OUTPUT_LIB_NAME"

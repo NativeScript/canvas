@@ -6,5 +6,5 @@ allprojects {
 }
 
 dependencies {
-   implementation 'org.nativescript:canvas:1.0.0-alpha.0'
+   implementation 'org.nativescript:canvas:1.0.0-alpha.1'
 }

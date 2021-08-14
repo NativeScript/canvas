@@ -39,37 +39,48 @@ public class TNSSVG: UIView {
         return 1
     }
     
+    var workItem: DispatchWorkItem?
     func doDraw(){
         if self.srcPath == nil && self.src == nil {return}
-        queue.async { [weak self] in
-            guard let self =  self else {return}
-            if(self.context > 0){
-                if(self.srcPath != nil){
-                    guard let srcPath = self.srcPath else{return}
-                    let source = srcPath as NSString
-                    svg_draw_from_path(self.context, source.utf8String)
+        workItem?.cancel()
+        workItem = DispatchWorkItem {
+            [weak self] in
+                guard let self =  self else {return}
+                if(self.context > 0){
+                    if(self.srcPath != nil){
+                        guard let srcPath = self.srcPath else{return}
+                        let source = srcPath as NSString
+                        svg_draw_from_path(self.context, source.utf8String)
+                        guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
+                        context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height))
+                        
+                        DispatchQueue.main.async { [self] in
+                            if(self.workItem!.isCancelled){
+                                return
+                            }
+                            self.didInitDrawing = true
+                            self.setNeedsDisplay()
+                        }
+                        return
+                    }
+                    
+                    guard let src = self.src else{return}
+                    let source = src as NSString
+                    svg_draw_from_string(self.context, source.utf8String)
                     guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
                     context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height))
                     
                     DispatchQueue.main.async {
+                        [self] in
+                            if(self.workItem!.isCancelled){
+                                return
+                            }
                         self.didInitDrawing = true
                         self.setNeedsDisplay()
                     }
-                    return
                 }
-                
-                guard let src = self.src else{return}
-                let source = src as NSString
-                svg_draw_from_string(self.context, source.utf8String)
-                guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
-                context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height))
-                
-                DispatchQueue.main.async {
-                    self.didInitDrawing = true
-                    self.setNeedsDisplay()
-                }
-            }
         }
+        queue.async(execute: workItem!)
     }
     
 
@@ -79,9 +90,9 @@ public class TNSSVG: UIView {
         let height = Float(size.height) * deviceScale()
         if !size.equalTo(data_size) || forceResize {
             data?.deallocate()
-            data = malloc(Int(width * height * 4))
+            data = calloc(Int(width * height), 4)
             buf_size = UInt(width * height * 4)
-            data_size = size
+            data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
             if context == 0 {
                 var direction = TNSTextDirection.Ltr
                 if(UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft){
@@ -110,7 +121,6 @@ public class TNSSVG: UIView {
     public override init(frame: CGRect) {
         queue = DispatchQueue(label: "TNSSVG")
         super.init(frame: frame)
-        contentMode = .topLeft
         backgroundColor = .white
     }
     

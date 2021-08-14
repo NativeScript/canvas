@@ -32,11 +32,9 @@ stringreader = "0.1.1"
 [target.'cfg(target_os="android")'.dependencies]
 jni = { version = "0.19.0", default-features = false }
 android_logger = "0.9.0"
-#skia-safe = { git = "https://github.com/triniwiz/rust-skia.git", rev = "6cd9777de06e5241320855ad5d1c62cad86fa748" , features = ["gl"] }
-skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl"] }
+skia-safe = { git = "https://github.com/triniwiz/rust-skia.git", rev = "d60f2c94d811d2bc661ae88f6aacc73031303bdc" , features = ["gl"] }
 [target.'cfg(target_os="ios")'.dependencies]
-#skia-safe = { git = "https://github.com/triniwiz/rust-skia.git", rev = "6cd9777de06e5241320855ad5d1c62cad86fa748" , features = ["gl"] }
-skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl"] }
+skia-safe = { git = "https://github.com/triniwiz/rust-skia.git", rev = "d60f2c94d811d2bc661ae88f6aacc73031303bdc" , features = ["gl"] }
 cocoa = { version = "0.24.0" }
 objc = { version = "0.2.4" }
 block = "0.1.6"

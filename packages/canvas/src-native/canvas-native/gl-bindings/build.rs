@@ -42,12 +42,12 @@ impl Display for Target {
     }
 }
 
+pub fn ndk() -> String {
+    std::env::var("ANDROID_NDK").expect("ANDROID_NDK variable not set")
+}
+
 fn main() {
     let target_str = std::env::var("TARGET").unwrap();
-    let arm_ndk = "/tmp/ndk_arm";
-    let arm_64_ndk = "/tmp/ndk_arm64";
-    let x86_ndk = "/tmp/ndk_x86";
-    let x86_64_ndk = "/tmp/ndk_x86_64";
     let mut include_dir = String::from("-I");
     let target: Vec<String> = target_str.split("-").map(|s| s.into()).collect();
     if target.len() < 3 {
@@ -72,18 +72,15 @@ fn main() {
         "android" | "androideabi" => {
             // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             let build_target;
+            include_dir.push_str(&ndk());
             if target.architecture.eq("armv7") {
                 build_target = "armv7-linux-androideabi";
-                include_dir.push_str(arm_ndk);
             } else if target.architecture.eq("aarch64") {
                 build_target = "aarch64-linux-android";
-                include_dir.push_str(arm_64_ndk);
             } else if target.architecture.eq("i686") {
                 build_target = "i686-linux-android";
-                include_dir.push_str(x86_ndk);
             } else if target.architecture.eq("x86_64") {
                 build_target = "x86_64-linux-android";
-                include_dir.push_str(x86_64_ndk);
             } else {
                 return;
             }

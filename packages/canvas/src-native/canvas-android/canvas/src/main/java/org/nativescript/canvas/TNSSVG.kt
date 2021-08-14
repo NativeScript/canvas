@@ -60,8 +60,10 @@ class TNSSVG : View {
 			}
 		}
 
+	private var currentTask: java.util.concurrent.Future<*>? = null
 	private fun resize(w: Int, h: Int) {
-		executor.execute {
+		currentTask?.cancel(true)
+		currentTask = executor.submit {
 			val metrics = resources.displayMetrics
 			TNSCanvas.nativeResizeCustomSurface(
 				svgCanvas,
@@ -86,6 +88,7 @@ class TNSSVG : View {
 					}
 				}
 			}
+			currentTask = null
 		}
 	}
 
@@ -98,7 +101,8 @@ class TNSSVG : View {
 			bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
 
 			if (svgCanvas == 0L) {
-				executor.execute {
+				currentTask?.cancel(true)
+				currentTask = executor.submit {
 					synchronized(lock) {
 						svgCanvas = TNSCanvas.nativeInitContextWithCustomSurface(
 							w.toFloat(),
@@ -126,6 +130,8 @@ class TNSSVG : View {
 							}
 
 						}
+
+						currentTask = null
 					}
 				}
 			} else {
@@ -144,12 +150,15 @@ class TNSSVG : View {
 		bitmap?.let {
 			synchronized(lock) {
 				if (svgCanvas != 0L) {
-					executor.execute {
+					currentTask?.cancel(true)
+					currentTask = executor.submit {
 						TNSCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
 						handler!!.post {
 							pendingInvalidate = false
 							invalidate()
 						}
+
+						currentTask = null
 					}
 				}
 			}
@@ -159,17 +168,16 @@ class TNSSVG : View {
 	private fun doDraw() {
 		synchronized(lock) {
 			if (svgCanvas != 0L) {
-				executor.execute {
+				currentTask?.cancel(true)
+				currentTask = executor.submit {
 					if (srcPath.isNotEmpty()) {
 						nativeDrawSVGFromPath(svgCanvas, srcPath)
 						bitmap?.let {
 							if (svgCanvas != 0L) {
-								executor.execute {
-									TNSCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
-									handler!!.post {
-										pendingInvalidate = false
-										invalidate()
-									}
+								TNSCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+								handler!!.post {
+									pendingInvalidate = false
+									invalidate()
 								}
 							}
 						}
@@ -177,16 +185,15 @@ class TNSSVG : View {
 						nativeDrawSVG(svgCanvas, src)
 						bitmap?.let {
 							if (svgCanvas != 0L) {
-								executor.execute {
-									TNSCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
-									handler!!.post {
-										pendingInvalidate = false
-										invalidate()
-									}
+								TNSCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+								handler!!.post {
+									pendingInvalidate = false
+									invalidate()
 								}
 							}
 						}
 					}
+					currentTask = null
 				}
 			}
 		}

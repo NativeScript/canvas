@@ -1,10 +1,12 @@
 use std::io::{Read, Seek, SeekFrom};
+
+use crate::common::context::Context;
+
 // use skia_safe::{
 //     AlphaType, Color, ColorType, ImageFilter, ImageInfo, ISize, Paint, Point, Rect, Surface, Vector,
 // };
 // use skia_safe::paint::Style;
 
-use crate::common::context::{Context};
 // mod attribute_names;
 // mod bounding_box;
 // mod elements;
@@ -28,10 +30,12 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
                 Ok(_) => {
                     let _ = reader.seek(SeekFrom::Start(0));
                     match skia_safe::svg::SvgDom::read(reader) {
-                        Ok(svg) => {
+                        Ok(mut svg) => {
                             let device = context.device;
+                            let size = skia_safe::Size::new(context.surface.width() as f32, context.surface.height() as f32);
                             let canvas = context.surface.canvas();
-                            //canvas.scale((device.density, device.density));
+                            svg.container_size(&size);
+                          //  canvas.scale((device.density, device.density));
                             svg.render(canvas)
                         }
                         Err(e) => {
@@ -39,7 +43,6 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
                         }
                     }
                     // TODO check bytes to verify it's an svg
-
                 }
                 Err(e) => {
                     println!("svg file read error: {}", e);
@@ -54,9 +57,11 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
 
 pub(crate) fn draw_svg(context: &mut Context, svg: &str) {
     match skia_safe::svg::SvgDom::from_bytes(svg.as_bytes()) {
-        Ok(svg) => {
+        Ok(mut svg) => {
             let device = context.device;
+            let size = skia_safe::Size::new(context.surface.width() as f32, context.surface.height() as f32);
             let canvas = context.surface.canvas();
+            svg.container_size(&size);
            // canvas.scale((device.density, device.density));
             svg.render(canvas)
         }

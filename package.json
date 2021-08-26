@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"license": "MIT",
 	"scripts": {
-		"setup": "npx rimraf node_modules package-lock.json dist tmp && npm i && ts-patch install",
+		"setup": "npx rimraf node_modules package-lock.json dist tmp && npm i --legacy-peer-deps && ts-patch install",
 		"start": "nps",
 		"add": "nx workspace-schematic add-package"
 	},
@@ -18,11 +18,12 @@
 		"@angular/platform-browser": "~10.1.0",
 		"@angular/platform-browser-dynamic": "~10.1.0",
 		"@angular/router": "~10.1.0",
+		"@nativescript-community/gesturehandler": "^0.1.45",
 		"@nativescript/angular": "~10.1.0",
 		"@nativescript/core": "~7.0.0",
+		"@nativescript/plugin-tools": "1.1.0",
 		"@nativescript/types": "~7.0.0",
 		"@nativescript/webpack": "~3.0.0",
-		"@nativescript-community/gesturehandler": "^0.1.45",
 		"@ngtools/webpack": "~10.1.0",
 		"@nrwl/eslint-plugin-nx": "~10.1.0",
 		"@nrwl/jest": "~10.1.0",

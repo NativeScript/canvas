@@ -788,7 +788,7 @@ export class Http {
                 let domainDebugger;
                 let debugRequest;
                 if (TNSHttpSettings.debug) {
-                    domainDebugger = require('tns-core-modules/debugger');
+                    domainDebugger = require('@nativescript/core/debugger');
                     const network = domainDebugger.getNetwork();
                     debugRequest = network && network.create();
                 }

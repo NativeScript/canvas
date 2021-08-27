@@ -21,7 +21,7 @@ export class Utils {
 				return jsArray;
 			}
 
-			if (array instanceof native.Array) {
+			if (array instanceof androidNative.Array) {
 				const count = array.length;
 				for (let i = 0; i < count; i++) {
 					jsArray.push(array[i]);

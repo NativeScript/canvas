@@ -278,7 +278,7 @@ declare module org {
 				public static Skipped: org.nativescript.canvas.HowToClear;
 				public static JustClear: org.nativescript.canvas.HowToClear;
 				public static CombinedClear: org.nativescript.canvas.HowToClear;
-				public static values(): native.Array<org.nativescript.canvas.HowToClear>;
+				public static values(): androidNative.Array<org.nativescript.canvas.HowToClear>;
 				public static valueOf(param0: string): org.nativescript.canvas.HowToClear;
 			}
 		}
@@ -319,10 +319,10 @@ declare module org {
 				public contextDesynchronized: boolean;
 				public contextXrCompatible: boolean;
 				public mClearStencil: number;
-				public mClearColor: native.Array<number>;
+				public mClearColor: androidNative.Array<number>;
 				public mScissorEnabled: boolean;
 				public mClearDepth: number;
-				public mColorMask: native.Array<boolean>;
+				public mColorMask: androidNative.Array<boolean>;
 				public mStencilMask: number;
 				public mStencilMaskBack: number;
 				public mStencilFuncRef: number;
@@ -344,7 +344,7 @@ declare module org {
 				public getWebGLRenderingContext$canvas_release(): org.nativescript.canvas.TNSWebGLRenderingContext;
 				public getCpuView$canvas_release(): org.nativescript.canvas.CPUView;
 				public setCpuHandlerThread(param0: globalAndroid.os.HandlerThread): void;
-				public toData(): native.Array<number>;
+				public toData(): androidNative.Array<number>;
 				public static nativeCustomWithBitmapFlush(param0: number, param1: globalAndroid.graphics.Bitmap): void;
 				public flush(): void;
 				public isHandleInvalidationManually$canvas_release(): boolean;
@@ -373,7 +373,7 @@ declare module org {
 				public static nativeFlush(param0: number): void;
 				public isPaused$canvas_release(): boolean;
 				public onDetachedFromWindow(): void;
-				public snapshot(): native.Array<number>;
+				public snapshot(): androidNative.Array<number>;
 				public getContextType$canvas_release(): org.nativescript.canvas.TNSCanvas.ContextType;
 				public setScale$canvas_release(param0: number): void;
 				public toDataURL(param0: string, param1: number): string;
@@ -442,7 +442,7 @@ declare module org {
 					public static CANVAS: org.nativescript.canvas.TNSCanvas.ContextType;
 					public static WEBGL: org.nativescript.canvas.TNSCanvas.ContextType;
 					public static valueOf(param0: string): org.nativescript.canvas.TNSCanvas.ContextType;
-					public static values(): native.Array<org.nativescript.canvas.TNSCanvas.ContextType>;
+					public static values(): androidNative.Array<org.nativescript.canvas.TNSCanvas.ContextType>;
 				}
 				export class DataURLListener {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.DataURLListener>;
@@ -578,7 +578,7 @@ declare module org {
 				public setImageSmoothingEnabled(param0: boolean): void;
 				public restore(): void;
 				public createRadialGradient(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): org.nativescript.canvas.TNSCanvasGradient;
-				public setLineDash(param0: native.Array<number>): void;
+				public setLineDash(param0: androidNative.Array<number>): void;
 				public getImageSmoothingEnabled(): boolean;
 				public drawImage(param0: globalAndroid.graphics.Bitmap, param1: number, param2: number): void;
 				public quadraticCurveTo(param0: number, param1: number, param2: number, param3: number): void;
@@ -587,7 +587,7 @@ declare module org {
 				public rotate(param0: number): void;
 				public getFilter(): string;
 				public setShadowColor(param0: string): void;
-				public getLineDash(): native.Array<number>;
+				public getLineDash(): androidNative.Array<number>;
 				public fill(): void;
 				public fill(param0: org.nativescript.canvas.TNSPath2D): void;
 				public isPointInPath(param0: org.nativescript.canvas.TNSPath2D, param1: number, param2: number): boolean;
@@ -702,7 +702,7 @@ declare module org {
 				public static Color: org.nativescript.canvas.TNSColorStyleType;
 				public static Gradient: org.nativescript.canvas.TNSColorStyleType;
 				public static Pattern: org.nativescript.canvas.TNSColorStyleType;
-				public static values(): native.Array<org.nativescript.canvas.TNSColorStyleType>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSColorStyleType>;
 				public toString(): string;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSColorStyleType;
 			}
@@ -742,7 +742,7 @@ declare module org {
 				public static Color: org.nativescript.canvas.TNSCompositeOperationType;
 				public static Luminosity: org.nativescript.canvas.TNSCompositeOperationType;
 				public static Companion: org.nativescript.canvas.TNSCompositeOperationType.Companion;
-				public static values(): native.Array<org.nativescript.canvas.TNSCompositeOperationType>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSCompositeOperationType>;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
 				public toString(): string;
@@ -830,8 +830,8 @@ declare module org {
 			export class TNSFileReader {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSFileReader>;
 				public static INSTANCE: org.nativescript.canvas.TNSFileReader;
-				public read(param0: string): native.Array<number>;
-				public read(param0: java.io.File): native.Array<number>;
+				public read(param0: string): androidNative.Array<number>;
+				public read(param0: java.io.File): androidNative.Array<number>;
 			}
 		}
 	}
@@ -845,7 +845,7 @@ declare module org {
 				public static NonZero: org.nativescript.canvas.TNSFillRule;
 				public static EvenOdd: org.nativescript.canvas.TNSFillRule;
 				public static Companion: org.nativescript.canvas.TNSFillRule.Companion;
-				public static values(): native.Array<org.nativescript.canvas.TNSFillRule>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSFillRule>;
 				public setRule(param0: string): void;
 				public getRule(): string;
 				public setValue(param0: number): void;
@@ -895,15 +895,15 @@ declare module org {
 				public static nativeGetWidthImpl$canvas_release(param0: number): number;
 				public loadImageFromResource(param0: number, param1: globalAndroid.content.Context): boolean;
 				public finalize(): void;
-				public getBytes(): native.Array<number>;
+				public getBytes(): androidNative.Array<number>;
 				public loadImageFromImageAsync(param0: globalAndroid.graphics.Bitmap, param1: org.nativescript.canvas.TNSImageAsset.Callback): void;
 				public constructor();
 				public getNativeImageAsset$canvas_release(): number;
 				public loadImageFromUrlAsync(param0: string, param1: org.nativescript.canvas.TNSImageAsset.Callback): void;
-				public loadImageFromBytesAsync(param0: native.Array<number>, param1: org.nativescript.canvas.TNSImageAsset.Callback): void;
+				public loadImageFromBytesAsync(param0: androidNative.Array<number>, param1: org.nativescript.canvas.TNSImageAsset.Callback): void;
 				public loadImageFromPath(param0: string): boolean;
 				public flipX(): void;
-				public loadImageFromBytes(param0: native.Array<number>): boolean;
+				public loadImageFromBytes(param0: androidNative.Array<number>): boolean;
 				public loadImageFromImage(param0: globalAndroid.graphics.Bitmap): boolean;
 				public getWidth(): number;
 				public save(param0: string, param1: org.nativescript.canvas.TNSImageAssetFormat): boolean;
@@ -917,7 +917,7 @@ declare module org {
 			export module TNSImageAsset {
 				export class ByteArrayOutputStream2 {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSImageAsset.ByteArrayOutputStream2>;
-					public buf(): native.Array<number>;
+					public buf(): androidNative.Array<number>;
 					public constructor();
 					public constructor(param0: number);
 				}
@@ -956,7 +956,7 @@ declare module org {
 				public static BMP: org.nativescript.canvas.TNSImageAssetFormat;
 				public static TIFF: org.nativescript.canvas.TNSImageAssetFormat;
 				public setFormat(param0: number): void;
-				public static values(): native.Array<org.nativescript.canvas.TNSImageAssetFormat>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageAssetFormat>;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSImageAssetFormat;
 				public getFormat(): number;
 			}
@@ -971,13 +971,13 @@ declare module org {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSImageBitmap>;
 				public static Companion: org.nativescript.canvas.TNSImageBitmap.Companion;
 				public getHeight(): number;
-				public static createFromBytesEncoded(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+				public static createFromBytesEncoded(param0: androidNative.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public finalize(): void;
 				public static createFromBuffer(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: org.nativescript.canvas.TNSImageBitmap.Options, param8: org.nativescript.canvas.TNSImageBitmap.Callback): void;
-				public static createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+				public static createFromBytes(param0: androidNative.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public static createFromBufferEncoded(param0: java.nio.ByteBuffer, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public setNativeImageAsset(param0: number): void;
-				public static createFromBytesEncoded(param0: native.Array<number>, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+				public static createFromBytesEncoded(param0: androidNative.Array<number>, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public static createFromImageBitmap(param0: org.nativescript.canvas.TNSImageBitmap, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public static createFromBufferEncoded(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public static createFromImageData(param0: org.nativescript.canvas.TNSImageData, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
@@ -990,8 +990,8 @@ declare module org {
 				public static createFromCanvas(param0: org.nativescript.canvas.TNSCanvas, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public static createFromImageBitmap(param0: org.nativescript.canvas.TNSImageBitmap, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public getNativeImageAsset(): number;
-				public static createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: org.nativescript.canvas.TNSImageBitmap.Options, param8: org.nativescript.canvas.TNSImageBitmap.Callback): void;
-				public static createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: org.nativescript.canvas.TNSImageBitmap.Options, param4: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+				public static createFromBytes(param0: androidNative.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: org.nativescript.canvas.TNSImageBitmap.Options, param8: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+				public static createFromBytes(param0: androidNative.Array<number>, param1: number, param2: number, param3: org.nativescript.canvas.TNSImageBitmap.Options, param4: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public constructor(param0: number);
 				public static createFromImageAsset(param0: org.nativescript.canvas.TNSImageAsset, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 				public static createFromImageAsset(param0: org.nativescript.canvas.TNSImageAsset, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
@@ -1014,9 +1014,9 @@ declare module org {
 				export class Companion {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSImageBitmap.Companion>;
 					public createFromImageData(param0: org.nativescript.canvas.TNSImageData, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
-					public createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
-					public createFromBytesEncoded(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
-					public createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: org.nativescript.canvas.TNSImageBitmap.Options, param8: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+					public createFromBytes(param0: androidNative.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+					public createFromBytesEncoded(param0: androidNative.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+					public createFromBytes(param0: androidNative.Array<number>, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: org.nativescript.canvas.TNSImageBitmap.Options, param8: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 					public createFromCanvas(param0: org.nativescript.canvas.TNSCanvas, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 					public createFromImageAsset(param0: org.nativescript.canvas.TNSImageAsset, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 					public createFromImageData(param0: org.nativescript.canvas.TNSImageData, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
@@ -1028,8 +1028,8 @@ declare module org {
 					public createFromBufferEncoded(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 					public getFAILED_TO_LOAD(): string;
 					public createFromImageAsset(param0: org.nativescript.canvas.TNSImageAsset, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
-					public createFromBytesEncoded(param0: native.Array<number>, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
-					public createFromBytes(param0: native.Array<number>, param1: number, param2: number, param3: org.nativescript.canvas.TNSImageBitmap.Options, param4: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+					public createFromBytesEncoded(param0: androidNative.Array<number>, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
+					public createFromBytes(param0: androidNative.Array<number>, param1: number, param2: number, param3: org.nativescript.canvas.TNSImageBitmap.Options, param4: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 					public createFromBuffer(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: org.nativescript.canvas.TNSImageBitmap.Options, param8: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 					public createFromBitmap(param0: globalAndroid.graphics.Bitmap, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap.Options, param6: org.nativescript.canvas.TNSImageBitmap.Callback): void;
 					public createFromBitmap(param0: globalAndroid.graphics.Bitmap, param1: org.nativescript.canvas.TNSImageBitmap.Options, param2: org.nativescript.canvas.TNSImageBitmap.Callback): void;
@@ -1068,7 +1068,7 @@ declare module org {
 				public getValue(): number;
 				public toNative(): number;
 				public getSpace(): string;
-				public static values(): native.Array<org.nativescript.canvas.TNSImageBitmapColorSpaceConversion>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageBitmapColorSpaceConversion>;
 			}
 			export module TNSImageBitmapColorSpaceConversion {
 				export class Companion {
@@ -1089,7 +1089,7 @@ declare module org {
 				public static Premultiply: org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha;
 				public static None: org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha;
 				public static Companion: org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha.Companion;
-				public static values(): native.Array<org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha>;
 				public toString(): string;
 				public getValue(): number;
 				public toNative(): number;
@@ -1118,7 +1118,7 @@ declare module org {
 				public static Companion: org.nativescript.canvas.TNSImageBitmapResizeQuality.Companion;
 				public getQuality(): string;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSImageBitmapResizeQuality;
-				public static values(): native.Array<org.nativescript.canvas.TNSImageBitmapResizeQuality>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageBitmapResizeQuality>;
 				public toString(): string;
 				public getValue(): number;
 				public toNative(): number;
@@ -1167,7 +1167,7 @@ declare module org {
 				public static Medium: org.nativescript.canvas.TNSImageSmoothingQuality;
 				public static High: org.nativescript.canvas.TNSImageSmoothingQuality;
 				public static Companion: org.nativescript.canvas.TNSImageSmoothingQuality.Companion;
-				public static values(): native.Array<org.nativescript.canvas.TNSImageSmoothingQuality>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageSmoothingQuality>;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSImageSmoothingQuality;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
@@ -1193,7 +1193,7 @@ declare module org {
 				public static Round: org.nativescript.canvas.TNSLineCap;
 				public static Square: org.nativescript.canvas.TNSLineCap;
 				public static Companion: org.nativescript.canvas.TNSLineCap.Companion;
-				public static values(): native.Array<org.nativescript.canvas.TNSLineCap>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSLineCap>;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
 				public toString(): string;
@@ -1219,7 +1219,7 @@ declare module org {
 				public static Round: org.nativescript.canvas.TNSLineJoin;
 				public static Miter: org.nativescript.canvas.TNSLineJoin;
 				public static Companion: org.nativescript.canvas.TNSLineJoin.Companion;
-				public static values(): native.Array<org.nativescript.canvas.TNSLineJoin>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSLineJoin>;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSLineJoin;
@@ -1303,7 +1303,7 @@ declare module org {
 				public static NoRepeat: org.nativescript.canvas.TNSPatternRepetition;
 				public getPattern(): string;
 				public toString(): string;
-				public static values(): native.Array<org.nativescript.canvas.TNSPatternRepetition>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSPatternRepetition>;
 				public toNative(): number;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSPatternRepetition;
 			}
@@ -1351,7 +1351,7 @@ declare module org {
 				public static Companion: org.nativescript.canvas.TNSTextAlignment.Companion;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
-				public static values(): native.Array<org.nativescript.canvas.TNSTextAlignment>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSTextAlignment>;
 				public toString(): string;
 				public toNative(): number;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSTextAlignment;
@@ -1378,7 +1378,7 @@ declare module org {
 				public static Ideographic: org.nativescript.canvas.TNSTextBaseline;
 				public static Bottom: org.nativescript.canvas.TNSTextBaseline;
 				public getBaseLine(): string;
-				public static values(): native.Array<org.nativescript.canvas.TNSTextBaseline>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSTextBaseline>;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSTextBaseline;
 				public setBaseLine(param0: string): void;
 				public toString(): string;
@@ -1394,7 +1394,7 @@ declare module org {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSTextDecoder>;
 				public static Companion: org.nativescript.canvas.TNSTextDecoder.Companion;
 				public getEncoding(): string;
-				public decode(param0: native.Array<number>): string;
+				public decode(param0: androidNative.Array<number>): string;
 				public decode(param0: java.nio.ByteBuffer): string;
 				public finalize(): void;
 				public constructor(param0: string);
@@ -1416,7 +1416,7 @@ declare module org {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSTextDirection>;
 				public static Ltr: org.nativescript.canvas.TNSTextDirection;
 				public static Rtl: org.nativescript.canvas.TNSTextDirection;
-				public static values(): native.Array<org.nativescript.canvas.TNSTextDirection>;
+				public static values(): androidNative.Array<org.nativescript.canvas.TNSTextDirection>;
 				public toString(): string;
 				public toNative(): number;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSTextDirection;
@@ -1484,9 +1484,9 @@ declare module org {
 				public static Companion: org.nativescript.canvas.TNSWebGL2RenderingContext.Companion;
 				public getCOLOR_ATTACHMENT13(): number;
 				public getUNSIGNED_INT_VEC3(): number;
-				public invalidateSubFramebuffer(param0: number, param1: native.Array<number>, param2: number, param3: number, param4: number, param5: number): void;
+				public invalidateSubFramebuffer(param0: number, param1: androidNative.Array<number>, param2: number, param3: number, param4: number, param5: number): void;
 				public getRGBA32UI(): number;
-				public uniform1uiv(param0: number, param1: native.Array<number>): void;
+				public uniform1uiv(param0: number, param1: androidNative.Array<number>): void;
 				public getRG32UI(): number;
 				public getSYNC_GPU_COMMANDS_COMPLETE(): number;
 				public getRGBA16F(): number;
@@ -1502,7 +1502,7 @@ declare module org {
 				public constructor(param0: org.nativescript.canvas.TNSCanvas, param1: java.util.Map<string,any>);
 				public getR8I(): number;
 				public texStorage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
-				public invalidateFramebuffer(param0: number, param1: native.Array<number>): void;
+				public invalidateFramebuffer(param0: number, param1: androidNative.Array<number>): void;
 				public getUNSIGNED_INT_24_8(): number;
 				public getTRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN(): number;
 				public getFRAMEBUFFER_ATTACHMENT_STENCIL_SIZE(): number;
@@ -1515,14 +1515,14 @@ declare module org {
 				public beginTransformFeedback(param0: number): void;
 				public getDRAW_FRAMEBUFFER(): number;
 				public createSampler(): number;
-				public uniformMatrix2x3fv(param0: number, param1: boolean, param2: native.Array<number>): void;
+				public uniformMatrix2x3fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public getPIXEL_UNPACK_BUFFER_BINDING(): number;
-				public drawBuffers(param0: native.Array<number>): void;
+				public drawBuffers(param0: androidNative.Array<number>): void;
 				public getFRAMEBUFFER_ATTACHMENT_ALPHA_SIZE(): number;
 				public getInternalformatParameter(param0: number, param1: number, param2: number): any;
 				public getINT_2_10_10_10_REV(): number;
 				public getRGBA16UI(): number;
-				public uniformMatrix2x4fv(param0: number, param1: boolean, param2: native.Array<number>): void;
+				public uniformMatrix2x4fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public getANY_SAMPLES_PASSED_CONSERVATIVE(): number;
 				public getDEPTH(): number;
 				public getTEXTURE_2D_ARRAY(): number;
@@ -1541,8 +1541,8 @@ declare module org {
 				public getSIGNED_NORMALIZED(): number;
 				public getMAX_UNIFORM_BUFFER_BINDINGS(): number;
 				public getFRAMEBUFFER_ATTACHMENT_COLOR_ENCODING(): number;
-				public clearBufferiv(param0: number, param1: number, param2: native.Array<number>): void;
-				public texSubImage3DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: native.Array<number>, param11: number): void;
+				public clearBufferiv(param0: number, param1: number, param2: androidNative.Array<number>): void;
+				public texSubImage3DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: androidNative.Array<number>, param11: number): void;
 				public getSAMPLER_CUBE_SHADOW(): number;
 				public getSEPARATE_ATTRIBS(): number;
 				public getFRAMEBUFFER_ATTACHMENT_RED_SIZE(): number;
@@ -1591,7 +1591,7 @@ declare module org {
 				public getRG8_SNORM(): number;
 				public getANY_SAMPLES_PASSED(): number;
 				public getSTATIC_READ(): number;
-				public getBufferSubData(param0: number, param1: number, param2: native.Array<number>, param3: number, param4: number): void;
+				public getBufferSubData(param0: number, param1: number, param2: androidNative.Array<number>, param3: number, param4: number): void;
 				public getDRAW_BUFFER1(): number;
 				public getMAX_COLOR_ATTACHMENTS(): number;
 				public getMAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS(): number;
@@ -1600,11 +1600,11 @@ declare module org {
 				public getRG16I(): number;
 				public getTEXTURE_MAX_LOD(): number;
 				public getSamplerParameter(param0: number, param1: number): any;
-				public clearBufferfv(param0: number, param1: number, param2: native.Array<number>): void;
+				public clearBufferfv(param0: number, param1: number, param2: androidNative.Array<number>): void;
 				public getTransformFeedbackVarying(param0: number, param1: number): any;
 				public renderbufferStorageMultisample(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: org.nativescript.canvas.TNSCanvas): void;
-				public vertexAttribI4uiv(param0: number, param1: native.Array<number>): void;
+				public vertexAttribI4uiv(param0: number, param1: androidNative.Array<number>): void;
 				public getRGB8_SNORM(): number;
 				public getRGB16F(): number;
 				public getFLOAT_MAT3x2(): number;
@@ -1630,12 +1630,12 @@ declare module org {
 				public getMAX_VERTEX_UNIFORM_COMPONENTS(): number;
 				public deleteSync(param0: number): void;
 				public getFRAMEBUFFER_DEFAULT(): number;
-				public texImage3DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>): void;
+				public texImage3DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>): void;
 				public getSAMPLER_2D_SHADOW(): number;
 				public uniform2ui(param0: number, param1: number, param2: number): void;
 				public uniformBlockBinding(param0: number, param1: number, param2: number): void;
-				public uniformMatrix4x3fv(param0: number, param1: boolean, param2: native.Array<number>): void;
-				public texSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: native.Array<number>, param11: number): void;
+				public uniformMatrix4x3fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
+				public texSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: androidNative.Array<number>, param11: number): void;
 				public getCOLOR_ATTACHMENT4(): number;
 				public getMAX(): number;
 				public getINT_SAMPLER_CUBE(): number;
@@ -1646,7 +1646,7 @@ declare module org {
 				public getTEXTURE_BINDING_2D_ARRAY(): number;
 				public getPIXEL_PACK_BUFFER_BINDING(): number;
 				public bindTransformFeedback(param0: number, param1: number): void;
-				public getActiveUniforms(param0: number, param1: native.Array<number>, param2: number): any;
+				public getActiveUniforms(param0: number, param1: androidNative.Array<number>, param2: number): any;
 				public getUNSIGNED_INT_5_9_9_9_REV(): number;
 				public getQuery(param0: number, param1: number): any;
 				public getSIGNALED(): number;
@@ -1658,7 +1658,7 @@ declare module org {
 				public getSRGB(): number;
 				public getCOLOR_ATTACHMENT6(): number;
 				public getVERTEX_ATTRIB_ARRAY_INTEGER(): number;
-				public texImage3DDouble(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>): void;
+				public texImage3DDouble(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>): void;
 				public beginQuery(param0: number, param1: number): void;
 				public getREAD_BUFFER(): number;
 				public getRG8UI(): number;
@@ -1668,15 +1668,15 @@ declare module org {
 				public getDRAW_BUFFER12(): number;
 				public getFRAMEBUFFER_ATTACHMENT_GREEN_SIZE(): number;
 				public getQueryParameter(param0: number, param1: number): any;
-				public texImage3DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>): void;
+				public texImage3DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>): void;
 				public uniform3ui(param0: number, param1: number, param2: number, param3: number): void;
-				public uniform4uiv(param0: number, param1: native.Array<number>): void;
+				public uniform4uiv(param0: number, param1: androidNative.Array<number>): void;
 				public copyTexSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number): void;
 				public getUNPACK_ROW_LENGTH(): number;
 				public getMAX_TEXTURE_LOD_BIAS(): number;
 				public getSTENCIL(): number;
 				public getFLOAT_MAT3x4(): number;
-				public uniformMatrix4x2fv(param0: number, param1: boolean, param2: native.Array<number>): void;
+				public uniformMatrix4x2fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public getR11F_G11F_B10F(): number;
 				public isQuery(param0: number): boolean;
 				public getSRGB8_ALPHA8(): number;
@@ -1696,14 +1696,14 @@ declare module org {
 				public getCOLOR_ATTACHMENT10(): number;
 				public getOBJECT_TYPE(): number;
 				public pauseTransformFeedback(): void;
-				public texSubImage3DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: native.Array<number>, param11: number): void;
+				public texSubImage3DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: androidNative.Array<number>, param11: number): void;
 				public getRGBA16I(): number;
 				public getMAX_SERVER_WAIT_TIMEOUT(): number;
 				public getRG32F(): number;
-				public uniform3uiv(param0: number, param1: native.Array<number>): void;
+				public uniform3uiv(param0: number, param1: androidNative.Array<number>): void;
 				public getDRAW_BUFFER3(): number;
-				public uniformMatrix3x4fv(param0: number, param1: boolean, param2: native.Array<number>): void;
-				public transformFeedbackVaryings(param0: number, param1: native.Array<string>, param2: number): void;
+				public uniformMatrix3x4fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
+				public transformFeedbackVaryings(param0: number, param1: androidNative.Array<string>, param2: number): void;
 				public getR32I(): number;
 				public samplerParameterf(param0: number, param1: number, param2: number): void;
 				public getQUERY_RESULT_AVAILABLE(): number;
@@ -1729,16 +1729,16 @@ declare module org {
 				public getRENDERBUFFER_SAMPLES(): number;
 				public getUNSIGNED_INT_2_10_10_10_REV(): number;
 				public getSYNC_FLUSH_COMMANDS_BIT(): number;
-				public uniformMatrix3x2fv(param0: number, param1: boolean, param2: native.Array<number>): void;
-				public texSubImage3DDouble(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: native.Array<number>, param11: number): void;
+				public uniformMatrix3x2fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
+				public texSubImage3DDouble(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: androidNative.Array<number>, param11: number): void;
 				public getMAX_ELEMENT_INDEX(): number;
 				public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: globalAndroid.graphics.Bitmap): void;
 				public isSampler(param0: number): boolean;
 				public getCURRENT_QUERY(): number;
 				public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: java.nio.FloatBuffer): void;
-				public texSubImage3DLong(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: native.Array<number>, param11: number): void;
+				public texSubImage3DLong(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: androidNative.Array<number>, param11: number): void;
 				public deleteQuery(param0: number): void;
-				public texSubImage3DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: native.Array<number>, param11: number): void;
+				public texSubImage3DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: androidNative.Array<number>, param11: number): void;
 				public getDEPTH_COMPONENT32F(): number;
 				public getSRGB8(): number;
 				public getMAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS(): number;
@@ -1752,7 +1752,7 @@ declare module org {
 				public getCOLOR_ATTACHMENT15(): number;
 				public clearBufferfi(param0: number, param1: number, param2: number, param3: number): void;
 				public getINVALID_INDEX(): number;
-				public getUniformIndices(param0: number, param1: native.Array<string>): native.Array<number>;
+				public getUniformIndices(param0: number, param1: androidNative.Array<string>): androidNative.Array<number>;
 				public getPACK_ROW_LENGTH(): number;
 				public getMAX_UNIFORM_BLOCK_SIZE(): number;
 				public getMIN(): number;
@@ -1760,12 +1760,12 @@ declare module org {
 				public getUNSIGNALED(): number;
 				public getRG8(): number;
 				public getMAX_ARRAY_TEXTURE_LAYERS(): number;
-				public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>): void;
+				public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>): void;
 				public getPACK_SKIP_ROWS(): number;
-				public texSubImage3DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: native.Array<number>, param11: number): void;
+				public texSubImage3DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: androidNative.Array<number>, param11: number): void;
 				public getVERTEX_ATTRIB_ARRAY_DIVISOR(): number;
 				public isTransformFeedback(param0: number): boolean;
-				public vertexAttribI4iv(param0: number, param1: native.Array<number>): void;
+				public vertexAttribI4iv(param0: number, param1: androidNative.Array<number>): void;
 				public getUNPACK_SKIP_ROWS(): number;
 				public drawArraysInstanced(param0: number, param1: number, param2: number, param3: number): void;
 				public getUNSIGNED_INT_SAMPLER_CUBE(): number;
@@ -1790,7 +1790,7 @@ declare module org {
 				public getRGBA32F(): number;
 				public getRGBA8I(): number;
 				public getCOLOR_ATTACHMENT3(): number;
-				public clearBufferuiv(param0: number, param1: number, param2: native.Array<number>): void;
+				public clearBufferuiv(param0: number, param1: number, param2: androidNative.Array<number>): void;
 				public getTEXTURE_BINDING_3D(): number;
 				public getR8UI(): number;
 				public bindVertexArray(param0: number): void;
@@ -1804,8 +1804,8 @@ declare module org {
 				public getMAX_VARYING_COMPONENTS(): number;
 				public texStorage2D(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public getSyncParameter(param0: number, param1: number): any;
-				public compressedTexSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>, param10: number, param11: number): void;
-				public uniform2uiv(param0: number, param1: native.Array<number>): void;
+				public compressedTexSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>, param10: number, param11: number): void;
+				public uniform2uiv(param0: number, param1: androidNative.Array<number>): void;
 				public getCOLOR_ATTACHMENT12(): number;
 				public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number): void;
 				public texSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: java.nio.ByteBuffer, param11: number): void;
@@ -1822,7 +1822,7 @@ declare module org {
 				public getSAMPLER_2D_ARRAY(): number;
 				public getUNIFORM_BUFFER_START(): number;
 				public getRGB16UI(): number;
-				public texImage3DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>): void;
+				public texImage3DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>): void;
 				public texSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: number, param10: org.nativescript.canvas.TNSImageAsset): void;
 				public uniform4ui(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public getActiveUniformBlockParameter(param0: number, param1: number, param2: number): any;
@@ -1836,16 +1836,16 @@ declare module org {
 				public getR8_SNORM(): number;
 				public getR16I(): number;
 				public getFragDataLocation(param0: number, param1: string): number;
-				public texImage3DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>): void;
+				public texImage3DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>): void;
 				public clientWaitSync(param0: number, param1: number, param2: number): number;
 				public getDRAW_BUFFER11(): number;
 				public getMAX_COMBINED_UNIFORM_BLOCKS(): number;
 				public getREAD_FRAMEBUFFER_BINDING(): number;
 				public getSAMPLER_2D_ARRAY_SHADOW(): number;
-				public fromGLint(param0: native.Array<number>): native.Array<boolean>;
+				public fromGLint(param0: androidNative.Array<number>): androidNative.Array<boolean>;
 				public getR32UI(): number;
 				public getMAX_FRAGMENT_UNIFORM_BLOCKS(): number;
-				public texImage3DLong(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: native.Array<number>): void;
+				public texImage3DLong(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: androidNative.Array<number>): void;
 				public getDRAW_BUFFER0(): number;
 				public getTRANSFORM_FEEDBACK_BINDING(): number;
 				public getMAX_FRAGMENT_INPUT_COMPONENTS(): number;
@@ -1874,7 +1874,7 @@ declare module org {
 					public static IntType: org.nativescript.canvas.TNSWebGL2RenderingContext.ReturnType;
 					public static BoolType: org.nativescript.canvas.TNSWebGL2RenderingContext.ReturnType;
 					public static valueOf(param0: string): org.nativescript.canvas.TNSWebGL2RenderingContext.ReturnType;
-					public static values(): native.Array<org.nativescript.canvas.TNSWebGL2RenderingContext.ReturnType>;
+					public static values(): androidNative.Array<org.nativescript.canvas.TNSWebGL2RenderingContext.ReturnType>;
 				}
 				export class WhenMappings {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSWebGL2RenderingContext.WhenMappings>;
@@ -1923,17 +1923,17 @@ declare module org {
 				public compressedTexImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: java.nio.ShortBuffer): void;
 				public getBLEND_EQUATION_RGB(): number;
 				public getBOOL_VEC4(): number;
-				public bufferSubDataInt(param0: number, param1: number, param2: native.Array<number>): void;
+				public bufferSubDataInt(param0: number, param1: number, param2: androidNative.Array<number>): void;
 				public texSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: org.nativescript.canvas.TNSImageAsset): void;
 				public getRGB565(): number;
 				public clearStencil(param0: number): void;
 				public detachShader(param0: number, param1: number): void;
-				public uniform3fv(param0: number, param1: native.Array<number>): void;
+				public uniform3fv(param0: number, param1: androidNative.Array<number>): void;
 				public getCONSTANT_ALPHA(): number;
 				public texParameterf(param0: number, param1: number, param2: number): void;
 				public getTEXTURE(): number;
 				public getVERTEX_ATTRIB_ARRAY_STRIDE(): number;
-				public readPixelsShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public readPixelsShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public getGL_FLOAT$canvas_release(): number;
 				public getELEMENT_ARRAY_BUFFER_BINDING(): number;
 				public getLEQUAL(): number;
@@ -1953,15 +1953,15 @@ declare module org {
 				public getTEXTURE1(): number;
 				public getTEXTURE_2D(): number;
 				public getINVALID_VALUE(): number;
-				public compressedTexSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: native.Array<number>): void;
+				public compressedTexSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: androidNative.Array<number>): void;
 				public isContextLost(): boolean;
 				public getNOTEQUAL(): number;
-				public bufferDataByte(param0: number, param1: native.Array<number>, param2: number): void;
+				public bufferDataByte(param0: number, param1: androidNative.Array<number>, param2: number): void;
 				public shaderSource(param0: number, param1: string): void;
 				public getCanvas$canvas_release(): org.nativescript.canvas.TNSCanvas;
 				public getError(): number;
 				public getACTIVE_TEXTURE(): number;
-				public readPixels(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public readPixels(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public getVERTEX_ATTRIB_ARRAY_NORMALIZED(): number;
 				public getFRAMEBUFFER_INCOMPLETE_ATTACHMENT(): number;
 				public texSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: java.nio.ByteBuffer): void;
@@ -1973,9 +1973,9 @@ declare module org {
 				public enableVertexAttribArray(param0: number): void;
 				public getDONT_CARE(): number;
 				public texSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: org.nativescript.canvas.TNSCanvas): void;
-				public readPixelsByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public readPixelsByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public getMAX_VARYING_VECTORS(): number;
-				public compressedTexSubImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: native.Array<number>): void;
+				public compressedTexSubImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: androidNative.Array<number>): void;
 				public getSHADER_TYPE(): number;
 				public getBLEND_DST_RGB(): number;
 				public bufferData(param0: number, param1: java.nio.FloatBuffer, param2: number): void;
@@ -2000,14 +2000,14 @@ declare module org {
 				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: java.nio.FloatBuffer): void;
 				public getDELETE_STATUS(): number;
 				public getGL_RGB$canvas_release(): number;
-				public texImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public getVERTEX_ATTRIB_ARRAY_TYPE(): number;
 				public getMIRRORED_REPEAT(): number;
 				public bufferData(param0: number, param1: java.nio.ByteBuffer, param2: number): void;
 				public compressedTexImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: java.nio.ByteBuffer): void;
 				public getDEPTH_BITS(): number;
 				public getVertexAttrib(param0: number, param1: number): any;
-				public texSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public getNEAREST_MIPMAP_NEAREST(): number;
 				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: java.nio.ShortBuffer): void;
 				public getSTENCIL_VALUE_MASK(): number;
@@ -2020,7 +2020,7 @@ declare module org {
 				public updateCanvas(): void;
 				public bindTexture(param0: number, param1: number): void;
 				public getFLOAT_MAT2(): number;
-				public bufferDataFloat(param0: number, param1: native.Array<number>, param2: number): void;
+				public bufferDataFloat(param0: number, param1: androidNative.Array<number>, param2: number): void;
 				public readPixels(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: java.nio.IntBuffer): void;
 				public getCURRENT_PROGRAM(): number;
 				public getDrawingBufferHeight(): number;
@@ -2037,7 +2037,7 @@ declare module org {
 				public getShaderSource(param0: number): string;
 				public clearIfComposited(param0: number): org.nativescript.canvas.HowToClear;
 				public getShaderParameter(param0: number, param1: number): any;
-				public vertexAttrib2fv(param0: number, param1: native.Array<number>): void;
+				public vertexAttrib2fv(param0: number, param1: androidNative.Array<number>): void;
 				public getUNSIGNED_BYTE(): number;
 				public deleteRenderbuffer(param0: number): void;
 				public getVIEWPORT(): number;
@@ -2045,16 +2045,16 @@ declare module org {
 				public getNEAREST_MIPMAP_LINEAR(): number;
 				public getDEPTH_COMPONENT(): number;
 				public getLINEAR_MIPMAP_LINEAR(): number;
-				public readPixelsInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public readPixelsInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public getSCISSOR_BOX(): number;
-				public texImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public getCCW(): number;
 				public getGEQUAL(): number;
 				public getTEXTURE3(): number;
 				public getLOW_INT(): number;
 				public getSCISSOR_TEST(): number;
 				public getGL_LUMINANCE$canvas_release(): number;
-				public bufferDataShort(param0: number, param1: native.Array<number>, param2: number): void;
+				public bufferDataShort(param0: number, param1: androidNative.Array<number>, param2: number): void;
 				public getTEXTURE19(): number;
 				public disableVertexAttribArray(param0: number): void;
 				public getGL_UNSIGNED_SHORT_5_5_5_1$canvas_release(): number;
@@ -2062,10 +2062,10 @@ declare module org {
 				public getARRAY_BUFFER_BINDING(): number;
 				public getGL_ALPHA$canvas_release(): number;
 				public getRGBA4(): number;
-				public texSubImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texSubImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public getRENDERBUFFER_INTERNAL_FORMAT(): number;
-				public compressedTexImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
-				public uniformMatrix4fv(param0: number, param1: boolean, param2: native.Array<number>): void;
+				public compressedTexImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
+				public uniformMatrix4fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public getSTENCIL_FAIL(): number;
 				public getINCR_WRAP(): number;
 				public getUNSIGNED_INT(): number;
@@ -2077,7 +2077,7 @@ declare module org {
 				public getRGB5_A1(): number;
 				public compressedTexSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: java.nio.ByteBuffer): void;
 				public uniform1f(param0: number, param1: number): void;
-				public compressedTexSubImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: native.Array<number>): void;
+				public compressedTexSubImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: androidNative.Array<number>): void;
 				public getBLEND_COLOR(): number;
 				public activeTexture(param0: number): void;
 				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: java.nio.IntBuffer): void;
@@ -2088,7 +2088,7 @@ declare module org {
 				public getPOLYGON_OFFSET_FILL(): number;
 				public compressedTexSubImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: java.nio.IntBuffer): void;
 				public getTEXTURE24(): number;
-				public uniformMatrix2fv(param0: number, param1: boolean, param2: native.Array<number>): void;
+				public uniformMatrix2fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public deleteBuffer(param0: number): void;
 				public disable(param0: number): void;
 				public createProgram(): number;
@@ -2108,12 +2108,12 @@ declare module org {
 				public getFUNC_REVERSE_SUBTRACT(): number;
 				public getTEXTURE18(): number;
 				public getRENDERBUFFER(): number;
-				public uniform4fv(param0: number, param1: native.Array<number>): void;
+				public uniform4fv(param0: number, param1: androidNative.Array<number>): void;
 				public getTEXTURE2(): number;
 				public drawArrays(param0: number, param1: number, param2: number): void;
 				public getLINE_WIDTH(): number;
-				public uniform1iv(param0: number, param1: native.Array<number>): void;
-				public vertexAttrib4fv(param0: number, param1: native.Array<number>): void;
+				public uniform1iv(param0: number, param1: androidNative.Array<number>): void;
+				public vertexAttrib4fv(param0: number, param1: androidNative.Array<number>): void;
 				public getPOINTS(): number;
 				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSImageBitmap): void;
 				public getDECR_WRAP(): number;
@@ -2122,11 +2122,11 @@ declare module org {
 				public getPACK_ALIGNMENT(): number;
 				public getDEPTH_STENCIL_ATTACHMENT(): number;
 				public getFRONT(): number;
-				public uniform2fv(param0: number, param1: native.Array<number>): void;
+				public uniform2fv(param0: number, param1: androidNative.Array<number>): void;
 				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: org.nativescript.canvas.TNSCanvas): void;
 				public bindAttribLocation(param0: number, param1: number, param2: string): void;
-				public uniform3iv(param0: number, param1: native.Array<number>): void;
-				public vertexAttrib3fv(param0: number, param1: native.Array<number>): void;
+				public uniform3iv(param0: number, param1: androidNative.Array<number>): void;
+				public vertexAttrib3fv(param0: number, param1: androidNative.Array<number>): void;
 				public getDST_ALPHA(): number;
 				public vertexAttrib4f(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public getMAX_TEXTURE_SIZE(): number;
@@ -2134,22 +2134,22 @@ declare module org {
 				public getONE_MINUS_DST_COLOR(): number;
 				public validateProgram(param0: number): void;
 				public getUNSIGNED_SHORT_4_4_4_4(): number;
-				public vertexAttrib1fv(param0: number, param1: native.Array<number>): void;
+				public vertexAttrib1fv(param0: number, param1: androidNative.Array<number>): void;
 				public getBLEND_EQUATION(): number;
 				public getMAX_FRAGMENT_UNIFORM_VECTORS(): number;
 				public getFLOAT_MAT3(): number;
-				public bufferSubData(param0: number, param1: number, param2: native.Array<number>): void;
+				public bufferSubData(param0: number, param1: number, param2: androidNative.Array<number>): void;
 				public getBOOL_VEC3(): number;
 				public getINT(): number;
-				public uniform1fv(param0: number, param1: native.Array<number>): void;
-				public uniform4iv(param0: number, param1: native.Array<number>): void;
+				public uniform1fv(param0: number, param1: androidNative.Array<number>): void;
+				public uniform4iv(param0: number, param1: androidNative.Array<number>): void;
 				public getDYNAMIC_DRAW(): number;
 				public getIMPLEMENTATION_COLOR_READ_FORMAT(): number;
 				public getRENDERBUFFER_DEPTH_SIZE(): number;
 				public getTEXTURE6(): number;
 				public getSUBPIXEL_BITS(): number;
 				public depthFunc(param0: number): void;
-				public uniform2iv(param0: number, param1: native.Array<number>): void;
+				public uniform2iv(param0: number, param1: androidNative.Array<number>): void;
 				public getSTENCIL_BACK_VALUE_MASK(): number;
 				public getProgramInfoLog(param0: number): string;
 				public getTEXTURE10(): number;
@@ -2174,12 +2174,12 @@ declare module org {
 				public getFLOAT_VEC2(): number;
 				public getUniform(param0: number, param1: number): any;
 				public getMAX_VERTEX_TEXTURE_IMAGE_UNITS(): number;
-				public texImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public drawElements(param0: number, param1: number, param2: number, param3: number): void;
 				public getATTACHED_SHADERS(): number;
 				public getTRIANGLE_FAN(): number;
 				public getLINEAR(): number;
-				public bufferSubDataByte(param0: number, param1: number, param2: native.Array<number>): void;
+				public bufferSubDataByte(param0: number, param1: number, param2: androidNative.Array<number>): void;
 				public getVERTEX_SHADER(): number;
 				public createTexture(): number;
 				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: java.nio.ByteBuffer): void;
@@ -2196,13 +2196,13 @@ declare module org {
 				public bindBuffer(param0: number, param1: number): void;
 				public getSAMPLE_COVERAGE_INVERT(): number;
 				public getSTENCIL_PASS_DEPTH_PASS(): number;
-				public texSubImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texSubImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public stencilMask(param0: number): void;
 				public framebufferTexture2D(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public getVertexAttribOffset(param0: number, param1: number): number;
 				public getARRAY_BUFFER(): number;
-				public compressedTexSubImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: native.Array<number>): void;
-				public compressedTexImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public compressedTexSubImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: androidNative.Array<number>): void;
+				public compressedTexImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public getTEXTURE17(): number;
 				public getAttribLocation(param0: number, param1: string): number;
 				public lineWidth(param0: number): void;
@@ -2258,7 +2258,7 @@ declare module org {
 				public getALPHA(): number;
 				public deleteFramebuffer(param0: number): void;
 				public uniform3i(param0: number, param1: number, param2: number, param3: number): void;
-				public texImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public getVERTEX_ATTRIB_ARRAY_SIZE(): number;
 				public bindRenderbuffer(param0: number, param1: number): void;
 				public copyTexImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number): void;
@@ -2267,15 +2267,15 @@ declare module org {
 				public reset(): void;
 				public getTEXTURE9(): number;
 				public uniform4i(param0: number, param1: number, param2: number, param3: number, param4: number): void;
-				public bufferSubDataFloat(param0: number, param1: number, param2: native.Array<number>): void;
+				public bufferSubDataFloat(param0: number, param1: number, param2: androidNative.Array<number>): void;
 				public getVENDOR(): number;
 				public viewport(param0: number, param1: number, param2: number, param3: number): void;
-				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public getVERTEX_ATTRIB_ARRAY_POINTER(): number;
 				public getLESS(): number;
 				public getTEXTURE7(): number;
-				public compressedTexImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
-				public bufferData(param0: number, param1: native.Array<number>, param2: number): void;
+				public compressedTexImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
+				public bufferData(param0: number, param1: androidNative.Array<number>, param2: number): void;
 				public getShaderInfoLog(param0: number): string;
 				public getVERTEX_ATTRIB_ARRAY_ENABLED(): number;
 				public getVERTEX_ATTRIB_ARRAY_BUFFER_BINDING(): number;
@@ -2296,15 +2296,15 @@ declare module org {
 				public getLOW_FLOAT(): number;
 				public bufferData(param0: number, param1: number, param2: number): void;
 				public uniform3f(param0: number, param1: number, param2: number, param3: number): void;
-				public readPixelsFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public readPixelsFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public getGL_UNSIGNED_BYTE$canvas_release(): number;
 				public isEnabled(param0: number): boolean;
 				public getUNSIGNED_SHORT_5_5_5_1(): number;
 				public getCONTEXT_LOST_WEBGL(): number;
-				public getSupportedExtensions(): native.Array<string>;
+				public getSupportedExtensions(): androidNative.Array<string>;
 				public getSTENCIL_BITS(): number;
 				public getGL_LUMINANCE_ALPHA$canvas_release(): number;
-				public bufferSubDataShort(param0: number, param1: number, param2: native.Array<number>): void;
+				public bufferSubDataShort(param0: number, param1: number, param2: androidNative.Array<number>): void;
 				public vertexAttrib3f(param0: number, param1: number, param2: number, param3: number): void;
 				public isFramebuffer(param0: number): boolean;
 				public getSTENCIL_BUFFER_BIT(): number;
@@ -2313,7 +2313,7 @@ declare module org {
 				public getCONSTANT_COLOR(): number;
 				public getFUNC_ADD(): number;
 				public compileShader(param0: number): void;
-				public getAttachedShaders(param0: number): native.Array<number>;
+				public getAttachedShaders(param0: number): androidNative.Array<number>;
 				public commit(): void;
 				public getTEXTURE29(): number;
 				public constructor(param0: org.nativescript.canvas.TNSCanvas);
@@ -2327,7 +2327,7 @@ declare module org {
 				public getMAX_CUBE_MAP_TEXTURE_SIZE(): number;
 				public getSTENCIL_FUNC(): number;
 				public getBROWSER_DEFAULT_WEBGL(): number;
-				public bufferDataInt(param0: number, param1: native.Array<number>, param2: number): void;
+				public bufferDataInt(param0: number, param1: androidNative.Array<number>, param2: number): void;
 				public getCOMPILE_STATUS(): number;
 				public runOnGLThread$canvas_release(param0: java.lang.Runnable): void;
 				public getMAX_VIEWPORT_DIMS(): number;
@@ -2344,7 +2344,7 @@ declare module org {
 				public static nativeReadPixels(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
 				public getRENDERBUFFER_BLUE_SIZE(): number;
 				public getSTENCIL_ATTACHMENT(): number;
-				public uniformMatrix3fv(param0: number, param1: boolean, param2: native.Array<number>): void;
+				public uniformMatrix3fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public getSTENCIL_TEST(): number;
 				public getSTENCIL_INDEX8(): number;
 				public getKEEP(): number;
@@ -2365,12 +2365,12 @@ declare module org {
 				public getLUMINANCE_ALPHA(): number;
 				public getGL_UNSIGNED_SHORT_4_4_4_4$canvas_release(): number;
 				public createRenderbuffer(): number;
-				public texSubImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
-				public compressedTexSubImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: native.Array<number>): void;
+				public texSubImage2DFloat(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
+				public compressedTexSubImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: androidNative.Array<number>): void;
 				public getDrawingBufferWidth(): number;
 				public getTEXTURE_MAG_FILTER(): number;
 				public getFASTEST(): number;
-				public compressedTexImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public compressedTexImage2DInt(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public getHIGH_FLOAT(): number;
 				public getFRAMEBUFFER_INCOMPLETE_DIMENSIONS(): number;
 				public getDST_COLOR(): number;
@@ -2397,7 +2397,7 @@ declare module org {
 				public getTEXTURE_CUBE_MAP(): number;
 				public getREPEAT(): number;
 				public getGL_UNSIGNED_SHORT_5_6_5$canvas_release(): number;
-				public compressedTexImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: native.Array<number>): void;
+				public compressedTexImage2DByte(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
 				public blendFunc(param0: number, param1: number): void;
 				public getTEXTURE4(): number;
 				public getALIASED_LINE_WIDTH_RANGE(): number;
@@ -2417,7 +2417,7 @@ declare module org {
 				public getCULL_FACE(): number;
 				public getSTENCIL_PASS_DEPTH_FAIL(): number;
 				public getSTENCIL_REF(): number;
-				public texSubImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: native.Array<number>): void;
+				public texSubImage2DShort(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: androidNative.Array<number>): void;
 				public getSTENCIL_BACK_FAIL(): number;
 				public getCOLOR_WRITEMASK(): number;
 				public getGENERATE_MIPMAP_HINT(): number;
@@ -2456,8 +2456,8 @@ declare module org {
 				public setFbo(param0: number): void;
 				public setMatrixPos(param0: number): void;
 				public setSamplerPos(param0: number): void;
-				public getMatrix(): native.Array<number>;
-				public setMatrix(param0: native.Array<number>): void;
+				public getMatrix(): androidNative.Array<number>;
+				public setMatrix(param0: androidNative.Array<number>): void;
 				public getRbo(): number;
 				public getFbo(): number;
 				public setTextureId(param0: number): void;
@@ -2468,7 +2468,7 @@ declare module org {
 					public static class: java.lang.Class<org.nativescript.canvas.TextureRender.Companion>;
 					public getVextexBuf(): java.nio.FloatBuffer;
 					public setVextexBuf(param0: java.nio.FloatBuffer): void;
-					public getVextexCoords(): native.Array<number>;
+					public getVextexCoords(): androidNative.Array<number>;
 				}
 			}
 		}
@@ -2481,10 +2481,10 @@ declare module org {
 			export class Utils {
 				public static class: java.lang.Class<org.nativescript.canvas.Utils>;
 				public static INSTANCE: org.nativescript.canvas.Utils;
-				public static createSurfaceTexture(param0: org.nativescript.canvas.TNSWebGLRenderingContext): native.Array<any>;
+				public static createSurfaceTexture(param0: org.nativescript.canvas.TNSWebGLRenderingContext): androidNative.Array<any>;
 				public static attachToGLContext(param0: org.nativescript.canvas.TNSWebGLRenderingContext, param1: globalAndroid.graphics.SurfaceTexture, param2: org.nativescript.canvas.TextureRender): void;
 				public isEmulator(): boolean;
-				public getBytesFromBitmap(param0: globalAndroid.graphics.Bitmap): native.Array<number>;
+				public getBytesFromBitmap(param0: globalAndroid.graphics.Bitmap): androidNative.Array<number>;
 				public static detachFromGLContext(param0: org.nativescript.canvas.TNSWebGLRenderingContext, param1: globalAndroid.graphics.SurfaceTexture): void;
 				public static createRenderAndAttachToGLContext(param0: org.nativescript.canvas.TNSWebGLRenderingContext, param1: globalAndroid.graphics.SurfaceTexture): org.nativescript.canvas.TextureRender;
 				public static updateTexImage(param0: org.nativescript.canvas.TNSWebGLRenderingContext, param1: globalAndroid.graphics.SurfaceTexture, param2: org.nativescript.canvas.TextureRender, param3: number, param4: number, param5: number, param6: number): void;
@@ -2994,7 +2994,7 @@ declare module org {
 				export class WEBGL_draw_buffers {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.WEBGL_draw_buffers>;
 					public setDRAW_BUFFER10_WEBGL(param0: number): void;
-					public drawBuffersWEBGL(param0: native.Array<number>): void;
+					public drawBuffersWEBGL(param0: androidNative.Array<number>): void;
 					public getDRAW_BUFFER8_WEBGL(): number;
 					public setCOLOR_ATTACHMENT10_WEBGL(param0: number): void;
 					public setCOLOR_ATTACHMENT2_WEBGL(param0: number): void;

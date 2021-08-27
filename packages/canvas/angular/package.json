@@ -9,7 +9,7 @@
         "@nativescript/canvas": "ns-canvas"
       }
     },
-    "whitelistedNonPeerDependencies": [
+    "allowedNonPeerDependencies": [
       "."
     ]
   }

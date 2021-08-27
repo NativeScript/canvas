@@ -1,10 +1,9 @@
 {
-  "main": "app.js",
+  "main": "./src/app.ts",
   "description": "NativeScript Application",
   "license": "SEE LICENSE IN <your-license-filename>",
   "repository": "<fill-your-repository-here>",
   "dependencies": {
-    "nativescript-theme-core": "file:../../node_modules/nativescript-theme-core",
     "@nativescript/core": "file:../../node_modules/@nativescript/core",
     "babylonjs": "file:../../node_modules/babylonjs",
     "babylonjs-materials": "file:../../node_modules/babylonjs-materials",
@@ -28,10 +27,7 @@
     "@nativescript/canvas-three": "file:../../packages/canvas-three"
   },
   "devDependencies": {
-    "@nativescript/android": "7.0.0",
-    "@nativescript/ios": "7.0.0",
-    "@nativescript/webpack": "~3.0.0",
-    "copy-webpack-plugin": "4.6.0",
-    "typescript": "file:../../node_modules/typescript"
+    "@nativescript/android": "8.0.0",
+    "@nativescript/ios": "8.0.0"
   }
 }

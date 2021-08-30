@@ -63,22 +63,19 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter)
     }
     
-    public func clearBufferfv(_ buffer: UInt32,_ drawbuffer: Int32,_ values: [Float32]){
+    public func clearBufferfv(_ buffer: UInt32,_ drawbuffer: Int32,_ values: UnsafeRawPointer){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value =  values
-        glClearBufferfv(buffer, drawbuffer, &value)
+        glClearBufferfv(buffer, drawbuffer,values.assumingMemoryBound(to: GLfloat.self))
     }
     
-    public func clearBufferiv(_ buffer: UInt32, _ drawbuffer: Int32, _ values: [Int32]){
+    public func clearBufferiv(_ buffer: UInt32, _ drawbuffer: Int32, _ values: UnsafeRawPointer){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value =  values
-        glClearBufferiv(buffer, drawbuffer, &value)
+        glClearBufferiv(buffer, drawbuffer, values.assumingMemoryBound(to: GLint.self))
     }
     
-    public func clearBufferuiv(_ buffer: UInt32, _ drawbuffer: Int32,_ values: [UInt32]){
+    public func clearBufferuiv(_ buffer: UInt32, _ drawbuffer: Int32,_ values: UnsafeRawPointer){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value =  values
-        glClearBufferuiv(buffer, drawbuffer, &value)
+        glClearBufferuiv(buffer, drawbuffer, values.assumingMemoryBound(to: GLuint.self))
     }
     
     public func clearBufferfi(_ buffer: UInt32,_ drawbuffer: Int32,_ depth: Float32,_ stencil: Int32){
@@ -443,14 +440,12 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
     }
     
     
-    public func getBufferSubData(_ target: UInt32,_ srcByteOffset: Int,_ dstData: Data,_ dstOffset: Int32,_ length: Int32) {
+    public func getBufferSubData(_ target: UInt32,_ srcByteOffset: Int, _ dstData: UnsafeMutableRawPointer, size: Int ,_ dstOffset: Int32,_ length: Int32) {
         let _ = canvas.renderer.ensureIsContextIsCurrent()
         if(length == 0){
             
         }
-        var data = [UInt8](dstData)
-        
-        let size = data.count
+  
         let typeSize = SIZE_OF_BYTE
         var byteLength = 0
         if (length > 0) {
@@ -473,7 +468,7 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         
         
         // var offset = srcByteOffset * SIZE_OF_BYTE
-        glBufferSubData(target, byteOffset, byteLength, &data)
+        glBufferSubData(target, byteOffset, byteLength, dstData)
     }
     
     
@@ -1119,7 +1114,6 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
     }
     
     
-    
     public func transformFeedbackVaryings(_ program: UInt32,_ varyings: [String],_ bufferMode: UInt32){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
         var varys = varyings.map { name -> UnsafePointer<Int8>? in
@@ -1145,65 +1139,55 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         glUniform4ui(location, v0, v1, v2,v3)
     }
     
-    public func uniform1uiv(_ location: Int32,_ data: Data){
+    public func uniform1uiv(_ location: Int32,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var locations = Array(data.withUnsafeBytes{$0.bindMemory(to: UInt32.self)})
-        glUniform1uiv(location, GLsizei(data.count), &locations)
+        glUniform1uiv(location, GLsizei(size/1), data.assumingMemoryBound(to: UInt32.self))
     }
     
-    public func uniform2uiv(_ location: Int32,_ data: Data){
+    public func uniform2uiv(_ location: Int32,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var locations = Array(data.withUnsafeBytes{$0.bindMemory(to: UInt32.self)})
-        glUniform2uiv(location, GLsizei(data.count), &locations)
+        glUniform2uiv(location, GLsizei(size/2), data.assumingMemoryBound(to: UInt32.self))
     }
-    public func uniform3uiv(_ location: Int32, _ data: Data){
+    public func uniform3uiv(_ location: Int32, _ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var locations = Array(data.withUnsafeBytes{$0.bindMemory(to: UInt32.self)})
-        glUniform3uiv(location, GLsizei(data.count), &locations)
+        glUniform3uiv(location, GLsizei(size / 3), data.assumingMemoryBound(to: UInt32.self))
     }
     
-    public func uniform4uiv(_ location: Int32,_ data: Data){
+    public func uniform4uiv(_ location: Int32,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var locations = Array(data.withUnsafeBytes{$0.bindMemory(to: UInt32.self)})
-        glUniform4uiv(location, GLsizei(data.count), &locations)
+        glUniform4uiv(location, GLsizei(size / 4), data.assumingMemoryBound(to: UInt32.self))
     }
     
     public func uniformBlockBinding(_ program: UInt32,_ uniformBlockIndex: UInt32,_ uniformBlockBinding: UInt32){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
         glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding)
     }
-    public func uniformMatrix3x2fv(_ location: UInt32,_ transpose: Bool,_ data: Data){
+    public func uniformMatrix3x2fv(_ location: UInt32,_ transpose: Bool,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value = Array(data.withUnsafeBytes{$0.bindMemory(to: Float32.self)})
-        glUniformMatrix3x2fv(GLint(location), GLsizei(data.count), boolConverter(transpose), &value)
+        glUniformMatrix3x2fv(GLint(location), GLsizei(size/6), boolConverter(transpose), data.assumingMemoryBound(to: Float32.self))
     }
-    public func uniformMatrix4x2fv(_ location: UInt32,_ transpose: Bool,_ data: Data){
+    public func uniformMatrix4x2fv(_ location: UInt32,_ transpose: Bool,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value = Array(data.withUnsafeBytes{$0.bindMemory(to: Float32.self)})
-        glUniformMatrix4x2fv(GLint(location), GLsizei(data.count), boolConverter(transpose), &value)
+        glUniformMatrix4x2fv(GLint(location), GLsizei(size/8), boolConverter(transpose), data.assumingMemoryBound(to: Float32.self))
     }
     
-    public func uniformMatrix2x3fv(_ location: UInt32,_ transpose: Bool,_ data: Data){
+    public func uniformMatrix2x3fv(_ location: UInt32,_ transpose: Bool,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value = Array(data.withUnsafeBytes{$0.bindMemory(to: Float32.self)})
-        glUniformMatrix2x3fv(GLint(location), GLsizei(data.count), boolConverter(transpose), &value)
+        glUniformMatrix2x3fv(GLint(location), GLsizei(size/6), boolConverter(transpose), data.assumingMemoryBound(to: Float32.self))
     }
-    public func uniformMatrix4x3fv(_ location: UInt32,_ transpose: Bool,_ data: Data){
+    public func uniformMatrix4x3fv(_ location: UInt32,_ transpose: Bool,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value = Array(data.withUnsafeBytes{$0.bindMemory(to: Float32.self)})
-        glUniformMatrix4x3fv(GLint(location), GLsizei(data.count), boolConverter(transpose), &value)
+        glUniformMatrix4x3fv(GLint(location),GLsizei(size/12), boolConverter(transpose), data.assumingMemoryBound(to: Float32.self))
     }
     
-    public func uniformMatrix2x4fv(_ location: UInt32,_ transpose: Bool,_ data: Data){
+    public func uniformMatrix2x4fv(_ location: UInt32,_ transpose: Bool,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value = Array(data.withUnsafeBytes{$0.bindMemory(to: Float32.self)})
-        glUniformMatrix2x4fv(GLint(location), GLsizei(data.count), boolConverter(transpose), &value)
+        glUniformMatrix2x4fv(GLint(location), GLsizei(size/8), boolConverter(transpose), data.assumingMemoryBound(to: Float32.self))
     }
     
-    public func uniformMatrix3x4fv(_ location: UInt32,_ transpose: Bool,_ data: Data){
+    public func uniformMatrix3x4fv(_ location: UInt32,_ transpose: Bool,_ data: UnsafeRawPointer,_ size: Int){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var value = Array(data.withUnsafeBytes{$0.bindMemory(to: Float32.self)})
-        glUniformMatrix3x4fv(GLint(location), GLsizei(data.count), boolConverter(transpose), &value)
+        glUniformMatrix3x4fv(GLint(location), GLsizei(size / 12), boolConverter(transpose), data.assumingMemoryBound(to: Float32.self))
     }
     public func vertexAttribDivisor(_ index: UInt32,_ divisor: UInt32){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
@@ -1219,16 +1203,14 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
         glVertexAttribI4ui(index, v0, v1, v2, v3)
     }
     
-    public func vertexAttribI4iv(_ index: UInt32,_ value: Data){
+    public func vertexAttribI4iv(_ index: UInt32,_ value: UnsafeRawPointer){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var v = Array(value.withUnsafeBytes{$0.bindMemory(to: Int32.self)})
-        glVertexAttribI4iv(index, &v)
+        glVertexAttribI4iv(index, value.assumingMemoryBound(to: Int32.self))
     }
     
-    public func vertexAttribI4uiv(_ index: UInt32,_ value: Data){
+    public func vertexAttribI4uiv(_ index: UInt32,_ value: UnsafeRawPointer){
         let _ = canvas.renderer.ensureIsContextIsCurrent()
-        var v = Array(value.withUnsafeBytes{$0.bindMemory(to: UInt32.self)})
-        glVertexAttribI4uiv(index, &v)
+        glVertexAttribI4uiv(index, value.assumingMemoryBound(to: UInt32.self))
     }
     
     /* Getting GL parameter information */

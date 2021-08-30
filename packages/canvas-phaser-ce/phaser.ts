@@ -1,11 +1,11 @@
 import '@nativescript/canvas-polyfill';
 
 function initPhaser() {
-	global.PIXI = global.window.PIXI = global.PIXI || require('phaser-ce/build/custom/pixi');
-	global.p2 = global.window.p2 = global.p2 || require('phaser-ce/build/custom/p2');
-	global.Phaser = global.window.Phaser = global.Phaser || require('phaser-ce/build/phaser');
+	(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || require('phaser-ce/build/custom/pixi');
+	(global as any).p2 = (global as any).window.p2 = (global as any).p2 || require('phaser-ce/build/custom/p2');
+	(global as any).Phaser = (global as any).window.Phaser = (global as any).Phaser || require('phaser-ce/build/phaser');
 
-	global.PIXI.WebGLRenderer.prototype.updateTexture = function (texture) {
+	(global as any).PIXI.WebGLRenderer.prototype.updateTexture = function (texture) {
 		if (!texture.hasLoaded || texture.source.nodeName === 'CANVAS') {
 				return false;
 		}
@@ -78,7 +78,7 @@ function initPhaser() {
 	};
 
 
-	return global.Phaser;
+	return (global as any).Phaser;
 }
 
 export default initPhaser();

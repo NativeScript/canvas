@@ -25,7 +25,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
         svg = TNSSVG(frame: view.bounds)
-        canvas1.addSubview(svg!)
+        //canvas1.addSubview(svg!)
         svg?.bringSubviewToFront(canvas1)
         svg?.ignorePixelScaling = false
        // svg!.backgroundColor = .white
@@ -155,7 +155,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         
         // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/gallardo.svg
         
-        DispatchQueue.global(qos: .background).async {
+       /* DispatchQueue.global(qos: .background).async {
             do{
                 let start = CACurrentMediaTime()
                 print("Started", start)
@@ -174,7 +174,7 @@ class ViewController: UIViewController, TNSCanvasListener {
                 print(error)
             }
 
-        }
+        } */
     
     }
     
@@ -353,7 +353,6 @@ class ViewController: UIViewController, TNSCanvasListener {
 //                     <rect fill="url(#Pattern)" stroke="black" width="200" height="200"/>
 //                    </svg>
 //                    """
-    
         
         
           let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
@@ -367,10 +366,13 @@ class ViewController: UIViewController, TNSCanvasListener {
         
         
         
+
+        
+        
        // drawRotatingCube(gl: gl)
         
         //drawRotatingCube(gl: gl)
-         drawTextures(canvas: canvas1)
+       //  drawTextures(canvas: canvas1)
         
         
         // self.drawGL(canvas: self.canvas1!) // sun

@@ -48,14 +48,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		//this.threeOcean(this.canvas);
+		this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		this.gtlfLoader(this.canvas);
+		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
@@ -2763,7 +2763,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		camera.position.set(30, 30, 100);
 
 		//
-
 		sun = new THREE.Vector3();
 
 		// Water

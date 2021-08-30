@@ -322,7 +322,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillText('Hello world', 50, 90);
 
 
-		const ctx = this.canvas.getContext('2d');
+	/*	const ctx = this.canvas.getContext('2d');
 
 // Moved square
 ctx.translate(110, 30);
@@ -334,7 +334,7 @@ ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 // Unmoved square
 ctx.fillStyle = 'gray';
-ctx.fillRect(0, 0, 80, 80);
+ctx.fillRect(0, 0, 80, 80); */
 
 
 		//filterBlur(this.canvas);
@@ -447,7 +447,7 @@ ctx.fillRect(0, 0, 80, 80);
 		//draw_image_space(this.canvas);
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
-		//cubeRotationRotation(this.canvas);
+		cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
 		// interactiveCube(this.canvas);
@@ -930,6 +930,7 @@ ctx.fillRect(0, 0, 80, 80);
 	}
 
 	matterJSCar(canvas) {
+		/*
 		if (Matter === undefined) {
 			Matter = require('matter-js');
 		}
@@ -1032,9 +1033,11 @@ ctx.fillRect(0, 0, 80, 80);
 		};
 
 		car();
+		*/
 	}
 
 	matterJSExample(canvas) {
+		/*
 		if (Matter === undefined) {
 			Matter = require('matter-js');
 		}
@@ -1066,6 +1069,8 @@ ctx.fillRect(0, 0, 80, 80);
 
 		// run the renderer
 		Render.run(render);
+
+		*/
 	}
 
 	multiCanvas(canvas) {

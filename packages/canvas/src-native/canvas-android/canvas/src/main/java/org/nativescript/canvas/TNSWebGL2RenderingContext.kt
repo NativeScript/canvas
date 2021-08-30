@@ -2889,7 +2889,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniform1uiv(location: Int, data: IntArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniform1uiv(location, data.size, IntBuffer.wrap(data))
+			val count = data.size / 1
+			GLES30.glUniform1uiv(location, count, IntBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2901,7 +2902,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniform2uiv(location: Int, data: IntArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniform2uiv(location, data.size, IntBuffer.wrap(data))
+			val count = data.size / 2
+			GLES30.glUniform2uiv(location, count, IntBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2913,7 +2915,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniform3uiv(location: Int, data: IntArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniform3uiv(location, data.size, IntBuffer.wrap(data))
+			val count = data.size / 3
+			GLES30.glUniform3uiv(location, count, IntBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2925,7 +2928,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniform4uiv(location: Int, data: IntArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniform4uiv(location, data.size, IntBuffer.wrap(data))
+			val count = data.size / 4
+			GLES30.glUniform4uiv(location, count, IntBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2949,7 +2953,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniformMatrix3x2fv(location: Int, transpose: Boolean, data: FloatArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniformMatrix3x2fv(location, data.size, transpose, FloatBuffer.wrap(data))
+			val count = data.size / 6
+			GLES30.glUniformMatrix3x2fv(location, count, transpose, FloatBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2961,7 +2966,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniformMatrix4x2fv(location: Int, transpose: Boolean, data: FloatArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniformMatrix4x2fv(location, data.size, transpose, FloatBuffer.wrap(data))
+			val count = data.size / 8
+			GLES30.glUniformMatrix4x2fv(location, count, transpose, FloatBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2973,7 +2979,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniformMatrix2x3fv(location: Int, transpose: Boolean, data: FloatArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniformMatrix2x3fv(location, data.size, transpose, FloatBuffer.wrap(data))
+			val count = data.size / 6
+			GLES30.glUniformMatrix2x3fv(location, count, transpose, FloatBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2985,7 +2992,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniformMatrix4x3fv(location: Int, transpose: Boolean, data: FloatArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniformMatrix4x3fv(location, data.size, transpose, FloatBuffer.wrap(data))
+			val count = data.size / 12
+			GLES30.glUniformMatrix4x3fv(location, count, transpose, FloatBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -2997,7 +3005,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniformMatrix2x4fv(location: Int, transpose: Boolean, data: FloatArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniformMatrix2x4fv(location, data.size, transpose, FloatBuffer.wrap(data))
+			val count = data.size / 8
+			GLES30.glUniformMatrix2x4fv(location, count, transpose, FloatBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {
@@ -3009,7 +3018,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	fun uniformMatrix3x4fv(location: Int, transpose: Boolean, data: FloatArray) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES30.glUniformMatrix3x4fv(location, data.size, transpose, FloatBuffer.wrap(data))
+			val count = data.size / 12
+			GLES30.glUniformMatrix3x4fv(location, count, transpose, FloatBuffer.wrap(data))
 			lock.countDown()
 		})
 		try {

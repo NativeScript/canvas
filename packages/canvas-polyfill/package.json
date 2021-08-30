@@ -33,7 +33,6 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
 	"dependencies": {
-		"xmldom": "~0.6.0",
-		"@nativescript-community/gesturehandler": "0.1.45"
+		"xmldom": "~0.6.0"
 	}
 }

@@ -2657,7 +2657,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+		//	clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
 			lock.countDown()
 		})
@@ -2678,7 +2678,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+			// clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
 			lock.countDown()
 		})
@@ -2699,7 +2699,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+		//	clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
 			lock.countDown()
 		})
@@ -2721,7 +2721,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+		//	clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, pixels)
 			lock.countDown()
 		})
@@ -2743,7 +2743,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+		//	clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, ByteBuffer.wrap(pixels))
 			lock.countDown()
 		})
@@ -2764,7 +2764,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+		//	clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, ShortBuffer.wrap(pixels))
 			lock.countDown()
 		})
@@ -2785,7 +2785,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+		//	clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, FloatBuffer.wrap(pixels))
 			lock.countDown()
 		})
@@ -2806,7 +2806,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			clearIfComposited()
+		//	clearIfComposited()
 			GLES20.glReadPixels(x, y, width, height, format, type, IntBuffer.wrap(pixels))
 			lock.countDown()
 		})
@@ -4007,7 +4007,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform1fv(location: Int, value: FloatArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform1fv(location, 1, value, 0)
+			val count = value?.size?.div(1) ?: 1
+			GLES20.glUniform1fv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4031,7 +4032,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform1iv(location: Int, value: IntArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform1iv(location, 1, value, 0)
+			val count = value?.size?.div(1) ?: 1
+			GLES20.glUniform1iv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4055,7 +4057,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform2fv(location: Int, value: FloatArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform1fv(location, 1, value, 0)
+			val count = value?.size?.div(2) ?: 2
+			GLES20.glUniform1fv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4079,7 +4082,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform2iv(location: Int, value: IntArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform2iv(location, 1, value, 0)
+			val count = value?.size?.div(2) ?: 2
+			GLES20.glUniform2iv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4103,7 +4107,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform3fv(location: Int, value: FloatArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform3fv(location, 1, value, 0)
+			val count = value?.size?.div(3) ?: 3
+			GLES20.glUniform3fv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4127,7 +4132,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform3iv(location: Int, value: IntArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform3iv(location, 1, value, 0)
+			val count = value?.size?.div(3) ?: 3
+			GLES20.glUniform3iv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4151,7 +4157,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform4fv(location: Int, value: FloatArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform4fv(location, 1, value, 0)
+			val count = value?.size?.div(4) ?: 4
+			GLES20.glUniform4fv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4175,7 +4182,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniform4iv(location: Int, value: IntArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniform4iv(location, 1, value, 0)
+			val count = value?.size?.div(4) ?: 4
+			GLES20.glUniform4iv(location, count, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4187,7 +4195,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniformMatrix2fv(location: Int, transpose: Boolean, value: FloatArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniformMatrix2fv(location, 1, transpose, value, 0)
+			val count = value?.size?.div(4) ?: 4
+			GLES20.glUniformMatrix2fv(location, count, transpose, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4199,7 +4208,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniformMatrix3fv(location: Int, transpose: Boolean, value: FloatArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniformMatrix3fv(location, 1, transpose, value, 0)
+			val count = value?.size?.div(9) ?: 9
+			GLES20.glUniformMatrix3fv(location, count, transpose, value, 0)
 			lock.countDown()
 		})
 		try {
@@ -4211,7 +4221,8 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	fun uniformMatrix4fv(location: Int, transpose: Boolean, value: FloatArray?) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
-			GLES20.glUniformMatrix4fv(location, 1, transpose, value, 0)
+			val count = value?.size?.div(16) ?: 16
+			GLES20.glUniformMatrix4fv(location, count, transpose, value, 0)
 			lock.countDown()
 		})
 		try {

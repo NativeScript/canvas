@@ -45,8 +45,8 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.particleContainer(canvas);
 		//this.transparent(canvas);
 		//this.textureRotate(canvas);
-		this.simplePlane(canvas);
-		//this.animatedJet(canvas);
+		//this.simplePlane(canvas);
+		this.animatedJet(canvas);
 	}
 
 	textureRotate(canvas) {
@@ -927,7 +927,7 @@ void main()
 // Get the texture for rope.
 		const starTexture = PIXI.Texture.from(this.root + '/images/star.png');
 
-		const starAmount = 1;
+		const starAmount = 1000;
 		let cameraZ = 0;
 		const fov = 20;
 		const baseSpeed = 0.025;

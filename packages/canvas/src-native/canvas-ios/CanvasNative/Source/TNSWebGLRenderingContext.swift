@@ -217,12 +217,23 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         var buffer = srcData
         glBufferData(target, buffer.count * SIZE_OF_BYTE, &buffer, usage)
     }
+    
+    
+    
+    public func bufferData(_ target: UInt32, srcData: UnsafeMutableRawPointer, size: Int, _ usage: UInt32){
+        canvas.renderer.ensureIsContextIsCurrent()
+        glBufferData(target, size , srcData, usage)
+    }
+
+    
 
     public func bufferData(_ target: UInt32, u8 srcData: [UInt8], _ usage: UInt32){
         canvas.renderer.ensureIsContextIsCurrent()
         var buffer = srcData
         glBufferData(target, buffer.count * SIZE_OF_BYTE, &buffer, usage)
     }
+    
+    
 
     public func bufferData(_ target: UInt32, i16 srcData: [Int16], _ usage: UInt32){
         canvas.renderer.ensureIsContextIsCurrent()
@@ -274,6 +285,15 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         var buffer = srcData
         glBufferSubData(target, offset, buffer.count, &buffer)
     }
+    
+    
+    
+    public func bufferSubData(_ target: UInt32,_ offset: Int, srcData: UnsafeMutableRawPointer, size: Int){
+        canvas.renderer.ensureIsContextIsCurrent()
+        glBufferSubData(target, offset, size, srcData)
+    }
+    
+    
 
     public func bufferSubData(_ target: UInt32,_ offset: Int,u8 srcData: [UInt8]){
         canvas.renderer.ensureIsContextIsCurrent()
@@ -1239,7 +1259,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
     }
 
 
-    public func getVertexAttribOffset(index: UInt32, pname: UInt32) -> Int {
+    public func getVertexAttribOffset(_ index: UInt32,_ pname: UInt32) -> Int {
         canvas.renderer.ensureIsContextIsCurrent()
        return Int(gl_get_vertex_attrib_offset(index, pname))
     }
@@ -1362,11 +1382,11 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glPolygonOffset(factor, units)
     }
 
-    public func readPixels(_ x: Int32,_ y: Int32,_ width: Int32,_ height: Int32,_ format: UInt32,_ type: UInt32,_ pixels: Data) {
+    public func readPixels(_ x: Int32,_ y: Int32,_ width: Int32,_ height: Int32,_ format: UInt32,_ type: UInt32,_ pixels: UnsafeMutableRawPointer) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var array = pixels
         clearIfComposited()
-        glReadPixels(x, y, width, height, format, type, &array)
+        glReadPixels(x, y, width, height, format, type, pixels)
+        
     }
 
     public func renderbufferStorage(_ target: UInt32,_ internalFormat: UInt32,_ width: Int32,_ height: Int32) {
@@ -1457,23 +1477,41 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
     }
     
     
-    public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,data: NSData) {
+    public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32, data: NSData) {
         canvas.renderer.ensureIsContextIsCurrent()
         var bytes = [UInt8](data)
         if(flipYWebGL){
             GLUtils.flipYInPlace(&bytes,bytes.count, Int(width * bytes_per_pixel(pixel_type: type, format: format)), Int(height))
         }
+        
         glTexImage2D(target, level, internalformat, width, height, border, format, type, &bytes)
     }
 
 
-    public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,u8 pixels: [UInt8]) {
+    public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32, u8 pixels: [UInt8]) {
         canvas.renderer.ensureIsContextIsCurrent()
         var data = pixels
         if(flipYWebGL){
             GLUtils.flipYInPlace(&data,data.count, Int(width * bytes_per_pixel(pixel_type: type, format: format)), Int(height))
         }
         glTexImage2D(target, level, internalformat, width, height, border, format, type, &data)
+    }
+    
+    
+    public func texImage2D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32, pixels: UnsafeRawPointer, size: Int) {
+        canvas.renderer.ensureIsContextIsCurrent()
+        if(flipYWebGL){
+            var px = Data(bytes: pixels, count: size)
+            px.withUnsafeMutableBytes { ptr in
+                let pointer = ptr.baseAddress?.assumingMemoryBound(to: UInt8.self)
+                GLUtils.flipYInPlace(pointer,size, Int(width * bytes_per_pixel(pixel_type: type, format: format)), Int(height))
+                glTexImage2D(target, level, internalformat, width, height, border, format, type, pointer)
+            }
+            
+        }else {
+            glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
+        }
+        
     }
 
 
@@ -1583,7 +1621,7 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
 
     }
     
-
+    
     public func texSubImage2D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ width: Int32,_ height: Int32, _ format: UInt32,_ type: UInt32,u8 pixels: [UInt8]){
         canvas.renderer.ensureIsContextIsCurrent()
         var data = pixels
@@ -1592,6 +1630,26 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         }
         glTexSubImage2D(GLenum(target), level, xoffset, yoffset, width, height, GLenum(format), GLenum(type), &data)
 
+    }
+
+    
+
+    public func texSubImage2D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ width: Int32,_ height: Int32, _ format: UInt32,_ type: UInt32,pixels: UnsafeMutableRawPointer, size: Int){
+        canvas.renderer.ensureIsContextIsCurrent()
+        
+        if(flipYWebGL){
+            var px = Data(bytes: pixels, count: size)
+            px.withUnsafeMutableBytes { ptr in
+                let pointer = ptr.baseAddress?.assumingMemoryBound(to: UInt8.self)
+                GLUtils.flipYInPlace(pointer,size, Int(width * bytes_per_pixel(pixel_type: type, format: format)), Int(height))
+                
+                glTexSubImage2D(GLenum(target), level, xoffset, yoffset, width, height, GLenum(format), GLenum(type), pixels)
+            }
+            
+        }else {
+            glTexSubImage2D(GLenum(target), level, xoffset, yoffset, width, height, GLenum(format), GLenum(type), pixels)
+        }
+        
     }
 
     public func texSubImage2D(_ target: UInt32,_ level: Int32,_ xoffset: Int32,_ yoffset: Int32,_ width: Int32,_ height: Int32, _ format: UInt32,_ type: UInt32,u16 pixels: [UInt16]){
@@ -1668,10 +1726,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform1f(location, v0)
     }
 
-    public func uniform1fv(_ location: Int32, _ value: [Float32]) {
+    public func uniform1fv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform1fv(location, 1, &v0)
+        glUniform1fv(location, GLint(size/1), value.assumingMemoryBound(to: GLfloat.self))
     }
 
 
@@ -1680,10 +1737,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform1i(location, v0)
     }
 
-    public func uniform1iv(_ location: Int32, _ value: [Int32]) {
+    public func uniform1iv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform1iv(location, 1, &v0)
+        glUniform1iv(location, GLint(size / 1), value.assumingMemoryBound(to: GLint.self))
     }
 
 
@@ -1692,10 +1748,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform2f(location, v0, v1)
     }
 
-    public func uniform2fv(_ location: Int32, _ value: [Float32]) {
+    public func uniform2fv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform1fv(location, 1, &v0)
+        glUniform1fv(location, GLint(size / 2), value.assumingMemoryBound(to: GLfloat.self))
     }
 
 
@@ -1704,10 +1759,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform2i(location, v0, v1)
     }
 
-    public func uniform2iv(_ location: Int32, _ value: [Int32]) {
+    public func uniform2iv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform2iv(location, 1, &v0)
+        glUniform2iv(location, GLint(size / 2), value.assumingMemoryBound(to: GLint.self))
     }
 
 
@@ -1716,10 +1770,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform3f(location, v0, v1, v2)
     }
 
-    public func uniform3fv(_ location: Int32, _ value: [Float32]) {
+    public func uniform3fv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform3fv(location, 1, &v0)
+        glUniform3fv(location, GLint(size / 3), value.assumingMemoryBound(to: GLfloat.self))
     }
 
 
@@ -1728,10 +1781,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform3i(location, v0, v1, v2)
     }
 
-    public func uniform3iv(_ location: Int32, _ value: [Int32]) {
+    public func uniform3iv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform3iv(location, 1, &v0)
+        glUniform3iv(location, GLint(size / 3), value.assumingMemoryBound(to: GLint.self))
     }
 
     public func uniform4f(_ location: Int32,_ v0: Float32,_ v1: Float32,_ v2: Float32,_ v3: Float32) {
@@ -1739,10 +1791,9 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform4f(location, v0, v1, v2, v3)
     }
 
-    public func uniform4fv(_ location: Int32, _ value: [Float32]) {
+    public func uniform4fv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform4fv(location, 1, &v0)
+        glUniform4fv(location, GLint(size / 4), value.assumingMemoryBound(to: GLfloat.self))
     }
 
     public func uniform4i(_ location: Int32,_ v0: Int32,_ v1: Int32,_ v2: Int32,_ v3: Int32) {
@@ -1750,28 +1801,24 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glUniform4i(location, v0, v1, v2, v3)
     }
 
-    public func uniform4iv(_ location: Int32, _ value: [Int32]) {
+    public func uniform4iv(_ location: Int32, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glUniform4iv(location, 1, &v0)
+        glUniform4iv(location, GLint(size / 4) , value.assumingMemoryBound(to: GLint.self))
     }
 
-    public func uniformMatrix2fv(_ location: Int32,_ transpose: Bool,_ value: [Float32]) {
+    public func uniformMatrix2fv(_ location: Int32,_ transpose: Bool,_ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var array = value
-        glUniformMatrix2fv(location, 1, boolConverter(transpose), &array)
+        glUniformMatrix2fv(location,GLsizei(size / 4), boolConverter(transpose), value.assumingMemoryBound(to: GLfloat.self))
     }
 
-    public func uniformMatrix3fv(_ location: Int32,_ transpose: Bool,_ value: [Float32]) {
+    public func uniformMatrix3fv(_ location: Int32,_ transpose: Bool,_ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var array = value
-        glUniformMatrix3fv(location, 1, boolConverter(transpose), &array)
+        glUniformMatrix3fv(location, GLsizei(size / 9), boolConverter(transpose), value.assumingMemoryBound(to: GLfloat.self))
     }
 
-    public func uniformMatrix4fv(_ location: Int32,_ transpose: Bool,_ value: [Float32]) {
+    public func uniformMatrix4fv(_ location: Int32,_ transpose: Bool, _ value: UnsafeMutableRawPointer,_ size: Int) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var array = value
-        glUniformMatrix4fv(location, 1, boolConverter(transpose), &array)
+        glUniformMatrix4fv(location, GLsizei(size / 16), boolConverter(transpose), value.assumingMemoryBound(to: GLfloat.self))
     }
 
     public func useProgram(_ program: UInt32){
@@ -1804,28 +1851,24 @@ public class TNSWebGLRenderingContext: TNSCanvasRenderingContext {
         glVertexAttrib4f(index, v0, v1, v2, v3)
     }
 
-    public func vertexAttrib1fv(_ index: UInt32,_ value: [Float32]) {
+    public func vertexAttrib1fv(_ index: UInt32,_ value: UnsafeMutableRawPointer) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glVertexAttrib1fv(index,&v0)
+        glVertexAttrib1fv(index,value.assumingMemoryBound(to: GLfloat.self))
     }
 
-    public func vertexAttrib2fv(_ index: UInt32,_ value: [Float32]) {
+    public func vertexAttrib2fv(_ index: UInt32,_ value: UnsafeMutableRawPointer) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glVertexAttrib2fv(index,&v0)
+        glVertexAttrib2fv(index,value.assumingMemoryBound(to: GLfloat.self))
     }
 
-    public func vertexAttrib3fv(_ index: UInt32, _ value: [Float32]) {
+    public func vertexAttrib3fv(_ index: UInt32, _ value: UnsafeMutableRawPointer) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glVertexAttrib3fv(GLuint(index),&v0)
+        glVertexAttrib3fv(GLuint(index),value.assumingMemoryBound(to: GLfloat.self))
     }
 
-    public func vertexAttrib4fv(_ index: UInt32, _ value: [Float32]) {
+    public func vertexAttrib4fv(_ index: UInt32, _ value: UnsafeMutableRawPointer) {
         canvas.renderer.ensureIsContextIsCurrent()
-        var v0 = value
-        glVertexAttrib4fv(index,&v0)
+        glVertexAttrib4fv(index,value.assumingMemoryBound(to: GLfloat.self))
     }
 
     public func vertexAttribPointer(_ index: UInt32,_ size: Int32,_ type: UInt32,_ normalized: Bool,_ stride: Int32,_ offset: Int) {

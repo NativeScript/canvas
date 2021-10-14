@@ -448,6 +448,7 @@ export class WEBGL_draw_buffers {
 	private nativeInstance: any;
 
 	constructor(nativeInstance) {
+		this.nativeInstance = nativeInstance;
 		this.COLOR_ATTACHMENT0_WEBGL = nativeInstance.COLOR_ATTACHMENT0_EXT;
 		this.COLOR_ATTACHMENT1_WEBGL = nativeInstance.COLOR_ATTACHMENT1_EXT;
 		this.COLOR_ATTACHMENT2_WEBGL = nativeInstance.COLOR_ATTACHMENT2_EXT;

@@ -5,7 +5,11 @@ android {
 	}
 }
 
+repositories {
+    google()
+}
+
 dependencies {
-    implementation 'com.google.android.exoplayer:exoplayer:2.13.2'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.2'
+    implementation 'com.google.android.exoplayer:exoplayer:2.13.3'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.3'
 }

@@ -5,13 +5,8 @@ use crate::common::ffi::u8_array::U8Array;
 
 #[no_mangle]
 pub extern "C" fn image_data_create(width: c_int, height: c_int) -> c_longlong {
-    Box::into_raw(
-        Box::new(
-            ImageData::new(width, height)
-        )
-    ) as c_longlong
+    Box::into_raw(Box::new(ImageData::new(width, height))) as c_longlong
 }
-
 
 #[no_mangle]
 pub extern "C" fn image_data_width(image_data: c_longlong) -> c_int {
@@ -37,7 +32,6 @@ pub extern "C" fn image_data_height(image_data: c_longlong) -> c_int {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn image_data_data(image_data: c_longlong) -> *mut u8 {
     if image_data == 0 {
@@ -62,7 +56,6 @@ pub extern "C" fn image_data_data_length(image_data: c_longlong) -> usize {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn destroy_image_data(image_data: c_longlong) {
     if image_data == 0 {
@@ -73,4 +66,3 @@ pub extern "C" fn destroy_image_data(image_data: c_longlong) {
         let _ = Box::from_raw(image_data);
     }
 }
-

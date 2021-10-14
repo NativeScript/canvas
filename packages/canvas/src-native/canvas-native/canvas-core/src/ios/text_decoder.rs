@@ -2,6 +2,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_longlong};
 
 use crate::common::context::text_decoder::TextDecoder;
+use crate::common::ffi::u8_array::U8Array;
 
 #[no_mangle]
 pub extern "C" fn text_decoder_create(decoding: *const c_char) -> c_longlong {
@@ -39,6 +40,20 @@ pub extern "C" fn text_decoder_decode(
 }
 
 #[no_mangle]
+pub extern "C" fn text_decoder_decode_to_bytes(
+    decoder: c_longlong,
+    data: *const u8,
+    len: usize,
+) -> *const U8Array {
+    unsafe {
+        let decoder: *mut TextDecoder = decoder as _;
+        let decoder = &mut *decoder;
+        let decoded: U8Array = decoder.decode_as_bytes(data, len).into();
+        Box::into_raw(Box::new(decoded))
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn text_decoder_decode_u16(
     decoder: c_longlong,
     data: *const u16,
@@ -66,9 +81,7 @@ pub extern "C" fn text_decoder_decode_i32(
 }
 
 #[no_mangle]
-pub extern "C" fn destroy_text_decoder(
-    decoder: c_longlong,
-) {
+pub extern "C" fn destroy_text_decoder(decoder: c_longlong) {
     if decoder == 0 {
         return;
     }
@@ -76,4 +89,54 @@ pub extern "C" fn destroy_text_decoder(
         let decoder: *mut TextDecoder = decoder as _;
         let _ = Box::from_raw(decoder);
     }
+}
+
+#[no_mangle]
+pub extern "C" fn text_decoder_decode_bytes(
+    decoder: c_longlong,
+    data: *const u8,
+    len: usize,
+) -> *mut U8Array {
+    unsafe {
+        let decoder: *mut TextDecoder = decoder as _;
+        let decoder = &mut *decoder;
+        let decoded: U8Array = decoder.decode_as_bytes(data, len).into();
+        Box::into_raw(Box::new(decoded))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn text_decoder_decode_u16_bytes(
+    decoder: c_longlong,
+    data: *const u16,
+    len: usize,
+) -> *mut U8Array {
+    text_decoder_decode_bytes(decoder, data as *const u8, len * 2)
+}
+
+#[no_mangle]
+pub extern "C" fn text_decoder_decode_i16_bytes(
+    decoder: c_longlong,
+    data: *const i16,
+    len: usize,
+) -> *mut U8Array {
+    text_decoder_decode_bytes(decoder, data as *const u8, len * 2)
+}
+
+#[no_mangle]
+pub extern "C" fn text_decoder_decode_i32_bytes(
+    decoder: c_longlong,
+    data: *const i32,
+    len: usize,
+) -> *mut U8Array {
+    text_decoder_decode_bytes(decoder, data as *const u8, len * 4)
+}
+
+#[no_mangle]
+pub extern "C" fn text_decoder_decode_u32_bytes(
+    decoder: c_longlong,
+    data: *const u32,
+    len: usize,
+) -> *mut U8Array {
+    text_decoder_decode_bytes(decoder, data as *const u8, len * 4)
 }

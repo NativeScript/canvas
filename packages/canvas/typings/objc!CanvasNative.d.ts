@@ -976,15 +976,35 @@ declare class TNSTextDecoder extends NSObject {
 
 	decodeWithBuffer(buffer: NSData): string;
 
+	decodeWithBufferOffset(buffer: NSData, offset: number): string;
+
+	decodeWithBufferOffsetLength(buffer: NSData, offset: number, length: number): string;
+
 	decodeWithBytes(bytes: NSArray<number> | number[]): string;
 
-	decodeWithI16(bytes: NSArray<number> | number[]): string;
+	decodeWithI16(buffer: interop.Pointer | interop.Reference<any>, size: number): string;
 
-	decodeWithI32(bytes: NSArray<number> | number[]): string;
+	decodeWithI16Offset(buffer: interop.Pointer | interop.Reference<any>, size: number, offset: number): string;
 
-	decodeWithI8(bytes: NSArray<number> | number[]): string;
+	decodeWithI32(buffer: interop.Pointer | interop.Reference<any>, size: number): string;
 
-	decodeWithU16(bytes: NSArray<number> | number[]): string;
+	decodeWithI32Offset(buffer: interop.Pointer | interop.Reference<any>, size: number, offset: number): string;
+
+	decodeWithI8(buffer: interop.Pointer | interop.Reference<any>, size: number): string;
+
+	decodeWithI8Offset(buffer: interop.Pointer | interop.Reference<any>, size: number, offset: number): string;
+
+	decodeWithU16(buffer: interop.Pointer | interop.Reference<any>, size: number): string;
+
+	decodeWithU16Offset(buffer: interop.Pointer | interop.Reference<any>, size: number, offset: number): string;
+
+	decodeWithU32(buffer: interop.Pointer | interop.Reference<any>, size: number): string;
+
+	decodeWithU32Offset(buffer: interop.Pointer | interop.Reference<any>, size: number, offset: number): string;
+
+	decodeWithU8(buffer: interop.Pointer | interop.Reference<any>, size: number): string;
+
+	decodeWithU8Offset(buffer: interop.Pointer | interop.Reference<any>, size: number, offset: number): string;
 
 	initWithEncoding(encoding: string): this;
 }
@@ -1596,9 +1616,15 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	clearBufferfv(buffer: number, drawbuffer: number, values: interop.Pointer | interop.Reference<any>): void;
 
+	clearBufferfvOffset(buffer: number, drawbuffer: number, values: interop.Pointer | interop.Reference<any>, offset: number): void;
+
 	clearBufferiv(buffer: number, drawbuffer: number, values: interop.Pointer | interop.Reference<any>): void;
 
+	clearBufferivOffset(buffer: number, drawbuffer: number, values: interop.Pointer | interop.Reference<any>, offset: number): void;
+
 	clearBufferuiv(buffer: number, drawbuffer: number, values: interop.Pointer | interop.Reference<any>): void;
+
+	clearBufferuivOffset(buffer: number, drawbuffer: number, values: interop.Pointer | interop.Reference<any>, offset: number): void;
 
 	clientWaitSync(sync: interop.Pointer | interop.Reference<any>, flags: number, timeout: number): number;
 
@@ -1666,6 +1692,8 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	getBufferSubDataSize(target: number, srcByteOffset: number, dstData: interop.Pointer | interop.Reference<any>, size: number, dstOffset: number, length: number): void;
 
+	getBufferSubDataSizeOffset(target: number, srcByteOffset: number, dstData: interop.Pointer | interop.Reference<any>, size: number, dstOffset: number, length: number, offset: number): void;
+
 	getFragDataLocation(program: number, name: string): number;
 
 	getIndexedParameter(target: number, index: number): any;
@@ -1720,9 +1748,9 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texImage3DData(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, data: NSData): void;
 
-	texImage3DF32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
+	texImage3DF32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
 
-	texImage3DF64(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
+	texImage3DF64(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
 
 	texImage3DI16(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
 
@@ -1734,9 +1762,9 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texImage3DSource(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: UIImage): void;
 
-	texImage3DU16(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
+	texImage3DU16(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
 
-	texImage3DU32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
+	texImage3DU32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
 
 	texImage3DU8(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
 
@@ -1752,25 +1780,25 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texSubImage3DData(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, data: NSData): void;
 
-	texSubImage3DF32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
+	texSubImage3DF32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
 	texSubImage3DF64(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
-	texSubImage3DI16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
+	texSubImage3DI16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
 	texSubImage3DI32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
-	texSubImage3DI8(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
+	texSubImage3DI8(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
 	texSubImage3DOffset(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, offset: number): void;
 
 	texSubImage3DSrcData(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: UIImage): void;
 
-	texSubImage3DU16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
+	texSubImage3DU16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
 
 	texSubImage3DU32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
-	texSubImage3DU8(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
+	texSubImage3DU8(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
 	transformFeedbackVaryings(program: number, varyings: NSArray<string> | string[], bufferMode: number): void;
 
@@ -1778,31 +1806,51 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	uniform1uiv(location: number, data: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniform1uivOffset(location: number, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniform2ui(location: number, v0: number, v1: number): void;
 
 	uniform2uiv(location: number, data: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniform2uivOffset(location: number, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniform3ui(location: number, v0: number, v1: number, v2: number): void;
 
 	uniform3uiv(location: number, data: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniform3uivOffset(location: number, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniform4ui(location: number, v0: number, v1: number, v2: number, v3: number): void;
 
 	uniform4uiv(location: number, data: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniform4uivOffset(location: number, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniformBlockBinding(program: number, uniformBlockIndex: number, uniformBlockBinding: number): void;
 
 	uniformMatrix2x3fv(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniformMatrix2x3fvOffset(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniformMatrix2x4fv(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniformMatrix2x4fvOffset(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniformMatrix3x2fv(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniformMatrix3x2fvOffset(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniformMatrix3x4fv(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniformMatrix3x4fvOffset(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniformMatrix4x2fv(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniformMatrix4x2fvOffset(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniformMatrix4x3fv(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniformMatrix4x3fvOffset(location: number, transpose: boolean, data: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	vertexAttribDivisor(index: number, divisor: number): void;
 
@@ -1810,9 +1858,13 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	vertexAttribI4iv(index: number, value: interop.Pointer | interop.Reference<any>): void;
 
+	vertexAttribI4ivOffset(index: number, value: interop.Pointer | interop.Reference<any>, offset: number): void;
+
 	vertexAttribI4ui(index: number, v0: number, v1: number, v2: number, v3: number): void;
 
 	vertexAttribI4uiv(index: number, value: interop.Pointer | interop.Reference<any>): void;
+
+	vertexAttribI4uivOffset(index: number, value: interop.Pointer | interop.Reference<any>, offset: number): void;
 }
 
 declare class TNSWebGLActiveInfo extends NSObject {
@@ -2476,6 +2528,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	bufferDataSrcDataSize(target: number, srcData: interop.Pointer | interop.Reference<any>, size: number, usage: number): void;
 
+	bufferDataSrcDataSizeOffset(target: number, srcData: interop.Pointer | interop.Reference<any>, size: number, usage: number, offset: number): void;
+
 	bufferDataU16(target: number, srcData: NSArray<number> | number[], usage: number): void;
 
 	bufferDataU32(target: number, srcData: NSArray<number> | number[], usage: number): void;
@@ -2495,6 +2549,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 	bufferSubDataI8(target: number, offset: number, srcData: NSArray<number> | number[]): void;
 
 	bufferSubDataSrcDataSize(target: number, offset: number, srcData: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	bufferSubDataSrcDataSizeOs(target: number, offset: number, srcData: interop.Pointer | interop.Reference<any>, size: number, os: number): void;
 
 	bufferSubDataU16(target: number, offset: number, srcData: NSArray<number> | number[]): void;
 
@@ -2662,6 +2718,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>): void;
 
+	readPixelsOffset(x: number, y: number, width: number, height: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>, offset: number): void;
+
 	renderbufferStorage(target: number, internalFormat: number, width: number, height: number): void;
 
 	sampleCoverage(value: number, invert: boolean): void;
@@ -2698,6 +2756,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	texImage2DPixelsSize(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	texImage2DPixelsSizeOffset(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	texImage2DU16(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: NSArray<number> | number[]): void;
 
 	texImage2DU32(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: NSArray<number> | number[]): void;
@@ -2724,6 +2784,8 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	texSubImage2DPixelsSize(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	texSubImage2DPixelsSizeOffset(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	texSubImage2DU16(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: NSArray<number> | number[]): void;
 
 	texSubImage2DU8(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: NSArray<number> | number[]): void;
@@ -2732,39 +2794,61 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	uniform1fv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniform1fvOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniform1i(location: number, v0: number): void;
 
 	uniform1iv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniform1ivOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniform2f(location: number, v0: number, v1: number): void;
 
 	uniform2fv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniform2fvOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniform2i(location: number, v0: number, v1: number): void;
 
 	uniform2iv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniform2ivOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniform3f(location: number, v0: number, v1: number, v2: number): void;
 
 	uniform3fv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniform3fvOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniform3i(location: number, v0: number, v1: number, v2: number): void;
 
 	uniform3iv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniform3ivOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniform4f(location: number, v0: number, v1: number, v2: number, v3: number): void;
 
 	uniform4fv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniform4fvOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniform4i(location: number, v0: number, v1: number, v2: number, v3: number): void;
 
 	uniform4iv(location: number, value: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniform4ivOffset(location: number, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniformMatrix2fv(location: number, transpose: boolean, value: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniformMatrix2fvOffset(location: number, transpose: boolean, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	uniformMatrix3fv(location: number, transpose: boolean, value: interop.Pointer | interop.Reference<any>, size: number): void;
 
+	uniformMatrix3fvOffset(location: number, transpose: boolean, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
+
 	uniformMatrix4fv(location: number, transpose: boolean, value: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	uniformMatrix4fvOffset(location: number, transpose: boolean, value: interop.Pointer | interop.Reference<any>, size: number, offset: number): void;
 
 	useProgram(program: number): void;
 
@@ -2774,17 +2858,25 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	vertexAttrib1fv(index: number, value: interop.Pointer | interop.Reference<any>): void;
 
+	vertexAttrib1fvOffset(index: number, value: interop.Pointer | interop.Reference<any>, offset: number): void;
+
 	vertexAttrib2f(index: number, v0: number, v1: number): void;
 
 	vertexAttrib2fv(index: number, value: interop.Pointer | interop.Reference<any>): void;
+
+	vertexAttrib2fvOffset(index: number, value: interop.Pointer | interop.Reference<any>, offset: number): void;
 
 	vertexAttrib3f(index: number, v0: number, v1: number, v2: number): void;
 
 	vertexAttrib3fv(index: number, value: interop.Pointer | interop.Reference<any>): void;
 
+	vertexAttrib3fvOffset(index: number, value: interop.Pointer | interop.Reference<any>, offset: number): void;
+
 	vertexAttrib4f(index: number, v0: number, v1: number, v2: number, v3: number): void;
 
 	vertexAttrib4fv(index: number, value: interop.Pointer | interop.Reference<any>): void;
+
+	vertexAttrib4fvOffset(index: number, value: interop.Pointer | interop.Reference<any>, offset: number): void;
 
 	vertexAttribPointer(index: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void;
 
@@ -3710,11 +3802,23 @@ declare function text_decoder_create(decoding: string | interop.Pointer | intero
 
 declare function text_decoder_decode(decoder: number, data: string | interop.Pointer | interop.Reference<any>, len: number): string;
 
+declare function text_decoder_decode_bytes(decoder: number, data: string | interop.Pointer | interop.Reference<any>, len: number): interop.Pointer | interop.Reference<U8Array>;
+
 declare function text_decoder_decode_i16(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+
+declare function text_decoder_decode_i16_bytes(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): interop.Pointer | interop.Reference<U8Array>;
 
 declare function text_decoder_decode_i32(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
 
+declare function text_decoder_decode_i32_bytes(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): interop.Pointer | interop.Reference<U8Array>;
+
+declare function text_decoder_decode_to_bytes(decoder: number, data: string | interop.Pointer | interop.Reference<any>, len: number): interop.Pointer | interop.Reference<U8Array>;
+
 declare function text_decoder_decode_u16(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): string;
+
+declare function text_decoder_decode_u16_bytes(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): interop.Pointer | interop.Reference<U8Array>;
+
+declare function text_decoder_decode_u32_bytes(decoder: number, data: interop.Pointer | interop.Reference<number>, len: number): interop.Pointer | interop.Reference<U8Array>;
 
 declare function text_decoder_get_encoding(decoder: number): string;
 

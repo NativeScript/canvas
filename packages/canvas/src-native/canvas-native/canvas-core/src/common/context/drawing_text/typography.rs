@@ -3,7 +3,7 @@ use std::os::raw::c_float;
 use skia_safe::{
     font_style::{Slant, Weight, Width},
     typeface::Typeface,
-     FontMetrics, FontMgr, FontStyle
+    FontMetrics, FontMgr, FontStyle,
 };
 
 use crate::{

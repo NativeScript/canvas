@@ -2,7 +2,8 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"outDir": "../../dist/out-tsc",
-		"rootDir": "."
+		"rootDir": ".",
+		"target": "es5"
 	},
 	"exclude": ["**/*.spec.ts", "angular", "src-native"],
 	"include": ["**/*.ts", "references.d.ts"]

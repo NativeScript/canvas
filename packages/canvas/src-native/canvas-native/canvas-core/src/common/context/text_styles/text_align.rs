@@ -21,11 +21,10 @@ impl Into<i32> for TextAlign {
             TextAlign::LEFT => 1,
             TextAlign::CENTER => 2,
             TextAlign::RIGHT => 3,
-            TextAlign::END => 4
+            TextAlign::END => 4,
         }
     }
 }
-
 
 impl From<i32> for TextAlign {
     fn from(value: i32) -> TextAlign {
@@ -35,9 +34,7 @@ impl From<i32> for TextAlign {
             2 => TextAlign::CENTER,
             3 => TextAlign::RIGHT,
             4 => TextAlign::END,
-            _ => {
-                TextAlign::START
-            }
+            _ => TextAlign::START,
         }
     }
 }

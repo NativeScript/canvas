@@ -154,8 +154,6 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBu
     }
 }
 
-
-
 #[no_mangle]
 pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBufferEncoded(
     env: JNIEnv,

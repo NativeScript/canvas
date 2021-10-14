@@ -30,7 +30,6 @@ impl Drop for U32Array {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn destroy_u32_array(array: *mut U32Array) {
     unsafe {

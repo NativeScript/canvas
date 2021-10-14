@@ -1,4 +1,4 @@
-use skia_safe::{Rect};
+use skia_safe::Rect;
 
 pub trait ScaleUtils {
     fn scale(&mut self, x: f32, y: f32);

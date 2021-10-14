@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{M44, Matrix, Point};
+use skia_safe::{Matrix, Point, M44};
 
 use crate::common::context::Context;
 

@@ -52,7 +52,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		//this.geoTextShapes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -1518,9 +1517,19 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		renderer.setSize(window.innerWidth, window.innerHeight);
 		renderer.outputEncoding = THREE.sRGBEncoding;
 
+		const pmremGenerator = new THREE.PMREMGenerator( renderer );
 
 		const scene = new THREE.Scene();
+
+
+		const light = new THREE.SpotLight();
+			light.position.set(-1.8, 0.6, 2.7 * 1.2);
+			scene.add(light);
+
+
 		scene.background = new THREE.Color(0xbfe3dd);
+
+		scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).texture;
 
 		const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, .1, 1000);
 		camera.position.set(5, 2, 8);
@@ -1531,22 +1540,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		controls.enablePan = false;
 		controls.enableDamping = true;
 
-		scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.4));
-
-		const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-		dirLight.position.set(5, 2, 8);
-		scene.add(dirLight);
-
-		// envmap
-		const path = this.root + '/textures/cube/Park2/';
-		const format = '.jpg';
-		const envMap = new THREE.CubeTextureLoader().load([
-			path + 'posx' + format, path + 'negx' + format,
-			path + 'posy' + format, path + 'negy' + format,
-			path + 'posz' + format, path + 'negz' + format
-		], undefined, undefined, e => {
-			console.log('CubeTextureLoader', e);
-		});
 
 		const dracoLoader = new DRACOLoader();
 		dracoLoader.setDecoderPath(this.root + '/js/libs/draco/gltf/');
@@ -1558,12 +1551,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const model = gltf.scene;
 			model.position.set(1, 1, 0);
 			model.scale.set(0.01, 0.01, 0.01);
-			model.traverse(function (child: any) {
-
-				if (child.isMesh) child.material.envMap = envMap;
-
-			});
-
 			scene.add(model);
 
 			mixer = new THREE.AnimationMixer(model);

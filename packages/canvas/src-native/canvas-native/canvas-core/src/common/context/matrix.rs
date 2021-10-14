@@ -17,7 +17,7 @@ impl Default for Matrix {
 impl From<&skia_safe::Matrix> for Matrix {
     fn from(matrix: &skia_safe::Matrix) -> Self {
         Self {
-            matrix: M44::from(matrix)
+            matrix: M44::from(matrix),
         }
     }
 }
@@ -79,7 +79,6 @@ pub enum Member2DName {
     Persp2 = 15,
 }
 
-
 impl Index<Member2D> for [f32] {
     type Output = f32;
 
@@ -94,7 +93,6 @@ impl IndexMut<Member2D> for [f32] {
     }
 }
 
-
 impl Index<Member2DName> for [f32] {
     type Output = f32;
 
@@ -108,7 +106,6 @@ impl IndexMut<Member2DName> for [f32] {
         &mut self[index as usize]
     }
 }
-
 
 impl Matrix {
     pub fn new() -> Self {
@@ -134,7 +131,6 @@ impl Matrix {
         self.matrix = M44::row_major(&m);
     }
 
-
     fn member_2d_name(&self, member: Member2DName) -> c_float {
         let mut m = [
             1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
@@ -151,7 +147,6 @@ impl Matrix {
         m[member] = value;
         self.matrix = M44::row_major(&m);
     }
-
 
     fn member_3d(&self, member: Member3D) -> c_float {
         let mut m = [
@@ -212,7 +207,6 @@ impl Matrix {
         self.set_member_2d_name(Member2DName::SkewX, x)
     }
 
-
     pub fn skew_y(&mut self) -> c_float {
         self.member_2d_name(Member2DName::SkewY)
     }
@@ -253,7 +247,6 @@ impl Matrix {
         self.set_member_2d(Member2D::F, f)
     }
 
-
     pub fn m11(&self) -> c_float {
         self.member_3d(Member3D::M11)
     }
@@ -285,7 +278,6 @@ impl Matrix {
     pub fn set_m14(&mut self, m14: c_float) {
         self.set_member_3d(Member3D::M14, m14)
     }
-
 
     pub fn m21(&self) -> c_float {
         self.member_3d(Member3D::M21)
@@ -319,7 +311,6 @@ impl Matrix {
         self.set_member_3d(Member3D::M24, m24)
     }
 
-
     pub fn m31(&self) -> c_float {
         self.member_3d(Member3D::M31)
     }
@@ -351,7 +342,6 @@ impl Matrix {
     pub fn set_m34(&mut self, m34: c_float) {
         self.set_member_3d(Member3D::M34, m34)
     }
-
 
     pub fn m41(&self) -> c_float {
         self.member_3d(Member3D::M41)

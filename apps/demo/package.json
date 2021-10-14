@@ -13,6 +13,7 @@
     "@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
     "@nativescript/canvas-three": "file:../../packages/canvas-three",
     "@nativescript/core": "file:../../node_modules/@nativescript/core",
+    "@nativescript/webpack": "^5.0.0",
     "babylonjs": "file:../../node_modules/babylonjs",
     "babylonjs-materials": "file:../../node_modules/babylonjs-materials",
     "chart.js": "file:../../node_modules/chart.js",
@@ -27,7 +28,7 @@
     "zen-3d": "file:../../node_modules/zen-3d"
   },
   "devDependencies": {
-    "@nativescript/android": "8.0.0",
+    "@nativescript/android": "8.2.0-alpha.2",
     "@nativescript/ios": "8.0.0"
   }
 }

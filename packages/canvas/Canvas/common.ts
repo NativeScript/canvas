@@ -14,6 +14,9 @@ export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
 	valueConverter: booleanConverter
 });
 
+
+import { observe as gestureObserve } from '@nativescript-community/gesturehandler/gestures_override';
+
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
@@ -38,6 +41,22 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			this.off('touch, pan, pinch', this._touchEvent, this);
 		}
 	}
+
+
+	_observe(type: GestureTypes, callback: (args: GestureEventData) => void, thisArg?: any): void {
+		if (!this._gestureObservers[type]) {
+			this._gestureObservers[type] = [];
+		}
+	
+		this._gestureObservers[type].push(gestureObserve(this, type, callback, thisArg));
+		if (global.isAndroid) {
+			if (this.isLoaded && !(<any>this).touchListenerIsSet) {
+				this.setOnTouchListener();
+			}
+		}
+	}
+
+
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
 		super.addEventListener(arg, callback, thisArg);
 		if (WEB_GESTURE_EVENTS.indexOf(arg) !== -1) {
@@ -400,20 +419,5 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 }
-
-
-(CanvasBase.prototype as any)._observe = function (type: GestureTypes, callback: (args: GestureEventData) => void, thisArg?: any): void {
-	const gestureObserve = require('@nativescript-community/gesturehandler/gestures_override').observe;
-	if (!this._gestureObservers[type]) {
-		this._gestureObservers[type] = [];
-	}
-
-	this._gestureObservers[type].push(gestureObserve(this, type, callback, thisArg));
-	if (global.isAndroid) {
-		if (this.isLoaded && !this.touchListenerIsSet) {
-			this.setOnTouchListener();
-		}
-	}
-};
 
 ignorePixelScalingProperty.register(CanvasBase);

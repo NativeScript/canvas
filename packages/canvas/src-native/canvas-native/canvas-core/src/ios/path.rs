@@ -6,52 +6,31 @@ use crate::common::context::paths::path::Path;
 
 #[no_mangle]
 pub extern "C" fn path_create() -> c_longlong {
-    Box::into_raw(
-        Box::new(
-            Path::new()
-        )
-    ) as c_longlong
+    Box::into_raw(Box::new(Path::new())) as c_longlong
 }
 
 #[no_mangle]
 pub extern "C" fn path_create_with_path(path: c_longlong) -> c_longlong {
     if path == 0 {
-        return Box::into_raw(
-            Box::new(
-                Path::new()
-            )
-        ) as c_longlong;
+        return Box::into_raw(Box::new(Path::new())) as c_longlong;
     }
     unsafe {
         let path: *mut Path = path as _;
         let path = &mut *path;
-        Box::into_raw(
-            Box::new(
-                Path::from_path(&path.path)
-            )
-        ) as c_longlong
+        Box::into_raw(Box::new(Path::from_path(&path.path))) as c_longlong
     }
 }
 
 #[no_mangle]
 pub extern "C" fn path_create_with_string(string: *const c_char) -> c_longlong {
     if string.is_null() {
-        return Box::into_raw(
-            Box::new(
-                Path::new()
-            )
-        ) as c_longlong;
+        return Box::into_raw(Box::new(Path::new())) as c_longlong;
     }
     unsafe {
         let string = CStr::from_ptr(string).to_string_lossy();
-        Box::into_raw(
-            Box::new(
-                Path::from_str(string.as_ref())
-            )
-        ) as c_longlong
+        Box::into_raw(Box::new(Path::from_str(string.as_ref()))) as c_longlong
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn path_add_path(path: c_longlong, path_to_add: c_longlong) {
@@ -68,7 +47,11 @@ pub extern "C" fn path_add_path(path: c_longlong, path_to_add: c_longlong) {
 }
 
 #[no_mangle]
-pub extern "C" fn path_add_path_with_matrix(path: c_longlong, path_to_add: c_longlong, matrix: c_longlong) {
+pub extern "C" fn path_add_path_with_matrix(
+    path: c_longlong,
+    path_to_add: c_longlong,
+    matrix: c_longlong,
+) {
     if path == 0 || path_to_add == 0 || matrix == 0 {
         return;
     }
@@ -119,7 +102,6 @@ pub extern "C" fn path_line_to(path: c_longlong, x: c_float, y: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn path_bezier_curve_to(
     path: c_longlong,
@@ -139,7 +121,6 @@ pub extern "C" fn path_bezier_curve_to(
         path.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn path_quadratic_curve_to(
@@ -178,7 +159,6 @@ pub extern "C" fn path_arc(
         path.arc(x, y, radius, start_angle, end_angle, anti_clockwise)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn path_arc_to(
@@ -248,11 +228,8 @@ pub extern "C" fn path_rect(
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn destroy_path(
-    path: c_longlong
-) {
+pub extern "C" fn destroy_path(path: c_longlong) {
     unsafe {
         if path == 0 {
             return;

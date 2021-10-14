@@ -150,13 +150,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (typeof srcData === 'number') {
 			this.context.bufferDataSize(target, srcData, usage);
 		} else if (srcData instanceof ArrayBuffer) {
-			this.context.bufferDataSrcDataSize(
-				target, srcData as any, srcData.byteLength, usage
-			);
-		} else if (srcData && srcData.buffer instanceof ArrayBuffer) {
-			this.context.bufferDataSrcDataSize(
-				target, srcData as any, srcData.byteLength, usage
-			);
+			this.context.bufferDataSrcDataSize(target, srcData as any, srcData.byteLength, usage);
+		} else if (Utils.isTypedArray(srcData)) {
+			this.context.bufferDataSrcDataSizeOffset(target, srcData as any, srcData.byteLength, usage, srcData.byteOffset);
 		} else {
 			this.context.bufferDataSrcData(target, srcData, usage);
 		}
@@ -165,10 +161,11 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	bufferSubData(target: number, offset: number, srcData: ArrayBuffer | ArrayBufferView): void {
 		this._glCheckError('bufferSubData');
 		this._checkArgs('bufferSubData', arguments);
-
-		this.context.bufferSubDataSrcDataSize(
-			target, offset, srcData as any, srcData.byteLength
-		);
+		if (Utils.isTypedArray(srcData)) {
+			this.context.bufferSubDataSrcDataSizeOs(target, offset, srcData as any, srcData.byteLength, (srcData as any).byteOffset);
+		} else {
+			this.context.bufferSubDataSrcDataSize(target, offset, srcData as any, srcData.byteLength);
+		}
 	}
 
 	checkFramebufferStatus(target: number): number {
@@ -578,19 +575,19 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				return new Float32Array(Utils.toJSArray(value));
 			case this.ARRAY_BUFFER_BINDING:
 			case this.ELEMENT_ARRAY_BUFFER_BINDING:
-				if(value){
+				if (value) {
 					return new WebGLBuffer(value);
 				}
 				return null;
 			case this.CURRENT_PROGRAM:
-				if(value){
+				if (value) {
 					return new WebGLProgram(value);
 				}
 				return null;
 			case this.COMPRESSED_TEXTURE_FORMATS:
 				return new Uint32Array(Utils.toJSArray(value));
 			case this.RENDERBUFFER_BINDING:
-				if(value){
+				if (value) {
 					return new WebGLRenderbuffer(value);
 				}
 				return null;
@@ -848,9 +845,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void {
 		this._glCheckError('readPixels');
 		this._checkArgs('readPixels', arguments);
-		if ((pixels && pixels.buffer instanceof ArrayBuffer)) {
-			this.context.readPixels(x, y, width, height, format, type, pixels.buffer as any);
-		}else if(pixels instanceof ArrayBuffer){
+		if (Utils.isTypedArray(pixels)) {
+			this.context.readPixelsOffset(x, y, width, height, format, type, pixels as any, pixels.byteOffset);
+		} else if (pixels instanceof ArrayBuffer) {
 			this.context.readPixels(x, y, width, height, format, type, pixels as any);
 		}
 	}
@@ -932,23 +929,23 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		// this.enable(this.BLEND);
 		/* TODO */
 		if (arguments.length === 9) {
-			if ((pixels && pixels.buffer) || pixels instanceof ArrayBuffer) {
-				this.context.texImage2DPixelsSize(
-					target, level, internalformat, width, height, border, format, type, pixels as any, pixels.byteLength
-				)
+			if (pixels instanceof ArrayBuffer) {
+				this.context.texImage2DPixelsSize(target, level, internalformat, width, height, border, format, type, pixels as any, pixels.byteLength);
+			}else if(Utils.isTypedArray(pixels)){
+				this.context.texImage2DPixelsSizeOffset(target, level, internalformat, width, height, border, format, type, pixels as any, pixels.byteLength, pixels.byteOffset);
 			} else {
 				this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels as any);
 			}
 		} else if (arguments.length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
-				border._video.getCurrentFrame(this.context,this, target, level, internalformat, width, height);
+				border._video.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				this.context.texImage2DAsset(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {
 				this.context.texImage2DBitmap(target, level, internalformat, width, height, border.native);
-			}  else if (border instanceof ImageSource) {
+			} else if (border instanceof ImageSource) {
 				this.context.texImage2DPixels(target, level, internalformat, width, height, border.ios);
 			} else if (border instanceof UIImage) {
 				this.context.texImage2DPixels(target, level, internalformat, width, height, border);
@@ -991,17 +988,18 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._glCheckError('texSubImage2D');
 		this._checkArgs('texSubImage2D', arguments);
 		if (arguments.length === 9) {
-			if ((pixels && pixels.buffer) || pixels instanceof ArrayBuffer) {
-				this.context.texSubImage2DPixelsSize(
-					target, level, xoffset, yoffset, width, height, format, type, pixels as any, pixels.byteLength
-				);
+			if (pixels instanceof ArrayBuffer) {
+				this.context.texSubImage2DPixelsSize(target, level, xoffset, yoffset, width, height, format, type, pixels as any, pixels.byteLength);
+			}else if(Utils.isTypedArray(pixels)){
+				this.context.texSubImage2DPixelsSizeOffset(target, level, xoffset, yoffset, width, height, format, type, pixels as any, pixels.byteLength, pixels.byteOffset);
 			} else {
 				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels as any);
 			}
 		} else if (arguments.length === 7) {
 			if (format instanceof ImageAsset) {
 				this.context.texSubImage2DAsset(target, level, xoffset, yoffset, width, height, format.native);
-			}if (format instanceof ImageBitmap) {
+			}
+			if (format instanceof ImageBitmap) {
 				this.context.texSubImage2DBitmap(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof UIImage) {
 				this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, format);
@@ -1038,16 +1036,16 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Int32Array)) {
 			value = new Int32Array(value) as any;
 		}
-		this.context.uniform1iv(location.native, value as any, value.length);
+		this.context.uniform1ivOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform1fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform1fv');
 		this._checkArgs('uniform1fv', arguments);
 		if (!(value instanceof Float32Array)) {
-			value = new Float32Array(value)as any;
+			value = new Float32Array(value) as any;
 		}
-		this.context.uniform1fv(location.native, value as any, value.length);
+		this.context.uniform1fvOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform1i(location: WebGLUniformLocation, v0: number): void {
@@ -1068,7 +1066,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Int32Array)) {
 			value = new Int32Array(value) as any;
 		}
-		this.context.uniform2iv(location.native, value as any, value.length);
+		this.context.uniform2ivOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform2fv(location: WebGLUniformLocation, value: number[]): void {
@@ -1077,7 +1075,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.uniform2fv(location.native, value as any, value.length);
+		this.context.uniform2fvOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform2i(location: WebGLUniformLocation, v0: number, v1: number): void {
@@ -1098,7 +1096,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Int32Array)) {
 			value = new Int32Array(value) as any;
 		}
-		this.context.uniform3iv(location.native, value as any, value.length);
+		this.context.uniform3ivOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform3fv(location: WebGLUniformLocation, value: number[]): void {
@@ -1107,7 +1105,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.uniform3fv(location.native, value as any, value.length);
+		this.context.uniform3fvOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform3i(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
@@ -1128,7 +1126,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Int32Array)) {
 			value = new Int32Array(value) as any;
 		}
-		this.context.uniform4iv(location.native, value as any, value.length);
+		this.context.uniform4ivOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform4fv(location: WebGLUniformLocation, value: number[]): void {
@@ -1137,7 +1135,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.uniform4fv(location.native, value as any, value.length);
+		this.context.uniform4fvOffset(location.native, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniform4i(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
@@ -1152,7 +1150,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.uniformMatrix2fv(location.native, transpose, value as any, value.length);
+		this.context.uniformMatrix2fvOffset(location.native, transpose, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniformMatrix3fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
@@ -1161,7 +1159,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.uniformMatrix3fv(location.native, transpose, value as any, value.length);
+		this.context.uniformMatrix3fvOffset(location.native, transpose, value as any, value.length, (value as any).byteOffset);
 	}
 
 	uniformMatrix4fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
@@ -1170,7 +1168,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.uniformMatrix4fv(location.native, transpose, value as any, value.length);
+		this.context.uniformMatrix4fvOffset(location.native, transpose, value as any, value.length, (value as any).byteOffset);
 	}
 
 	useProgram(program: WebGLProgram): void {
@@ -1199,7 +1197,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.vertexAttrib1fv(index, value as any);
+		this.context.vertexAttrib1fvOffset(index, value as any, (value as any).byteOffset);
 	}
 
 	vertexAttrib2f(index: number, v0: number, v1: number): void {
@@ -1214,7 +1212,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.vertexAttrib2fv(index, value as any);
+		this.context.vertexAttrib2fvOffset(index, value as any, (value as any).byteOffset);
 	}
 
 	vertexAttrib3f(index: number, v0: number, v1: number, v2: number): void {
@@ -1229,7 +1227,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.vertexAttrib3fv(index, value as any);
+		this.context.vertexAttrib3fvOffset(index, value as any, (value as any).byteOffset);
 	}
 
 	vertexAttrib4f(index: number, v0: number, v1: number, v2: number, v3: number): void {
@@ -1244,7 +1242,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (!(value instanceof Float32Array)) {
 			value = new Float32Array(value) as any;
 		}
-		this.context.vertexAttrib4fv(index, value as any);
+		this.context.vertexAttrib4fvOffset(index, value as any, (value as any).byteOffset);
 	}
 
 	vertexAttribPointer(index: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void {

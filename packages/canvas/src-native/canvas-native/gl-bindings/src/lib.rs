@@ -3,7 +3,6 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
-
 #[cfg(target_os = "android")]
 #[cfg(target_os = "android")]
 #[allow(non_snake_case)]
@@ -25,5 +24,3 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 // #[cfg(target_os = "ios")]
 // mod ios_bindings;
 // pub use ios_bindings::*;
-
-

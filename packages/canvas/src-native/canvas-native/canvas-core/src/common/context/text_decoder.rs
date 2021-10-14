@@ -1,4 +1,4 @@
-use std::ffi::{ CString};
+use std::ffi::CString;
 
 use encoding_rs::UTF_8;
 
@@ -14,33 +14,44 @@ impl TextDecoder {
         Self { decoder }
     }
 
-
     pub fn decode(&mut self, data: *const u8, len: usize) -> CString {
         let txt = unsafe { std::slice::from_raw_parts(data, len) };
         let (res, _) = self.decoder.decode_with_bom_removal(txt);
+        // let utf8_src = res.as_bytes();
+        /*let nul_range_end = utf8_src
+        .iter()
+        .position(|&c| c == b'\0')
+        .unwrap_or(utf8_src.len()); // default to length if no `\0` present*/
+        // let data = &utf8_src[0..];
+        // let str = unsafe { std::str::from_utf8_unchecked(data) };
+        CString::new(res.to_string()).unwrap()
+    }
 
+    pub fn decode_as_bytes(&mut self, data: *const u8, len: usize) -> Vec<u8> {
+        let txt = unsafe { std::slice::from_raw_parts(data, len) };
+        let (res, _) = self.decoder.decode_with_bom_removal(txt);
         let utf8_src = res.as_bytes();
-        let nul_range_end = utf8_src
-            .iter()
-            .position(|&c| c == b'\0')
-            .unwrap_or(utf8_src.len()); // default to length if no `\0` present
-        let data = &utf8_src[0..nul_range_end];
-        let str = unsafe { std::str::from_utf8_unchecked(data) };
-        CString::new(str).unwrap()
+        /*let nul_range_end = utf8_src
+        .iter()
+        .position(|&c| c == b'\0')
+        .unwrap_or(utf8_src.len()); // default to length if no `\0` present*/
+        // let data = &utf8_src[0..];
+        // let str = unsafe { std::str::from_utf8_unchecked(data) };
+        utf8_src.to_vec()
     }
 
     pub(crate) fn decode_to_bytes(&mut self, txt: &str) -> Vec<u8> {
         let (res, _) = self.decoder.decode_with_bom_removal(txt.as_bytes());
 
-        let mut utf8_src = res.as_bytes();
-        let nul_range_end = utf8_src
-            .iter()
-            .position(|&c| c == b'\0')
-            .unwrap_or(utf8_src.len()); // default to length if no `\0` present
-        let data = &utf8_src[0..nul_range_end];
-        data.to_vec()
+        // let mut utf8_src = res.as_bytes();
+        /* let nul_range_end = utf8_src
+        .iter()
+        .position(|&c| c == b'\0')
+        .unwrap_or(utf8_src.len()); // default to length if no `\0` present*/
+        // let data = &utf8_src[0..];
+        // data.to_vec()
+        res.as_bytes().to_vec()
     }
-
 
     pub fn encoding(&self) -> &str {
         self.decoder.name()

@@ -34,8 +34,8 @@ class MainActivity : AppCompatActivity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
-		//canvas = findViewById(R.id.canvasView)
-		svg = findViewById(R.id.svgView)
+		canvas = findViewById(R.id.canvasView)
+		//svg = findViewById(R.id.svgView)
 		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
@@ -244,7 +244,7 @@ class MainActivity : AppCompatActivity() {
 		//	drawTransformGradientSvg()
 
 			//	drawClipPathUnitsSvg()
-		downloadSvg()
+	//	downloadSvg()
 //		svg?.setSrc("""
 //			<svg xmlns="http://www.w3.org/2000/svg">
 //			  <!-- Using g to inherit presentation attributes -->
@@ -312,6 +312,35 @@ class MainActivity : AppCompatActivity() {
 			*/
 
 
+	}
+
+	fun issue54(){
+		executor.execute {
+			try {
+				val patternFile = File(filesDir, "pattern.svg")
+				if (patternFile.exists()) {
+					patternFile.delete()
+				}
+
+				val url =
+					URL("https://mdn.mozillademos.org/files/222/Canvas_createpattern.png")
+				val fs = FileOutputStream(patternFile)
+				url.openStream().use { input ->
+					fs.use { output ->
+						input.copyTo(output)
+					}
+				}
+
+				val ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+				val asset = TNSImageAsset()
+				val bm = BitmapFactory.decodeFile(patternFile.absolutePath)
+				val pattern = ctx?.createPattern(bm)
+				Log.d("com.test","issue54")
+				Log.d("com.test", "" + pattern)
+			} catch (e: IOException) {
+				e.printStackTrace()
+			}
+		}
 	}
 
 	fun goToVideo(view: View) {
@@ -493,7 +522,7 @@ class MainActivity : AppCompatActivity() {
 				}
 
 				val url =
-					URL("https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")
+					URL("https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg")
 				val fs = FileOutputStream(svgFile)
 				url.openStream().use { input ->
 					fs.use { output ->
@@ -1476,18 +1505,19 @@ class MainActivity : AppCompatActivity() {
 
 	@SuppressLint("NewApi")
 	fun drawFill(view: View) {
+		issue54()
 		//addPath(canvas!!)
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
-		ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+	//	ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 		//drawText(ctx!!)
 		// ballExample(ctx!!)
 		//drawPattern(canvas!!)
-		 drawFace(ctx!!)
+		 //drawFace(ctx!!)
 		//drawPattern(canvas!!)
 		// drawElements(canvas!!)
 		// drawPatterWithCanvas(canvas!!)
-		executor.submit {
+	//	executor.submit {
 			// drawPatterWithCanvas(canvas!!)
 			//  drawPatterWithCanvas(canvas!!)
 			//  canvas?.isHandleInvalidationManually = true
@@ -1496,7 +1526,7 @@ class MainActivity : AppCompatActivity() {
 			//drawFace(ctx!!)
 			//canvas?.flush()
 			// ballExample(ctx!!)
-		}
+		//}
 		//getImageData(ctx!!)
 		// drawImageExample(ctx!!)
 		//drawPattern(canvas!!)

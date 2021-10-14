@@ -261,6 +261,81 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		}
 	}
 
+	fun compressedTexSubImage3DByteBuffer(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		srcData: ByteBuffer,
+		srcOffset: Int,
+		srcLengthOverride: Int
+	) {
+		compressedTexSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			srcData,
+			srcOffset,
+			srcLengthOverride
+		)
+	}
+
+
+	fun compressedTexSubImage3D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		srcData: ByteBuffer,
+		srcOffset: Int,
+		srcLengthOverride: Int
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread {
+			var size = srcData.capacity()
+			if (srcLengthOverride == 0) {
+				size -= srcOffset
+			} else if (srcLengthOverride > size - srcOffset) {
+
+			}
+			srcData.position(srcOffset)
+			GLES30.glCompressedTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				size,
+				srcData
+			)
+			lock.countDown()
+		}
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
 	fun copyBufferSubData(
 		readTarget: Int,
 		writeTarget: Int,
@@ -470,6 +545,23 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			GLES30.glDrawBuffers(buffers.size, IntBuffer.wrap(buffers))
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun drawBuffersBuffer(buffers: IntBuffer) {
+		drawBuffers(buffers)
+	}
+
+	fun drawBuffers(buffers: IntBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES30.glDrawBuffers(buffers.capacity(), buffers)
 			lock.countDown()
 		})
 		try {
@@ -936,7 +1028,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				info[0] = null
 				return@Runnable
 			}
-			var name: ByteArray? = ByteArray(maxNameLength[0])
+			var name = ByteArray(maxNameLength[0])
 			val length = IntArray(1)
 			val size = IntArray(1)
 			val type = IntArray(1)
@@ -957,7 +1049,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				info[0] = null
 				return@Runnable
 			}
-			name = Arrays.copyOfRange(name, 0, length[0])
+			name = name.copyOfRange(0, length[0])
 			val nameValue = String(name)
 			info[0] = WebGLActiveInfo(nameValue, size[0], type[0])
 			lock.countDown()
@@ -1235,7 +1327,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				if(it.isDirect){
+				if (it.isDirect) {
 					nativeTexImage3DBuffer(
 						target,
 						level,
@@ -1249,7 +1341,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 						it,
 						flipYWebGL
 					)
-				}else {
+				} else {
 					nativeTexImage3DByteArray(
 						target,
 						level,
@@ -1302,7 +1394,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				if(it.isDirect){
+				if (it.isDirect) {
 					nativeTexImage3DBuffer(
 						target,
 						level,
@@ -1316,7 +1408,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 						it,
 						flipYWebGL
 					)
-				}else {
+				} else {
 					nativeTexImage3DShortArray(
 						target,
 						level,
@@ -1369,7 +1461,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				if(it.isDirect){
+				if (it.isDirect) {
 					nativeTexImage3DBuffer(
 						target,
 						level,
@@ -1383,7 +1475,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 						it,
 						flipYWebGL
 					)
-				}else {
+				} else {
 					nativeTexImage3DIntArray(
 						target,
 						level,
@@ -1436,7 +1528,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				if(it.isDirect){
+				if (it.isDirect) {
 					nativeTexImage3DBuffer(
 						target,
 						level,
@@ -1450,7 +1542,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 						it,
 						flipYWebGL
 					)
-				}else {
+				} else {
 					nativeTexImage3DLongArray(
 						target,
 						level,
@@ -1503,7 +1595,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				if(it.isDirect){
+				if (it.isDirect) {
 					nativeTexImage3DBuffer(
 						target,
 						level,
@@ -1517,7 +1609,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 						it,
 						flipYWebGL
 					)
-				}else {
+				} else {
 					nativeTexImage3DFloatArray(
 						target,
 						level,
@@ -1570,7 +1662,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			source?.let {
-				if(it.isDirect){
+				if (it.isDirect) {
 					nativeTexImage3DBuffer(
 						target,
 						level,
@@ -1584,7 +1676,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 						it,
 						flipYWebGL
 					)
-				}else {
+				} else {
 					nativeTexImage3DDoubleArray(
 						target,
 						level,
@@ -1621,6 +1713,98 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		}
 	}
 
+
+	fun texImage3DByteBuffer(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		source: ByteBuffer?
+	) {
+		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
+	}
+
+
+	fun texImage3DShortBuffer(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		source: ShortBuffer?
+	) {
+		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
+	}
+
+	fun texImage3DIntBuffer(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		source: IntBuffer?
+	) {
+		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
+	}
+
+	fun texImage3DLongBuffer(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		source: LongBuffer?
+	) {
+		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
+	}
+
+	fun texImage3DFloatBuffer(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		source: FloatBuffer?
+	) {
+		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
+	}
+
+	fun texImage3DDoubleBuffer(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		source: DoubleBuffer?
+	) {
+		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
+	}
+
 	fun texImage3DByte(
 		target: Int,
 		level: Int,
@@ -1632,7 +1816,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		format: Int,
 		type: Int,
 		source: ByteArray?
-	){
+	) {
 		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
 	}
 
@@ -1648,7 +1832,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		format: Int,
 		type: Int,
 		source: ShortArray?
-	){
+	) {
 		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
 	}
 
@@ -1663,7 +1847,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		format: Int,
 		type: Int,
 		source: IntArray?
-	){
+	) {
 		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
 	}
 
@@ -1678,7 +1862,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		format: Int,
 		type: Int,
 		source: LongArray?
-	){
+	) {
 		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
 	}
 
@@ -1693,7 +1877,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		format: Int,
 		type: Int,
 		source: FloatArray?
-	){
+	) {
 		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
 	}
 
@@ -1708,7 +1892,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		format: Int,
 		type: Int,
 		source: DoubleArray?
-	){
+	) {
 		texImage3D(target, level, internalformat, width, height, depth, border, format, type, source)
 	}
 
@@ -2320,8 +2504,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: ByteArray?,
 		srcOffset: Int = 0
-	){
-		texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset)
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
 	}
 
 
@@ -2338,8 +2535,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: ShortArray?,
 		srcOffset: Int = 0
-	){
-		texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset)
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
 	}
 
 	fun texSubImage3DInt(
@@ -2355,8 +2565,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: IntArray?,
 		srcOffset: Int = 0
-	){
-		texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset)
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
 	}
 
 
@@ -2373,8 +2596,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: LongArray?,
 		srcOffset: Int = 0
-	){
-		texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset)
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
 	}
 
 
@@ -2391,8 +2627,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: FloatArray?,
 		srcOffset: Int = 0
-	){
-		texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset)
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
 	}
 
 
@@ -2409,9 +2658,211 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: DoubleArray?,
 		srcOffset: Int = 0
-	){
-		texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset)
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
 	}
+
+
+
+
+
+	fun texSubImage3DByteBuffer(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: ByteBuffer?,
+		srcOffset: Int = 0
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
+	}
+
+
+	fun texSubImage3DShortBuffer(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: ShortBuffer?,
+		srcOffset: Int = 0
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
+	}
+
+	fun texSubImage3DIntBuffer(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: IntBuffer?,
+		srcOffset: Int = 0
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
+	}
+
+
+	fun texSubImage3DLongBuffer(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: LongBuffer?,
+		srcOffset: Int = 0
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
+	}
+
+
+	fun texSubImage3DFloatBuffer(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: FloatBuffer?,
+		srcOffset: Int = 0
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
+	}
+
+
+	fun texSubImage3DDoubleBuffer(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: DoubleBuffer?,
+		srcOffset: Int = 0
+	) {
+		texSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			srcOffset
+		)
+	}
+
 
 
 	fun texSubImage3D(
@@ -2426,6 +2877,288 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		format: Int,
 		type: Int,
 		srcData: ByteBuffer?,
+		srcOffset: Int = 0
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			srcData?.let {
+				it.position(srcOffset)
+				nativeTexSubImage3DBuffer(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					it,
+					flipYWebGL
+				)
+			} ?: run {
+				GLES30.glTexSubImage3D(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun texSubImage3D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: ShortBuffer?,
+		srcOffset: Int = 0
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			srcData?.let {
+				it.position(srcOffset)
+				nativeTexSubImage3DBuffer(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					it,
+					flipYWebGL
+				)
+			} ?: run {
+				GLES30.glTexSubImage3D(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+
+
+	fun texSubImage3D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: IntBuffer?,
+		srcOffset: Int = 0
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			srcData?.let {
+				it.position(srcOffset)
+				nativeTexSubImage3DBuffer(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					it,
+					flipYWebGL
+				)
+			} ?: run {
+				GLES30.glTexSubImage3D(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun texSubImage3D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: LongBuffer?,
+		srcOffset: Int = 0
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			srcData?.let {
+				it.position(srcOffset)
+				nativeTexSubImage3DBuffer(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					it,
+					flipYWebGL
+				)
+			} ?: run {
+				GLES30.glTexSubImage3D(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun texSubImage3D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: FloatBuffer?,
+		srcOffset: Int = 0
+	) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			srcData?.let {
+				it.position(srcOffset)
+				nativeTexSubImage3DBuffer(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					it,
+					flipYWebGL
+				)
+			} ?: run {
+				GLES30.glTexSubImage3D(
+					target,
+					level,
+					xoffset,
+					yoffset,
+					zoffset,
+					width,
+					height,
+					depth,
+					format,
+					type,
+					null
+				)
+			}
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun texSubImage3D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: DoubleBuffer?,
 		srcOffset: Int = 0
 	) {
 		val lock = CountDownLatch(1)
@@ -2938,6 +3671,60 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		}
 	}
 
+
+
+	fun uniform1uivBuffer(location: Int, data: IntBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 1
+			GLES30.glUniform1uiv(location, count, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniform2uivBuffer(location: Int, data: IntBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 2
+			GLES30.glUniform2uiv(location, count, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniform3uivBuffer(location: Int, data: IntBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 3
+			GLES30.glUniform3uiv(location, count, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniform4uivBuffer(location: Int, data: IntBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 4
+			GLES30.glUniform4uiv(location, count, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
 	fun uniformBlockBinding(program: Int, uniformBlockIndex: Int, uniformBlockBinding: Int) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -3028,6 +3815,89 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		}
 	}
 
+
+
+
+	fun uniformMatrix3x2fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 6
+			GLES30.glUniformMatrix3x2fv(location, count, transpose, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniformMatrix4x2fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 8
+			GLES30.glUniformMatrix4x2fv(location, count, transpose, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniformMatrix2x3fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 6
+			GLES30.glUniformMatrix2x3fv(location, count, transpose, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniformMatrix4x3fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 12
+			GLES30.glUniformMatrix4x3fv(location, count, transpose, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniformMatrix2x4fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 8
+			GLES30.glUniformMatrix2x4fv(location, count, transpose, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun uniformMatrix3x4fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			val count = data.capacity() / 12
+			GLES30.glUniformMatrix3x4fv(location, count, transpose, data)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+
 	fun vertexAttribDivisor(index: Int, divisor: Int) {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
@@ -3080,6 +3950,31 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		val lock = CountDownLatch(1)
 		runOnGLThread(Runnable {
 			GLES30.glVertexAttribI4uiv(index, IntBuffer.wrap(value))
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun vertexAttribI4ivBuffer(index: Int, value: IntBuffer?) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES30.glVertexAttribI4iv(index, value)
+			lock.countDown()
+		})
+		try {
+			lock.await()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun vertexAttribI4uivBuffer(index: Int, value: IntBuffer?) {
+		val lock = CountDownLatch(1)
+		runOnGLThread(Runnable {
+			GLES30.glVertexAttribI4uiv(index, value)
 			lock.countDown()
 		})
 		try {
@@ -3444,7 +4339,6 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 			byteArray: ByteArray,
 			flipYWebGL: Boolean
 		)
-
 
 
 		@JvmStatic

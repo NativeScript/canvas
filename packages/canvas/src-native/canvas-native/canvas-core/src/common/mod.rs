@@ -1,16 +1,19 @@
 use std::os::raw::c_int;
 
-use skia_safe::{AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, SamplingOptions, Surface, Point};
 use skia_safe::image::CachingHint;
+use skia_safe::{
+    AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface,
+};
 
+use crate::common::context::filter_quality::FilterQuality;
 use crate::common::context::Context;
 
 pub mod context;
 pub mod ffi;
-pub(crate) mod svg;
-pub(crate) mod utils;
 pub mod image_bitmap;
 pub mod prelude;
+pub(crate) mod svg;
+pub(crate) mod utils;
 
 pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -> String {
     let surface = &mut context.surface;
@@ -88,12 +91,9 @@ pub(crate) fn flush_custom_surface(context: *mut Context, width: i32, height: i3
 
         if let Some(mut dst_surface) = Surface::new_raster_direct(&info, dst, None, None) {
             let dst_canvas = dst_surface.canvas();
-            context.surface.draw(
-                dst_canvas,
-                Point::new(0., 0.),
-                SamplingOptions::from_filter_quality(skia_safe::FilterQuality::High, None),
-                None,
-            );
+            context
+                .surface
+                .draw(dst_canvas, Point::new(0., 0.), FilterQuality::High, None);
             context.surface.flush_and_submit();
             dst_surface.flush_and_submit();
         }
@@ -131,12 +131,7 @@ pub(crate) fn snapshot_canvas_raw(context: *mut Context) -> Vec<u8> {
         let mut dst_surface =
             Surface::new_raster_direct(&info, bytes.as_mut_slice(), None, None).unwrap();
         let mut dst_canvas = dst_surface.canvas();
-        surface.draw(
-            dst_canvas,
-            Point::new(0., 0.),
-            SamplingOptions::from_filter_quality(skia_safe::FilterQuality::High, None),
-            None,
-        );
+        surface.draw(dst_canvas, Point::new(0., 0.), FilterQuality::High, None);
         surface.flush_and_submit();
         dst_surface.flush_and_submit();
         bytes

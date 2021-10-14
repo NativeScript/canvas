@@ -30,7 +30,9 @@ export class Image extends SVGItem {
 	href: string;
 	x: any = 0;
 	y: any = 0;
+	// @ts-ignore
 	#loadedSrc: string;
+	// @ts-ignore
 	#asset = new ImageAsset();
 
 	constructor(){

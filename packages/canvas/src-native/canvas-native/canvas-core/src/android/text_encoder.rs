@@ -23,7 +23,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeInit(
 }
 
 #[no_mangle]
-pub  extern "C" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeDestroy(
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     encoder: jlong,

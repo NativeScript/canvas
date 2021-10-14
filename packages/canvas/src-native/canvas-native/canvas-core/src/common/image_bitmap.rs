@@ -1,7 +1,10 @@
 use core::convert::{From, Into};
 
-use skia_safe::{EncodedImageFormat, Point, RCHandle, Rect};
+use skia_safe::{
+    CubicResampler, EncodedImageFormat, FilterMode, MipmapMode, Point, RCHandle, Rect,
+};
 
+use crate::common::context::filter_quality::FilterQuality;
 use crate::common::context::image_asset::ImageAsset;
 use crate::common::context::pixel_manipulation::image_data::ImageData;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
@@ -103,22 +106,10 @@ impl From<i32> for ImageBitmapResizeQuality {
 impl ImageBitmapResizeQuality {
     pub fn to_quality(&self) -> skia_safe::SamplingOptions {
         return match self {
-            ImageBitmapResizeQuality::Low => skia_safe::SamplingOptions::from_filter_quality(
-                skia_safe::FilterQuality::Low,
-                skia_safe::sampling_options::MediumBehavior::AsMipmapLinear,
-            ),
-            ImageBitmapResizeQuality::Medium => skia_safe::SamplingOptions::from_filter_quality(
-                skia_safe::FilterQuality::Medium,
-                skia_safe::sampling_options::MediumBehavior::AsMipmapLinear,
-            ),
-            ImageBitmapResizeQuality::High => skia_safe::SamplingOptions::from_filter_quality(
-                skia_safe::FilterQuality::High,
-                skia_safe::sampling_options::MediumBehavior::AsMipmapLinear,
-            ),
-            ImageBitmapResizeQuality::Pixelated => skia_safe::SamplingOptions::from_filter_quality(
-                skia_safe::FilterQuality::None,
-                skia_safe::sampling_options::MediumBehavior::AsMipmapLinear,
-            ),
+            ImageBitmapResizeQuality::Low => FilterQuality::Low.into(),
+            ImageBitmapResizeQuality::Medium => FilterQuality::Medium.into(),
+            ImageBitmapResizeQuality::High => FilterQuality::High.into(),
+            ImageBitmapResizeQuality::Pixelated => FilterQuality::None.into(),
         };
     }
 }

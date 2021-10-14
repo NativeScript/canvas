@@ -926,11 +926,23 @@ long long text_decoder_create(const char *decoding);
 
 const char *text_decoder_decode(long long decoder, const uint8_t *data, uintptr_t len);
 
+U8Array *text_decoder_decode_bytes(long long decoder, const uint8_t *data, uintptr_t len);
+
 const char *text_decoder_decode_i16(long long decoder, const int16_t *data, uintptr_t len);
+
+U8Array *text_decoder_decode_i16_bytes(long long decoder, const int16_t *data, uintptr_t len);
 
 const char *text_decoder_decode_i32(long long decoder, const int32_t *data, uintptr_t len);
 
+U8Array *text_decoder_decode_i32_bytes(long long decoder, const int32_t *data, uintptr_t len);
+
+const U8Array *text_decoder_decode_to_bytes(long long decoder, const uint8_t *data, uintptr_t len);
+
 const char *text_decoder_decode_u16(long long decoder, const uint16_t *data, uintptr_t len);
+
+U8Array *text_decoder_decode_u16_bytes(long long decoder, const uint16_t *data, uintptr_t len);
+
+U8Array *text_decoder_decode_u32_bytes(long long decoder, const uint32_t *data, uintptr_t len);
 
 const char *text_decoder_get_encoding(long long decoder);
 

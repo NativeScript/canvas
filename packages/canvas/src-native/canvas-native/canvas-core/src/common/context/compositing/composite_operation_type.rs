@@ -65,7 +65,7 @@ impl Into<i32> for CompositeOperationType {
             CompositeOperationType::Hue => 22,
             CompositeOperationType::Saturation => 23,
             CompositeOperationType::Color => 24,
-            CompositeOperationType::Luminosity => 25
+            CompositeOperationType::Luminosity => 25,
         }
     }
 }
@@ -98,7 +98,7 @@ impl From<i32> for CompositeOperationType {
             22 => CompositeOperationType::Hue,
             23 => CompositeOperationType::Saturation,
             24 => CompositeOperationType::Luminosity,
-            _ => CompositeOperationType::SourceOver
+            _ => CompositeOperationType::SourceOver,
         }
     }
 }

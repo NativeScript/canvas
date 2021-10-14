@@ -15,12 +15,15 @@ pub extern "C" fn gradient_add_color_stop(style: c_longlong, stop: c_float, colo
             PaintStyle::Gradient(gradient) => {
                 let color = CStr::from_ptr(color).to_string_lossy();
                 if let Ok(color) = color.as_ref().parse::<css_color_parser::Color>() {
-                    gradient.add_color_stop(stop, skia_safe::Color::from_argb(
-                        (color.a * 255.0) as u8,
-                        color.r,
-                        color.g,
-                        color.b,
-                    ))
+                    gradient.add_color_stop(
+                        stop,
+                        skia_safe::Color::from_argb(
+                            (color.a * 255.0) as u8,
+                            color.r,
+                            color.g,
+                            color.b,
+                        ),
+                    )
                 }
             }
             _ => {}

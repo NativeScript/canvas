@@ -7,6 +7,7 @@ IOS_LIB_DIR="$IOS_SRC_DIR/CanvasNative"
 IOS_LIB_INCLUDE="$IOS_LIB_DIR/include"
 IOS_LIB_LIBS="$IOS_LIB_DIR/libs"
 IOS_LIB_X86_64_SIM="$IOS_LIB_LIBS/x86_64-iphonesimulator"
+IOS_LIB_ARM_64_SIM="$IOS_LIB_LIBS/arm64-iphonesimulator"
 IOS_LIB_ARM_64_PHONE="$IOS_LIB_LIBS/arm64-iphoneos"
 OUTPUT_LIB_NAME="libcanvasnative.a"
 IS_RELEASE=false
@@ -21,6 +22,11 @@ IOS_X86_64_SIM_OUTPUT_RELEASE_DIR="$NATIVE_SRC/target/x86_64-apple-ios/release/$
 
 IOS_ARM_64_PHONE_OUTPUT_DEBUG_DIR="$NATIVE_SRC/target/aarch64-apple-ios/debug/$OUTPUT_LIB_NAME"
 IOS_ARM_64_PHONE_OUTPUT_RELEASE_DIR="$NATIVE_SRC/target/aarch64-apple-ios/release/$OUTPUT_LIB_NAME"
+
+IOS_ARM_64_SIM_OUTPUT_DEBUG_DIR="$NATIVE_SRC/target/aarch64-apple-darwin/debug/$OUTPUT_LIB_NAME"
+IOS_ARM_64_SIM_OUTPUT_RELEASE_DIR="$NATIVE_SRC/target/aarch64-apple-darwin/release/$OUTPUT_LIB_NAME"
+
+
 if ! cargo --version >/dev/null 2>&1; then
   echo "Cargo not found"
   exit
@@ -71,7 +77,7 @@ else
 fi
 
 
-if [[ -f "I$OS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME" ]]; then
+if [[ -f "$IOS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME" ]]; then
   rm "$IOS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME"
 fi
 
@@ -86,3 +92,16 @@ else
 fi
 
 
+# if [[ -f "$IOS_LIB_ARM_64_SIM/$OUTPUT_LIB_NAME" ]]; then
+#   rm "$IOS_LIB_ARM_64_SIM/$OUTPUT_LIB_NAME"
+# fi
+
+# if [[ $IS_RELEASE == true ]]; then
+#   cd "$NATIVE_SRC"
+#  RUST_BACKTRACE=1 cargo build --target aarch64-apple-darwin $BUILD_FLAG $FEATURE_FLAGS
+#   cp "$IOS_ARM_64_SIM_OUTPUT_RELEASE_DIR" "$IOS_LIB_ARM_64_SIM/$OUTPUT_LIB_NAME"
+# else
+#   cd "$NATIVE_SRC"
+#  RUST_BACKTRACE=1 cargo build --target aarch64-apple-darwin $FEATURE_FLAGS
+#   cp "$IOS_ARM_64_SIM_OUTPUT_DEBUG_DIR" "$IOS_LIB_ARM_64_SIM/$OUTPUT_LIB_NAME"
+# fi

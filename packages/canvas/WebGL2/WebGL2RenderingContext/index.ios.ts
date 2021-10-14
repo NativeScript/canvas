@@ -80,7 +80,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		if (!(values instanceof Float32Array)) {
 			values = new Float32Array(values) as any;
 		}
-		this.native.clearBufferfv(buffer.native, drawbuffer, values as any);
+		this.native.clearBufferfvOffset(buffer.native, drawbuffer, values as any, (values as any).byteOffset);
 	}
 
 	clearBufferiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Int32Array): void {
@@ -88,7 +88,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		if (!(values instanceof Int32Array)) {
 			values = new Int32Array(values) as any;
 		}
-		this.native.clearBufferiv(buffer.native, drawbuffer, values as any);
+		this.native.clearBufferivOffset(buffer.native, drawbuffer, values as any, (values as any).byteOffset);
 	}
 
 	clearBufferuiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Uint32Array): void {
@@ -96,7 +96,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		if (!(values instanceof Uint32Array)) {
 			values = new Uint32Array(values) as any;
 		}
-		this.native.clearBufferuiv(buffer.native, drawbuffer, values as any);
+		this.native.clearBufferuivOffset(buffer.native, drawbuffer, values as any, (values as any).byteOffset);
 	}
 
 	clientWaitSync(sync: WebGLSync, flags: number, timeout: number): number {
@@ -586,7 +586,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform1uiv(location: number, data: Uint32Array): void {
 		this._glCheckError('uniform1uiv');
-		this.native.uniform1uiv(location, data as any, data.length);
+		this.native.uniform1uivOffset(location, data as any, data.length, data.byteOffset);
 	}
 
 	uniform2ui(location: number, v0: number, v1: number): void {
@@ -596,7 +596,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform2uiv(location: number, data: Uint32Array): void {
 		this._glCheckError('uniform2uiv');
-		this.native.uniform2uiv(location, data as any, data.length);
+		this.native.uniform2uivOffset(location, data as any, data.length, data.byteOffset);
 	}
 
 	/* Sync objects */
@@ -610,7 +610,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform3uiv(location: number, data: Uint32Array): void {
 		this._glCheckError('uniform3uiv');
-		this.native.uniform3uiv(location, data as any, data.length);
+		this.native.uniform3uivOffset(location, data as any, data.length, data.byteOffset);
 	}
 
 	uniform4ui(location: number, v0: number, v1: number, v2: number, v3: number): void {
@@ -620,7 +620,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform4uiv(location: number, data: Uint32Array): void {
 		this._glCheckError('uniform4uiv');
-		this.native.uniform4uiv(location, data as any, data.length);
+		this.native.uniform4uivOffset(location, data as any, data.length, data.byteOffset);
 	}
 
 	uniformBlockBinding(program: WebGLProgram, uniformBlockIndex: number, uniformBlockBinding: number): void {
@@ -630,22 +630,22 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniformMatrix2x3fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		this._glCheckError('uniformMatrix2x3fv');
-		this.native.uniformMatrix2x3fv(location.native, transpose, data as any, data.length);
+		this.native.uniformMatrix2x3fvOffset(location.native, transpose, data as any, data.length, data.byteOffset);
 	}
 
 	uniformMatrix2x4fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		this._glCheckError('uniformMatrix2x4fv');
-		this.native.uniformMatrix2x4fv(location.native, transpose, data as any, data.length);
+		this.native.uniformMatrix2x4fvOffset(location.native, transpose, data as any, data.length, data.byteOffset);
 	}
 
 	uniformMatrix3x2fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		this._glCheckError('uniformMatrix3x2fv');
-		this.native.uniformMatrix3x2fv(location.native, transpose, data as any, data.length);
+		this.native.uniformMatrix3x2fvOffset(location.native, transpose, data as any, data.length, data.byteOffset);
 	}
 
 	uniformMatrix3x4fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		this._glCheckError('uniformMatrix3x4fv');
-		this.native.uniformMatrix3x4fv(location.native, transpose, data as any, data.length);
+		this.native.uniformMatrix3x4fvOffset(location.native, transpose, data as any, data.length, data.byteOffset);
 	}
 
 	uniformMatrix4x2fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
@@ -655,7 +655,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniformMatrix4x3fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		this._glCheckError('uniformMatrix4x3fv');
-		this.native.uniformMatrix4x3fv(location.native, transpose, data as any, data.length);
+		this.native.uniformMatrix4x3fvOffset(location.native, transpose, data as any, data.length, data.byteOffset);
 	}
 
 	vertexAttribDivisor(index: number, divisor: number): void {
@@ -673,7 +673,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		if (!(value instanceof Int32Array)) {
 			value = new Int32Array(value) as any;
 		}
-		this.native.vertexAttribI4iv(index, value as any);
+		this.native.vertexAttribI4ivOffset(index, value as any, (value as any).byteOffset);
 	}
 
 	vertexAttribI4ui(index: number, v0: number, v1: number, v2: number, v3: number): void {
@@ -686,7 +686,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		if (!(value instanceof Uint32Array)) {
 			value = new Uint32Array(value) as any;
 		}
-		this.native.vertexAttribI4uiv(index, value as any);
+		this.native.vertexAttribI4uivOffset(index, value as any, (value as any).byteOffset);
 	}
 	
 	/* Miscellaneous constants */

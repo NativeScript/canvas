@@ -7,7 +7,7 @@ pub struct ImageData {
     pub(crate) data_len: usize,
     width: c_int,
     height: c_int,
-    pub(crate) scale: f32
+    pub(crate) scale: f32,
 }
 
 impl ImageData {
@@ -26,7 +26,7 @@ impl ImageData {
             height,
             data,
             data_len,
-            scale: 1.
+            scale: 1.,
         }
     }
 

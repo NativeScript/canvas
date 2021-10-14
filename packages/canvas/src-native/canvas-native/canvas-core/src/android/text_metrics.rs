@@ -1,12 +1,15 @@
-use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::sys::{jfloat, jlong};
+use jni::JNIEnv;
 
 use crate::common::context::drawing_text::text_metrics::TextMetrics;
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetWidth(_: JNIEnv,
-                                                                                _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetWidth(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -17,10 +20,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetWidth(_: 
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxLeft(_: JNIEnv,
-                                                                                                _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxLeft(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -31,10 +36,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBou
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxRight(_: JNIEnv,
-                                                                                                 _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxRight(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -45,10 +52,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBou
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxAscent(_: JNIEnv,
-                                                                                                  _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxAscent(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -60,8 +69,11 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBou
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxDescent(_: JNIEnv,
-                                                                                                   _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBoundingBoxDescent(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -72,10 +84,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetActualBou
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetFontBoundingBoxAscent(_: JNIEnv,
-                                                                                                _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetFontBoundingBoxAscent(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -86,10 +100,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetFontBound
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetFontBoundingBoxDescent(_: JNIEnv,
-                                                                                                 _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetFontBoundingBoxDescent(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -100,10 +116,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetFontBound
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetEmHeightAscent(_: JNIEnv,
-                                                                                         _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetEmHeightAscent(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -115,8 +133,11 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetEmHeightA
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetEmHeightDescent(_: JNIEnv,
-                                                                                          _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetEmHeightDescent(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -127,10 +148,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetEmHeightD
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetHangingBaseline(_: JNIEnv,
-                                                                                          _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetHangingBaseline(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -141,10 +164,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetHangingBa
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetAlphabeticBaseline(_: JNIEnv,
-                                                                                             _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetAlphabeticBaseline(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -155,10 +180,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetAlphabeti
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetIdeographicBaseline(_: JNIEnv,
-                                                                                              _: JClass, metrics: jlong) -> jfloat {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetIdeographicBaseline(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) -> jfloat {
     if metrics == 0 {
         return 0.0;
     }
@@ -170,8 +197,11 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeGetIdeograph
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeDestroy(_: JNIEnv,
-                                                                               _: JClass, metrics: jlong) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSTextMetrics_nativeDestroy(
+    _: JNIEnv,
+    _: JClass,
+    metrics: jlong,
+) {
     if metrics == 0 {
         return;
     }

@@ -20,10 +20,7 @@ impl Context {
             image,
             Some((&src_rect, SrcRectConstraint::Strict)),
             dst_rect,
-            skia_safe::SamplingOptions::from_filter_quality(
-                self.state.image_smoothing_quality.into(),
-                None,
-            ),
+            self.state.image_smoothing_quality,
             &paint,
         );
     }
@@ -38,10 +35,7 @@ impl Context {
             image,
             None,
             dst_rect,
-            skia_safe::SamplingOptions::from_filter_quality(
-                self.state.image_smoothing_quality.into(),
-                None,
-            ),
+            self.state.image_smoothing_quality,
             &paint,
         );
     }
@@ -54,10 +48,7 @@ impl Context {
         self.surface.canvas().draw_image_with_sampling_options(
             image,
             (x, y),
-            skia_safe::SamplingOptions::from_filter_quality(
-                self.state.image_smoothing_quality.into(),
-                None,
-            ),
+            self.state.image_smoothing_quality,
             Some(&paint),
         );
     }

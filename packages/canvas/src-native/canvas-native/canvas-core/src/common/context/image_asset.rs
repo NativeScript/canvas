@@ -3,9 +3,8 @@ use std::io::{Read, Seek, SeekFrom};
 use std::os::raw::{c_char, c_uint};
 use std::ptr::{null, null_mut};
 
-
-use image::{GenericImageView, ImageFormat};
 use image::imageops::FilterType;
+use image::{GenericImageView, ImageFormat};
 
 use crate::common::ffi::u8_array::U8Array;
 
@@ -58,7 +57,6 @@ enum ByteType {
     RGBA,
     RGB,
 }
-
 
 impl ImageAsset {
     pub fn new() -> Self {

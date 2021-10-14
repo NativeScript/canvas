@@ -378,8 +378,11 @@ extension RangeReplaceableCollection {
   @objc public func bindVertexArray(_ vertexArray: Swift.UInt32)
   @objc public func blitFramebuffer(_ srcX0: Swift.Int32, _ srcY0: Swift.Int32, _ srcX1: Swift.Int32, _ srcY1: Swift.Int32, _ dstX0: Swift.Int32, _ dstY0: Swift.Int32, _ dstX1: Swift.Int32, _ dstY1: Swift.Int32, _ mask: Swift.UInt32, _ filter: Swift.UInt32)
   @objc public func clearBufferfv(_ buffer: Swift.UInt32, _ drawbuffer: Swift.Int32, _ values: Swift.UnsafeRawPointer)
+  @objc public func clearBufferfv(_ buffer: Swift.UInt32, _ drawbuffer: Swift.Int32, _ values: Swift.UnsafeRawPointer, offset: Swift.Int)
   @objc public func clearBufferiv(_ buffer: Swift.UInt32, _ drawbuffer: Swift.Int32, _ values: Swift.UnsafeRawPointer)
+  @objc public func clearBufferiv(_ buffer: Swift.UInt32, _ drawbuffer: Swift.Int32, _ values: Swift.UnsafeRawPointer, offset: Swift.Int)
   @objc public func clearBufferuiv(_ buffer: Swift.UInt32, _ drawbuffer: Swift.Int32, _ values: Swift.UnsafeRawPointer)
+  @objc public func clearBufferuiv(_ buffer: Swift.UInt32, _ drawbuffer: Swift.Int32, _ values: Swift.UnsafeRawPointer, offset: Swift.Int)
   @objc public func clearBufferfi(_ buffer: Swift.UInt32, _ drawbuffer: Swift.Int32, _ depth: Swift.Float32, _ stencil: Swift.Int32)
   @objc public func clientWaitSync(_ sync: OpenGLES.GLsync, _ flags: Swift.UInt32, _ timeout: Swift.UInt64) -> Swift.Int32
   @objc public func compressedTexSubImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.UInt32, _ imageSize: Swift.Int32, _ offset: Swift.Int32)
@@ -414,6 +417,7 @@ extension RangeReplaceableCollection {
   @objc public func getActiveUniformBlockParameter(_ program: Swift.UInt32, _ uniformBlockIndex: Swift.UInt32, _ pname: Swift.UInt32) -> Any
   @objc public func getActiveUniforms(_ program: Swift.UInt32, _ uniformIndices: [Swift.UInt32], _ pname: Swift.UInt32) -> Any
   @objc public func getBufferSubData(_ target: Swift.UInt32, _ srcByteOffset: Swift.Int, _ dstData: Swift.UnsafeMutableRawPointer, size: Swift.Int, _ dstOffset: Swift.Int32, _ length: Swift.Int32)
+  @objc public func getBufferSubData(_ target: Swift.UInt32, _ srcByteOffset: Swift.Int, _ dstData: Swift.UnsafeMutableRawPointer, size: Swift.Int, _ dstOffset: Swift.Int32, _ length: Swift.Int32, offset: Swift.Int)
   @objc public func getFragDataLocation(_ program: Swift.UInt32, _ name: Swift.String) -> Swift.Int32
   @objc public func getIndexedParameter(_ target: Swift.UInt32, _ index: Swift.UInt32) -> Any
   @objc public func getInternalformatParameter(_ target: Swift.UInt32, _ internalformat: Swift.UInt32, _ pname: Swift.UInt32) -> Any
@@ -490,21 +494,33 @@ extension RangeReplaceableCollection {
   @objc public func uniform3ui(_ location: Swift.Int32, _ v0: Swift.UInt32, _ v1: Swift.UInt32, _ v2: Swift.UInt32)
   @objc public func uniform4ui(_ location: Swift.Int32, _ v0: Swift.UInt32, _ v1: Swift.UInt32, _ v2: Swift.UInt32, _ v3: Swift.UInt32)
   @objc public func uniform1uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniform1uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform2uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniform2uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform3uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniform3uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform4uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniform4uiv(_ location: Swift.Int32, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformBlockBinding(_ program: Swift.UInt32, _ uniformBlockIndex: Swift.UInt32, _ uniformBlockBinding: Swift.UInt32)
   @objc public func uniformMatrix3x2fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix3x2fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix4x2fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix4x2fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix2x3fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix2x3fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix4x3fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix4x3fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix2x4fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix2x4fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix3x4fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix3x4fv(_ location: Swift.UInt32, _ transpose: Swift.Bool, _ data: Swift.UnsafeRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func vertexAttribDivisor(_ index: Swift.UInt32, _ divisor: Swift.UInt32)
   @objc public func vertexAttribI4i(_ index: Swift.UInt32, _ v0: Swift.Int32, _ v1: Swift.Int32, _ v2: Swift.Int32, _ v3: Swift.Int32)
   @objc public func vertexAttribI4ui(_ index: Swift.UInt32, _ v0: Swift.UInt32, _ v1: Swift.UInt32, _ v2: Swift.UInt32, _ v3: Swift.UInt32)
   @objc public func vertexAttribI4iv(_ index: Swift.UInt32, _ value: Swift.UnsafeRawPointer)
+  @objc public func vertexAttribI4iv(_ index: Swift.UInt32, _ value: Swift.UnsafeRawPointer, offset: Swift.Int)
   @objc public func vertexAttribI4uiv(_ index: Swift.UInt32, _ value: Swift.UnsafeRawPointer)
+  @objc public func vertexAttribI4uiv(_ index: Swift.UInt32, _ value: Swift.UnsafeRawPointer, offset: Swift.Int)
   @objc public var READ_BUFFER: Swift.UInt32 {
     @objc get
   }
@@ -1362,11 +1378,26 @@ extension RangeReplaceableCollection {
     @objc get
   }
   @objc public func decode(buffer: Foundation.Data) -> Swift.String
+  @objc public func decode(buffer: Foundation.Data, offset: Swift.Int) -> Swift.String
+  @objc public func decode(buffer: Foundation.Data, offset: Swift.Int, length: Swift.Int) -> Swift.String
+  @objc public func decode(u8 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int) -> Swift.String
+  @objc public func decode(u8 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int) -> Swift.String
+  @objc public func decode(i8 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int) -> Swift.String
+  @objc public func decode(i8 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int) -> Swift.String
+  @objc public func decode(u16 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int) -> Swift.String
+  @objc public func decode(u16 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int) -> Swift.String
+  @objc public func decode(i16 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int) -> Swift.String
+  @objc public func decode(i16 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int) -> Swift.String
+  @objc public func decode(i32 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int) -> Swift.String
+  @objc public func decode(i32 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int) -> Swift.String
+  @objc public func decode(u32 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int) -> Swift.String
+  @objc public func decode(u32 buffer: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int) -> Swift.String
   @objc public func decode(bytes: [Swift.UInt8]) -> Swift.String
   @objc public func decode(i8 bytes: [Swift.Int8]) -> Swift.String
   @objc public func decode(u16 bytes: [Swift.UInt16]) -> Swift.String
   @objc public func decode(i16 bytes: [Swift.Int16]) -> Swift.String
   @objc public func decode(i32 bytes: [Swift.Int32]) -> Swift.String
+  @objc public func decode(u32 bytes: [Swift.UInt32]) -> Swift.String
   @objc deinit
 }
 @objcMembers @objc(TNSWebGLActiveInfo) public class TNSWebGLActiveInfo : ObjectiveC.NSObject {
@@ -1432,6 +1463,7 @@ extension RangeReplaceableCollection {
   @objc public func bufferData(_ target: Swift.UInt32, srcData: Foundation.NSNull, _ usage: Swift.UInt32)
   @objc public func bufferData(_ target: Swift.UInt32, i8 srcData: [Swift.Int8], _ usage: Swift.UInt32)
   @objc public func bufferData(_ target: Swift.UInt32, srcData: Swift.UnsafeMutableRawPointer, size: Swift.Int, _ usage: Swift.UInt32)
+  @objc public func bufferData(_ target: Swift.UInt32, srcData: Swift.UnsafeMutableRawPointer, size: Swift.Int, _ usage: Swift.UInt32, offset: Swift.Int)
   @objc public func bufferData(_ target: Swift.UInt32, u8 srcData: [Swift.UInt8], _ usage: Swift.UInt32)
   @objc public func bufferData(_ target: Swift.UInt32, i16 srcData: [Swift.Int16], _ usage: Swift.UInt32)
   @objc public func bufferData(_ target: Swift.UInt32, u16 srcData: [Swift.UInt16], _ usage: Swift.UInt32)
@@ -1442,6 +1474,7 @@ extension RangeReplaceableCollection {
   @objc public func bufferSubData(_ target: Swift.UInt32, _ offset: Swift.Int, _ srcData: Foundation.NSNull)
   @objc public func bufferSubData(_ target: Swift.UInt32, _ offset: Swift.Int, i8 srcData: [Swift.Int8])
   @objc public func bufferSubData(_ target: Swift.UInt32, _ offset: Swift.Int, srcData: Swift.UnsafeMutableRawPointer, size: Swift.Int)
+  @objc public func bufferSubData(_ target: Swift.UInt32, _ offset: Swift.Int, srcData: Swift.UnsafeMutableRawPointer, size: Swift.Int, os: Swift.Int)
   @objc public func bufferSubData(_ target: Swift.UInt32, _ offset: Swift.Int, u8 srcData: [Swift.UInt8])
   @objc public func bufferSubData(_ target: Swift.UInt32, _ offset: Swift.Int, i16 srcData: [Swift.Int16])
   @objc public func bufferSubData(_ target: Swift.UInt32, _ offset: Swift.Int, u16 srcData: [Swift.UInt16])
@@ -1527,6 +1560,7 @@ extension RangeReplaceableCollection {
   @objc public func pixelStorei(_ pname: Swift.UInt32, _ param: Swift.UInt32)
   @objc public func polygonOffset(_ factor: Swift.Float32, _ units: Swift.Float32)
   @objc public func readPixels(_ x: Swift.Int32, _ y: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Swift.UnsafeMutableRawPointer)
+  @objc public func readPixels(_ x: Swift.Int32, _ y: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Swift.UnsafeMutableRawPointer, offset: Swift.Int)
   @objc public func renderbufferStorage(_ target: Swift.UInt32, _ internalFormat: Swift.UInt32, _ width: Swift.Int32, _ height: Swift.Int32)
   @objc public func sampleCoverage(_ value: Swift.Float32, _ invert: Swift.Bool)
   @objc public func scissor(_ x: Swift.Int32, _ y: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32)
@@ -1540,6 +1574,7 @@ extension RangeReplaceableCollection {
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, data: Foundation.NSData)
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, u8 pixels: [Swift.UInt8])
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: Swift.UnsafeRawPointer, size: Swift.Int)
+  @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: Swift.UnsafeRawPointer, size: Swift.Int, offset: Swift.Int)
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, u16 pixels: [Swift.UInt16])
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, u32 pixels: [Swift.UInt32])
   @objc public func texImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, f32 pixels: [Swift.Float32])
@@ -1554,6 +1589,7 @@ extension RangeReplaceableCollection {
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, data: Foundation.NSData)
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, u8 pixels: [Swift.UInt8])
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: Swift.UnsafeMutableRawPointer, size: Swift.Int)
+  @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: Swift.UnsafeMutableRawPointer, size: Swift.Int, offset: Swift.Int)
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, u16 pixels: [Swift.UInt16])
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, f32 pixels: [Swift.Float32])
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Foundation.NSNull)
@@ -1564,23 +1600,34 @@ extension RangeReplaceableCollection {
   @objc public func texSubImage2D(_ target: Swift.UInt32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, _ pixels: Foundation.NSNull)
   @objc public func uniform1f(_ location: Swift.Int32, _ v0: Swift.Float32)
   @objc public func uniform1fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform1fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform1i(_ location: Swift.Int32, _ v0: Swift.Int32)
   @objc public func uniform1iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform1iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform2f(_ location: Swift.Int32, _ v0: Swift.Float32, _ v1: Swift.Float32)
   @objc public func uniform2fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform2fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform2i(_ location: Swift.Int32, _ v0: Swift.Int32, _ v1: Swift.Int32)
   @objc public func uniform2iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform2iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform3f(_ location: Swift.Int32, _ v0: Swift.Float32, _ v1: Swift.Float32, _ v2: Swift.Float32)
   @objc public func uniform3fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform3fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform3i(_ location: Swift.Int32, _ v0: Swift.Int32, _ v1: Swift.Int32, _ v2: Swift.Int32)
   @objc public func uniform3iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform3iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform4f(_ location: Swift.Int32, _ v0: Swift.Float32, _ v1: Swift.Float32, _ v2: Swift.Float32, _ v3: Swift.Float32)
   @objc public func uniform4fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform4fv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniform4i(_ location: Swift.Int32, _ v0: Swift.Int32, _ v1: Swift.Int32, _ v2: Swift.Int32, _ v3: Swift.Int32)
   @objc public func uniform4iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniform4iv(_ location: Swift.Int32, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix2fv(_ location: Swift.Int32, _ transpose: Swift.Bool, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix2fv(_ location: Swift.Int32, _ transpose: Swift.Bool, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix3fv(_ location: Swift.Int32, _ transpose: Swift.Bool, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix3fv(_ location: Swift.Int32, _ transpose: Swift.Bool, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func uniformMatrix4fv(_ location: Swift.Int32, _ transpose: Swift.Bool, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int)
+  @objc public func uniformMatrix4fv(_ location: Swift.Int32, _ transpose: Swift.Bool, _ value: Swift.UnsafeMutableRawPointer, _ size: Swift.Int, offset: Swift.Int)
   @objc public func useProgram(_ program: Swift.UInt32)
   @objc public func validateProgram(_ program: Swift.UInt32)
   @objc public func vertexAttrib1f(_ index: Swift.UInt32, _ v0: Swift.Float32)
@@ -1588,9 +1635,13 @@ extension RangeReplaceableCollection {
   @objc public func vertexAttrib3f(_ index: Swift.UInt32, _ v0: Swift.Float32, _ v1: Swift.Float32, _ v2: Swift.Float32)
   @objc public func vertexAttrib4f(_ index: Swift.UInt32, _ v0: Swift.Float32, _ v1: Swift.Float32, _ v2: Swift.Float32, _ v3: Swift.Float32)
   @objc public func vertexAttrib1fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer)
+  @objc public func vertexAttrib1fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer, offset: Swift.Int)
   @objc public func vertexAttrib2fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer)
+  @objc public func vertexAttrib2fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer, offset: Swift.Int)
   @objc public func vertexAttrib3fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer)
+  @objc public func vertexAttrib3fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer, offset: Swift.Int)
   @objc public func vertexAttrib4fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer)
+  @objc public func vertexAttrib4fv(_ index: Swift.UInt32, _ value: Swift.UnsafeMutableRawPointer, offset: Swift.Int)
   @objc public func vertexAttribPointer(_ index: Swift.UInt32, _ size: Swift.Int32, _ type: Swift.UInt32, _ normalized: Swift.Bool, _ stride: Swift.Int32, _ offset: Swift.Int)
   @objc public func viewport(_ x: Swift.Int32, _ y: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32)
   @objc public var DEPTH_BUFFER_BIT: Swift.UInt32 {

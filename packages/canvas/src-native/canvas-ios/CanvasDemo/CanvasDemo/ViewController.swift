@@ -301,7 +301,9 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     
     func drawAll() {
-        
+        let data: [UInt8] =  [75, 97, 121, 100, 97, 114, 97, 32, 70, 66, 88, 32, 66, 105, 110, 97, 114, 121, 32, 32, 0]
+        let decoder = TNSTextDecoder()
+        print(decoder.decode(bytes: data))
 //        svg?.src  = """
 //                <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"
 //                xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -997,9 +999,9 @@ class ViewController: UIViewController, TNSCanvasListener {
         gl.clearDepth(1.0)
         gl.viewport(0, 0, Int32(width), Int32(height))
         gl.clear(UInt32(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT))
-        gl.uniformMatrix4fv(Pmatrix, false, proj_matrix)
-        gl.uniformMatrix4fv(Vmatrix, false, view_matrix)
-        gl.uniformMatrix4fv(Mmatrix, false, mov_matrix)
+        gl.uniformMatrix4fv(Pmatrix, false, &proj_matrix, proj_matrix.count * 4)
+        gl.uniformMatrix4fv(Vmatrix, false, &view_matrix, proj_matrix.count * 4)
+        gl.uniformMatrix4fv(Mmatrix, false, &mov_matrix, proj_matrix.count * 4)
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer)
         gl.drawElements(gl.TRIANGLES, Int32(indices.count), gl.UNSIGNED_SHORT, 0)
         TNSAnimationFrame.requestAnimationFrame { (t) in

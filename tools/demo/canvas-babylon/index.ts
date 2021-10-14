@@ -33,14 +33,14 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		// You must at least define a camera
 		engine = createDefaultEngine();
 		if (!engine) throw 'engine should not be null.';
-		 //this.createMDN(engine)
+		 this.createMDN(engine)
 
 		 //sceneToRender = this.createChart(engine);
-		// sceneToRender = this.createWaterScene(engine);
+		//sceneToRender = this.createWaterScene(engine);
 		//sceneToRender = this.createScene(engine);
 		//sceneToRender = this.createSkullScene(engine);
-		sceneToRender = this.createLightTexture(engine);
-		// sceneToRender = this.createParticleScene(engine);
+		//sceneToRender = this.createLightTexture(engine);
+		//sceneToRender = this.createParticleScene(engine);
 		engine.runRenderLoop(function () {
 			if (sceneToRender) {
 				sceneToRender.render();

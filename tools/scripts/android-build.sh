@@ -57,7 +57,7 @@ if [[ "$NAME" == "Darwin" ]];then
 PRE_BUILT_PATH="$ANDROID_NDK/toolchains/llvm/prebuilt/darwin-x86_64"
 export PATH=$PATH:/"$PRE_BUILT_PATH/bin"
 ANDROID_NDK_SYSROOT_LIB="$PRE_BUILT_PATH/sysroot/usr/lib"
-else if [[ "$NAME" == "Linux" ]];then 
+elif [[ "$NAME" == "Linux" ]];then
 PRE_BUILT_PATH="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64"
 export PATH=$PATH:/"$PRE_BUILT_PATH/bin"
 ANDROID_NDK_SYSROOT_LIB="$PRE_BUILT_PATH/sysroot/usr/lib"

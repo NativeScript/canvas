@@ -14,7 +14,7 @@ impl Into<i32> for PaintStyleValueType {
         match self {
             PaintStyleValueType::PaintStyleValueTypeColor => 0,
             PaintStyleValueType::PaintStyleValueTypeGradient => 1,
-            PaintStyleValueType::PaintStyleValueTypePattern => 2
+            PaintStyleValueType::PaintStyleValueTypePattern => 2,
         }
     }
 }
@@ -25,11 +25,10 @@ impl PaintStyleValueType {
             0 => Some(PaintStyleValueType::PaintStyleValueTypeColor),
             1 => Some(PaintStyleValueType::PaintStyleValueTypeGradient),
             2 => Some(PaintStyleValueType::PaintStyleValueTypePattern),
-            _ => None
+            _ => None,
         }
     }
 }
-
 
 #[repr(C)]
 pub struct PaintStyleValue {
@@ -40,11 +39,7 @@ pub struct PaintStyleValue {
 impl PaintStyleValue {
     pub fn new(value: PaintStyle, value_type: PaintStyleValueType) -> Self {
         Self {
-            value: Box::into_raw(
-                Box::new(
-                    value.clone()
-                )
-            ) as c_longlong,
+            value: Box::into_raw(Box::new(value.clone())) as c_longlong,
             value_type,
         }
     }

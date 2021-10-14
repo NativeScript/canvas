@@ -73,7 +73,7 @@ internal class GLContext {
 					if (offscreenTexture != null) {
 						GLES20.glClearColor(0f, 0f, 0f, 0f)
 						GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-						if (!swapBuffers(mEGLSurface)) {
+						if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 							Log.e("JS", "GLContext: Cannot swap buffers!")
 						}
 						offscreenTexture!!.release()
@@ -115,7 +115,7 @@ internal class GLContext {
 					} else {
 						GLES20.glClearColor(0f, 0f, 0f, 0f)
 						GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-						if (!swapBuffers(mEGLSurface)) {
+						if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 							Log.e("JS", "GLContext: Cannot swap buffers!")
 						}
 						if (canvasView.nativeContext > 0) {
@@ -151,13 +151,13 @@ internal class GLContext {
 				val canvasView = reference!!.get()
 				if (canvasView != null && canvasView.nativeContext != 0L && canvasView.pendingInvalidate) {
 					TNSCanvas.nativeFlush(canvasView.nativeContext)
-					if (!swapBuffers(mEGLSurface)) {
+					if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
 					canvasView.pendingInvalidate = false
 				} else {
 					// WebGL
-					if (!swapBuffers(mEGLSurface)) {
+					if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
 					if (canvasView != null) {
@@ -222,7 +222,7 @@ internal class GLContext {
 				)
 			}
 			if (mGLThread != null) {
-				mGLThread!!.setPaused(false)
+				mGLThread!!.setPaused(true)
 			}
 		})
 	}
@@ -268,13 +268,19 @@ internal class GLContext {
 		@JvmField
 		var isStarted = false
 
-		private var isPaused = false
+
+		internal var isPaused = false
 
 		var type = TNSCanvas.ContextType.NONE
 
 		@Synchronized
 		fun setPaused(paused: Boolean) {
 			isPaused = paused
+		}
+
+		@Synchronized
+		fun getPaused(): Boolean {
+			return isPaused
 		}
 
 		@Synchronized
@@ -501,7 +507,7 @@ internal class GLContext {
 				bit = bit or GLES20.GL_STENCIL_BUFFER_BIT
 			}
 			GLES20.glClear(bit)
-			if (!swapBuffers(mEGLSurface)) {
+			if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 				Log.e("JS", "GLContext: Cannot swap buffers!")
 			}
 

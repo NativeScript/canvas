@@ -14,6 +14,7 @@ import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, envi
 declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
+import { issue54 } from './issues';
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
 	private svg: Svg.Svg;
@@ -315,6 +316,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	draw() {
+//const str = new java.lang.String()
 
 
 		// const ctx = this.canvas.getContext('2d');
@@ -447,7 +449,7 @@ ctx.fillRect(0, 0, 80, 80); */
 		//draw_image_space(this.canvas);
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
-		cubeRotationRotation(this.canvas);
+		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
 		// interactiveCube(this.canvas);
@@ -470,6 +472,7 @@ ctx.fillRect(0, 0, 80, 80); */
 		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
+		issue54(this.canvas);
 	}
 
 	drawRandomFullscreenImage(canvas) {

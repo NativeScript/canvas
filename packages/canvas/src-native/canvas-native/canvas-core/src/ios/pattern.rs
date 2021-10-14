@@ -14,9 +14,7 @@ pub extern "C" fn pattern_set_transform(pattern: c_longlong, matrix: c_longlong)
         let matrix: *mut Matrix = matrix as _;
         let matrix = &mut *matrix;
         match pattern {
-            PaintStyle::Pattern(pattern) => {
-                pattern.set_pattern_transform(&matrix)
-            }
+            PaintStyle::Pattern(pattern) => pattern.set_pattern_transform(&matrix),
             _ => {}
         }
     }

@@ -1,25 +1,28 @@
 use std::os::raw::c_void;
 
 use android_logger::Config;
-use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass, JObject, JString};
-use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
-use log::{debug, info};
+use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 use log::Level;
-use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry, Rect, Size, Surface, RCHandle};
+use log::{debug, info};
 use skia_safe::gpu::gl::Interface;
 use skia_safe::image::CachingHint;
+use skia_safe::{
+    AlphaType, Color, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, PixelGeometry,
+    RCHandle, Rect, Size, Surface,
+};
 
-
-use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;
 use crate::common::context::text_styles::text_direction::TextDirection;
+use crate::common::context::{Context, Device, State};
 use crate::common::to_data_url;
 
 pub mod context;
 pub mod gl;
 pub mod gradient;
 pub mod image_asset;
+pub mod image_bitmap;
 pub mod image_data;
 pub mod matrix;
 pub mod paint;
@@ -30,7 +33,6 @@ pub mod text_decoder;
 pub mod text_encoder;
 pub mod text_metrics;
 pub mod utils;
-pub mod image_bitmap;
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -337,9 +339,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeSnapshotCanvas(
         context.surface.flush();
         let ss = context.surface.image_snapshot();
         match ss.encode_to_data(EncodedImageFormat::PNG) {
-            None => {
-                env.byte_array_from_slice(&[]).unwrap()
-            }
+            None => env.byte_array_from_slice(&[]).unwrap(),
             Some(data) => {
                 let bytes = data.to_vec();
                 env.byte_array_from_slice(bytes.as_slice()).unwrap()

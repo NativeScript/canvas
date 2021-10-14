@@ -22,7 +22,6 @@ impl TextEncoder {
     }
 }
 
-
 pub fn destroy_text_encoder(encoder: *mut TextEncoder) {
     unsafe {
         if !encoder.is_null() {

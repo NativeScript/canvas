@@ -821,6 +821,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		height: Int,
 		repetition: Int
 	): TNSPattern? {
+		printLog("createPattern: imagebitmap")
 		val lock = CountDownLatch(1)
 		var value: TNSPattern? = null
 		canvas.queueEvent {
@@ -828,6 +829,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				canvas.nativeContext,
 				data, width, height, repetition
 			)
+
 			if (id > 0L) {
 				value = TNSPattern(id)
 			}
@@ -869,7 +871,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		src: TNSImageBitmap?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
 	): TNSPattern? {
-		printLog("createPattern: asset")
+		printLog("createPattern: imagebitmap")
 		if (src == null) return null
 		val lock = CountDownLatch(1)
 		var value: TNSPattern? = null
@@ -1609,6 +1611,14 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			data: ByteArray,
 			width: Int,
 			height: Int,
+			repetition: Int
+		): Long
+
+
+		@JvmStatic
+		private external fun nativeCreatePatternEncoded(
+			context: Long,
+			data: ByteArray,
 			repetition: Int
 		): Long
 

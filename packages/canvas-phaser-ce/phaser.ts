@@ -1,5 +1,14 @@
 import '@nativescript/canvas-polyfill';
 
+
+interface TNSPhaserCe {
+    PIXI: any;
+	Phaser: any;
+}
+
+export declare var global: NodeJS.Global & typeof globalThis & TNSPhaserCe;
+
+
 function initPhaser() {
 	(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || require('phaser-ce/build/custom/pixi');
 	(global as any).p2 = (global as any).window.p2 = (global as any).p2 || require('phaser-ce/build/custom/p2');

@@ -10,7 +10,7 @@ impl From<i32> for TextDirection {
         match value {
             1 => Self::RTL,
             0 => Self::LTR,
-            _ => Self::LTR
+            _ => Self::LTR,
         }
     }
 }
@@ -19,7 +19,7 @@ impl Into<i32> for TextDirection {
     fn into(self) -> i32 {
         match self {
             Self::RTL => 1,
-            Self::LTR => 0
+            Self::LTR => 0,
         }
     }
 }

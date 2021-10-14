@@ -30,7 +30,6 @@ impl Drop for U8Array {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn destroy_u8_array(array: *mut U8Array) {
     unsafe {

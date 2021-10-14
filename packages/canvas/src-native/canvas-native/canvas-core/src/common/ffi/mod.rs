@@ -3,7 +3,7 @@ pub mod f64_array;
 pub mod i16_array;
 pub mod i32_array;
 pub mod i8_array;
+pub mod paint_style_value;
 pub mod u16_array;
 pub mod u32_array;
 pub mod u8_array;
-pub mod paint_style_value;

@@ -1,7 +1,7 @@
 use std::os::raw::c_float;
 
-use skia_safe::{Color, Point, Shader, TileMode};
 use skia_safe::gradient_shader::GradientShaderColors;
+use skia_safe::{Color, Point, Shader, TileMode};
 
 use crate::common::context::matrix::Matrix;
 
@@ -37,38 +37,80 @@ impl Gradient {
 
     pub(crate) fn set_tile_mode(&mut self, mode: TileMode) {
         match self {
-            Gradient::Linear { ref mut tile_mode, .. } => {
-                *tile_mode = mode
-            }
-            Gradient::Radial { ref mut tile_mode, .. } => {
-                *tile_mode = mode
-            }
+            Gradient::Linear {
+                ref mut tile_mode, ..
+            } => *tile_mode = mode,
+            Gradient::Radial {
+                ref mut tile_mode, ..
+            } => *tile_mode = mode,
         }
     }
 
     pub fn to_shader(gradient: &Gradient) -> Option<Shader> {
         match gradient {
-            Gradient::Linear { start, stop, stops, colors, matrix, tile_mode, .. } => {
+            Gradient::Linear {
+                start,
+                stop,
+                stops,
+                colors,
+                matrix,
+                tile_mode,
+                ..
+            } => {
                 if let Some(matrix) = matrix {
                     let matrix = matrix.matrix.to_m33();
                     Gradient::to_linear_gradient_shader(
-                        *start, *stop, stops.as_slice(), colors.as_slice(), Some(&matrix), *tile_mode,
+                        *start,
+                        *stop,
+                        stops.as_slice(),
+                        colors.as_slice(),
+                        Some(&matrix),
+                        *tile_mode,
                     )
                 } else {
                     Gradient::to_linear_gradient_shader(
-                        *start, *stop, stops.as_slice(), colors.as_slice(), None, *tile_mode,
+                        *start,
+                        *stop,
+                        stops.as_slice(),
+                        colors.as_slice(),
+                        None,
+                        *tile_mode,
                     )
                 }
             }
-            Gradient::Radial { start, start_radius, stop, stop_radius, stops, colors, matrix, tile_mode, .. } => {
+            Gradient::Radial {
+                start,
+                start_radius,
+                stop,
+                stop_radius,
+                stops,
+                colors,
+                matrix,
+                tile_mode,
+                ..
+            } => {
                 if let Some(matrix) = matrix {
                     let matrix = matrix.matrix.to_m33();
                     Gradient::to_radial_gradient_shader(
-                        *start, *start_radius, *stop, *stop_radius, stops.as_slice(), colors.as_slice(), Some(&matrix), *tile_mode,
+                        *start,
+                        *start_radius,
+                        *stop,
+                        *stop_radius,
+                        stops.as_slice(),
+                        colors.as_slice(),
+                        Some(&matrix),
+                        *tile_mode,
                     )
                 } else {
                     Gradient::to_radial_gradient_shader(
-                        *start, *start_radius, *stop, *stop_radius, stops.as_slice(), colors.as_slice(), None, *tile_mode,
+                        *start,
+                        *start_radius,
+                        *stop,
+                        *stop_radius,
+                        stops.as_slice(),
+                        colors.as_slice(),
+                        None,
+                        *tile_mode,
                     )
                 }
             }

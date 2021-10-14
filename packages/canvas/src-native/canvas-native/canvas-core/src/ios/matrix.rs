@@ -4,13 +4,8 @@ use crate::common::context::matrix::Matrix;
 
 #[no_mangle]
 pub extern "C" fn matrix_create() -> c_longlong {
-    Box::into_raw(
-        Box::new(
-            Matrix::new()
-        )
-    ) as c_longlong
+    Box::into_raw(Box::new(Matrix::new())) as c_longlong
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_update(matrix: c_longlong, data: *const c_float, data_len: usize) {
@@ -26,7 +21,6 @@ pub extern "C" fn matrix_update(matrix: c_longlong, data: *const c_float, data_l
         matrix.set_affine(&affine);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_a(matrix: c_longlong) -> c_float {
@@ -52,7 +46,6 @@ pub extern "C" fn matrix_set_a(matrix: c_longlong, a: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_b(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -76,7 +69,6 @@ pub extern "C" fn matrix_set_b(matrix: c_longlong, b: c_float) {
         matrix.set_b(b)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_c(matrix: c_longlong) -> c_float {
@@ -174,7 +166,6 @@ pub extern "C" fn matrix_set_f(matrix: c_longlong, f: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m11(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -198,7 +189,6 @@ pub extern "C" fn matrix_set_m11(matrix: c_longlong, m11: c_float) {
         matrix.set_m11(m11)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_m12(matrix: c_longlong) -> c_float {
@@ -224,7 +214,6 @@ pub extern "C" fn matrix_set_m12(matrix: c_longlong, m12: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m13(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -248,7 +237,6 @@ pub extern "C" fn matrix_set_m13(matrix: c_longlong, m13: c_float) {
         matrix.set_m13(m13)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_m14(matrix: c_longlong) -> c_float {
@@ -274,7 +262,6 @@ pub extern "C" fn matrix_set_m14(matrix: c_longlong, m14: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m21(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -298,7 +285,6 @@ pub extern "C" fn matrix_set_m21(matrix: c_longlong, m21: c_float) {
         matrix.set_m21(m21)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_m22(matrix: c_longlong) -> c_float {
@@ -324,7 +310,6 @@ pub extern "C" fn matrix_set_m22(matrix: c_longlong, m22: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m23(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -348,7 +333,6 @@ pub extern "C" fn matrix_set_m23(matrix: c_longlong, m23: c_float) {
         matrix.set_m23(m23)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_m24(matrix: c_longlong) -> c_float {
@@ -374,7 +358,6 @@ pub extern "C" fn matrix_set_m24(matrix: c_longlong, m24: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m31(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -398,7 +381,6 @@ pub extern "C" fn matrix_set_m31(matrix: c_longlong, m31: c_float) {
         matrix.set_m31(m31)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_m32(matrix: c_longlong) -> c_float {
@@ -424,7 +406,6 @@ pub extern "C" fn matrix_set_m32(matrix: c_longlong, m32: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m33(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -448,7 +429,6 @@ pub extern "C" fn matrix_set_m33(matrix: c_longlong, m33: c_float) {
         matrix.set_m33(m33)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_m34(matrix: c_longlong) -> c_float {
@@ -474,7 +454,6 @@ pub extern "C" fn matrix_set_m34(matrix: c_longlong, m34: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m41(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -498,7 +477,6 @@ pub extern "C" fn matrix_set_m41(matrix: c_longlong, m41: c_float) {
         matrix.set_m41(m41)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn matrix_m42(matrix: c_longlong) -> c_float {
@@ -524,7 +502,6 @@ pub extern "C" fn matrix_set_m42(matrix: c_longlong, m42: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m43(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -549,7 +526,6 @@ pub extern "C" fn matrix_set_m43(matrix: c_longlong, m43: c_float) {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn matrix_m44(matrix: c_longlong) -> c_float {
     if matrix == 0 {
@@ -573,7 +549,6 @@ pub extern "C" fn matrix_set_m44(matrix: c_longlong, m44: c_float) {
         matrix.set_m44(m44)
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn destroy_matrix(matrix: c_longlong) {

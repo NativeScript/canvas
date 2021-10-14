@@ -12,10 +12,9 @@ impl Context {
         paint.set_anti_alias(true);
         paint.set_style(Style::Fill);
         paint.set_blend_mode(BlendMode::Clear);
-        self.surface.canvas().draw_rect(
-            Rect::from_xywh(x, y, width, height),
-            &paint,
-        );
+        self.surface
+            .canvas()
+            .draw_rect(Rect::from_xywh(x, y, width, height), &paint);
     }
 
     pub fn fill_rect(&mut self, rect: &Rect) {

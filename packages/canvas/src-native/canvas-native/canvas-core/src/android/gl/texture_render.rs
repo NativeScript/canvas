@@ -1,7 +1,7 @@
 use std::os::raw::c_void;
 
 use jni::objects::{JClass, JObject, ReleaseMode};
-use jni::sys::{jfloatArray, jint, jboolean};
+use jni::sys::{jboolean, jfloatArray, jint};
 use jni::JNIEnv;
 
 const SURFACE_TEXTURE_CLASS: &'static str = "android/graphics/SurfaceTexture";
@@ -69,8 +69,18 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFr
     gl_bindings::glBindRenderbuffer(gl_bindings::GL_RENDERBUFFER, rbo as u32);
 
     if render_width != width || render_height != height {
-        gl_bindings::glRenderbufferStorage(gl_bindings::GL_RENDERBUFFER, gl_bindings::GL_DEPTH24_STENCIL8, width, height);
-        gl_bindings::glFramebufferRenderbuffer(gl_bindings::GL_FRAMEBUFFER, gl_bindings::GL_DEPTH_STENCIL_ATTACHMENT, gl_bindings::GL_RENDERBUFFER, rbo as u32);
+        gl_bindings::glRenderbufferStorage(
+            gl_bindings::GL_RENDERBUFFER,
+            gl_bindings::GL_DEPTH24_STENCIL8,
+            width,
+            height,
+        );
+        gl_bindings::glFramebufferRenderbuffer(
+            gl_bindings::GL_FRAMEBUFFER,
+            gl_bindings::GL_DEPTH_STENCIL_ATTACHMENT,
+            gl_bindings::GL_RENDERBUFFER,
+            rbo as u32,
+        );
         gl_bindings::glBindTexture(gl_bindings::GL_TEXTURE_2D, previous_texture[0] as u32);
 
         gl_bindings::glTexImage2D(
@@ -139,7 +149,6 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFr
     gl_bindings::glClearColor(0., 0., 0., 1.);
     gl_bindings::glClear(gl_bindings::GL_COLOR_BUFFER_BIT | gl_bindings::GL_DEPTH_BUFFER_BIT);
 
-
     gl_bindings::glUseProgram(program as u32);
     gl_bindings::glBindBuffer(gl_bindings::GL_ARRAY_BUFFER, array_buffer as u32);
     gl_bindings::glVertexAttribPointer(
@@ -153,19 +162,15 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFr
 
     gl_bindings::glEnableVertexAttribArray(pos as u32);
 
-
     let _ = env.call_method(surface_texture_object, "updateTexImage", "()V", &[]);
-        let _ = env.call_method(
-            surface_texture_object,
-            "getTransformMatrix",
-            "([F)V",
-            &[matrix.into()],
-        );
-
-
+    let _ = env.call_method(
+        surface_texture_object,
+        "getTransformMatrix",
+        "([F)V",
+        &[matrix.into()],
+    );
 
     if let Ok(matrix) = env.get_primitive_array_critical(matrix, ReleaseMode::CopyBack) {
-
         // super::surface_texture::ASurfaceTexture_updateTexImage(std::mem::transmute(
         //     surface_texture_object.into_inner(),
         // ));
@@ -221,14 +226,17 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFr
 
         gl_bindings::glDrawArrays(gl_bindings::GL_TRIANGLE_STRIP, 0, draw_count);
 
-      //  gl_bindings::glFinish();
+        //  gl_bindings::glFinish();
 
         //gl_bindings::glBindTexture(gl_bindings::GL_TEXTURE_EXTERNAL_OES, 0);
 
         //  gl_bindings::glBindRenderbuffer(gl_bindings::GL_RENDERBUFFER, previous_render_buffer[0] as u32);
     }
 
-    gl_bindings::glBindRenderbuffer(gl_bindings::GL_RENDERBUFFER, previous_render_buffer[0] as u32);
+    gl_bindings::glBindRenderbuffer(
+        gl_bindings::GL_RENDERBUFFER,
+        previous_render_buffer[0] as u32,
+    );
     gl_bindings::glBindFramebuffer(gl_bindings::GL_FRAMEBUFFER, previous_frame_buffer[0] as u32);
 
     gl_bindings::glViewport(

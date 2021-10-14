@@ -90,7 +90,10 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		}
 	}
 	_removeListener(type: string, listener: Function, listeners: any) {
-		if (listener && listeners && typeof listeners === 'object') {
+		if(!this._listeners){
+			this._listeners = {};
+		}
+		if (typeof listener === 'function' && listeners && typeof listeners === 'object') {
 			const currentEvents = listeners[type];
 			if (Array.isArray(currentEvents)) {
 				const size = currentEvents.length;
@@ -111,7 +114,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 
 	_listenerExist(type: string, listener: Function, listeners: any): boolean {
 		let has = false;
-		if (listener && listeners && typeof listeners === 'object') {
+		if (typeof listener === 'function' && listeners && typeof listeners === 'object') {
 			const currentEvents = listeners[type];
 			if (Array.isArray(currentEvents)) {
 				const size = currentEvents.length;
@@ -127,6 +130,9 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		return has;
 	}
 	addEventListener(type: string, listener: Function, useCapture: boolean | any) {
+		if(!this._listeners){
+			this._listeners = {};
+		}
 		let isCapture = false;
 		if (typeof useCapture === 'boolean') {
 			isCapture = true;
@@ -136,16 +142,16 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 
 		if (isCapture) {
 			if (!this._listenerExist(type, listener, this._capturedListeners)) {
-				if (Array.isArray(this._capturedListeners[type])) {
-					this._capturedListeners[type]?.push?.(listener);
+				if (Array.isArray(this._capturedListeners?.[type])) {
+					this._capturedListeners?.[type]?.push?.(listener);
 				} else {
 					this._capturedListeners[type] = [listener];
 				}
 			}
 		} else {
 			if (!this._listenerExist(type, listener, this._listeners)) {
-				if (Array.isArray(this._listeners[type])) {
-					this._listeners[type]?.push?.(listener);
+				if (Array.isArray(this._listeners?.[type])) {
+					this._listeners?.[type]?.push?.(listener);
 				} else {
 					this._listeners[type] = [listener];
 				}
@@ -163,7 +169,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		if (isCapture) {
 			if (!this._listenerExist(type, listener, this._capturedListeners)) {
 				if (Array.isArray(this._capturedListeners[type])) {
-					this._capturedListeners[type]?.push?.(listener);
+					this._capturedListeners?.[type]?.push?.(listener);
 				} else {
 					this._capturedListeners[type] = [listener];
 				}
@@ -171,7 +177,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		} else {
 			if (!this._listenerExist(type, listener, this._listeners)) {
 				if (Array.isArray(this._listeners[type])) {
-					this._listeners[type]?.push?.(listener);
+					this._listeners?.[type]?.push?.(listener);
 				} else {
 					this._listeners[type] = [listener];
 				}

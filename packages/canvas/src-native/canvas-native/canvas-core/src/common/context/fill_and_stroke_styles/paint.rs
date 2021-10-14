@@ -1,10 +1,11 @@
 use std::os::raw::c_float;
 
 use skia_safe::paint::{Cap, Style};
-use skia_safe::{Color, FilterQuality, Point};
+use skia_safe::{Color, Point};
 
 use crate::common::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::common::context::fill_and_stroke_styles::pattern::Pattern;
+use crate::common::context::filter_quality::FilterQuality;
 use crate::common::context::image_smoothing::ImageSmoothingQuality;
 use crate::common::utils::color::to_parsed_color;
 
@@ -66,12 +67,12 @@ impl Paint {
                 if is_fill {
                     self.fill_paint.set_shader(Pattern::to_pattern_shader(
                         pattern,
-                        self.image_smoothing_quality,
+                        self.image_smoothing_quality.into(),
                     ));
                 } else {
                     self.stroke_paint.set_shader(Pattern::to_pattern_shader(
                         pattern,
-                        self.image_smoothing_quality,
+                        self.image_smoothing_quality.into(),
                     ));
                 }
             }

@@ -93,9 +93,9 @@ fn main() {
             println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
             println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
             println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
-            // The bindgen::Builder is the main entry point
-            // to bindgen, and lets you build up options for
-            // the resulting bindings.
+                                                     // The bindgen::Builder is the main entry point
+                                                     // to bindgen, and lets you build up options for
+                                                     // the resulting bindings.
             let bindings = bindgen::Builder::default()
                 // The input header we would like to generate
                 // bindings for.
@@ -196,12 +196,12 @@ fn build(sdk_path: Option<&str>, target: &str) {
     }
     if target.contains("apple-ios") {
         // builder = builder.clang_args(&["-x", "objective-c", "-fblocks"]);
-        builder = 
-        builder.clang_args(&["-x","objective-c", "-fblocks"])
-        .objc_extern_crate(true)
-        .block_extern_crate(true)
-        .allowlist_function("gl.*")
-        .allowlist_type("GL_.*")
+        builder = builder
+            .clang_args(&["-x", "objective-c", "-fblocks"])
+            .objc_extern_crate(true)
+            .block_extern_crate(true)
+            .allowlist_function("gl.*")
+            .allowlist_type("GL_.*")
     }
 
     let meta_header: Vec<_> = headers

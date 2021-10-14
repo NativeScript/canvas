@@ -2,6 +2,7 @@ use std::os::raw::c_float;
 
 use skia_safe::{Color, Point, SamplingOptions, Surface};
 
+use crate::common::context::filter_quality::FilterQuality;
 use crate::{
     common::context::compositing::composite_operation_type::CompositeOperationType,
     common::context::drawing_text::typography::Font,
@@ -33,6 +34,7 @@ pub mod line_styles;
 pub mod shadows;
 pub mod state;
 
+pub mod filter_quality;
 pub mod image_asset;
 pub mod matrix;
 pub mod text_decoder;
@@ -88,14 +90,14 @@ pub(crate) struct State {
 }
 
 impl State {
-    pub(crate) fn image_filter_quality(&self) -> skia_safe::FilterQuality {
+    pub(crate) fn image_filter_quality(&self) -> FilterQuality {
         if self.image_smoothing_enabled {
             self.image_smoothing_quality.into()
         } else {
-            skia_safe::FilterQuality::None
+            FilterQuality::None
         }
     }
-    pub fn from_device(device: Device, direction: TextDirection) -> Self {
+    pub fn from_device(_device: Device, direction: TextDirection) -> Self {
         let mut font = Font::new("10px sans-serif");
         let mut paint = Paint::default();
         paint
@@ -160,7 +162,7 @@ impl Context {
         src_surface.draw(
             surface.canvas(),
             Point::new(0., 0.),
-            SamplingOptions::from_filter_quality(skia_safe::FilterQuality::High, None),
+            FilterQuality::High,
             None,
         )
     }

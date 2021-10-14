@@ -914,7 +914,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePattern(
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternEncoded(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -935,6 +935,39 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
                 length,
             );
             if let Some(image) = from_image_slice_encoded(buf) {
+                return Box::into_raw(Box::new(PaintStyle::Pattern(
+                    context.create_pattern(image, Repetition::from(repetition)),
+                ))) as jlong;
+            }
+        }
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePattern(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    image_data: jbyteArray,
+    width: jint,
+    height: jint,
+    repetition: jint,
+) -> jlong {
+    use log::{debug, info};
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        if let Ok(val) = env.get_byte_array_elements(image_data, ReleaseMode::NoCopyBack) {
+            let length = val.size().unwrap_or(0) as usize;
+            let buf = std::slice::from_raw_parts(
+                std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
+                length,
+            );
+            if let Some(image) = from_image_slice(buf, width, height) {
                 return Box::into_raw(Box::new(PaintStyle::Pattern(
                     context.create_pattern(image, Repetition::from(repetition)),
                 ))) as jlong;

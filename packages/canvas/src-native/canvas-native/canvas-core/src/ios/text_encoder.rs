@@ -29,10 +29,7 @@ pub extern "C" fn text_encoder_get_encoding(encoder: c_longlong) -> *const c_cha
 }
 
 #[no_mangle]
-pub extern "C" fn text_encoder_encode(
-    encoder: c_longlong,
-    text: *const c_char,
-) -> *mut U8Array {
+pub extern "C" fn text_encoder_encode(encoder: c_longlong, text: *const c_char) -> *mut U8Array {
     if encoder == 0 {
         return std::ptr::null_mut();
     }
@@ -45,11 +42,8 @@ pub extern "C" fn text_encoder_encode(
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn destroy_text_encoder(
-    encoder: c_longlong,
-) {
+pub extern "C" fn destroy_text_encoder(encoder: c_longlong) {
     if encoder == 0 {
         return;
     }

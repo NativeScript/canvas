@@ -24,7 +24,7 @@ impl From<i32> for TextBaseLine {
             3 => Self::ALPHABETIC,
             4 => Self::IDEOGRAPHIC,
             5 => Self::BOTTOM,
-            _ => TextBaseLine::ALPHABETIC
+            _ => TextBaseLine::ALPHABETIC,
         }
     }
 }
@@ -37,7 +37,7 @@ impl Into<i32> for TextBaseLine {
             TextBaseLine::MIDDLE => 2,
             TextBaseLine::ALPHABETIC => 3,
             TextBaseLine::IDEOGRAPHIC => 4,
-            TextBaseLine::BOTTOM => 5
+            TextBaseLine::BOTTOM => 5,
         }
     }
 }

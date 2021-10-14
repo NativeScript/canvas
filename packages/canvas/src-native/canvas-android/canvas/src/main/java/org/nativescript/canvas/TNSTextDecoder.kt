@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import java.nio.*
+import java.nio.charset.Charset
 
 /**
  * Created by triniwiz on 5/15/20
@@ -25,33 +26,87 @@ class TNSTextDecoder {
 		nativeDestroy(nativeDecoder)
 	}
 
-	fun decode(buffer: ByteArray): String {
-		return nativeDecode(nativeDecoder, buffer)
+	fun decode(buffer: ByteBuffer): String {
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
 	}
 
-	fun decode(buffer: ByteBuffer): String {
-		return nativeDecodeBuffer(nativeDecoder, buffer)
+	fun decode(bytes: ByteArray): String {
+		val result = nativeDecodeToBytes(nativeDecoder, bytes)
+		return String(result, Charset.defaultCharset())
 	}
 
 	fun decode(bytes: ShortArray): String {
 		val buffer = ShortBuffer.wrap(bytes)
-		return nativeDecodeBuffer(nativeDecoder, buffer)
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
 	}
 
 	fun decode(bytes: IntArray): String {
 		val buffer = IntBuffer.wrap(bytes)
-		return nativeDecodeBuffer(nativeDecoder, buffer)
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
 	}
 
 	fun decode(bytes: FloatArray): String {
 		val buffer = FloatBuffer.wrap(bytes)
-		return nativeDecodeBuffer(nativeDecoder, buffer)
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
 	}
 
 	fun decode(bytes: DoubleArray): String {
 		val buffer = DoubleBuffer.wrap(bytes)
-		return nativeDecodeBuffer(nativeDecoder, buffer)
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
 	}
+
+
+	fun decodeByteBuffer(buffer: ByteBuffer): String {
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
+	}
+
+	fun decodeShortBuffer(buffer: ShortBuffer): String {
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
+	}
+
+	fun decodeIntBuffer(buffer: IntBuffer): String {
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
+	}
+
+	fun decodeFloatBuffer(buffer: FloatBuffer): String {
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
+	}
+
+	fun decodeDoubleBuffer(buffer: DoubleBuffer): String {
+		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
+		return String(result, Charset.defaultCharset())
+	}
+
+
+	fun decodeByte(bytes: ByteArray): String {
+		return decode(bytes)
+	}
+
+	fun decodeShort(bytes: ShortArray): String {
+		return decode(bytes)
+	}
+
+	fun decodeInt(bytes: IntArray): String {
+		return decode(bytes)
+	}
+
+	fun decodeFloat(bytes: FloatArray): String {
+		return decode(bytes)
+	}
+
+	fun decodeDouble(bytes: FloatArray): String {
+		return decode(bytes)
+	}
+
 
 	val encoding: String
 		get() = nativeGetEncoding(nativeDecoder)
@@ -71,5 +126,11 @@ class TNSTextDecoder {
 
 		@JvmStatic
 		private external fun nativeDecodeBuffer(decoder: Long, bytes: Buffer): String
+
+		@JvmStatic
+		private external fun nativeDecodeToBytes(decoder: Long, bytes: ByteArray): ByteArray
+
+		@JvmStatic
+		private external fun nativeDecodeBufferToBytes(decoder: Long, bytes: Buffer): ByteArray
 	}
 }

@@ -1,6 +1,6 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_float, c_int, c_longlong, c_uint};
-use std::str::{FromStr};
+use std::str::FromStr;
 
 use skia_safe::gpu::gl::Interface;
 use skia_safe::image::CachingHint;
@@ -12,7 +12,7 @@ use skia_safe::{
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
 use crate::common::context::drawing_paths::fill_rule::FillRule;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
-use crate::common::context::fill_and_stroke_styles::pattern::{ Repetition};
+use crate::common::context::fill_and_stroke_styles::pattern::Repetition;
 use crate::common::context::image_asset::ImageAsset;
 use crate::common::context::image_smoothing::ImageSmoothingQuality;
 use crate::common::context::line_styles::line_cap::LineCap;

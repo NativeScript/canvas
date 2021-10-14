@@ -27,7 +27,13 @@ pub extern "C" fn flip_y_in_place_3d_i8(
     height: usize,
     depth: usize,
 ) {
-    crate::common::utils::gl::flip_in_place_3d(data as *mut u8, length, bytes_per_row, height, depth)
+    crate::common::utils::gl::flip_in_place_3d(
+        data as *mut u8,
+        length,
+        bytes_per_row,
+        height,
+        depth,
+    )
 }
 
 #[no_mangle]

@@ -1,6 +1,6 @@
-use skia_safe::FilterQuality;
-
+use crate::common::context::filter_quality::FilterQuality;
 use crate::common::context::Context;
+use skia_safe::SamplingOptions;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -37,6 +37,16 @@ impl Into<FilterQuality> for ImageSmoothingQuality {
     }
 }
 
+impl Into<SamplingOptions> for ImageSmoothingQuality {
+    fn into(self) -> SamplingOptions {
+        match self {
+            ImageSmoothingQuality::Low => FilterQuality::Low.into(),
+            ImageSmoothingQuality::Medium => FilterQuality::Medium.into(),
+            ImageSmoothingQuality::High => FilterQuality::High.into(),
+        }
+    }
+}
+
 impl Into<i32> for ImageSmoothingQuality {
     fn into(self) -> i32 {
         match self {
@@ -47,7 +57,7 @@ impl Into<i32> for ImageSmoothingQuality {
     }
 }
 
-impl Context{
+impl Context {
     pub fn set_image_smoothing_enabled(&mut self, value: bool) {
         self.state.image_smoothing_enabled = value;
     }

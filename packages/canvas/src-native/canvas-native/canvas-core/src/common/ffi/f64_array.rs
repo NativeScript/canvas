@@ -30,7 +30,6 @@ impl Drop for F64Array {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn destroy_f64_array(array: *mut F64Array) {
     unsafe {

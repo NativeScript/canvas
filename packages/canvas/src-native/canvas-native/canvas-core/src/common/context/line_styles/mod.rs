@@ -13,10 +13,7 @@ pub mod line_join;
 impl Context {
     pub fn set_line_width(&mut self, width: c_float) {
         self.state.line_width = width;
-        self.state
-            .paint
-            .stroke_paint_mut()
-            .set_stroke_width(width);
+        self.state.paint.stroke_paint_mut().set_stroke_width(width);
     }
 
     pub fn line_width(&self) -> c_float {
@@ -53,13 +50,8 @@ impl Context {
 
     pub fn set_miter_limit(&mut self, limit: c_float) {
         self.state.miter_limit = limit;
-        self.state
-            .paint
-            .stroke_paint_mut()
-            .set_stroke_miter(limit);
+        self.state.paint.stroke_paint_mut().set_stroke_miter(limit);
     }
-
-
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {
         // TODO ?
@@ -75,7 +67,7 @@ impl Context {
             effect = PathEffect::dash(line_dash.as_ref(), self.state.line_dash_offset);
         }
         let slice = line_dash.as_ref();
-        self.state.line_dash_list.splice(..,slice.iter().cloned());
+        self.state.line_dash_list.splice(.., slice.iter().cloned());
         self.state.paint.stroke_paint_mut().set_path_effect(effect);
     }
 
@@ -86,7 +78,7 @@ impl Context {
     pub fn set_line_dash_offset(&mut self, offset: c_float) {
         // TODO ?
         self.state.line_dash_offset = offset;
-        let list  = self.state.line_dash_list.clone();
+        let list = self.state.line_dash_list.clone();
         self.set_line_dash(list.as_slice());
     }
 

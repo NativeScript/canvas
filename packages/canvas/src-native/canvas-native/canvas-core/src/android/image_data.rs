@@ -1,23 +1,25 @@
-use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::sys::{jint, jlong, jobject};
+use jni::JNIEnv;
 
 use crate::common::context::pixel_manipulation::image_data::ImageData;
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeInit(_: JNIEnv,
-                                                                          _: JClass, width: jint, height: jint) -> jlong {
-    Box::into_raw(
-        Box::new(
-            ImageData::new(width, height)
-        )
-    ) as jlong
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeInit(
+    _: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+) -> jlong {
+    Box::into_raw(Box::new(ImageData::new(width, height))) as jlong
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeWidth(_: JNIEnv,
-                                                                           _: JClass, image_data: jlong) -> jint {
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeWidth(
+    _: JNIEnv,
+    _: JClass,
+    image_data: jlong,
+) -> jint {
     if image_data == 0 {
         return 0;
     }
@@ -29,8 +31,11 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeWidth(_: JNIEn
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeHeight(_: JNIEnv,
-                                                                            _: JClass, image_data: jlong) -> jint {
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeHeight(
+    _: JNIEnv,
+    _: JClass,
+    image_data: jlong,
+) -> jint {
     if image_data == 0 {
         return 0;
     }
@@ -41,10 +46,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeHeight(_: JNIE
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeData(env: JNIEnv,
-                                                                          _: JClass, image_data: jlong) -> jobject {
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeData(
+    env: JNIEnv,
+    _: JClass,
+    image_data: jlong,
+) -> jobject {
     if image_data == 0 {
         let mut slice = [0u8; 0];
         return env.new_direct_byte_buffer(&mut slice).unwrap().into_inner();
@@ -62,8 +69,11 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeData(env: JNIE
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDataLength(_: JNIEnv,
-                                                                                _: JClass, image_data: jlong) -> jint {
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDataLength(
+    _: JNIEnv,
+    _: JClass,
+    image_data: jlong,
+) -> jint {
     if image_data == 0 {
         return 0;
     }
@@ -74,10 +84,12 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDataLength(_: 
     }
 }
 
-
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDestroy(_: JNIEnv,
-                                                                             _: JClass, image_data: jlong) {
+pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDestroy(
+    _: JNIEnv,
+    _: JClass,
+    image_data: jlong,
+) {
     if image_data == 0 {
         return;
     }
@@ -86,4 +98,3 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDestroy(_: JNI
         let _ = Box::from_raw(image_data);
     }
 }
-

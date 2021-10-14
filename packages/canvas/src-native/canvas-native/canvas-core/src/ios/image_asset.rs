@@ -174,7 +174,7 @@ pub extern "C" fn image_asset_flip_y(asset: c_longlong) -> bool {
 #[no_mangle]
 pub extern "C" fn image_asset_flip_y_in_place_owned(buf: *mut u8, length: usize) {
     if let Ok(mut image) =
-    image::load_from_memory(unsafe { std::slice::from_raw_parts_mut(buf, length) })
+        image::load_from_memory(unsafe { std::slice::from_raw_parts_mut(buf, length) })
     {
         image::imageops::flip_vertical_in_place(&mut image);
     }
@@ -183,7 +183,7 @@ pub extern "C" fn image_asset_flip_y_in_place_owned(buf: *mut u8, length: usize)
 #[no_mangle]
 pub extern "C" fn image_asset_flip_x_in_place_owned(buf: *mut u8, length: usize) {
     if let Ok(mut image) =
-    image::load_from_memory(unsafe { std::slice::from_raw_parts_mut(buf, length) })
+        image::load_from_memory(unsafe { std::slice::from_raw_parts_mut(buf, length) })
     {
         image::imageops::flip_horizontal_in_place(&mut image);
     }

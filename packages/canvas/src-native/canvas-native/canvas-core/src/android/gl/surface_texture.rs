@@ -3,7 +3,6 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
-
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ANativeWindow {
@@ -15,8 +14,6 @@ pub struct ANativeWindow {
 pub struct ASurfaceTexture {
     _unused: [u8; 0],
 }
-
-
 
 extern "system" {
     #[doc = " Release the reference to the native ASurfaceTexture acquired with"]

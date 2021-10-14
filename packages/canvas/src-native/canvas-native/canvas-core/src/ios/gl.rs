@@ -1,7 +1,7 @@
 use std::os::raw::{c_int, c_longlong, c_uint, c_void};
 
 use crate::common::context::image_asset::ImageAsset;
-use crate::common::ffi::u8_array::{destroy_u8_array};
+use crate::common::ffi::u8_array::destroy_u8_array;
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;
@@ -22,12 +22,8 @@ pub extern "C" fn gl_tex_image_2D_asset(
         let asset = &mut *asset;
         let mut data;
         match format as u32 {
-            RGBA | RGBA_INTEGER => {
-                data = asset.rgba_internal_bytes()
-            }
-            _ => {
-                data = asset.rgb_internal_bytes()
-            }
+            RGBA | RGBA_INTEGER => data = asset.rgba_internal_bytes(),
+            _ => data = asset.rgb_internal_bytes(),
         }
         let data_array = data.as_mut_slice();
         let width = asset.width();
@@ -36,7 +32,8 @@ pub extern "C" fn gl_tex_image_2D_asset(
             crate::common::utils::gl::flip_in_place(
                 data_array.as_mut_ptr(),
                 data_array.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width as i32) as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32
+                    * width as i32) as usize,
                 height as usize,
             );
         }
@@ -84,7 +81,8 @@ pub extern "C" fn gl_tex_sub_image_2D_asset(
             crate::common::utils::gl::flip_in_place(
                 data_array.data,
                 data_array.data_len,
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * width as i32) as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32
+                    * width as i32) as usize,
                 height as usize,
             );
         }
@@ -134,7 +132,8 @@ pub extern "C" fn gl_tex_image_3D_asset(
             crate::common::utils::gl::flip_in_place_3d(
                 data_array.data,
                 data_array.data_len,
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * asset.width() as i32) as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32
+                    * asset.width() as i32) as usize,
                 asset.height() as usize,
                 depth as usize,
             );
@@ -187,7 +186,8 @@ pub extern "C" fn gl_tex_sub_image_3D_asset(
             crate::common::utils::gl::flip_in_place_3d(
                 data_array.data,
                 data_array.data_len,
-                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32 * asset.width() as i32) as usize,
+                (crate::common::utils::gl::bytes_per_pixel(image_type, format) as i32
+                    * asset.width() as i32) as usize,
                 asset.height() as usize,
                 depth as usize,
             );
@@ -229,10 +229,7 @@ pub unsafe extern "C" fn gl_vertex_attrib_pointer(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn gl_get_vertex_attrib_offset(
-    index: c_uint,
-    pname: c_uint,
-) -> c_longlong {
+pub unsafe extern "C" fn gl_get_vertex_attrib_offset(index: c_uint, pname: c_uint) -> c_longlong {
     let mut buf = [0i64; 1];
     let ptr_ptr: *mut *mut c_void = buf.as_mut_ptr() as *mut _;
     gl_bindings::glGetVertexAttribPointerv(index, pname, ptr_ptr);

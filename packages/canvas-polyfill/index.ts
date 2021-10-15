@@ -13,8 +13,7 @@ import { Document } from './DOM/Document';
 import './window';
 import './resize';
 import './process';
-import { TextDecoder, TextEncoder } from '@nativescript/canvas';
-import { ImageBitmap } from '@nativescript/canvas/ImageBitmap';
+import { TextDecoder, TextEncoder, ImageBitmap} from '@nativescript/canvas';
 import { URL } from './URL';
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 

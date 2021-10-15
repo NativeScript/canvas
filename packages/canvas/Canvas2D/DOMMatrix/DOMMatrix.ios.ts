@@ -3,6 +3,9 @@ import {DOMMatrixBase} from './common';
 export class DOMMatrix extends DOMMatrixBase {
 	constructor(instance) {
 		super(instance);
+		if (!this.nativeInstance) {
+			this.nativeInstance = TNSCanvas.createSVGMatrix();
+		}
 	}
 
 	get a(): number {

@@ -13,12 +13,33 @@ export * from './WebGL';
 export * from './WebGL2';
 export * from './SVG';
 
+import { ImageBitmap } from './ImageBitmap';
+
 export * from './ImageBitmap';
 
 export {CanvasRenderingContext2D} from './Canvas2D/CanvasRenderingContext2D';
 export {WebGLRenderingContext} from './WebGL/WebGLRenderingContext';
 export {WebGL2RenderingContext} from './WebGL2/WebGL2RenderingContext';
-import {CanvasPattern, CanvasGradient, Path2D} from './Canvas2D';
+
+import {CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix} from './Canvas2D';
+
+Object.defineProperty(global, 'CanvasRenderingContext2D', {
+	value: CanvasRenderingContext2D,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'WebGLRenderingContext', {
+	value: WebGLRenderingContext,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'WebGL2RenderingContext', {
+	value: WebGL2RenderingContext,
+	configurable: true,
+	writable: true,
+});
 
 Object.defineProperty(global, 'CanvasPattern', {
 	value: CanvasPattern,
@@ -32,7 +53,6 @@ Object.defineProperty(global, 'CanvasGradient', {
 	writable: true,
 });
 
-
 Object.defineProperty(global, 'TextEncoder', {
 	value: TextEncoder,
 	configurable: true,
@@ -45,9 +65,26 @@ Object.defineProperty(global, 'TextDecoder', {
 	writable: true,
 });
 
-
 Object.defineProperty(global, 'Path2D', {
 	value: Path2D,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'ImageData', {
+	value: ImageData,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'DOMMatrix', {
+	value: DOMMatrix,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'ImageBitmap', {
+	value: ImageBitmap,
 	configurable: true,
 	writable: true,
 });

@@ -1,4 +1,4 @@
-import '@nativescript/canvas-polyfill';
+require('@nativescript/canvas-polyfill');
 import * as Pixii from 'pixi.js';
 
 export class TNSPIXIApplication extends Pixii.Application {

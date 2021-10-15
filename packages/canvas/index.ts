@@ -1,27 +1,32 @@
 import {CanvasRenderingContext} from './common';
 
-export {CanvasRenderingContext};
 export {Canvas, createSVGMatrix} from './Canvas';
-export * from './Canvas2D';
-export * from './ImageAsset';
 import {TextEncoder} from './TextEncoder';
 import {TextDecoder} from './TextDecoder';
 
+import { ImageBitmap } from './ImageBitmap';
+import {CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix} from './Canvas2D';
+
+import {CanvasRenderingContext2D} from './Canvas2D/CanvasRenderingContext2D';
+import {WebGLRenderingContext} from './WebGL/WebGLRenderingContext';
+import {WebGL2RenderingContext} from './WebGL2/WebGL2RenderingContext';
+
+export * from './Canvas2D';
+export * from './ImageAsset';
 export * from './TextEncoder';
 export * from './TextDecoder';
 export * from './WebGL';
 export * from './WebGL2';
 export * from './SVG';
 
-import { ImageBitmap } from './ImageBitmap';
-
-export * from './ImageBitmap';
+export { ImageBitmap } from './ImageBitmap'
 
 export {CanvasRenderingContext2D} from './Canvas2D/CanvasRenderingContext2D';
 export {WebGLRenderingContext} from './WebGL/WebGLRenderingContext';
 export {WebGL2RenderingContext} from './WebGL2/WebGL2RenderingContext';
 
-import {CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix} from './Canvas2D';
+import { install } from '@nativescript-community/gesturehandler';
+install();
 
 Object.defineProperty(global, 'CanvasRenderingContext2D', {
 	value: CanvasRenderingContext2D,

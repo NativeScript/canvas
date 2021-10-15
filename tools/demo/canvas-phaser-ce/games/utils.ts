@@ -27,7 +27,7 @@ const imageSourceCache = {};
 function cacheImages(images: any) {
   const imageArray = Object.keys(images).map((key) => images[key]);
   return imageArray.map((image) => {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const asset = new ImageAsset();
       asset.loadFileAsync(image)
         .then(loaded => {

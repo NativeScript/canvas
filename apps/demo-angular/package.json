@@ -1,18 +1,19 @@
 {
   "main": "./src/main.ts",
   "dependencies": {
-    "@nativescript/core": "file:../../node_modules/@nativescript/core",
-    "@nativescript/canvas-media": "file:../../dist/packages/canvas-media",
     "@nativescript/canvas": "file:../../dist/packages/canvas",
     "@nativescript/canvas-babylon": "file:../../dist/packages/canvas-babylon",
+    "@nativescript/canvas-media": "file:../../dist/packages/canvas-media",
     "@nativescript/canvas-phaser": "file:../../dist/packages/canvas-phaser",
     "@nativescript/canvas-phaser-ce": "file:../../dist/packages/canvas-phaser-ce",
     "@nativescript/canvas-pixi": "file:../../dist/packages/canvas-pixi",
     "@nativescript/canvas-polyfill": "file:../../dist/packages/canvas-polyfill",
-    "@nativescript/canvas-three": "file:../../dist/packages/canvas-three"
+    "@nativescript/canvas-three": "file:../../dist/packages/canvas-three",
+    "@nativescript/core": "file:../../node_modules/@nativescript/core",
+    "three": "file:../../node_modules/three"
   },
   "devDependencies": {
-    "@nativescript/android": "8.0.0",
+    "@nativescript/android": "8.2.0-alpha.2",
     "@nativescript/ios": "8.0.0"
   }
 }

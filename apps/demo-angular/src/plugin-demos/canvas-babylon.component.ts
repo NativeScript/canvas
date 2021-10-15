@@ -1,6 +1,5 @@
 import { Component, NgZone } from '@angular/core';
 import { DemoSharedCanvasBabylon } from '@demo/shared';
-import {} from '@nativescript/canvas-babylon';
 
 @Component({
 	selector: 'demo-canvas-babylon',

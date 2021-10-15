@@ -2,10 +2,10 @@
 	<ActionBar title="Demos"></ActionBar>
 </ActionBar>
 <GridLayout>
-	<ListView [items]="demos">
+	<ListView [items]="demos" (itemTap)="onTap($event)">
 		<ng-template let-item="item" let-i="index">
 			<GridLayout class="p-y-10">
-				<Label [text]="item.name" [nsRouterLink]="['/' + item.name]"></Label>
+				<Label [text]="item.name"></Label>
 			</GridLayout>
 		</ng-template>
 	</ListView>

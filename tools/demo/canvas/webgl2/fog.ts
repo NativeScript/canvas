@@ -231,9 +231,7 @@ void main() {
       }
       if (!nativeCanvas) {
 
-      } else {
-        native
-      }
+      } else {}
       LAF = requestAnimationFrame(drawScene);
     }
   }

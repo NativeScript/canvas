@@ -1,6 +1,5 @@
 import { Component, NgZone } from '@angular/core';
 import { DemoSharedCanvasPhaser } from '@demo/shared';
-import {} from '@nativescript/canvas-phaser';
 
 @Component({
 	selector: 'demo-canvas-phaser',

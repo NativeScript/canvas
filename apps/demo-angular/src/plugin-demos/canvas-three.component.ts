@@ -1,6 +1,5 @@
 import { Component, NgZone } from '@angular/core';
 import { DemoSharedCanvasThree } from '@demo/shared';
-import {} from '@nativescript/canvas-three';
 
 @Component({
 	selector: 'demo-canvas-three',
@@ -13,5 +12,17 @@ export class CanvasThreeComponent {
 
 	ngOnInit() {
 		this.demoShared = new DemoSharedCanvasThree();
+	}
+
+	canvasLoaded(event) {
+		this.demoShared?.canvasLoaded?.(event);
+	}
+
+	loaded(event) {
+		this.demoShared?.loaded?.(event);
+	}
+
+	unloaded(event) {
+		this.demoShared?.unloaded?.(event);
 	}
 }

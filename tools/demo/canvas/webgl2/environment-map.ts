@@ -221,9 +221,7 @@ void main() {
     var then = 0;
     if (!nativeCanvas) {
 
-    } else {
-      native
-    }
+    } else {}
     requestAnimationFrame(drawScene);
 
     // Draw the scene.
@@ -289,9 +287,7 @@ void main() {
 
       if (!nativeCanvas) {
 
-      } else {
-        native
-      }
+      } else {}
       LAF = requestAnimationFrame(drawScene);
     }
   }

@@ -1,6 +1,5 @@
 import { Component, NgZone } from '@angular/core';
 import { DemoSharedCanvasPolyfill } from '@demo/shared';
-import {} from '@nativescript/canvas-polyfill';
 
 @Component({
 	selector: 'demo-canvas-polyfill',

@@ -1,4 +1,4 @@
-import '@nativescript/canvas-polyfill';
+require('@nativescript/canvas-polyfill');
 
 
 interface TNSPhaserCe {
@@ -6,7 +6,7 @@ interface TNSPhaserCe {
 	Phaser: any;
 }
 
-export declare var global: NodeJS.Global & typeof globalThis & TNSPhaserCe;
+export declare var global: TNSPhaserCe;
 
 
 function initPhaser() {

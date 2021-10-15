@@ -5,7 +5,7 @@ import { HTMLCanvasElement } from './DOM/HTMLCanvasElement';
 import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { Device, fromObject, View } from '@nativescript/core';
-import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } from '@nativescript/canvas';
+import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData } from '@nativescript/canvas';
 
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
@@ -25,6 +25,8 @@ import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext
 (global as any).window.CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D || CanvasRenderingContext2D;
 (global as any).window.WebGLRenderingContext = (global as any).WebGLRenderingContext = (global as any).WebGLRenderingContext || WebGLRenderingContext;
 (global as any).window.WebGL2RenderingContext = (global as any).WebGL2RenderingContext = (global as any).WebGL2RenderingContext || WebGL2RenderingContext;
+
+(global as any).window.ImageData = (global as any).ImageData = (global as any).ImageData || ImageData;
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {

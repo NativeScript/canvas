@@ -1,6 +1,6 @@
+use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::sys::jlong;
-use jni::JNIEnv;
 
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::matrix::Matrix;

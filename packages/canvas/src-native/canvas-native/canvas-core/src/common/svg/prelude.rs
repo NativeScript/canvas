@@ -1,10 +1,8 @@
 use skia_safe::{Rect, Size};
 
-
 use crate::common::svg::enums::preserve_aspect_ratio::{
     AlignMeetOrSlice, AspectRatioAlign, AspectRatioMeetOrSlice,
 };
-
 use crate::common::svg::view_box::ViewBox;
 
 pub trait ColorConversation {

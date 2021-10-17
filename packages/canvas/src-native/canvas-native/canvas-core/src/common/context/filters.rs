@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use skia_safe::{color_filters, image_filters, table_color_filter, Point, TileMode};
+use skia_safe::{color_filters, image_filters, Point, table_color_filter, TileMode};
 
 use crate::common::context::Context;
 use crate::common::utils::color::parse_color;

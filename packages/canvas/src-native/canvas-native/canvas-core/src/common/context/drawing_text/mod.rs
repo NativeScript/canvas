@@ -1,12 +1,12 @@
 use std::os::raw::c_float;
 
-use skia_safe::paint::Style;
 use skia_safe::{Point, Size};
+use skia_safe::paint::Style;
 
+use crate::common::context::Context;
 use crate::common::context::drawing_text::text_metrics::TextMetrics;
 use crate::common::context::drawing_text::typography::{get_font_baseline, to_real_text_align};
 use crate::common::context::text_styles::text_align::TextAlign;
-use crate::common::context::Context;
 use crate::common::utils::geometry::inflate_stroke_rect;
 
 pub mod text_metrics;

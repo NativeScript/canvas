@@ -1,9 +1,9 @@
 use std::ffi::CString;
 use std::os::raw::{c_char, c_longlong};
 
+use crate::common::context::Context;
 use crate::common::context::drawing_text::text_metrics::TextMetrics;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
-use crate::common::context::Context;
 
 pub mod context;
 pub mod gl;

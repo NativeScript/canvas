@@ -2,9 +2,9 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jbyteArray, jlong, jobject, jstring};
-use jni::JNIEnv;
 
 use crate::common::context::text_encoder::TextEncoder;
 

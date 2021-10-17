@@ -1,7 +1,6 @@
-use std::{cell::RefCell, rc::Rc, str::FromStr};
-
 use roxmltree::Node;
 use skia_safe::Matrix;
+use std::{cell::RefCell, rc::Rc, str::FromStr};
 
 use crate::common::context::Context;
 use crate::common::context::fill_and_stroke_styles::pattern::Repetition;

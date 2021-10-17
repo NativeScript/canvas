@@ -1,19 +1,15 @@
+use roxmltree::Node;
+use skia_safe::{RCHandle, Rect};
 use std::collections::HashMap;
 use std::f32::consts::PI;
-
-use roxmltree::{Node};
-use skia_safe::{RCHandle, Rect};
 
 use crate::common::context::{Context, Device};
 use crate::common::svg::attribute_names::Attribute;
 use crate::common::svg::bounding_box::BoundingBox;
-
 use crate::common::svg::elements::parser::{Parser, StyleMap};
 use crate::common::svg::elements::renderer::{
     handle_style_data, render_mask, Renderer, set_filters, set_mask,
 };
-
-
 use crate::common::svg::units::length::{convert_length, Length};
 use crate::common::svg::units::Units;
 use crate::common::svg::view_box::ViewBox;

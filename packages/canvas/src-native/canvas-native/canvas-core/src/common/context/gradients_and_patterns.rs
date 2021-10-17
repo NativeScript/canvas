@@ -2,10 +2,10 @@ use std::os::raw::c_float;
 
 use skia_safe::{Image, Point, TileMode};
 
+use crate::common::context::Context;
 use crate::common::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::common::context::fill_and_stroke_styles::pattern::{Pattern, Repetition};
 use crate::common::context::matrix::Matrix;
-use crate::common::context::Context;
 
 impl Context {
     pub fn create_linear_gradient(

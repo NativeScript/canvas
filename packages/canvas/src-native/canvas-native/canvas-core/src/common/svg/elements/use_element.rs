@@ -1,4 +1,4 @@
-use roxmltree::{Node};
+use roxmltree::Node;
 
 use crate::common::{
     context::Context,

@@ -1,6 +1,6 @@
+use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::sys::{jfloat, jlong};
-use jni::JNIEnv;
 
 use crate::common::context::drawing_text::text_metrics::TextMetrics;
 

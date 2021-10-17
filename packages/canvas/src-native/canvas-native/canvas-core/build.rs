@@ -1,7 +1,7 @@
+use std::{env, fmt};
 use std::borrow::Borrow;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use std::{env, fmt};
 
 use bindgen;
 
@@ -88,7 +88,7 @@ fn main() {
             println!("cargo:rustc-link-search=native={}", include_dir);
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=android"); // the "-l" flag
-                                                      // the resulting bindings.
+            // the resulting bindings.
             let bindings = bindgen::Builder::default()
                 // The input header we would like to generate
                 // bindings for.

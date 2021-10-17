@@ -2,9 +2,9 @@ use std::borrow::BorrowMut;
 
 use skia_safe::{ClipOp, Matrix, Point};
 
+use crate::common::context::Context;
 use crate::common::context::drawing_paths::fill_rule::FillRule;
 use crate::common::context::paths::path::Path;
-use crate::common::context::Context;
 
 pub mod fill_rule;
 

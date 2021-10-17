@@ -1,7 +1,7 @@
 use jni::errors::Error;
+use jni::JNIEnv;
 use jni::objects::{AutoPrimitiveArray, JByteBuffer, JClass, JObject, ReleaseMode};
 use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_TRUE};
-use jni::JNIEnv;
 use skia_safe::{RCHandle, Rect};
 
 use crate::common::context::image_asset::ImageAsset;

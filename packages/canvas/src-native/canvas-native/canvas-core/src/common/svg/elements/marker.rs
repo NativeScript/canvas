@@ -1,7 +1,6 @@
-use std::num::ParseIntError;
-
 use roxmltree::Node;
 use skia_safe::Point;
+use std::num::ParseIntError;
 
 use crate::common::context::Context;
 use crate::common::context::paths::path::Path;
@@ -240,7 +239,7 @@ impl Marker {
                             if point_count > 0 {
                                 for i in 1..point_count - 1 {
                                     if let (Some(point), Some(value)) =
-                                        (markers.0.get(i), markers.1.get(i))
+                                    (markers.0.get(i), markers.1.get(i))
                                     {
                                         context.save();
                                         context.rotate(*value);

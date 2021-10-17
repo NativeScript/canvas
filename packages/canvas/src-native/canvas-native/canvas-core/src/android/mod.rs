@@ -1,21 +1,21 @@
 use std::os::raw::c_void;
 
 use android_logger::Config;
-use jni::objects::{JByteBuffer, JClass, JObject, JString};
-use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
-use log::Level;
+use jni::objects::{JByteBuffer, JClass, JObject, JString};
+use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
 use log::{debug, info};
-use skia_safe::gpu::gl::Interface;
-use skia_safe::image::CachingHint;
+use log::Level;
 use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, PixelGeometry,
+    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry,
     RCHandle, Rect, Size, Surface,
 };
+use skia_safe::gpu::gl::Interface;
+use skia_safe::image::CachingHint;
 
+use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;
 use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::context::{Context, Device, State};
 use crate::common::to_data_url;
 
 pub mod context;

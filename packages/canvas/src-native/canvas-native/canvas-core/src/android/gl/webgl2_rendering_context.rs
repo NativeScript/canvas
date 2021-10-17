@@ -4,12 +4,12 @@
 
 use std::os::raw::c_void;
 
+use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode};
 use jni::sys::{
     jboolean, jbyteArray, jdouble, jdoubleArray, jfloatArray, jint, jintArray, jlong, jlongArray,
-    jshortArray, JNI_TRUE,
+    JNI_TRUE, jshortArray,
 };
-use jni::JNIEnv;
 
 use crate::common::context::image_asset::ImageAsset;
 

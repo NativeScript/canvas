@@ -2,14 +2,14 @@ use std::os::raw::c_float;
 
 use skia_safe::{
     font_style::{Slant, Weight, Width},
-    typeface::Typeface,
-    FontMetrics, FontMgr, FontStyle,
+    FontMetrics,
+    FontMgr, FontStyle, typeface::Typeface,
 };
 
 use crate::{
+    common::context::Device,
     common::context::text_styles::text_align::TextAlign,
-    common::context::text_styles::text_baseline::TextBaseLine,
-    common::context::text_styles::text_direction::TextDirection, common::context::Device,
+    common::context::text_styles::text_baseline::TextBaseLine, common::context::text_styles::text_direction::TextDirection,
     common::utils::dimensions::parse_size,
 };
 

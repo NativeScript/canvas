@@ -1,6 +1,6 @@
+use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::sys::{jint, jlong, jobject};
-use jni::JNIEnv;
 
 use crate::common::context::pixel_manipulation::image_data::ImageData;
 

@@ -1,7 +1,7 @@
 use std::os::raw::c_float;
 
-use skia_safe::paint::{Cap, Style};
 use skia_safe::{Color, Point};
+use skia_safe::paint::{Cap, Style};
 
 use crate::common::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::common::context::fill_and_stroke_styles::pattern::Pattern;

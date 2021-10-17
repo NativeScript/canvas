@@ -1,8 +1,8 @@
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_float, c_longlong};
 
-use jni::objects::{JClass, JString};
 use jni::JNIEnv;
+use jni::objects::{JClass, JString};
 
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 

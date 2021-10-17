@@ -1,5 +1,5 @@
-use skia_safe::canvas::SrcRectConstraint;
 use skia_safe::{Image, Rect};
+use skia_safe::canvas::SrcRectConstraint;
 
 use crate::common::context::Context;
 

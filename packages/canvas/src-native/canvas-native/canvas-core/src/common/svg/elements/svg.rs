@@ -1,13 +1,13 @@
 use roxmltree::Node;
 use skia_safe::{Color, ISize, Point, SamplingOptions, Surface, Vector};
 
+use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;
 use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::context::{Context, Device, State};
 use crate::common::svg::attribute_names::{Attribute, NodeExt};
 use crate::common::svg::elements::element_names::ElementName;
 use crate::common::svg::elements::renderer::handle_render_children;
-use crate::common::svg::enums::preserve_aspect_ratio::{view_box_to_transform, AlignMeetOrSlice};
+use crate::common::svg::enums::preserve_aspect_ratio::{AlignMeetOrSlice, view_box_to_transform};
 use crate::common::svg::units::length::{convert_length, Length, LengthUnit};
 use crate::common::svg::units::Units;
 use crate::common::svg::view_box::ViewBox;
@@ -48,7 +48,7 @@ pub fn create_context<'a>(
             (width * density) as i32,
             (height * density) as i32,
         ))
-        .unwrap(),
+            .unwrap(),
         path: Path::default(),
         state: State::from_device(device, direction),
         state_stack: vec![],

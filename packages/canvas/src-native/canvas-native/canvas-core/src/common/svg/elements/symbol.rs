@@ -120,7 +120,7 @@ impl Symbol {
             parent_view_box.width(), parent_view_box.height(), device.density, device.alpha, context.font_color.to_int() as i32, device.ppi, context.direction(),
         );
 
-        let bounding_box = BoundingBox::new(x,y,width,height);
+        let bounding_box = BoundingBox::new(x, y, width, height);
         let parsed = handle_style_data(&style, context, root_element, bounding_box);
         if !parsed.is_visible() {
             return;
@@ -155,7 +155,7 @@ impl Symbol {
         }
 
         let ss = symbol_ctx.surface.image_snapshot();
-        
+
         context.draw_image_with_points(&ss, 0.0, 0.0)
     }
 }

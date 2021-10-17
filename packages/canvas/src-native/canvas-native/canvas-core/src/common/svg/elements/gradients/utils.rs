@@ -1,7 +1,6 @@
-use std::str::FromStr;
-
 use roxmltree::Children;
 use skia_safe::Color;
+use std::str::FromStr;
 
 use crate::common::svg::attribute_names::Attribute;
 use crate::common::svg::elements::element_names::ElementName;

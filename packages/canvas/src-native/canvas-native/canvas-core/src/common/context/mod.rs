@@ -2,7 +2,6 @@ use std::os::raw::c_float;
 
 use skia_safe::{Color, Point, SamplingOptions, Surface};
 
-use crate::common::context::filter_quality::FilterQuality;
 use crate::{
     common::context::compositing::composite_operation_type::CompositeOperationType,
     common::context::drawing_text::typography::Font,
@@ -15,6 +14,7 @@ use crate::{
         text_align::TextAlign, text_baseline::TextBaseLine, text_direction::TextDirection,
     },
 };
+use crate::common::context::filter_quality::FilterQuality;
 
 pub mod drawing_images;
 pub mod drawing_text;

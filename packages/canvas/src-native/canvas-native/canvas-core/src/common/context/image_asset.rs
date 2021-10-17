@@ -3,8 +3,8 @@ use std::io::{Read, Seek, SeekFrom};
 use std::os::raw::{c_char, c_uint};
 use std::ptr::{null, null_mut};
 
-use image::imageops::FilterType;
 use image::{GenericImageView, ImageFormat};
+use image::imageops::FilterType;
 
 use crate::common::ffi::u8_array::U8Array;
 

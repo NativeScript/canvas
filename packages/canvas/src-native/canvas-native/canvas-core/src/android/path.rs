@@ -1,6 +1,6 @@
+use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jfloat, jlong};
-use jni::JNIEnv;
 
 use crate::common::context::matrix::Matrix;
 use crate::common::context::paths::path::Path;

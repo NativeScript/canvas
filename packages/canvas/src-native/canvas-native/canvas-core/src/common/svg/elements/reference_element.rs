@@ -1,7 +1,6 @@
+use roxmltree::Node;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
-
-use roxmltree::Node;
 
 use crate::common::svg::attribute_names::{Attribute, NodeExt};
 use crate::common::svg::elements::element_names::ElementName;

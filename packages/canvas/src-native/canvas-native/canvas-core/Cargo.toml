@@ -24,7 +24,7 @@ lazy_static = "1.4.0"
 css-color-parser = "0.1.2"
 reqwest = { version = "0.11", features = ["blocking"] }
 openssl = { version = "0.10", features = ["vendored"] }
-phf = {version = "0.8.0", features = ["macros"]}
+phf = { version = "0.8.0", features = ["macros"] }
 rgb = "0.8.25"
 log = "0.4.8"
 stringreader = "0.1.1"

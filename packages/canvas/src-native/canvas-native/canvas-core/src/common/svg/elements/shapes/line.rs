@@ -1,21 +1,17 @@
-use std::collections::HashMap;
-
-use roxmltree::{Node};
+use roxmltree::Node;
 use skia_safe::{Point, RCHandle, Rect};
+use std::collections::HashMap;
 
 use crate::common::context::{Context, Device};
 use crate::common::context::paths::path::Path;
 use crate::common::svg::attribute_names::Attribute;
 use crate::common::svg::bounding_box::BoundingBox;
 use crate::common::svg::elements::marker::{Marker, MarkerPosition};
-
 use crate::common::svg::elements::parser::{Parser, StyleMap};
 use crate::common::svg::elements::reference_element::ReferenceElement;
 use crate::common::svg::elements::renderer::{
     handle_style_data, render_mask, Renderer, set_filters, set_mask,
 };
-
-
 use crate::common::svg::units::length::{convert_length, Length};
 use crate::common::svg::units::Units;
 use crate::common::svg::view_box::ViewBox;

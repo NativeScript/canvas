@@ -1,5 +1,3 @@
-
-
 use crate::common::svg::elements::clip_path::shapes::ClipShape;
 use crate::common::svg::units::Units;
 

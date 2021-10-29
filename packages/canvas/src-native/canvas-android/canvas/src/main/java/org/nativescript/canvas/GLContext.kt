@@ -91,7 +91,7 @@ internal class GLContext {
 								)
 							)
 						}
-						if (canvasView.nativeContext > 0) {
+						if (canvasView.nativeContext != 0L) {
 							val frameBuffers = IntArray(1)
 							GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)
 							var samples = 0
@@ -118,7 +118,7 @@ internal class GLContext {
 						if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 							Log.e("JS", "GLContext: Cannot swap buffers!")
 						}
-						if (canvasView.nativeContext > 0) {
+						if (canvasView.nativeContext != 0L) {
 							GLES20.glViewport(0, 0, width, height)
 							val frameBuffers = IntArray(1)
 							GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)

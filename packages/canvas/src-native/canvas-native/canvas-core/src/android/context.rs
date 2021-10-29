@@ -967,6 +967,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
                 std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
                 length,
             );
+
             if let Some(image) = from_image_slice(buf, width, height) {
                 return Box::into_raw(Box::new(PaintStyle::Pattern(
                     context.create_pattern(image, Repetition::from(repetition)),

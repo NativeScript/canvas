@@ -7,6 +7,9 @@ import { Utils, profile } from '@nativescript/core';
 
 declare var TNSCanvas, TNSCanvasListener;
 
+
+export * from './common';
+
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(TNSCanvas.createSVGMatrix());
 }
@@ -170,8 +173,6 @@ export class Canvas extends CanvasBase {
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
 		this._readyListener = undefined;
-		this._canvas = undefined;
-		this.setNativeView(undefined);
 		super.disposeNativeView();
 	}
 

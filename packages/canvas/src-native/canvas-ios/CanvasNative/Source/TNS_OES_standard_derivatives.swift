@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import OpenGLES
 @objcMembers
 @objc(TNS_OES_standard_derivatives)
 public class TNS_OES_standard_derivatives: NSObject {

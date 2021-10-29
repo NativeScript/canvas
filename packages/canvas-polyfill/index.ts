@@ -96,16 +96,3 @@ if (!((global as any).URL instanceof URL)) {
 	});
 	(global as any).window.URL = (global as any).URL;
 }
-class TouchEvent {
-	preventDefault() {}
-	stopPropagation() {}
-}
-
-if (!((global as any).TouchEvent instanceof TouchEvent)) {
-	Object.defineProperty(global, 'TouchEvent', {
-		value: TouchEvent,
-		configurable: true,
-		writable: true,
-	});
-	(global as any).window.TouchEvent = (global as any).TouchEvent;
-}

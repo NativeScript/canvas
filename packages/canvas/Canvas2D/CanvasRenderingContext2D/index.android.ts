@@ -652,6 +652,8 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			image.tagName === 'CANVAS' && image._canvas instanceof Canvas
 		) {
 			img = image._canvas.android;
+		} else if(image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap){
+			img = image.native;
 		}
 		if (!img) {
 			return null;
@@ -747,6 +749,8 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			image.tagName === 'CANVAS' && image._canvas instanceof Canvas
 		) {
 			image = image._canvas.android;
+		} else if(image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap){
+			image = image.native;
 		}
 
 		if (args.length === 3) {

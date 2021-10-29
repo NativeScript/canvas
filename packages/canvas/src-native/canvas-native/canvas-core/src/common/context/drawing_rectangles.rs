@@ -4,7 +4,7 @@ use skia_safe::{BlendMode, Paint, Rect};
 use skia_safe::paint::Style;
 
 use crate::common::context::Context;
-use crate::common::prelude::*;
+
 
 impl Context {
     pub fn clear_rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {

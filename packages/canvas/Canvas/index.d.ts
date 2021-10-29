@@ -6,6 +6,20 @@ import {WebGL2RenderingContext} from '../WebGL2/WebGL2RenderingContext';
 
 export declare function createSVGMatrix(): DOMMatrix;
 
+export class TouchEvent {
+	readonly type: string;
+	constructor(name, init?: { [key: string]: any });
+	preventDefault();
+	stopPropagation();
+}
+
+export class PointerEvent {
+	readonly type: string;
+	constructor(name, init?: { [key: string]: any });
+	preventDefault();
+	stopPropagation();
+}
+
 export declare class Canvas extends CanvasBase {
 	readonly clientWidth: number;
 	readonly clientHeight: number;

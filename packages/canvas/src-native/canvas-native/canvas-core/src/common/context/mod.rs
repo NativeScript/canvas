@@ -1,6 +1,6 @@
 use std::os::raw::c_float;
 
-use skia_safe::{Color, Point, SamplingOptions, Surface};
+use skia_safe::{Color, Point, Surface};
 
 use crate::{
     common::context::compositing::composite_operation_type::CompositeOperationType,

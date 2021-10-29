@@ -1,10 +1,8 @@
-use std::os::raw::c_void;
-
 use android_logger::Config;
 use jni::JNIEnv;
-use jni::objects::{JByteBuffer, JClass, JObject, JString};
-use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
-use log::{debug, info};
+use jni::objects::{JClass, JObject, JString};
+use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
+
 use log::Level;
 use skia_safe::{
     AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry,

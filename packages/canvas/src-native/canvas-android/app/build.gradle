@@ -1,15 +1,12 @@
 apply plugin: 'com.android.application'
-
 apply plugin: 'kotlin-android'
 
-apply plugin: 'kotlin-android-extensions'
-
 android {
-	compileSdkVersion 30
+	compileSdkVersion 31
 	defaultConfig {
 		applicationId "org.nativescript.canvasdemo"
 		minSdkVersion 21
-		targetSdkVersion 30
+		targetSdkVersion 31
 		versionCode 1
 		versionName "1.0"
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -40,6 +37,6 @@ dependencies {
 	androidTestImplementation 'androidx.test:runner:1.2.0'
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 	implementation project(path: ':canvas')
-	implementation 'com.google.android.exoplayer:exoplayer:2.13.2'
-	implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.2'
+	implementation 'com.google.android.exoplayer:exoplayer:2.15.1'
+	implementation 'com.google.android.exoplayer:exoplayer-ui:2.15.1'
 }

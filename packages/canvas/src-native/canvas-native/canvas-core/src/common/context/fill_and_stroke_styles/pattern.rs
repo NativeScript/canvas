@@ -53,9 +53,14 @@ impl Pattern {
             Repetition::RepeatY => (TileMode::Clamp, TileMode::Repeat),
             _ => (TileMode::Repeat, TileMode::Repeat),
         };
-        pattern
+        match pattern
             .image()
-            .to_shader(Some(mode), image_smoothing_quality, Some(&pattern.matrix))
+            .to_shader(Some(mode), image_smoothing_quality, None) {
+            Some(shader) => {
+              Some(shader.with_local_matrix(&pattern.matrix))
+            }
+            None => None
+        }
     }
 
     pub fn new(image: Image, repetition: Repetition) -> Self {

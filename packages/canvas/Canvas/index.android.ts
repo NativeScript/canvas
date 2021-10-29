@@ -170,7 +170,6 @@ export class Canvas extends CanvasBase {
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
 		super.disposeNativeView();
-		this._canvas = undefined;
 	}
 
 	toDataURL(type = 'png', encoderOptions = 0.92) {

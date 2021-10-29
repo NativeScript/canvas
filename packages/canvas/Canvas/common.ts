@@ -1,12 +1,42 @@
-import {CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application, Property, booleanConverter} from '@nativescript/core';
-import {CanvasRenderingContext, TouchList} from '../common';
-import {GestureTypes, GestureEventData, Pointer} from '@nativescript/core/ui/gestures';
+import { CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application, Property, booleanConverter } from '@nativescript/core';
+import { CanvasRenderingContext, TouchList } from '../common';
+import { GestureTypes, GestureEventData, Pointer } from '@nativescript/core/ui/gestures';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
 }
 
-const WEB_GESTURE_EVENTS = ['touchmove', 'touchstart', 'touchcancel', 'touchend'];
+
+export class TouchEvent {
+	readonly type: string;
+	constructor(name, init?: { [key: string]: any }) {
+		this.type = name;
+		if (init && typeof init === 'object') {
+			Object.keys(init).forEach(key => {
+				this[key] = init[key];
+			});
+		}
+	}
+	preventDefault() { }
+	stopPropagation() { }
+}
+
+export class PointerEvent {
+	readonly type: string;
+	constructor(name, init?: { [key: string]: any }) {
+		this.type = name;
+		if (init && typeof init === 'object') {
+			Object.keys(init).forEach(key => {
+				this[key] = init[key];
+			});
+		}
+	}
+	preventDefault() { }
+	stopPropagation() { }
+}
+
+
+const WEB_GESTURE_EVENTS = ['touchmove', 'touchstart', 'touchcancel', 'touchend', 'change', 'pointerup', 'pointerdown', 'pointermove', 'pointercancel'];
 
 export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
 	name: 'ignorePixelScaling',
@@ -16,6 +46,13 @@ export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
 
 
 import { observe as gestureObserve } from '@nativescript-community/gesturehandler/gestures_override';
+import { GestureHandlerTouchEvent, GestureTouchEventData, HandlerType, Manager, PanGestureHandler, PinchGestureHandler, TapGestureHandler, GestureStateEventData, GestureHandlerStateEvent, GestureState } from '@nativescript-community/gesturehandler';
+
+
+export const TOUCH_GESTURE_TAG = 1;
+export const PAN_GESTURE_TAG = 2;
+export const PINCH_GESTURE_TAG = 3;
+let pointerId = 0;
 
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
@@ -28,17 +65,511 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		this._classList = new Set();
 	}
 
+	__touchStart;
+	__touchLast;
+	_isPinching = false;
+	_isPanning = false;
+	_previousX = 0;
+	_previousY = 0;
+	_previousPinchDistance = 0;
+
+	_panGestureHandler: PanGestureHandler;
+	_touchGestureHandler: TapGestureHandler;
+	_pinchGestureHandler: PinchGestureHandler;
 	_gesturesRegistered = false;
+
+	_pointers: { id: number, coords: { x: number, y: number } }[] = [];
+
+	_findPointer(extraData) {
+		return this._pointers.findIndex(item => {
+			if (item.coords.x === extraData.x && item.coords.y === extraData.y) {
+				return true;
+			}
+			const oldX = extraData.x + (extraData?.translationX ?? 0)
+			const oldY = extraData.y + (extraData?.translationY ?? 0)
+			if (oldX === item.coords.x && oldY === item.coords.y) {
+				return true
+			}
+			console.log(
+				'_findPointer', item, extraData
+			);
+			return undefined;
+		})
+	}
+
 	__ensureGestures() {
 		if (!this._gesturesRegistered) {
 			this._gesturesRegistered = true;
-			this.on('touch, pan, pinch', this._touchEvent, this);
+			//this.on('touch, pan, pinch', this._touchEvent, this);
+
+			const manager = Manager.getInstance();
+			this._touchGestureHandler = manager.createGestureHandler(
+				HandlerType.TAP, TOUCH_GESTURE_TAG, {
+				simultaneousHandlers: [PAN_GESTURE_TAG],
+				shouldCancelWhenOutside: false,
+			}
+			);
+
+			this._panGestureHandler = manager.createGestureHandler(
+				HandlerType.PAN, PAN_GESTURE_TAG, {
+				simultaneousHandlers: [
+					TOUCH_GESTURE_TAG
+				]
+			}
+			);
+
+			this._pinchGestureHandler = manager.createGestureHandler(
+				HandlerType.PINCH, PINCH_GESTURE_TAG, {
+				simultaneousHandlers: [
+					PAN_GESTURE_TAG
+				],
+				shouldCancelWhenOutside: false,
+				minPointers: 2,
+			}
+			);
+
+			if (this.isLoaded) {
+				this._listenToGestures();
+			}
+
 		}
 	}
+
+	_listenToGestures(remove = false) {
+		if (!this._gesturesRegistered) {
+			return;
+		}
+		if (remove) {
+			this._touchGestureHandler.off(GestureHandlerTouchEvent, this._onTouchGesture);
+			this._touchGestureHandler.off(GestureHandlerStateEvent, this._onTouchGestureState);
+
+			this._touchGestureHandler.detachFromView(this);
+
+
+			this._panGestureHandler.off(GestureHandlerTouchEvent, this._onPanGesture);
+			this._panGestureHandler.off(GestureHandlerStateEvent, this._onPanGestureState);
+
+
+			this._panGestureHandler.detachFromView(this);
+
+			this._pinchGestureHandler.off(GestureHandlerTouchEvent, this._onPinchGesture);
+			this._pinchGestureHandler.off(GestureHandlerStateEvent, this._onPinchGestureState);
+
+
+			this._pinchGestureHandler.detachFromView(this);
+
+		} else {
+			this._touchGestureHandler.on(GestureHandlerTouchEvent, this._onTouchGesture, this);
+			this._touchGestureHandler.on(GestureHandlerStateEvent, this._onTouchGestureState, this);
+
+			this._touchGestureHandler.attachToView(this);
+
+			this._panGestureHandler.on(GestureHandlerTouchEvent, this._onPanGesture, this);
+			this._panGestureHandler.on(GestureHandlerStateEvent, this._onPanGestureState, this);
+
+			this._panGestureHandler.attachToView(this);
+
+			this._pinchGestureHandler.on(GestureHandlerTouchEvent, this._onPinchGesture, this);
+			this._pinchGestureHandler.on(GestureHandlerStateEvent, this._onPinchGestureState, this);
+
+			this._pinchGestureHandler.attachToView(this);
+		}
+
+	}
+
 	__unregisterGestures() {
 		if (this._gesturesRegistered) {
 			this._gesturesRegistered = false;
-			this.off('touch, pan, pinch', this._touchEvent, this);
+			this._listenToGestures(true);
+			this._panGestureHandler = null;
+			this._touchGestureHandler = null;
+			this._pinchGestureHandler = null;
+			//this.off('touch, pan, pinch', this._touchEvent, this);
+		}
+	}
+
+	_createTouchEvent(name, extraData, pointData = {}): any {
+		const count = extraData.numberOfPointers;
+		const point = extraData.positions;
+		if (!point) {
+			return null;
+		}
+		const x = extraData.x;
+		const y = extraData.y;
+		const pointers = [];
+		const activePointer = {
+			clientX: x,
+			clientY: y,
+			force: 0.0,
+			identifier: 0,
+			pageX: x,
+			pageY: y,
+			radiusX: 0,
+			radiusY: 0,
+			rotationAngle: 0,
+			screenX: x,
+			screenY: y,
+		};
+
+		let result;
+		if (name.indexOf('pointer') !== -1) {
+			pointerId++;
+			activePointer['pointerId'] = pointerId;
+			activePointer['pointerType'] = 'touch';
+			activePointer['width'] = 23.4375;
+			activePointer['height'] = 23.4375;
+			activePointer['isPrimary'] = true;
+			activePointer['x'] = x;
+			activePointer['y'] = y;
+			result = new PointerEvent(name);
+		} else {
+			result = new TouchEvent(name);
+		}
+
+		for (let i = 0; i < count; i++) {
+			const x = extraData.positions[i];
+			const y = extraData.positions[i + 1];
+			pointers.push({
+				clientX: x,
+				clientY: y,
+				force: 0.0,
+				identifier: i,
+				pageX: x,
+				pageY: y,
+				radiusX: 0,
+				radiusY: 0,
+				rotationAngle: 0,
+				screenX: x,
+				screenY: y,
+				target: this,
+			});
+		}
+
+		return Object.assign(result, {
+			eventName: name,
+			defaultPrevented: false,
+			cancelable: false,
+			altKey: false,
+			changedTouches: pointers,
+			ctrlKey: false,
+			metaKey: false,
+			shiftKey: false,
+			targetTouches: pointers,
+			touches: pointers,
+			target: this,
+			...activePointer,
+			...pointData
+		});
+	}
+
+	_updatePointerId(extraData, event, remove = false) {
+		const oldPointIndex = this._findPointer(extraData);
+		let newPointer = null;
+		if (oldPointIndex !== -1) {
+			const oldPoint = this._pointers[oldPointIndex];
+			console.log('_updatePointerId', oldPoint);
+			pointerId--;
+			newPointer = { ...event, ...{ pointerId: oldPoint.id } }
+			if (remove) {
+				console.log(this._pointers);
+				console.log('removing', oldPointIndex);
+				this._pointers.splice(oldPointIndex, 1);
+				console.log(this._pointers)
+			}
+		}
+
+		return newPointer;
+	}
+
+	_onTouchGesture(args: GestureTouchEventData) {
+		const { state, extraData } = args.data;
+	}
+
+	_onTouchGestureState(args: GestureStateEventData) {
+		const { state, extraData } = args.data;
+		if (state === GestureState.BEGAN) {
+			this.__touchStart = args.data.extraData;
+			if (this.hasListeners('pointerdown')) {
+				console.log('_onTouchGestureState', 'points', this._pointers);
+				const event = this._createTouchEvent('pointerdown', extraData);
+				this._pointers.push({
+					id: event.pointerId,
+					coords: {
+						x: event.x,
+						y: event.y
+					}
+				});
+				this.notify(event);
+			}
+
+			if (this.hasListeners('touchstart')) {
+				this.notify(
+					this._createTouchEvent('touchstart', extraData)
+				);
+			}
+		}
+
+
+		if (state === GestureState.END) {
+			if (this.hasListeners('pointerup')) {
+				const event = this._updatePointerId(extraData, this._createTouchEvent('pointerup', extraData), true);
+				if (event) {
+					this.notify(event);
+				}
+			}
+
+			if (this.hasListeners('touchend')) {
+				this.notify(
+					this._createTouchEvent('touchend', extraData)
+				);
+			}
+
+			this.__touchStart = undefined;
+		}
+
+		if (state === GestureState.CANCELLED || state === GestureState.FAILED) {
+
+			if (this.hasListeners('pointercancel')) {
+				const event = this._updatePointerId(extraData, this._createTouchEvent('pointercancel', extraData), true);
+				if (event) {
+					this.notify(event);
+				}
+			}
+
+			if (this.hasListeners('touchcancel')) {
+				this.notify(
+					this._createTouchEvent('touchcancel', extraData)
+				);
+			}
+
+			this.__touchStart = undefined;
+		}
+	}
+
+
+	_onPanGesture(args: GestureTouchEventData) {
+		const { state, extraData } = args.data;
+		if (state === GestureState.ACTIVE) {
+			console.log('_onPanGesture', args.data.state, this._isPinching, this._isPanning, extraData.numberOfPointers);
+			const emit = (name) => {
+				const x = extraData.x;
+				const y = extraData.y;
+				const activePointer = {
+					clientX: x,
+					clientY: y,
+					force: 0.0,
+					identifier: 0,
+					pageX: x,
+					pageY: y,
+					radiusX: 0,
+					radiusY: 0,
+					rotationAngle: 0,
+					screenX: x,
+					screenY: y,
+					target: this
+				};
+
+				let result;
+				if (name.indexOf('pointer') !== -1) {
+					pointerId++;
+					console.log('_onPanGesture', 'pointerId', pointerId);
+					activePointer['pointerId'] = pointerId;
+					activePointer['pointerType'] = 'touch';
+					activePointer['width'] = 100;
+					activePointer['height'] = 100;
+					activePointer['isPrimary'] = true;
+					activePointer['x'] = x;
+					activePointer['y'] = y;
+					result = new PointerEvent(name);
+				} else {
+					result = new TouchEvent(name);
+				}
+
+				const pointers = [];
+
+				const count = extraData.numberOfPointers;
+				for (let i = 0; i < count; i++) {
+					const point = extraData.positions;
+					const x = point[i];
+					const y = point[i + 1]
+					pointers.push({
+						clientX: x,
+						clientY: y,
+						force: 0.0,
+						identifier: i,
+						pageX: x,
+						pageY: y,
+						radiusX: 0,
+						radiusY: 0,
+						rotationAngle: 0,
+						screenX: x,
+						screenY: y,
+						target: this,
+					});
+				}
+
+				this._previousX = extraData.translationX;
+				this._previousY = extraData.translationY;
+				return Object.assign(result, {
+					eventName: name,
+					defaultPrevented: false,
+					cancelable: false,
+					altKey: false,
+					changedTouches: pointers,
+					ctrlKey: false,
+					metaKey: false,
+					shiftKey: false,
+					targetTouches: pointers,
+					touches: pointers,
+					target: this,
+					...activePointer,
+				});
+			}
+
+			if (this.hasListeners('pointermove')) {
+				const event = this._updatePointerId(extraData, emit('pointermove'));
+				if (event) {
+					this.notify(event);
+				}
+			}
+
+			if (this.hasListeners('touchmove')) {
+				this.notify(emit('touchmove'));
+			}
+		}
+	}
+
+	_onPanGestureState(args: GestureStateEventData) {
+		const { state, extraData } = args.data;
+
+		if (state === GestureState.END) {
+			this._isPanning = false;
+
+			console.log('_onPanGestureState', 'pointerup', this.hasListeners('pointerup'), this._pointers);
+			if (this.hasListeners('pointerup')) {
+				const event = this._updatePointerId(extraData, this._createTouchEvent('pointerup', extraData), true);
+				if (event) {
+					this.notify(event);
+				}
+			}
+			console.log('after', '_onPanGestureState', 'pointerup', this.hasListeners('pointerup'), this._pointers);
+
+			if (this.hasListeners('touchend')) {
+				this.notify(
+					this._createTouchEvent('touchend', extraData)
+				);
+			}
+
+			this.__touchStart = undefined;
+			this.__touchLast = undefined;
+		} else if (state === GestureState.CANCELLED || state === GestureState.FAILED) {
+			this._isPanning = false;
+
+			if (this.hasListeners('pointercancel')) {
+				const event = this._updatePointerId(extraData, this._createTouchEvent('pointercancel', extraData), true)
+				if (event) {
+					this.notify(event);
+				}
+			}
+
+			if (this.hasListeners('touchcancel')) {
+				this.notify(
+					this._createTouchEvent('touchcancel', extraData)
+				);
+			}
+
+			// this.__touchStart = undefined;
+			// this.__touchLast = undefined;
+		}
+	}
+
+	_onPinchGesture(args: GestureTouchEventData) {
+		const { state, extraData } = args.data;
+		if (state !== GestureState.ACTIVE) {
+			return;
+		}
+		console.log('_onPinchGesture', args.data.state, this._isPinching, this._isPanning, extraData.numberOfPointers);
+		this._isPanning = false;
+		this._isPinching = true;
+		const dx = extraData.positions[2] - extraData.positions[0];
+		const dy = extraData.positions[3] - extraData.positions[1];
+
+		let delta = 0;
+
+		var distance = Math.sqrt(dx * dx + dy * dy);
+		if (this._previousPinchDistance) {
+			delta = this._previousPinchDistance - distance;
+		}
+		this._previousPinchDistance = distance;
+		const x = extraData.focalX;
+		const y = extraData.focalY;
+		const data = {
+			deltaMode: 0,
+			clientX: x,
+			clientY: y,
+			screenX: x,
+			screenY: y,
+			deltaX: 0,
+			deltaY: delta,
+			deltaZ: 0,
+		};
+
+		if (this.hasListeners('pointermove')) {
+			this.notify(
+				this._createTouchEvent('pointermove', extraData, data)
+			);
+		}
+
+		if (this.hasListeners('touchmove')) {
+			this.notify(
+				this._createTouchEvent('touchmove', extraData, data)
+			);
+		}
+
+	}
+
+	_onPinchGestureState(args: GestureStateEventData) {
+		const { state, extraData } = args.data;
+		if (state === GestureState.END) {
+			this._isPinching = false;
+
+			if (this.hasListeners('pointerup')) {
+				console.log('start', '_onPinchGestureState');
+				const event = this._updatePointerId(extraData, this._createTouchEvent('pointerup', extraData), true);
+				console.log('ebd', '_onPinchGestureState');
+				if (event) {
+					this.notify(event);
+				}
+			}
+
+			if (this.hasListeners('touchend')) {
+				this.notify(
+					this._createTouchEvent('touchend', extraData)
+				);
+			}
+
+			this.__touchStart = undefined;
+			this.__touchLast = undefined;
+		} else if (state === GestureState.CANCELLED || state === GestureState.FAILED) {
+			this._isPinching = false;
+
+			if (this.hasListeners('pointercancel')) {
+				console.log('pointercancel', args.data.prevState, args.data.state)
+				const event = this._updatePointerId(extraData, this._createTouchEvent('pointercancel', extraData), true)
+				if (event) {
+					this.notify(event);
+				}
+			}
+
+			if (this.hasListeners('touchcancel')) {
+				this.notify(
+					this._createTouchEvent('touchcancel', extraData)
+				);
+			}
+
+			// this.__touchStart = undefined;
+			// this.__touchLast = undefined;
+
 		}
 	}
 
@@ -47,7 +578,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (!this._gestureObservers[type]) {
 			this._gestureObservers[type] = [];
 		}
-	
+
 		this._gestureObservers[type].push(gestureObserve(this, type, callback, thisArg));
 		if (global.isAndroid) {
 			if (this.isLoaded && !(<any>this).touchListenerIsSet) {
@@ -56,6 +587,19 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
+
+	onLoaded() {
+		super.onLoaded();
+		this._listenToGestures();
+	}
+
+	setPointerCapture() {
+
+	}
+
+	releasePointerCapture() {
+
+	}
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
 		super.addEventListener(arg, callback, thisArg);
@@ -68,7 +612,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		super.removeEventListener(arg, callback, thisArg);
 		if (WEB_GESTURE_EVENTS.indexOf(arg) !== -1) {
 			// if we dont have any other web gestures we can unregister gestures
-			if (!WEB_GESTURE_EVENTS.some(e=>this.hasListeners(e))){
+			if (!WEB_GESTURE_EVENTS.some(e => this.hasListeners(e))) {
 				this.__unregisterGestures();
 			}
 		}
@@ -114,7 +658,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === 'boolean') {
 				return contextOpts;
 			} else {
-				return {alpha: true};
+				return { alpha: true };
 			}
 		}
 		const setIfDefined = (prop, value) => {
@@ -138,16 +682,13 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return null;
 	}
 
-	__touchStart?: Pointer;
-
-	_isPinching = false;
 	_touchEvent(event: any) {
 		if (event.eventName === 'touch') {
 			switch (event.action) {
 				case 'down':
 					// ensure we dont have multiple touchstart
 					// on the web seems to be called only on first touch
-					if (! this.__touchStart) {
+					if (!this.__touchStart) {
 						this.__touchStart = event.getActivePointers()[0];
 						this._emitEvent('touchstart', event);
 					}
@@ -187,13 +728,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 			if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
 				this._emitEvent('touchmove', event);
+			} else if (event.state === GestureStateTypes.ended) {
+				this._emitEvent('touchend', event);
+			} else if (event.state === GestureStateTypes.cancelled) {
+				this._emitEvent('touchcancel', event);
 			}
+
+
 		}
 	}
-
-	_previousX = 0;
-	_previousY = 0;
-	_previousPinchDistance = 0;
 
 	_getTouchEvent(name, event, target): TouchEvent {
 		const pointers = new TouchList();
@@ -236,49 +779,32 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					target,
 				});
 			}
-
-			/* mouse */
-			// pointers.push({
-			// 	// * SCALE ??
-			// 	clientX: x,
-			// 	clientY: y,
-			// 	force: 0.0,
-			// 	identifier: 0,
-			// 	pageX: x,
-			// 	pageY: y,
-			// 	radiusX: 0,
-			// 	radiusY: 0,
-			// 	rotationAngle: 0,
-			// 	screenX: x,
-			// 	screenY: y,
-			// 	target,
-			// });
 			this._previousX = event.deltaX;
 			this._previousY = event.deltaY;
 		} else if (name === 'touchmove:pinch') {
 			const dx = event.extraData.positions[2] - event.extraData.positions[0];
 			const dy = event.extraData.positions[3] - event.extraData.positions[1];
-			let delta =0 ;
+			let delta = 0;
 
 			var distance = Math.sqrt(dx * dx + dy * dy);
 			if (this._previousPinchDistance) {
-				delta  = this._previousPinchDistance - distance;
+				delta = this._previousPinchDistance - distance;
 			}
-			this._previousPinchDistance= distance;
+			this._previousPinchDistance = distance;
 			name = 'wheel';
 			const x = event.getFocusX();
 			const y = event.getFocusY();
 			const scale = event.scale;
 			// mouse event
 			let data = {
-				deltaMode:0,
+				deltaMode: 0,
 				clientX: x,
 				clientY: y,
-				screenX: x ,
+				screenX: x,
 				screenY: x,
-				deltaX:0,
-				deltaY:delta,
-				deltaZ:0,
+				deltaX: 0,
+				deltaY: delta,
+				deltaZ: 0,
 			};
 			return Object.assign(new TouchEvent(name), { eventName: name, object: null, defaultPrevented: false, cancelable: false, altKey: false, ctrlKey: true, metaKey: false, shiftKey: false, target }, data);
 		} else {
@@ -321,7 +847,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 
-		return Object.assign(new TouchEvent(name),{
+		return Object.assign(new TouchEvent(name), {
 			eventName: name,
 			defaultPrevented: false,
 			cancelable: false,

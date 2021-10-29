@@ -72,6 +72,8 @@ fn main() {
         "android" | "androideabi" => {
             let build_target;
             include_dir.push_str(&ndk());
+            // after moving to newer ndk
+            // include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
             if target.architecture.eq("armv7") {
                 build_target = "armv7-linux-androideabi";
             } else if target.architecture.eq("aarch64") {
@@ -85,6 +87,7 @@ fn main() {
             }
 
             include_dir.push_str("/sysroot/usr/include");
+            println!("target {:?}", build_target);
             println!("cargo:rustc-link-search=native={}", include_dir);
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=android"); // the "-l" flag

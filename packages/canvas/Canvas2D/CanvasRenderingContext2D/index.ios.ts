@@ -670,6 +670,8 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			if (image._canvas instanceof Canvas) {
 				img = image._canvas.ios;
 			}
+		} else if(image instanceof ImageBitmap || image?.native instanceof TNSImageBitmap){
+			img = image.native;
 		}
 
 		if (!img) {
@@ -693,6 +695,8 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 
 		if (img instanceof TNSImageAsset) {
+			return new CanvasPattern(this.context.createPattern(img, rep));
+		}else if (img instanceof TNSImageBitmap) {
 			return new CanvasPattern(this.context.createPattern(img, rep));
 		} else if (img instanceof UIImage) {
 			return new CanvasPattern(this.context.createPattern(img, rep));
@@ -782,7 +786,10 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			image.tagName === 'CANVAS' && image._canvas instanceof Canvas
 		) {
 			image = image._canvas;
+		} else if(image instanceof ImageBitmap || image?.native instanceof TNSImageBitmap){
+			image = image.native;
 		}
+
 
 		if (args.length === 3) {
 			if (image instanceof ImageAsset) {

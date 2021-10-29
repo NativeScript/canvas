@@ -1210,7 +1210,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				this.context.texImage2D(target, level, internalformat, width, height, border.native);
-			} else if (border instanceof ImageBitmap) {
+			} else if (border instanceof ImageBitmap || border?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
 				this.context.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof android.graphics.Bitmap) {
 				this.context.texImage2D(target, level, internalformat, width, height, border);
@@ -1301,6 +1301,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			} else if (format instanceof ImageSource) {
 				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format.android);
 			} else if (format instanceof ImageAsset) {
+				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
+			} else if (format instanceof ImageBitmap || format?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
 				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
 				if (format._imageSource instanceof ImageSource) {

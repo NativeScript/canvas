@@ -2,6 +2,7 @@ import { Canvas } from '../Canvas';
 import { ImageBitmapBase } from './common';
 import { ImageData } from '../Canvas2D';
 import { ImageAsset } from '../ImageAsset';
+import { ImageSource } from '@nativescript/core';
 export class ImageBitmap extends ImageBitmapBase {
 	private constructor(bitmap: any) {
 		super(bitmap);
@@ -156,6 +157,14 @@ export class ImageBitmap extends ImageBitmapBase {
 						reject(error);
 					}
 				});
+			} else if (source instanceof ImageSource) {
+				TNSImageBitmap.createFromUIImage(source.ios, opts, (bitmap, error) => {
+					if (bitmap) {
+						resolve(ImageBitmap.fromNative(bitmap));
+					} else {
+						reject(error);
+					}
+				});
 			}
 		});
 	}
@@ -215,6 +224,14 @@ export class ImageBitmap extends ImageBitmapBase {
 				});
 			} else if (source instanceof ArrayBuffer) {
 				(TNSImageBitmap as any).createFromDataEncoded(NSData.dataWithData(source as any), sx, sy, sWidth, sHeight,  opts, (bitmap, error) => {
+					if (bitmap) {
+						resolve(ImageBitmap.fromNative(bitmap));
+					} else {
+						reject(error);
+					}
+				});
+			} else if (source instanceof ImageSource) {
+				(TNSImageBitmap as any).createFromUIImage(source.ios, sx, sy, sWidth, sHeight, opts, (bitmap, error) => {
 					if (bitmap) {
 						resolve(ImageBitmap.fromNative(bitmap));
 					} else {

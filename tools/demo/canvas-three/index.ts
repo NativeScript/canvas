@@ -9,12 +9,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper';
 import { VertexTangentsHelper } from 'three/examples/jsm/helpers/VertexTangentsHelper';
 import { DRACOLoader } from './custom/DRACOLoader';
+//import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
 import { Points } from 'three';
-import { TypedArrayUtils } from 'three/examples/jsm/utils/TypedArrayUtils';
 import { Water } from 'three/examples/jsm/objects/Water';
 import { Sky } from 'three/examples/jsm/objects/Sky';
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
+//import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment";
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 // import {ThreeMFLoader} from "three/examples/jsm/loaders/3MFLoader";
@@ -24,7 +24,7 @@ class IconMesh extends THREE.Mesh {
 	}
 }
 
-global.console.warn = ()=>{}
+global.console.warn = () => { }
 
 export class DemoSharedCanvasThree extends DemoSharedBase {
 	canvas: any;
@@ -65,17 +65,17 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 	}
 
-	renderVideo(){
+	renderVideo() {
 		const ctx = this.canvas.getContext('webgl2');
 		const video = document.createElement('video');
 		video.loop = true;
 		video.autoplay = true;
 		video.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
-		function update(){
+		function update() {
 			//@ts-ignore
 			video.requestVideoFrameCallback(update);
 			//@ts-ignore
-		video._video.getCurrentFrame(ctx.native);
+			video._video.getCurrentFrame(ctx.native);
 		}
 		//@ts-ignore
 		video.requestVideoFrameCallback(update);
@@ -85,6 +85,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	gtlfLoader(canvas) {
 		var container, controls, context, width, height;
 		var camera, scene, renderer;
+		var mouseX = 0, mouseY = 0, windowHalfX = 0, windowHalfY = 0;
 
 		const init = () => {
 			context = canvas.getContext('webgl2');
@@ -144,18 +145,21 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			pmremGenerator.compileEquirectangularShader();
 
 			controls = new OrbitControls(camera, canvas);
-			controls.addEventListener('change', render); // use if there is no animation loop
+
+			canvas.addEventListener('change', render);
 			controls.minDistance = 2;
 			controls.maxDistance = 10;
 			controls.target.set(0, 0, -0.2);
 			controls.update();
 
+			onWindowResize();
 			window.addEventListener('resize', onWindowResize, false);
 		};
 
+
 		function onWindowResize() {
-			width = context.drawingBufferWidth;
-			height = context.drawingBufferHeight;
+			const width = context.drawingBufferWidth;
+			const height = context.drawingBufferHeight;
 			camera.aspect = width / height;
 			camera.updateProjectionMatrix();
 
@@ -170,8 +174,17 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			renderer.render(scene, camera);
 		}
 
+		function animate() {
+
+			requestAnimationFrame(animate);
+
+			render();
+			//stats.update();
+
+		}
+
 		init();
-		render();
+		animate();
 	}
 
 	gtlfTonemapping(canvas) {
@@ -898,121 +911,122 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		init();
 		animate();
 	}
-
-	webGLHelpers(canvas) {
-		var scene, renderer;
-		var camera, light;
-		var vnh;
-		var vth;
-
-		const init = () => {
-			const context = canvas.getContext('webgl2');
-			renderer = new THREE.WebGLRenderer({ context });
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
-
-			//
-
-			camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 1000);
-			camera.position.z = 400;
-
-			scene = new THREE.Scene();
-
-			light = new THREE.PointLight();
-			light.position.set(200, 100, 150);
-			scene.add(light);
-
-			scene.add(new THREE.PointLightHelper(light, 15));
-
-			var gridHelper = new THREE.GridHelper(400, 40, 0x0000ff, 0x808080);
-			gridHelper.position.y = -150;
-			gridHelper.position.x = -150;
-			scene.add(gridHelper);
-
-			var polarGridHelper = new THREE.PolarGridHelper(200, 16, 8, 64, 0x0000ff, 0x808080);
-			polarGridHelper.position.y = -150;
-			polarGridHelper.position.x = 200;
-			scene.add(polarGridHelper);
-
-			var loader = new GLTFLoader();
-			loader.load(this.root + '/models/gltf/LeePerrySmith/LeePerrySmith.glb', function (gltf) {
-				var mesh: any = gltf.scene.children[0];
-
-				BufferGeometryUtils.computeTangents(mesh.geometry); // generates bad data due to degenerate UVs
-
-				var group = new THREE.Group();
-				group.scale.multiplyScalar(50);
-				scene.add(group);
-
-				// To make sure that the matrixWorld is up to date for the boxhelpers
-				group.updateMatrixWorld(true);
-
-				group.add(mesh);
-
-				vnh = new VertexNormalsHelper(mesh, 5);
-				scene.add(vnh);
-
-				vth = new VertexTangentsHelper(mesh, 5);
-				scene.add(vth);
-
-				scene.add(new THREE.BoxHelper(mesh));
-
-				var wireframe = new THREE.WireframeGeometry(mesh.geometry);
-				var line = new THREE.LineSegments(wireframe) as any;
-				line.material.depthTest = false;
-				line.material.opacity = 0.25;
-				line.material.transparent = true;
-				line.position.x = 4;
-				group.add(line);
-				scene.add(new THREE.BoxHelper(line));
-
-				var edges = new THREE.EdgesGeometry(mesh.geometry);
-				var line = new THREE.LineSegments(edges) as any;
-				line.material.depthTest = false;
-				line.material.opacity = 0.25;
-				line.material.transparent = true;
-				line.position.x = -4;
-				group.add(line);
-				scene.add(new THREE.BoxHelper(line));
-
-				scene.add(new THREE.BoxHelper(group));
-				scene.add(new THREE.BoxHelper(scene));
-			});
-
-			//
-
-			window.addEventListener('resize', onWindowResize, false);
-		};
-
-		function onWindowResize() {
-			camera.aspect = window.innerWidth / window.innerHeight;
-			camera.updateProjectionMatrix();
-
-			renderer.setSize(window.innerWidth, window.innerHeight);
+	/*
+		webGLHelpers(canvas) {
+			var scene, renderer;
+			var camera, light;
+			var vnh;
+			var vth;
+	
+			const init = () => {
+				const context = canvas.getContext('webgl2');
+				renderer = new THREE.WebGLRenderer({ context });
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+	
+				//
+	
+				camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 1, 1000);
+				camera.position.z = 400;
+	
+				scene = new THREE.Scene();
+	
+				light = new THREE.PointLight();
+				light.position.set(200, 100, 150);
+				scene.add(light);
+	
+				scene.add(new THREE.PointLightHelper(light, 15));
+	
+				var gridHelper = new THREE.GridHelper(400, 40, 0x0000ff, 0x808080);
+				gridHelper.position.y = -150;
+				gridHelper.position.x = -150;
+				scene.add(gridHelper);
+	
+				var polarGridHelper = new THREE.PolarGridHelper(200, 16, 8, 64, 0x0000ff, 0x808080);
+				polarGridHelper.position.y = -150;
+				polarGridHelper.position.x = 200;
+				scene.add(polarGridHelper);
+	
+				var loader = new GLTFLoader();
+				loader.load(this.root + '/models/gltf/LeePerrySmith/LeePerrySmith.glb', function (gltf) {
+					var mesh: any = gltf.scene.children[0];
+	
+					//BufferGeometryUtils.computeTangents(mesh.geometry); // generates bad data due to degenerate UVs
+	
+					var group = new THREE.Group();
+					group.scale.multiplyScalar(50);
+					scene.add(group);
+	
+					// To make sure that the matrixWorld is up to date for the boxhelpers
+					group.updateMatrixWorld(true);
+	
+					group.add(mesh);
+	
+					vnh = new VertexNormalsHelper(mesh, 5);
+					scene.add(vnh);
+	
+					vth = new VertexTangentsHelper(mesh, 5);
+					scene.add(vth);
+	
+					scene.add(new THREE.BoxHelper(mesh));
+	
+					var wireframe = new THREE.WireframeGeometry(mesh.geometry);
+					var line = new THREE.LineSegments(wireframe) as any;
+					line.material.depthTest = false;
+					line.material.opacity = 0.25;
+					line.material.transparent = true;
+					line.position.x = 4;
+					group.add(line);
+					scene.add(new THREE.BoxHelper(line));
+	
+					var edges = new THREE.EdgesGeometry(mesh.geometry);
+					var line = new THREE.LineSegments(edges) as any;
+					line.material.depthTest = false;
+					line.material.opacity = 0.25;
+					line.material.transparent = true;
+					line.position.x = -4;
+					group.add(line);
+					scene.add(new THREE.BoxHelper(line));
+	
+					scene.add(new THREE.BoxHelper(group));
+					scene.add(new THREE.BoxHelper(scene));
+				});
+	
+				//
+	
+				window.addEventListener('resize', onWindowResize, false);
+			};
+	
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+	
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+	
+			function animate() {
+				requestAnimationFrame(animate);
+	
+				var time = -performance.now() * 0.0003;
+	
+				camera.position.x = 400 * Math.cos(time);
+				camera.position.z = 400 * Math.sin(time);
+				camera.lookAt(scene.position);
+	
+				light.position.x = Math.sin(time * 1.7) * 300;
+				light.position.y = Math.cos(time * 1.5) * 400;
+				light.position.z = Math.cos(time * 1.3) * 300;
+	
+				if (vnh) vnh.update();
+				if (vth) vth.update();
+	
+				renderer.render(scene, camera);
+			}
+	
+			init();
+			animate();
 		}
-
-		function animate() {
-			requestAnimationFrame(animate);
-
-			var time = -performance.now() * 0.0003;
-
-			camera.position.x = 400 * Math.cos(time);
-			camera.position.z = 400 * Math.sin(time);
-			camera.lookAt(scene.position);
-
-			light.position.x = Math.sin(time * 1.7) * 300;
-			light.position.y = Math.cos(time * 1.5) * 400;
-			light.position.z = Math.cos(time * 1.3) * 300;
-
-			if (vnh) vnh.update();
-			if (vth) vth.update();
-
-			renderer.render(scene, camera);
-		}
-
-		init();
-		animate();
-	}
+		*/
 
 	geoTextShapes(canvas) {
 		var camera, scene, renderer;
@@ -1310,7 +1324,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			scene = new THREE.Scene();
 
-			
+
 			geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
 			material = new THREE.MeshBasicMaterial();
 			material.map = new THREE.VideoTexture(texture);
@@ -1517,19 +1531,19 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		renderer.setSize(window.innerWidth, window.innerHeight);
 		renderer.outputEncoding = THREE.sRGBEncoding;
 
-		const pmremGenerator = new THREE.PMREMGenerator( renderer );
+		const pmremGenerator = new THREE.PMREMGenerator(renderer);
 
 		const scene = new THREE.Scene();
 
 
 		const light = new THREE.SpotLight();
-			light.position.set(-1.8, 0.6, 2.7 * 1.2);
-			scene.add(light);
+		light.position.set(-1.8, 0.6, 2.7 * 1.2);
+		scene.add(light);
 
 
 		scene.background = new THREE.Color(0xbfe3dd);
 
-		scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).texture;
+		scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
 		const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, .1, 1000);
 		camera.position.set(5, 2, 8);
@@ -2200,7 +2214,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 	bufferGeo(canvas) {
 
-		const context = canvas.getContext('webgl2',{ antialias: false}) as any;
+		const context = canvas.getContext('webgl2', { antialias: false }) as any;
 
 
 		let container, stats;
@@ -2352,35 +2366,36 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 	}
 
+	/*
 	nearestNeighbour(canvas) {
 		const vertexShader = `//uniform float zoom;
 
-    attribute float alpha;
+	attribute float alpha;
 
-    varying float vAlpha;
+	varying float vAlpha;
 
-    void main() {
+	void main() {
 
-        vAlpha = 1.0 - alpha;
+		vAlpha = 1.0 - alpha;
 
-        vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+		vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 
-        gl_PointSize = 4.0 * ( 300.0 / -mvPosition.z );
+		gl_PointSize = 4.0 * ( 300.0 / -mvPosition.z );
 
-        gl_Position = projectionMatrix * mvPosition;
+		gl_Position = projectionMatrix * mvPosition;
 
-    }`;
+	}`;
 
 		const fragmentShader = `uniform sampler2D tex1;
 
-    varying float vAlpha;
+	varying float vAlpha;
 
-    void main() {
+	void main() {
 
-        gl_FragColor = texture2D( tex1, gl_PointCoord );
-        gl_FragColor.r = ( 1.0 - gl_FragColor.r ) * vAlpha + gl_FragColor.r;
+		gl_FragColor = texture2D( tex1, gl_PointCoord );
+		gl_FragColor.r = ( 1.0 - gl_FragColor.r ) * vAlpha + gl_FragColor.r;
 
-    }`;
+	}`;
 
 		const context = canvas.getContext('webgl2') as any;
 
@@ -2521,6 +2536,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		init();
 		animate();
 	}
+	*/
 
 	skinningAndMorphing(canvas) {
 		const context = canvas.getContext('webgl2') as any;
@@ -2741,7 +2757,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var container, stats;
 		var camera, scene, renderer;
 		var controls, water, sun, mesh, mesh2, mesh3;
-		const context = canvas.getContext('webgl2', {antialias: false}) as any;
+		const context = canvas.getContext('webgl2', { antialias: false }) as any;
 		renderer = new THREE.WebGLRenderer({ context, antialias: false });
 		renderer.setPixelRatio(1);
 		renderer.setSize(context.drawingBufferWidth, context.drawingBufferHeight);
@@ -2781,7 +2797,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var sky = new Sky();
 		sky.scale.setScalar(10000);
 		scene.add(sky);
-		
+
 
 		var uniforms = sky.material.uniforms;
 
@@ -2814,13 +2830,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		updateSun();
 
 		//
-/*
-		const texture = document.createElement('video');
-		texture.loop = true;
-		texture.muted = true;
-		texture.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-		texture.play();
-		*/
+		/*
+				const texture = document.createElement('video');
+				texture.loop = true;
+				texture.muted = true;
+				texture.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+				texture.play();
+				*/
 
 
 		var geometry = new THREE.BoxBufferGeometry(30, 30, 30);
@@ -2843,6 +2859,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//
 
 		controls = new OrbitControls(camera, canvas);
+		console.log(
+			controls.enableRotate,
+			controls.enablePan,
+			controls.enableZoom
+		)
 		controls.maxPolarAngle = Math.PI * 0.495;
 		controls.target.set(0, 10, 0);
 		controls.minDistance = 40.0;
@@ -3038,265 +3059,265 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		renderer.render(scene, camera);
 	}
 
-	webgl_buffergeometry_drawrange(canvas){
-			let group;
-			let container, stats;
-			const particlesData = [];
-			let camera, scene, renderer;
-			let positions, colors;
-			let particles;
-			let pointCloud;
-			let particlePositions;
-			let linesMesh;
+	webgl_buffergeometry_drawrange(canvas) {
+		let group;
+		let container, stats;
+		const particlesData = [];
+		let camera, scene, renderer;
+		let positions, colors;
+		let particles;
+		let pointCloud;
+		let particlePositions;
+		let linesMesh;
 
-			const maxParticleCount = 1000;
-			let particleCount = 500;
-			const r = 800;
-			const rHalf = r / 2;
+		const maxParticleCount = 1000;
+		let particleCount = 500;
+		const r = 800;
+		const rHalf = r / 2;
 
-			const effectController = {
-				showDots: true,
-				showLines: true,
-				minDistance: 150,
-				limitConnections: false,
-				maxConnections: 20,
-				particleCount: 500
-			};
+		const effectController = {
+			showDots: true,
+			showLines: true,
+			minDistance: 150,
+			limitConnections: false,
+			maxConnections: 20,
+			particleCount: 500
+		};
 
-			init();
-			animate();
+		init();
+		animate();
 
-			function initGUI() {
+		function initGUI() {
 
-				/*const gui = new GUI();
+			/*const gui = new GUI();
 
-				gui.add( effectController, "showDots" ).onChange( function ( value ) {
+			gui.add( effectController, "showDots" ).onChange( function ( value ) {
 
-					pointCloud.visible = value;
+				pointCloud.visible = value;
 
-				} );
-				gui.add( effectController, "showLines" ).onChange( function ( value ) {
+			} );
+			gui.add( effectController, "showLines" ).onChange( function ( value ) {
 
-					linesMesh.visible = value;
+				linesMesh.visible = value;
 
-				} );
-				gui.add( effectController, "minDistance", 10, 300 );
-				gui.add( effectController, "limitConnections" );
-				gui.add( effectController, "maxConnections", 0, 30, 1 );
-				gui.add( effectController, "particleCount", 0, maxParticleCount, 1 ).onChange( function ( value ) {
+			} );
+			gui.add( effectController, "minDistance", 10, 300 );
+			gui.add( effectController, "limitConnections" );
+			gui.add( effectController, "maxConnections", 0, 30, 1 );
+			gui.add( effectController, "particleCount", 0, maxParticleCount, 1 ).onChange( function ( value ) {
 
-					particleCount = parseInt( value );
-					particles.setDrawRange( 0, particleCount );
-
-				} );
-				*/
-
-			}
-
-			function init() {
-
-				initGUI();
-
-				container = canvas
-
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 4000 );
-				camera.position.z = 1750;
-
-				const controls = new OrbitControls( camera, container );
-				controls.minDistance = 1000;
-				controls.maxDistance = 3000;
-
-				scene = new THREE.Scene();
-
-
-				group = new THREE.Group();
-				scene.add( group );
-
-				const helper = new THREE.BoxHelper( new THREE.Mesh( new THREE.BoxGeometry( r, r, r ) ) ) as any;
-				helper.material.color.setHex( 0x101010 );
-				helper.material.blending = THREE.AdditiveBlending;
-				helper.material.transparent = true;
-				group.add( helper );
-
-				const segments = maxParticleCount * maxParticleCount;
-
-				positions = new Float32Array( segments * 3 );
-				colors = new Float32Array( segments * 3 );
-
-				const pMaterial = new THREE.PointsMaterial( {
-					color: 0xFFFFFF,
-					size: 3,
-					blending: THREE.AdditiveBlending,
-					transparent: true,
-					sizeAttenuation: false
-				} );
-
-				particles = new THREE.BufferGeometry();
-				particlePositions = new Float32Array( maxParticleCount * 3 );
-
-				for ( let i = 0; i < maxParticleCount; i ++ ) {
-
-					const x = Math.random() * r - r / 2;
-					const y = Math.random() * r - r / 2;
-					const z = Math.random() * r - r / 2;
-
-					particlePositions[ i * 3 ] = x;
-					particlePositions[ i * 3 + 1 ] = y;
-					particlePositions[ i * 3 + 2 ] = z;
-
-					// add it to the geometry
-					particlesData.push( {
-						velocity: new THREE.Vector3( - 1 + Math.random() * 2, - 1 + Math.random() * 2, - 1 + Math.random() * 2 ),
-						numConnections: 0
-					} );
-
-				}
-
+				particleCount = parseInt( value );
 				particles.setDrawRange( 0, particleCount );
-				particles.setAttribute( 'position', new THREE.BufferAttribute( particlePositions, 3 ).setUsage( THREE.DynamicDrawUsage ) );
 
-				// create the particle system
-				pointCloud = new THREE.Points( particles, pMaterial );
-				group.add( pointCloud );
+			} );
+			*/
 
-				const geometry = new THREE.BufferGeometry();
+		}
 
-				geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ).setUsage( THREE.DynamicDrawUsage ) );
-				geometry.setAttribute( 'color', new THREE.BufferAttribute( colors, 3 ).setUsage( THREE.DynamicDrawUsage ) );
+		function init() {
 
-				geometry.computeBoundingSphere();
+			initGUI();
 
-				geometry.setDrawRange( 0, 0 );
+			container = canvas
 
-				const material = new THREE.LineBasicMaterial( {
-					vertexColors: true,
-					blending: THREE.AdditiveBlending,
-					transparent: true
-				} );
+			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 4000);
+			camera.position.z = 1750;
 
-				linesMesh = new THREE.LineSegments( geometry, material );
-				group.add( linesMesh );
+			const controls = new OrbitControls(camera, container);
+			controls.minDistance = 1000;
+			controls.maxDistance = 3000;
 
-				//
+			scene = new THREE.Scene();
 
-				const ctx = canvas.getContext('webgl2');
-				renderer = new THREE.WebGLRenderer( {context: ctx, antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.outputEncoding = THREE.sRGBEncoding;
 
-				//
+			group = new THREE.Group();
+			scene.add(group);
 
-				//stats = new Stats();
-				//container.appendChild( stats.dom );
+			const helper = new THREE.BoxHelper(new THREE.Mesh(new THREE.BoxGeometry(r, r, r))) as any;
+			helper.material.color.setHex(0x101010);
+			helper.material.blending = THREE.AdditiveBlending;
+			helper.material.transparent = true;
+			group.add(helper);
 
-				window.addEventListener( 'resize', onWindowResize );
+			const segments = maxParticleCount * maxParticleCount;
+
+			positions = new Float32Array(segments * 3);
+			colors = new Float32Array(segments * 3);
+
+			const pMaterial = new THREE.PointsMaterial({
+				color: 0xFFFFFF,
+				size: 3,
+				blending: THREE.AdditiveBlending,
+				transparent: true,
+				sizeAttenuation: false
+			});
+
+			particles = new THREE.BufferGeometry();
+			particlePositions = new Float32Array(maxParticleCount * 3);
+
+			for (let i = 0; i < maxParticleCount; i++) {
+
+				const x = Math.random() * r - r / 2;
+				const y = Math.random() * r - r / 2;
+				const z = Math.random() * r - r / 2;
+
+				particlePositions[i * 3] = x;
+				particlePositions[i * 3 + 1] = y;
+				particlePositions[i * 3 + 2] = z;
+
+				// add it to the geometry
+				particlesData.push({
+					velocity: new THREE.Vector3(- 1 + Math.random() * 2, - 1 + Math.random() * 2, - 1 + Math.random() * 2),
+					numConnections: 0
+				});
 
 			}
 
-			function onWindowResize() {
+			particles.setDrawRange(0, particleCount);
+			particles.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3).setUsage(THREE.DynamicDrawUsage));
 
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
+			// create the particle system
+			pointCloud = new THREE.Points(particles, pMaterial);
+			group.add(pointCloud);
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
+			const geometry = new THREE.BufferGeometry();
 
-			}
+			geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+			geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage));
 
-			function animate() {
+			geometry.computeBoundingSphere();
 
-				let vertexpos = 0;
-				let colorpos = 0;
-				let numConnected = 0;
+			geometry.setDrawRange(0, 0);
 
-				for ( let i = 0; i < particleCount; i ++ )
-					particlesData[ i ].numConnections = 0;
+			const material = new THREE.LineBasicMaterial({
+				vertexColors: true,
+				blending: THREE.AdditiveBlending,
+				transparent: true
+			});
 
-				for ( let i = 0; i < particleCount; i ++ ) {
+			linesMesh = new THREE.LineSegments(geometry, material);
+			group.add(linesMesh);
 
-					// get the particle
-					const particleData = particlesData[ i ];
+			//
 
-					particlePositions[ i * 3 ] += particleData.velocity.x;
-					particlePositions[ i * 3 + 1 ] += particleData.velocity.y;
-					particlePositions[ i * 3 + 2 ] += particleData.velocity.z;
+			const ctx = canvas.getContext('webgl2');
+			renderer = new THREE.WebGLRenderer({ context: ctx, antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.outputEncoding = THREE.sRGBEncoding;
 
-					if ( particlePositions[ i * 3 + 1 ] < - rHalf || particlePositions[ i * 3 + 1 ] > rHalf )
-						particleData.velocity.y = - particleData.velocity.y;
+			//
 
-					if ( particlePositions[ i * 3 ] < - rHalf || particlePositions[ i * 3 ] > rHalf )
-						particleData.velocity.x = - particleData.velocity.x;
+			//stats = new Stats();
+			//container.appendChild( stats.dom );
 
-					if ( particlePositions[ i * 3 + 2 ] < - rHalf || particlePositions[ i * 3 + 2 ] > rHalf )
-						particleData.velocity.z = - particleData.velocity.z;
+			window.addEventListener('resize', onWindowResize);
 
-					if ( effectController.limitConnections && particleData.numConnections >= effectController.maxConnections )
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+		}
+
+		function animate() {
+
+			let vertexpos = 0;
+			let colorpos = 0;
+			let numConnected = 0;
+
+			for (let i = 0; i < particleCount; i++)
+				particlesData[i].numConnections = 0;
+
+			for (let i = 0; i < particleCount; i++) {
+
+				// get the particle
+				const particleData = particlesData[i];
+
+				particlePositions[i * 3] += particleData.velocity.x;
+				particlePositions[i * 3 + 1] += particleData.velocity.y;
+				particlePositions[i * 3 + 2] += particleData.velocity.z;
+
+				if (particlePositions[i * 3 + 1] < - rHalf || particlePositions[i * 3 + 1] > rHalf)
+					particleData.velocity.y = - particleData.velocity.y;
+
+				if (particlePositions[i * 3] < - rHalf || particlePositions[i * 3] > rHalf)
+					particleData.velocity.x = - particleData.velocity.x;
+
+				if (particlePositions[i * 3 + 2] < - rHalf || particlePositions[i * 3 + 2] > rHalf)
+					particleData.velocity.z = - particleData.velocity.z;
+
+				if (effectController.limitConnections && particleData.numConnections >= effectController.maxConnections)
+					continue;
+
+				// Check collision
+				for (let j = i + 1; j < particleCount; j++) {
+
+					const particleDataB = particlesData[j];
+					if (effectController.limitConnections && particleDataB.numConnections >= effectController.maxConnections)
 						continue;
 
-					// Check collision
-					for ( let j = i + 1; j < particleCount; j ++ ) {
+					const dx = particlePositions[i * 3] - particlePositions[j * 3];
+					const dy = particlePositions[i * 3 + 1] - particlePositions[j * 3 + 1];
+					const dz = particlePositions[i * 3 + 2] - particlePositions[j * 3 + 2];
+					const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-						const particleDataB = particlesData[ j ];
-						if ( effectController.limitConnections && particleDataB.numConnections >= effectController.maxConnections )
-							continue;
+					if (dist < effectController.minDistance) {
 
-						const dx = particlePositions[ i * 3 ] - particlePositions[ j * 3 ];
-						const dy = particlePositions[ i * 3 + 1 ] - particlePositions[ j * 3 + 1 ];
-						const dz = particlePositions[ i * 3 + 2 ] - particlePositions[ j * 3 + 2 ];
-						const dist = Math.sqrt( dx * dx + dy * dy + dz * dz );
+						particleData.numConnections++;
+						particleDataB.numConnections++;
 
-						if ( dist < effectController.minDistance ) {
+						const alpha = 1.0 - dist / effectController.minDistance;
 
-							particleData.numConnections ++;
-							particleDataB.numConnections ++;
+						positions[vertexpos++] = particlePositions[i * 3];
+						positions[vertexpos++] = particlePositions[i * 3 + 1];
+						positions[vertexpos++] = particlePositions[i * 3 + 2];
 
-							const alpha = 1.0 - dist / effectController.minDistance;
+						positions[vertexpos++] = particlePositions[j * 3];
+						positions[vertexpos++] = particlePositions[j * 3 + 1];
+						positions[vertexpos++] = particlePositions[j * 3 + 2];
 
-							positions[ vertexpos ++ ] = particlePositions[ i * 3 ];
-							positions[ vertexpos ++ ] = particlePositions[ i * 3 + 1 ];
-							positions[ vertexpos ++ ] = particlePositions[ i * 3 + 2 ];
+						colors[colorpos++] = alpha;
+						colors[colorpos++] = alpha;
+						colors[colorpos++] = alpha;
 
-							positions[ vertexpos ++ ] = particlePositions[ j * 3 ];
-							positions[ vertexpos ++ ] = particlePositions[ j * 3 + 1 ];
-							positions[ vertexpos ++ ] = particlePositions[ j * 3 + 2 ];
+						colors[colorpos++] = alpha;
+						colors[colorpos++] = alpha;
+						colors[colorpos++] = alpha;
 
-							colors[ colorpos ++ ] = alpha;
-							colors[ colorpos ++ ] = alpha;
-							colors[ colorpos ++ ] = alpha;
-
-							colors[ colorpos ++ ] = alpha;
-							colors[ colorpos ++ ] = alpha;
-							colors[ colorpos ++ ] = alpha;
-
-							numConnected ++;
-
-						}
+						numConnected++;
 
 					}
 
 				}
 
-
-				linesMesh.geometry.setDrawRange( 0, numConnected * 2 );
-				linesMesh.geometry.attributes.position.needsUpdate = true;
-				linesMesh.geometry.attributes.color.needsUpdate = true;
-
-				pointCloud.geometry.attributes.position.needsUpdate = true;
-
-				requestAnimationFrame( animate );
-
-				//stats.update();
-				render();
-
 			}
 
-			function render() {
 
-				const time = Date.now() * 0.001;
+			linesMesh.geometry.setDrawRange(0, numConnected * 2);
+			linesMesh.geometry.attributes.position.needsUpdate = true;
+			linesMesh.geometry.attributes.color.needsUpdate = true;
 
-				group.rotation.y = time * 0.1;
-				renderer.render( scene, camera );
+			pointCloud.geometry.attributes.position.needsUpdate = true;
 
-			}
+			requestAnimationFrame(animate);
+
+			//stats.update();
+			render();
+
+		}
+
+		function render() {
+
+			const time = Date.now() * 0.001;
+
+			group.rotation.y = time * 0.1;
+			renderer.render(scene, camera);
+
+		}
 	}
 }

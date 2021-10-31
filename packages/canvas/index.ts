@@ -84,7 +84,7 @@ Object.defineProperty(global, 'DOMMatrix', {
 Object.defineProperty(global, 'ImageBitmap', {
 	value: ImageBitmap,
 	configurable: true,
-	writable: false,
+	writable: true,
 });
 
 

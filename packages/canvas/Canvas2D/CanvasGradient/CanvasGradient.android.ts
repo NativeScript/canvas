@@ -1,5 +1,4 @@
 import {CanvasGradientBase} from './common';
-import {Color} from '@nativescript/core';
 
 export class CanvasGradient extends CanvasGradientBase {
     readonly nativeInstance;

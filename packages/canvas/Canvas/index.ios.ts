@@ -4,7 +4,6 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Utils, profile } from '@nativescript/core';
-
 declare var TNSCanvas, TNSCanvasListener;
 
 
@@ -278,4 +277,5 @@ export class Canvas extends CanvasBase {
 			y: frame.origin.y,
 		};
 	}
+
 }

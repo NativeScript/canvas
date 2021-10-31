@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by triniwiz on 5/4/20
@@ -145,7 +146,7 @@ class TNSImageAsset {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: java.lang.Exception) {
 
 		}

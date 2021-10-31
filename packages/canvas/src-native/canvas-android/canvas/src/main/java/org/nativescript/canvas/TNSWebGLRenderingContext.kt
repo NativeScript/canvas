@@ -11,6 +11,7 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 
 /**
@@ -62,7 +63,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -74,7 +75,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -86,7 +87,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -98,7 +99,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -110,7 +111,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -122,7 +123,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -134,7 +135,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -146,7 +147,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -158,7 +159,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -170,7 +171,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -182,7 +183,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -194,7 +195,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -206,7 +207,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -218,7 +219,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -230,7 +231,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -259,7 +260,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -273,7 +274,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -287,7 +288,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -301,7 +302,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -331,7 +332,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -343,7 +344,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -355,7 +356,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -367,7 +368,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -397,7 +398,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -412,7 +413,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -427,7 +428,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -442,7 +443,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -472,7 +473,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -484,7 +485,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -496,7 +497,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -508,7 +509,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -521,7 +522,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return status[0]
@@ -537,7 +538,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -553,7 +554,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -566,7 +567,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -579,7 +580,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -595,7 +596,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -690,7 +691,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -826,7 +827,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -857,7 +858,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -888,7 +889,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -919,7 +920,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -950,7 +951,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -979,7 +980,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1008,7 +1009,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1037,7 +1038,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1179,7 +1180,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1211,7 +1212,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1243,7 +1244,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1274,7 +1275,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1308,7 +1309,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1341,7 +1342,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1374,7 +1375,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1407,7 +1408,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1429,7 +1430,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1451,7 +1452,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1464,7 +1465,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return bufferId[0]
@@ -1478,7 +1479,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return frameBufferId[0]
@@ -1492,7 +1493,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return program[0]
@@ -1506,7 +1507,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return renderBufferId[0]
@@ -1520,7 +1521,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return shader[0]
@@ -1534,7 +1535,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return textureId[0]
@@ -1547,7 +1548,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1560,7 +1561,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1573,7 +1574,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1585,7 +1586,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1598,7 +1599,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1610,7 +1611,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1623,7 +1624,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1635,7 +1636,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1647,7 +1648,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1659,7 +1660,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1671,7 +1672,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1683,7 +1684,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1695,7 +1696,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1709,7 +1710,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1723,7 +1724,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1735,7 +1736,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1747,7 +1748,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1759,7 +1760,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1771,7 +1772,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1788,7 +1789,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1800,7 +1801,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1812,7 +1813,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1824,7 +1825,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -1857,7 +1858,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return info
@@ -1890,7 +1891,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return info
@@ -1909,7 +1910,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return shadersList[0]
@@ -1923,7 +1924,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return location[0]
@@ -1940,7 +1941,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return parameter[0]
@@ -1981,7 +1982,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (ignored: InterruptedException) {
 			}
 			return error[0]
@@ -2073,7 +2074,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2118,7 +2119,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return result
@@ -2202,7 +2203,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return parameter[0]
@@ -2216,7 +2217,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return infoLog[0]
@@ -2237,7 +2238,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return parameter[0]
@@ -2253,7 +2254,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return parameter[0]
@@ -2267,7 +2268,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return infoLog[0]
@@ -2286,7 +2287,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return parameter[0]
@@ -2312,7 +2313,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		/*if (hasError[0]) {
@@ -2328,7 +2329,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return source[0]
@@ -2344,7 +2345,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (ignored: InterruptedException) {
 			}
 			return extensions[0]
@@ -2361,7 +2362,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return parameters[0]
@@ -2473,7 +2474,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return uniform[0]
@@ -2487,7 +2488,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return location[0]
@@ -2514,7 +2515,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return attrib[0]
@@ -2531,7 +2532,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return offset[0]
@@ -2544,7 +2545,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2557,7 +2558,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2580,7 +2581,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2594,7 +2595,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2608,7 +2609,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2622,7 +2623,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2636,7 +2637,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2650,7 +2651,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -2663,7 +2664,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2675,7 +2676,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2730,7 +2731,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2742,7 +2743,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2864,7 +2865,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2885,7 +2886,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2906,7 +2907,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2928,7 +2929,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2950,7 +2951,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2971,7 +2972,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -2992,7 +2993,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3013,7 +3014,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3025,7 +3026,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3037,7 +3038,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3049,7 +3050,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3061,7 +3062,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3073,7 +3074,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3103,7 +3104,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3117,7 +3118,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3144,7 +3145,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3156,7 +3157,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3168,7 +3169,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3291,7 +3292,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3355,7 +3356,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3419,7 +3420,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3482,7 +3483,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3586,7 +3587,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3633,7 +3634,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3680,7 +3681,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3727,7 +3728,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3758,7 +3759,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3786,7 +3787,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3814,7 +3815,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3844,7 +3845,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3856,7 +3857,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -3868,7 +3869,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4024,7 +4025,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4048,7 +4049,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4071,7 +4072,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4094,7 +4095,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4133,7 +4134,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4170,7 +4171,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4207,7 +4208,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4244,7 +4245,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4276,7 +4277,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4307,7 +4308,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4336,7 +4337,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4365,7 +4366,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4377,7 +4378,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4390,7 +4391,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4403,7 +4404,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4415,7 +4416,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4428,7 +4429,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4441,7 +4442,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4453,7 +4454,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4466,7 +4467,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4479,7 +4480,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4491,7 +4492,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4504,7 +4505,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4517,7 +4518,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4529,7 +4530,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4542,7 +4543,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4555,7 +4556,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4567,7 +4568,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4580,7 +4581,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4593,7 +4594,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4605,7 +4606,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4618,7 +4619,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4631,7 +4632,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4643,7 +4644,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4656,7 +4657,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4669,7 +4670,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4682,7 +4683,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4695,7 +4696,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4708,7 +4709,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4721,7 +4722,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4734,7 +4735,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4747,7 +4748,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4759,7 +4760,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4771,7 +4772,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4783,7 +4784,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4795,7 +4796,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4807,7 +4808,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4819,7 +4820,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4831,7 +4832,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4843,7 +4844,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4855,7 +4856,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4867,7 +4868,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4879,7 +4880,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4891,7 +4892,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4903,7 +4904,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4915,7 +4916,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4934,7 +4935,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -4946,7 +4947,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}

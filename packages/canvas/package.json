@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas",
-	"version": "1.0.0-alpha.10",
+	"version": "1.0.0-alpha.11",
 	"description": "DOM Canvas API for NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -33,7 +33,6 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
 	"dependencies": {
-		"@nativescript-community/gesturehandler": "~0.1.47",
 		"xmldom": "~0.6.0"
 	}
 }

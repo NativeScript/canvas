@@ -5,6 +5,7 @@ import android.util.Log
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by triniwiz on 2019-07-06
@@ -31,7 +32,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -65,7 +66,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -100,7 +101,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: Exception) {
 		}
 		return value
@@ -133,7 +134,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			}
 
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -168,7 +169,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -188,7 +189,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -208,7 +209,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -229,7 +230,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -249,7 +250,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -270,7 +271,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -291,7 +292,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value
@@ -314,7 +315,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -336,7 +337,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -359,7 +360,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -379,7 +380,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -399,7 +400,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -418,7 +419,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -438,7 +439,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -459,7 +460,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -482,7 +483,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: java.lang.Exception) {
 			}
 			return value
@@ -508,7 +509,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				lock.countDown()
 			}
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (e: Exception) {
 			}
 			return value ?: TNSDOMMatrix()
@@ -836,7 +837,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: Exception) {
 		}
 		return value
@@ -862,7 +863,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: Exception) {
 		}
 		return value
@@ -887,7 +888,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: java.lang.Exception) {
 		}
 		return value
@@ -912,7 +913,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: java.lang.Exception) {
 		}
 		return value
@@ -1351,7 +1352,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: Exception) {
 		}
 		return value ?: TNSImageData(sw.toInt(), sh.toInt(), -1)
@@ -1398,7 +1399,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: java.lang.Exception) {
 		}
 		return value
@@ -1417,7 +1418,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			lock.countDown()
 		}
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (e: java.lang.Exception) {
 		}
 		return value

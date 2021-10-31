@@ -2859,11 +2859,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//
 
 		controls = new OrbitControls(camera, canvas);
-		console.log(
-			controls.enableRotate,
-			controls.enablePan,
-			controls.enableZoom
-		)
 		controls.maxPolarAngle = Math.PI * 0.495;
 		controls.target.set(0, 10, 0);
 		controls.minDistance = 40.0;

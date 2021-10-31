@@ -781,6 +781,33 @@ public class TNSWebGL2RenderingContext: TNSWebGLRenderingContext {
     }
     
     
+    public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,pixels: UnsafeRawPointer, size: Int) {
+        texImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels: pixels, size: size,pixelOffset: 0, srcOffset: 0)
+    }
+    
+    
+    
+    public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,pixels: UnsafeRawPointer, size: Int, pixelOffset: Int, srcOffset:Int32) {
+        let _ = canvas.renderer.ensureIsContextIsCurrent()
+        
+        if(flipYWebGL){
+            var px = Data(bytes: pixels, count: size)
+            px.withUnsafeMutableBytes { ptr in
+                let pointer = ptr.baseAddress?.assumingMemoryBound(to: UInt8.self).advanced(by: pixelOffset + Int(srcOffset))
+                
+                GLUtils.flipYInPlace3D(pointer, size, Int(width * bytes_per_pixel(pixel_type: type, format: format)), Int(height), Int(depth))
+                
+                glTexImage3D(target, level, internalformat, width, height, depth, border,format,type, pointer)
+            }
+            
+        }else {
+            glTexImage3D(target, level, internalformat, width, height, depth, border,format,type, pixels.advanced(by: (pixelOffset + Int(srcOffset))))
+        }
+        
+    }
+    
+    
+    
     public func texImage3D(_ target: UInt32,_ level: Int32,_ internalformat: Int32,_ width: Int32,_ height: Int32,_ depth: Int32,_ border: Int32,_ format: UInt32,_ type: UInt32,i8 source: [Int8]) {
         texImage3D(target, level, internalformat, width, height, depth, border, format, type, i8: source, 0)
     }

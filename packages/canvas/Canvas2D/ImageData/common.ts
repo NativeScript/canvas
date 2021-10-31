@@ -11,4 +11,8 @@ export abstract class ImageDataBase {
 	get native() {
 		return this.nativeInstance;
 	}
+
+	static [Symbol.hasInstance](obj) {
+		if (obj.native && obj.constructor.name === 'ImageData') return true;
+	}
 }

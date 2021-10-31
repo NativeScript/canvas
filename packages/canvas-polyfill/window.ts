@@ -5,7 +5,7 @@ import { HTMLCanvasElement } from './DOM/HTMLCanvasElement';
 import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { Device, fromObject, View } from '@nativescript/core';
-import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData } from '@nativescript/canvas';
+import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
@@ -17,7 +17,7 @@ import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext
 (global as any).window.self = (global as any).self = (global as any).self || window;
 (global as any).window.HTMLImageElement = (global as any).HTMLImageElement = (global as any).HTMLImageElement || HTMLImageElement;
 (global as any).window.Image = (global as any).Image = (global as any).Image || HTMLImageElement;
-(global as any).window.ImageBitmap = (global as any).ImageBitmap = (global as any).ImageBitmap || HTMLImageElement;
+(global as any).window.ImageBitmap = (global as any).ImageBitmap = (global as any).ImageBitmap || ImageBitmap;
 (global as any).window.HTMLVideoElement = (global as any).HTMLVideoElement = (global as any).HTMLVideoElement || HTMLVideoElement;
 (global as any).window.Video = (global as any).Video = (global as any).Video || HTMLVideoElement;
 (global as any).window.HTMLCanvasElement = (global as any).HTMLCanvasElement = (global as any).HTMLCanvasElement || HTMLCanvasElement;

@@ -146,7 +146,7 @@ internal class GLContext {
 	}
 
 	fun flush() {
-		queueEvent(Runnable {
+		queueEvent {
 			if (reference != null) {
 				val canvasView = reference!!.get()
 				if (canvasView != null && canvasView.nativeContext != 0L && canvasView.pendingInvalidate) {
@@ -165,7 +165,7 @@ internal class GLContext {
 					}
 				}
 			}
-		})
+		}
 	}
 
 	fun createEglSurface(surface: Any): EGLSurface {
@@ -175,9 +175,8 @@ internal class GLContext {
 		return mEGL!!.eglCreateWindowSurface(mEGLDisplay, mEGLConfig, surface, surfaceAttribs)
 	}
 
-
 	fun makeEglSurfaceCurrent(surface: EGLSurface) {
-		mEGL!!.eglMakeCurrent(mEGLDisplay, surface, surface, mEGLContext)
+		mEGL?.eglMakeCurrent(mEGLDisplay, surface, surface, mEGLContext)
 	}
 
 	fun createSurface(config: EGLConfig?, surface: Any?): EGLSurface {
@@ -197,11 +196,11 @@ internal class GLContext {
 					height = 1
 				}
 			}
-			val surfaceAttribs = intArrayOf(
-				EGL10.EGL_WIDTH, width,
-				EGL10.EGL_HEIGHT, height,
-				EGL10.EGL_NONE
-			)
+//			val surfaceAttribs = intArrayOf(
+//				EGL10.EGL_WIDTH, width,
+//				EGL10.EGL_HEIGHT, height,
+//				EGL10.EGL_NONE
+//			)
 			textureId += 1
 			offscreenTexture = SurfaceTexture(textureId)
 			// return mEGL.eglCreatePbufferSurface(mEGLDisplay, config, surfaceAttribs);
@@ -213,26 +212,22 @@ internal class GLContext {
 
 	fun onPause() {
 		queueEvent(Runnable {
-			if (mEGL != null) {
-				mEGL!!.eglMakeCurrent(
-					mEGLDisplay,
-					EGL10.EGL_NO_SURFACE,
-					EGL10.EGL_NO_SURFACE,
-					EGL10.EGL_NO_CONTEXT
-				)
-			}
-			if (mGLThread != null) {
-				mGLThread!!.setPaused(true)
-			}
+			mEGL?.eglMakeCurrent(
+				mEGLDisplay,
+				EGL10.EGL_NO_SURFACE,
+				EGL10.EGL_NO_SURFACE,
+				EGL10.EGL_NO_CONTEXT
+			)
+			mGLThread?.setPaused(true)
 		})
 	}
 
 	fun onResume() {
-		queueEvent(Runnable {
-			if (mGLThread != null) {
-				mGLThread!!.setPaused(false)
+		if (mGLThread?.isPaused == true) {
+			queueEvent {
+				mGLThread?.setPaused(false)
 			}
-		})
+		}
 	}
 
 	fun makeCurrent(surface: EGLSurface?): Boolean {
@@ -577,7 +572,6 @@ internal class GLContext {
 							view.drawingBufferHeight = 1
 						}
 
-						Log.d("com.test", "${view.drawingBufferWidth} ${view.drawingBufferHeight}")
 						GLES20.glViewport(0, 0, view.drawingBufferWidth, view.drawingBufferHeight)
 						GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)
 						var samples = 0

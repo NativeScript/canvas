@@ -1,5 +1,5 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 5.5 (swiftlang-1300.0.31.1 clang-1300.0.29.1)
+// swift-compiler-version: Apple Swift version 5.5.1 (swiftlang-1300.0.31.4 clang-1300.0.29.6)
 // swift-module-flags: -target x86_64-apple-ios11.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
 import AVFoundation
 @_exported import CanvasNative
@@ -442,6 +442,8 @@ extension Swift.RangeReplaceableCollection {
   @objc public func samplerParameterf(_ sampler: Swift.UInt32, _ pname: Swift.UInt32, _ param: Swift.Float)
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, data: Foundation.NSData)
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, offset: Swift.Int)
+  @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: Swift.UnsafeRawPointer, size: Swift.Int)
+  @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, pixels: Swift.UnsafeRawPointer, size: Swift.Int, pixelOffset: Swift.Int, srcOffset: Swift.Int32)
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, i8 source: [Swift.Int8])
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, u8 source: [Swift.UInt8])
   @objc public func texImage3D(_ target: Swift.UInt32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.UInt32, _ type: Swift.UInt32, i16 source: [Swift.Int16])

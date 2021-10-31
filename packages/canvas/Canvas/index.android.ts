@@ -4,12 +4,12 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, profile } from '@nativescript/core';
-
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(org.nativescript.canvas.TNSCanvas.createSVGMatrix());
 }
 
 export * from './common';
+
 
 export class Canvas extends CanvasBase {
 	_ready = false;
@@ -141,9 +141,9 @@ export class Canvas extends CanvasBase {
 
 	onUnloaded() {
 		this._didPause = true;
-		if (this._canvas) {
-			this._canvas.onPause();
-		}
+		// if (this._canvas) {
+		// 	this._canvas.onPause();
+		// }
 		super.onUnloaded();
 	}
 
@@ -152,9 +152,9 @@ export class Canvas extends CanvasBase {
 		super.onLoaded();
 		if (this._didPause) {
 			this._didPause = false;
-			if (this._canvas) {
-				this._canvas.onResume();
-			}
+			// if (this._canvas) {
+			// 	this._canvas.onResume();
+			// }
 		}
 	}
 
@@ -277,4 +277,10 @@ export class Canvas extends CanvasBase {
 			y: nativeView.getY(),
 		};
 	}
+
+
+	setPointerCapture() { }
+
+	releasePointerCapture() { }
+
 }

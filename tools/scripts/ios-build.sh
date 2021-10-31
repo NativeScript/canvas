@@ -60,7 +60,7 @@ if [[ -f "$IOS_LIB_INCLUDE/canvas_native.h" ]]; then
 fi
 
 # TODO fix header generation .... ignore android
-cbindgen "$CWD/canvas-native/canvas-core/src/lib.rs" -l c >"$IOS_LIB_INCLUDE/canvas_native.h"
+cbindgen --config "$CWD/canvas-native/canvas-core/cbindgen.toml"  "$CWD/canvas-native/canvas-core/src/lib.rs" -l c >"$IOS_LIB_INCLUDE/canvas_native.h"
 
 
 if [[ -f "$IOS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME" ]]; then

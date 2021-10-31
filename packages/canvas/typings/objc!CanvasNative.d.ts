@@ -1748,7 +1748,7 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texImage3DData(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, data: NSData): void;
 
-	texImage3DF32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
+	texImage3DF32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
 
 	texImage3DF64(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
 
@@ -1760,13 +1760,17 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texImage3DOffset(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: number): void;
 
+	texImage3DPixelsSize(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>, size: number): void;
+
+	texImage3DPixelsSizePixelOffsetSrcOffset(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, pixels: interop.Pointer | interop.Reference<any>, size: number, pixelOffset: number, srcOffset: number): void;
+
 	texImage3DSource(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: UIImage): void;
 
-	texImage3DU16(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
+	texImage3DU16(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
 
 	texImage3DU32(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
 
-	texImage3DU8(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[]): void;
+	texImage3DU8(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: NSArray<number> | number[], srcOffset: number): void;
 
 	texStorage2D(target: number, levels: number, internalformat: number, width: number, height: number): void;
 
@@ -1794,11 +1798,11 @@ declare class TNSWebGL2RenderingContext extends TNSWebGLRenderingContext {
 
 	texSubImage3DSrcData(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: UIImage): void;
 
-	texSubImage3DU16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
+	texSubImage3DU16(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
 	texSubImage3DU32(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
 
-	texSubImage3DU8(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[]): void;
+	texSubImage3DU8(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: NSArray<number> | number[], srcOffset: number): void;
 
 	transformFeedbackVaryings(program: number, varyings: NSArray<string> | string[], bufferMode: number): void;
 

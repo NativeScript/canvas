@@ -80,14 +80,6 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 	});
 }
 
-if (!((global as any).ImageBitmap instanceof ImageBitmap)) {
-	Object.defineProperty(global, 'ImageBitmap', {
-		value: ImageBitmap,
-		configurable: true,
-		writable: true,
-	});
-}
-
 if (!((global as any).URL instanceof URL)) {
 	Object.defineProperty(global, 'URL', {
 		value: URL,

@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import java.io.File
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 
 object Utils {
@@ -129,7 +130,7 @@ object Utils {
 		}
 
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 
@@ -152,7 +153,7 @@ object Utils {
 		}
 
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return render
@@ -172,7 +173,7 @@ object Utils {
 		}
 
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -186,7 +187,7 @@ object Utils {
 		}
 
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -214,7 +215,7 @@ object Utils {
 		}
 
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 

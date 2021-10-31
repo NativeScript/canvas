@@ -44,7 +44,7 @@ xcodebuild archive -project CanvasNative.xcodeproj \
                    -configuration Release \
                    -sdk iphonesimulator IPHONEOS_DEPLOYMENT_TARGET=11.0 \
                    -quiet \
-                   -arch arm64 \
+                   -arch x86_64 \
                    DEVELOPMENT_TEAM=$DEV_TEAM \
                    SKIP_INSTALL=NO \
                    BUILD_LIBRARY_FOR_DISTRIBUTION=YES \

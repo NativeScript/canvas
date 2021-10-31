@@ -31,7 +31,6 @@
     "@angular/platform-browser": "^12.0.0",
     "@angular/platform-browser-dynamic": "^12.0.0",
     "@angular/router": "^12.0.0",
-    "@nativescript-community/gesturehandler": "^0.1.45",
     "@nativescript/angular": "^12.0.0",
     "@nativescript/core": "~8.1.0",
     "@nativescript/plugin-tools": "2.1.0",

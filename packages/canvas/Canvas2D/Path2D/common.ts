@@ -11,6 +11,10 @@ export abstract class Path2DBase {
 		return this.nativeInstance;
 	}
 
+	static [Symbol.hasInstance](obj) {
+		if (obj.native && obj.constructor.name === 'Path2D') return true;
+	}
+
 	public abstract addPath(
 		path: Path2DBase,
 		transform?: DOMMatrixBase

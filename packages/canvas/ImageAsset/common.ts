@@ -8,6 +8,11 @@ export class ImageAssetBase {
 	get native() {
 		return this.nativeInstance;
 	}
+
+	static [Symbol.hasInstance](obj) {
+		if (obj.native && obj.constructor.name === 'ImageAsset') return true;
+	}
+
 }
 
 export enum ImageAssetSaveFormat {

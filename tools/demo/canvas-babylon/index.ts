@@ -33,14 +33,14 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		// You must at least define a camera
 		engine = createDefaultEngine();
 		if (!engine) throw 'engine should not be null.';
-		 this.createMDN(engine)
+		 //this.createMDN(engine)
 
 		 //sceneToRender = this.createChart(engine);
 		//sceneToRender = this.createWaterScene(engine);
 		//sceneToRender = this.createScene(engine);
 		//sceneToRender = this.createSkullScene(engine);
 		//sceneToRender = this.createLightTexture(engine);
-		//sceneToRender = this.createParticleScene(engine);
+		sceneToRender = this.createParticleScene(engine);
 		engine.runRenderLoop(function () {
 			if (sceneToRender) {
 				sceneToRender.render();
@@ -260,8 +260,8 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 			}
 
 			if (useGPUVersion && BABYLON.GPUParticleSystem.IsSupported) {
-				particleSystem = new BABYLON.GPUParticleSystem('particles', { capacity: 1000000 }, scene);
-				particleSystem.activeParticleCount = 2000;
+				particleSystem = new BABYLON.GPUParticleSystem('particles', { capacity: 100000 }, scene);
+				particleSystem.activeParticleCount = 10000;
 			} else {
 				particleSystem = new BABYLON.ParticleSystem('particles', 10000, scene);
 			}

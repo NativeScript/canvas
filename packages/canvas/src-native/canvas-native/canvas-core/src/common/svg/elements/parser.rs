@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-use std::f32::consts::PI;
-
 use roxmltree::Node;
 use skia_safe::Vector;
+use std::collections::HashMap;
+use std::f32::consts::PI;
 
 use crate::common::svg::attribute_names::Attribute;
 

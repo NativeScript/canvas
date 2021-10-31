@@ -3,8 +3,8 @@ use std::io::{Read, Seek, SeekFrom};
 use std::os::raw::{c_char, c_uint};
 use std::ptr::{null, null_mut};
 
-use image::imageops::FilterType;
 use image::{GenericImageView, ImageFormat};
+use image::imageops::FilterType;
 
 use crate::common::ffi::u8_array::U8Array;
 
@@ -87,7 +87,7 @@ impl ImageAsset {
         }
     }
 
-    pub fn load_from_path(&mut self, path: *const c_char) -> bool {
+    pub unsafe fn load_from_path(&mut self, path: *const c_char) -> bool {
         if !self.error.is_empty() {
             self.error.clear()
         }
@@ -141,7 +141,7 @@ impl ImageAsset {
         }
     }
 
-    pub fn load_from_raw(&mut self, buffer: *const u8, size: usize) -> bool {
+    pub unsafe fn load_from_raw(&mut self, buffer: *const u8, size: usize) -> bool {
         if !self.error.is_empty() {
             self.error.clear()
         }
@@ -289,11 +289,11 @@ impl ImageAsset {
                 let raw;
                 match byte_type {
                     ByteType::RGB => {
-                        let image_ref = image.to_rgb();
+                        let image_ref = image.to_rgb8();
                         raw = image_ref.into_raw();
                     }
                     ByteType::RGBA => {
-                        let image_ref = image.to_rgba();
+                        let image_ref = image.to_rgba8();
                         raw = image_ref.into_raw();
                     }
                     ByteType::Default => {
@@ -330,11 +330,11 @@ impl ImageAsset {
                 let raw;
                 match byte_type {
                     ByteType::RGB => {
-                        let image_ref = image.to_rgb();
+                        let image_ref = image.to_rgb8();
                         raw = image_ref.into_raw();
                     }
                     ByteType::RGBA => {
-                        let image_ref = image.to_rgba();
+                        let image_ref = image.to_rgba8();
                         raw = image_ref.into_raw();
                     }
                     ByteType::Default => {
@@ -369,7 +369,7 @@ impl ImageAsset {
         self.bytes_with(ByteType::RGB)
     }
 
-    pub fn save_path(&mut self, path: *const c_char, format: OutputFormat) -> bool {
+    pub unsafe fn save_path(&mut self, path: *const c_char, format: OutputFormat) -> bool {
         if !self.error.is_empty() {
             self.error.clear()
         }
@@ -396,7 +396,7 @@ impl ImageAsset {
         }
     }
 
-    pub fn free_image_data(data: *mut U8Array) {
+    pub unsafe fn free_image_data(data: *mut U8Array) {
         unsafe {
             let _ = Box::from_raw(data);
         }

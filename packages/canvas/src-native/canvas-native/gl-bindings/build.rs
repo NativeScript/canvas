@@ -2,8 +2,6 @@ use std::borrow::Borrow;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use bindgen;
-
 const _IOS_SRC_BINDINGS_RS: &str = "src/bindings.rs";
 const _ANDROID_SRC_BINDINGS_RS: &str = "src/bindings.rs";
 
@@ -21,7 +19,7 @@ impl Target {
             self.architecture.as_str(),
             self.vendor.as_str(),
             self.system.as_str(),
-            self.abi.as_ref().map(|s| s.as_str()),
+            self.abi.as_deref(),
         )
     }
 }
@@ -49,9 +47,9 @@ pub fn ndk() -> String {
 fn main() {
     let target_str = std::env::var("TARGET").unwrap();
     let mut include_dir = String::from("-I");
-    let target: Vec<String> = target_str.split("-").map(|s| s.into()).collect();
+    let target: Vec<String> = target_str.split('-').map(|s| s.into()).collect();
     if target.len() < 3 {
-        panic!("Failed to parse TARGET {}", target_str);
+        assert!(!(target.len() < 3), "Failed to parse TARGET {}", target_str);
     }
 
     let abi = if target.len() > 3 {
@@ -68,31 +66,39 @@ fn main() {
     };
     println!("cargo:rerun-if-changed=build.rs");
 
+    println!("system {:?}", &target.system);
+    println!("target {:?}", &target);
     match target.system.borrow() {
         "android" | "androideabi" => {
             // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             let build_target;
             include_dir.push_str(&ndk());
+            // after moving to newer ndk
+           // include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
+
+
+           include_dir.push_str("/sysroot/usr/include");
+            println!("cargo:rustc-link-search=native={}", include_dir);
+
             if target.architecture.eq("armv7") {
                 build_target = "armv7-linux-androideabi";
             } else if target.architecture.eq("aarch64") {
                 build_target = "aarch64-linux-android";
+                println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
             } else if target.architecture.eq("i686") {
                 build_target = "i686-linux-android";
             } else if target.architecture.eq("x86_64") {
                 build_target = "x86_64-linux-android";
+                println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
             } else {
                 return;
             }
 
             println!("target {:?}", build_target);
-
-            include_dir.push_str("/sysroot/usr/include");
-            println!("cargo:rustc-link-search=native={}", include_dir);
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
             println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
-            println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
+            
                                                      // The bindgen::Builder is the main entry point
                                                      // to bindgen, and lets you build up options for
                                                      // the resulting bindings.
@@ -126,10 +132,9 @@ fn main() {
 
 fn sdk_path(target: &str) -> Result<String, std::io::Error> {
     use std::process::Command;
-
     let sdk = if target.contains("apple-darwin") {
         "macosx"
-    } else if target == "x86_64-apple-ios" || target == "i386-apple-ios" {
+    } else if target == "x86_64-apple-ios" || target == "i386-apple-ios" || target == "aarch64-apple-ios-sim" {
         "iphonesimulator"
     } else if target == "aarch64-apple-ios"
         || target == "armv7-apple-ios"

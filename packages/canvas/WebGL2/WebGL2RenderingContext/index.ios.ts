@@ -18,6 +18,7 @@ import {ImageAsset} from '../../ImageAsset';
 import {WebGL2RenderingContextBase} from "./common";
 import {Canvas} from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
+import { Utils } from '../../utils';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	constructor(context) {
@@ -456,24 +457,45 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			} else {
 				this.native.texImage3DU8(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			}
-		} else if (source && source.buffer) {
+		}else if(source instanceof ArrayBuffer){
+			(this.native as TNSWebGL2RenderingContext).texImage3DPixelsSizePixelOffsetSrcOffset(
+				target, level, internalformat, width, height, depth, border, format, type,source as any, source.byteLength, 0 , srcOffset
+			)
+		} else if (source && source.buffer && Utils.isTypedArray(source)) {
+
+			(this.native as TNSWebGL2RenderingContext).texImage3DPixelsSizePixelOffsetSrcOffset(
+				target, level, internalformat, width, height, depth, border, format, type,source as any, source.byteLength, source.byteOffset , srcOffset
+			)
+
+			/*console.log('TypedArray');
 			if (source instanceof Int8Array) {
+				(this.native as TNSWebGL2RenderingContext).texImage3DPixelsSizePixelOffsetSrcOffset
+				console.log('Int8Array');
 				this.native.texImage3DI8(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			} else if (source instanceof Uint8Array || source instanceof Uint8ClampedArray) {
+				console.log('Uint8Array' , 'Uint8ClampedArray');
 				this.native.texImage3DU8(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			} else if (source instanceof Int16Array) {
+				console.log('Int16Array');
 				this.native.texImage3DI16(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			} else if (source instanceof Uint16Array) {
+				console.log('Uint16Array');
 				this.native.texImage3DU16(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			} else if (source instanceof Int32Array) {
+				console.log('Int32Array');
 				this.native.texImage3DI32(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			} else if (source instanceof Uint32Array) {
+				console.log('Uint32Array');
 				this.native.texImage3DU32(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			} else if (source instanceof Float32Array) {
+				console.log('Float32Array', source);
 				this.native.texImage3DF32(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			} else if (source instanceof Float64Array) {
+				console.log('Float64Array');
 				this.native.texImage3DF64(target, level, internalformat, width, height, depth, border, format, type, source, srcOffset);
 			}
+
+			*/
 		} else if (source instanceof UIImage) {
 			this.native.texImage3DSource(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source instanceof ImageSource) {

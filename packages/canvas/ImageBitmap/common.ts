@@ -8,6 +8,11 @@ export abstract class ImageBitmapBase {
 	get native() {
 		return this.nativeInstance;
 	}
+
+	static [Symbol.hasInstance](obj) {
+		if (obj.native && obj.constructor.name === 'ImageBitmap') return true;
+	}
+
 	abstract readonly width: number;
 	abstract readonly height: number;
 	abstract close();

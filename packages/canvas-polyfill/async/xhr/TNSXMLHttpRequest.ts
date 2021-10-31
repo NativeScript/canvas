@@ -395,6 +395,8 @@ export class TNSXMLHttpRequest {
 				);
 			} else if (this._request.url.startsWith('/')) {
 				path = this._request.url;
+			} else if (this._request.url.startsWith('blob:nativescript')) {
+				path = (URL as any)?.InternalAccessor?.getPath?.(this._request.url);
 			}
 
 			const responseURL = `file://${path}`;

@@ -20,6 +20,7 @@
 		<activity android:name=".VideoActivity" />
 		<activity android:name=".WebGLActivity" />
 		<activity
+			android:exported="true"
 			android:name=".MainActivity"
 			android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout|locale|uiMode">
 			<intent-filter>

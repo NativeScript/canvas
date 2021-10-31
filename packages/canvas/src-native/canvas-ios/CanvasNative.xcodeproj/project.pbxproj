@@ -108,6 +108,10 @@
 		F1A87B24255BB4F000394387 /* TextBaseLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextBaseLine.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* TNSCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TNSCanvas.xib; sourceTree = "<group>"; };
 		F1DE2E4E2612F7CA0000D48F /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		F1FF5772271E5F7B001CBF6D /* CanvasNative copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "CanvasNative copy-Info.plist"; path = "/Users/triniwiz/Desktop/oss/canvas/packages/canvas/src-native/canvas-ios/CanvasNative copy-Info.plist"; sourceTree = "<absolute>"; };
+		F1FF57C0271E6998001CBF6D /* CanvasNative copy2-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "CanvasNative copy2-Info.plist"; path = "/Users/triniwiz/Desktop/oss/canvas/packages/canvas/src-native/canvas-ios/CanvasNative copy2-Info.plist"; sourceTree = "<absolute>"; };
+		F1FF57C2271E6BF0001CBF6D /* libcanvasnative.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcanvasnative.a; path = "CanvasNative/libs/arm64-iphoneos/libcanvasnative.a"; sourceTree = "<group>"; };
+		F1FF57C4271E6C01001CBF6D /* libcanvasnative.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcanvasnative.a; path = CanvasNative/libs/iphonesimulator/libcanvasnative.a; sourceTree = "<group>"; };
 		F1FF6A3225248CFE001DAE0D /* TNSDOMMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSDOMMatrix.swift; path = CanvasNative/Source/TNSDOMMatrix.swift; sourceTree = "<group>"; };
 		F1FF6A3325248CFE001DAE0D /* TNSTextAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSTextAlignment.swift; path = CanvasNative/Source/TNSTextAlignment.swift; sourceTree = "<group>"; };
 		F1FF6A3425248CFE001DAE0D /* TNSCanvasListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSCanvasListener.swift; path = CanvasNative/Source/TNSCanvasListener.swift; sourceTree = "<group>"; };
@@ -289,6 +293,9 @@
 				F11C5D0C2524403700538D04 /* CanvasNative */,
 				F11C5D172524403700538D04 /* CanvasNativeTests */,
 				F11C5D0B2524403700538D04 /* Products */,
+				F1FF5772271E5F7B001CBF6D /* CanvasNative copy-Info.plist */,
+				F1FF57C0271E6998001CBF6D /* CanvasNative copy2-Info.plist */,
+				F1FF57C1271E6BF0001CBF6D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -317,6 +324,15 @@
 				F11C5D1A2524403700538D04 /* Info.plist */,
 			);
 			path = CanvasNativeTests;
+			sourceTree = "<group>";
+		};
+		F1FF57C1271E6BF0001CBF6D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F1FF57C4271E6C01001CBF6D /* libcanvasnative.a */,
+				F1FF57C2271E6BF0001CBF6D /* libcanvasnative.a */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -641,34 +657,39 @@
 		F11C5D1F2524403700538D04 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = TG7LSJHB64;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 arm64e i386";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = i386;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/CanvasNative/include\"";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/CanvasNative/include";
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=arm64]" = "$(SRCROOT)/CanvasNative/libs/arm64-iphoneos";
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*][arch=arm64]" = "$(SRCROOT)/CanvasNative/libs/arm64-iphonesimulator";
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*][arch=x86_64]" = "$(SRCROOT)/CanvasNative/libs/x86_64-iphonesimulator";
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_LDFLAGS = (
-					"-L\"$(SRCROOT)/CanvasNative/libs/$(CURRENT_ARCH)$(EFFECTIVE_PLATFORM_NAME)\"",
 					"-lcanvasnative",
 					"-lc++",
 					"-ObjC",
+					"-framework",
+					OpenGLES,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -683,32 +704,37 @@
 		F11C5D202524403700538D04 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = TG7LSJHB64;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_BITCODE = NO;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "arm64 arm64e i386";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = i386;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/CanvasNative/include\"";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/CanvasNative/include";
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=arm64]" = "$(SRCROOT)/CanvasNative/libs/arm64-iphoneos";
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*][arch=arm64]" = "$(SRCROOT)/CanvasNative/libs/arm64-iphonesimulator";
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*][arch=x86_64]" = "$(SRCROOT)/CanvasNative/libs/x86_64-iphonesimulator";
 				OTHER_LDFLAGS = (
-					"-L\"$(SRCROOT)/CanvasNative/libs/$(CURRENT_ARCH)$(EFFECTIVE_PLATFORM_NAME)\"",
 					"-lcanvasnative",
 					"-lc++",
 					"-ObjC",
+					"-framework",
+					OpenGLES,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";

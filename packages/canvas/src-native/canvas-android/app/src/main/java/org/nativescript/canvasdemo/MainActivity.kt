@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
 //			""".trimIndent()
 //		)
 
-	//	init()
+		//	init()
 
 //				svg?.setSrc(
 //			"""
@@ -233,7 +233,7 @@ class MainActivity : AppCompatActivity() {
 		//drawTransformRotateSvg()
 		//drawTransformScaleSvg()
 		//drawTransformTranslateSvg()
-	//	drawTransformSkewX()
+		//	drawTransformSkewX()
 		//drawTransformSkewY()
 
 		//drawLinearGradientSvg()
@@ -243,8 +243,8 @@ class MainActivity : AppCompatActivity() {
 
 		//	drawTransformGradientSvg()
 
-			//	drawClipPathUnitsSvg()
-	//	downloadSvg()
+		//	drawClipPathUnitsSvg()
+		//	downloadSvg()
 //		svg?.setSrc("""
 //			<svg xmlns="http://www.w3.org/2000/svg">
 //			  <!-- Using g to inherit presentation attributes -->
@@ -314,7 +314,7 @@ class MainActivity : AppCompatActivity() {
 
 	}
 
-	fun issue54(){
+	fun issue54() {
 		executor.execute {
 			try {
 				val patternFile = File(filesDir, "pattern.svg")
@@ -328,15 +328,14 @@ class MainActivity : AppCompatActivity() {
 				url.openStream().use { input ->
 					fs.use { output ->
 						input.copyTo(output)
+						input.close()
 					}
+					fs.close()
 				}
 
 				val ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
-				val asset = TNSImageAsset()
 				val bm = BitmapFactory.decodeFile(patternFile.absolutePath)
 				val pattern = ctx?.createPattern(bm)
-				Log.d("com.test","issue54")
-				Log.d("com.test", "" + pattern)
 			} catch (e: IOException) {
 				e.printStackTrace()
 			}
@@ -829,31 +828,39 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	fun drawRemoteGLImage(canvas: TNSCanvas) {
-		runBlocking {
-			val downloader = suspendCoroutine<File> {
-				val file = File(filesDir, "ff.png")
-				if (file.exists()) {
-					it.resume(file)
-				} else {
-					val url =
-						URL("https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample6/cubetexture.png")
-					val fs = FileOutputStream(file)
-					url.openStream().use { input ->
-						fs.use { output ->
-							input.copyTo(output)
-						}
+		executor.execute {
+			val file = File(filesDir, "ff.png")
+			Log.d("Canvas", "drawRemoteGLImage ${file.absolutePath}")
+			if (!file.exists()) {
+				val url =
+					URL("https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample6/cubetexture.png")
+				val fs = FileOutputStream(file)
+				url.openStream().use { input ->
+					fs.use { output ->
+						input.copyTo(output)
 					}
-					it.resume(file)
 				}
 			}
+
 			val asset = TNSImageAsset()
-			asset.loadImageFromPathAsync(downloader.absolutePath, object : Callback {
+			asset.loadImageFromPathAsync(file.absolutePath, object : Callback {
 				override fun onSuccess(value: Any?) {
+					Log.d("Canvas", "w ${asset.width} h ${asset.height}")
 					drawGLImage(canvas, asset)
+//					TNSImageBitmap.createFromImageAsset(asset, TNSImageBitmap.Options(), object: TNSImageBitmap.Callback{
+//						override fun onSuccess(result: TNSImageBitmap) {
+//							Log.d("Canvas", "imageBitmap w ${result.width} h ${result.height}")
+//							drawGLImage(canvas, result)
+//						}
+//
+//						override fun onError(message: String) {
+//							Log.e("Canvas"," bitmap onError $message")
+//						}
+//					})
 				}
 
 				override fun onError(error: String?) {
-					println(error)
+					Log.e("Canvas", "onError asset ${error ?: ""}")
 				}
 			})
 		}
@@ -919,11 +926,15 @@ class MainActivity : AppCompatActivity() {
 		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MIN_FILTER, ctx3d.NEAREST);
 		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MAG_FILTER, ctx3d.NEAREST);
 		(image as? TNSImageAsset)?.let {
-			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it);
+			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it)
 		}
 
 		(image as? Bitmap)?.let {
-			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it);
+			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it)
+		}
+
+		(image as? TNSImageBitmap)?.let {
+			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it)
 		}
 
 		ctx3d.enableVertexAttribArray(vloc);
@@ -1424,32 +1435,38 @@ class MainActivity : AppCompatActivity() {
 
 
 	fun drawPattern(canvas: TNSCanvas) {
-		val img = File(filesDir, "Canvas_createpattern.png")
+		executor.execute {
+			val img = File(filesDir, "Canvas_createpattern.png")
 
-		val asset = TNSImageAsset()
+			val asset = TNSImageAsset()
 
-		if (img.exists()) {
-			asset.loadImageFromPath(img.absolutePath)
-		} else {
-			val url = URL("https://mdn.mozillademos.org/files/222/Canvas_createpattern.png")
-			val fs = FileOutputStream(img)
-			url.openStream().use { input ->
-				fs.use { output ->
-					input.copyTo(output)
-				}
+			if(img.exists() && img.length() == 0L){
+				img.delete()
 			}
-			asset.loadImageFromPath(img.absolutePath)
+
+			if (img.exists()) {
+				asset.loadImageFromPath(img.absolutePath)
+			} else {
+				val url = URL("https://mdn.mozillademos.org/files/222/Canvas_createpattern.png")
+				val fs = FileOutputStream(img)
+				url.openStream().use { input ->
+					fs.use { output ->
+						input.copyTo(output)
+					}
+				}
+				asset.loadImageFromPath(img.absolutePath)
+			}
+
+
+			val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+			val pattern = ctx.createPattern(asset, TNSPatternRepetition.Repeat)
+			pattern?.let {
+				ctx.fillStyle = it
+			}
+
+			ctx.fillRect(0f, 0f, 300f, 300f);
+
 		}
-
-		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
-		val pattern = ctx.createPattern(asset, TNSPatternRepetition.Repeat)
-		pattern?.let {
-			ctx.fillStyle = it
-		}
-
-		ctx.fillRect(0f, 0f, 300f, 300f);
-
-
 	}
 
 	var didPause = false;
@@ -1505,27 +1522,27 @@ class MainActivity : AppCompatActivity() {
 
 	@SuppressLint("NewApi")
 	fun drawFill(view: View) {
-		issue54()
+		//issue54()
 		//addPath(canvas!!)
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
-	//	ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+		//	ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 		//drawText(ctx!!)
 		// ballExample(ctx!!)
-		//drawPattern(canvas!!)
-		 //drawFace(ctx!!)
+		drawPattern(canvas!!)
+		//drawFace(ctx!!)
 		//drawPattern(canvas!!)
 		// drawElements(canvas!!)
 		// drawPatterWithCanvas(canvas!!)
-	//	executor.submit {
-			// drawPatterWithCanvas(canvas!!)
-			//  drawPatterWithCanvas(canvas!!)
-			//  canvas?.isHandleInvalidationManually = true
-			//drawElements(canvas!!)
-			//ctx = canvas?.getContext("2d") as CanvasRenderingContext2D?
-			//drawFace(ctx!!)
-			//canvas?.flush()
-			// ballExample(ctx!!)
+		//	executor.submit {
+		// drawPatterWithCanvas(canvas!!)
+		//  drawPatterWithCanvas(canvas!!)
+		//  canvas?.isHandleInvalidationManually = true
+		//drawElements(canvas!!)
+		//ctx = canvas?.getContext("2d") as CanvasRenderingContext2D?
+		//drawFace(ctx!!)
+		//canvas?.flush()
+		// ballExample(ctx!!)
 		//}
 		//getImageData(ctx!!)
 		// drawImageExample(ctx!!)

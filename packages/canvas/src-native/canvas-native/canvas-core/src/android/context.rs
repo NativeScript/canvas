@@ -1,14 +1,15 @@
 use std::str::FromStr;
 
 use jni::errors::Error;
+use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JString, JValue, ReleaseMode};
 use jni::sys::{
-    jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE,
+    jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring,
 };
-use jni::JNIEnv;
 use skia_safe::Rect;
 
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
+use crate::common::context::Context;
 use crate::common::context::drawing_paths::fill_rule::FillRule;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::fill_and_stroke_styles::pattern::Repetition;
@@ -22,7 +23,6 @@ use crate::common::context::pixel_manipulation::image_data::ImageData;
 use crate::common::context::text_styles::text_align::TextAlign;
 use crate::common::context::text_styles::text_baseline::TextBaseLine;
 use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::context::Context;
 use crate::common::ffi::paint_style_value::{PaintStyleValue, PaintStyleValueType};
 use crate::common::utils::color::to_parsed_color;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded, to_image};
@@ -121,14 +121,14 @@ fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
             "(Ljava/lang/String;J)Lorg/json/JSONObject;",
             value_args.as_slice(),
         )
-        .unwrap();
+            .unwrap();
         env.call_method(
             json,
             "put",
             "(Ljava/lang/String;I)Lorg/json/JSONObject;",
             value_type_args.as_slice(),
         )
-        .unwrap();
+            .unwrap();
         json.into_inner()
     }
 }
@@ -967,6 +967,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
                 std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
                 length,
             );
+
             if let Some(image) = from_image_slice(buf, width, height) {
                 return Box::into_raw(Box::new(PaintStyle::Pattern(
                     context.create_pattern(image, Repetition::from(repetition)),

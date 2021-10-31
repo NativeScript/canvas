@@ -1,14 +1,43 @@
 import { BufferAttribute, BufferGeometry, FileLoader, Loader } from 'three';
 
-var DRACOLoader = function (manager) {
-	Loader.call(this, manager);
+// var DRACOLoader = function (manager) {
+// 	Loader.call(this, manager);
+
+// 	this.decoderPath = '';
+// 	this.decoderConfig = {};
+// 	this.decoderBinary = null;
+// 	this.decoderPending = null;
+
+// 	this.workerLimit = 5;
+// 	this.workerPool = [];
+// 	this.workerNextTaskID = 1;
+// 	this.workerSourceURL = '';
+
+// 	this.defaultAttributeIDs = {
+// 		position: 'POSITION',
+// 		normal: 'NORMAL',
+// 		color: 'COLOR',
+// 		uv: 'TEX_COORD',
+// 	};
+// 	this.defaultAttributeTypes = {
+// 		position: 'Float32Array',
+// 		normal: 'Float32Array',
+// 		color: 'Float32Array',
+// 		uv: 'Float32Array',
+// 	};
+// };
+
+
+class DRACOLoader extends Loader {
+	constructor(manager){
+		super(manager);
 
 	this.decoderPath = '';
 	this.decoderConfig = {};
 	this.decoderBinary = null;
 	this.decoderPending = null;
 
-	this.workerLimit = 5;
+	this.workerLimit = 1;
 	this.workerPool = [];
 	this.workerNextTaskID = 1;
 	this.workerSourceURL = '';
@@ -25,45 +54,43 @@ var DRACOLoader = function (manager) {
 		color: 'Float32Array',
 		uv: 'Float32Array',
 	};
-};
+	}
 
-DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
-	constructor: DRACOLoader,
 
-	setDecoderPath: function (path) {
+	setDecoderPath(path) {
 		this.decoderPath = path;
 
 		return this;
-	},
+	}
 
-	setDecoderConfig: function (config) {
+	setDecoderConfig(config) {
 		this.decoderConfig = config;
 
 		return this;
-	},
+	}
 
-	setWorkerLimit: function (workerLimit) {
+	setWorkerLimit(workerLimit) {
 		this.workerLimit = workerLimit;
 
 		return this;
-	},
+	}
 
 	/** @deprecated */
-	setVerbosity: function () {
+	setVerbosity() {
 		console.warn('THREE.DRACOLoader: The .setVerbosity() method has been removed.');
-	},
+	}
 
 	/** @deprecated */
-	setDrawMode: function () {
+	setDrawMode() {
 		console.warn('THREE.DRACOLoader: The .setDrawMode() method has been removed.');
-	},
+	}
 
 	/** @deprecated */
-	setSkipDequantization: function () {
+	setSkipDequantization() {
 		console.warn('THREE.DRACOLoader: The .setSkipDequantization() method has been removed.');
-	},
+	}
 
-	load: function (url, onLoad, onProgress, onError) {
+	load(url, onLoad, onProgress, onError) {
 		var loader = new FileLoader(this.manager);
 
 		loader.setPath(this.path);
@@ -88,10 +115,10 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 			onProgress,
 			onError
 		);
-	},
+	}
 
 	/** @deprecated Kept for backward-compatibility with previous DRACOLoader versions. */
-	decodeDracoFile: function (buffer, callback, attributeIDs, attributeTypes) {
+	decodeDracoFile(buffer, callback, attributeIDs, attributeTypes) {
 		var taskConfig = {
 			attributeIDs: attributeIDs || this.defaultAttributeIDs,
 			attributeTypes: attributeTypes || this.defaultAttributeTypes,
@@ -99,9 +126,9 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 		};
 
 		this.decodeGeometry(buffer, taskConfig).then(callback);
-	},
+	}
 
-	decodeGeometry: function (buffer, taskConfig) {
+	decodeGeometry(buffer, taskConfig) {
 		// TODO: For backward-compatibility, support 'attributeTypes' objects containing
 		// references (rather than names) to typed array constructors. These must be
 		// serialized before sending them to the worker.
@@ -193,9 +220,9 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 		});
 
 		return geometryPending;
-	},
+	}
 
-	_createGeometry: function (geometryData) {
+	_createGeometry(geometryData) {
 		try {
 			var geometry = new BufferGeometry();
 			var getBuffer = function (buf, type) {
@@ -234,9 +261,9 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 		}
 
 		return geometry;
-	},
+	}
 
-	_loadLibrary: function (url, responseType) {
+	_loadLibrary(url, responseType) {
 		var loader = new FileLoader(this.manager);
 		loader.setPath(this.decoderPath);
 		loader.setResponseType(responseType);
@@ -244,15 +271,15 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 		return new Promise((resolve, reject) => {
 			loader.load(url, resolve, undefined, reject);
 		});
-	},
+	}
 
-	preload: function () {
+	preload() {
 		this._initDecoder();
 
 		return this;
-	},
+	}
 
-	_initDecoder: function () {
+	_initDecoder() {
 		if (this.decoderPending) return this.decoderPending;
 
 		var useJS = this.decoderConfig.type === 'js';
@@ -277,7 +304,7 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 			var body = ['/* draco decoder */', jsContent, '', '/* worker */', fn.substring(fn.indexOf('{') + 1, fn.lastIndexOf('}'))].join('\n');
 
 			try {
-				this.workerSourceURL = URL.createObjectURL(new Blob([body], { type: 'text/javascript' }));
+				this.workerSourceURL = URL.createObjectURL(new Blob([body], { type: 'text/javascript' }), {appendExt: true, ext: 'js'});
 				//require(this.workerSourceURL);
 			} catch (e) {
 				console.log('require fail', e);
@@ -285,13 +312,14 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 		});
 
 		return this.decoderPending;
-	},
+	}
 
-	_getWorker: function (taskID, taskCost) {
+	_getWorker(taskID, taskCost) {
 		return this._initDecoder().then(() => {
 			if (this.workerPool.length < this.workerLimit) {
 				try {
-					var worker = new Worker(this.workerSourceURL);
+					console.log(this.workerSourceURL);
+					var worker = new Worker(URL.InternalAccessor.getPath(this.workerSourceURL));
 
 					worker._callbacks = {};
 					worker._taskCosts = {};
@@ -330,9 +358,9 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 			worker._taskLoad += taskCost;
 			return worker;
 		});
-	},
+	}
 
-	_releaseTask: function (worker, taskID) {
+	_releaseTask(worker, taskID) {
 		try {
 			worker._taskLoad -= worker._taskCosts[taskID];
 			delete worker._callbacks[taskID];
@@ -340,16 +368,16 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 		} catch (e) {
 			console.log('_releaseTask', e);
 		}
-	},
+	}
 
-	debug: function () {
+	debug() {
 		console.log(
 			'Task load: ',
 			this.workerPool.map((worker) => worker._taskLoad)
 		);
-	},
+	}
 
-	dispose: function () {
+	dispose() {
 		for (var i = 0; i < this.workerPool.length; ++i) {
 			this.workerPool[i].terminate();
 		}
@@ -357,8 +385,10 @@ DRACOLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 		this.workerPool.length = 0;
 
 		return this;
-	},
-});
+	}
+};
+
+
 
 /* WEB WORKER */
 

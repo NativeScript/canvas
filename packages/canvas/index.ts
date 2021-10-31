@@ -1,17 +1,18 @@
-import {CanvasRenderingContext} from './common';
+import { TouchEvent, PointerEvent } from './Canvas';
 
-export {Canvas, createSVGMatrix} from './Canvas';
-import {TextEncoder} from './TextEncoder';
-import {TextDecoder} from './TextDecoder';
-
+export { Canvas, createSVGMatrix, TouchEvent, PointerEvent } from './Canvas';
+import { TextEncoder } from './TextEncoder';
+import { TextDecoder } from './TextDecoder';
 import { ImageBitmap } from './ImageBitmap';
-import {CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix} from './Canvas2D';
 
-import {CanvasRenderingContext2D} from './Canvas2D/CanvasRenderingContext2D';
-import {WebGLRenderingContext} from './WebGL/WebGLRenderingContext';
-import {WebGL2RenderingContext} from './WebGL2/WebGL2RenderingContext';
+import { CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix } from './Canvas2D';
+
+import { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
+import { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
+import { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';
 
 export * from './Canvas2D';
+export * from './ImageBitmap';
 export * from './ImageAsset';
 export * from './TextEncoder';
 export * from './TextDecoder';
@@ -19,14 +20,6 @@ export * from './WebGL';
 export * from './WebGL2';
 export * from './SVG';
 
-export { ImageBitmap } from './ImageBitmap'
-
-export {CanvasRenderingContext2D} from './Canvas2D/CanvasRenderingContext2D';
-export {WebGLRenderingContext} from './WebGL/WebGLRenderingContext';
-export {WebGL2RenderingContext} from './WebGL2/WebGL2RenderingContext';
-
-import { install } from '@nativescript-community/gesturehandler';
-install();
 
 Object.defineProperty(global, 'CanvasRenderingContext2D', {
 	value: CanvasRenderingContext2D,
@@ -91,5 +84,23 @@ Object.defineProperty(global, 'DOMMatrix', {
 Object.defineProperty(global, 'ImageBitmap', {
 	value: ImageBitmap,
 	configurable: true,
+	writable: false,
+});
+
+
+Object.defineProperty(global, 'TouchEvent', {
+	value: TouchEvent,
+	configurable: true,
 	writable: true,
 });
+
+Object.defineProperty(global, 'PointerEvent', {
+	value: PointerEvent,
+	configurable: true,
+	writable: true,
+});
+
+export { ImageBitmap } from './ImageBitmap'
+export { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
+export { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
+export { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';

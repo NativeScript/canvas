@@ -1,8 +1,8 @@
 use std::os::raw::c_void;
 
+use jni::JNIEnv;
 use jni::objects::{JClass, JObject, ReleaseMode};
 use jni::sys::{jboolean, jfloatArray, jint};
-use jni::JNIEnv;
 
 const SURFACE_TEXTURE_CLASS: &'static str = "android/graphics/SurfaceTexture";
 

@@ -1,4 +1,4 @@
-import {ImageAsset} from '@nativescript/canvas';
+import {ImageAsset, ImageBitmap} from '@nativescript/canvas';
 import * as glMatrix from './gl-matrix';
 import {ImageSource} from "@nativescript/core";
 
@@ -9,7 +9,7 @@ var asset;
 var cubeRotation = 0;
 
 export function main(canvas, nativeCanvas?) {
-  const gl = canvas.getContext ? canvas.getContext('webgl') : canvas;
+  const gl = canvas.getContext ? canvas.getContext('webgl2') : canvas;
 
   if (!nativeCanvas) {
     canvas.off('loaded');
@@ -335,16 +335,17 @@ function loadTexture(gl) {
     width, height, border, srcFormat, srcType,
     pixel);
 
-  asset = new ImageAsset();
-  asset.loadFileAsync('~/assets/file-assets/webgl/svh.jpeg')
-    .then(src => {
+    fetch('~/assets/file-assets/webgl/svh.jpeg')
+    .then(data => data.blob())
+    .then(blob => createImageBitmap(blob, {}))
+    .then(bm => {
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-        srcFormat, srcType, asset);
+        srcFormat, srcType, bm);
       // WebGL1 has different requirements for power of 2 images
       // vs non power of 2 images so check if the image is a
       // power of 2 in both dimensions.
-      if (isPowerOf2(asset.width) && isPowerOf2(asset.height)) {
+      if (isPowerOf2(bm.width) && isPowerOf2(bm.height)) {
         // Yes, it's a power of 2. Generate mips.
         gl.generateMipmap(gl.TEXTURE_2D);
       } else {
@@ -358,6 +359,32 @@ function loadTexture(gl) {
     }).catch(e => {
     console.log('e', e);
   })
+
+  // asset = new ImageAsset();
+  // asset.loadFileAsync('~/assets/file-assets/webgl/svh.jpeg')
+  //   .then(src => createImageBitmap(asset, {}))
+  //   .then(bm => {
+  //     gl.bindTexture(gl.TEXTURE_2D, texture);
+  //     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+  //       srcFormat, srcType, bm);
+  //       console.log(bm.native, bm.width, bm.height);
+  //     // WebGL1 has different requirements for power of 2 images
+  //     // vs non power of 2 images so check if the image is a
+  //     // power of 2 in both dimensions.
+  //     if (isPowerOf2(bm.width) && isPowerOf2(bm.height)) {
+  //       // Yes, it's a power of 2. Generate mips.
+  //       gl.generateMipmap(gl.TEXTURE_2D);
+  //     } else {
+
+  //       // No, it's not a power of 2. Turn of mips and set
+  //       // wrapping to clamp to edge
+  //       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  //       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  //       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  //     }
+  //   }).catch(e => {
+  //   console.log('e', e);
+  // })
 
 /*
   ImageSource.fromFile('~/assets/file-assets/webgl/svh.jpeg')

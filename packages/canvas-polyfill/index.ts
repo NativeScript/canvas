@@ -80,14 +80,6 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 	});
 }
 
-if (!((global as any).ImageBitmap instanceof ImageBitmap)) {
-	Object.defineProperty(global, 'ImageBitmap', {
-		value: ImageBitmap,
-		configurable: true,
-		writable: true,
-	});
-}
-
 if (!((global as any).URL instanceof URL)) {
 	Object.defineProperty(global, 'URL', {
 		value: URL,
@@ -95,17 +87,4 @@ if (!((global as any).URL instanceof URL)) {
 		writable: true,
 	});
 	(global as any).window.URL = (global as any).URL;
-}
-class TouchEvent {
-	preventDefault() {}
-	stopPropagation() {}
-}
-
-if (!((global as any).TouchEvent instanceof TouchEvent)) {
-	Object.defineProperty(global, 'TouchEvent', {
-		value: TouchEvent,
-		configurable: true,
-		writable: true,
-	});
-	(global as any).window.TouchEvent = (global as any).TouchEvent;
 }

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use roxmltree::{Document, Node};
+use std::collections::HashMap;
 
 use crate::common::context::{Context, Device};
 use crate::common::svg::attribute_names::{Attribute, NodeExt};

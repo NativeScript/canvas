@@ -27,7 +27,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		if (nativeImageAsset > 0) {
+		if (nativeImageAsset != 0L) {
 			TNSImageAsset.nativeDestroyImpl(nativeImageAsset)
 			nativeImageAsset = 0
 		}
@@ -105,7 +105,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				}
 
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -151,7 +151,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					)
 				}
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -203,7 +203,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					)
 				}
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -243,7 +243,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					)
 				}
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -271,7 +271,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -303,7 +303,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -366,7 +366,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					options.resizeHeight
 				)
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -400,7 +400,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					options.resizeHeight
 				)
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -435,7 +435,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					options.resizeHeight
 				)
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -462,7 +462,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					options.resizeHeight
 				)
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -500,7 +500,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					options.resizeHeight
 				)
 				handler.post {
-					if (asset > 0) {
+					if (asset != 0L) {
 						callback.onSuccess(TNSImageBitmap(asset))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -528,7 +528,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -560,7 +560,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -588,7 +588,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -620,7 +620,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -648,7 +648,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)
@@ -680,7 +680,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				)
 
 				handler.post {
-					if (result > 0) {
+					if (result != 0L) {
 						callback.onSuccess(TNSImageBitmap(result))
 					} else {
 						callback.onError(FAILED_TO_LOAD)

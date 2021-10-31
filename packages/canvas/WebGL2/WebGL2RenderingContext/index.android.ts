@@ -873,7 +873,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				type,
 				source.native
 			);
-		} else if (source instanceof ImageBitmap) {
+		} else if (source instanceof ImageBitmap || source?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
 			this.native.texImage3D(
 				target,
 				level,
@@ -1243,7 +1243,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				type,
 				srcData.native
 			);
-		} else if (srcData instanceof ImageBitmap) {
+		} else if (srcData instanceof ImageBitmap  || srcData?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
 			this.native.texSubImage3D(
 				target,
 				level,

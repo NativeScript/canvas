@@ -3,6 +3,7 @@ import { ImageData } from '../Canvas2D';
 import { ImageBitmapBase } from './common';
 import { Canvas } from '../Canvas';
 import lazy from '../utils';
+import { ImageSource } from '@nativescript/core';
 const ImageBitmapPremultiplyAlpha = {
 	Default: lazy(() => org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha.Default),
 	None: lazy(() => org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha.None),
@@ -224,6 +225,19 @@ export class ImageBitmap extends ImageBitmapBase {
 						})
 					);
 				}
+			} else if (source instanceof ImageSource) {
+				org.nativescript.canvas.TNSImageBitmap.createFromBitmap(
+					source.android,
+					opts,
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
+						onError(error) {
+							reject(error);
+						},
+						onSuccess(bitmap) {
+							resolve(ImageBitmap.fromNative(bitmap));
+						},
+					})
+				);
 			}
 		});
 	}
@@ -376,6 +390,23 @@ export class ImageBitmap extends ImageBitmapBase {
 						})
 					);
 				}
+			} else if (source instanceof ImageSource) {
+				org.nativescript.canvas.TNSImageBitmap.createFromBitmap(
+					source.android,
+					sx,
+					sy,
+					sWidth,
+					sHeight,
+					opts,
+					new org.nativescript.canvas.TNSImageBitmap.Callback({
+						onError(error) {
+							reject(error);
+						},
+						onSuccess(bitmap) {
+							resolve(ImageBitmap.fromNative(bitmap));
+						},
+					})
+				);
 			}
 		});
 	}

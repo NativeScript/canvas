@@ -4,8 +4,10 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Utils, profile } from '@nativescript/core';
-
 declare var TNSCanvas, TNSCanvasListener;
+
+
+export * from './common';
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(TNSCanvas.createSVGMatrix());
@@ -170,8 +172,6 @@ export class Canvas extends CanvasBase {
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
 		this._readyListener = undefined;
-		this._canvas = undefined;
-		this.setNativeView(undefined);
 		super.disposeNativeView();
 	}
 
@@ -277,4 +277,5 @@ export class Canvas extends CanvasBase {
 			y: frame.origin.y,
 		};
 	}
+
 }

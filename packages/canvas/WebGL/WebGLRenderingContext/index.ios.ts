@@ -943,7 +943,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				this.context.texImage2DAsset(target, level, internalformat, width, height, border.native);
-			} else if (border instanceof ImageBitmap) {
+			} else if (border instanceof ImageBitmap || border?.native instanceof TNSImageBitmap) {
 				this.context.texImage2DBitmap(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageSource) {
 				this.context.texImage2DPixels(target, level, internalformat, width, height, border.ios);
@@ -999,7 +999,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			if (format instanceof ImageAsset) {
 				this.context.texSubImage2DAsset(target, level, xoffset, yoffset, width, height, format.native);
 			}
-			if (format instanceof ImageBitmap) {
+			if (format instanceof ImageBitmap || format?.native instanceof TNSImageBitmap) {
 				this.context.texSubImage2DBitmap(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof UIImage) {
 				this.context.texSubImage2DPixels(target, level, xoffset, yoffset, width, height, format);

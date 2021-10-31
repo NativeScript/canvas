@@ -9,6 +9,10 @@ export abstract class TextMetricsBase {
 		return this.nativeInstance;
 	}
 
+	static [Symbol.hasInstance](obj) {
+		if (obj.native && obj.constructor.name === 'TextMetrics') return true;
+	}
+
 	public abstract readonly width: number;
 	public abstract readonly actualBoundingBoxLeft: number;
 	public abstract readonly actualBoundingBoxRight: number;

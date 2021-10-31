@@ -24,6 +24,7 @@ import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 
 /**
@@ -209,6 +210,10 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		surface?.gLContext?.onResume()
 	}
 
+	fun destroy(){
+		surface?.gLContext?.destroy();
+	}
+
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
@@ -266,7 +271,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				lock.countDown()
 			})
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (ignore: InterruptedException) {
 			}
 			return data[0]
@@ -290,7 +295,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				lock.countDown()
 			})
 			try {
-				lock.await()
+				lock.await(2, TimeUnit.SECONDS)
 			} catch (ignore: InterruptedException) {
 			}
 			return ss[0]
@@ -345,7 +350,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignore: InterruptedException) {
 		}
 		return data[0]

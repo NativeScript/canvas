@@ -1,7 +1,6 @@
-use std::f32::consts::PI;
-
 use roxmltree::{Children, Document, Node};
 use skia_safe::{Color, Image, SamplingOptions, Vector};
+use std::f32::consts::PI;
 
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
 use crate::common::context::Context;

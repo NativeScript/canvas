@@ -5,11 +5,11 @@
 use std::os::raw::c_void;
 
 use jni::errors::Error;
+use jni::JNIEnv;
 use jni::objects::{AutoPrimitiveArray, JByteBuffer, JClass, JObject, ReleaseMode};
 use jni::sys::{
-    jboolean, jbyteArray, jfloatArray, jint, jintArray, jlong, jobject, jshortArray, JNI_TRUE,
+    jboolean, jbyteArray, jfloatArray, jint, jintArray, jlong, JNI_TRUE, jobject, jshortArray,
 };
-use jni::JNIEnv;
 use skia_safe::RCHandle;
 
 use crate::common::context::image_asset::ImageAsset;

@@ -1,6 +1,5 @@
+use roxmltree::Node;
 use std::collections::HashMap;
-
-use roxmltree::{Node};
 
 use crate::common::context::{Context, Device};
 use crate::common::context::paths::path::Path;
@@ -13,7 +12,6 @@ use crate::common::svg::elements::reference_element::ReferenceElement;
 use crate::common::svg::elements::renderer::{
     handle_style_data, render_mask, Renderer, set_filters, set_mask,
 };
-
 use crate::common::svg::view_box::ViewBox;
 
 #[derive(Clone, Debug)]

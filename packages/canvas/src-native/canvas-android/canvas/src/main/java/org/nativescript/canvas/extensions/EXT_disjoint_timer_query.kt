@@ -7,6 +7,7 @@ import androidx.annotation.RequiresApi
 import org.nativescript.canvas.Constants
 import org.nativescript.canvas.TNSCanvas
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by triniwiz on 5/1/20
@@ -21,7 +22,7 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return query[0]
@@ -35,7 +36,7 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -48,7 +49,7 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
@@ -61,7 +62,7 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -73,7 +74,7 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -90,7 +91,7 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return query[0]
@@ -104,7 +105,7 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 			lock.countDown()
 		})
 		try {
-			lock.await()
+			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return if (pname == QUERY_RESULT_AVAILABLE_EXT) {

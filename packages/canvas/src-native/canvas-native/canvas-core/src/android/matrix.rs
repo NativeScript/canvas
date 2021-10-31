@@ -1,6 +1,6 @@
+use jni::JNIEnv;
 use jni::objects::JClass;
 use jni::sys::{jfloat, jfloatArray, jlong};
-use jni::JNIEnv;
 
 use crate::common::context::matrix::Matrix;
 

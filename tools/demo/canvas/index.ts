@@ -213,15 +213,15 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
   <!-- Horizontal translation -->
   <rect x="5" y="5" width="40" height="40" fill="blue"
-        transform="translate(50)" />
+		transform="translate(50)" />
 
   <!-- Vertical translation -->
   <rect x="5" y="5" width="40" height="40" fill="red"
-        transform="translate(0 50)" />
+		transform="translate(0 50)" />
 
   <!-- Both horizontal and vertical translation -->
   <rect x="5" y="5" width="40" height="40" fill="yellow"
-         transform="translate(50,50)" />
+		 transform="translate(50,50)" />
 </svg>
 		`) */
 
@@ -315,8 +315,117 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		*/
 	}
 
+	urlTests() {
+		this.urlConstructor();
+		this.urlHash();
+		this.urlHost();
+		this.urlHostname();
+		this.urlHref();
+		this.urlOrigin();
+		this.urlPassword();
+		this.urlPathname();
+		this.urlProtocol();
+		this.urlSearch();
+
+		this.urlUsername();
+	}
+
+
+
+	urlConstructor() {
+		let m = 'https://developer.mozilla.org';
+		let a = new URL("/", m);                                // => 'https://developer.mozilla.org/'
+		let b = new URL(m);                                     // => 'https://developer.mozilla.org/'
+
+		new URL('en-US/docs', b);                      // => 'https://developer.mozilla.org/en-US/docs'
+		let d = new URL('/en-US/docs', b);                     // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('/en-US/docs', d);                     // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('/en-US/docs', a);                     // => 'https://developer.mozilla.org/en-US/docs'
+
+		new URL('/en-US/docs', "https://developer.mozilla.org/fr-FR/toto");
+		// => 'https://developer.mozilla.org/en-US/docs'
+
+		try {
+			new URL('/en-US/docs', '');                    // Raises a TypeError exception as '' is not a valid URL
+		} catch (e) {
+			console.log(e);
+		}
+
+		try {
+			new URL('/en-US/docs');                        // Raises a TypeError exception as '/en-US/docs' is not a valid URL
+		} catch (e) {
+			console.log(e);
+		}
+		new URL('http://www.example.com',);           // => 'http://www.example.com/'
+		new URL('http://www.example.com', b);          // => 'http://www.example.com/'
+
+		new URL("//foo.com", "https://example.com")    // => 'https://foo.com' (see relative URLs)
+	}
+	urlHash() {
+		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/href#Examples');
+		console.log(url.hash); // Logs: '#Examples'
+	}
+
+	urlHost() {
+		let url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/host');
+		console.log(url.host); // "developer.mozilla.org"
+
+		url = new URL('https://developer.mozilla.org:443/en-US/docs/Web/API/URL/host');
+		console.log(url.host); // "developer.mozilla.org"
+		// The port number is not included because 443 is the scheme's default port
+
+		url = new URL('https://developer.mozilla.org:4097/en-US/docs/Web/API/URL/host');
+		console.log(url.host); // "developer.mozilla.org:4097"
+	}
+
+	urlHostname() {
+		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/hostname');
+		console.log(url.hostname); // Logs: 'developer.mozilla.org'
+	}
+
+	urlHref() {
+		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/href');
+		console.log(url.href); // Logs: 'https://developer.mozilla.org/en-US/docs/Web/API/URL/href'
+	}
+
+	urlOrigin() {
+		const url = new URL("blob:https://mozilla.org:443/")
+		console.log(url.origin); // Logs 'https://mozilla.org'
+	}
+
+	urlPassword() {
+		const url = new URL('https://anonymous:flabada@developer.mozilla.org/en-US/docs/Web/API/URL/password');
+		console.log(url.password) // Logs "flabada"
+	}
+
+	urlPathname() {
+		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/pathname?q=value');
+		console.log(url.pathname); // Logs "/en-US/docs/Web/API/URL/pathname"
+	}
+
+	urlPort() {
+		const url = new URL('https://mydomain.com:80/svn/Repos/');
+		console.log(url.port); // Logs '80'
+	}
+
+	urlProtocol() {
+		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol');
+		console.log(url.protocol); // Logs "https:"
+	}
+
+	urlSearch() {
+		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/search?q=123');
+		console.log(url.search); // Logs "?q=123"
+	}
+
+	urlUsername() {
+		const url = new URL('https://anonymous:flabada@developer.mozilla.org/en-US/docs/Web/API/URL/username');
+		console.log(url.username) // Logs "anonymous"
+	}
+
 	draw() {
-//const str = new java.lang.String()
+		this.urlTests();
+		//const str = new java.lang.String()
 
 
 		// const ctx = this.canvas.getContext('2d');
@@ -324,19 +433,19 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillText('Hello world', 50, 90);
 
 
-	/*	const ctx = this.canvas.getContext('2d');
-
-// Moved square
-ctx.translate(110, 30);
-ctx.fillStyle = 'red';
-ctx.fillRect(0, 0, 80, 80);
-
-// Reset current transformation matrix to the identity matrix
-ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-// Unmoved square
-ctx.fillStyle = 'gray';
-ctx.fillRect(0, 0, 80, 80); */
+		/*	const ctx = this.canvas.getContext('2d');
+	
+	// Moved square
+	ctx.translate(110, 30);
+	ctx.fillStyle = 'red';
+	ctx.fillRect(0, 0, 80, 80);
+	
+	// Reset current transformation matrix to the identity matrix
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+	
+	// Unmoved square
+	ctx.fillStyle = 'gray';
+	ctx.fillRect(0, 0, 80, 80); */
 
 
 		//filterBlur(this.canvas);
@@ -469,10 +578,10 @@ ctx.fillRect(0, 0, 80, 80); */
 		//this.multiCanvas(this.canvas);
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		//this.zen3dGeometryLoaderGltf(this.canvas);
+		this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
-		issue54(this.canvas);
+		//issue54(this.canvas);
 	}
 
 	drawRandomFullscreenImage(canvas) {

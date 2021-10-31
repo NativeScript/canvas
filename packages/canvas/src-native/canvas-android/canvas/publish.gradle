@@ -1,32 +1,143 @@
-apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: 'maven-publish'
+apply plugin: "com.vanniktech.maven.publish"
 
-tasks.withType(Javadoc) {
-	failOnError false
-	options.addStringOption('Xdoclint:none', '-quiet')
-	options.addStringOption('encoding', 'UTF-8')
-	options.addStringOption('charSet', 'UTF-8')
+//tasks.withType(Javadoc) {
+//	failOnError false
+//	options.addStringOption('Xdoclint:none', '-quiet')
+//	options.addStringOption('encoding', 'UTF-8')
+//	options.addStringOption('charSet', 'UTF-8')
+//}
+//
+//task sourceJar(type: Jar) {
+//	from android.sourceSets.main.java.srcDirs
+//	classifier "sources"
+//}
+
+allprojects {
+	plugins.withId("com.vanniktech.maven.publish") {
+		mavenPublish {
+			sonatypeHost = "S01"
+		}
+	}
+
+	plugins.withId("com.vanniktech.maven.base") {
+		group = "org.nativescript"
+		archivesBaseName = "canvas"
+		version = "1.0.0-alpha.12"
+
+		mavenPublishing {
+			publishToMavenCentral("DEFAULT")
+
+			// Will only apply to non snapshot builds.
+			// Uses credentials as described above, supports both regular and in memory signing.
+			signAllPublications()
+
+			pom {
+				name = "CanvasNative"
+				packaging = 'aar'
+				description = "DOM Canvas API for Android"
+				inceptionYear = "2019"
+				url  = 'https://github.com/NativeScript/canvas'
+
+				licenses {
+					license {
+						name = "The Apache License, Version 2.0"
+						url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+						distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+					}
+				}
+
+				developers {
+					developer {
+						id = 'triniwiz'
+						name = 'Osei Fortune'
+						email = 'fortune.osei@yahoo.com'
+						url = "https://github.com/triniwiz/"
+					}
+				}
+
+				scm {
+					connection = 'scm:git@github.com:nativescript/canvas.git'
+					developerConnection = 'scm:git@github.com:nativescript/canvas.git'
+					url = 'https://github.com/NativeScript/canvas'
+				}
+			}
+
+			pomFromGradleProperties()
+		}
+	}
 }
 
-task sourceJar(type: Jar) {
-	from android.sourceSets.main.java.srcDirs
-	classifier "sources"
-}
+
+//signing {
+//	sign configurations.archives
+//}
 
 
-signing {
-	sign configurations.archives
-}
+//group = "org.nativescript"
+//archivesBaseName = "canvas"
+//version = "1.0.0-alpha.4"
+
+//afterEvaluate {
+//	publishing {
+//		publications {
+//			maven(MavenPublication) {
+//				repository(url: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
+//					authentication(userName: ossrhUsername, password: ossrhPassword)
+//				}
+//
+//				snapshotRepository(url: "https://s01.oss.sonatype.org/content/repositories/snapshots/") {
+//					authentication(userName: ossrhUsername, password: ossrhPassword)
+//				}
+//
+//				pom.project {
+//					name "CanvasNative"
+//					packaging 'aar'
+//					description "DOM Canvas API for Android"
+//					url 'https://github.com/NativeScript/canvas'
+//
+//					scm {
+//						connection 'scm:git@github.com:nativescript/canvas.git'
+//						developerConnection 'scm:git@github.com:nativescript/canvas.git'
+//						url 'https://github.com/NativeScript/canvas'
+//					}
+//
+//					licenses {
+//						license {
+//							name 'The Apache License, Version 2.0'
+//							url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//						}
+//					}
+//
+//					developers {
+//						developer {
+//							id 'triniwiz'
+//							name 'Osei Fortune'
+//							email 'fortune.osei@yahoo.com'
+//						}
+//					}
+//				}
+//			}
+//		}
+//		repositories {
+//			def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+//			def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+//			url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+//		}
+//	}
+//
+//	signing {
+//		sign publishing.publications.maven
+//	}
+//}
 
 
-group = "org.nativescript"
-archivesBaseName = "canvas"
-version = "1.0.0-alpha.4"
-
+/*
 uploadArchives {
 	repositories {
 		mavenDeployer {
-			beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+		//	beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
 			repository(url: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
 				authentication(userName: ossrhUsername, password: ossrhPassword)
@@ -66,3 +177,6 @@ uploadArchives {
 		}
 	}
 }
+*/
+
+

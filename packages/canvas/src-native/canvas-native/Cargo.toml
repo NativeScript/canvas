@@ -15,4 +15,5 @@ lto = true
 opt-level = "z"
 debug = false
 incremental = false
+
 strip = "symbols"

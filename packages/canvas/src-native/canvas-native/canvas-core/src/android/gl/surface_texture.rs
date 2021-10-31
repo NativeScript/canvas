@@ -25,6 +25,7 @@ extern "system" {
     #[doc = " \\param st A ASurfaceTexture reference acquired with ASurfaceTexture_fromSurfaceTexture()"]
     pub fn ASurfaceTexture_release(st: *mut ASurfaceTexture);
 }
+
 extern "system" {
     #[doc = " Returns a reference to an ANativeWindow (i.e. the Producer) for this SurfaceTexture."]
     #[doc = " This is equivalent to Java's: Surface sur = new Surface(surfaceTexture);"]
@@ -37,6 +38,7 @@ extern "system" {
     #[doc = " returned if \\p st is null or if it's not an instance of android.graphics.SurfaceTexture"]
     pub fn ASurfaceTexture_acquireANativeWindow(st: *mut ASurfaceTexture) -> *mut ANativeWindow;
 }
+
 extern "system" {
     #[doc = " Attach the SurfaceTexture to the OpenGL ES context that is current on the calling thread.  A"]
     #[doc = " new OpenGL ES texture object is created and populated with the SurfaceTexture image frame"]
@@ -58,6 +60,7 @@ extern "system" {
         texName: u32,
     ) -> ::std::os::raw::c_int;
 }
+
 extern "system" {
     #[doc = " Detach the SurfaceTexture from the OpenGL ES context that owns the OpenGL ES texture object."]
     #[doc = " This call must be made with the OpenGL ES context current on the calling thread.  The OpenGL"]
@@ -75,6 +78,7 @@ extern "system" {
     #[doc = " \\return 0 on success, negative posix error code otherwise (see <errno.h>)"]
     pub fn ASurfaceTexture_detachFromGLContext(st: *mut ASurfaceTexture) -> ::std::os::raw::c_int;
 }
+
 extern "system" {
     #[doc = " Update the texture image to the most recent frame from the image stream.  This may only be"]
     #[doc = " called while the OpenGL ES context that owns the texture is current on the calling thread."]
@@ -86,6 +90,7 @@ extern "system" {
     #[doc = " \\return 0 on success, negative posix error code otherwise (see <errno.h>)"]
     pub fn ASurfaceTexture_updateTexImage(st: *mut ASurfaceTexture) -> ::std::os::raw::c_int;
 }
+
 extern "system" {
     #[doc = " Retrieve the 4x4 texture coordinate transform matrix associated with the texture image set by"]
     #[doc = " the most recent call to updateTexImage."]
@@ -105,6 +110,7 @@ extern "system" {
     #[doc = "     16 elements."]
     pub fn ASurfaceTexture_getTransformMatrix(st: *mut ASurfaceTexture, mtx: *mut f32);
 }
+
 extern "system" {
     #[doc = " Retrieve the timestamp associated with the texture image set by the most recent call to"]
     #[doc = " updateTexImage."]

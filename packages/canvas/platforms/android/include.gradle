@@ -2,11 +2,12 @@
 allprojects {
     repositories {
         maven { url "https://repo1.maven.org/maven2/" }
+        maven { url "https://s01.oss.sonatype.org/content/repositories/releases/" }
     }
 }
 
 dependencies {
-  implementation 'org.nativescript:canvas:1.0.0-alpha.4'
+  implementation 'org.nativescript:canvas:1.0.0-alpha.10'
   implementation "androidx.multidex:multidex:2.0.1"
 }
 

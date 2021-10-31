@@ -1,6 +1,6 @@
+use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::jlong;
-use jni::JNIEnv;
 
 use crate::common::context::Context;
 

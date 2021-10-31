@@ -1,12 +1,12 @@
 use std::os::raw::c_int;
 
-use skia_safe::image::CachingHint;
 use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface,
+    AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, Point, Surface,
 };
+use skia_safe::image::CachingHint;
 
-use crate::common::context::filter_quality::FilterQuality;
 use crate::common::context::Context;
+use crate::common::context::filter_quality::FilterQuality;
 
 pub mod context;
 pub mod ffi;

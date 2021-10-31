@@ -1,9 +1,8 @@
-use std::str::FromStr;
-
 use image::{DynamicImage, GenericImageView, ImageError};
 use rgb::FromSlice;
 use roxmltree::{Document, Node};
 use skia_safe::SamplingOptions;
+use std::str::FromStr;
 
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
 use crate::common::context::Context;

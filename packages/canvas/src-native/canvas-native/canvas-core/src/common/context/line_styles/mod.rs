@@ -1,11 +1,11 @@
+use std::borrow::Cow;
 use std::os::raw::c_float;
 
 use skia_safe::PathEffect;
 
+use crate::common::context::Context;
 use crate::common::context::line_styles::line_cap::LineCap;
 use crate::common::context::line_styles::line_join::LineJoin;
-use crate::common::context::Context;
-use std::borrow::Cow;
 
 pub mod line_cap;
 pub mod line_join;

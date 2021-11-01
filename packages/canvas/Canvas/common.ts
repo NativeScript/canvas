@@ -422,13 +422,75 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					}
 					break;
 				case 'move':
-					// NOOP
+					if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
+						const numberOfPointers = this._pointerCountFromEvent(event);
+						if (numberOfPointers >= 2) {
+							hasPointerMove = this.hasListeners('pointermove');
+							hasTouchMove = this.hasListeners('touchmove');
+							let data = {};
+
+							if (hasPointerMove || hasTouchMove) {
+								const positions = this._positionsFromEvent(event);
+								extraData = {
+									numberOfPointers,
+									positions,
+									x: positions[0],
+									y: positions[1]
+								}
+
+								const dx = extraData.positions[2] - extraData.positions[0];
+								const dy = extraData.positions[3] - extraData.positions[1];
+								let delta = 0;
+
+								const distance = Math.sqrt(dx * dx + dy * dy);
+								if (this._previousPinchDistance) {
+									delta = this._previousPinchDistance - distance;
+								}
+								this._previousPinchDistance = distance;
+
+								const x = dx; //event.getFocusX();
+								const y = dy; //event.getFocusY();
+								const scale = event.scale;
+
+								data = {
+									deltaMode: 0,
+									clientX: x,
+									clientY: y,
+									screenX: x,
+									screenY: y,
+									deltaX: 0,
+									deltaY: delta,
+									deltaZ: 0,
+								};
+							}
+
+							if (hasPointerMove) {
+								const count = extraData.numberOfPointers;
+								const positions = extraData.positions;
+								for (let i = 0; i < count; i++) {
+									let x = positions[i] - extraData.x;
+									let y = positions[i + 1] - extraData.y;
+									this.notify({
+										...this._createPointerEvent('pointermove', { ...extraData, x, y }),
+										pointerId: this._pointers[i].id
+									});
+								}
+							}
+
+							if (hasTouchMove) {
+								this.notify(
+									this._createTouchEvent('touchmove', { ...extraData, data })
+								);
+							}
+						}
+					}
+
 					break;
 				default:
 					break;
 			}
 		} else if (event.eventName === 'pinch') {
-			const numberOfPointers = this._pointerCountFromEvent(event);
+			/*const numberOfPointers = this._pointerCountFromEvent(event);
 			if (!this._isPinching && numberOfPointers >= 2 && (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed)) {
 				this._previousPinchDistance = 0;
 				this._isPinching = true;
@@ -492,12 +554,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						this._createTouchEvent('touchmove', { ...extraData, data })
 					);
 				}
-
-
 			}
 			if (event.state === GestureStateTypes.ended || event.state === GestureStateTypes.cancelled) {
 				this._isPinching = false;
-			}
+			} */
 		}
 		else if (event.eventName === 'pan') {
 			if (this._isPinching) {

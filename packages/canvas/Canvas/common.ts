@@ -249,7 +249,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_pointerCountFromEvent(event) {
 		let count = 0;
 		if (global.isIOS) {
-			count = event.getPointerCount();
+			count = event.ios.numberOfTouches ?? 0;
 		} else if (global.isAndroid) {
 			count = (event.android.current || event.android.initial || event.android).getPointerCount?.() ?? 0;
 		}
@@ -259,14 +259,22 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_positionsFromEvent(event) {
 		const positions = [];
 
-		if (global.isiOS) {
-			const pointers = event.getAllPointers();
-			const count = pointers.length;
-
-			for (let i = 0; i < count; i++) {
-				const point = pointers[i];
-				positions.push(point.getX(), point.getY(),
-				);
+		if (global.isIOS) {
+			const set = event?.ios?.touches as NSSet<UITouch>;
+			if (event?.ios?.touches instanceof NSSet) {
+				const objects = set.allObjects;
+				for (let i = 0; i < set.count; i++) {
+					const touch = objects.objectAtIndex(i);
+					const point = touch.locationInView(touch.view);
+					positions.push(point.x, point.x)
+				}
+			} else {
+				const count = event.ios.numberOfTouches;
+				const rec = (<UIGestureRecognizer>event.ios);
+				for (let i = 0; i < count; i++) {
+					const point = rec.locationOfTouchInView(i, rec.view);
+					positions.push(point.x, point.y);
+				}
 			}
 		} else if (global.isAndroid) {
 			const motionEvent = event.android?.current ?? event.android;
@@ -316,7 +324,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						}
 					}
 
-					if (hasPointerDown && this._previousPointerCount === extraData.numberOfPointers) {
+					if (hasPointerDown && this._previousPointerCount !== extraData.numberOfPointers) {
 						this._previousPointerCount = extraData.numberOfPointers;
 						pointerId++;
 
@@ -327,7 +335,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 								y: extraData.y
 							}
 						}
-
 
 						this.notify({
 							...this._createPointerEvent('pointerdown', extraData),
@@ -358,12 +365,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							y
 						}
 					}
+
 					if (hasPointerUp) {
-						if (global.isAndroid) {
-							this._previousPointerCount -= extraData.numberOfPointers;
-						} else if (global.isIOS) {
-							this._previousPointerCount -= 1;
-						}
+						this._previousPointerCount -= extraData.numberOfPointers;
 						for (let i = 0; i < extraData.numberOfPointers; i++) {
 							const x = extraData.positions[i];
 							const y = extraData.positions[i + 1];
@@ -433,46 +437,42 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 				hasPointerMove = this.hasListeners('pointermove');
 				hasTouchMove = this.hasListeners('touchmove');
+				let data = {};
 
 				if (hasPointerMove || hasTouchMove) {
 					const positions = this._positionsFromEvent(event);
-					const x = global.isIOS ? (<TouchGestureEventData>event).getX() : positions[0];
-					const y = global.isIOS ? (<TouchGestureEventData>event).getY() : positions[1];
 					extraData = {
 						numberOfPointers,
 						positions,
-						x,
-						y
+						x: positions[0],
+						y: positions[1]
 					}
+
+					const dx = extraData.positions[2] - extraData.positions[0];
+					const dy = extraData.positions[3] - extraData.positions[1];
+					let delta = 0;
+
+					var distance = Math.sqrt(dx * dx + dy * dy);
+					if (this._previousPinchDistance) {
+						delta = this._previousPinchDistance - distance;
+					}
+					this._previousPinchDistance = distance;
+
+					const x = event.getFocusX();
+					const y = event.getFocusY();
+					const scale = event.scale;
+
+					data = {
+						deltaMode: 0,
+						clientX: x,
+						clientY: y,
+						screenX: x,
+						screenY: y,
+						deltaX: 0,
+						deltaY: delta,
+						deltaZ: 0,
+					};
 				}
-
-
-				const dx = extraData.positions[2] - extraData.positions[0];
-				const dy = extraData.positions[3] - extraData.positions[1];
-				let delta = 0;
-
-				var distance = Math.sqrt(dx * dx + dy * dy);
-				if (this._previousPinchDistance) {
-					delta = this._previousPinchDistance - distance;
-				}
-				this._previousPinchDistance = distance;
-
-				const x = event.getFocusX();
-				const y = event.getFocusY();
-				const scale = event.scale;
-
-				let data = {
-					deltaMode: 0,
-					clientX: x,
-					clientY: y,
-					screenX: x,
-					screenY: y,
-					deltaX: 0,
-					deltaY: delta,
-					deltaZ: 0,
-				};
-
-
 
 				if (hasPointerMove) {
 					const count = extraData.numberOfPointers;
@@ -509,8 +509,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				if (hasPointerMove || hasTouchMove) {
 					const numberOfPointers = this._pointerCountFromEvent(event);
 					const positions = this._positionsFromEvent(event);
-					const x = global.isIOS ? (<TouchGestureEventData>event).getX() : positions[0];
-					const y = global.isIOS ? (<TouchGestureEventData>event).getY() : positions[1];
+					const x = positions[0];
+					const y = positions[1];
 					extraData = {
 						numberOfPointers,
 						positions,

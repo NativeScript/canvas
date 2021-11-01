@@ -46,9 +46,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
-		//this.skinningAndMorphing(this.canvas);
+		this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
@@ -2610,6 +2610,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//container.appendChild( renderer.domElement );
 
 			window.addEventListener('resize', onWindowResize, false);
+			
+			const controls = new OrbitControls(camera, canvas);
+			controls.update();
 
 			// stats
 			/*stats = new Stats();

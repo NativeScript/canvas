@@ -14,8 +14,8 @@
 		F16241F222DA6E9D007FBF7B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F16241F022DA6E9D007FBF7B /* LaunchScreen.storyboard */; };
 		F16241FD22DA6E9D007FBF7B /* CanvasDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241FC22DA6E9D007FBF7B /* CanvasDemoTests.swift */; };
 		F162420822DA6E9D007FBF7B /* CanvasDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F162420722DA6E9D007FBF7B /* CanvasDemoUITests.swift */; };
-		F1FF6B07252535C8001DAE0D /* CanvasNative.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */; };
-		F1FF6B08252535C8001DAE0D /* CanvasNative.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F195B6062748903400E182CA /* CanvasNative.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; };
+		F195B6072748903400E182CA /* CanvasNative.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,13 +36,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F1FF6B09252535C8001DAE0D /* Embed Frameworks */ = {
+		F195B6082748903400E182CA /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				F1FF6B08252535C8001DAE0D /* CanvasNative.xcframework in Embed Frameworks */,
+				F195B6072748903400E182CA /* CanvasNative.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -63,7 +63,8 @@
 		F162420322DA6E9D007FBF7B /* CanvasDemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CanvasDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F162420722DA6E9D007FBF7B /* CanvasDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDemoUITests.swift; sourceTree = "<group>"; };
 		F162420922DA6E9D007FBF7B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = CanvasNative.xcframework; path = ../CanvasNative/Dist/CanvasNative.xcframework; sourceTree = "<group>"; };
+		F195B604274832CD00E182CA /* CanvasDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CanvasDemo.entitlements; sourceTree = "<group>"; };
+		F195B6052748903400E182CA /* CanvasNative.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = CanvasNative.xcframework; path = ../dist/CanvasNative.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,7 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F1FF6B07252535C8001DAE0D /* CanvasNative.xcframework in Frameworks */,
+				F195B6062748903400E182CA /* CanvasNative.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,7 +96,7 @@
 		4481D334EC20564EAB46B0E3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				F1FF6B06252535C8001DAE0D /* CanvasNative.xcframework */,
+				F195B6052748903400E182CA /* CanvasNative.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -132,6 +133,7 @@
 		F16241E622DA6E9C007FBF7B /* CanvasDemo */ = {
 			isa = PBXGroup;
 			children = (
+				F195B604274832CD00E182CA /* CanvasDemo.entitlements */,
 				F16241E722DA6E9C007FBF7B /* AppDelegate.swift */,
 				F16241E922DA6E9C007FBF7B /* ViewController.swift */,
 				F16241EB22DA6E9C007FBF7B /* Main.storyboard */,
@@ -170,7 +172,7 @@
 				F16241E022DA6E9C007FBF7B /* Sources */,
 				F16241E122DA6E9C007FBF7B /* Frameworks */,
 				F16241E222DA6E9C007FBF7B /* Resources */,
-				F1FF6B09252535C8001DAE0D /* Embed Frameworks */,
+				F195B6082748903400E182CA /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -473,16 +475,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CanvasDemo/CanvasDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = TG7LSJHB64;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../CanvasNative/Dist\"",
+					"\"$(SRCROOT)/../build\"",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = CanvasDemo/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -493,6 +497,8 @@
 				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = Demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
@@ -508,16 +514,18 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = NO;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CanvasDemo/CanvasDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = TG7LSJHB64;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../CanvasNative/Dist\"",
+					"\"$(SRCROOT)/../build\"",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = CanvasDemo/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -528,6 +536,8 @@
 				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;

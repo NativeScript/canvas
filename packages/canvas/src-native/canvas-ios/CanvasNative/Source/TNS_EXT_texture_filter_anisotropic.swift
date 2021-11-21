@@ -6,7 +6,14 @@
 //
 
 import Foundation
+#if !targetEnvironment(macCatalyst)
 import OpenGLES
+#endif
+
+
+#if targetEnvironment(macCatalyst)
+import OpenGL
+#endif
 @objcMembers
 @objc(TNS_EXT_texture_filter_anisotropic)
 public class TNS_EXT_texture_filter_anisotropic: NSObject {

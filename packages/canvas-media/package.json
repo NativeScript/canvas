@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-media",
-	"version": "0.13.7",
+	"version": "0.13.8",
 	"description": "Canvas media",
 	"main": "index",
 	"typings": "index.d.ts",

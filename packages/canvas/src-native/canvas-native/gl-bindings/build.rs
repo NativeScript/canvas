@@ -121,9 +121,10 @@ fn main() {
 
             // fs::copy(out_path.join("android_bindings.rs"), ANDROID_SRC_BINDINGS_RS).expect("Couldn't copy bindings!");;;
         }
-        "ios" => {
+        "ios" | "darwin" => {
             let target = std::env::var("TARGET").unwrap();
             let directory = sdk_path(&target).ok();
+            println!("sdk_path {:?}", directory);
             build(directory.as_ref().map(String::as_ref), &target);
         }
         _ => {}
@@ -132,7 +133,9 @@ fn main() {
 
 fn sdk_path(target: &str) -> Result<String, std::io::Error> {
     use std::process::Command;
-    let sdk = if target.contains("apple-darwin") {
+    let sdk = if target.contains("apple-darwin") 
+    || target == "aarch64-apple-ios-macabi"
+    || target == "x86_64-apple-ios-macabi"  {
         "macosx"
     } else if target == "x86_64-apple-ios" || target == "i386-apple-ios" || target == "aarch64-apple-ios-sim" {
         "iphonesimulator"
@@ -168,13 +171,25 @@ fn build(sdk_path: Option<&str>, target: &str) {
 
     let mut headers: Vec<&str> = vec![];
 
-    println!("cargo:rustc-link-lib=framework=GLKit");
-    println!("cargo:rustc-link-lib=framework=OpenGLES");
-    headers.push("OpenGLES/ES2/gl.h");
-    headers.push("OpenGLES/ES2/glext.h");
-    headers.push("OpenGLES/ES3/gl.h");
-    headers.push("OpenGLES/ES3/glext.h");
-    headers.push("OpenGLES/EAGL.h");
+
+    if target.contains("apple-ios") &&  !target.contains("macabi"){
+        println!("cargo:rustc-link-lib=framework=GLKit");
+        println!("cargo:rustc-link-lib=framework=OpenGLES");
+        headers.push("OpenGLES/ES2/gl.h");
+        headers.push("OpenGLES/ES2/glext.h");
+        headers.push("OpenGLES/ES3/gl.h");
+        headers.push("OpenGLES/ES3/glext.h");
+        headers.push("OpenGLES/EAGL.h");
+    } else {
+        println!("cargo:rustc-link-lib=framework=GLKit");
+        println!("cargo:rustc-link-lib=framework=OpenGL");
+        headers.push("OpenGL/gl.h");
+        headers.push("OpenGL/glext.h");
+        headers.push("OpenGL/gl3.h");
+        headers.push("OpenGL/gl3ext.h");
+        headers.push("OpenGL/OpenGL.h");
+    }
+
 
     println!("cargo:rerun-if-env-changed=BINDGEN_EXTRA_CLANG_ARGS");
     // Begin building the bindgen params.

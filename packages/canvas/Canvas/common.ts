@@ -1,6 +1,6 @@
 import { CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application, Property, booleanConverter } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
-import { Pointer, TouchGestureEventData } from '@nativescript/core/ui/gestures';
+import { Pointer, TouchGestureEventData, GestureTypes } from '@nativescript/core/ui/gestures';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
@@ -235,7 +235,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	__ensureGestures() {
 		if (!this._gesturesRegistered) {
 			this._gesturesRegistered = true;
-			this.on(global.isAndroid ? 'touch, pan' : 'touch, pan, pinch', this._touchEvent, this);
+			this.on(global.isAndroid ? 'touch, pan, pinch' : 'touch, pan, pinch', this._touchEvent, this);
 		}
 	}
 
@@ -266,7 +266,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				for (let i = 0; i < set.count; i++) {
 					const touch = objects.objectAtIndex(i);
 					const point = touch.locationInView(touch.view);
-					positions.push(point.x, point.x)
+					positions.push(point.x, point.y)
 				}
 			} else {
 				const count = event.ios.numberOfTouches;
@@ -422,142 +422,149 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					}
 					break;
 				case 'move':
-					if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
+					if (this._isPinching && global.isAndroid) {
 						const numberOfPointers = this._pointerCountFromEvent(event);
-						if (numberOfPointers >= 2) {
-							hasPointerMove = this.hasListeners('pointermove');
-							hasTouchMove = this.hasListeners('touchmove');
-							let data = {};
+						hasPointerMove = this.hasListeners('pointermove');
+						hasTouchMove = this.hasListeners('touchmove');
+						let data = {};
 
-							if (hasPointerMove || hasTouchMove) {
-								const positions = this._positionsFromEvent(event);
-								extraData = {
-									numberOfPointers,
-									positions,
-									x: positions[0],
-									y: positions[1]
-								}
-
-								const dx = extraData.positions[2] - extraData.positions[0];
-								const dy = extraData.positions[3] - extraData.positions[1];
-								let delta = 0;
-
-								const distance = Math.sqrt(dx * dx + dy * dy);
-								if (this._previousPinchDistance) {
-									delta = this._previousPinchDistance - distance;
-								}
-								this._previousPinchDistance = distance;
-
-								const x = dx; //event.getFocusX();
-								const y = dy; //event.getFocusY();
-								const scale = event.scale;
-
-								data = {
-									deltaMode: 0,
-									clientX: x,
-									clientY: y,
-									screenX: x,
-									screenY: y,
-									deltaX: 0,
-									deltaY: delta,
-									deltaZ: 0,
-								};
+						if (hasPointerMove || hasTouchMove) {
+							const positions = this._positionsFromEvent(event);
+							extraData = {
+								numberOfPointers,
+								positions,
+								x: positions[0],
+								y: positions[1]
 							}
 
-							if (hasPointerMove) {
-								const count = extraData.numberOfPointers;
-								const positions = extraData.positions;
-								for (let i = 0; i < count; i++) {
-									let x = positions[i] - extraData.x;
-									let y = positions[i + 1] - extraData.y;
-									this.notify({
-										...this._createPointerEvent('pointermove', { ...extraData, x, y }),
-										pointerId: this._pointers[i].id
-									});
-								}
-							}
+							const dx = extraData.positions[2] - extraData.positions[0];
+							const dy = extraData.positions[3] - extraData.positions[1];
+							let delta = 0;
 
-							if (hasTouchMove) {
-								this.notify(
-									this._createTouchEvent('touchmove', { ...extraData, data })
-								);
+							var distance = Math.sqrt(dx * dx + dy * dy);
+							if (this._previousPinchDistance) {
+								delta = this._previousPinchDistance - distance;
+							}
+							this._previousPinchDistance = distance;
+
+							const x = dx //event.getFocusX();
+							const y = dy //event.getFocusY();
+							const scale = event.scale;
+
+							data = {
+								deltaMode: 0,
+								clientX: x,
+								clientY: y,
+								screenX: x,
+								screenY: y,
+								deltaX: 0,
+								deltaY: delta,
+								deltaZ: 0,
+							};
+						}
+
+						if (hasPointerMove) {
+							const count = extraData.numberOfPointers;
+							const positions = extraData.positions;
+							for (let i = 0; i < count; i++) {
+								let x = positions[i] - extraData.x;
+								let y = positions[i + 1] - extraData.y;
+								this.notify({
+									...this._createPointerEvent('pointermove', { ...extraData, x, y }),
+									pointerId: this._pointers[i].id
+								});
 							}
 						}
-					}
 
+						if (hasTouchMove) {
+							this.notify(
+								this._createTouchEvent('touchmove', { ...extraData, data })
+							);
+						}
+					}
 					break;
 				default:
 					break;
 			}
 		} else if (event.eventName === 'pinch') {
-			/*const numberOfPointers = this._pointerCountFromEvent(event);
-			if (!this._isPinching && numberOfPointers >= 2 && (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed)) {
-				this._previousPinchDistance = 0;
-				this._isPinching = true;
+			if (global.isAndroid) {
+				if ((event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed)) {
+					this._isPinching = true;
+					this._previousPinchDistance = 0;
+				}
+				if (event.state === GestureStateTypes.ended || event.state === GestureStateTypes.cancelled) {
+					this._isPinching = false;
+				}
+			} else {
+				const numberOfPointers = this._pointerCountFromEvent(event);
+				if (!this._isPinching && numberOfPointers >= 2 && (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed)) {
+					this._previousPinchDistance = 0;
+					this._isPinching = true;
+				}
+				if (event.state === GestureStateTypes.ended || event.state === GestureStateTypes.cancelled) {
+					this._isPinching = false;
+				}
+				if (this._isPinching && numberOfPointers >= 2) {
+					if (global.isIOS) {
+						hasPointerMove = this.hasListeners('pointermove');
+						hasTouchMove = this.hasListeners('touchmove');
+						let data = {};
+						let delta = 0;
+						if (hasPointerMove || hasTouchMove) {
+							const positions = this._positionsFromEvent(event);
+							extraData = {
+								numberOfPointers,
+								positions,
+								x: positions[0],
+								y: positions[1]
+							}
+
+							const dx = extraData.positions[2] - extraData.positions[0];
+							const dy = extraData.positions[3] - extraData.positions[1];
+
+							var distance = Math.sqrt(dx * dx + dy * dy);
+							if (this._previousPinchDistance) {
+								delta = this._previousPinchDistance - distance;
+							}
+							this._previousPinchDistance = distance;
+
+							const x = event.getFocusX();
+							const y = event.getFocusY();
+							const scale = event.scale;
+
+							data = {
+								deltaMode: 0,
+								clientX: x,
+								clientY: y,
+								screenX: x,
+								screenY: y,
+								deltaX: 0,
+								deltaY: delta,
+								deltaZ: 0,
+							};
+						}
+
+						if (hasPointerMove) {
+							const count = extraData.numberOfPointers;
+							const positions = extraData.positions;
+							for (let i = 0; i < count; i++) {
+								let x = positions[i] - extraData.x;
+								let y = positions[i + 1] - extraData.y;
+								this.notify({
+									...this._createPointerEvent('pointermove', { ...extraData, x, y }),
+									pointerId: this._pointers[i].id
+								});
+							}
+						}
+
+						if (hasTouchMove) {
+							this.notify(
+								this._createTouchEvent('touchmove', { ...extraData, data })
+							);
+						}
+					}
+				}
 			}
-			if (this._isPinching) {
-
-				hasPointerMove = this.hasListeners('pointermove');
-				hasTouchMove = this.hasListeners('touchmove');
-				let data = {};
-
-				if (hasPointerMove || hasTouchMove) {
-					const positions = this._positionsFromEvent(event);
-					extraData = {
-						numberOfPointers,
-						positions,
-						x: positions[0],
-						y: positions[1]
-					}
-
-					const dx = extraData.positions[2] - extraData.positions[0];
-					const dy = extraData.positions[3] - extraData.positions[1];
-					let delta = 0;
-
-					var distance = Math.sqrt(dx * dx + dy * dy);
-					if (this._previousPinchDistance) {
-						delta = this._previousPinchDistance - distance;
-					}
-					this._previousPinchDistance = distance;
-
-					const x = event.getFocusX();
-					const y = event.getFocusY();
-					const scale = event.scale;
-
-					data = {
-						deltaMode: 0,
-						clientX: x,
-						clientY: y,
-						screenX: x,
-						screenY: y,
-						deltaX: 0,
-						deltaY: delta,
-						deltaZ: 0,
-					};
-				}
-
-				if (hasPointerMove) {
-					const count = extraData.numberOfPointers;
-					const positions = extraData.positions;
-					for (let i = 0; i < count; i++) {
-						let x = positions[i] - extraData.x;
-						let y = positions[i + 1] - extraData.y;
-						this.notify({
-							...this._createPointerEvent('pointermove', { ...extraData, x, y }),
-							pointerId: this._pointers[i].id
-						});
-					}
-				}
-
-				if (hasTouchMove) {
-					this.notify(
-						this._createTouchEvent('touchmove', { ...extraData, data })
-					);
-				}
-			}
-			if (event.state === GestureStateTypes.ended || event.state === GestureStateTypes.cancelled) {
-				this._isPinching = false;
-			} */
 		}
 		else if (event.eventName === 'pan') {
 			if (this._isPinching) {

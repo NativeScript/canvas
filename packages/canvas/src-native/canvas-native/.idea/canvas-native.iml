@@ -667,6 +667,10 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ring-98994dd1877a3883/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_json-9e0b83790e0b68c7/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/skia-bindings-c53163877d90c338/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/canvas-native-c1cdfc9359261725/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/gl-bindings-fe7c321cd0762816/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ring-e5023e64a429322e/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/skia-bindings-a015a217b1c61741/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

@@ -1,4 +1,4 @@
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 extern crate objc;
 
 #[allow(deprecated, dead_code)]
@@ -8,5 +8,5 @@ pub mod common;
 #[allow(non_snake_case)]
 pub mod android;
 
-#[cfg(target_os = "ios")]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 pub mod ios;

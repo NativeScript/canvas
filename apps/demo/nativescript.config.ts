@@ -10,5 +10,8 @@ export default {
 	appPath: 'src',
 	ios: {
 		discardUncaughtJsExceptions: false
+	},
+	cli: {
+		packageManager: 'npm'
 	}
 } as NativeScriptConfig;

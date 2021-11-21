@@ -6,7 +6,15 @@
 //
 
 import Foundation
+#if !targetEnvironment(macCatalyst)
 import OpenGLES
+#endif
+
+
+#if targetEnvironment(macCatalyst)
+import OpenGL
+#endif
+
 @objcMembers
 @objc(TNS_ANGLE_instanced_arrays)
 public class TNS_ANGLE_instanced_arrays: NSObject {

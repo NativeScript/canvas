@@ -6,7 +6,15 @@
 //
 
 import Foundation
+#if !targetEnvironment(macCatalyst)
 import OpenGLES
+#endif
+
+
+#if targetEnvironment(macCatalyst)
+import OpenGL
+#endif
+
 @objcMembers
 @objc(TNS_WEBGL_color_buffer_float)
 public class TNS_WEBGL_color_buffer_float: NSObject {

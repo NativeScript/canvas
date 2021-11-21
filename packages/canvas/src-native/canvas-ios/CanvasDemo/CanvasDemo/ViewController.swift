@@ -25,7 +25,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
         svg = TNSSVG(frame: view.bounds)
-        //canvas1.addSubview(svg!)
+        canvas1.addSubview(svg!)
         svg?.bringSubviewToFront(canvas1)
         svg?.ignorePixelScaling = false
        // svg!.backgroundColor = .white
@@ -155,7 +155,7 @@ class ViewController: UIViewController, TNSCanvasListener {
         
         // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/gallardo.svg
         
-       /* DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .background).async {
             do{
                 let start = CACurrentMediaTime()
                 print("Started", start)
@@ -174,7 +174,7 @@ class ViewController: UIViewController, TNSCanvasListener {
                 print(error)
             }
 
-        } */
+        }
     
     }
     
@@ -301,9 +301,9 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     
     func drawAll() {
-        let data: [UInt8] =  [75, 97, 121, 100, 97, 114, 97, 32, 70, 66, 88, 32, 66, 105, 110, 97, 114, 121, 32, 32, 0]
-        let decoder = TNSTextDecoder()
-        print(decoder.decode(bytes: data))
+//        let data: [UInt8] =  [75, 97, 121, 100, 97, 114, 97, 32, 70, 66, 88, 32, 66, 105, 110, 97, 114, 121, 32, 32, 0]
+//        let decoder = TNSTextDecoder()
+//        print(decoder.decode(bytes: data))
 //        svg?.src  = """
 //                <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"
 //                xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -374,7 +374,7 @@ class ViewController: UIViewController, TNSCanvasListener {
        // drawRotatingCube(gl: gl)
         
         //drawRotatingCube(gl: gl)
-       //  drawTextures(canvas: canvas1)
+         drawTextures(canvas: canvas1)
         
         
         // self.drawGL(canvas: self.canvas1!) // sun
@@ -524,7 +524,7 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     
     func drawPatterWithCanvas(canvas: TNSCanvas){
-        let patternCanvas = TNSCanvas(frame: .zero)
+        let patternCanvas = TNSCanvas(frame: .zero, useCpu: true)
         let patternContext = patternCanvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let scale = UIScreen.main.scale
         let width = 50

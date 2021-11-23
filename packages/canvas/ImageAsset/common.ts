@@ -10,7 +10,7 @@ export class ImageAssetBase {
 	}
 
 	static [Symbol.hasInstance](obj) {
-		if (obj.native && obj.constructor.name === 'ImageAsset') return true;
+		if (obj?.native && obj.constructor.name === 'ImageAsset') return true;
 	}
 
 }

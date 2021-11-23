@@ -13,7 +13,7 @@ export abstract class TextDecoderBase {
 	abstract decode(buffer: ArrayBuffer | ArrayBufferView, options?: any): string;
 
 	static [Symbol.hasInstance](obj) {
-		if (obj.native && obj.constructor.name === 'TextDecoder') return true;
+		if (obj?.native && obj.constructor.name === 'TextDecoder') return true;
 	}
 
 }

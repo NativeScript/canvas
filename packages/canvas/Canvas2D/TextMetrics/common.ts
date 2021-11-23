@@ -10,7 +10,7 @@ export abstract class TextMetricsBase {
 	}
 
 	static [Symbol.hasInstance](obj) {
-		if (obj.native && obj.constructor.name === 'TextMetrics') return true;
+		if (obj?.native && obj.constructor.name === 'TextMetrics') return true;
 	}
 
 	public abstract readonly width: number;

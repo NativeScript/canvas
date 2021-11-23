@@ -13,6 +13,6 @@ export abstract class ImageDataBase {
 	}
 
 	static [Symbol.hasInstance](obj) {
-		if (obj.native && obj.constructor.name === 'ImageData') return true;
+		if (obj?.native && obj.constructor.name === 'ImageData') return true;
 	}
 }

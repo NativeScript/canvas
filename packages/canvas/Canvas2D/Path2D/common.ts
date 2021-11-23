@@ -12,7 +12,7 @@ export abstract class Path2DBase {
 	}
 
 	static [Symbol.hasInstance](obj) {
-		if (obj.native && obj.constructor.name === 'Path2D') return true;
+		if (obj?.native && obj.constructor.name === 'Path2D') return true;
 	}
 
 	public abstract addPath(

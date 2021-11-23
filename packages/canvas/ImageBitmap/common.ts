@@ -10,7 +10,7 @@ export abstract class ImageBitmapBase {
 	}
 
 	static [Symbol.hasInstance](obj) {
-		if (obj.native && obj.constructor.name === 'ImageBitmap') return true;
+		if (obj?.native && obj.constructor.name === 'ImageBitmap') return true;
 	}
 
 	abstract readonly width: number;

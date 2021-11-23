@@ -34,6 +34,6 @@ export abstract class DOMMatrixBase {
 	}
 
 	static [Symbol.hasInstance](obj) {
-		if (obj.native && obj.constructor.name === 'DOMMatrix') return true;
+		if (obj?.native && obj.constructor.name === 'DOMMatrix') return true;
 	}
 }

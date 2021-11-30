@@ -309,7 +309,7 @@ declare module org {
 		export module canvas {
 			export class TNSCanvas {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas>;
-				public pendingInvalidate: boolean;
+				public invalidateState: org.nativescript.canvas.TNSCanvas.ContextType;
 				public contextAlpha: boolean;
 				public contextAntialias: boolean;
 				public contextDepth: boolean;
@@ -458,6 +458,14 @@ declare module org {
 					});
 					public constructor();
 					public onResult(param0: string): void;
+				}
+				export class InvalidateState {
+					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.InvalidateState>;
+					public static NONE: org.nativescript.canvas.TNSCanvas.InvalidateState;
+					public static PENDING: org.nativescript.canvas.TNSCanvas.InvalidateState;
+					public static INVALIDATING: org.nativescript.canvas.TNSCanvas.InvalidateState;
+					public static valueOf(param0: string): org.nativescript.canvas.TNSCanvas.InvalidateState;
+					public static values(): androidNative.Array<org.nativescript.canvas.TNSCanvas.InvalidateState>;
 				}
 				export class Listener {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.Listener>;

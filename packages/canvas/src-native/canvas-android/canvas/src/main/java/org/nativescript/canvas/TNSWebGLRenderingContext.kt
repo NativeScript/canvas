@@ -39,7 +39,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 
 	fun updateCanvas() {
 		// synchronized (canvasView.lock) {
-		canvas.pendingInvalidate = true
+		canvas.invalidateState = TNSCanvas.InvalidateState.PENDING
 		//}
 	}
 

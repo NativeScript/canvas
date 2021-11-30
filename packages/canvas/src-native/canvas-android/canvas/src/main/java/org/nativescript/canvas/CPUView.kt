@@ -71,7 +71,7 @@ class CPUView @JvmOverloads constructor(
 						canvas.queueEvent {
 							TNSCanvas.nativeCustomWithBitmapFlush(canvas.nativeContext, it)
 							handler!!.post {
-								canvas.pendingInvalidate = false
+								canvas.invalidateState = TNSCanvas.InvalidateState.NONE
 								invalidate()
 							}
 						}

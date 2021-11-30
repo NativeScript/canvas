@@ -46,7 +46,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		}
 
 	@JvmField
-	internal var pendingInvalidate = false
+	internal var invalidateState = InvalidateState.NONE
 	internal var contextType = ContextType.NONE
 	internal var actualContextType = ""
 	internal var useCpu = false
@@ -122,9 +122,14 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 	private val mainHandler = Handler(Looper.getMainLooper())
 
+	enum class InvalidateState {
+		NONE, PENDING, INVALIDATING
+	}
+
 	override fun doFrame(frameTimeNanos: Long) {
 		if (!isHandleInvalidationManually) {
-			if (pendingInvalidate) {
+			if (invalidateState == InvalidateState.PENDING) {
+				invalidateState = InvalidateState.INVALIDATING
 				flush()
 			}
 		}

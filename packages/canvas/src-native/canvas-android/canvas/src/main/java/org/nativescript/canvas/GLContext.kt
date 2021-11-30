@@ -149,19 +149,19 @@ internal class GLContext {
 		queueEvent {
 			if (reference != null) {
 				val canvasView = reference!!.get()
-				if (canvasView != null && canvasView.nativeContext != 0L && canvasView.pendingInvalidate) {
+				if (canvasView != null && canvasView.nativeContext != 0L && canvasView.invalidateState == TNSCanvas.InvalidateState.INVALIDATING) {
 					TNSCanvas.nativeFlush(canvasView.nativeContext)
 					if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
-					canvasView.pendingInvalidate = false
+					canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
 				} else {
 					// WebGL
 					if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
 					if (canvasView != null) {
-						canvasView.pendingInvalidate = false
+						canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
 					}
 				}
 			}

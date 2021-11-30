@@ -309,7 +309,7 @@ declare module org {
 		export module canvas {
 			export class TNSCanvas {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas>;
-				public invalidateState: org.nativescript.canvas.TNSCanvas.ContextType;
+				public invalidateState: org.nativescript.canvas.TNSCanvas.InvalidateState;
 				public contextAlpha: boolean;
 				public contextAntialias: boolean;
 				public contextDepth: boolean;

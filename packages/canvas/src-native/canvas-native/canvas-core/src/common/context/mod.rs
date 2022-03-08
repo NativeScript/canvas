@@ -2,6 +2,7 @@ use std::os::raw::c_float;
 
 use skia_safe::{Color, Point, Surface};
 
+use crate::common::context::filter_quality::FilterQuality;
 use crate::{
     common::context::compositing::composite_operation_type::CompositeOperationType,
     common::context::drawing_text::typography::Font,
@@ -14,7 +15,6 @@ use crate::{
         text_align::TextAlign, text_baseline::TextBaseLine, text_direction::TextDirection,
     },
 };
-use crate::common::context::filter_quality::FilterQuality;
 
 pub mod drawing_images;
 pub mod drawing_text;
@@ -97,8 +97,8 @@ impl State {
             FilterQuality::None
         }
     }
-    pub fn from_device(_device: Device, direction: TextDirection) -> Self {
-        let mut font = Font::new("10px sans-serif");
+    pub fn from_device(device: Device, direction: TextDirection) -> Self {
+        let mut font = Font::new("10px sans-serif", device);
         let mut paint = Paint::default();
         paint
             .stroke_paint_mut()

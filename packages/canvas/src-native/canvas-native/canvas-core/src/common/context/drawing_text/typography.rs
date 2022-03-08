@@ -1,19 +1,20 @@
+use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::convert::TryFrom;
 
 use skia_safe::{
     font_style::{Slant, Weight, Width},
-    FontMetrics,
-    FontMgr, FontStyle, typeface::Typeface,
+    typeface::Typeface,
+    FontMetrics, FontMgr, FontStyle,
 };
 
+use crate::common::context::drawing_text::typography::ParsedFontStyle::{Italic, Normal, Oblique};
 use crate::{
-    common::context::Device,
     common::context::text_styles::text_align::TextAlign,
-    common::context::text_styles::text_baseline::TextBaseLine, common::context::text_styles::text_direction::TextDirection,
+    common::context::text_styles::text_baseline::TextBaseLine,
+    common::context::text_styles::text_direction::TextDirection, common::context::Device,
     common::utils::dimensions::parse_size,
 };
-use crate::common::context::drawing_text::typography::ParsedFontStyle::{Italic, Normal, Oblique};
 
 const XX_SMALL: &str = "9px";
 const X_SMALL: &str = "10px";
@@ -68,19 +69,19 @@ pub(crate) fn to_real_text_align(align: TextAlign, direction: TextDirection) -> 
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct Font {
     pub(crate) font_details: String,
     pub(crate) font: ParsedFont,
-    skia_value: skia_safe::Font,
+    pub(crate) device: Device,
 }
 
 impl Font {
-    pub fn new(font_details: &str) -> Self {
+    pub fn new(font_details: &str, device: Device) -> Self {
         Self {
-            font_details: font_details.into(),
+            font_details: font_details.to_string(),
             font: parse_font(font_details),
-            skia_value: skia_safe::Font
+            device,
         }
     }
 
@@ -99,11 +100,11 @@ impl Font {
 
         self.font_details = font_details.to_string();
         self.font = parse_font(font_details);
+    }
 
-        let style = to_font_style(weight.as_ref(), style.as_ref());
-
-        let mut families: Vec<String> =
-            parse_font_family(parsed_font.font_family.unwrap_or("sans-serif".to_string()));
+    fn to_font(&self) -> skia_safe::Font {
+        let style = to_font_style(self.font.font_weight(), self.font.font_style());
+        let mut families: Vec<String> = parse_font_family(self.font.font_family());
         let mut default_typeface =
             Typeface::from_name("sans-serif", style).unwrap_or(Typeface::default());
         let mgr = FontMgr::default();
@@ -118,14 +119,14 @@ impl Font {
             }
         }
 
-       self.skia_value = skia_safe::Font::from_typeface(
+        skia_safe::Font::from_typeface(
             default_typeface,
-            Some(parse_size(font_size.as_ref(), device)),
-        );
+            Some(parse_size(self.font.font_size(), self.device)),
+        )
     }
 
-    pub fn to_skia(&self) -> &skia_safe::Font {
-      &self.skia_value
+    pub fn to_skia(&self) -> skia_safe::Font {
+        self.to_font()
     }
 }
 
@@ -137,6 +138,27 @@ pub struct ParsedFont {
     line_height: Option<String>,
     font_size: Option<String>,
     font_family: Option<String>,
+}
+
+impl ParsedFont {
+    pub fn font_style(&self) -> ParsedFontStyle {
+        self.font_style
+    }
+    pub fn font_variant(&self) -> &str {
+        &self.font_variant
+    }
+    pub fn font_weight(&self) -> ParsedFontWeight {
+        self.font_weight
+    }
+    pub fn line_height(&self) -> &str {
+        self.line_height.as_ref().map_or("1.4px", |v| v)
+    }
+    pub fn font_size(&self) -> &str {
+        self.font_size.as_ref().map_or("10px", |v| v)
+    }
+    pub fn font_family(&self) -> &str {
+        self.font_family.as_ref().map_or("sans-serif", |v| v)
+    }
 }
 
 impl Default for ParsedFont {
@@ -225,7 +247,13 @@ impl ParsedFontWeight {
     }
 
     pub fn into_skia(&self) -> Weight {
-        Weight::from(self as i32)
+        (*self).into()
+    }
+}
+
+impl Into<Weight> for ParsedFontWeight {
+    fn into(self) -> Weight {
+        Weight::from(*&self as i32)
     }
 }
 
@@ -241,7 +269,7 @@ pub fn parse_font(font: &str) -> ParsedFont {
         if let Some(part) = res.pop_front() {
             if part.eq("normal") {
             } else if part.eq("small-caps") {
-                parsed_font.font_variant = part.to_string();
+                parsed_font.font_variant = part.into();
             } else if ParsedFontStyle::is_supported(part) {
                 match part {
                     NORMAL => {
@@ -262,15 +290,15 @@ pub fn parse_font(font: &str) -> ParsedFont {
                 let sizes = part.split('/');
                 for (j, size) in sizes.enumerate() {
                     if j == 0 {
-                        parsed_font.font_size = Some(size.to_string());
+                        parsed_font.font_size = Some(size.into());
                     }
 
                     if j == 1 {
-                        parsed_font.line_height = Some(size.to_string());
+                        parsed_font.line_height = Some(size.into());
                     }
                 }
             } else {
-                parsed_font.font_family = Some(part.to_string());
+                parsed_font.font_family = Some(part.into());
                 if !res.is_empty() {
                     let mut current = parsed_font.font_family.unwrap_or_default();
                     for item in res.iter() {
@@ -286,7 +314,7 @@ pub fn parse_font(font: &str) -> ParsedFont {
     parsed_font
 }
 
-fn parse_font_family(value: String) -> Vec<String> {
+fn parse_font_family(value: &str) -> Vec<String> {
     let mut result = Vec::new();
     if value.is_empty() {
         return result;
@@ -319,4 +347,3 @@ fn is_size_length(value: &str) -> bool {
 fn to_font_style(weight: ParsedFontWeight, style: ParsedFontStyle) -> FontStyle {
     FontStyle::new(weight.into_skia(), Width::NORMAL, style.into_skia())
 }
-

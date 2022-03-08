@@ -30,7 +30,7 @@ impl Context {
         if value.eq("none") {
             return;
         }
-        let mut filters: Vec<&str> = value.split(")").collect();
+        let filters: Vec<&str> = value.split(")").collect();
         let filters: Vec<FilterType> = filters
             .into_iter()
             .filter(|x| {

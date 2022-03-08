@@ -1,6 +1,6 @@
-use std::borrow::Cow;
+
 use std::collections::VecDeque;
-use std::convert::TryFrom;
+
 
 use skia_safe::{
     font_style::{Slant, Weight, Width},
@@ -8,7 +8,7 @@ use skia_safe::{
     FontMetrics, FontMgr, FontStyle,
 };
 
-use crate::common::context::drawing_text::typography::ParsedFontStyle::{Italic, Normal, Oblique};
+
 use crate::{
     common::context::text_styles::text_align::TextAlign,
     common::context::text_styles::text_baseline::TextBaseLine,
@@ -104,7 +104,7 @@ impl Font {
 
     fn to_font(&self) -> skia_safe::Font {
         let style = to_font_style(self.font.font_weight(), self.font.font_style());
-        let mut families: Vec<String> = parse_font_family(self.font.font_family());
+        let families: Vec<String> = parse_font_family(self.font.font_family());
         let mut default_typeface =
             Typeface::from_name("sans-serif", style).unwrap_or(Typeface::default());
         let mgr = FontMgr::default();

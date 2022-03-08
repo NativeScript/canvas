@@ -1,5 +1,3 @@
-cargo-features=["strip"]
-
 [workspace]
 
 members = [
@@ -8,12 +6,10 @@ members = [
 ]
 
 [profile.release]
-#panic = "abort"
+panic = "abort"
 codegen-units = 1
 lto = true
-#opt-level = 3
 opt-level = "z"
 debug = false
 incremental = false
-
-strip = "symbols"
+strip = true

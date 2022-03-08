@@ -10,12 +10,12 @@ impl Context {
         src_rect: impl Into<Rect>,
         dst_rect: impl Into<Rect>,
     ) {
-        let mut src_rect = src_rect.into();
-        let mut dst_rect = dst_rect.into();
+        let src_rect = src_rect.into();
+        let dst_rect = dst_rect.into();
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
-        let mut paint = self.state.paint.image_paint().clone();
+        let paint = self.state.paint.image_paint().clone();
         self.surface.canvas().draw_image_rect_with_sampling_options(
             image,
             Some((&src_rect, SrcRectConstraint::Strict)),
@@ -26,7 +26,7 @@ impl Context {
     }
 
     pub fn draw_image_with_rect(&mut self, image: &Image, dst_rect: impl Into<Rect>) {
-        let mut dst_rect = dst_rect.into();
+        let dst_rect = dst_rect.into();
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());

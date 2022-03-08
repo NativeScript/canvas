@@ -1,16 +1,15 @@
-use jni::errors::Error;
+
 use jni::JNIEnv;
-use jni::objects::{AutoPrimitiveArray, JByteBuffer, JClass, JObject, ReleaseMode};
+use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode};
 use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_TRUE};
-use skia_safe::{RCHandle, Rect};
+
 
 use crate::common::context::image_asset::ImageAsset;
 use crate::common::image_bitmap;
 use crate::common::image_bitmap::{
     create_from_image_asset_src_rect, create_from_image_data, create_image_asset,
-    create_image_bitmap,
 };
-use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
+
 
 /*
 ImageBitmap backed by ImageAsset
@@ -392,7 +391,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBi
     resize_width: jfloat,
     resize_height: jfloat,
 ) -> jlong {
-    let mut result = super::utils::image::get_bytes_from_bitmap(env, bitmap);
+    let result = super::utils::image::get_bytes_from_bitmap(env, bitmap);
     create_image_asset(
         result.0.as_slice(),
         result.1.width as f32,

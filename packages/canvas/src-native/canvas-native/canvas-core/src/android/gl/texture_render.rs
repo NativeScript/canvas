@@ -2,9 +2,7 @@ use std::os::raw::c_void;
 
 use jni::JNIEnv;
 use jni::objects::{JClass, JObject, ReleaseMode};
-use jni::sys::{jboolean, jfloatArray, jint};
-
-const SURFACE_TEXTURE_CLASS: &'static str = "android/graphics/SurfaceTexture";
+use jni::sys::{jfloatArray, jint};
 
 #[no_mangle]
 pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFrame(
@@ -184,7 +182,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFr
         // env.call_static_method(clazz, "setIdentityM", "([F;I)V", &[])
 
         let size = matrix.size().unwrap_or(0) as usize;
-        let mut matrix = std::slice::from_raw_parts_mut(matrix.as_ptr() as *mut f32, size);
+        let matrix = std::slice::from_raw_parts_mut(matrix.as_ptr() as *mut f32, size);
 
         if flip_y_web_gl {
             identity(matrix);

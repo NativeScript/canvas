@@ -7,7 +7,7 @@ use std::os::raw::c_void;
 use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode};
 use jni::sys::{
-    jboolean, jbyteArray, jdouble, jdoubleArray, jfloatArray, jint, jintArray, jlong, jlongArray,
+    jboolean, jbyteArray, jdoubleArray, jfloatArray, jint, jintArray, jlong, jlongArray,
     JNI_TRUE, jshortArray,
 };
 

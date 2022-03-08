@@ -56,7 +56,7 @@ pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -
 }
 
 pub(crate) fn to_data(context: &mut Context) -> Vec<u8> {
-    let mut surface = &mut context.surface;
+    let surface = &mut context.surface;
     let width = surface.width();
     let height = surface.height();
     let image = surface.image_snapshot();
@@ -130,7 +130,7 @@ pub(crate) fn snapshot_canvas_raw(context: *mut Context) -> Vec<u8> {
         let mut bytes = vec![0u8; len];
         let mut dst_surface =
             Surface::new_raster_direct(&info, bytes.as_mut_slice(), None, None).unwrap();
-        let mut dst_canvas = dst_surface.canvas();
+        let dst_canvas = dst_surface.canvas();
         surface.draw(dst_canvas, Point::new(0., 0.), FilterQuality::High, None);
         surface.flush_and_submit();
         dst_surface.flush_and_submit();

@@ -4,7 +4,7 @@
 
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
-use jni::sys::{jbyteArray, jlong, jobject, jstring};
+use jni::sys::{jbyteArray, jlong, jstring};
 
 use crate::common::context::text_encoder::TextEncoder;
 

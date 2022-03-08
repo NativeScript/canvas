@@ -4,13 +4,13 @@
 
 use std::os::raw::c_void;
 
-use jni::errors::Error;
+
 use jni::JNIEnv;
-use jni::objects::{AutoPrimitiveArray, JByteBuffer, JClass, JObject, ReleaseMode};
+use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode};
 use jni::sys::{
-    jboolean, jbyteArray, jfloatArray, jint, jintArray, jlong, JNI_TRUE, jobject, jshortArray,
+    jboolean, jbyteArray, jfloatArray, jint, jintArray, jlong, JNI_TRUE, jshortArray,
 };
-use skia_safe::RCHandle;
+
 
 use crate::common::context::image_asset::ImageAsset;
 
@@ -21,15 +21,15 @@ const RGBA_INTEGER: u32 = 0x8D99;
 pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGLRenderingContext_nativeTexImage2DTexture(
     _env: JNIEnv,
     _: JClass,
-    width: jint,
-    height: jint,
-    src_texture: jint,
+    _width: jint,
+    _height: jint,
+    _src_texture: jint,
 ) {
-    let mut previous_view_port = [-1_i32; 4];
-    let mut previous_active_texture = [-1_i32; 1];
-    let mut previous_texture = [-1_i32; 1];
-    let mut previous_program = [-1_i32; 1];
-    let mut previous_frame_buffer = [-1_i32; 1];
+    let _previous_view_port = [-1_i32; 4];
+    let _previous_active_texture = [-1_i32; 1];
+    let _previous_texture = [-1_i32; 1];
+    let _previous_program = [-1_i32; 1];
+    let _previous_frame_buffer = [-1_i32; 1];
 }
 
 #[no_mangle]

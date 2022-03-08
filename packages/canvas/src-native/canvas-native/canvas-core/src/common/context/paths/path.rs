@@ -44,7 +44,7 @@ impl Path {
         Self { path: path.clone() }
     }
 
-    fn init(&mut self, x: f32, y: f32) {
+    fn init(&mut self, _x: f32, _y: f32) {
         if self.path.is_empty() {
             //   self.path.move_to(Point::new(x, y));
         }

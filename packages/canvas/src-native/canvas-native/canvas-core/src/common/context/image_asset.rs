@@ -92,7 +92,7 @@ impl ImageAsset {
             self.error.clear()
         }
         self.image = None;
-        let real_path = unsafe { CStr::from_ptr(path) }.to_str().unwrap_or("");
+        let real_path = CStr::from_ptr(path).to_str().unwrap_or("");
         let file = std::fs::File::open(real_path);
         match file {
             Ok(file) => {
@@ -146,7 +146,7 @@ impl ImageAsset {
             self.error.clear()
         }
         self.image = None;
-        match image::load_from_memory(unsafe { std::slice::from_raw_parts(buffer, size) }) {
+        match image::load_from_memory(std::slice::from_raw_parts(buffer, size)) {
             Ok(result) => {
                 self.image = Some(result);
                 true
@@ -382,7 +382,7 @@ impl ImageAsset {
                     OutputFormat::TIFF => ImageFormat::Tiff,
                     _ => ImageFormat::Jpeg,
                 };
-                let real_path = unsafe { CStr::from_ptr(path) }.to_str().unwrap_or("");
+                let real_path = CStr::from_ptr(path).to_str().unwrap_or("");
                 let done = match image.save_with_format(real_path, format) {
                     Ok(_) => true,
                     _ => false,
@@ -397,8 +397,6 @@ impl ImageAsset {
     }
 
     pub unsafe fn free_image_data(data: *mut U8Array) {
-        unsafe {
             let _ = Box::from_raw(data);
-        }
     }
 }

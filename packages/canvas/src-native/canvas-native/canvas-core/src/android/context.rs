@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use jni::errors::Error;
+
 use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JString, JValue, ReleaseMode};
 use jni::sys::{
@@ -15,7 +15,7 @@ use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::fill_and_stroke_styles::pattern::Repetition;
 use crate::common::context::image_asset::ImageAsset;
 use crate::common::context::image_smoothing::ImageSmoothingQuality;
-use crate::common::context::line_styles::line_cap::LineCap;
+
 use crate::common::context::line_styles::line_join::LineJoin;
 use crate::common::context::matrix::Matrix;
 use crate::common::context::paths::path::Path;
@@ -23,9 +23,9 @@ use crate::common::context::pixel_manipulation::image_data::ImageData;
 use crate::common::context::text_styles::text_align::TextAlign;
 use crate::common::context::text_styles::text_baseline::TextBaseLine;
 use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::ffi::paint_style_value::{PaintStyleValue, PaintStyleValueType};
+use crate::common::ffi::paint_style_value::{PaintStyleValueType};
 use crate::common::utils::color::to_parsed_color;
-use crate::common::utils::image::{from_image_slice, from_image_slice_encoded, to_image};
+use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
 
 const JSON_CLASS: &str = "org/json/JSONObject";
 const SIG_OBJECT_CTOR: &str = "()V";
@@ -921,7 +921,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
     image_data: jbyteArray,
     repetition: jint,
 ) -> jlong {
-    use log::{debug, info};
+    
     unsafe {
         if context == 0 {
             return 0;
@@ -954,7 +954,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
     height: jint,
     repetition: jint,
 ) -> jlong {
-    use log::{debug, info};
+    
     unsafe {
         if context == 0 {
             return 0;

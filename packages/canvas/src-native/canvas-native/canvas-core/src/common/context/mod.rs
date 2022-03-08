@@ -98,7 +98,7 @@ impl State {
         }
     }
     pub fn from_device(device: Device, direction: TextDirection) -> Self {
-        let mut font = Font::new("10px sans-serif", device);
+        let font = Font::new("10px sans-serif", device);
         let mut paint = Paint::default();
         paint
             .stroke_paint_mut()

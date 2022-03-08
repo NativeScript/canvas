@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
-use css_color_parser::{Color, ColorParseError};
+
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jlong, jstring};
-use log::{debug, info};
+
 
 use crate::common::context::Context;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;

@@ -4,7 +4,7 @@
 
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
-use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring};
+use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
 
 use crate::common::context::image_asset::{ImageAsset, OutputFormat};
 

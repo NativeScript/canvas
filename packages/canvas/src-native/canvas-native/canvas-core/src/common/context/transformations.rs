@@ -32,7 +32,7 @@ impl Context {
         f: c_float,
     ) {
         let affine = [a, b, c, d, e, f];
-        let mut transform = Matrix::from_affine(&affine);
+        let transform = Matrix::from_affine(&affine);
         self.surface.canvas().concat(&transform);
     }
 
@@ -53,14 +53,14 @@ impl Context {
         f: c_float,
     ) {
         let affine = [a, b, c, d, e, f];
-        let mut matrix = Matrix::from_affine(&affine);
+        let matrix = Matrix::from_affine(&affine);
         let m44 = M44::from(matrix);
         self.surface.canvas().set_matrix(&m44);
     }
 
     pub fn set_transform_matrix(&mut self, matrix: &Matrix) {
         self.surface.canvas().reset_matrix();
-        let mut matrix = matrix.clone();
+        let matrix = matrix.clone();
         let m44 = M44::from(matrix);
         self.surface.canvas().set_matrix(&m44);
     }

@@ -1,5 +1,5 @@
-use std::ffi::CStr;
-use std::os::raw::{c_char, c_float, c_longlong};
+
+use std::os::raw::{c_float, c_longlong};
 
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};

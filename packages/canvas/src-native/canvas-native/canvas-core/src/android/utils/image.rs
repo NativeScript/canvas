@@ -1,14 +1,14 @@
-use std::borrow::Cow;
+
 use std::os::raw::c_void;
 
 use jni::JNIEnv;
-use jni::objects::{JByteBuffer, JClass, JObject};
-use jni::sys::{jbyteArray, jobject};
-use log::{debug, info};
+use jni::objects::{JClass, JObject};
+use jni::sys::{jbyteArray};
+use log::{debug};
 
 use crate::android::utils::bitmap::AndroidBitmapInfo;
 
-use super::bitmap::*;
+
 
 pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> (Vec<u8>, AndroidBitmapInfo) {
     let native_interface = env.get_native_interface();

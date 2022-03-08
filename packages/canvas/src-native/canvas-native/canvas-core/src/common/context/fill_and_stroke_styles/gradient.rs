@@ -28,7 +28,7 @@ pub enum Gradient {
 }
 
 impl Gradient {
-    pub fn set_shader(&mut self, shader: Option<Shader>) {
+    pub fn set_shader(&mut self, _shader: Option<Shader>) {
         match &self {
             Gradient::Linear { .. } => {}
             Gradient::Radial { .. } => {}

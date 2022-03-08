@@ -5,11 +5,10 @@ use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, j
 
 use log::Level;
 use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, PixelGeometry,
-    RCHandle, Rect, Size, Surface,
+    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, ISize, PixelGeometry, Rect, Surface,
 };
 use skia_safe::gpu::gl::Interface;
-use skia_safe::image::CachingHint;
+
 
 use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;

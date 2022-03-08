@@ -7,6 +7,8 @@ lazy_static! {
             [
             (
                 vec![
+                // iPhone 13 mini
+                "iPhone14,4",
                 // iPhone 12 mini
                 "iPhone13,1"
                 ],
@@ -14,6 +16,10 @@ lazy_static! {
             ),
                 (
                     vec![
+                        // iPhone 13
+                        "iPhone14,5",
+                        // iPhone 13 Pro
+                        "iPhone14,2",
                         // iPhone 12
                         "iPhone13,2",
                         // iPhone 12 Pro
@@ -23,6 +29,8 @@ lazy_static! {
                 ),
                 (
                     vec![
+                     // iPhone 13 Pro Max
+                    "iPhone14,3",
                     // iPhone 12 Pro Max
                     "iPhone13,4",
                     // iPhone 11 Pro
@@ -87,6 +95,8 @@ lazy_static! {
                 // iPhone 4S
                 "iPhone4,1",
 
+                // iPad mini (6th generation)
+                "iPad14,1", "iPad14,2",
                 // iPad mini (5th generation)
                 "iPad11,1", "iPad11,2",
                 // iPad mini 4
@@ -100,42 +110,48 @@ lazy_static! {
                 ),
                 (
                     vec![
-                        // iPad Air (4th generation)
-                        "iPad13,1", "iPad13,2",
-                        // iPad (8th generation)
-                        "iPad11,6", "iPad11,7",
-                        // iPad Pro (12.9″, 4th generation)
-                        "iPad8,11", "iPad8,12",
-                        // iPad Pro (11″, 2nd generation)
-                        "iPad8,9", "iPad8,10",
-                        // iPad (7th generation)
-                        "iPad7,11", "iPad7,12",
-                        // iPad Air (3rd generation)
-                        "iPad11,3", "iPad11,4",
-                        // iPad Pro (12.9″, 3rd generation)
-                        "iPad8,5", "iPad8,6", "iPad8,7", "iPad8,8",
-                        // iPad Pro (11″)
-                        "iPad8,1", "iPad8,2", "iPad8,3", "iPad8,4",
-                        // iPad (6th generation)
-                        "iPad7,5", "iPad7,6",
-                        // iPad Pro (10.5″)
-                        "iPad7,3", "iPad7,4",
-                        // iPad Pro (12.9″, 2nd generation)
-                        "iPad7,1", "iPad7,2",
-                        // iPad (5th generation)
-                        "iPad6,11", "iPad6,12",
-                        // iPad Pro (12.9″)
-                        "iPad6,7", "iPad6,8",
-                        // iPad Pro (9.7″)
-                        "iPad6,3", "iPad6,4",
-                        // iPad Air 2
-                        "iPad5,3", "iPad5,4",
-                        // iPad Air
-                        "iPad4,1", "iPad4,2", "iPad4,3",
-                        // iPad (4th generation)
-                        "iPad3,4", "iPad3,5", "iPad3,6",
-                        // iPad (3rd generation)
-                        "iPad3,1", "iPad3,2", "iPad3,3"
+                          // iPad (9th generation)
+                "iPad12,1", "iPad12,2",
+                // iPad Pro (12.9″, 5th generation)
+                "iPad13,8", "iPad13,9", "iPad13,10", "iPad13,11",
+                // iPad Pro (11″, 3rd generation)
+                "iPad13,4", "iPad13,5", "iPad13,6", "iPad13,7",
+                // iPad Air (4th generation)
+                "iPad13,1", "iPad13,2",
+                // iPad (8th generation)
+                "iPad11,6", "iPad11,7",
+                // iPad Pro (12.9″, 4th generation)
+                "iPad8,11", "iPad8,12",
+                // iPad Pro (11″, 2nd generation)
+                "iPad8,9", "iPad8,10",
+                // iPad (7th generation)
+                "iPad7,11", "iPad7,12",
+                // iPad Air (3rd generation)
+                "iPad11,3", "iPad11,4",
+                // iPad Pro (12.9″, 3rd generation)
+                "iPad8,5", "iPad8,6", "iPad8,7", "iPad8,8",
+                // iPad Pro (11″)
+                "iPad8,1", "iPad8,2", "iPad8,3", "iPad8,4",
+                // iPad (6th generation)
+                "iPad7,5", "iPad7,6",
+                // iPad Pro (10.5″)
+                "iPad7,3", "iPad7,4",
+                // iPad Pro (12.9″, 2nd generation)
+                "iPad7,1", "iPad7,2",
+                // iPad (5th generation)
+                "iPad6,11", "iPad6,12",
+                // iPad Pro (12.9″)
+                "iPad6,7", "iPad6,8",
+                // iPad Pro (9.7″)
+                "iPad6,3", "iPad6,4",
+                // iPad Air 2
+                "iPad5,3", "iPad5,4",
+                // iPad Air
+                "iPad4,1", "iPad4,2", "iPad4,3",
+                // iPad (4th generation)
+                "iPad3,4", "iPad3,5", "iPad3,6",
+                // iPad (3rd generation)
+                "iPad3,1", "iPad3,2", "iPad3,3"
                     ],
                     264
                 ),

@@ -49,7 +49,7 @@ impl Context {
         }
         let font = &self.state.font;
 
-        let measurement = font.get_font(self.device).measure_str(text, Some(paint));
+        let measurement = font.to_skia().measure_str(text, Some(paint));
         let font_width = measurement.0;
         let max_width = width;
         let width: f32;
@@ -59,7 +59,7 @@ impl Context {
         } else {
             width = font_width;
         }
-        let metrics = font.get_font(self.device).metrics();
+        let metrics = font.to_skia().metrics();
         let baseline = get_font_baseline(metrics.1, self.state.text_baseline);
         let mut location: Point = (x, y + baseline).into();
 
@@ -74,7 +74,7 @@ impl Context {
                 // NOOP
             }
         }
-        let (line_spacing, metrics) = font.get_font(self.device).metrics();
+        let (line_spacing, metrics) = font.to_skia().metrics();
 
         let mut rect: (Point, Size) = (
             (
@@ -102,7 +102,7 @@ impl Context {
             self.surface.canvas().scale((scale_x, 1.0));
         }
 
-        let font = font.get_font(self.device);
+        let font = font.to_skia();
         if let Some(shadow_paint) = shadow_paint {
             self.surface
                 .canvas()
@@ -118,9 +118,9 @@ impl Context {
         let (width, bounds) = self
             .state
             .font
-            .get_font(self.device)
+            .to_skia()
             .measure_str(text, Some(self.state.paint.fill_paint()));
-        let (_, metrics) = self.state.font.get_font(self.device).metrics();
+        let (_, metrics) = self.state.font.to_skia().metrics();
         let ascent = metrics.ascent;
         let descent = metrics.descent;
         let baseline_y = get_font_baseline(metrics, self.state.text_baseline);

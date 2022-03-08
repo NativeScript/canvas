@@ -1,4 +1,5 @@
-
+use std::collections::VecDeque;
+use std::convert::TryFrom;
 
 use skia_safe::{
     font_style::{Slant, Weight, Width},
@@ -12,6 +13,7 @@ use crate::{
     common::context::text_styles::text_baseline::TextBaseLine, common::context::text_styles::text_direction::TextDirection,
     common::utils::dimensions::parse_size,
 };
+use crate::common::context::drawing_text::typography::ParsedFontStyle::{Italic, Normal, Oblique};
 
 const XX_SMALL: &str = "9px";
 const X_SMALL: &str = "10px";
@@ -69,12 +71,16 @@ pub(crate) fn to_real_text_align(align: TextAlign, direction: TextDirection) -> 
 #[derive(Clone, Debug)]
 pub struct Font {
     pub(crate) font_details: String,
+    pub(crate) font: ParsedFont,
+    skia_value: skia_safe::Font,
 }
 
 impl Font {
     pub fn new(font_details: &str) -> Self {
         Self {
             font_details: font_details.into(),
+            font: parse_font(font_details),
+            skia_value: skia_safe::Font
         }
     }
 
@@ -82,60 +88,22 @@ impl Font {
         self.font_details.as_ref()
     }
 
-    pub fn get_font(&self, device: Device) -> skia_safe::Font {
-        parse_font(self.get_font_details(), device).unwrap().1
+    pub fn get_font(&self) -> &ParsedFont {
+        &self.font
     }
-}
 
-pub(crate) fn parse_font(font: &str, device: Device) -> Result<(String, skia_safe::Font), ()> {
-    let mut data: Vec<_> = font.split(' ').collect();
-    let mut data: Vec<String> = data.into_iter().map(|x| x.trim().to_string()).collect();
-    let size = data.len();
-    if !data.is_empty() && size >= 2 {
-        let font_size_line_height = data.get(size - 2);
-        let font_families = data.last();
-        let mut font_size = "10px".to_string();
-        let mut style = "normal".to_string();
-        let mut variant = "normal".to_string();
-        let mut weight = "normal".to_string();
-        let mut width = "normal".to_string();
-        let mut line_height = "normal".to_string();
-        let mut family = "sans-serif".to_string();
-
-        match (font_size_line_height, font_families) {
-            (Some(font_size_line_height), Some(_)) => {
-                if let Ok(result) = to_size_line_height(font_size_line_height) {
-                    font_size = result.0.into();
-                    line_height = result.1.into();
-                } else {
-                    return Err(());
-                }
-            }
-            _ => {
-                return Err(());
-            }
+    pub fn set_font(&mut self, font_details: &str) {
+        if font_details.is_empty() {
+            return;
         }
 
-        for prop in data.into_iter().take(size - 2) {
-            match prop.as_str() {
-                "italic" | "oblique" => style = prop.into(),
-                "small-caps" => variant = prop.into(),
-                "bold" | "bolder" | "lighter" | "thin" | "100" | "200" | "300" | "400" | "500"
-                | "600" | "700" | "800" | "900" => weight = prop.into(),
-                "ultra-condensed" | "extra-condensed" | "condensed" | "semi-condensed"
-                | "semi-expanded" | "expanded" | "extra-expanded" | "ultra-expanded" => {
-                    width = prop.into()
-                }
-                _ => {}
-            }
-        }
+        self.font_details = font_details.to_string();
+        self.font = parse_font(font_details);
 
-        let style = to_font_style(weight.as_ref(), width.as_ref(), style.as_ref());
-        let mut families: Vec<_> = family.split("/").collect();
-        let mut families: Vec<String> = families
-            .into_iter()
-            .map(|x| x.trim().replace("\"", ""))
-            .collect();
+        let style = to_font_style(weight.as_ref(), style.as_ref());
+
+        let mut families: Vec<String> =
+            parse_font_family(parsed_font.font_family.unwrap_or("sans-serif".to_string()));
         let mut default_typeface =
             Typeface::from_name("sans-serif", style).unwrap_or(Typeface::default());
         let mgr = FontMgr::default();
@@ -149,25 +117,192 @@ pub(crate) fn parse_font(font: &str, device: Device) -> Result<(String, skia_saf
                 }
             }
         }
-        return Ok((
-            font.to_string(),
-            skia_safe::Font::from_typeface(
-                default_typeface,
-                Some(parse_size(font_size.as_ref(), device)),
-            ),
-        ));
+
+       self.skia_value = skia_safe::Font::from_typeface(
+            default_typeface,
+            Some(parse_size(font_size.as_ref(), device)),
+        );
     }
-    Err(())
+
+    pub fn to_skia(&self) -> &skia_safe::Font {
+      &self.skia_value
+    }
 }
 
-fn is_line_height_size_length(value: &str) -> bool {
-    if is_size_length(value) {
-        return true;
+#[derive(Clone, Debug)]
+pub struct ParsedFont {
+    font_style: ParsedFontStyle,
+    font_variant: String,
+    font_weight: ParsedFontWeight,
+    line_height: Option<String>,
+    font_size: Option<String>,
+    font_family: Option<String>,
+}
+
+impl Default for ParsedFont {
+    fn default() -> Self {
+        Self {
+            font_style: ParsedFontStyle::Normal,
+            font_variant: "normal".to_string(),
+            font_weight: ParsedFontWeight::Normal,
+            line_height: None,
+            font_size: None,
+            font_family: None,
+        }
     }
-    if let Ok(_) = value.parse::<i32>() {
-        return true;
+}
+
+const NORMAL: &str = "normal";
+const ITALIC: &str = "italic";
+const OBLIQUE: &str = "oblique";
+
+#[derive(Copy, Clone, Debug)]
+pub enum ParsedFontStyle {
+    Normal,
+    Italic,
+    Oblique,
+}
+
+impl ParsedFontStyle {
+    pub fn value(&self) -> &str {
+        match self {
+            ParsedFontStyle::Normal => NORMAL,
+            ParsedFontStyle::Italic => ITALIC,
+            ParsedFontStyle::Oblique => OBLIQUE,
+        }
     }
-    return false;
+
+    pub fn is_supported(value: &str) -> bool {
+        NORMAL == value || ITALIC == value || OBLIQUE == value
+    }
+
+    pub fn into_skia(&self) -> Slant {
+        match self {
+            ParsedFontStyle::Italic => Slant::Italic,
+            ParsedFontStyle::Oblique => Slant::Oblique,
+            _ => Slant::Upright,
+        }
+    }
+}
+
+#[repr(u32)]
+#[derive(Copy, Clone, Debug)]
+pub enum ParsedFontWeight {
+    Thin = 100,
+    ExtraLight = 200,
+    Light = 300,
+    Normal = 400,
+    Medium = 500,
+    SemiBold = 600,
+    Bold = 700,
+    ExtraBold = 800,
+    Black = 900,
+}
+
+impl ParsedFontWeight {
+    pub fn is_supported(value: &str) -> bool {
+        match value {
+            "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" | "lighter"
+            | "bold" | "bolder" | "normal" => true,
+            _ => false,
+        }
+    }
+
+    // todo parse relative values
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "100" => Option::from(ParsedFontWeight::Thin),
+            "200" => Option::from(ParsedFontWeight::ExtraLight),
+            "300" => Option::from(ParsedFontWeight::Light),
+            "400" | "normal" => Option::from(ParsedFontWeight::Normal),
+            "500" => Option::from(ParsedFontWeight::Medium),
+            "600" => Option::from(ParsedFontWeight::SemiBold),
+            "700" | "bold" => Option::from(ParsedFontWeight::Bold),
+            "800" => Option::from(ParsedFontWeight::ExtraBold),
+            "900" => Option::from(ParsedFontWeight::Black),
+            _ => None,
+        }
+    }
+
+    pub fn into_skia(&self) -> Weight {
+        Weight::from(self as i32)
+    }
+}
+
+pub fn parse_font(font: &str) -> ParsedFont {
+    let pat = regex::Regex::new(r"\s+").unwrap();
+    let res = pat.split(font);
+
+    let mut parsed_font = ParsedFont::default();
+
+    let mut res: VecDeque<_> = res.collect();
+
+    for _ in 0..res.len() {
+        if let Some(part) = res.pop_front() {
+            if part.eq("normal") {
+            } else if part.eq("small-caps") {
+                parsed_font.font_variant = part.to_string();
+            } else if ParsedFontStyle::is_supported(part) {
+                match part {
+                    NORMAL => {
+                        parsed_font.font_style = ParsedFontStyle::Normal;
+                    }
+                    ITALIC => {
+                        parsed_font.font_style = ParsedFontStyle::Italic;
+                    }
+                    OBLIQUE => {
+                        parsed_font.font_style = ParsedFontStyle::Oblique;
+                    }
+                    _ => {}
+                }
+            } else if ParsedFontWeight::is_supported(part) {
+                parsed_font.font_weight =
+                    ParsedFontWeight::parse(part).unwrap_or(ParsedFontWeight::Normal);
+            } else if parsed_font.font_size.is_none() {
+                let sizes = part.split('/');
+                for (j, size) in sizes.enumerate() {
+                    if j == 0 {
+                        parsed_font.font_size = Some(size.to_string());
+                    }
+
+                    if j == 1 {
+                        parsed_font.line_height = Some(size.to_string());
+                    }
+                }
+            } else {
+                parsed_font.font_family = Some(part.to_string());
+                if !res.is_empty() {
+                    let mut current = parsed_font.font_family.unwrap_or_default();
+                    for item in res.iter() {
+                        current.push_str(&format!(" {}", *item));
+                    }
+                    parsed_font.font_family = Some(current);
+                }
+                break;
+            }
+        }
+    }
+
+    parsed_font
+}
+
+fn parse_font_family(value: String) -> Vec<String> {
+    let mut result = Vec::new();
+    if value.is_empty() {
+        return result;
+    }
+
+    let regex = regex::Regex::new(r#"/['"]+/g"#).unwrap();
+
+    let split = value.split(',');
+    for item in split {
+        let s = regex.replace(item.trim(), "");
+        if !s.is_empty() {
+            result.push(s.to_string());
+        }
+    }
+
+    return result;
 }
 
 fn is_size_length(value: &str) -> bool {
@@ -181,81 +316,7 @@ fn is_size_length(value: &str) -> bool {
         || value.contains("%");
 }
 
-fn to_size_line_height(value: &str) -> Result<(String, String), ()> {
-    let mut val: Vec<String> = value
-        .split('/')
-        .into_iter()
-        .map(|x| x.to_string())
-        .collect();
-    val = val.into_iter().take(2).collect();
-    let mut size = None;
-    let mut line_height = "normal";
-    if let Some(val) = val.first() {
-        if is_size_length(val) {
-            size = Some(val);
-        } else {
-            match val.as_str() {
-                "medium" | "xx-small" | "x-small" | "small" | "large" | "x-large" | "xx-large"
-                | "smaller" | "larger" => size = Some(val),
-                _ => {}
-            }
-        }
-    }
-
-    if let Some(val) = val.last() {
-        if is_line_height_size_length(value) {
-            line_height = val
-        }
-    }
-
-    if let Some(size) = size {
-        return Ok((size.into(), line_height.into()));
-    }
-
-    Err(())
+fn to_font_style(weight: ParsedFontWeight, style: ParsedFontStyle) -> FontStyle {
+    FontStyle::new(weight.into_skia(), Width::NORMAL, style.into_skia())
 }
 
-fn to_font_style(weight: &str, width: &str, slant: &str) -> FontStyle {
-    FontStyle::new(to_weight(weight), to_width(width), to_slant(slant))
-}
-
-fn to_weight(value: &str) -> Weight {
-    match value {
-        "bold" => Weight::BOLD,
-        // TODO use parent
-        "lighter" => Weight::LIGHT,
-        "bolder" => Weight::BOLD,
-        "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" => {
-            Weight::from(value.parse::<i32>().unwrap())
-        }
-        _ => Weight::NORMAL,
-    }
-}
-
-fn to_width(value: &str) -> Width {
-    match value {
-        "ultra-condensed" => Width::ULTRA_CONDENSED,
-        "extra-condensed" => Width::EXTRA_CONDENSED,
-        "condensed" => Width::CONDENSED,
-        "semi-condensed" => Width::SEMI_CONDENSED,
-        "semi-expanded" => Width::SEMI_EXPANDED,
-        "expanded" => Width::EXPANDED,
-        "extra-expanded" => Width::EXTRA_EXPANDED,
-        "ultra-expanded" => Width::ULTRA_EXPANDED,
-        _ => Width::NORMAL,
-    }
-}
-
-fn to_slant(value: &str) -> Slant {
-    match value {
-        "italic" => Slant::Italic,
-        "oblique" => Slant::Oblique,
-        _ => Slant::Upright,
-    }
-}
-
-fn is_size(value: &str) -> bool {
-    match value {
-        _ => false,
-    }
-}

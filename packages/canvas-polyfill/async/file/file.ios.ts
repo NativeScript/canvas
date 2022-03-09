@@ -1,3 +1,5 @@
+declare const qos_class_t;
+
 const background_queue = dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0);
 const main_queue = dispatch_get_current_queue();
 export class FileManager {

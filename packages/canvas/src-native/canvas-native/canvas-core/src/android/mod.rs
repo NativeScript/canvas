@@ -45,7 +45,7 @@ pub extern "system" fn JNI_OnLoad() -> jint {
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContext(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContext(
     _: JNIEnv,
     _: JClass,
     width: jfloat,
@@ -146,7 +146,7 @@ pub(crate) fn init_with_custom_surface(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContextWithCustomSurface(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContextWithCustomSurface(
     _: JNIEnv,
     _: JClass,
     width: jfloat,
@@ -161,7 +161,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContextWithCu
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeDestroyContext(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDestroyContext(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -176,7 +176,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeDestroyContext(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeSurface(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeSurface(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -250,7 +250,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeSurface(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeCustomSurface(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeCustomSurface(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -293,7 +293,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeCustomSurfa
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -322,7 +322,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeSnapshotCanvas(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeSnapshotCanvas(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -346,7 +346,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeSnapshotCanvas(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeFlush(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeFlush(
     _: JNIEnv,
     _: JClass,
     context: jlong,
@@ -362,7 +362,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeFlush(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBitmapFlush(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBitmapFlush(
     env: JNIEnv,
     _: JClass,
     context: jlong,

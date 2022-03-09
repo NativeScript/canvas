@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		//svg = findViewById(R.id.svgView)
+		svg = findViewById(R.id.svgView)
 		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
@@ -49,6 +49,8 @@ class MainActivity : AppCompatActivity() {
 				drawFill(canvas!!)
 			}
 		}
+
+		drawTransformPathSvg()
 //		svg?.setSrc(
 //			"""
 //				<svg width="100" height="100" xmlns="svg">
@@ -380,10 +382,12 @@ class MainActivity : AppCompatActivity() {
 	fun drawTransformPathSvg() {
 		svg?.setSrc(
 			"""
-		<svg width="2000" height="2000"
-  xmlns="http://www.w3.org/2000/svg">
-  <image href="https://mdn.mozillademos.org/files/6457/mdn_logo_only_color.png" height="2000" width="2000"/>
-</svg>
+  <svg version="1.1"
+        xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        width="128" height="128">
+        <image width="128" height="128" transform="rotate(45)" transform-origin="64 64"
+            xlink:href="https://www.rust-lang.org/logos/rust-logo-128x128.png"/>
+        </svg>
 		""".trimIndent()
 		)
 	}

@@ -7,7 +7,7 @@ use jni::objects::{JClass, JString};
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasGradient_nativeAddColorStop(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasGradient_nativeAddColorStop(
     env: JNIEnv,
     _: JClass,
     style: c_longlong,

@@ -5,7 +5,7 @@ use jni::sys::{jint, jlong, jobject};
 use crate::common::context::pixel_manipulation::image_data::ImageData;
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeInit(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageData_nativeInit(
     _: JNIEnv,
     _: JClass,
     width: jint,
@@ -15,7 +15,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeInit(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeWidth(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageData_nativeWidth(
     _: JNIEnv,
     _: JClass,
     image_data: jlong,
@@ -31,7 +31,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeWidth(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeHeight(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageData_nativeHeight(
     _: JNIEnv,
     _: JClass,
     image_data: jlong,
@@ -47,7 +47,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeHeight(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeData(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageData_nativeData(
     env: JNIEnv,
     _: JClass,
     image_data: jlong,
@@ -69,7 +69,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeData(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDataLength(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageData_nativeDataLength(
     _: JNIEnv,
     _: JClass,
     image_data: jlong,
@@ -85,7 +85,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDataLength(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageData_nativeDestroy(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageData_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     image_data: jlong,

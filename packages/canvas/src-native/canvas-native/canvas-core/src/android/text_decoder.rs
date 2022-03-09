@@ -12,7 +12,7 @@ use jni::sys::{jbyteArray, jlong, jstring};
 use crate::common::context::text_decoder::TextDecoder;
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeInit(
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeInit(
     env: JNIEnv,
     _: JClass,
     decoding: JString,
@@ -26,7 +26,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeInit(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDestroy(
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -41,7 +41,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDestroy(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeGetEncoding(
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeGetEncoding(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -54,7 +54,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeGetEncoding(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeBuffer(
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeBuffer(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -75,7 +75,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeBuffer
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeBufferToBytes(
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeBufferToBytes(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -95,7 +95,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeBuffer
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecode(
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecode(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,
@@ -123,7 +123,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecode(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeToBytes(
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeToBytes(
     env: JNIEnv,
     _: JClass,
     decoder: jlong,

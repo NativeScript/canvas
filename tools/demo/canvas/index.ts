@@ -424,7 +424,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	draw() {
-		this.urlTests();
+		//this.urlTests();
 		//const str = new java.lang.String()
 
 
@@ -501,7 +501,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowOffsetY(this.canvas);
 		// strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
-		//textAlign(this.canvas)
+		textAlign(this.canvas)
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
@@ -578,7 +578,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		this.zen3dGeometryLoaderGltf(this.canvas);
+		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);

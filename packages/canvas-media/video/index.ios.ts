@@ -87,6 +87,7 @@ export class Video extends VideoBase {
 	_asset: AVURLAsset;
 	_videoSize: any;
 	_render: any;
+	static IS_DEBUG = false;
 	get _player() {
 		return this.#player;
 	}
@@ -135,7 +136,9 @@ export class Video extends VideoBase {
 				}
 				Utils.drawFrame(this.#player, this._assetOutput, this._videoSize, this._render, arguments[4], arguments[5], false);
 			} catch (e) {
-				console.log('getCurrentFrame error:', e);
+				if (Video.IS_DEBUG) {
+					console.log('getCurrentFrame error:', e);
+				}	
 			}
 		}
 	}

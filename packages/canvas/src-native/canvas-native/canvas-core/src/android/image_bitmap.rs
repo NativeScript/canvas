@@ -88,7 +88,7 @@ fn create_from_bytes_encoded_src_rect(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBuffer(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBuffer(
     env: JNIEnv,
     _: JClass,
     image_buffer: JByteBuffer,
@@ -119,7 +119,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBu
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBufferSrcRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBufferSrcRect(
     env: JNIEnv,
     _: JClass,
     image_buffer: JByteBuffer,
@@ -154,7 +154,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBu
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBufferEncoded(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBufferEncoded(
     env: JNIEnv,
     _: JClass,
     image_buffer: JByteBuffer,
@@ -181,7 +181,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBu
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBufferEncodedSrcRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBufferEncodedSrcRect(
     env: JNIEnv,
     _: JClass,
     image_buffer: JByteBuffer,
@@ -212,7 +212,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBu
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytes(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytes(
     env: JNIEnv,
     _: JClass,
     image_bytes: jbyteArray,
@@ -241,7 +241,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBy
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytesSrcRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytesSrcRect(
     env: JNIEnv,
     _: JClass,
     image_bytes: jbyteArray,
@@ -274,7 +274,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBy
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytesEncoded(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytesEncoded(
     env: JNIEnv,
     _: JClass,
     image_bytes: jbyteArray,
@@ -299,7 +299,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBy
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytesEncodedSrcRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBytesEncodedSrcRect(
     env: JNIEnv,
     _: JClass,
     image_bytes: jbyteArray,
@@ -328,7 +328,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBy
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromAsset(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromAsset(
     _: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -352,7 +352,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromAs
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromAssetSrcRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromAssetSrcRect(
     _: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -380,7 +380,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromAs
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBitmap(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBitmap(
     env: JNIEnv,
     _: JClass,
     bitmap: JObject,
@@ -407,7 +407,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBi
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBitmapSrcRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBitmapSrcRect(
     env: JNIEnv,
     _: JClass,
     bitmap: JObject,
@@ -438,7 +438,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromBi
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromImageData(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromImageData(
     _: JNIEnv,
     _: JClass,
     image_data: jlong,
@@ -462,7 +462,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromIm
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromImageDataSrcRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateFromImageDataSrcRect(
     _: JNIEnv,
     _: JClass,
     image_data: jlong,

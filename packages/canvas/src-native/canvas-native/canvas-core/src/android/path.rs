@@ -6,12 +6,12 @@ use crate::common::context::matrix::Matrix;
 use crate::common::context::paths::path::Path;
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeInit(_: JNIEnv, _: JClass) -> jlong {
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeInit(_: JNIEnv, _: JClass) -> jlong {
     Box::into_raw(Box::new(Path::new())) as jlong
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeCreateWithPath(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeCreateWithPath(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -27,7 +27,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeCreateWithPath(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeCreateWithString(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeCreateWithString(
     env: JNIEnv,
     _: JClass,
     string: JString,
@@ -41,7 +41,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeCreateWithString(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeAddPath(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeAddPath(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -60,7 +60,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeAddPath(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeAddPathWithMatrix(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeAddPathWithMatrix(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -82,7 +82,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeAddPathWithMatrix
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeClosePath(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeClosePath(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -98,7 +98,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeClosePath(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeMoveTo(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeMoveTo(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -116,7 +116,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeMoveTo(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeLineTo(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeLineTo(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -134,7 +134,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeLineTo(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeBezierCurveTo(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeBezierCurveTo(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -156,7 +156,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeBezierCurveTo(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeQuadraticCurveTo(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeQuadraticCurveTo(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -176,7 +176,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeQuadraticCurveTo(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeArc(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeArc(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -198,7 +198,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeArc(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeArcTo(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeArcTo(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -219,7 +219,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeArcTo(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeEllipse(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeEllipse(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -252,7 +252,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeEllipse(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeRect(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeRect(
     _: JNIEnv,
     _: JClass,
     path: jlong,
@@ -272,7 +272,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeRect(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSPath2D_nativeDestroy(
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     path: jlong,

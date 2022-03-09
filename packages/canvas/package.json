@@ -1,38 +1,38 @@
 {
-	"name": "@nativescript/canvas",
-	"version": "1.0.0-alpha.18",
-	"description": "DOM Canvas API for NativeScript",
-	"main": "index",
-	"typings": "index.d.ts",
-	"nativescript": {
-		"platforms": {
-			"ios": "7.0.0",
-			"android": "7.0.0"
-		}
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/NativeScript/canvas.git"
-	},
-	"keywords": [
-		"NativeScript",
-		"JavaScript",
-		"TypeScript",
-		"iOS",
-		"Android"
-	],
-	"author": {
-		"name": "NativeScript",
-		"email": "oss@nativescript.org"
-	},
-	"bugs": {
-		"url": "https://github.com/NativeScript/canvas/issues"
-	},
-	"license": "Apache-2.0",
-	"homepage": "https://github.com/NativeScript/canvas",
-	"readmeFilename": "README.md",
-	"bootstrapper": "@nativescript/plugin-seed",
-	"dependencies": {
-		"xmldom": "~0.6.0"
-	}
+  "name": "@nativescript/canvas",
+  "version": "1.0.0",
+  "description": "DOM Canvas API for NativeScript",
+  "main": "index",
+  "typings": "index.d.ts",
+  "nativescript": {
+    "platforms": {
+      "ios": "7.0.0",
+      "android": "7.0.0"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NativeScript/canvas.git"
+  },
+  "keywords": [
+    "NativeScript",
+    "JavaScript",
+    "TypeScript",
+    "iOS",
+    "Android"
+  ],
+  "author": {
+    "name": "NativeScript",
+    "email": "oss@nativescript.org"
+  },
+  "bugs": {
+    "url": "https://github.com/NativeScript/canvas/issues"
+  },
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/NativeScript/canvas",
+  "readmeFilename": "README.md",
+  "bootstrapper": "@nativescript/plugin-seed",
+  "dependencies": {
+    "xmldom": "~0.6.0"
+  }
 }

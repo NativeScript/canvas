@@ -5,7 +5,7 @@ use jni::objects::{JClass, JObject, ReleaseMode};
 use jni::sys::{jfloatArray, jint};
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFrame(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFrame(
     env: JNIEnv,
     _: JClass,
     surface_texture_object: JObject,

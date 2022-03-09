@@ -14,8 +14,8 @@
 		F16241F222DA6E9D007FBF7B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F16241F022DA6E9D007FBF7B /* LaunchScreen.storyboard */; };
 		F16241FD22DA6E9D007FBF7B /* CanvasDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241FC22DA6E9D007FBF7B /* CanvasDemoTests.swift */; };
 		F162420822DA6E9D007FBF7B /* CanvasDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F162420722DA6E9D007FBF7B /* CanvasDemoUITests.swift */; };
-		F195B6062748903400E182CA /* CanvasNative.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; };
-		F195B6072748903400E182CA /* CanvasNative.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F188B80E274E8F800049AB62 /* CanvasNative.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; };
+		F188B80F274E8F800049AB62 /* CanvasNative.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,13 +36,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F195B6082748903400E182CA /* Embed Frameworks */ = {
+		F188B810274E8F800049AB62 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				F195B6072748903400E182CA /* CanvasNative.xcframework in Embed Frameworks */,
+				F188B80F274E8F800049AB62 /* CanvasNative.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -72,7 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F195B6062748903400E182CA /* CanvasNative.xcframework in Frameworks */,
+				F188B80E274E8F800049AB62 /* CanvasNative.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -172,7 +172,7 @@
 				F16241E022DA6E9C007FBF7B /* Sources */,
 				F16241E122DA6E9C007FBF7B /* Frameworks */,
 				F16241E222DA6E9C007FBF7B /* Resources */,
-				F195B6082748903400E182CA /* Embed Frameworks */,
+				F188B810274E8F800049AB62 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);

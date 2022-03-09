@@ -1,6 +1,7 @@
 import { Element } from './Element';
 import { knownFolders, path, File } from '@nativescript/core';
 import { ImageAsset } from '@nativescript/canvas';
+declare const qos_class_t;
 const background_queue = global.isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
 const main_queue = global.isIOS ? dispatch_get_current_queue() : undefined;
 declare var NSUUID, java, NSData, android;

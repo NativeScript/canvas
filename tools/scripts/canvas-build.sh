@@ -9,9 +9,9 @@ mkdir -p ../platforms/ios
 echo "Build iOS"
 ./build.sh
 #cd ..
-echo "Copy /build/*.xcframework platforms/ios"
+echo "Copy /dist/*.xcframework platforms/ios"
 
-cp -R build/CanvasNative.xcframework ../../platforms/ios
+cp -R dist/CanvasNative.xcframework ../../platforms/ios
 
 
 # DEV_TEAM=${DEVELOPMENT_TEAM:-}

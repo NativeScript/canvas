@@ -215,7 +215,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		surface?.gLContext?.onResume()
 	}
 
-	fun destroy(){
+	fun destroy() {
 		surface?.gLContext?.destroy();
 	}
 
@@ -225,6 +225,14 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		if (nativeContext != 0L) {
 			nativeDestroyContext(nativeContext)
 			nativeContext = 0
+		}
+
+		if (useCpu) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+				cpuHandlerThread?.quitSafely()
+			}
+		} else {
+			surface?.gLContext?.destroy()
 		}
 	}
 
@@ -403,7 +411,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			var finalWidth = width
 			var finalHeight = height
 			if (ignorePixelScaling) {
-				if (width != 1 || height != 1){
+				if (width != 1 || height != 1) {
 					val density = resources.displayMetrics.density
 					finalWidth = (finalWidth / density).toInt()
 					finalHeight = (finalHeight / density).toInt()

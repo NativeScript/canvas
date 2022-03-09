@@ -28,6 +28,17 @@ class ViewController: UIViewController, TNSCanvasListener {
         canvas1.addSubview(svg!)
         svg?.bringSubviewToFront(canvas1)
         svg?.ignorePixelScaling = false
+        
+        
+        svg?.src = """
+                <svg version="1.1"
+                        xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                        width="128" height="128">
+                        <image width="128" height="128" transform="rotate(45)" transform-origin="64 64"
+                            xlink:href="https://www.rust-lang.org/logos/rust-logo-128x128.png"/>
+                        </svg>
+                """
+        
        // svg!.backgroundColor = .white
 //        svg?.src = """
 //<svg width="660" height="220" style="outline: 1px solid red">
@@ -155,26 +166,26 @@ class ViewController: UIViewController, TNSCanvasListener {
         
         // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/gallardo.svg
         
-        DispatchQueue.global(qos: .background).async {
-            do{
-                let start = CACurrentMediaTime()
-                print("Started", start)
-                let svg_file = NSURL(fileURLWithPath: NSTemporaryDirectory() + UUID().uuidString + "_svg_file.svg")
-                let svg_data = try Data(contentsOf: URL(string: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/gallardo.svg")!)
-                try svg_data.write(to: svg_file.absoluteURL!, options: .atomicWrite)
-                let mid = CACurrentMediaTime()
-                print("Finished Downloading", mid , mid - start)
-                //let svgContents = String(data: svg_data, encoding: .utf8)
-                self.svg?.srcPath = svg_file.path
-                let end = CACurrentMediaTime()
-                print("Finished Setting path", end , end - start)
-                //svg?.src = svgContents
-
-            }catch {
-                print(error)
-            }
-
-        }
+//        DispatchQueue.global(qos: .background).async {
+//            do{
+//                let start = CACurrentMediaTime()
+//                print("Started", start)
+//                let svg_file = NSURL(fileURLWithPath: NSTemporaryDirectory() + UUID().uuidString + "_svg_file.svg")
+//                let svg_data = try Data(contentsOf: URL(string: "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/gallardo.svg")!)
+//                try svg_data.write(to: svg_file.absoluteURL!, options: .atomicWrite)
+//                let mid = CACurrentMediaTime()
+//                print("Finished Downloading", mid , mid - start)
+//                //let svgContents = String(data: svg_data, encoding: .utf8)
+//                self.svg?.srcPath = svg_file.path
+//                let end = CACurrentMediaTime()
+//                print("Finished Setting path", end , end - start)
+//                //svg?.src = svgContents
+//
+//            }catch {
+//                print(error)
+//            }
+//
+//        }
     
     }
     

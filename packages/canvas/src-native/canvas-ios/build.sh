@@ -15,8 +15,7 @@ xcodebuild \
     clean build \
     BUILD_DIR=$(PWD)/dist \
     SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
-    -quiet
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES 
 
 echo "Build for iphoneos"
 xcodebuild \
@@ -30,8 +29,7 @@ xcodebuild \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
     SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
-    -quiet
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES 
 
 echo "Creating XCFramework"
 xcodebuild \

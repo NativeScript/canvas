@@ -6,7 +6,7 @@ use crate::common::context::Context;
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVG(
+pub extern "system" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVG(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -24,7 +24,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVG(
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVGFromPath(
+pub extern "system" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVGFromPath(
     env: JNIEnv,
     _: JClass,
     context: jlong,

@@ -10,6 +10,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.android.exoplayer:exoplayer:2.13.3'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.3'
+    implementation 'com.google.android.exoplayer:exoplayer:2.17.0'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.17.0'
 }

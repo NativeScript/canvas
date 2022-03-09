@@ -42,7 +42,7 @@ pub(crate) fn paint_style_set_color_with_string(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetFillColorWithString(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetFillColorWithString(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -52,7 +52,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetStrokeColorWithString(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetStrokeColorWithString(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -62,7 +62,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativ
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSColorStyle_nativeDestroy(
+pub extern "system" fn Java_org_nativescript_canvas_TNSColorStyle_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     style: jlong,
@@ -77,7 +77,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSColorStyle_nativeDestroy(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSColor_nativeGetColorString(
+pub extern "system" fn Java_org_nativescript_canvas_TNSColor_nativeGetColorString(
     env: JNIEnv,
     _: JClass,
     color: jlong,

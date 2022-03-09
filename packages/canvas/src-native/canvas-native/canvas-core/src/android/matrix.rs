@@ -5,7 +5,7 @@ use jni::sys::{jfloat, jfloatArray, jlong};
 use crate::common::context::matrix::Matrix;
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeInit(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeInit(
     _: JNIEnv,
     _: JClass,
 ) -> jlong {
@@ -13,7 +13,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeInit(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeUpdate(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeUpdate(
     env: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -33,7 +33,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeUpdate(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeA(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeA(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -49,7 +49,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeA(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetA(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetA(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -66,7 +66,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetA(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeB(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeB(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -82,7 +82,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeB(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetB(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetB(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -99,7 +99,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetB(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeC(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeC(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -115,7 +115,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeC(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetC(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetC(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -132,7 +132,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetC(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeD(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeD(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -148,7 +148,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeD(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetD(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetD(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -165,7 +165,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetD(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeE(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeE(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -181,7 +181,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeE(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetE(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetE(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -198,7 +198,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetE(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeF(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeF(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -214,7 +214,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeF(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetF(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetF(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -231,7 +231,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetF(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM11(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM11(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -247,7 +247,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM11(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM11(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM11(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -264,7 +264,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM11(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM12(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM12(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -280,7 +280,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM12(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM12(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM12(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -297,7 +297,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM12(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM13(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM13(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -313,7 +313,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM13(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM13(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM13(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -330,7 +330,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM13(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM14(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM14(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -346,7 +346,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM14(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM14(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM14(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -363,7 +363,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM14(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM21(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM21(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -379,7 +379,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM21(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM21(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM21(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -396,7 +396,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM21(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM22(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM22(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -412,7 +412,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM22(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM22(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM22(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -429,7 +429,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM22(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM23(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM23(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -445,7 +445,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM23(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM23(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM23(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -462,7 +462,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM23(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM24(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM24(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -478,7 +478,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM24(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM24(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM24(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -495,7 +495,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM24(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM31(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM31(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -511,7 +511,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM31(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM31(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM31(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -528,7 +528,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM31(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM32(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM32(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -544,7 +544,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM32(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM32(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM32(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -561,7 +561,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM32(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM33(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM33(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -577,7 +577,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM33(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM33(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM33(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -594,7 +594,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM33(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM34(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM34(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -610,7 +610,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM34(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM34(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM34(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -627,7 +627,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM34(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM41(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM41(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -643,7 +643,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM41(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM41(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM41(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -660,7 +660,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM41(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM42(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM42(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -676,7 +676,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM42(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM42(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM42(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -693,7 +693,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM42(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM43(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM43(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -709,7 +709,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM43(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM43(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM43(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -726,7 +726,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM43(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM44(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM44(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -742,7 +742,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeM44(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM44(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM44(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,
@@ -759,7 +759,7 @@ pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeSetM44(
 }
 
 #[no_mangle]
-pub extern "C" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeDestroy(
+pub extern "system" fn Java_org_nativescript_canvas_TNSDOMMatrix_nativeDestroy(
     _: JNIEnv,
     _: JClass,
     matrix: jlong,

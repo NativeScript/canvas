@@ -2,7 +2,7 @@ import { VideoBase, controlsProperty, autoplayProperty, loopProperty, srcPropert
 import { Screen, Application, Utils, knownFolders, path } from '@nativescript/core';
 import { Source } from '..';
 import { isString } from '@nativescript/core/utils/types';
-
+declare var com;
 const STATE_IDLE: number = 1;
 const STATE_BUFFERING: number = 2;
 const STATE_READY: number = 3;
@@ -14,8 +14,7 @@ export class Video extends VideoBase {
 	#sourceView: Source[] = [];
 	#playerView: com.google.android.exoplayer2.ui.PlayerView;
 	#player: com.google.android.exoplayer2.SimpleExoPlayer;
-	#playerListener: com.google.android.exoplayer2.Player.EventListener;
-	#videoListener: com.google.android.exoplayer2.video.VideoListener;
+	#playerListener; //com.google.android.exoplayer2.Player.Listener;
 	#src: string;
 	#autoplay: boolean;
 	#loop: boolean;
@@ -23,11 +22,11 @@ export class Video extends VideoBase {
 
 	private static _cache: com.google.android.exoplayer2.upstream.cache.SimpleCache;
 	private static _leastRecentlyUsedCacheEvictor: com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor;
-	private static _exoDatabaseProvider: com.google.android.exoplayer2.database.ExoDatabaseProvider;
+	private static _exoDatabaseProvider; // com.google.android.exoplayer2.database.ExoDatabaseProvider;
 	private static _exoPlayerCacheSize = 100 * 1024 * 1024;
 	private static _dsf: com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 	private static _msf: com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
-	private static _cdsf: com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
+	private static _cdsf: com.google.android.exoplayer2.upstream.cache.CacheDataSource.Factory;
 	_isCustom: boolean = false;
 	_playing: boolean = false;
 	_timer: any;
@@ -42,6 +41,7 @@ export class Video extends VideoBase {
 	_videoHeight = 0;
 	private static _didInit = false;
 	static BUFFER_MS = 500;
+	static IS_DEBUG = false;
 	constructor() {
 		super();
 		try {
@@ -63,7 +63,9 @@ export class Video extends VideoBase {
 			Video._exoDatabaseProvider = new com.google.android.exoplayer2.database.ExoDatabaseProvider(activity);
 			Video._cache = new com.google.android.exoplayer2.upstream.cache.SimpleCache(cacheDir, Video._leastRecentlyUsedCacheEvictor, Video._exoDatabaseProvider);
 			Video._dsf = new com.google.android.exoplayer2.upstream.DefaultDataSourceFactory(activity, com.google.android.exoplayer2.util.Util.getUserAgent(activity, packageName));
-			Video._cdsf = new com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory(Video._cache,Video._dsf)
+			Video._cdsf = new com.google.android.exoplayer2.upstream.cache.CacheDataSource.Factory();
+			Video._cdsf.setCache(Video._cache);
+			Video._cdsf.setUpstreamDataSourceFactory(Video._dsf);
 			Video._msf = new com.google.android.exoplayer2.source.DefaultMediaSourceFactory(Video._cdsf);
 			Video._didInit = true;
 		}
@@ -74,7 +76,7 @@ export class Video extends VideoBase {
 		builder.setLoadControl(loadControl.build());
 		this.#player = builder.build();
 		const ref = new WeakRef(this);
-		this.#playerListener = new com.google.android.exoplayer2.Player.EventListener({
+		this.#playerListener = new com.google.android.exoplayer2.Player.Listener({
 			onIsPlayingChanged: function (isPlaying) {
 				const owner = ref.get();
 				if (owner) {
@@ -109,22 +111,11 @@ export class Video extends VideoBase {
 					}
 				}
 			},
-			onLoadingChanged: function (isLoading) {
-				//console.log('onLoadingChanged', isLoading);
-			},
+			onLoadingChanged: function (isLoading) {},
 			onPlaybackParametersChanged: function (playbackParameters) {},
 			onPlaybackSuppressionReasonChanged: function (playbackSuppressionReason) {},
-			onPlayerError: function (error) {
-				//console.log('PlayerError', error);
-			},
-			onPlayerStateChanged: function (playWhenReady, playbackState) {
-				// console.log('onPlayerStateChanged', Date.now(), playbackState , STATE_BUFFERING);
-				// if (playbackState === STATE_READY) {
-				// 	playerReady = true;
-				// } else if (playbackState === STATE_ENDED) {
-				// 	playerEnded = true;
-				// }
-			},
+			onPlayerError: function (error) {},
+			onPlayerStateChanged: function (playWhenReady, playbackState) {},
 			onPositionDiscontinuity: function (reason) {},
 			onRepeatModeChanged: function (repeatMode) {},
 			onSeekProcessed: function () {},
@@ -132,17 +123,29 @@ export class Video extends VideoBase {
 			//@ts-ignore
 			onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, reason: number) {},
 			onTracksChanged: function (trackGroups, trackSelections) {},
-		});
-		this.#videoListener = new com.google.android.exoplayer2.video.VideoListener({
-			onRenderedFirstFrame() {},
-			onVideoSizeChanged(width: number, height: number, unappliedRotationDegrees: number, pixelWidthHeightRatio: number) {
-				const owner = ref.get();
-				if (owner) {
-					owner._videoWidth = width;
-					owner._videoHeight = height;
+
+			onPlayWhenReadyChanged​(playWhenReady: boolean, reason: number){},
+			onEvents​(player, events){},
+			onMediaItemTransition​(mediaItem,reason: number){},
+			onAvailableCommandsChanged​(availableCommands){},
+			onPlaybackStateChanged​(playbackState: number){},
+			onIsLoadingChanged​(isLoading: boolean){},
+			onPlayerErrorChanged​(error){
+				if (Video.IS_DEBUG) {
+					console.log(error);
 				}
 			},
-			onSurfaceSizeChanged(width: number, height: number) {},
+			onTracksInfoChanged(tracksInfo){},
+			onSurfaceSizeChanged(width: number, height: number){},
+			onRenderedFirstFrame(){},
+			onDeviceVolumeChanged​(volume: number, muted: boolean){},
+			onVideoSizeChanged​(videoSize) {
+				const owner = ref.get();
+				if (owner) {
+					owner._videoWidth = videoSize.width;
+					owner._videoHeight = videoSize.height;
+				}
+			}
 		});
 		const inflator = activity.getLayoutInflater();
 		const layout = Video.getResourceId(Application.android.foregroundActivity || Application.android.startActivity, 'player');
@@ -153,7 +156,7 @@ export class Video extends VideoBase {
 		this.#textureView = new android.view.TextureView(Application.android.foregroundActivity || Application.android.startActivity);
 		this.#container.addView(this.#textureView as any, params);
 		this.setNativeView(this.#container);
-		this.#player.addVideoListener(this.#videoListener);
+
 	}
 
 	get readyState() {
@@ -191,13 +194,15 @@ export class Video extends VideoBase {
 			if (typeof value === 'string' && value.startsWith('~/')) {
 				value = path.join(knownFolders.currentApp().path, value.replace('~', ''));
 			}
-			this.#player.setMediaItem(com.google.android.exoplayer2.MediaItem.fromUri(android.net.Uri.parse(value)));
+			this.#player.setMediaItems(java.util.Arrays.asList([com.google.android.exoplayer2.MediaItem.fromUri(android.net.Uri.parse(value))]), true);
 			this.#player.prepare();
 			if (this.#autoplay) {
 				this.#player.setPlayWhenReady(true);
 			}
 		} catch (e) {
-			console.log(e);
+			if (Video.IS_DEBUG) {
+				console.log(e);
+			}
 		}
 	}
 
@@ -272,7 +277,7 @@ export class Video extends VideoBase {
 	}
 
 	set currentTime(value: number) {
-		this.#player.seekTo(value * 1000);
+		this.#player.seekTo(value * 1000, 0);
 	}
 
 	get src() {

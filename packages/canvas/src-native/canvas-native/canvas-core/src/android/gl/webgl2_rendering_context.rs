@@ -17,7 +17,7 @@ const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeFlipInPlace3D(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeFlipInPlace3D(
     env: JNIEnv,
     _: JClass,
     pixels: JByteBuffer,
@@ -76,7 +76,7 @@ fn texImage3D(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DBuffer(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DBuffer(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -109,7 +109,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DByteArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DByteArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -152,7 +152,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DShortArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DShortArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -198,7 +198,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DIntArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DIntArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -241,7 +241,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DFloatArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DFloatArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -287,7 +287,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DDoubleArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DDoubleArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -333,7 +333,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DLongArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DLongArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -379,7 +379,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DAsset(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DAsset(
     _env: JNIEnv,
     _: JClass,
     target: jint,
@@ -427,7 +427,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DBitmap(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DBitmap(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -512,7 +512,7 @@ fn texSubImage3D(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DBuffer(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DBuffer(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -547,7 +547,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DByteArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DByteArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -592,7 +592,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DShortArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DShortArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -640,7 +640,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DIntArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DIntArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -688,7 +688,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DLongArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DLongArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -736,7 +736,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DFloatArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DFloatArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -784,7 +784,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DDoubleArray(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DDoubleArray(
     env: JNIEnv,
     _: JClass,
     target: jint,
@@ -832,7 +832,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DAsset(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DAsset(
     _env: JNIEnv,
     _: JClass,
     target: jint,
@@ -882,7 +882,7 @@ pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DBitmap(
+pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DBitmap(
     env: JNIEnv,
     _: JClass,
     target: jint,

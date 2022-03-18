@@ -7,7 +7,7 @@ import {ImageSource} from '@nativescript/core';
 import {ImageAsset} from '../../ImageAsset';
 import {CanvasPattern} from '../CanvasPattern';
 import {Canvas} from '../../Canvas';
-import lazy from '@nativescript/canvas/utils';
+import lazy from '@nativescript/core/utils/lazy';
 
 const FillRule = {
 	EvenOdd: lazy(() => org.nativescript.canvas.TNSFillRule.EvenOdd),

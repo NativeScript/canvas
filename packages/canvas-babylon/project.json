@@ -1,0 +1,64 @@
+{
+	"root": "packages/canvas-babylon",
+	"sourceRoot": "packages/canvas-babylon",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas-babylon",
+				"tsConfig": "packages/canvas-babylon/tsconfig.json",
+				"packageJson": "packages/canvas-babylon/package.json",
+				"main": "packages/canvas-babylon/index.ts",
+				"assets": [
+					"packages/canvas-babylon/*.md",
+					"packages/canvas-babylon/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-babylon/platforms/",
+						"output": "./platforms/"
+					}
+				]
+			},
+			"executor": "@nrwl/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["dist/packages/canvas-babylon"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-babylon"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas-babylon"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/canvas-babylon/**/*.ts"]
+			}
+		}
+	}
+}

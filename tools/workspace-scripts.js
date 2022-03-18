@@ -120,7 +120,7 @@ module.exports = {
 				},
 			},
 			'build-all': {
-				script: 'nx run all:build',
+				script: 'nx run-many --target=build.all --all',
 				description: 'Build all packages',
 			},
 		},
@@ -172,7 +172,7 @@ module.exports = {
 				description: 'Focus on @nativescript/canvas-media',
 			},
 			reset: {
-				script: 'nx run all:focus',
+				script: 'nx g @nativescript/plugin-tools:focus-packages',
 				description: 'Reset Focus',
 			},
 		},

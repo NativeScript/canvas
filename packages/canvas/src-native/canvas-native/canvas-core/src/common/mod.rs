@@ -17,7 +17,9 @@ pub(crate) mod utils;
 
 pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -> String {
     let surface = &mut context.surface;
+//    surface.flush();
     let image = surface.image_snapshot();
+
     let mut quality = quality;
     if quality > 100 || quality < 0 {
         quality = 92;

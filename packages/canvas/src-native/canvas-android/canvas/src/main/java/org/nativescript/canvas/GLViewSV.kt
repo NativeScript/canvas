@@ -46,7 +46,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 
 	override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-			gLContext!!.init(holder.surface)
+			gLContext!!.setTexture(holder.surface)
 			isCreatedWithZeroSized = false
 			if (mListener != null) {
 				mListener!!.contextReady()

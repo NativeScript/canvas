@@ -59,28 +59,28 @@
 			app:layout_constraintVertical_bias="0.5" />-->
 
 
-<!--	<org.nativescript.canvas.TNSCanvas
+	<org.nativescript.canvas.TNSCanvas
 		android:id="@+id/canvasView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toTopOf="parent" />-->
-
-
-
-
-<org.nativescript.canvas.TNSSVG
-		android:id="@+id/svgView"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		tools:layout_editor_absoluteX="8dp"
-		tools:layout_editor_absoluteY="8dp"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent" />
+
+
+
+
+<!--<org.nativescript.canvas.TNSSVG-->
+<!--		android:id="@+id/svgView"-->
+<!--		android:layout_width="match_parent"-->
+<!--		android:layout_height="match_parent"-->
+<!--		tools:layout_editor_absoluteX="8dp"-->
+<!--		tools:layout_editor_absoluteY="8dp"-->
+<!--		app:layout_constraintBottom_toBottomOf="parent"-->
+<!--		app:layout_constraintEnd_toEndOf="parent"-->
+<!--		app:layout_constraintStart_toStartOf="parent"-->
+<!--		app:layout_constraintTop_toTopOf="parent" />-->
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

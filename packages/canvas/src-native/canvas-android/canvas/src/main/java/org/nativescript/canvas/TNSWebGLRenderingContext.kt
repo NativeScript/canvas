@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.os.Build
 import android.os.Build.VERSION_CODES
+import android.util.Log
 import org.nativescript.canvas.extensions.*
 import java.io.UnsupportedEncodingException
 import java.nio.*
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit
  * Created by triniwiz on 4/21/20
  */
 open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
-	internal var canvas: TNSCanvas
+	var canvas: TNSCanvas
 
 	constructor(canvas: TNSCanvas) {
 		this.canvas = canvas
@@ -697,8 +698,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 
-
-
 	fun compressedTexImage2DByteBuffer(
 		target: Int,
 		level: Int,
@@ -926,7 +925,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 
-
 	fun compressedTexImage2D(
 		target: Int,
 		level: Int,
@@ -1044,8 +1042,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 
-
-
 	fun compressedTexSubImage2DByteBuffer(
 		target: Int,
 		level: Int,
@@ -1098,7 +1094,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	) {
 		compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels)
 	}
-
 
 
 	fun compressedTexSubImage2DByte(
@@ -2773,7 +2768,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 
-
 	fun readPixelsInt(
 		x: Int,
 		y: Int,
@@ -3739,12 +3733,28 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		internalformat: Int,
 		format: Int,
 		type: Int,
-		canvas: TNSCanvas
+		source: TNSCanvas
 	) {
-		val ss = canvas.snapshot()
+
+		// TODO fix
+//		Utils.texImage2D(
+//			this,
+//			canvas,
+//			internalformat,
+//			format
+//		)
+
 		val lock = CountDownLatch(1)
+		val ss = source.snapshot()
+		//source.flush(true)
+//		val bitmap: Bitmap? = if (source.useCpu) {
+//			source.cpuView?.view
+//		} else {
+//			source.surface?.bitmap
+//		}
+		Log.d("com.test" , "texImage2D $ss")
 		runOnGLThread {
-			nativeTexImage2DByteArray(
+			nativeTexImage2DBuffer(
 				target,
 				level,
 				internalformat,
@@ -3756,6 +3766,20 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				ss,
 				flipYWebGL
 			)
+//			bitmap?.let {
+//				nativeTexImage2DBitmap(
+//					target,
+//					level,
+//					internalformat,
+//					canvas.width,
+//					canvas.height,
+//					0,
+//					format,
+//					type,
+//					bitmap,
+//					flipYWebGL
+//				)
+//			}
 			lock.countDown()
 		}
 		try {
@@ -3918,8 +3942,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 
-
-
 	fun texSubImage2DByteBuffer(
 		target: Int,
 		level: Int,
@@ -4031,7 +4053,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 
-
 	fun texSubImage2D(
 		target: Int,
 		level: Int,
@@ -4099,7 +4120,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		} catch (ignored: InterruptedException) {
 		}
 	}
-
 
 
 	fun texSubImage2D(
@@ -4262,7 +4282,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		val lock = CountDownLatch(1)
 		val buffer = canvas.snapshot()
 		runOnGLThread {
-			nativeTexSubImage2DByteArray(
+			nativeTexSubImage2DBuffer(
 				target,
 				level,
 				xoffset,

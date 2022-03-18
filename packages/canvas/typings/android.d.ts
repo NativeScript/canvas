@@ -543,10 +543,12 @@ declare module org {
 				public scale(param0: number, param1: number): void;
 				public drawImage(param0: org.nativescript.canvas.TNSImageAsset, param1: number, param2: number, param3: number, param4: number): void;
 				public setLineCap(param0: org.nativescript.canvas.TNSLineCap): void;
+				public setLineCap(param0: number): void;
 				public setFont(param0: string): void;
 				public drawImage(param0: org.nativescript.canvas.TNSImageAsset, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number): void;
 				public createPattern(param0: org.nativescript.canvas.TNSImageBitmap, param1: org.nativescript.canvas.TNSPatternRepetition): org.nativescript.canvas.TNSPattern;
 				public setFillStyle(param0: org.nativescript.canvas.TNSColorStyle): void;
+				public setFillStyle(param0: string): void;
 				public getGlobalCompositeOperation(): org.nativescript.canvas.TNSCompositeOperationType;
 				public getCurrentTransform(): org.nativescript.canvas.TNSDOMMatrix;
 				public drawImage(param0: org.nativescript.canvas.TNSCanvas, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number): void;
@@ -557,6 +559,7 @@ declare module org {
 				public getCanvas(): org.nativescript.canvas.TNSCanvas;
 				public isPointInStroke(param0: number, param1: number): boolean;
 				public clip(param0: org.nativescript.canvas.TNSFillRule): void;
+				public clip(param0: number): void;
 				public clip(): void;
 				public getLineJoin(): org.nativescript.canvas.TNSLineJoin;
 				public createLinearGradient(param0: number, param1: number, param2: number, param3: number): org.nativescript.canvas.TNSCanvasGradient;
@@ -581,13 +584,17 @@ declare module org {
 				public getShadowOffsetX(): number;
 				public bezierCurveTo(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
 				public fill(param0: org.nativescript.canvas.TNSPath2D, param1: org.nativescript.canvas.TNSFillRule): void;
+				public fill(param0: org.nativescript.canvas.TNSPath2D, param1: number): void;
 				public setDirection(param0: org.nativescript.canvas.TNSTextDirection): void;
+				public setDirection(param0: number): void;
 				public fill(param0: org.nativescript.canvas.TNSFillRule): void;
+				public fill(param0: number): void;
 				public setGlobalAlpha(param0: number): void;
 				public getShadowOffsetY(): number;
 				public getFillStyle(): org.nativescript.canvas.TNSColorStyle;
 				public getLineCap(): org.nativescript.canvas.TNSLineCap;
 				public clip(param0: org.nativescript.canvas.TNSPath2D, param1: org.nativescript.canvas.TNSFillRule): void;
+				public clip(param0: org.nativescript.canvas.TNSPath2D, param1: number): void;
 				public setImageSmoothingEnabled(param0: boolean): void;
 				public restore(): void;
 				public createRadialGradient(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): org.nativescript.canvas.TNSCanvasGradient;
@@ -617,6 +624,7 @@ declare module org {
 				public isPointInStroke(param0: org.nativescript.canvas.TNSPath2D, param1: number, param2: number): boolean;
 				public ellipse(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number): void;
 				public setStrokeStyle(param0: org.nativescript.canvas.TNSColorStyle): void;
+				public setStrokeStyle(param0: color): void;
 				public stroke(): void;
 				public strokeRect(param0: number, param1: number, param2: number, param3: number): void;
 				public setShadowOffsetX(param0: number): void;
@@ -627,6 +635,7 @@ declare module org {
 				public setImageSmoothingQuality(param0: org.nativescript.canvas.TNSImageSmoothingQuality): void;
 				public putImageData(param0: org.nativescript.canvas.TNSImageData, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number): void;
 				public setLineJoin(param0: org.nativescript.canvas.TNSLineJoin): void;
+				public setLineJoin(param0: number): void;
 				public lineTo(param0: number, param1: number): void;
 				public drawImage(param0: org.nativescript.canvas.TNSImageAsset, param1: number, param2: number): void;
 				public setShadowBlur(param0: number): void;

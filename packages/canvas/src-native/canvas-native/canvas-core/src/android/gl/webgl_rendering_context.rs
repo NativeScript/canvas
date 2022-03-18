@@ -4,13 +4,9 @@
 
 use std::os::raw::c_void;
 
-
-use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode};
-use jni::sys::{
-    jboolean, jbyteArray, jfloatArray, jint, jintArray, jlong, JNI_TRUE, jshortArray,
-};
-
+use jni::sys::{jboolean, jbyteArray, jfloatArray, jint, jintArray, jlong, jshortArray, JNI_TRUE};
+use jni::JNIEnv;
 
 use crate::common::context::image_asset::ImageAsset;
 
@@ -395,28 +391,45 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     bitmap: JObject,
     flipY: jboolean,
 ) {
-    let mut data = super::super::utils::image::get_bytes_from_bitmap(env, bitmap);
-    if !data.0.is_empty() {
-        if flipY == JNI_TRUE {
-            crate::common::utils::gl::flip_in_place(
-                data.0.as_mut_ptr(),
-                data.0.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
-                    * data.1.width as u32) as i32 as usize,
-                data.1.height as usize,
+    if flipY == JNI_TRUE {
+        let mut data = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap);
+        if !data.0.is_empty() {
+            if flipY == JNI_TRUE {
+                crate::common::utils::gl::flip_in_place(
+                    data.0.as_mut_ptr(),
+                    data.0.len(),
+                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                        * data.1.width as u32) as i32 as usize,
+                    data.1.height as usize,
+                );
+            }
+            gl_bindings::glTexImage2D(
+                target as u32,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format as u32,
+                image_type as u32,
+                data.0.as_ptr() as *const c_void,
             );
         }
-        gl_bindings::glTexImage2D(
-            target as u32,
-            level,
-            internalformat,
-            width,
-            height,
-            border,
-            format as u32,
-            image_type as u32,
-            data.0.as_ptr() as *const c_void,
-        );
+    } else {
+        let mut data = crate::android::utils::image::BitmapBytes::new(env, bitmap);
+        if let Some(data) = data.data_mut() {
+            gl_bindings::glTexImage2D(
+                target as u32,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format as u32,
+                image_type as u32,
+                data.as_ptr() as *const c_void,
+            );
+        }
     }
 }
 

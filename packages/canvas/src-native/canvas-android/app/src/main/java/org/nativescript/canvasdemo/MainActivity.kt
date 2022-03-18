@@ -11,6 +11,7 @@ import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import org.nativescript.canvas.TNSImageAsset.Callback
@@ -35,22 +36,22 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		svg = findViewById(R.id.svgView)
+		//svg = findViewById(R.id.svgView)
 		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
 
 		System.loadLibrary("canvasnative")
 		canvas?.ignorePixelScaling = false
+
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
-				print("Is Ready")
-
-				drawFill(canvas!!)
+				Log.d("com.test", "Is Ready")
+					//	drawPatterWithCanvas(canvas!!)
 			}
 		}
 
-		drawTransformPathSvg()
+//		drawTransformPathSvg()
 //		svg?.setSrc(
 //			"""
 //				<svg width="100" height="100" xmlns="svg">
@@ -1444,7 +1445,7 @@ class MainActivity : AppCompatActivity() {
 
 			val asset = TNSImageAsset()
 
-			if(img.exists() && img.length() == 0L){
+			if (img.exists() && img.length() == 0L) {
 				img.delete()
 			}
 
@@ -1661,25 +1662,21 @@ class MainActivity : AppCompatActivity() {
 
 	fun drawPatterWithCanvas(canvas: TNSCanvas) {
 		val patternCanvas = TNSCanvas(this)
-		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
-// Give the pattern a width and height of 50
 		val scale = resources.displayMetrics.density
-		val width = (50 * scale).toInt()
-		val height = (50 * scale).toInt()
-		patternCanvas.layoutParams = FrameLayout.LayoutParams(width, height)
-		val w = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
-		val h = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
-		patternCanvas.measure(w, h)
-		patternCanvas.layout(0, 0, width, height)
+		// Give the pattern a width and height of 50
+		val width = (50 * scale)
+		val height = (50 * scale)
+		TNSCanvas.layoutView(width.toInt(), height.toInt(), patternCanvas)
+		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
 
 
 // Give the pattern a background color and draw an arc
 		patternContext.fillStyle = TNSColor("#fec")
 		val style = patternContext.fillStyle as TNSColor
 		patternContext.fillRect(
-			0f, 0f, 50f, 50f
+			0f, 0f, width, width
 		);
-		patternContext.arc(0f, 0f, 50f, 0f, (0.5 * Math.PI).toFloat());
+		patternContext.arc(0f, 0f, width, 0f, (0.5 * Math.PI).toFloat());
 		patternContext.stroke()
 
 

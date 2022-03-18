@@ -7,11 +7,13 @@ import android.graphics.Color
 import android.util.AttributeSet
 import android.view.View
 import java.lang.ref.WeakReference
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class CPUView @JvmOverloads constructor(
 	context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
-	private var view: Bitmap? = null
+	internal var view: Bitmap? = null
 	internal var canvasView: WeakReference<TNSCanvas>? = null
 	internal val lock = Any()
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -64,15 +66,31 @@ class CPUView @JvmOverloads constructor(
 	}
 
 	fun flush() {
+		flush(false)
+	}
+
+	fun flush(wait: Boolean) {
 		view?.let {
 			synchronized(lock) {
 				canvasView?.get()?.let { canvas ->
 					if (canvas.nativeContext != 0L) {
+						val lock = if (wait) {
+							CountDownLatch(1)
+						} else {
+							null
+						}
 						canvas.queueEvent {
 							TNSCanvas.nativeCustomWithBitmapFlush(canvas.nativeContext, it)
 							handler!!.post {
 								canvas.invalidateState = TNSCanvas.InvalidateState.NONE
 								invalidate()
+							}
+							lock?.countDown()
+						}
+						lock?.let {
+							try {
+								it.await(2, TimeUnit.SECONDS)
+							} catch (ignored: InterruptedException) {
 							}
 						}
 					}

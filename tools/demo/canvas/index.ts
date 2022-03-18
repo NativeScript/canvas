@@ -4,12 +4,12 @@ import Chart from 'chart.js';
 
 let Matter;
 import { Canvas, ImageAsset } from '@nativescript/canvas';
-import { flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles } from './canvas2d';
+import { flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, globalCompositeOperation } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import Vex from 'vexflow';
-import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures } from './webgl';
+import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 declare var com, java;
 let zen3d;
@@ -330,36 +330,34 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		this.urlUsername();
 	}
 
-
-
 	urlConstructor() {
 		let m = 'https://developer.mozilla.org';
-		let a = new URL("/", m);                                // => 'https://developer.mozilla.org/'
-		let b = new URL(m);                                     // => 'https://developer.mozilla.org/'
+		let a = new URL('/', m); // => 'https://developer.mozilla.org/'
+		let b = new URL(m); // => 'https://developer.mozilla.org/'
 
-		new URL('en-US/docs', b);                      // => 'https://developer.mozilla.org/en-US/docs'
-		let d = new URL('/en-US/docs', b);                     // => 'https://developer.mozilla.org/en-US/docs'
-		new URL('/en-US/docs', d);                     // => 'https://developer.mozilla.org/en-US/docs'
-		new URL('/en-US/docs', a);                     // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('en-US/docs', b); // => 'https://developer.mozilla.org/en-US/docs'
+		let d = new URL('/en-US/docs', b); // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('/en-US/docs', d); // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('/en-US/docs', a); // => 'https://developer.mozilla.org/en-US/docs'
 
-		new URL('/en-US/docs', "https://developer.mozilla.org/fr-FR/toto");
+		new URL('/en-US/docs', 'https://developer.mozilla.org/fr-FR/toto');
 		// => 'https://developer.mozilla.org/en-US/docs'
 
 		try {
-			new URL('/en-US/docs', '');                    // Raises a TypeError exception as '' is not a valid URL
+			new URL('/en-US/docs', ''); // Raises a TypeError exception as '' is not a valid URL
 		} catch (e) {
 			console.log(e);
 		}
 
 		try {
-			new URL('/en-US/docs');                        // Raises a TypeError exception as '/en-US/docs' is not a valid URL
+			new URL('/en-US/docs'); // Raises a TypeError exception as '/en-US/docs' is not a valid URL
 		} catch (e) {
 			console.log(e);
 		}
-		new URL('http://www.example.com',);           // => 'http://www.example.com/'
-		new URL('http://www.example.com', b);          // => 'http://www.example.com/'
+		new URL('http://www.example.com'); // => 'http://www.example.com/'
+		new URL('http://www.example.com', b); // => 'http://www.example.com/'
 
-		new URL("//foo.com", "https://example.com")    // => 'https://foo.com' (see relative URLs)
+		new URL('//foo.com', 'https://example.com'); // => 'https://foo.com' (see relative URLs)
 	}
 	urlHash() {
 		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/href#Examples');
@@ -389,13 +387,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	urlOrigin() {
-		const url = new URL("blob:https://mozilla.org:443/")
+		const url = new URL('blob:https://mozilla.org:443/');
 		console.log(url.origin); // Logs 'https://mozilla.org'
 	}
 
 	urlPassword() {
 		const url = new URL('https://anonymous:flabada@developer.mozilla.org/en-US/docs/Web/API/URL/password');
-		console.log(url.password) // Logs "flabada"
+		console.log(url.password); // Logs "flabada"
 	}
 
 	urlPathname() {
@@ -420,19 +418,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	urlUsername() {
 		const url = new URL('https://anonymous:flabada@developer.mozilla.org/en-US/docs/Web/API/URL/username');
-		console.log(url.username) // Logs "anonymous"
+		console.log(url.username); // Logs "anonymous"
 	}
 
 	draw() {
 		//this.urlTests();
 		//const str = new java.lang.String()
-
-
-		// const ctx = this.canvas.getContext('2d');
 		// ctx.font = '50px serif';
 		// ctx.fillText('Hello world', 50, 90);
-
-
 		/*	const ctx = this.canvas.getContext('2d');
 	
 	// Moved square
@@ -446,8 +439,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	// Unmoved square
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
-
-
 		//filterBlur(this.canvas);
 		//handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
@@ -501,7 +492,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowOffsetY(this.canvas);
 		// strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
-		textAlign(this.canvas)
+		//textAlign(this.canvas)
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
@@ -542,7 +533,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//setTimeout(()=>{
 		//colorRain(this.canvas);
 		//particlesLarge(this.canvas);
-		//rainbowOctopus(this.canvas);
+		rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);

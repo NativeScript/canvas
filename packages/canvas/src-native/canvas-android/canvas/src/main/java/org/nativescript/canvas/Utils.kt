@@ -6,6 +6,7 @@ import android.opengl.GLES20
 import android.os.Build
 import android.os.Environment
 import java.io.File
+import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -14,7 +15,12 @@ object Utils {
 	private const val TAG = "Utils"
 
 	@JvmStatic
-	private external fun nativeGetByteBufferFromBitmap(bitmap: Bitmap?): ByteArray
+	private external fun nativeGetBytesFromBitmap(bitmap: Bitmap?): ByteArray
+
+	@JvmStatic
+	private external fun nativeGetByteBufferFromBitmap(bitmap: Bitmap?): ByteBuffer
+
+
 	private var rating = -1
 	val isEmulator: Boolean
 		get() {
@@ -116,6 +122,10 @@ object Utils {
 		}
 
 	fun getBytesFromBitmap(bitmap: Bitmap?): ByteArray {
+		return nativeGetBytesFromBitmap(bitmap)
+	}
+
+	fun getByteBufferFromBitmap(bitmap: Bitmap?): ByteBuffer {
 		return nativeGetByteBufferFromBitmap(bitmap)
 	}
 
@@ -192,7 +202,6 @@ object Utils {
 		}
 	}
 
-
 	@JvmStatic
 	fun updateTexImage(
 		context: TNSWebGLRenderingContext,
@@ -219,6 +228,50 @@ object Utils {
 		} catch (ignored: InterruptedException) {
 		}
 
+	}
+
+
+	@JvmStatic
+	fun texImage2D(
+		context: TNSWebGLRenderingContext,
+		canvas: TNSCanvas,
+		internalFormat: Int,
+		format: Int
+	) {
+		val lock = CountDownLatch(1)
+		context.runOnGLThread {
+			val width = canvas.width
+			val height = canvas.height
+			if (canvas.textureRender.mProgram == 0) {
+				canvas.textureRender.surfaceCreated()
+			}
+			canvas.surface?.let { glView ->
+				glView.surfaceTexture?.let {
+					it.detachFromGLContext()
+					it.attachToGLContext(canvas.textureRender.textureId)
+					it.updateTexImage()
+					canvas.textureRender.drawFrame(
+						it,
+						width,
+						height,
+						internalFormat,
+						format,
+						context.flipYWebGL
+					)
+					if (canvas.textureRender.width != width || canvas.textureRender.height != width) {
+						canvas.textureRender.width = width
+						canvas.textureRender.height = height
+					}
+					it.detachFromGLContext()
+				}
+			}
+			lock.countDown()
+		}
+
+		try {
+			lock.await(2, TimeUnit.SECONDS)
+		} catch (ignored: InterruptedException) {
+		}
 	}
 
 

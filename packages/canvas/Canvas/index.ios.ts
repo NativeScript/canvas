@@ -6,7 +6,6 @@ import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Utils, profile } from '@nativescript/core';
 declare var TNSCanvas, TNSCanvasListener;
 
-
 export * from './common';
 
 export function createSVGMatrix(): DOMMatrix {
@@ -177,6 +176,7 @@ export class Canvas extends CanvasBase {
 
 	_layoutNative() {
 		if (!this.parent) {
+			console.time('_layoutNative');
 			if ((typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
 				return;
 			}
@@ -185,22 +185,27 @@ export class Canvas extends CanvasBase {
 			}
 
 			const size = this._realSize;
-			if (!(size.width || 0) && !(size.height || 0)) {
-				return;
-			}
-			const width = Utils.layout.toDeviceIndependentPixels(size.width || 0);
-			const height = Utils.layout.toDeviceIndependentPixels(size.height || 0);
-			let frameSize = this._canvas.frame.size;
 
-			if (width === frameSize.width && height === frameSize.height) {
-				return;
-			}
+			// if (!(size.width || 0) && !(size.height || 0)) {
+			// 	return;
+			// }
 
-			const frame_origin = this._canvas.frame.origin;
-			const frame = CGRectMake(frame_origin.x, frame_origin.y, width, height);
-			this._canvas.frame = frame;
-			this._canvas.setNeedsLayout();
-			this._canvas.layoutIfNeeded();
+			this._canvas.forceLayout(size.width || 0, size.height || 0);
+			// const width = Utils.layout.toDeviceIndependentPixels(size.width || 0);
+			// const height = Utils.layout.toDeviceIndependentPixels(size.height || 0);
+			// let frameSize = this._canvas.frame.size;
+
+			// if (width === frameSize.width && height === frameSize.height) {
+			// 	return;
+			// }
+
+			// const frame_origin = this._canvas.frame.origin;
+			// const frame = CGRectMake(frame_origin.x, frame_origin.y, width, height);
+			// this._canvas.frame = frame;
+			// this._canvas.setNeedsLayout();
+			// this._canvas.layoutIfNeeded();
+
+			console.timeEnd('_layoutNative');
 		}
 	}
 
@@ -277,5 +282,4 @@ export class Canvas extends CanvasBase {
 			y: frame.origin.y,
 		};
 	}
-
 }

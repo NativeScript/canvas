@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "canvas_native.h"
+#import "canvas-native.h"
 #import "Utils.h"
 
 //! Project version number for CanvasNative.

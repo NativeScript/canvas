@@ -236,6 +236,7 @@ import _Concurrency
     @objc set
   }
   @objc @_Concurrency.MainActor(unsafe) public static func createSVGMatrix() -> CanvasNative.TNSDOMMatrix
+  @objc @_Concurrency.MainActor(unsafe) public func forceLayout(_ width: CoreGraphics.CGFloat, _ height: CoreGraphics.CGFloat)
   @objc @_Concurrency.MainActor(unsafe) public var handleInvalidationManually: Swift.Bool {
     @objc get
     @objc set
@@ -2571,6 +2572,10 @@ extension Swift.RangeReplaceableCollection {
   @objc override dynamic public init()
   @objc deinit
 }
+@_hasMissingDesignatedInitializers @objc(TNSCanvasData) public class TNSCanvasData : Foundation.NSMutableData {
+  public init(data: Swift.UnsafeMutablePointer<CanvasNative.U8Array>)
+  @objc deinit
+}
 @objc(TNSImageSmoothingQuality) public enum TNSImageSmoothingQuality : Swift.UInt32, Swift.RawRepresentable {
   case Low
   case Medium
@@ -2697,10 +2702,12 @@ extension Swift.RangeReplaceableCollection {
     @objc get
     @objc set
   }
+  @objc public func setFillStyleWithString(_ style: Swift.String)
   @objc public var fillStyle: CanvasNative.ICanvasColorStyle {
     @objc get
     @objc set
   }
+  @objc public func setStrokeStyleWithString(_ style: Swift.String)
   @objc public var strokeStyle: CanvasNative.ICanvasColorStyle {
     @objc get
     @objc set

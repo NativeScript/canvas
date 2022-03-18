@@ -6,12 +6,11 @@ import android.opengl.GLES20
 import android.os.Bundle
 import android.util.Log
 import android.view.Surface
+import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import org.nativescript.canvas.TNSCanvas
-import org.nativescript.canvas.TNSWebGLRenderingContext
-import org.nativescript.canvas.TextureRender
-import org.nativescript.canvas.Utils
 import com.google.android.exoplayer2.SimpleExoPlayer
+import org.nativescript.canvas.*
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -84,7 +83,6 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 	""".trimIndent()
 
 
-
 	init {
 		val index =
 			ByteBuffer.allocateDirect(indexCoords.size * SIZE_OF_INT).order(ByteOrder.nativeOrder())
@@ -96,7 +94,8 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 		vextexBuf.position(0)
 
 		val vbi =
-			ByteBuffer.allocateDirect(vextexCoordsInner.size * SIZE_OF_FLOAT).order(ByteOrder.nativeOrder())
+			ByteBuffer.allocateDirect(vextexCoordsInner.size * SIZE_OF_FLOAT)
+				.order(ByteOrder.nativeOrder())
 		vextexBufInner = vbi.asFloatBuffer().put(vextexCoordsInner)
 		vextexBufInner.position(0)
 	}
@@ -118,7 +117,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 	var texPos2 = -1
 
 
-	fun createProgram(vs:String, fs: String): Int {
+	fun createProgram(vs: String, fs: String): Int {
 		val program = GLES20.glCreateProgram()
 
 		val vs1 = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
@@ -166,7 +165,6 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 			setup()
 		}
 		canvas = findViewById(R.id.canvasView)
-
 
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
@@ -268,7 +266,6 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 						)
 
 						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
-
 
 
 						/*
@@ -388,7 +385,6 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 						GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
 
 
-
 						/*
 						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture2)
 
@@ -436,7 +432,6 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 	}
 
 
-
 	fun setup() {
 		if (width == -1 && height == -1 || didInit) {
 			return
@@ -461,8 +456,16 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 
 	fun renderFrame() {
 		val ctx = canvas?.getContext("webgl2") as? TNSWebGLRenderingContext
-	//GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
-		Utils.updateTexImage(ctx!!, surfaceTexture!!, render!!, width, height, GLES20.GL_RGBA, GLES20.GL_RGBA)
+		//GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
+		Utils.updateTexImage(
+			ctx!!,
+			surfaceTexture!!,
+			render!!,
+			width,
+			height,
+			GLES20.GL_RGBA,
+			GLES20.GL_RGBA
+		)
 		canvas?.queueEvent {
 			GLES20.glUseProgram(program)
 			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab)
@@ -485,7 +488,6 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 			GLES20.glEnableVertexAttribArray(texPos)
 
 			GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
-
 
 
 			/*

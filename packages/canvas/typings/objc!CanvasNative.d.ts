@@ -359,6 +359,8 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	static new(): TNSCanvasRenderingContext2D; // inherited from NSObject
 
+	setFillStyleWithString(style: string);
+
 	fillStyle: ICanvasColorStyle;
 
 	filter: string;
@@ -390,6 +392,8 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 	shadowOffsetX: number;
 
 	shadowOffsetY: number;
+
+	setStrokeStyleWithString(style: string);
 
 	strokeStyle: ICanvasColorStyle;
 

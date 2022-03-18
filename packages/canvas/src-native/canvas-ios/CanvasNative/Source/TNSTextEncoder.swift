@@ -42,10 +42,7 @@ public class TNSTextEncoder: NSObject {
         if(result == nil){
             return NSData()
         }
-        let pointer = result!.pointee
-        let bytes = NSData(bytes: pointer.data, length: Int(pointer.data_len))
-        destroy_u8_array(result)
-        return bytes
+        return TNSCanvasData(data: result!)
     }
     
     public func encode(pointer text: UnsafePointer<Int8>?) -> NSData {
@@ -53,10 +50,7 @@ public class TNSTextEncoder: NSObject {
         if(result == nil){
             return NSData()
         }
-        let pointer = result!.pointee
-        let bytes = NSData(bytes: pointer.data, length: Int(pointer.data_len))
-        destroy_u8_array(result)
-        return bytes
+        return TNSCanvasData(data: result!)
     }
     
     deinit {

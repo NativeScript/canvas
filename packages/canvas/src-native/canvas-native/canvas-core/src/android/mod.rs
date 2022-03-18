@@ -1,18 +1,23 @@
+use std::collections::HashMap;
+use std::ffi::c_void;
+
 use android_logger::Config;
-use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JString};
-use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
-
+use jni::objects::{GlobalRef, JByteBuffer, JClass, JObject, JString, JValue};
+use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
+use jni::{JNIEnv, JavaVM};
 use log::Level;
-use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, ISize, PixelGeometry, Rect, Surface,
-};
+use once_cell::sync::OnceCell;
 use skia_safe::gpu::gl::Interface;
+use skia_safe::image::CachingHint;
+use skia_safe::{
+    AlphaType, Color, ColorType, EncodedImageFormat, ISize, ImageInfo, PixelGeometry, Rect, Surface,
+};
 
-
-use crate::common::context::{Context, Device, State};
+use crate::android::prelude::find_class;
 use crate::common::context::paths::path::Path;
 use crate::common::context::text_styles::text_direction::TextDirection;
+use crate::common::context::{Context, Device, State};
+use crate::common::ffi::u8_array::U8Array;
 use crate::common::to_data_url;
 
 pub mod context;
@@ -25,6 +30,7 @@ pub mod matrix;
 pub mod paint;
 pub mod path;
 pub mod pattern;
+pub mod prelude;
 pub mod svg;
 pub mod text_decoder;
 pub mod text_encoder;
@@ -34,14 +40,50 @@ pub mod utils;
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
 
+pub static JVM: OnceCell<JavaVM> = OnceCell::new();
+
+pub(crate) const TNSGCUTILS_CLASS: &str = "org/nativescript/canvas/TNSGcUtils";
+
+pub static JVM_CLASS_CACHE: OnceCell<parking_lot::RwLock<HashMap<&'static str, GlobalRef>>> =
+    OnceCell::new();
+
 #[no_mangle]
-pub extern "system" fn JNI_OnLoad() -> jint {
+pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
     {
         android_logger::init_once(Config::default().with_min_level(Level::Debug));
         log::info!("Canvas Native library loaded");
     }
 
+    if let Ok(env) = vm.get_env() {
+        JVM_CLASS_CACHE.get_or_init(|| {
+            let mut map = HashMap::new();
+            map.insert(
+                TNSGCUTILS_CLASS,
+                env.new_global_ref(env.find_class(TNSGCUTILS_CLASS).unwrap())
+                    .unwrap(),
+            );
+            parking_lot::RwLock::new(map)
+        });
+    }
+
+    JVM.get_or_init(|| vm);
+
     jni::sys::JNI_VERSION_1_6
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSGcUtils_nativeDestroyU8Array(
+    _: JNIEnv,
+    _: JClass,
+    array: jlong,
+) {
+    if array == 0 {
+        return;
+    }
+    unsafe {
+        let array: *mut U8Array = array as _;
+        let _ = Box::from_raw(array);
+    }
 }
 
 #[no_mangle]
@@ -58,6 +100,8 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContext(
     ppi: jfloat,
     direction: jint,
 ) -> jlong {
+    log::debug!("nativeInitContext w {} x h {}", width, height);
+
     let device = Device {
         width,
         height,
@@ -308,14 +352,8 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
         let context = &mut *context;
         if let Ok(format) = env.get_string(format) {
             let format = format.to_string_lossy();
-            return env
-                .new_string(to_data_url(
-                    context,
-                    format.as_ref(),
-                    (quality * 100 as f32) as i32,
-                ))
-                .unwrap()
-                .into_inner();
+            let data = to_data_url(context, format.as_ref(), (quality * 100 as f32) as i32);
+            return env.new_string(data).unwrap().into_inner();
         }
         return env.new_string("").unwrap().into_inner();
     }
@@ -326,23 +364,48 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeSnapshotCanv
     env: JNIEnv,
     _: JClass,
     context: jlong,
-) -> jbyteArray {
+) -> jobject {
+    let mut buf;
     if context == 0 {
-        return env.new_byte_array(0).unwrap();
-    }
-    unsafe {
-        let context: *mut Context = context as _;
-        let context = &mut *context;
-        context.surface.flush();
-        let ss = context.surface.image_snapshot();
-        match ss.encode_to_data(EncodedImageFormat::PNG) {
-            None => env.byte_array_from_slice(&[]).unwrap(),
-            Some(data) => {
-                let bytes = data.to_vec();
-                env.byte_array_from_slice(bytes.as_slice()).unwrap()
-            }
+        buf = Vec::new();
+    } else {
+        unsafe {
+            let context: *mut Context = context as _;
+            let context = &mut *context;
+            context.surface.flush();
+            //let ss = context.surface.image_snapshot();
+
+            let info = context.surface.image_info();
+            let size = ((info.width() * 4) * info.height()) as usize;
+            buf = vec![0_u8; size];
+            context
+                .surface
+                .read_pixels(&info, buf.as_mut_slice(), info.min_row_bytes(), (0, 0));
+            // match ss.encode_to_data(EncodedImageFormat::PNG) {
+            //     None => {
+            //         buf = Vec::new();
+            //     }
+            //     Some(data) => {
+            //         buf = data.to_vec();
+            //     }
+            // }
         }
     }
+
+    let db = env.new_direct_byte_buffer(buf.as_mut_slice()).unwrap();
+    let u8 = U8Array::from(buf);
+    let ptr = Box::into_raw(Box::new(u8));
+    let clazz = find_class(TNSGCUTILS_CLASS).unwrap();
+    let db: JValue = db.into();
+    env.call_static_method(
+        clazz,
+        "watchItem",
+        "(JLjava/nio/ByteBuffer;)V",
+        &[(ptr as i64).into(), db],
+    )
+    .unwrap();
+
+    db.l().unwrap().into_inner()
 }
 
 #[no_mangle]

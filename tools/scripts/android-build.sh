@@ -70,14 +70,12 @@ LIBCPLUSPLUS_SHARED_x86="$ANDROID_NDK_SYSROOT_LIB/i686-linux-android/$LIBCPLUSPL
 LIBCPLUSPLUS_SHARED_x86_64="$ANDROID_NDK_SYSROOT_LIB/x86_64-linux-android/$LIBCPLUSPLUS_NAME"
 LIBCPLUSPLUS_SHARED_AARCH_64="$ANDROID_NDK_SYSROOT_LIB/aarch64-linux-android/$LIBCPLUSPLUS_NAME"
 
-
-
 export RUSTFLAGS="$CARGO_FLAGS"
 
 cd "$NATIVE_SRC"
 
 # Build arm
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target armv7-linux-androideabi  $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features='panic_immediate_abort' --target armv7-linux-androideabi  $BUILD_FLAG
 
 if [[ -f "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME"

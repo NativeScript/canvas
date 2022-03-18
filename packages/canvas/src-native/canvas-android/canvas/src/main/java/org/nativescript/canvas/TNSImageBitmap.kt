@@ -70,7 +70,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if(buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBufferSrcRect(
 						buffer,
 						imageWidth,
@@ -86,7 +86,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
+				} else {
 					asset = nativeCreateFromBytesSrcRect(
 						buffer.array(),
 						imageWidth,
@@ -125,7 +125,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if (buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBuffer(
 						buffer,
 						imageWidth,
@@ -137,7 +137,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
+				} else {
 					asset = nativeCreateFromBytes(
 						buffer.array(),
 						imageWidth,
@@ -173,7 +173,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if (buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBufferEncodedSrcRect(
 						buffer,
 						sx,
@@ -187,7 +187,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
+				} else {
 					asset = nativeCreateFromBytesEncodedSrcRect(
 						buffer.array(),
 						sx,
@@ -221,7 +221,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if(buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBufferEncoded(
 						buffer,
 						options.flipY,
@@ -231,8 +231,8 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
-					 asset = nativeCreateFromBytesEncoded(
+				} else {
+					asset = nativeCreateFromBytesEncoded(
 						buffer.array(),
 						options.flipY,
 						options.premultiplyAlpha.toNative(),
@@ -320,7 +320,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			callback: Callback
 		) {
 			val bytes = canvas.snapshot()
-			createFromBytes(
+			createFromBuffer(
 				bytes, canvas.width.toFloat(), canvas.height.toFloat(), options, callback
 			)
 		}
@@ -336,7 +336,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			callback: Callback
 		) {
 			val bytes = canvas.snapshot()
-			createFromBytes(
+			createFromBuffer(
 				bytes, sx,
 				sy,
 				sWidth,

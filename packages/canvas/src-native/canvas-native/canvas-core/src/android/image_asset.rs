@@ -2,10 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use jni::JNIEnv;
-use jni::objects::{JClass, JString};
-use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
+use std::convert::TryInto;
+use std::ffi::c_void;
 
+use jni::objects::{JClass, JObject, JString, ReleaseMode};
+use jni::sys::{jboolean, jbyteArray, jint, jlong, jstring, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
+
+use crate::android::utils::bitmap::AndroidBitmapInfo;
 use crate::common::context::image_asset::{ImageAsset, OutputFormat};
 
 #[no_mangle]
@@ -238,19 +242,78 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAsse
     if asset == 0 {
         return JNI_FALSE;
     }
-    if let Ok(size) = env.get_array_length(buffer) {
-        let mut buf = vec![0u8; size as usize];
-        unsafe {
-            if let Ok(_) =
-            env.get_byte_array_region(buffer, 0, std::mem::transmute(buf.as_mut_slice()))
-            {
-                let asset: *mut ImageAsset = asset as _;
-                let asset = &mut *asset;
-                if asset.load_from_bytes(buf.as_slice()) {
-                    return JNI_TRUE;
-                }
+    unsafe {
+        if let Ok(array) = env.get_primitive_array_critical(buffer, ReleaseMode::NoCopyBack) {
+            let buf = std::slice::from_raw_parts_mut(
+                array.as_ptr() as *mut u8,
+                array.size().unwrap_or_default().try_into().unwrap(),
+            );
+            let asset: *mut ImageAsset = asset as _;
+            let asset = &mut *asset;
+            if asset.load_from_bytes(buf) {
+                return JNI_TRUE;
             }
         }
     }
     JNI_FALSE
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeCopyToBitmap(
+    env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    bitmap: JObject,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    let native_interface = env.get_native_interface();
+    let bitmap = bitmap.into_inner();
+    let mut bitmap_info = std::mem::MaybeUninit::uninit();
+
+    unsafe {
+        if crate::android::utils::bitmap::AndroidBitmap_getInfo(
+            native_interface as _,
+            bitmap,
+            bitmap_info.as_mut_ptr(),
+        ) < crate::android::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
+        {
+            log::debug!("Get Bitmap Info Failed");
+            let info = AndroidBitmapInfo::default();
+            return JNI_FALSE;
+        }
+    }
+    let bitmap_info = unsafe { bitmap_info.assume_init() };
+    let mut pixels = std::ptr::null_mut() as *mut c_void;
+    let pixels_ptr: *mut *mut c_void = &mut pixels;
+    unsafe {
+        if crate::android::utils::bitmap::AndroidBitmap_lockPixels(
+            native_interface as _,
+            bitmap,
+            pixels_ptr,
+        ) < crate::android::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
+        {
+            log::debug!("Get Bitmap Lock Failed");
+            return JNI_FALSE;
+        }
+    }
+    let length = (bitmap_info.height * bitmap_info.stride as u32) as usize;
+    let slice: &mut [u8] =
+        unsafe { std::slice::from_raw_parts_mut(pixels as *mut u8, length as usize) };
+
+    let asset: *mut ImageAsset = asset as _;
+    let asset = unsafe { &mut *asset };
+
+    slice.copy_from_slice(asset.rgba_internal_bytes().as_mut_slice());
+
+    unsafe {
+        if crate::android::utils::bitmap::AndroidBitmap_unlockPixels(native_interface as _, bitmap)
+            < crate::android::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
+        {
+            log::debug!("Unlock Bitmap Failed");
+        }
+    }
+    return JNI_TRUE;
 }

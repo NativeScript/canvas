@@ -43,12 +43,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
-		//this.geoColors(this.canvas);
+		this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
@@ -63,6 +63,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.birds(this.canvas);
 		//this.renderVideo();
 		//this.webgl_buffergeometry_drawrange(this.canvas);
+		//this.panorama_cube(this.canvas);
 	}
 
 	renderVideo() {
@@ -1257,7 +1258,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene.add(mesh);
 			const gl = args.getContext('webgl2') as any;
 
-
 			renderer = new THREE.WebGLRenderer({ context: gl, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1300,6 +1300,108 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			renderer.render(scene, camera);
 		}
+	}
+
+	panorama_cube(canvas){
+
+
+		let camera, controls;
+			let renderer;
+			let scene;
+
+			init(this.root);
+			animate();
+
+			function init(root) {
+
+				const context = canvas.getContext('webgl2');
+				const width = context.drawingBufferWidth;
+				const height = context.drawingBufferHeight;
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( width, height );
+		
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera( 90, width / height, 0.1, 100 );
+				camera.position.z = 0.01;
+
+				controls = new OrbitControls( camera, canvas );
+				controls.enableZoom = false;
+				controls.enablePan = false;
+				controls.enableDamping = true;
+				controls.rotateSpeed = - 0.25;
+
+				const textures = getTexturesFromAtlasFile( root + '/textures/cube/sun_temple_stripe.jpg', 6 );
+
+				const materials = [];
+
+				for ( let i = 0; i < 6; i ++ ) {
+
+					materials.push( new THREE.MeshBasicMaterial( { map: textures[ i ] } ) );
+
+				}
+
+				const skyBox = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 1 ), materials );
+				skyBox.geometry.scale( 1, 1, - 1 );
+				scene.add( skyBox );
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function getTexturesFromAtlasFile( atlasImgUrl, tilesNum ) {
+
+				const textures = [];
+
+				for ( let i = 0; i < tilesNum; i ++ ) {
+
+					textures[ i ] = new THREE.Texture();
+
+				}
+
+				new THREE.ImageLoader()
+					.load( atlasImgUrl, ( image ) => {
+
+						let canvas, context;
+						const tileWidth = image.height;
+
+						for ( let i = 0; i < textures.length; i ++ ) {
+
+							canvas = document.createElement( 'canvas' );
+							context = canvas.getContext( '2d' );
+							canvas.height = tileWidth;
+							canvas.width = tileWidth;
+							context.drawImage( image, tileWidth * i, 0, tileWidth, tileWidth, 0, 0, tileWidth, tileWidth );
+							textures[ i ].image = canvas;
+							textures[ i ].needsUpdate = true;
+
+						}
+
+					} );
+
+				return textures;
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				controls.update(); // required when damping is enabled
+
+				renderer.render( scene, camera );
+
+			}
 	}
 
 	// https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4

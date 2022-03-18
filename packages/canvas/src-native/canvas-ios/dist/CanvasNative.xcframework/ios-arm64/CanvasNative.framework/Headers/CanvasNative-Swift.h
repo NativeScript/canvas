@@ -278,6 +278,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (void * _Nullable)getViewPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL ignorePixelScaling;
 + (TNSDOMMatrix * _Nonnull)createSVGMatrix SWIFT_WARN_UNUSED_RESULT;
+- (void)forceLayout:(CGFloat)width :(CGFloat)height;
 @property (nonatomic) BOOL handleInvalidationManually;
 - (void)didDraw;
 - (NSString * _Nonnull)toDataURL SWIFT_WARN_UNUSED_RESULT;
@@ -309,6 +310,30 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (TNSCanvasRenderingContext * _Nullable)getContext:(NSString * _Nonnull)type SWIFT_WARN_UNUSED_RESULT;
 - (TNSCanvasRenderingContext * _Nullable)getContext:(NSString * _Nonnull)type contextAttributes:(NSDictionary * _Nonnull)contextAttributes SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)initWithFrame:(CGRect)frame SWIFT_UNAVAILABLE;
+@end
+
+@class NSData;
+@class NSURL;
+
+SWIFT_CLASS_NAMED("TNSCanvasData")
+@interface TNSCanvasData : NSMutableData
+- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+- (nullable instancetype)initWithContentsOfMappedFile:(NSString * _Nonnull)path SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithBase64EncodedString:(NSString * _Nonnull)base64String options:(NSDataBase64DecodingOptions)options SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithBase64EncodedData:(NSData * _Nonnull)base64Data options:(NSDataBase64DecodingOptions)options SWIFT_UNAVAILABLE;
+- (nonnull instancetype)initWithBytes:(void const * _Nullable)bytes length:(NSUInteger)length SWIFT_UNAVAILABLE;
+- (nonnull instancetype)initWithBytesNoCopy:(void * _Nonnull)bytes length:(NSUInteger)length SWIFT_UNAVAILABLE;
+- (nonnull instancetype)initWithBytesNoCopy:(void * _Nonnull)bytes length:(NSUInteger)length freeWhenDone:(BOOL)b SWIFT_UNAVAILABLE;
+- (nonnull instancetype)initWithBytesNoCopy:(void * _Nonnull)bytes length:(NSUInteger)length deallocator:(void (^ _Nullable)(void * _Nonnull, NSInteger))deallocator SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithContentsOfFile:(NSString * _Nonnull)path options:(NSDataReadingOptions)readOptionsMask error:(NSError * _Nullable * _Nullable)error SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithContentsOfURL:(NSURL * _Nonnull)url options:(NSDataReadingOptions)readOptionsMask error:(NSError * _Nullable * _Nullable)error SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithContentsOfFile:(NSString * _Nonnull)path SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithContentsOfURL:(NSURL * _Nonnull)url SWIFT_UNAVAILABLE;
+- (nonnull instancetype)initWithData:(NSData * _Nonnull)data SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithCapacity:(NSUInteger)capacity SWIFT_UNAVAILABLE;
+- (nullable instancetype)initWithLength:(NSUInteger)length SWIFT_UNAVAILABLE;
 @end
 
 
@@ -357,7 +382,9 @@ SWIFT_CLASS_NAMED("TNSCanvasRenderingContext2D")
 @property (nonatomic) float shadowOffsetY;
 @property (nonatomic) enum TNSTextAlignment textAlign;
 @property (nonatomic) enum TNSTextBaseLine textBaseline;
+- (void)setFillStyleWithString:(NSString * _Nonnull)style;
 @property (nonatomic, strong) id <ICanvasColorStyle> _Nonnull fillStyle;
+- (void)setStrokeStyleWithString:(NSString * _Nonnull)style;
 @property (nonatomic, strong) id <ICanvasColorStyle> _Nonnull strokeStyle;
 - (void)fillRect:(float)x :(float)y :(float)width :(float)height;
 - (void)strokeRect:(float)x :(float)y :(float)width :(float)height;
@@ -571,7 +598,6 @@ typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageAssetFormat, "TNSImageAssetFormat", 
 };
 
 @class TNSImageBitmapOptions;
-@class NSData;
 
 SWIFT_CLASS_NAMED("TNSImageBitmap")
 @interface TNSImageBitmap : NSObject

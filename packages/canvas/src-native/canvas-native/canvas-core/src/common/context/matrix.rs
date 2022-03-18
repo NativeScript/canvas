@@ -3,7 +3,7 @@ use std::os::raw::c_float;
 
 use skia_safe::M44;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Matrix {
     pub(crate) matrix: skia_safe::M44,
 }

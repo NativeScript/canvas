@@ -474,7 +474,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
-			this.context.fillStyle = TNSColor.alloc().init(color);
+			this.context.setFillStyleWithString(color);
 		} else if (color instanceof CanvasGradient) {
 			this.context.fillStyle = color.native;
 		} else if (color instanceof CanvasPattern) {
@@ -503,7 +503,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
-			this.context.strokeStyle = TNSColor.alloc().init(color);
+			this.context.setStrokeStyleWithString(color);
 		} else if (color instanceof CanvasGradient) {
 			this.context.strokeStyle = color.native;
 		} else if (color instanceof CanvasPattern) {

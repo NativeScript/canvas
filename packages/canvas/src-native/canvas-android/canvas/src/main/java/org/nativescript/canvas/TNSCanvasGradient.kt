@@ -1,5 +1,7 @@
 package org.nativescript.canvas
 
+import android.util.Log
+
 /**
  * Created by triniwiz on 5/30/20
  */

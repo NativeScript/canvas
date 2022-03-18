@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.util.Log
 import org.json.JSONException
 import org.json.JSONObject
+import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -15,15 +16,20 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		nativeDestroy(canvas.nativeContext)
+		TNSCanvas.nativeDestroyContext(canvas.nativeContext)
 	}
+
+	private fun runOnGLThread(runnable: Runnable?) {
+		canvas.queueEvent(runnable)
+	}
+
 
 	var direction: TNSTextDirection
 		get() {
 			printLog("getDirection")
 			val lock = CountDownLatch(1)
 			var value = TNSTextDirection.Ltr
-			canvas.queueEvent {
+			runOnGLThread {
 				value = if (nativeGetDirection(canvas.nativeContext) == 1) {
 					TNSTextDirection.Rtl
 				} else {
@@ -39,15 +45,22 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(direction) {
 			printLog("setDirection")
-			canvas.queueEvent { nativeSetDirection(canvas.nativeContext, direction.toNative()) }
+			runOnGLThread { nativeSetDirection(canvas.nativeContext, direction.toNative()) }
 		}
+
+	fun setDirection(direction: Int) {
+		if (direction in 0..1) {
+			printLog("setDirection")
+			runOnGLThread { nativeSetDirection(canvas.nativeContext, direction) }
+		}
+	}
 
 	var fillStyle: TNSColorStyle
 		get() {
 			printLog("getFillStyle")
 			val lock = CountDownLatch(1)
 			var value: TNSColorStyle = TNSColor("black")
-			canvas.queueEvent {
+			runOnGLThread {
 				val style = nativeGetFillStyle(
 					canvas.nativeContext
 				)
@@ -73,7 +86,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(value) {
 			printLog("setFillStyle")
-			canvas.queueEvent {
+			runOnGLThread {
 				when (value.styleType) {
 					TNSColorStyleType.Color -> {
 						val color = value as TNSColor
@@ -91,32 +104,38 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			}
 		}
 
+	fun setFillStyle(color: String) {
+		runOnGLThread {
+			nativeSetFillColorWithString(canvas.nativeContext, color)
+		}
+	}
+
 	var filter: String
-	get() {
-		printLog("getFilter")
-		val lock = CountDownLatch(1)
-		var value = "none"
-		canvas.queueEvent {
-			value = nativeGetFilter(canvas.nativeContext)
-			lock.countDown()
+		get() {
+			printLog("getFilter")
+			val lock = CountDownLatch(1)
+			var value = "none"
+			runOnGLThread {
+				value = nativeGetFilter(canvas.nativeContext)
+				lock.countDown()
+			}
+			try {
+				lock.await(2, TimeUnit.SECONDS)
+			} catch (e: Exception) {
+			}
+			return value
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (e: Exception) {
+		set(value) {
+			printLog("setFilter")
+			runOnGLThread { nativeSetFilter(canvas.nativeContext, value) }
 		}
-		return value
-	}
-	set(value) {
-		printLog("setFilter")
-		canvas.queueEvent { nativeSetFilter(canvas.nativeContext, value) }
-	}
 
 	var strokeStyle: TNSColorStyle
 		get() {
 			printLog("getStrokeStyle")
 			val lock = CountDownLatch(1)
 			var value: TNSColorStyle = TNSColor("black")
-			canvas.queueEvent {
+			runOnGLThread {
 				val style = nativeGetStrokeStyle(
 					canvas.nativeContext
 				)
@@ -141,7 +160,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(value) {
 			printLog("setStrokeStyle")
-			canvas.queueEvent {
+			runOnGLThread {
 				when (value.styleType) {
 					TNSColorStyleType.Color -> {
 						val color = value as TNSColor
@@ -159,12 +178,18 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			}
 		}
 
+	fun setStrokeStyle(color: String) {
+		runOnGLThread {
+			nativeSetStrokeColorWithString(canvas.nativeContext, color)
+		}
+	}
+
 	var lineWidth: Float
 		get() {
 			printLog("getLineWidth")
 			val lock = CountDownLatch(1)
 			var value = 1f
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetLineWidth(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -176,7 +201,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(lineWidth) {
 			printLog("setLineWidth")
-			canvas.queueEvent { nativeSetLineWidth(canvas.nativeContext, lineWidth) }
+			runOnGLThread { nativeSetLineWidth(canvas.nativeContext, lineWidth) }
 		}
 
 	var lineCap: TNSLineCap
@@ -184,7 +209,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getLineCap")
 			val lock = CountDownLatch(1)
 			var value = TNSLineCap.Butt
-			canvas.queueEvent {
+			runOnGLThread {
 				value = TNSLineCap.fromNative(nativeGetLineCap(canvas.nativeContext))
 				lock.countDown()
 			}
@@ -196,15 +221,22 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(value) {
 			printLog("setLineCap")
-			canvas.queueEvent { nativeSetLineCap(canvas.nativeContext, value.toNative()) }
+			runOnGLThread { nativeSetLineCap(canvas.nativeContext, value.toNative()) }
 		}
+
+	fun setLineCap(cap: Int) {
+		if (cap in 0..2) {
+			printLog("setLineCap")
+			runOnGLThread { nativeSetLineCap(canvas.nativeContext, cap) }
+		}
+	}
 
 	var lineJoin: TNSLineJoin
 		get() {
 			printLog("getLineJoin")
 			val lock = CountDownLatch(1)
 			var value = TNSLineJoin.Bevel
-			canvas.queueEvent {
+			runOnGLThread {
 				value = TNSLineJoin.fromNative(nativeGetLineJoin(canvas.nativeContext))
 				lock.countDown()
 			}
@@ -216,8 +248,15 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(value) {
 			printLog("setLineJoin")
-			canvas.queueEvent { nativeSetLineJoin(canvas.nativeContext, value.toNative()) }
+			runOnGLThread { nativeSetLineJoin(canvas.nativeContext, value.toNative()) }
 		}
+
+	fun setLineJoin(join: Int) {
+		if (join in 0..2) {
+			printLog("setLineJoin")
+			runOnGLThread { nativeSetLineJoin(canvas.nativeContext, join) }
+		}
+	}
 
 
 	var miterLimit: Float
@@ -225,7 +264,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getMiterLimit")
 			val lock = CountDownLatch(1)
 			var value = 10f
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetMiterLimit(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -237,7 +276,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(limit) {
 			printLog("setMiterLimit")
-			canvas.queueEvent { nativeSetMiterLimit(canvas.nativeContext, limit) }
+			runOnGLThread { nativeSetMiterLimit(canvas.nativeContext, limit) }
 		}
 
 	var lineDashOffset: Float
@@ -245,7 +284,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getLineDashOffset")
 			val lock = CountDownLatch(1)
 			var value = 0f
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetLineDashOffset(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -257,7 +296,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(offset) {
 			printLog("setLineDashOffset")
-			canvas.queueEvent { nativeSetLineDashOffset(canvas.nativeContext, offset) }
+			runOnGLThread { nativeSetLineDashOffset(canvas.nativeContext, offset) }
 		}
 
 
@@ -266,7 +305,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getLineDash")
 			val lock = CountDownLatch(1)
 			var value = FloatArray(0)
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetLineDash(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -278,7 +317,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(value) {
 			printLog("setLineDash")
-			canvas.queueEvent { nativeSetLineDash(canvas.nativeContext, value) }
+			runOnGLThread { nativeSetLineDash(canvas.nativeContext, value) }
 		}
 
 	var globalCompositeOperation: TNSCompositeOperationType
@@ -286,7 +325,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getGlobalCompositeOperation")
 			val lock = CountDownLatch(1)
 			var value = TNSCompositeOperationType.SourceOver
-			canvas.queueEvent {
+			runOnGLThread {
 				value =
 					TNSCompositeOperationType.fromNative(nativeGetGlobalCompositeOperation(canvas.nativeContext))
 				lock.countDown()
@@ -299,10 +338,19 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(value) {
 			printLog("setGlobalCompositeOperation")
-			canvas.queueEvent {
+			runOnGLThread {
 				nativeSetGlobalCompositeOperation(canvas.nativeContext, value.toNative())
 			}
 		}
+
+	fun setGlobalCompositeOperation(type: Int) {
+		if (type in 0..25) {
+			printLog("setGlobalCompositeOperation")
+			runOnGLThread {
+				nativeSetGlobalCompositeOperation(canvas.nativeContext, type)
+			}
+		}
+	}
 
 
 	var globalAlpha: Float
@@ -310,7 +358,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getGlobalAlpha")
 			val lock = CountDownLatch(1)
 			var value = 1f
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetGlobalAlpha(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -322,7 +370,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(alpha) {
 			printLog("setGlobalAlpha")
-			canvas.queueEvent(Runnable {
+			runOnGLThread(Runnable {
 				nativeSetGlobalAlpha(canvas.nativeContext, alpha)
 			})
 		}
@@ -332,7 +380,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getTextAlign")
 			val lock = CountDownLatch(1)
 			var value = TNSTextAlignment.Start
-			canvas.queueEvent {
+			runOnGLThread {
 				value = TNSTextAlignment.fromNative(nativeGetTextAlign(canvas.nativeContext))
 				lock.countDown()
 			}
@@ -344,10 +392,20 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(textAlign) {
 			printLog("setTextAlign")
-			canvas.queueEvent {
+			runOnGLThread {
 				nativeSetTextAlign(canvas.nativeContext, textAlign.toNative())
 			}
 		}
+
+
+	fun setTextAlign(alignment: Int) {
+		if (alignment in 0..4) {
+			printLog("setTextAlign")
+			runOnGLThread {
+				nativeSetTextAlign(canvas.nativeContext, alignment)
+			}
+		}
+	}
 
 
 	var shadowBlur: Float
@@ -355,7 +413,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getShadowBlur")
 			val lock = CountDownLatch(1)
 			var value = 0f
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetShadowBlur(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -367,7 +425,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(blur) {
 			printLog("setShadowBlur")
-			canvas.queueEvent { nativeSetShadowBlur(canvas.nativeContext, blur) }
+			runOnGLThread { nativeSetShadowBlur(canvas.nativeContext, blur) }
 		}
 
 	var shadowColor: String
@@ -375,7 +433,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getShadowColor")
 			val lock = CountDownLatch(1)
 			var value = "rgba(0,0,0,0)"
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetShadowColor(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -387,7 +445,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(color) {
 			printLog("setShadowColor")
-			canvas.queueEvent { nativeSetShadowColorString(canvas.nativeContext, color) }
+			runOnGLThread { nativeSetShadowColorString(canvas.nativeContext, color) }
 		}
 
 	var shadowOffsetX: Float
@@ -395,7 +453,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getShadowOffsetX")
 			val lock = CountDownLatch(1)
 			var value = 0f
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetShadowOffsetX(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -407,14 +465,14 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(x) {
 			printLog("setShadowOffsetX")
-			canvas.queueEvent { nativeSetShadowOffsetX(canvas.nativeContext, x) }
+			runOnGLThread { nativeSetShadowOffsetX(canvas.nativeContext, x) }
 		}
 	var shadowOffsetY: Float
 		get() {
 			printLog("getShadowOffsetY")
 			val lock = CountDownLatch(1)
 			var value = 0f
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetShadowOffsetY(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -426,7 +484,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(y) {
 			printLog("setShadowOffsetY")
-			canvas.queueEvent { nativeSetShadowOffsetY(canvas.nativeContext, y) }
+			runOnGLThread { nativeSetShadowOffsetY(canvas.nativeContext, y) }
 		}
 
 	var font: String
@@ -434,7 +492,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getFont")
 			val lock = CountDownLatch(1)
 			var value = "10px sans-serif"
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetFont(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -446,7 +504,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(font) {
 			printLog("setFont")
-			canvas.queueEvent { nativeSetFont(canvas.nativeContext, font) }
+			runOnGLThread { nativeSetFont(canvas.nativeContext, font) }
 		}
 
 
@@ -455,7 +513,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getImageSmoothingEnabled")
 			val lock = CountDownLatch(1)
 			var value = false
-			canvas.queueEvent {
+			runOnGLThread {
 				value = nativeGetImageSmoothingEnabled(canvas.nativeContext)
 				lock.countDown()
 			}
@@ -467,7 +525,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(enabled) {
 			printLog("setImageSmoothingEnabled")
-			canvas.queueEvent {
+			runOnGLThread {
 				nativeSetImageSmoothingEnabled(canvas.nativeContext, enabled)
 			}
 		}
@@ -477,7 +535,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getImageSmoothingQuality")
 			val lock = CountDownLatch(1)
 			var value = TNSImageSmoothingQuality.Low
-			canvas.queueEvent {
+			runOnGLThread {
 				value =
 					TNSImageSmoothingQuality.fromNative(nativeGetImageSmoothingQuality(canvas.nativeContext))
 				lock.countDown()
@@ -490,7 +548,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(quality) {
 			printLog("setImageSmoothingQuality")
-			canvas.queueEvent {
+			runOnGLThread {
 				nativeSetImageSmoothingQuality(canvas.nativeContext, quality.toNative())
 			}
 		}
@@ -501,7 +559,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			printLog("getCurrentTransform")
 			val lock = CountDownLatch(1)
 			var value: TNSDOMMatrix? = null
-			canvas.queueEvent {
+			runOnGLThread {
 				val id = nativeGetCurrentTransform(canvas.nativeContext)
 				value = if (id == 0L) {
 					TNSDOMMatrix()
@@ -516,7 +574,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		set(matrix) {
 			printLog("setCurrentTransform")
-			canvas.queueEvent {
+			runOnGLThread {
 				nativeSetCurrentTransform(canvas.nativeContext, matrix.matrix)
 			}
 		}
@@ -529,7 +587,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun clearRect(x: Float, y: Float, width: Float, height: Float) {
 		printLog("clearRect")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeClearRect(canvas.nativeContext, x, y, width, height)
 			updateCanvas()
 		})
@@ -537,7 +595,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun fillRect(x: Float, y: Float, width: Float, height: Float) {
 		printLog("fillRect")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeFillRect(canvas.nativeContext, x, y, width, height)
 			updateCanvas()
 		})
@@ -545,7 +603,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun strokeRect(x: Float, y: Float, width: Float, height: Float) {
 		printLog("strokeRect")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeStrokeRect(canvas.nativeContext, x, y, width, height)
 			updateCanvas()
 		})
@@ -557,7 +615,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun fillText(text: String, x: Float, y: Float, width: Float) {
 		printLog("fillText")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeFillText(canvas.nativeContext, text, x, y, width)
 			updateCanvas()
 		})
@@ -570,7 +628,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun strokeText(text: String, x: Float, y: Float, width: Float) {
 		printLog("strokeText")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeStrokeText(canvas.nativeContext, text, x, y, width)
 			updateCanvas()
 		})
@@ -578,7 +636,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun rect(x: Float, y: Float, width: Float, height: Float) {
 		printLog("rect")
-		canvas.queueEvent(Runnable { nativeRect(canvas.nativeContext, x, y, width, height) })
+		runOnGLThread(Runnable { nativeRect(canvas.nativeContext, x, y, width, height) })
 	}
 
 
@@ -586,9 +644,14 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		fill(TNSFillRule.NonZero)
 	}
 
-
 	fun fill(rule: TNSFillRule) {
 		fill(0, rule.toNative())
+	}
+
+	fun fill(rule: Int) {
+		if (rule in 0..1) {
+			fill(0, rule)
+		}
 	}
 
 	fun fill(path: TNSPath2D) {
@@ -599,9 +662,15 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		fill(path.path, rule.toNative())
 	}
 
+	fun fill(path: TNSPath2D, rule: Int) {
+		if (rule in 0..1) {
+			fill(path.path, rule)
+		}
+	}
+
 	private fun fill(path: Long, rule: Int) {
 		printLog("fill: path rule")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeFill(canvas.nativeContext, path, rule)
 			updateCanvas()
 		})
@@ -617,7 +686,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	private fun stroke(path: Long) {
 		printLog("stroke: path")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeStroke(canvas.nativeContext, path)
 			updateCanvas()
 		})
@@ -625,22 +694,22 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun beginPath() {
 		printLog("beginPath")
-		canvas.queueEvent(Runnable { nativeBeginPath(canvas.nativeContext) })
+		runOnGLThread(Runnable { nativeBeginPath(canvas.nativeContext) })
 	}
 
 	fun moveTo(x: Float, y: Float) {
 		printLog("moveTo")
-		canvas.queueEvent(Runnable { nativeMoveTo(canvas.nativeContext, x, y) })
+		runOnGLThread(Runnable { nativeMoveTo(canvas.nativeContext, x, y) })
 	}
 
 	fun lineTo(x: Float, y: Float) {
 		printLog("lineTo")
-		canvas.queueEvent(Runnable { nativeLineTo(canvas.nativeContext, x, y) })
+		runOnGLThread(Runnable { nativeLineTo(canvas.nativeContext, x, y) })
 	}
 
 	fun closePath() {
 		printLog("closePath")
-		canvas.queueEvent(Runnable { nativeClosePath(canvas.nativeContext) })
+		runOnGLThread(Runnable { nativeClosePath(canvas.nativeContext) })
 	}
 
 
@@ -664,7 +733,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		anticlockwise: Boolean = false
 	) {
 		printLog("arc")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeArc(
 				canvas.nativeContext,
 				x,
@@ -679,12 +748,12 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun arcTo(x1: Float, y1: Float, x2: Float, y2: Float, radius: Float) {
 		printLog("arcTo")
-		canvas.queueEvent(Runnable { nativeArcTo(canvas.nativeContext, x1, y1, x2, y2, radius) })
+		runOnGLThread(Runnable { nativeArcTo(canvas.nativeContext, x1, y1, x2, y2, radius) })
 	}
 
 	fun bezierCurveTo(cp1x: Float, cp1y: Float, cp2x: Float, cp2y: Float, x: Float, y: Float) {
 		printLog("bezierCurveTo")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeBezierCurveTo(
 				canvas.nativeContext,
 				cp1x,
@@ -722,7 +791,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		anticlockwise: Boolean
 	) {
 		printLog("ellipse")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeEllipse(
 				canvas.nativeContext,
 				x,
@@ -745,19 +814,29 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		clip(0, rule.toNative())
 	}
 
+	fun clip(rule: Int) {
+		if (rule in 0..1) {
+			clip(0, rule)
+		}
+	}
+
 	fun clip(path: TNSPath2D) {
-		printLog("clip: path")
 		clip(path, TNSFillRule.NonZero)
 	}
 
 	fun clip(path: TNSPath2D, rule: TNSFillRule) {
-		printLog("clip: path rule")
 		clip(path.path, rule.toNative())
+	}
+
+	fun clip(path: TNSPath2D, rule: Int) {
+		if (rule in 0..1) {
+			clip(path.path, rule)
+		}
 	}
 
 	private fun clip(path: Long, rule: Int) {
 		printLog("clip: path rule")
-		canvas.queueEvent(Runnable { nativeClip(canvas.nativeContext, path, rule) })
+		runOnGLThread(Runnable { nativeClip(canvas.nativeContext, path, rule) })
 	}
 
 	fun createLinearGradient(x0: Float, y0: Float, x1: Float, y1: Float): TNSCanvasGradient {
@@ -774,71 +853,129 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		r1: Float
 	): TNSCanvasGradient {
 		printLog("createRadialGradient")
-		return TNSCanvasGradient(
-			nativeCreateRadialGradient(
-				canvas.nativeContext,
-				x0,
-				y0,
-				r0,
-				x1,
-				y1,
-				r1
-			)
+		val style = nativeCreateRadialGradient(
+			canvas.nativeContext,
+			x0,
+			y0,
+			r0,
+			x1,
+			y1,
+			r1
 		)
+		return TNSCanvasGradient(style)
 	}
 
 	fun createPattern(
 		src: TNSCanvas?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
 	): TNSPattern? {
+		return createPattern(src, repetition.toNative())
+	}
+
+	fun createPattern(
+		src: TNSCanvas?,
+		repetition: Int
+	): TNSPattern? {
 		printLog("createPattern: canvas")
 		if (src == null) return null
-		val ss = src.snapshot()
-		return createPattern(
-			ss,
-			src.width,
-			src.height,
-			repetition.toNative()
-		)
+		if (repetition in 0..3) {
+			val ss = src.snapshot()
+			return createPattern(
+				ss,
+				src.width,
+				src.height,
+				repetition
+			)
+		}
+		return null
 	}
 
 	fun createPattern(
 		src: Bitmap?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
 	): TNSPattern? {
-		printLog("createPattern: bitmap")
-		if (src == null) return null
-		return createPattern(
-			Utils.getBytesFromBitmap(src),
-			src.width,
-			src.height,
-			repetition.toNative()
-		)
+		return createPattern(src, repetition.toNative())
 	}
 
-	private fun createPattern(
+	fun createPattern(
+		src: Bitmap?,
+		repetition: Int
+	): TNSPattern? {
+		printLog("createPattern: bitmap")
+		if (src == null) return null
+		if (repetition in 0..3) {
+			return createPattern(
+				Utils.getBytesFromBitmap(src),
+				src.width,
+				src.height,
+				repetition
+			)
+		}
+		return null
+	}
+
+	fun createPattern(
 		data: ByteArray,
 		width: Int,
 		height: Int,
 		repetition: Int
 	): TNSPattern? {
 		printLog("createPattern: imagebitmap")
-		val lock = CountDownLatch(1)
 		var value: TNSPattern? = null
-		canvas.queueEvent {
-			val id = nativeCreatePattern(
-				canvas.nativeContext,
-				data, width, height, repetition
-			)
+		if (repetition in 0..3) {
+			val lock = CountDownLatch(1)
+			runOnGLThread {
+				val id = nativeCreatePattern(
+					canvas.nativeContext,
+					data, width, height, repetition
+				)
 
-			if (id != 0L) {
-				value = TNSPattern(id)
+				if (id != 0L) {
+					value = TNSPattern(id)
+				}
+				lock.countDown()
 			}
-			lock.countDown()
+			try {
+				lock.await(2, TimeUnit.SECONDS)
+			} catch (e: Exception) {
+			}
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (e: Exception) {
+		return value
+	}
+
+
+	fun createPattern(
+		data: ByteBuffer,
+		width: Int,
+		height: Int,
+		repetition: Int
+	): TNSPattern? {
+		printLog("createPattern: imagebitmap")
+		var value: TNSPattern? = null
+		if (repetition in 0..3) {
+			val lock = CountDownLatch(1)
+			runOnGLThread {
+				val id = if (data.isDirect) {
+					nativeCreatePatternWithBuffer(
+						canvas.nativeContext,
+						data, width, height, repetition
+					)
+				} else {
+					nativeCreatePattern(
+						canvas.nativeContext,
+						data.array(), width, height, repetition
+					)
+				}
+
+				if (id != 0L) {
+					value = TNSPattern(id)
+				}
+				lock.countDown()
+			}
+			try {
+				lock.await(2, TimeUnit.SECONDS)
+			} catch (e: Exception) {
+			}
 		}
 		return value
 	}
@@ -851,7 +988,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		printLog("createPattern: imagebitmap")
 		val lock = CountDownLatch(1)
 		var value: TNSPattern? = null
-		canvas.queueEvent {
+		runOnGLThread {
 			val id = nativeCreatePatternEncoded(
 				canvas.nativeContext,
 				data, repetition
@@ -869,6 +1006,40 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		return value
 	}
 
+
+	private fun createPatternEncoded(
+		data: ByteBuffer,
+		repetition: Int
+	): TNSPattern? {
+		printLog("createPattern: imagebitmap")
+		val lock = CountDownLatch(1)
+		var value: TNSPattern? = null
+		runOnGLThread {
+			val id = if (data.isDirect) {
+				nativeCreatePatternEncodedWithBuffer(
+					canvas.nativeContext,
+					data, repetition
+				)
+			} else {
+				nativeCreatePatternEncoded(
+					canvas.nativeContext,
+					data.array(), repetition
+				)
+			}
+
+			if (id != 0L) {
+				value = TNSPattern(id)
+			}
+			lock.countDown()
+		}
+		try {
+			lock.await(2, TimeUnit.SECONDS)
+		} catch (e: Exception) {
+		}
+		return value
+	}
+
+
 	fun createPattern(
 		src: TNSImageAsset?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
@@ -877,7 +1048,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		if (src == null) return null
 		val lock = CountDownLatch(1)
 		var value: TNSPattern? = null
-		canvas.queueEvent {
+		runOnGLThread {
 			val id = nativeCreatePatternWithAsset(
 				canvas.nativeContext,
 				src.nativeImageAsset, repetition.toNative()
@@ -898,23 +1069,32 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		src: TNSImageBitmap?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
 	): TNSPattern? {
+		return createPattern(src, repetition.toNative())
+	}
+
+	fun createPattern(
+		src: TNSImageBitmap?,
+		repetition: Int
+	): TNSPattern? {
 		printLog("createPattern: imagebitmap")
 		if (src == null) return null
-		val lock = CountDownLatch(1)
 		var value: TNSPattern? = null
-		canvas.queueEvent {
-			val id = nativeCreatePatternWithAsset(
-				canvas.nativeContext,
-				src.nativeImageAsset, repetition.toNative()
-			)
-			if (id != 0L) {
-				value = TNSPattern(id)
+		if (repetition in 0..3) {
+			val lock = CountDownLatch(1)
+			runOnGLThread {
+				val id = nativeCreatePatternWithAsset(
+					canvas.nativeContext,
+					src.nativeImageAsset, repetition
+				)
+				if (id != 0L) {
+					value = TNSPattern(id)
+				}
+				lock.countDown()
 			}
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (e: java.lang.Exception) {
+			try {
+				lock.await(2, TimeUnit.SECONDS)
+			} catch (e: java.lang.Exception) {
+			}
 		}
 		return value
 	}
@@ -922,48 +1102,48 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun save() {
 		printLog("save")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeSave(canvas.nativeContext)
 		})
 	}
 
 	fun restore() {
 		printLog("restore")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeRestore(canvas.nativeContext)
 		})
 	}
 
 	fun setTransform(a: Float, b: Float, c: Float, d: Float, e: Float, f: Float) {
 		printLog("setTransform")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeSetTransform(canvas.nativeContext, a, b, c, d, e, f)
 		})
 	}
 
 	fun transform(a: Float, b: Float, c: Float, d: Float, e: Float, f: Float) {
 		printLog("transform")
-		canvas.queueEvent(Runnable { nativeTransform(canvas.nativeContext, a, b, c, d, e, f) })
+		runOnGLThread(Runnable { nativeTransform(canvas.nativeContext, a, b, c, d, e, f) })
 	}
 
 	fun scale(x: Float, y: Float) {
 		printLog("scale")
-		canvas.queueEvent(Runnable { nativeScale(canvas.nativeContext, x, y) })
+		runOnGLThread(Runnable { nativeScale(canvas.nativeContext, x, y) })
 	}
 
 	fun rotate(angle: Float) {
 		printLog("rotate")
-		canvas.queueEvent(Runnable { nativeRotate(canvas.nativeContext, angle) })
+		runOnGLThread(Runnable { nativeRotate(canvas.nativeContext, angle) })
 	}
 
 	fun translate(x: Float, y: Float) {
 		printLog("translate")
-		canvas.queueEvent(Runnable { nativeTranslate(canvas.nativeContext, x, y) })
+		runOnGLThread(Runnable { nativeTranslate(canvas.nativeContext, x, y) })
 	}
 
 	fun quadraticCurveTo(cpx: Float, cpy: Float, x: Float, y: Float) {
 		printLog("quadraticCurveTo")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeQuadraticCurveTo(canvas.nativeContext, cpx, cpy, x, y)
 		})
 	}
@@ -993,8 +1173,8 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		val finalWidth = width.toFloat()
 		val finalHeight = height.toFloat()
-		canvas.queueEvent(Runnable {
-			nativeDrawImageDxDy(
+		runOnGLThread(Runnable {
+			nativeDrawImageDxDyWithBuffer(
 				canvas.nativeContext,
 				ss,
 				finalWidth,
@@ -1009,7 +1189,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	fun drawImage(image: Bitmap?, dx: Float, dy: Float) {
 		printLog("drawImage: bitmap")
 		image?.let {
-			canvas.queueEvent(Runnable {
+			runOnGLThread(Runnable {
 				val width = image.width.toFloat()
 				val height = image.height.toFloat()
 				nativeDrawImageDxDyWithBitmap(
@@ -1027,7 +1207,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun drawImage(asset: TNSImageAsset, dx: Float, dy: Float) {
 		printLog("drawImage: asset")
-		canvas.queueEvent(Runnable {
+		runOnGLThread {
 			nativeDrawImageDxDyWithAsset(
 				canvas.nativeContext,
 				asset.nativeImageAsset,
@@ -1035,12 +1215,12 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				dy
 			)
 			updateCanvas()
-		})
+		}
 	}
 
 	fun drawImage(bitmap: TNSImageBitmap, dx: Float, dy: Float) {
 		printLog("drawImage: bitmap")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeDrawImageDxDyWithAsset(
 				canvas.nativeContext,
 				bitmap.nativeImageAsset,
@@ -1076,8 +1256,8 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		val finalWidth = width.toFloat()
 		val finalHeight = height.toFloat()
-		canvas.queueEvent(Runnable {
-			nativeDrawImageDxDyDwDy(
+		runOnGLThread(Runnable {
+			nativeDrawImageDxDyDwDyWithBuffer(
 				canvas.nativeContext,
 				ss,
 				finalWidth,
@@ -1094,7 +1274,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	fun drawImage(image: Bitmap?, dx: Float, dy: Float, dWidth: Float, dHeight: Float) {
 		printLog("drawImage: bitmap")
 		image?.let {
-			canvas.queueEvent(Runnable {
+			runOnGLThread(Runnable {
 				nativeDrawImageDxDyDwDhWithBitmap(
 					canvas.nativeContext,
 					image,
@@ -1112,7 +1292,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun drawImage(asset: TNSImageAsset, dx: Float, dy: Float, dWidth: Float, dHeight: Float) {
 		printLog("drawImage: asset")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeDrawImageDxDyDwDhWithAsset(
 				canvas.nativeContext,
 				asset.nativeImageAsset,
@@ -1127,7 +1307,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun drawImage(bitmap: TNSImageBitmap, dx: Float, dy: Float, dWidth: Float, dHeight: Float) {
 		printLog("drawImage: bitmap")
-		canvas.queueEvent(Runnable {
+		runOnGLThread {
 			nativeDrawImageDxDyDwDhWithAsset(
 				canvas.nativeContext,
 				bitmap.nativeImageAsset,
@@ -1137,7 +1317,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				dHeight
 			)
 			updateCanvas()
-		})
+		}
 	}
 
 	fun drawImage(
@@ -1175,8 +1355,8 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 		val finalWidth = width.toFloat()
 		val finalHeight = height.toFloat()
-		canvas.queueEvent(Runnable {
-			nativeDrawImage(
+		runOnGLThread(Runnable {
+			nativeDrawImageWithBuffer(
 				canvas.nativeContext,
 				ss,
 				finalWidth,
@@ -1207,7 +1387,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	) {
 		printLog("drawImage: bitmap")
 		image?.let {
-			canvas.queueEvent(Runnable {
+			runOnGLThread(Runnable {
 				nativeDrawImageWithBitmap(
 					canvas.nativeContext,
 					image,
@@ -1239,7 +1419,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		dHeight: Float
 	) {
 		printLog("drawImage: asset")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeDrawImageWithAsset(
 				canvas.nativeContext,
 				asset.nativeImageAsset,
@@ -1269,7 +1449,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		dHeight: Float
 	) {
 		printLog("drawImage: bitmap")
-		canvas.queueEvent(Runnable {
+		runOnGLThread(Runnable {
 			nativeDrawImageWithAsset(
 				canvas.nativeContext,
 				bitmap.nativeImageAsset,
@@ -1324,7 +1504,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		dirtyWidth: Float,
 		dirtyHeight: Float
 	) {
-		canvas.queueEvent {
+		runOnGLThread {
 			nativePutImageData(
 				canvas.nativeContext,
 				data.nativeImageData,
@@ -1343,7 +1523,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		printLog("getImageData")
 		val lock = CountDownLatch(1)
 		var value: TNSImageData? = null
-		canvas.queueEvent {
+		runOnGLThread {
 			value = TNSImageData(
 				sw.toInt(),
 				sh.toInt(),
@@ -1361,7 +1541,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun resetTransform() {
 		printLog("resetTransform")
-		canvas.queueEvent(Runnable { nativeResetTransform(canvas.nativeContext) })
+		runOnGLThread(Runnable { nativeResetTransform(canvas.nativeContext) })
 	}
 
 	fun isPointInPath(x: Float, y: Float): Boolean {
@@ -1394,7 +1574,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		printLog("isPointInPath")
 		val lock = CountDownLatch(1)
 		var value = false
-		canvas.queueEvent {
+		runOnGLThread {
 			value = nativeIsPointInPath(canvas.nativeContext, path, x, y, fillRule)
 			lock.countDown()
 		}
@@ -1413,7 +1593,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		printLog("isPointInStroke")
 		val lock = CountDownLatch(1)
 		var value = false
-		canvas.queueEvent {
+		runOnGLThread {
 			value = nativeIsPointInStroke(canvas.nativeContext, path?.path ?: 0L, x, y)
 			lock.countDown()
 		}
@@ -1426,9 +1606,6 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	companion object {
 		const val TAG = "CanvasRenderingContext"
-
-		@JvmStatic
-		private external fun nativeDestroy(context: Long)
 
 		@JvmStatic
 		private external fun nativeSetDirection(context: Long, direction: Int)
@@ -1639,11 +1816,28 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			repetition: Int
 		): Long
 
+		@JvmStatic
+		private external fun nativeCreatePatternWithBuffer(
+			context: Long,
+			data: ByteBuffer,
+			width: Int,
+			height: Int,
+			repetition: Int
+		): Long
+
 
 		@JvmStatic
 		private external fun nativeCreatePatternEncoded(
 			context: Long,
 			data: ByteArray,
+			repetition: Int
+		): Long
+
+
+		@JvmStatic
+		private external fun nativeCreatePatternEncodedWithBuffer(
+			context: Long,
+			data: ByteBuffer,
 			repetition: Int
 		): Long
 
@@ -1730,6 +1924,16 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 
 		@JvmStatic
+		private external fun nativeDrawImageDxDyWithBuffer(
+			context: Long,
+			data: ByteBuffer,
+			width: Float,
+			height: Float,
+			dx: Float,
+			dy: Float
+		)
+
+		@JvmStatic
 		private external fun nativeDrawImageDxDyWithBitmap(
 			context: Long,
 			bitmap: Bitmap,
@@ -1752,6 +1956,19 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		private external fun nativeDrawImageDxDyDwDy(
 			context: Long,
 			data: ByteArray,
+			width: Float,
+			height: Float,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		)
+
+
+		@JvmStatic
+		private external fun nativeDrawImageDxDyDwDyWithBuffer(
+			context: Long,
+			data: ByteBuffer,
 			width: Float,
 			height: Float,
 			dx: Float,
@@ -1800,6 +2017,22 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			dHeight: Float
 		)
 
+
+		@JvmStatic
+		private external fun nativeDrawImageWithBuffer(
+			context: Long,
+			data: ByteBuffer,
+			width: Float,
+			height: Float,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		)
 
 		@JvmStatic
 		private external fun nativeDrawImageWithBitmap(

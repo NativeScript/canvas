@@ -12,7 +12,7 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
             match result {
                 Ok(_) => {
                     let _ = reader.seek(SeekFrom::Start(0));
-                    match skia_safe::svg::SvgDom::read(reader) {
+                    match skia_safe::svg::Dom::read(reader) {
                         Ok(mut svg) => {
                             let _device = context.device;
                             let size = skia_safe::Size::new(
@@ -20,7 +20,7 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
                                 context.surface.height() as f32,
                             );
                             let canvas = context.surface.canvas();
-                            svg.container_size(&size);
+                            svg.set_container_size(size);
                             //  canvas.scale((device.density, device.density));
                             svg.render(canvas)
                         }
@@ -42,7 +42,7 @@ pub(crate) fn draw_svg_from_path(context: &mut Context, path: &str) {
 }
 
 pub(crate) fn draw_svg(context: &mut Context, svg: &str) {
-    match skia_safe::svg::SvgDom::from_bytes(svg.as_bytes()) {
+    match skia_safe::svg::Dom::from_bytes(svg.as_bytes()) {
         Ok(mut svg) => {
             let _device = context.device;
             let size = skia_safe::Size::new(
@@ -50,7 +50,7 @@ pub(crate) fn draw_svg(context: &mut Context, svg: &str) {
                 context.surface.height() as f32,
             );
             let canvas = context.surface.canvas();
-            svg.container_size(&size);
+            svg.set_container_size(size);
             // canvas.scale((device.density, device.density));
             svg.render(canvas)
         }

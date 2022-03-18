@@ -64,6 +64,24 @@ public class TNSCanvas: UIView, RenderListener {
         TNSDOMMatrix()
     }
     
+    
+    public func forceLayout(_ width: CGFloat, _ height: CGFloat){
+        
+        if (width == .zero && height == .zero) {
+            return
+        }
+        let w = UIScreen.main.scale * width;
+        let h = UIScreen.main.scale * height
+        
+        if (w == frame.size.width && h == frame.size.height) {
+            return;
+        }
+        frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: w, height: h)
+        setNeedsLayout()
+        layoutIfNeeded()
+    }
+    
+    
     var isContextLost: Bool = false
     var _handleInvalidationManually: Bool = false
     public var handleInvalidationManually: Bool {

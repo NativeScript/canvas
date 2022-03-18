@@ -1,9 +1,12 @@
-use std::{env, fmt};
+extern crate cbindgen;
+
 use std::borrow::Borrow;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
+use std::{env, fmt};
 
 use bindgen;
+use cbindgen::{Config, Language};
 
 #[derive(Clone, Debug)]
 pub struct Target {
@@ -67,7 +70,6 @@ fn main() {
 
     println!("cargo:rerun-if-changed=build.rs");
 
-    dbg!("system target {:?}", &target.system);
     match target.system.borrow() {
         "android" | "androideabi" => {
             let build_target;
@@ -87,11 +89,10 @@ fn main() {
             }
 
             include_dir.push_str("/sysroot/usr/include");
-            println!("target {:?}", build_target);
-            println!("cargo:rustc-link-search=native={}", include_dir);
+            //println!("cargo:rustc-link-search=native={}", include_dir);
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=android"); // the "-l" flag
-            // the resulting bindings.
+                                                      // the resulting bindings.
             let bindings = bindgen::Builder::default()
                 // The input header we would like to generate
                 // bindings for.
@@ -110,5 +111,35 @@ fn main() {
                 .expect("Couldn't write bindings!");
         }
         _ => {}
+    }
+
+    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+
+    let package_name = env::var("CARGO_PKG_NAME").unwrap();
+    let output_file = target_dir()
+        .join(format!("{}.h", package_name))
+        .display()
+        .to_string();
+
+    let config = Config {
+        // defines: HashMap::from([
+        //     ("target_os = ios".into(), "TARGET_OS_IOS".into()),
+        //     ("target_os = macos".into(), "TARGET_OS_MACOS".into()),
+        //     ("target_os = android".into(), "TARGET_OS_ANDROID".into()),
+        // ]),
+        language: Language::C,
+        ..Default::default()
+    };
+
+    cbindgen::generate_with_config(&crate_dir, config)
+        .unwrap()
+        .write_to_file(&output_file);
+}
+
+fn target_dir() -> PathBuf {
+    if let Ok(target) = env::var("CARGO_TARGET_DIR") {
+        PathBuf::from(target)
+    } else {
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("target")
     }
 }

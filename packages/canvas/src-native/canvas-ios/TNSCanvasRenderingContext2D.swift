@@ -197,6 +197,10 @@
             }
         }
         
+        public func setFillStyleWithString(_ style: String){
+            paint_style_set_fill_color_with_string(canvas.context, (style as NSString).utf8String)
+        }
+        
         public var fillStyle: ICanvasColorStyle {
             get {
                 let ptr = context_get_fill_style(canvas.context)!
@@ -233,6 +237,9 @@
         }
         
         
+        public func setStrokeStyleWithString(_ style: String){
+            paint_style_set_stroke_color_with_string(canvas.context, (style as NSString).utf8String)
+        }
         
         
         public var strokeStyle: ICanvasColorStyle {

@@ -1,21 +1,18 @@
 use std::str::FromStr;
 
-
-use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JString, JValue, ReleaseMode};
+use jni::objects::{JByteBuffer, JClass, JObject, JString, JValue, ReleaseMode};
 use jni::sys::{
-    jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring,
+    jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE,
 };
+use jni::JNIEnv;
 use skia_safe::Rect;
 
 use crate::common::context::compositing::composite_operation_type::CompositeOperationType;
-use crate::common::context::Context;
 use crate::common::context::drawing_paths::fill_rule::FillRule;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
 use crate::common::context::fill_and_stroke_styles::pattern::Repetition;
 use crate::common::context::image_asset::ImageAsset;
 use crate::common::context::image_smoothing::ImageSmoothingQuality;
-
 use crate::common::context::line_styles::line_join::LineJoin;
 use crate::common::context::matrix::Matrix;
 use crate::common::context::paths::path::Path;
@@ -23,7 +20,8 @@ use crate::common::context::pixel_manipulation::image_data::ImageData;
 use crate::common::context::text_styles::text_align::TextAlign;
 use crate::common::context::text_styles::text_baseline::TextBaseLine;
 use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::ffi::paint_style_value::{PaintStyleValueType};
+use crate::common::context::Context;
+use crate::common::ffi::paint_style_value::PaintStyleValueType;
 use crate::common::utils::color::to_parsed_color;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
 
@@ -121,14 +119,14 @@ fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
             "(Ljava/lang/String;J)Lorg/json/JSONObject;",
             value_args.as_slice(),
         )
-            .unwrap();
+        .unwrap();
         env.call_method(
             json,
             "put",
             "(Ljava/lang/String;I)Lorg/json/JSONObject;",
             value_type_args.as_slice(),
         )
-            .unwrap();
+        .unwrap();
         json.into_inner()
     }
 }
@@ -921,7 +919,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     image_data: jbyteArray,
     repetition: jint,
 ) -> jlong {
-    
     unsafe {
         if context == 0 {
             return 0;
@@ -945,6 +942,31 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternEncodedWithBuffer(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    image_data: JByteBuffer,
+    repetition: jint,
+) -> jlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        if let Ok(buf) = env.get_direct_buffer_address(image_data) {
+            if let Some(image) = from_image_slice_encoded(buf) {
+                return Box::into_raw(Box::new(PaintStyle::Pattern(
+                    context.create_pattern(image, Repetition::from(repetition)),
+                ))) as jlong;
+            }
+        }
+        0
+    }
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePattern(
     env: JNIEnv,
     _: JClass,
@@ -954,7 +976,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     height: jint,
     repetition: jint,
 ) -> jlong {
-    
     unsafe {
         if context == 0 {
             return 0;
@@ -968,6 +989,33 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
                 length,
             );
 
+            if let Some(image) = from_image_slice(buf, width, height) {
+                return Box::into_raw(Box::new(PaintStyle::Pattern(
+                    context.create_pattern(image, Repetition::from(repetition)),
+                ))) as jlong;
+            }
+        }
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithBuffer(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    image_data: JByteBuffer,
+    width: jint,
+    height: jint,
+    repetition: jint,
+) -> jlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        if let Ok(buf) = env.get_direct_buffer_address(image_data) {
             if let Some(image) = from_image_slice(buf, width, height) {
                 return Box::into_raw(Box::new(PaintStyle::Pattern(
                     context.create_pattern(image, Repetition::from(repetition)),
@@ -1119,6 +1167,26 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithBuffer(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    image_data: JByteBuffer,
+    width: jfloat,
+    height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+) {
+    unsafe {
+        if let Ok(buf) = env.get_direct_buffer_address(image_data) {
+            draw_image(
+                context, buf, width, height, 0.0, 0.0, width, height, dx, dy, width, height,
+            );
+        }
+    }
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithAsset(
     _: JNIEnv,
     _: JClass,
@@ -1203,6 +1271,28 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
                 std::mem::transmute::<*mut i8, *mut u8>(val.as_ptr()),
                 length,
             );
+            draw_image(
+                context, buf, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
+            )
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithBuffer(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    image_data: JByteBuffer,
+    width: jfloat,
+    height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+    d_width: jfloat,
+    d_height: jfloat,
+) {
+    unsafe {
+        if let Ok(buf) = env.get_direct_buffer_address(image_data) {
             draw_image(
                 context, buf, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
             )
@@ -1354,6 +1444,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageWithBuffer(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    image_data: JByteBuffer,
+    width: jfloat,
+    height: jfloat,
+    sx: jfloat,
+    sy: jfloat,
+    s_width: jfloat,
+    s_height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+    d_width: jfloat,
+    d_height: jfloat,
+) {
+    unsafe {
+        if let Ok(buf) = env.get_direct_buffer_address(image_data) {
+            draw_image(
+                context, buf, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+            )
+        }
+    }
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeEllipse(
     _: JNIEnv,
     _: JClass,
@@ -1491,7 +1607,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetTansform(
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeGetTransform(
     _: JNIEnv,
     _: JClass,
     context: jlong,

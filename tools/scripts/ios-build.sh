@@ -50,10 +50,6 @@ if ! cargo --version >/dev/null 2>&1; then
   exit
 fi
 
-if ! cargo lipo --version >/dev/null 2>&1; then
-  echo "Lipo not found"
-  exit
-fi
 
 for arg in "$@"; do
   if [[ "$arg" == "--help" ]] || [[ "$arg" == "-h" ]]; then
@@ -73,12 +69,12 @@ export RUSTFLAGS="$CARGO_FLAGS"
 
 cd canvas-native
 
-if [[ -f "$IOS_LIB_INCLUDE/canvas_native.h" ]]; then
-  rm "$IOS_LIB_INCLUDE/canvas_native.h"
-fi
+# if [[ -f "$IOS_LIB_INCLUDE/canvas_native.h" ]]; then
+#   rm "$IOS_LIB_INCLUDE/canvas_native.h"
+# fi
 
 # TODO fix header generation .... ignore android
-cbindgen --config "$CWD/canvas-native/canvas-core/cbindgen.toml"  "$CWD/canvas-native/canvas-core/src/lib.rs" -l c >"$IOS_LIB_INCLUDE/canvas_native.h"
+# cbindgen --config "$CWD/canvas-native/canvas-core/cbindgen.toml"  "$CWD/canvas-native/canvas-core/src/lib.rs" -l c >"$IOS_LIB_INCLUDE/canvas_native.h"
 
 
 if [[ -f "$IOS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME" ]]; then

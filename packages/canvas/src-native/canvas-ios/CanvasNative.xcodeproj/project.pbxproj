@@ -19,6 +19,7 @@
 		F181662D26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181662C26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift */; };
 		F181663126230D8C0051F06B /* TNSImageBitmapResizeQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181663026230D8C0051F06B /* TNSImageBitmapResizeQuality.swift */; };
 		F181663526230E500051F06B /* TNSImageBitmapOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181663426230E500051F06B /* TNSImageBitmapOptions.swift */; };
+		F18B4A7227D95313009258DD /* TNSCanvasData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18B4A7127D95313009258DD /* TNSCanvasData.swift */; };
 		F1A87B25255BB4F000394387 /* TextBaseLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A87B24255BB4F000394387 /* TextBaseLine.swift */; };
 		F1A87C75255D00BA00394387 /* TNSCanvas.xib in Resources */ = {isa = PBXBuildFile; fileRef = F1A87C74255D00BA00394387 /* TNSCanvas.xib */; };
 		F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE2E4E2612F7CA0000D48F /* Utils.swift */; };
@@ -75,7 +76,6 @@
 		F1FF6A9F25248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6725248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift */; };
 		F1FF6AA025248CFF001DAE0D /* TNSColorStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6825248CFF001DAE0D /* TNSColorStyle.swift */; };
 		F1FF6AA125248CFF001DAE0D /* TNSTextMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6925248CFF001DAE0D /* TNSTextMetrics.swift */; };
-		F1FF6AAD25248DD0001DAE0D /* canvas_native.h in Headers */ = {isa = PBXBuildFile; fileRef = F1FF6AAC25248DD0001DAE0D /* canvas_native.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F1FF6AB125248DD9001DAE0D /* Utils.h in Headers */ = {isa = PBXBuildFile; fileRef = F1FF6AB025248DD9001DAE0D /* Utils.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
@@ -105,6 +105,7 @@
 		F181662C26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapPremultiplyAlpha.swift; sourceTree = "<group>"; };
 		F181663026230D8C0051F06B /* TNSImageBitmapResizeQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapResizeQuality.swift; sourceTree = "<group>"; };
 		F181663426230E500051F06B /* TNSImageBitmapOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapOptions.swift; sourceTree = "<group>"; };
+		F18B4A7127D95313009258DD /* TNSCanvasData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSCanvasData.swift; sourceTree = "<group>"; };
 		F1A87B24255BB4F000394387 /* TextBaseLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextBaseLine.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* TNSCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TNSCanvas.xib; sourceTree = "<group>"; };
 		F1DE2E4E2612F7CA0000D48F /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
@@ -165,7 +166,6 @@
 		F1FF6A6725248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_depth_texture.swift; path = CanvasNative/Source/TNS_WEBGL_depth_texture.swift; sourceTree = "<group>"; };
 		F1FF6A6825248CFF001DAE0D /* TNSColorStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSColorStyle.swift; path = CanvasNative/Source/TNSColorStyle.swift; sourceTree = "<group>"; };
 		F1FF6A6925248CFF001DAE0D /* TNSTextMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSTextMetrics.swift; sourceTree = "<group>"; };
-		F1FF6AAC25248DD0001DAE0D /* canvas_native.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = canvas_native.h; path = CanvasNative/include/canvas_native.h; sourceTree = "<group>"; };
 		F1FF6AB025248DD9001DAE0D /* Utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Utils.h; path = CanvasNative/include/Utils.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -219,6 +219,7 @@
 		F11C5D002524403700538D04 = {
 			isa = PBXGroup;
 			children = (
+				F18B4A7127D95313009258DD /* TNSCanvasData.swift */,
 				F181663426230E500051F06B /* TNSImageBitmapOptions.swift */,
 				F181663026230D8C0051F06B /* TNSImageBitmapResizeQuality.swift */,
 				F181662C26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift */,
@@ -236,7 +237,6 @@
 				F11A74052558C55E0038B4C6 /* 2D */,
 				F11A74022558C4D70038B4C6 /* SVG */,
 				F1FF6AB025248DD9001DAE0D /* Utils.h */,
-				F1FF6AAC25248DD0001DAE0D /* canvas_native.h */,
 				F1FF6A3825248CFE001DAE0D /* DataURLRequest.swift */,
 				F1FF6A4525248CFE001DAE0D /* Extensions.swift */,
 				F1FF6A6925248CFF001DAE0D /* TNSTextMetrics.swift */,
@@ -343,7 +343,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11C5D1B2524403700538D04 /* CanvasNative.h in Headers */,
-				F1FF6AAD25248DD0001DAE0D /* canvas_native.h in Headers */,
 				F1FF6AB125248DD9001DAE0D /* Utils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -486,6 +485,7 @@
 				F1FF6A8B25248CFF001DAE0D /* HowToClear.swift in Sources */,
 				F181661D26228CBA0051F06B /* TNSImageBitmap.swift in Sources */,
 				F1FF6A8C25248CFF001DAE0D /* TNS_OES_fbo_render_mipmap.swift in Sources */,
+				F18B4A7227D95313009258DD /* TNSCanvasData.swift in Sources */,
 				F1FF6A8D25248CFF001DAE0D /* TNSImageSmoothingQuality.swift in Sources */,
 				F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */,
 				F1FF6A8E25248CFF001DAE0D /* TNSWebGLShaderPrecisionFormat.swift in Sources */,
@@ -671,7 +671,7 @@
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/CanvasNative/include";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/canvas-core/target\"";
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -683,14 +683,40 @@
 				);
 				LIBRARY_SEARCH_PATHS = "";
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"-L\"$(SRCROOT)/CanvasNative/libs/$(CURRENT_ARCH)$(EFFECTIVE_PLATFORM_NAME)\"",
+				"OTHER_LDFLAGS[arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/debug\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",
 					"-framework",
 					OpenGLES,
 					"-lc++",
 				);
+				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios/debug\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios-sim/debug\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-lc++",
+				);
+				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -700,6 +726,7 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				USE_HEADERMAP = NO;
 			};
 			name = Debug;
 		};
@@ -719,7 +746,7 @@
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/CanvasNative/include";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/canvas-core/target\"";
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -731,14 +758,40 @@
 				);
 				LIBRARY_SEARCH_PATHS = "";
 				"LIBRARY_SEARCH_PATHS[arch=*]" = "";
-				OTHER_LDFLAGS = (
-					"-L\"$(SRCROOT)/CanvasNative/libs/$(CURRENT_ARCH)$(EFFECTIVE_PLATFORM_NAME)\"",
+				"OTHER_LDFLAGS[arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/release\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",
 					"-framework",
 					OpenGLES,
 					"-lc++",
 				);
+				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios/release\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios-sim/release\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-lc++",
+				);
+				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -748,6 +801,7 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				USE_HEADERMAP = NO;
 			};
 			name = Release;
 		};

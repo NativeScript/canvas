@@ -42,7 +42,7 @@ declare const TNS_EXT_blend_minmax,
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
-	private context//: TNSWebGLRenderingContext;
+	private context; //: TNSWebGLRenderingContext;
 
 	constructor(context) {
 		super(context);
@@ -924,6 +924,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	texImage2D(target: any, level: any, internalformat: any, width: any, height: any, border: any, format?: any, type?: any, pixels?: any) {
 		this._glCheckError('texImage2D');
 		this._checkArgs('texImage2D', arguments);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		/* TODO */
 		// this.blendFunc(this.SRC_ALPHA, this.ONE_MINUS_SRC_ALPHA);
 		// this.enable(this.BLEND);
@@ -931,7 +932,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (arguments.length === 9) {
 			if (pixels instanceof ArrayBuffer) {
 				this.context.texImage2DPixelsSize(target, level, internalformat, width, height, border, format, type, pixels as any, pixels.byteLength);
-			}else if(Utils.isTypedArray(pixels)){
+			} else if (Utils.isTypedArray(pixels)) {
 				this.context.texImage2DPixelsSizeOffset(target, level, internalformat, width, height, border, format, type, pixels as any, pixels.byteLength, pixels.byteOffset);
 			} else {
 				this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels as any);
@@ -990,7 +991,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (arguments.length === 9) {
 			if (pixels instanceof ArrayBuffer) {
 				this.context.texSubImage2DPixelsSize(target, level, xoffset, yoffset, width, height, format, type, pixels as any, pixels.byteLength);
-			}else if(Utils.isTypedArray(pixels)){
+			} else if (Utils.isTypedArray(pixels)) {
 				this.context.texSubImage2DPixelsSizeOffset(target, level, xoffset, yoffset, width, height, format, type, pixels as any, pixels.byteLength, pixels.byteOffset);
 			} else {
 				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels as any);

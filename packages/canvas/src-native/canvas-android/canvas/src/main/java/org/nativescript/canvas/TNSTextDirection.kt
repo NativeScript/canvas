@@ -7,6 +7,16 @@ enum class TNSTextDirection(private val direction: String, private val value: In
 		return direction
 	}
 
+	internal fun fromNative(value: Int): TNSTextDirection? {
+		if (value == 0) {
+			return Ltr
+		} else if (value == 1) {
+			return Rtl
+		}
+
+		return null
+	}
+
 	fun toNative(): Int {
 		return value
 	}

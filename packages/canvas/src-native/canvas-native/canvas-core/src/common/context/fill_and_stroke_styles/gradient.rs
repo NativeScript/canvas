@@ -5,7 +5,7 @@ use skia_safe::gradient_shader::GradientShaderColors;
 
 use crate::common::context::matrix::Matrix;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Gradient {
     Linear {
         start: Point,

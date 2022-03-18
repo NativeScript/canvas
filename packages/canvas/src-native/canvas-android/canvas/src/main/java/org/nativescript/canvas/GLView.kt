@@ -4,11 +4,10 @@ import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
-import android.util.Log
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
+import java.lang.Exception
 import java.lang.ref.WeakReference
-import java.time.LocalDate
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -22,19 +21,21 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	var gLContext: GLContext? = null
 		private set
 	private var mListener: TNSCanvas.Listener? = null
+
 	@JvmField
-    var drawingBufferWidth = 0
+	var drawingBufferWidth = 0
+
 	@JvmField
-    var drawingBufferHeight = 0
+	var drawingBufferHeight = 0
 
 	constructor(context: Context?) : super(context!!) {
 		init()
 	}
 
-	private fun setScaling(){
+	private fun setScaling() {
 		val matrix = Matrix()
 		val density = resources.displayMetrics.density
-		if(ignorePixelScaling){
+		if (ignorePixelScaling) {
 			matrix.postScale(density, density)
 		}
 		setTransform(matrix)
@@ -46,6 +47,7 @@ internal class GLView : TextureView, SurfaceTextureListener {
 			setScaling()
 		}
 
+	private var isReady = false
 
 
 	fun resize(width: Int, height: Int) {
@@ -61,40 +63,33 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	}
 
 	fun init() {
-		// setZOrderOnTop(true);
-		// getHolder().setFormat(PixelFormat.TRANSPARENT);
-		// getHolder().addCallback(this);
 		isOpaque = false
 		surfaceTextureListener = this
 		gLContext = GLContext()
 		gLContext!!.glView = WeakReference(this)
+		gLContext?.startGLThread()
 	}
 
-	var starting = false
-	var startupLock: CountDownLatch? = null
-	fun setupContext() {
-		if (gLContext!!.mGLThread != null && gLContext!!.mGLThread!!.isStarted) {
-			return
-		}
-		if (gLContext!!.mGLThread == null) {
-			gLContext!!.init(null)
-		}
-		if (!starting) {
-			starting = true
-			startupLock = CountDownLatch(1)
-			gLContext!!.startGLThread()
-			try {
-				startupLock!!.await(1500, TimeUnit.MILLISECONDS)
-			} catch (ignore: InterruptedException) {
-			} finally {
-				starting = false
-				startupLock = null
+	var type = TNSCanvas.ContextType.NONE
+		set(value) {
+			field = value
+			gLContext?.type = value
+			gLContext?.mGLThread?.lock = CountDownLatch(1)
+			gLContext?.mGLThread?.lock?.let { lock ->
+				try {
+					lock.await(2, TimeUnit.SECONDS)
+				} catch (e: Exception) {
+				}
 			}
+
 		}
-	}
 
 	fun flush() {
-		gLContext!!.flush()
+		flush(false)
+	}
+
+	fun flush(wait: Boolean) {
+		gLContext!!.flush(wait)
 	}
 
 	fun queueEvent(runnable: Runnable?) {
@@ -114,9 +109,10 @@ internal class GLView : TextureView, SurfaceTextureListener {
 				isCreatedWithZeroSized = true
 			}
 			if (!isCreatedWithZeroSized) {
-				gLContext!!.init(surface)
-				if (mListener != null) {
+				gLContext!!.setTexture(surface)
+				if (mListener != null && !isReady) {
 					mListener!!.contextReady()
+					isReady = true
 				}
 			}
 			isCreated = true
@@ -131,10 +127,11 @@ internal class GLView : TextureView, SurfaceTextureListener {
 			// resize
 		}
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-			gLContext!!.init(surface)
+			gLContext!!.setTexture(surface)
 			isCreatedWithZeroSized = false
-			if (mListener != null) {
+			if (mListener != null && !isReady) {
 				mListener!!.contextReady()
+				isReady = true
 			}
 		}
 	}
@@ -145,49 +142,5 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		return true
 	}
 
-	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {} /*@Override
-    public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
-        int width = surfaceHolder.getSurfaceFrame().width();
-        int height = surfaceHolder.getSurfaceFrame().height();
-        drawingBufferHeight = height;
-        drawingBufferWidth = width;
-        if (!isCreated) {
-            if (width == 0 || height == 0) {
-                isCreatedWithZeroSized = true;
-            }
-            if (!isCreatedWithZeroSized) {
-                mGLContext.init(surfaceHolder.getSurface());
-            }
-            isCreated = true;
-        }
-    }
-
-
-    @Override
-    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int format, int width, int height) {
-        drawingBufferHeight = height;
-        drawingBufferWidth = width;
-        if (!isCreatedWithZeroSized) {
-            // resize
-        }
-        if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-            mGLContext.init(surfaceHolder.getSurface());
-            isCreatedWithZeroSized = false;
-            if (mListener != null) {
-                mListener.contextReady();
-            }
-        }
-    }
-
-    @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
-        isCreated = false;
-    }*/
-	//    public void setOpaque(boolean b) {
-	//        if(b){
-	//            getHolder().setFormat(PixelFormat.OPAQUE);
-	//        }else {
-	//            getHolder().setFormat(PixelFormat.TRANSPARENT);
-	//        }
-	//    }
+	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
 }

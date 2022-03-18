@@ -1,9 +1,23 @@
-// Add your native dependencies here:
+repositories {
+  mavenCentral()
+  maven {
+    url 'https://maven.google.com/'
+    name 'Google'
+  }
+  maven { url "https://repo1.maven.org/maven2/" }
+  google()
+}
 
-// Uncomment to add recyclerview-v7 dependency
-//dependencies {
-//	compile 'com.android.support:recyclerview-v7:+'
-//}
+
+project.ext {
+  androidXAppCompat = "1.3.1"
+}
+
+dependencies {
+  constraints {
+	implementation 'androidx.appcompat:appcompat:1.3.1'
+  }
+}
 
 android {
   compileSdkVersion 31

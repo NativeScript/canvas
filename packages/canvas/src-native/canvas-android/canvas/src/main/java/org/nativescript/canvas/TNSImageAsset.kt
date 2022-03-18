@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
+import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.util.concurrent.CountDownLatch
@@ -153,19 +154,20 @@ class TNSImageAsset {
 		return result
 	}
 
-
 	fun loadImageFromUrlAsync(url: String, callback: Callback) {
 		resourceError = null
 		executorService.execute {
+			val bs = ByteArrayOutputStream2()
 			try {
 				val urlSrc =
 					URL(url)
-				val bs = ByteArrayOutputStream2()
+
 				urlSrc.openStream().use { input ->
 					bs.use { output ->
 						input.copyTo(output)
 					}
 				}
+
 				val loaded = loadImageFromBytes(bs.buf())
 				if (loaded) {
 					callback.onSuccess(true)
@@ -175,6 +177,8 @@ class TNSImageAsset {
 			} catch (e: Exception) {
 				resourceError = e.message
 				callback.onError(error)
+			} finally {
+
 			}
 		}
 	}
@@ -226,6 +230,10 @@ class TNSImageAsset {
 		}
 	}
 
+	fun copyToBitmap(dst: Bitmap): Boolean {
+		return nativeCopyToBitmap(nativeImageAsset, dst)
+	}
+
 	@Throws(Throwable::class)
 	protected fun finalize() {
 		nativeDestroy(nativeImageAsset)
@@ -246,6 +254,7 @@ class TNSImageAsset {
 	}
 
 	companion object {
+
 		@JvmStatic
 		private external fun nativeInit(): Long
 
@@ -300,6 +309,9 @@ class TNSImageAsset {
 		internal fun nativeDestroyImpl(asset: Long) {
 			nativeDestroy(asset)
 		}
+
+		@JvmStatic
+		private external fun nativeCopyToBitmap(asset: Long, dst: Bitmap): Boolean
 
 		private val executorService = Executors.newCachedThreadPool()
 	}

@@ -3,7 +3,7 @@ import {CanvasGradient} from '../CanvasGradient';
 import {Path2D} from '../Path2D';
 import {ImageData} from '../ImageData';
 import {TextMetrics} from '../TextMetrics';
-import {Color, ImageSource} from '@nativescript/core';
+import {ImageSource} from '@nativescript/core';
 import {ImageAsset} from '../../ImageAsset';
 import {CanvasPattern} from '../CanvasPattern';
 import {Canvas} from '../../Canvas';
@@ -93,9 +93,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	_fillRuleFromString(string: string) {
 		if (string === 'evenodd') {
-			return FillRule.EvenOdd();
+			return 1;
 		} else if (string === 'nonzero') {
-			return FillRule.NonZero();
+			return 0;
 		}
 		return null;
 	}
@@ -143,7 +143,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this._ensureLayoutBeforeDraw();
 		if (this.context) {
 			this.context.setDirection(
-				value === "rtl" ? TextDirection.Rtl() : TextDirection.Ltr()
+				value === "rtl" ? 1 : 0
 			);
 		}
 	}
@@ -221,13 +221,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (join) {
 				case 'bevel':
-					this.context.setLineJoin(LineJoin.Bevel());
+					this.context.setLineJoin(0);
 					break;
 				case 'round':
-					this.context.setLineJoin(LineJoin.Round());
+					this.context.setLineJoin(1);
 					break;
 				default:
-					this.context.setLineJoin(LineJoin.Miter());
+					this.context.setLineJoin(2);
 					break;
 			}
 		}
@@ -244,13 +244,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (this.context) {
 			switch (cap) {
 				case 'round':
-					this.context.setLineCap(LineCap.Round());
+					this.context.setLineCap(1);
 					break;
 				case 'square':
-					this.context.setLineCap(LineCap.Square());
+					this.context.setLineCap(2);
 					break;
 				default:
-					this.context.setLineCap(LineCap.Butt());
+					this.context.setLineCap(0);
 			}
 		}
 	}
@@ -454,7 +454,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
-			this.context.setFillStyle(new org.nativescript.canvas.TNSColor(color));
+			this.context.setFillStyle(color);
 		} else if (color instanceof CanvasGradient) {
 			this.context.setFillStyle(color.native);
 		} else if (color instanceof CanvasPattern) {
@@ -497,7 +497,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
-			this.context.setStrokeStyle(new org.nativescript.canvas.TNSColor(color));
+			this.context.setStrokeStyle(color);
 		} else if (color instanceof CanvasGradient) {
 			this.context.setStrokeStyle(color.native);
 		} else if (color instanceof CanvasPattern) {

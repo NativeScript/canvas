@@ -70,7 +70,17 @@ function checkEmitter() {
 	}
 };
 
-(global as any).window.DOMParser = (global as any).DOMParser = (global as any).DOMParser || require('xmldom').DOMParser;
+import {DOMParser as Parser} from 'xmldom';
+
+export class DOMParser extends Parser {
+	parseFromString(string, mimeType){
+		return XMLDocument.fromParser(
+			super.parseFromString(string, mimeType)
+		)
+	}
+}
+
+(global as any).window.DOMParser = (global as any).DOMParser = (global as any).DOMParser || DOMParser;
 
 (global as any).window.XMLDocument = (global as any).XMLDocument = XMLDocument;
 

@@ -10,7 +10,7 @@ import { WebGLRenderbuffer } from '../WebGLRenderbuffer';
 import { WebGLShaderPrecisionFormat } from '../WebGLShaderPrecisionFormat';
 import { WebGLBuffer } from '../WebGLBuffer';
 
-import { ImageSource, Screen } from '@nativescript/core';
+import { ImageSource } from '@nativescript/core';
 import {
 	ANGLE_instanced_arrays,
 	EXT_blend_minmax,
@@ -877,7 +877,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._glCheckError('getShaderPrecisionFormat');
 		this._checkArgs('getShaderPrecisionFormat', arguments);
 		const precision = this.context.getShaderPrecisionFormat(shaderType, precisionType);
-		return new WebGLShaderPrecisionFormat(precision.getRangeMin(), precision.getRangeMax(), precision.getPrecision());
+		return new WebGLShaderPrecisionFormat(precision);
 	}
 
 	getShaderSource(shader: WebGLShader): string {

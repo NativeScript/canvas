@@ -78,7 +78,7 @@ fn main() {
 
 
            include_dir.push_str("/sysroot/usr/include");
-            println!("cargo:rustc-link-search=native={}", include_dir);
+            //println!("cargo:rustc-link-search=native={}", include_dir);
 
             if target.architecture.eq("armv7") {
                 build_target = "armv7-linux-androideabi";

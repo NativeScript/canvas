@@ -18,6 +18,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.ViewCompat
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
@@ -38,6 +39,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	internal var renderingContext2d: TNSCanvasRenderingContext? = null
 	internal var scale = 1f
 	internal var ctx: Context? = null
+	internal var textureRender = TextureRender()
 
 	var ignorePixelScaling: Boolean = false
 		set(value) {
@@ -55,7 +57,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	internal var contextAlpha = true
 
 	@JvmField
-	internal var contextAntialias = true
+	internal var contextAntialias = false
 
 	@JvmField
 	internal var contextDepth = true
@@ -167,21 +169,23 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		} else {
 			2
 		}
-		surface!!.layoutParams = LayoutParams(
-			ViewGroup.LayoutParams.MATCH_PARENT,
-			ViewGroup.LayoutParams.MATCH_PARENT
-		)
 		if (useCpu) {
 			cpuView = CPUView(context)
 			cpuView!!.canvasView = WeakReference(this)
-			cpuView!!.layoutParams = LayoutParams(
-				ViewGroup.LayoutParams.MATCH_PARENT,
-				ViewGroup.LayoutParams.MATCH_PARENT
-			)
 			initCPUThread()
-			addView(cpuView)
+			addView(
+				cpuView, LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT
+				)
+			)
 		} else {
-			addView(surface)
+			addView(
+				surface, LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT
+				)
+			)
 		}
 	}
 
@@ -232,7 +236,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				cpuHandlerThread?.quitSafely()
 			}
 		} else {
-			surface?.gLContext?.destroy()
+			destroy()
 		}
 	}
 
@@ -279,10 +283,10 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		if (contextType == ContextType.CANVAS) {
 			val lock = CountDownLatch(1)
 			val data = arrayOfNulls<ByteArray>(1)
-			queueEvent(Runnable {
+			queueEvent {
 				data[0] = nativeToData(nativeContext)
 				lock.countDown()
-			})
+			}
 			try {
 				lock.await(2, TimeUnit.SECONDS)
 			} catch (ignore: InterruptedException) {
@@ -298,15 +302,14 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		return ByteArray(0)
 	}
 
-	fun snapshot(): ByteArray {
+	fun snapshot(): ByteBuffer {
 		if (contextType == ContextType.CANVAS) {
 			val lock = CountDownLatch(1)
-			val ss = ArrayList<ByteArray>()
-			// initCanvas();
-			queueEvent(Runnable {
+			val ss = arrayListOf<ByteBuffer>()
+			queueEvent {
 				ss.add(nativeSnapshotCanvas(nativeContext))
 				lock.countDown()
-			})
+			}
 			try {
 				lock.await(2, TimeUnit.SECONDS)
 			} catch (ignore: InterruptedException) {
@@ -314,9 +317,9 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			return ss[0]
 		} else if (contextType == ContextType.WEBGL) {
 			val bm = surface!!.getBitmap(width, height)
-			return Utils.getBytesFromBitmap(bm)
+			return Utils.getByteBufferFromBitmap(bm)
 		}
-		return ByteArray(0)
+		return ByteBuffer.allocate(0)
 	}
 
 	fun toDataURLAsync(listener: DataURLListener) {
@@ -358,10 +361,10 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		}
 		val lock = CountDownLatch(1)
 		val data = arrayOfNulls<String>(1)
-		queueEvent(Runnable {
+		queueEvent {
 			data[0] = nativeDataURL(nativeContext, type, quality)
 			lock.countDown()
-		})
+		}
 		try {
 			lock.await(2, TimeUnit.SECONDS)
 		} catch (ignore: InterruptedException) {
@@ -376,135 +379,69 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		NONE, CANVAS, WEBGL
 	}
 
-	private var needRenderRequest = 0
-
-	fun resizeViewPort() {
-		queueEvent(Runnable { GLES20.glViewport(0, 0, width, height) })
-	}
-
-	internal fun initCanvas() {
-		if (surface != null && nativeContext == 0L) {
-			var width = surface!!.width
-			var height = surface!!.height
-			// dynamically created view w/o layout
-			val params = surface!!.layoutParams
-			if (width == 0 && params != null) {
-				width = params.width
-				needRenderRequest += 1
-			}
-			if (height == 0 && params != null) {
-				height = params.height
-				needRenderRequest += 1
-			}
-			// size was not set set to 1
-			if (width == 0) {
-				width = 1
-				needRenderRequest += 1
-			}
-			if (height == 0) {
-				height = 1
-				needRenderRequest += 1
-			}
-			if (newSize == null || newSize!!.width == 0 && newSize!!.height == 0) {
-				newSize = Size(width, height)
-			}
-			var finalWidth = width
-			var finalHeight = height
-			if (ignorePixelScaling) {
-				if (width != 1 || height != 1) {
-					val density = resources.displayMetrics.density
-					finalWidth = (finalWidth / density).toInt()
-					finalHeight = (finalHeight / density).toInt()
-				}
-			}
-			surface!!.queueEvent {
-				if (nativeContext == 0L && finalWidth > 0 && finalHeight > 0) {
-					Log.d("com.test", "$finalWidth $finalHeight")
-					// GLES20.glClearColor(1F, 1F, 1F, 1F);
-					// GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-					val frameBuffers = IntArray(1)
-					GLES20.glViewport(0, 0, finalWidth, finalHeight)
-					GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)
-					var samples = 0
-					if (contextAntialias) {
-						samples = 4
-					}
-					val metrics = resources.displayMetrics
-					nativeContext = nativeInitContext(
-						finalWidth.toFloat(),
-						finalHeight.toFloat(), scale,
-						frameBuffers[0],
-						samples,
-						true,
-						Color.BLACK,
-						metrics.density,
-						direction.toNative()
-					)
-				}
-			}
-		}
-	}
-
 	fun getContext(type: String): TNSCanvasRenderingContext? {
-		val attributes = HashMap<String, Any>()
+		val attributes = JSONObject()
 		if (type == "2d") {
-			attributes["alpha"] = true
-			attributes["desynchronized"] = false
+			attributes.put("alpha", true)
+			attributes.put("desynchronized", false)
 		} else if (type.contains("webgl")) {
-			attributes["alpha"] = true
-			attributes["depth"] = true
-			attributes["antialias"] = true
-			attributes["failIfMajorPerformanceCaveat"] = false
-			attributes["powerPreference"] = "default"
-			attributes["premultipliedAlpha"] = true
-			attributes["preserveDrawingBuffer"] = false
-			attributes["stencil"] = false
-			attributes["xrCompatible"] = false
-			attributes["desynchronized"] = false
+			attributes.put("alpha", true)
+			attributes.put("depth", true)
+			attributes.put("antialias", true)
+			attributes.put("failIfMajorPerformanceCaveat", false)
+			attributes.put("powerPreference", "default")
+			attributes.put("premultipliedAlpha", true)
+			attributes.put("preserveDrawingBuffer", false)
+			attributes.put("stencil", false)
+			attributes.put("xrCompatible", false)
+			attributes.put("desynchronized", false)
 		}
-		return getContext(type, attributes)
+		return getContext(type, attributes.toString())
 	}
 
-	private fun handleAttributes(contextAttributes: Map<String, Any>?) {
-		if (contextAttributes != null) {
-			val keys = contextAttributes.keys
-			for (key in keys) {
-				val value = contextAttributes[key]
-				when (key) {
-					"alpha" -> {
-						contextAlpha = value as Boolean
-					}
-					"antialias" -> {
-						contextAntialias = value as Boolean
-					}
-					"depth" -> {
-						contextDepth = value as Boolean
-					}
-					"failIfMajorPerformanceCaveat" -> {
-						contextFailIfMajorPerformanceCaveat = value as Boolean
-					}
-					"premultipliedAlpha" -> {
-						contextPremultipliedAlpha = value as Boolean
-					}
-					"preserveDrawingBuffer" -> {
-						contextPreserveDrawingBuffer = value as Boolean
-					}
-					"stencil" -> {
-						contextStencil = value as Boolean
-					}
-					"xrCompatible" -> {
-						contextXrCompatible = value as Boolean
-					}
-					"desynchronized" -> contextDesynchronized = value as Boolean
-					"powerPreference" -> contextPowerPreference = value as String?
-					else -> {
+	private fun handleAttributes(contextAttributes: String?) {
+		contextAttributes?.let {
+			try {
+				val obj = JSONObject(it)
+				obj.keys().forEach { key ->
+					val value = obj[key]
+					when (key) {
+						"alpha" -> {
+							contextAlpha = value as Boolean
+						}
+						"antialias" -> {
+							contextAntialias = value as Boolean
+						}
+						"depth" -> {
+							contextDepth = value as Boolean
+						}
+						"failIfMajorPerformanceCaveat" -> {
+							contextFailIfMajorPerformanceCaveat = value as Boolean
+						}
+						"premultipliedAlpha" -> {
+							contextPremultipliedAlpha = value as Boolean
+						}
+						"preserveDrawingBuffer" -> {
+							contextPreserveDrawingBuffer = value as Boolean
+						}
+						"stencil" -> {
+							contextStencil = value as Boolean
+						}
+						"xrCompatible" -> {
+							contextXrCompatible = value as Boolean
+						}
+						"desynchronized" -> contextDesynchronized = value as Boolean
+						"powerPreference" -> contextPowerPreference = value as String?
+						else -> {
+						}
 					}
 				}
+			} catch (e: Exception) {
 			}
 		}
 	}
 
-	fun getContext(type: String, contextAttributes: Map<String, Any>?): TNSCanvasRenderingContext? {
+	fun getContext(type: String, contextAttributes: String?): TNSCanvasRenderingContext? {
 		handleAttributes(contextAttributes)
 		if (type == "2d" || type == "experimental-webgl" || type == "webgl" || type == "webgl2" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
 			mainHandler.post {
@@ -513,18 +450,22 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				}
 			}
 
+			if (type.contains("webgl") && !GLContext.DID_CHECK_WEBGL_SUPPORT) {
+				surface?.gLContext?.checkGLSupport()
+			}
+
 			if (type == "2d") {
 				contextType = ContextType.CANVAS
 			}
-			if (!useCpu && renderingContext2d == null && webGLRenderingContext == null && webGL2RenderingContext == null) {
-				surface?.setupContext()
-			}
 		}
+
+
 		when (type) {
 			"2d" -> {
 				actualContextType = "2d"
 				if (renderingContext2d == null) {
 					renderingContext2d = TNSCanvasRenderingContext2D(this)
+					surface?.type = ContextType.CANVAS
 				}
 				contextType = ContextType.CANVAS
 				return renderingContext2d
@@ -533,6 +474,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				actualContextType = "webgl"
 				if (webGLRenderingContext == null) {
 					webGLRenderingContext = TNSWebGLRenderingContext(this)
+					surface?.type = ContextType.WEBGL
 				}
 				contextType = ContextType.WEBGL
 				return webGLRenderingContext
@@ -543,6 +485,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 						actualContextType = "webgl"
 						webGL2RenderingContext = TNSWebGL2RenderingContext(this)
 						isWebGL = true
+						surface?.type = ContextType.WEBGL
 						contextType = ContextType.WEBGL
 					} else {
 						isWebGL = false
@@ -554,10 +497,12 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			}
 		}
 		contextType = ContextType.NONE
+
 		return null
 	}
 
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+		Log.d("com.test", "onSizeChanged w $w h $h oldw $oldw oldh $oldh")
 		surface?.resize(w, h)
 	}
 
@@ -589,16 +534,24 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 	internal var lastSize: Size? = null
 	internal var newSize: Size? = null
+
 	fun flush() {
+		flush(false)
+	}
+
+	fun flush(wait: Boolean) {
 		if (useCpu) {
-			cpuView?.flush()
+			cpuView?.flush(wait)
 		} else {
-			surface?.flush()
+			surface?.flush(wait)
 		}
 	}
 
 	companion object {
 		var views: ConcurrentHashMap<*, *> = ConcurrentHashMap<Any?, Any?>()
+
+		@JvmStatic
+		var enableDebug = false
 
 		@JvmStatic
 		fun layoutView(width: Int, height: Int, tnsCanvas: TNSCanvas) {
@@ -671,7 +624,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		)
 
 		@JvmStatic
-		private external fun nativeDestroyContext(context: Long)
+		external fun nativeDestroyContext(context: Long)
 
 		@JvmStatic
 		external fun nativeFlush(context: Long)
@@ -686,7 +639,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		private external fun nativeToData(context: Long): ByteArray?
 
 		@JvmStatic
-		private external fun nativeSnapshotCanvas(context: Long): ByteArray
+		private external fun nativeSnapshotCanvas(context: Long): ByteBuffer
 
 		internal const val ONE_MILLISECOND_NS: Long = 1000000
 		internal const val ONE_S_IN_NS = 1000 * ONE_MILLISECOND_NS

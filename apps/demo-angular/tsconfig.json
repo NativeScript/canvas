@@ -1,26 +1,20 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDirs": [
-      ".",
-      "../.."
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "src/*"
-      ],
-      "@nativescript/*": [
-        "../../dist/packages/*"
-      ],
-      "@demo/shared": [
-        "../../tools/demo/index.ts"
-      ]
-    }
-  },
-  "files": [
-    "./references.d.ts",
-    "./src/main.ts",
-    "./src/polyfills.ts"
-  ]
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"paths": {
+			"~/*": ["src/*"],
+			"@demo/shared": ["tools/demo/index.ts"],
+			"@nativescript/canvas": ["packages/canvas/index.ts"],
+			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"],
+			"@nativescript/canvas-babylon": ["packages/canvas-babylon/index.ts"],
+			"@nativescript/canvas-polyfill": ["packages/canvas-polyfill/index.ts"],
+			"@nativescript/canvas-phaser": ["packages/canvas-phaser/index.ts"],
+			"@nativescript/canvas-phaser-ce": ["packages/canvas-phaser-ce/index.ts"],
+			"@nativescript/canvas-pixi": ["packages/canvas-pixi/index.ts"],
+			"@nativescript/canvas-three": ["packages/canvas-three/index.ts"],
+			"@nativescript/canvas-media": ["packages/canvas-media/index.ts"]
+		}
+	},
+	"files": ["./references.d.ts", "./src/main.ts", "./src/polyfills.ts"],
+	"include": ["../../packages/**/references.d.ts"]
 }

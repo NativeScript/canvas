@@ -1,0 +1,64 @@
+{
+	"root": "packages/canvas-phaser",
+	"sourceRoot": "packages/canvas-phaser",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas-phaser",
+				"tsConfig": "packages/canvas-phaser/tsconfig.json",
+				"packageJson": "packages/canvas-phaser/package.json",
+				"main": "packages/canvas-phaser/index.ts",
+				"assets": [
+					"packages/canvas-phaser/*.md",
+					"packages/canvas-phaser/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-phaser/platforms/",
+						"output": "./platforms/"
+					}
+				]
+			},
+			"executor": "@nrwl/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["dist/packages/canvas-phaser"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-phaser"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas-phaser"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/canvas-phaser/**/*.ts"]
+			}
+		}
+	}
+}

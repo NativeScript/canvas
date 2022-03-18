@@ -1,0 +1,69 @@
+{
+	"root": "packages/canvas-polyfill",
+	"sourceRoot": "packages/canvas-polyfill",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas-polyfill",
+				"tsConfig": "packages/canvas-polyfill/tsconfig.json",
+				"packageJson": "packages/canvas-polyfill/package.json",
+				"main": "packages/canvas-polyfill/index.ts",
+				"assets": [
+					"packages/canvas-polyfill/*.md",
+					"packages/canvas-polyfill/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-polyfill/platforms/",
+						"output": "./platforms/"
+					},
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-polyfill/vendor/",
+						"output": "./vendor/"
+					}
+				]
+			},
+			"executor": "@nrwl/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["dist/packages/canvas-polyfill"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-polyfill"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas-polyfill"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/canvas-polyfill/**/*.ts"]
+			}
+		}
+	}
+}

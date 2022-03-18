@@ -1,0 +1,193 @@
+{
+	"root": "packages/canvas",
+	"sourceRoot": "packages/canvas",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas",
+				"tsConfig": "packages/canvas/tsconfig.json",
+				"packageJson": "packages/canvas/package.json",
+				"main": "packages/canvas/index.ts",
+				"assets": [
+					"packages/canvas/*.md",
+					"packages/canvas/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas/platforms/",
+						"output": "./platforms/"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas/",
+						"output": "./Canvas/"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/CanvasGradient",
+						"output": "./Canvas2D/CanvasGradient"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/CanvasPattern",
+						"output": "./Canvas2D/CanvasPattern"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/CanvasRenderingContext2D",
+						"output": "./Canvas2D/CanvasRenderingContext2D"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/DOMMatrix",
+						"output": "./Canvas2D/DOMMatrix"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/ImageData",
+						"output": "./Canvas2D/ImageData"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/Path2D",
+						"output": "./Canvas2D/Path2D"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/Path2D",
+						"output": "./Canvas2D/Path2D"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/Canvas2D/TextMetrics",
+						"output": "./Canvas2D/TextMetrics"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/ImageAsset",
+						"output": "./ImageAsset"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/TextDecoder",
+						"output": "./TextDecoder"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/TextEncoder",
+						"output": "./TextEncoder"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/WebGL/WebGLExtensions",
+						"output": "./WebGL/WebGLExtensions"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/WebGL/WebGLRenderingContext",
+						"output": "./WebGL/WebGLRenderingContext"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas/WebGL2/WebGL2RenderingContext",
+						"output": "./WebGL2/WebGL2RenderingContext"
+					}
+				]
+			},
+			"executor": "@nrwl/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["dist/packages/canvas"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"build.native.ios.framework.release": {
+			"outputs": ["dist/packages"],
+			"options": {
+				"commands": ["sh canvas-build.sh"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"build.native.ios.framework.debug": {
+			"outputs": ["dist/packages"],
+			"options": {
+				"commands": ["sh canvas-build-debug.sh"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"build.native.ios.debug": {
+			"outputs": ["dist/packages"],
+			"options": {
+				"commands": ["sh ios-build.sh"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"build.native.ios.release": {
+			"outputs": ["dist/packages"],
+			"options": {
+				"commands": ["sh ios-build.sh --release"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"build.native.android.debug": {
+			"outputs": ["dist/packages"],
+			"options": {
+				"commands": ["sh android-build.sh"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"build.native.android.release": {
+			"outputs": ["dist/packages"],
+			"options": {
+				"commands": ["sh android-build.sh --release"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/canvas/**/*.ts"]
+			}
+		}
+	}
+}

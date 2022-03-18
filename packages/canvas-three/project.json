@@ -1,0 +1,64 @@
+{
+	"root": "packages/canvas-three",
+	"sourceRoot": "packages/canvas-three",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas-three",
+				"tsConfig": "packages/canvas-three/tsconfig.json",
+				"packageJson": "packages/canvas-three/package.json",
+				"main": "packages/canvas-three/index.ts",
+				"assets": [
+					"packages/canvas-three/*.md",
+					"packages/canvas-three/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-three/platforms/",
+						"output": "./platforms/"
+					}
+				]
+			},
+			"executor": "@nrwl/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["dist/packages/canvas-three"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-three"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas-three"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/canvas-three/**/*.ts"]
+			}
+		}
+	}
+}

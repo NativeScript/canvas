@@ -1,0 +1,64 @@
+{
+	"root": "packages/canvas-pixi",
+	"sourceRoot": "packages/canvas-pixi",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas-pixi",
+				"tsConfig": "packages/canvas-pixi/tsconfig.json",
+				"packageJson": "packages/canvas-pixi/package.json",
+				"main": "packages/canvas-pixi/index.ts",
+				"assets": [
+					"packages/canvas-pixi/*.md",
+					"packages/canvas-pixi/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-pixi/platforms/",
+						"output": "./platforms/"
+					}
+				]
+			},
+			"executor": "@nrwl/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["dist/packages/canvas-pixi"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-pixi"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas-pixi"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/canvas-pixi/**/*.ts"]
+			}
+		}
+	}
+}

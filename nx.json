@@ -13,46 +13,20 @@
 		"tslint.json": "*",
 		"nx.json": "*"
 	},
-	"projects": {
-		"demo": {
-			"tags": []
-		},
-		"demo-angular": {
-			"tags": []
-		},
-		"demo-vue": {
-			"tags": []
-		},
-		"all": {
-			"tags": []
-		},
-		"canvas": {
-			"tags": []
-		},
-		"canvas-babylon": {
-			"tags": []
-		},
-		"canvas-polyfill": {
-			"tags": []
-		},
-		"canvas-phaser": {
-			"tags": []
-		},
-		"canvas-phaser-ce": {
-			"tags": []
-		},
-		"canvas-pixi": {
-			"tags": []
-		},
-		"canvas-three": {
-			"tags": []
-		},
-		"canvas-media": {
-			"tags": []
-		}
-	},
 	"workspaceLayout": {
 		"appsDir": "apps",
 		"libsDir": "packages"
+	},
+	"tasksRunnerOptions": {
+		"default": {
+			"runner": "@nrwl/workspace/tasks-runners/default",
+			"options": {
+				"cacheableOperations": ["build", "build.all", "lint", "test", "e2e"],
+				"runtimeCacheInputs": ["node -v"]
+			}
+		}
+	},
+	"cli": {
+		"defaultCollection": "@nrwl/workspace"
 	}
 }

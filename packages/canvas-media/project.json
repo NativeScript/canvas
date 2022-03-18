@@ -1,0 +1,74 @@
+{
+	"root": "packages/canvas-media",
+	"sourceRoot": "packages/canvas-media",
+	"projectType": "library",
+	"generators": {},
+	"targets": {
+		"build": {
+			"options": {
+				"outputPath": "dist/packages/canvas-media",
+				"tsConfig": "packages/canvas-media/tsconfig.json",
+				"packageJson": "packages/canvas-media/package.json",
+				"main": "packages/canvas-media/index.ts",
+				"assets": [
+					"packages/canvas-media/*.md",
+					"packages/canvas-media/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-media/platforms/",
+						"output": "./platforms/"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas-media/audio/",
+						"output": "./audio"
+					},
+					{
+						"glob": "**/*.d.ts",
+						"input": "packages/canvas-media/video/",
+						"output": "./video"
+					}
+				]
+			},
+			"executor": "@nrwl/js:tsc",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				}
+			]
+		},
+		"build.all": {
+			"outputs": ["dist/packages/canvas-media"],
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-media"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands",
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"focus": {
+			"options": {
+				"commands": ["nx workspace-schematic focus-packages canvas-media"],
+				"parallel": false
+			},
+			"executor": "@nrwl/workspace:run-commands"
+		},
+		"lint": {
+			"executor": "@nrwl/linter:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/canvas-media/**/*.ts"]
+			}
+		}
+	}
+}

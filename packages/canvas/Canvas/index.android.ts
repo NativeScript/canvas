@@ -92,8 +92,8 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
-	static createCustomView() {
-		const canvas = new Canvas();
+	static createCustomView(useCpu = false) {
+		const canvas = new Canvas(useCpu);
 		canvas.width = 300;
 		canvas.height = 150;
 		canvas._isCustom = true;

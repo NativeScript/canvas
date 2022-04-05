@@ -1,6 +1,5 @@
 package org.nativescript.canvas
 
-import android.util.Log
 import java.lang.ref.PhantomReference
 import java.lang.ref.Reference
 import java.lang.ref.ReferenceQueue
@@ -33,7 +32,6 @@ class TNSGcUtils {
 						val key = keyMap[tmp]
 						if (key != null) {
 							val value = map[key]
-							Log.d("com.test", "dropping value $value")
 							keyMap.remove(tmp)
 							map.remove(key)
 							nativeDestroyU8Array(key)

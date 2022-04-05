@@ -16,55 +16,20 @@ class OES_vertex_array_object(var canvas: TNSCanvas) {
 	var VERTEX_ARRAY_BINDING_OES = Constants.GL_VERTEX_ARRAY_BINDING_OES
 	fun createVertexArrayOES(): Int {
 		val array = IntArray(1)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glGenVertexArrays(1, array, 0)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glGenVertexArrays(1, array, 0)
 		return array[0]
 	}
 
 	fun deleteVertexArrayOES(arrayObject: Int) {
 		val array = intArrayOf(arrayObject)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glDeleteVertexArrays(1, array, 0)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glDeleteVertexArrays(1, array, 0)
 	}
 
 	fun isVertexArrayOES(arrayObject: Int): Boolean {
-		val value = BooleanArray(1)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
-			value[0] = GLES30.glIsVertexArray(arrayObject)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+	return GLES30.glIsVertexArray(arrayObject)
 	}
 
 	fun bindVertexArrayOES(arrayObject: Int) {
-		val array = intArrayOf(arrayObject)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glBindVertexArray(arrayObject)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glBindVertexArray(arrayObject)
 	}
 }

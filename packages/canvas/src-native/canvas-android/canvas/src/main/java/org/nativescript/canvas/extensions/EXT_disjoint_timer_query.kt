@@ -15,68 +15,26 @@ import java.util.concurrent.TimeUnit
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 	fun createQueryEXT(): Int {
-		val lock = CountDownLatch(1)
 		val query = IntArray(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glGenQueries(1, query, 0)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glGenQueries(1, query, 0)
 		return query[0]
 	}
 
 	fun deleteQueryEXT(query: Int) {
-		val lock = CountDownLatch(1)
 		val id = intArrayOf(query)
-		canvas.queueEvent(Runnable {
-			GLES30.glDeleteQueries(1, id, 0)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glDeleteQueries(1, id, 0)
 	}
 
 	fun isQueryEXT(query: Int): Boolean {
-		val lock = CountDownLatch(1)
-		val value = BooleanArray(1)
-		canvas.queueEvent(Runnable {
-			value[0] = GLES30.glIsQuery(query)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		return GLES30.glIsQuery(query)
 	}
 
 	fun beginQueryEXT(target: Int, query: Int) {
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glBeginQuery(target, query)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glBeginQuery(target, query)
 	}
 
 	fun endQueryEXT(target: Int) {
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glEndQuery(target)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glEndQuery(target)
 	}
 
 	fun queryCounterEXT(query: Int, target: Int) {
@@ -84,30 +42,14 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 	}
 
 	fun getQueryEXT(target: Int, pname: Int): Int {
-		val lock = CountDownLatch(1)
 		val query = IntArray(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glGetQueryiv(target, pname, query, 0)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glGetQueryiv(target, pname, query, 0)
 		return query[0]
 	}
 
 	fun getQueryObjectEXT(query: Int, pname: Int): Any {
-		val lock = CountDownLatch(1)
 		val value = IntArray(1)
-		canvas.queueEvent(Runnable {
-			GLES30.glGetQueryObjectuiv(query, pname, value, 0)
-			lock.countDown()
-		})
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		GLES30.glGetQueryObjectuiv(query, pname, value, 0)
 		return if (pname == QUERY_RESULT_AVAILABLE_EXT) {
 			value[0] == GLES20.GL_TRUE
 		} else value[0]

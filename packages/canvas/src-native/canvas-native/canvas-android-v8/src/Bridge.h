@@ -1,0 +1,23 @@
+//
+// Created by Osei Fortune on 22/03/2022.
+//
+
+#ifndef CANVAS_NATIVE_BRIDGE_H
+#define CANVAS_NATIVE_BRIDGE_H
+
+#include "Common.h"
+#include "ImageAssetImpl.h"
+#include "canvas2d/Canvas2D.h"
+#include "./webgl/WebGL.h"
+#include "./webgl2/WebGL2.h"
+
+
+using V8FunctionCallbackInfo = v8::FunctionCallbackInfo<v8::Value>;
+
+class Bridge {
+};
+
+void Init(const v8::FunctionCallbackInfo <v8::Value> &args);
+
+
+#endif //CANVAS_NATIVE_BRIDGE_H

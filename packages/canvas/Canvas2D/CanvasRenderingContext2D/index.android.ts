@@ -1,12 +1,12 @@
-import {CanvasRenderingContext2DBase} from './common';
-import {CanvasGradient} from '../CanvasGradient';
-import {Path2D} from '../Path2D';
-import {ImageData} from '../ImageData';
-import {TextMetrics} from '../TextMetrics';
-import {ImageSource} from '@nativescript/core';
-import {ImageAsset} from '../../ImageAsset';
-import {CanvasPattern} from '../CanvasPattern';
-import {Canvas} from '../../Canvas';
+import { CanvasRenderingContext2DBase } from './common';
+import { CanvasGradient } from '../CanvasGradient';
+import { Path2D } from '../Path2D';
+import { ImageData } from '../ImageData';
+import { TextMetrics } from '../TextMetrics';
+import { ImageSource } from '@nativescript/core';
+import { ImageAsset } from '../../ImageAsset';
+import { CanvasPattern } from '../CanvasPattern';
+import { Canvas } from '../../Canvas';
 import lazy from '@nativescript/core/utils/lazy';
 
 const FillRule = {
@@ -75,11 +75,11 @@ const CompositeOperationType = {
 };
 
 const PatternRepetition = {
-	NoRepeat: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.NoRepeat),
-	Repeat: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.Repeat),
-	RepeatX: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.RepeatX),
-	RepeatY: lazy(()=> org.nativescript.canvas.TNSPatternRepetition.RepeatY)
-}
+	NoRepeat: lazy(() => org.nativescript.canvas.TNSPatternRepetition.NoRepeat),
+	Repeat: lazy(() => org.nativescript.canvas.TNSPatternRepetition.Repeat),
+	RepeatX: lazy(() => org.nativescript.canvas.TNSPatternRepetition.RepeatX),
+	RepeatY: lazy(() => org.nativescript.canvas.TNSPatternRepetition.RepeatY),
+};
 
 export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	public static isDebug = false;
@@ -135,16 +135,14 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	get direction(): string {
 		this.log('direction');
-		return this.context.getDirection() === TextDirection.Ltr() ? "ltr" : "rtl";
+		return this.context.getDirection() === TextDirection.Ltr() ? 'ltr' : 'rtl';
 	}
 
 	set direction(value: string) {
 		this.log('direction value:', value);
 		this._ensureLayoutBeforeDraw();
 		if (this.context) {
-			this.context.setDirection(
-				value === "rtl" ? 1 : 0
-			);
+			this.context.setDirection(value === 'rtl' ? 1 : 0);
 		}
 	}
 
@@ -430,10 +428,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 	}
 
-
 	get fillStyle() {
 		this.log('fillStyle');
-		if(this.context){
+		if (this.context) {
 			switch (this.context.getFillStyle().getStyleType()) {
 				case org.nativescript.canvas.TNSColorStyleType.Color:
 					const color = this.context.getFillStyle() as org.nativescript.canvas.TNSColor;
@@ -455,14 +452,10 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
 			this.context.setFillStyle(color);
-		} else if (color instanceof CanvasGradient) {
-			this.context.setFillStyle(color.native);
-		} else if (color instanceof CanvasPattern) {
+		} else if ((color instanceof CanvasGradient || color instanceof CanvasPattern) && color.native) {
 			this.context.setFillStyle(color.native);
 		}
 	}
-
-
 
 	get filter(): string {
 		this.log('get filter');
@@ -475,7 +468,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			this.context.setFilter(value);
 		}
 	}
-	
 
 	get strokeStyle() {
 		this.log('strokeStyle');
@@ -498,9 +490,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this._ensureLayoutBeforeDraw();
 		if (typeof color === 'string') {
 			this.context.setStrokeStyle(color);
-		} else if (color instanceof CanvasGradient) {
-			this.context.setStrokeStyle(color.native);
-		} else if (color instanceof CanvasPattern) {
+		} else if ((color instanceof CanvasGradient || color instanceof CanvasPattern) && color.native) {
 			this.context.setStrokeStyle(color.native);
 		}
 	}
@@ -518,17 +508,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 	}
 
-	addHitRegion(region: any): void {
-	}
+	addHitRegion(region: any): void {}
 
-	arc(
-		x: number,
-		y: number,
-		radius: number,
-		startAngle: number,
-		endAngle: number,
-		anticlockwise: boolean = false
-	): void {
+	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
 		this.log('arc value:', x, y, radius, startAngle, endAngle, anticlockwise);
 		this._ensureLayoutBeforeDraw();
 		this.context.arc(x, y, radius, startAngle, endAngle, anticlockwise);
@@ -546,21 +528,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.context.beginPath();
 	}
 
-	bezierCurveTo(
-		cp1x: number,
-		cp1y: number,
-		cp2x: number,
-		cp2y: number,
-		x: number,
-		y: number
-	): void {
+	bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void {
 		this.log('bezierCurveTo value:', cp1x, cp1y, cp2x, cp2y, x, y);
 		this._ensureLayoutBeforeDraw();
 		this.context.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
 	}
 
-	clearHitRegions(): void {
-	}
+	clearHitRegions(): void {}
 
 	clearRect(x: number, y: number, width: number, height: number): void {
 		this.log('clearRect value:', x, y, width, height);
@@ -605,18 +579,14 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (width instanceof ImageData) {
 			return ImageData.from(width);
 		} else {
-			return ImageData.fromNative(
-				this.context.createImageData(width as any, height)
-			);
+			return ImageData.fromNative(this.context.createImageData(width as any, height));
 		}
 	}
 
 	createLinearGradient(x0: number, y0: number, x1: number, y1: number) {
 		this.log('createLinearGradient value:', x0, y0, x1, y1);
 		this._ensureLayoutBeforeDraw();
-		return CanvasGradient.fromNative(
-			this.context.createLinearGradient(x0, y0, x1, y1)
-		);
+		return CanvasGradient.fromNative(this.context.createLinearGradient(x0, y0, x1, y1));
 	}
 
 	createPattern(image: any, repetition: string): CanvasPattern | null {
@@ -646,13 +616,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			} else if (typeof image.src === 'string') {
 				img = ImageSource.fromFileSync(image.src).android;
 			}
-		} else if (
-			image &&
-			typeof image.tagName === 'string' &&
-			image.tagName === 'CANVAS' && image._canvas instanceof Canvas
-		) {
+		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
 			img = image._canvas.android;
-		} else if(image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap){
+		} else if (image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap) {
 			img = image.native;
 		}
 		if (!img) {
@@ -677,49 +643,23 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		return new CanvasPattern(this.context.createPattern(img, rep));
 	}
 
-	createRadialGradient(
-		x0: number,
-		y0: number,
-		r0: number,
-		x1: number,
-		y1: number,
-		r1: number
-	) {
+	createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) {
 		this.log('createRadialGradient value:', x0, y0, r0, x1, y1, r1);
 		this._ensureLayoutBeforeDraw();
-		return CanvasGradient.fromNative(
-			this.context.createRadialGradient(x0, y0, r0, x1, y1, r1)
-		);
+		return CanvasGradient.fromNative(this.context.createRadialGradient(x0, y0, r0, x1, y1, r1));
 	}
 
 	drawFocusIfNeeded(element): void;
 
 	drawFocusIfNeeded(path, element): void;
 
-	drawFocusIfNeeded(...args: any): void {
-	}
+	drawFocusIfNeeded(...args: any): void {}
 
 	drawImage(image: any, dx: number, dy: number): void;
 
-	drawImage(
-		image: any,
-		dx: number,
-		dy: number,
-		dWidth: number,
-		dHeight: number
-	): void;
+	drawImage(image: any, dx: number, dy: number, dWidth: number, dHeight: number): void;
 
-	drawImage(
-		image: any,
-		sx: number,
-		sy: number,
-		sWidth: number,
-		sHeight: number,
-		dx: number,
-		dy: number,
-		dWidth: number,
-		dHeight: number
-	): void;
+	drawImage(image: any, sx: number, sy: number, sWidth: number, sHeight: number, dx: number, dy: number, dWidth: number, dHeight: number): void;
 
 	drawImage(...args): void {
 		this.log('drawImage value:', ...args);
@@ -743,13 +683,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			} else if (typeof image.src === 'string') {
 				image = ImageSource.fromFileSync(image.src).android;
 			}
-		} else if (
-			image &&
-			typeof image.tagName === 'string' &&
-			image.tagName === 'CANVAS' && image._canvas instanceof Canvas
-		) {
+		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
 			image = image._canvas.android;
-		} else if(image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap){
+		} else if (image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap) {
 			image = image.native;
 		}
 
@@ -758,51 +694,15 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		} else if (args.length === 5) {
 			this.context.drawImage(image, args[1], args[2], args[3], args[4]);
 		} else if (args.length === 9) {
-			this.context.drawImage(
-				image,
-				args[1],
-				args[2],
-				args[3],
-				args[4],
-				args[5],
-				args[6],
-				args[7],
-				args[8]
-			);
+			this.context.drawImage(image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
 		}
 	}
 
-	ellipse(
-		x: number,
-		y: number,
-		radiusX: number,
-		radiusY: number,
-		rotation: number,
-		startAngle: number,
-		endAngle: number,
-		anticlockwise: boolean = false
-	): void {
-		this.log('ellipse value:', x,
-			y,
-			radiusX,
-			radiusY,
-			rotation,
-			startAngle,
-			endAngle,
-			anticlockwise);
+	ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
+		this.log('ellipse value:', x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
 		this._ensureLayoutBeforeDraw();
-		this.context.ellipse(
-			x,
-			y,
-			radiusX,
-			radiusY,
-			rotation,
-			startAngle,
-			endAngle,
-			anticlockwise
-		);
+		this.context.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
 	}
-
 
 	fill(): void;
 
@@ -856,12 +756,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	isPointInPath(x: number, y: number, fillRule: string): boolean;
 
-	isPointInPath(
-		path: Path2D,
-		x: number,
-		y: number,
-		fillRule: string
-	): boolean;
+	isPointInPath(path: Path2D, x: number, y: number, fillRule: string): boolean;
 
 	isPointInPath(...args): boolean {
 		this.log('isPointInPath value:', ...args);
@@ -911,25 +806,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	putImageData(imageData: ImageData, dx: number, dy: number): void;
 
-	putImageData(
-		imageData: ImageData,
-		dx: number,
-		dy: number,
-		dirtyX: number,
-		dirtyY: number,
-		dirtyWidth: number,
-		dirtyHeight: number
-	): void;
+	putImageData(imageData: ImageData, dx: number, dy: number, dirtyX: number, dirtyY: number, dirtyWidth: number, dirtyHeight: number): void;
 
-	putImageData(
-		imageData: ImageData,
-		dx: number,
-		dy: number,
-		dirtyX?: number,
-		dirtyY?: number,
-		dirtyWidth?: number,
-		dirtyHeight?: number
-	): void;
+	putImageData(imageData: ImageData, dx: number, dy: number, dirtyX?: number, dirtyY?: number, dirtyWidth?: number, dirtyHeight?: number): void;
 
 	putImageData(...args): void {
 		this.log('putImageData value:', ...args);
@@ -957,8 +836,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.context.rect(x, y, width, height);
 	}
 
-	removeHitRegion(id: string): void {
-	}
+	removeHitRegion(id: string): void {}
 
 	resetTransform(): void {
 		this.log('resetTransform value:');
@@ -994,8 +872,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	scrollPathIntoView(path: Path2D): void;
 
-	scrollPathIntoView(path?: Path2D): void {
-	}
+	scrollPathIntoView(path?: Path2D): void {}
 
 	setLineDash(segments: number[]): void {
 		this.log('setLineDash value:', segments);
@@ -1003,14 +880,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.context.setLineDash(segments);
 	}
 
-	setTransform(
-		a: number,
-		b: number,
-		c: number,
-		d: number,
-		e: number,
-		f: number
-	): void {
+	setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void {
 		this.log('setTransform value:', a, b, c, d, e, f);
 		this._ensureLayoutBeforeDraw();
 		this.context.setTransform(a, b, c, d, e, f);
@@ -1044,14 +914,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		}
 	}
 
-	transform(
-		a: number,
-		b: number,
-		c: number,
-		d: number,
-		e: number,
-		f: number
-	): void {
+	transform(a: number, b: number, c: number, d: number, e: number, f: number): void {
 		this.log('transform value:', a, b, c, d, e, f);
 		this._ensureLayoutBeforeDraw();
 		this.context.transform(a, b, c, d, e, f);

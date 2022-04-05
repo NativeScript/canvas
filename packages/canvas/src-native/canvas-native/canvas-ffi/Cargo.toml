@@ -1,0 +1,29 @@
+[package]
+name = "canvas-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "canvasffi"
+crate-type = ["staticlib"]
+
+[features]
+gl = ["canvas-core/gl"]
+
+[build]
+rustc-wrapper = "sccache"
+
+[build-dependencies]
+bindgen = "0.57.0"
+cmake = "0.1.44"
+cc = "1.0.73"
+cbindgen = "0.20.0"
+
+[dependencies]
+gl-bindings = { path = "../gl-bindings" }
+canvas-core = { path = "../canvas-core" }
+#skia-safe = { version = "0.43.0", features = ["gl"] }
+#skia-safe = { git = "https://github.com/triniwiz/rust-skia", branch="feat/svg" , features = ["gl"] }
+skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl", "svg"] }
+image = "0.23.7"
+css-color-parser = "0.1.2"

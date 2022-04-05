@@ -20,10 +20,29 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		const canvas = args.object;
 		TNSPIXIApplication = require('@nativescript/canvas-pixi').TNSPIXIApplication;
 		PIXI = require('pixi.js');
-		//  ctx.font = 'normal normal normal 150px times'
-		//  ctx.strokeText('Help!!!', 0,150)
-		// ctx.fillText('Help!!!', 0,300)
-		//this.text(canvas);
+		// const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		// const canvas2 = document.createElement('canvas');
+		// const ctx2 = canvas2.getContext('2d') as CanvasRenderingContext2D;
+		
+	
+		// ctx.font = 'normal normal normal 150px times';
+		// ctx2.font = 'normal normal normal 150px times';
+		// ctx.shadowBlur = 10;
+		// ctx2.shadowBlur = 10;
+		// ctx.shadowColor = 'green';
+		// ctx2.shadowColor = 'blue';
+		// ctx.shadowOffsetX = 10;
+		// ctx2.shadowOffsetX = 10;
+		// ctx.shadowOffsetY = 10;
+		// ctx2.shadowOffsetY = 10;
+		// ctx.strokeText('Help!!!', 0, 150);
+		// ctx2.strokeText('Help2!!!', 0, 150);
+		// ctx.fillText('Help!!!', 0, 300);
+		// ctx2.fillText('Help2!!!', 0, 300);
+		// ctx.drawImage(canvas2, 0, 0);
+
+
+		this.text(canvas);
 		//this.drawPatternWithCanvas(canvas);
 		//this.simple(canvas);
 		//this.simplePlane(canvas);
@@ -38,7 +57,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.starWarp(canvas)
 		// this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
-		this.multiPassShaderGenMesh(canvas);
+		//this.multiPassShaderGenMesh(canvas);
 		//this.cacheAsBitmap(canvas);
 		//this.blendModes(canvas);
 		//this.particleContainer(canvas);
@@ -1360,7 +1379,7 @@ void main()
 
 		const style = new PIXI.TextStyle({
 			fontFamily: 'Arial',
-			fontSize: 36,
+			fontSize: 300,
 			fontStyle: 'italic',
 			fontWeight: 'bold',
 			fill: ['#ffffff', '#00ff99'], // gradient
@@ -1385,10 +1404,11 @@ void main()
 	drawPatternWithCanvas(canvas) {
 		const scale = Screen.mainScreen.scale;
 		const patternCanvas = document.createElement('canvas');
-		const patternContext = patternCanvas.getContext('2d') as any;
 		// Give the pattern a width and height of 50
 		patternCanvas.width = 50 * scale;
 		patternCanvas.height = 50 * scale;
+
+		const patternContext = patternCanvas.getContext('2d') as any;
 
 		// Give the pattern a background color and draw an arc
 		patternContext.fillStyle = '#fec';

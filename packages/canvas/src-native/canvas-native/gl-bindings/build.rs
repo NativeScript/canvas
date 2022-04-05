@@ -74,10 +74,9 @@ fn main() {
             let build_target;
             include_dir.push_str(&ndk());
             // after moving to newer ndk
-           // include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
+            // include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
 
-
-           include_dir.push_str("/sysroot/usr/include");
+            include_dir.push_str("/sysroot/usr/include");
             //println!("cargo:rustc-link-search=native={}", include_dir);
 
             if target.architecture.eq("armv7") {
@@ -98,10 +97,10 @@ fn main() {
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
             println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
-            
-                                                     // The bindgen::Builder is the main entry point
-                                                     // to bindgen, and lets you build up options for
-                                                     // the resulting bindings.
+
+            // The bindgen::Builder is the main entry point
+            // to bindgen, and lets you build up options for
+            // the resulting bindings.
             let bindings = bindgen::Builder::default()
                 // The input header we would like to generate
                 // bindings for.
@@ -133,11 +132,15 @@ fn main() {
 
 fn sdk_path(target: &str) -> Result<String, std::io::Error> {
     use std::process::Command;
-    let sdk = if target.contains("apple-darwin") 
-    || target == "aarch64-apple-ios-macabi"
-    || target == "x86_64-apple-ios-macabi"  {
+    let sdk = if target.contains("apple-darwin")
+        || target == "aarch64-apple-ios-macabi"
+        || target == "x86_64-apple-ios-macabi"
+    {
         "macosx"
-    } else if target == "x86_64-apple-ios" || target == "i386-apple-ios" || target == "aarch64-apple-ios-sim" {
+    } else if target == "x86_64-apple-ios"
+        || target == "i386-apple-ios"
+        || target == "aarch64-apple-ios-sim"
+    {
         "iphonesimulator"
     } else if target == "aarch64-apple-ios"
         || target == "armv7-apple-ios"
@@ -171,8 +174,7 @@ fn build(sdk_path: Option<&str>, target: &str) {
 
     let mut headers: Vec<&str> = vec![];
 
-
-    if target.contains("apple-ios") &&  !target.contains("macabi"){
+    if target.contains("apple-ios") && !target.contains("macabi") {
         println!("cargo:rustc-link-lib=framework=GLKit");
         println!("cargo:rustc-link-lib=framework=OpenGLES");
         headers.push("OpenGLES/ES2/gl.h");
@@ -189,7 +191,6 @@ fn build(sdk_path: Option<&str>, target: &str) {
         headers.push("OpenGL/gl3ext.h");
         headers.push("OpenGL/OpenGL.h");
     }
-
 
     println!("cargo:rerun-if-env-changed=BINDGEN_EXTRA_CLANG_ARGS");
     // Begin building the bindgen params.

@@ -2,6 +2,7 @@ package org.nativescript.canvas
 
 import android.opengl.*
 import android.util.Log
+import java.lang.Exception
 import java.lang.ref.WeakReference
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -16,6 +17,7 @@ internal class GLContext {
 	@JvmField
 	var glView: WeakReference<GLView>? = null
 	val mQueue: BlockingQueue<Runnable> = LinkedBlockingQueue()
+
 
 	@JvmField
 	var mGLThread = GLThread(this)
@@ -36,6 +38,10 @@ internal class GLContext {
 	var xrCompatible = false
 	var type = TNSCanvas.ContextType.NONE
 
+
+	var surfaceWidth: Int = 0
+	var surfaceHeight: Int = 0
+
 	@JvmField
 	var reference: WeakReference<TNSCanvas>? = null
 
@@ -52,42 +58,23 @@ internal class GLContext {
 		mGLThread.start()
 	}
 
-	fun resize(width: Int, height: Int) {
-		reference?.get()?.let { canvasView ->
-			queueEvent {
-				if (mGLThread.state == GLThread.State.Complete) {
-					return@queueEvent
-				}
-				GLES20.glClearColor(0f, 0f, 0f, 0f)
-				GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-				if (!mGLThread.getPaused() && !swapBuffers(mEGLSurface)) {
-					if (TNSCanvas.enableDebug) {
-						Log.e("JS", "GLContext: Cannot swap buffers!")
-					}
-				}
-				if (canvasView.nativeContext != 0L) {
-					GLES20.glViewport(0, 0, width, height)
-					val frameBuffers = IntArray(1)
-					GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)
-					var samples = 0
-					if (canvasView.contextAntialias) {
-						samples = 4
-					}
-					val metrics = canvasView.resources.displayMetrics
-					TNSCanvas.nativeResizeSurface(
-						canvasView.nativeContext,
-						canvasView.drawingBufferWidth.toFloat(),
-						canvasView.drawingBufferHeight.toFloat(),
-						canvasView.scale,
-						frameBuffers[0],
-						samples,
-						true,
-						metrics.density
-					)
-					swapBuffers(mEGLSurface)
+	fun resize(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
+		if (surfaceWidth == 0 && surfaceHeight == 0) {
+			return
+		}
+
+		if (mGLThread.state == GLThread.State.Complete && (surfaceWidth != width && surfaceHeight != height)) {
+			mGLThread.state = GLThread.State.Resizing
+			mGLThread.lock = CountDownLatch(1)
+			mGLThread.lock?.let { lock ->
+				try {
+					lock.await(2, TimeUnit.SECONDS)
+				} catch (e: Exception) {
 				}
 			}
 		}
+
+		Log.d("com.test", "state ${mGLThread.state}")
 	}
 
 	fun flush() {
@@ -102,26 +89,26 @@ internal class GLContext {
 				null
 			}
 
-			queueEvent {
-				if (canvasView.nativeContext != 0L && canvasView.invalidateState == TNSCanvas.InvalidateState.INVALIDATING) {
-					TNSCanvas.nativeFlush(canvasView.nativeContext)
-					if (!mGLThread.getPaused() && !swapBuffers(mEGLSurface)) {
-						if (TNSCanvas.enableDebug) {
-							Log.e("JS", "GLContext: Cannot swap buffers!")
-						}
-					}
-					canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
-				} else {
-					// WebGL
-					if (!mGLThread.getPaused() && !swapBuffers(mEGLSurface)) {
-						if (TNSCanvas.enableDebug) {
-							Log.e("JS", "GLContext: Cannot swap buffers!")
-						}
-					}
-					canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
-				}
-				lock?.countDown()
-			}
+//			queueEvent {
+//				if (canvasView.nativeContext != 0L && canvasView.invalidateState == TNSCanvas.InvalidateState.INVALIDATING) {
+//					TNSCanvas.nativeFlush(canvasView.nativeContext)
+//					if (!mGLThread.getPaused() && !swapBuffers(mEGLSurface)) {
+//						if (TNSCanvas.enableDebug) {
+//							Log.e("JS", "GLContext: Cannot swap buffers!")
+//						}
+//					}
+//					canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
+//				} else {
+//					// WebGL
+//					if (!mGLThread.getPaused() && !swapBuffers(mEGLSurface)) {
+//						if (TNSCanvas.enableDebug) {
+//							Log.e("JS", "GLContext: Cannot swap buffers!")
+//						}
+//					}
+//					canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
+//				}
+//				lock?.countDown()
+//			}
 
 			lock?.let {
 				try {
@@ -148,12 +135,10 @@ internal class GLContext {
 			var width = 1
 			var height = 1
 
-			if (reference != null) {
-				val view = reference!!.get()
-				if (view != null) {
-					width = view.width
-					height = view.height
-				}
+			reference?.get()?.let { view ->
+				width = view.width
+				height = view.height
+
 				if (width == 0) {
 					width = 1
 				}
@@ -161,6 +146,9 @@ internal class GLContext {
 					height = 1
 				}
 			}
+
+			surfaceWidth = width
+			surfaceHeight = height
 
 			val surfaceAttribs = intArrayOf(
 				EGL14.EGL_WIDTH, width,
@@ -174,6 +162,9 @@ internal class GLContext {
 		val surfaceAttribs = intArrayOf(
 			EGL14.EGL_NONE
 		)
+
+		surfaceWidth = glView?.get()?.width ?: 0
+		surfaceHeight = glView?.get()?.height ?: 0
 
 		return EGL14.eglCreateWindowSurface(mEGLDisplay, config, surface, surfaceAttribs, 0)
 	}

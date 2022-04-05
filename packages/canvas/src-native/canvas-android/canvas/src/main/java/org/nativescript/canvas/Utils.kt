@@ -5,6 +5,7 @@ import android.graphics.SurfaceTexture
 import android.opengl.GLES20
 import android.os.Build
 import android.os.Environment
+import android.util.Log
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
@@ -132,17 +133,9 @@ object Utils {
 
 	@JvmStatic
 	fun createSurfaceTexture(context: TNSWebGLRenderingContext): Array<Any> {
+		context.ensureContextIsCurrent()
 		val render = TextureRender()
-		val lock = CountDownLatch(1)
-		context.canvas.queueEvent {
-			render.surfaceCreated()
-			lock.countDown()
-		}
-
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		render.surfaceCreated()
 
 		return arrayOf(SurfaceTexture(render.textureId), render)
 
@@ -154,18 +147,10 @@ object Utils {
 		context: TNSWebGLRenderingContext,
 		texture: SurfaceTexture,
 	): TextureRender {
+		context.ensureContextIsCurrent()
 		val render = TextureRender()
-		val lock = CountDownLatch(1)
-		context.canvas.queueEvent {
-			render.surfaceCreated()
-			texture.attachToGLContext(render.textureId)
-			lock.countDown()
-		}
-
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		render.surfaceCreated()
+		texture.attachToGLContext(render.textureId)
 		return render
 	}
 
@@ -176,30 +161,14 @@ object Utils {
 		texture: SurfaceTexture,
 		render: TextureRender
 	) {
-		val lock = CountDownLatch(1)
-		context.canvas.queueEvent {
-			texture.attachToGLContext(render.textureId)
-			lock.countDown()
-		}
-
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		context.ensureContextIsCurrent()
+		texture.attachToGLContext(render.textureId)
 	}
 
 	@JvmStatic
 	fun detachFromGLContext(context: TNSWebGLRenderingContext, texture: SurfaceTexture) {
-		val lock = CountDownLatch(1)
-		context.canvas.queueEvent {
-			texture.detachFromGLContext()
-			lock.countDown()
-		}
-
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		context.ensureContextIsCurrent()
+		texture.detachFromGLContext()
 	}
 
 	@JvmStatic
@@ -212,66 +181,15 @@ object Utils {
 		internalFormat: Int,
 		format: Int,
 	) {
-		val lock = CountDownLatch(1)
-		context.runOnGLThread {
-			render.drawFrame(texture, width, height, internalFormat, format, context.flipYWebGL)
+		context.ensureContextIsCurrent()
 
-			if (render.width != width || render.height != width) {
-				render.width = width
-				render.height = height
-			}
-			lock.countDown()
+		render.drawFrame(texture, width, height, internalFormat, format, context.flipYWebGL)
+
+		if (render.width != width || render.height != width) {
+			render.width = width
+			render.height = height
 		}
 
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-
-	}
-
-
-	@JvmStatic
-	fun texImage2D(
-		context: TNSWebGLRenderingContext,
-		canvas: TNSCanvas,
-		internalFormat: Int,
-		format: Int
-	) {
-		val lock = CountDownLatch(1)
-		context.runOnGLThread {
-			val width = canvas.width
-			val height = canvas.height
-			if (canvas.textureRender.mProgram == 0) {
-				canvas.textureRender.surfaceCreated()
-			}
-			canvas.surface?.let { glView ->
-				glView.surfaceTexture?.let {
-					it.detachFromGLContext()
-					it.attachToGLContext(canvas.textureRender.textureId)
-					it.updateTexImage()
-					canvas.textureRender.drawFrame(
-						it,
-						width,
-						height,
-						internalFormat,
-						format,
-						context.flipYWebGL
-					)
-					if (canvas.textureRender.width != width || canvas.textureRender.height != width) {
-						canvas.textureRender.width = width
-						canvas.textureRender.height = height
-					}
-					it.detachFromGLContext()
-				}
-			}
-			lock.countDown()
-		}
-
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
 	}
 
 

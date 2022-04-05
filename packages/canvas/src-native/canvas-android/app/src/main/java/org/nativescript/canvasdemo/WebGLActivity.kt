@@ -20,9 +20,11 @@ import java.util.concurrent.Executors
 class WebGLActivity : AppCompatActivity() {
 	var canvas: TNSCanvas? = null
 	var executor = Executors.newSingleThreadExecutor()
+	var contentView: ViewGroup? = null
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_web_g_l)
+		contentView = findViewById(android.R.id.content)
 		canvas = findViewById(R.id.canvasView)
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
@@ -36,19 +38,18 @@ class WebGLActivity : AppCompatActivity() {
 	fun drawTriangle() {
 		canvas?.let { canvas ->
 			val gl = canvas.getContext("webgl") as? TNSWebGLRenderingContext
-			canvas.queueEvent {
-				val vertex = floatArrayOf(
-					-1f, 1f, 0f,
-					-1f, -1f, 0f,
-					1f, -1f, 0f
+			val vertex = floatArrayOf(
+				-1f, 1f, 0f,
+				-1f, -1f, 0f,
+				1f, -1f, 0f
 
-				)
+			)
 
 
-				val vertexBuf = ByteBuffer.allocate(vertex.size * 4).order(ByteOrder.nativeOrder())
-				vertexBuf.asFloatBuffer().put(vertex)
-				vertexBuf.rewind()
-				val vs_source = """
+			val vertexBuf = ByteBuffer.allocate(vertex.size * 4).order(ByteOrder.nativeOrder())
+			vertexBuf.asFloatBuffer().put(vertex)
+			vertexBuf.rewind()
+			val vs_source = """
 				#version 300 es
 				in vec3 aPos;
 				void main(){
@@ -56,7 +57,7 @@ class WebGLActivity : AppCompatActivity() {
 				}
 			""".trimIndent()
 
-				val fs_source = """
+			val fs_source = """
 				#version 300 es
 				precision mediump float;
 				out vec4 FragColor;
@@ -66,54 +67,53 @@ class WebGLActivity : AppCompatActivity() {
 			""".trimIndent()
 
 
-				val program = GLES20.glCreateProgram()
-				val vs = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
-				GLES20.glShaderSource(vs, vs_source)
+			val program = GLES20.glCreateProgram()
+			val vs = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
+			GLES20.glShaderSource(vs, vs_source)
 
 
-				val fs = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER)
-				GLES20.glShaderSource(fs, fs_source)
+			val fs = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER)
+			GLES20.glShaderSource(fs, fs_source)
 
-				GLES20.glCompileShader(vs)
-				GLES20.glCompileShader(fs)
+			GLES20.glCompileShader(vs)
+			GLES20.glCompileShader(fs)
 
-				GLES20.glAttachShader(program, vs)
-				GLES20.glAttachShader(program, fs)
+			GLES20.glAttachShader(program, vs)
+			GLES20.glAttachShader(program, fs)
 
-				Log.d("com.test", "vs log ${GLES20.glGetShaderInfoLog(vs)}")
-				Log.d("com.test", "fs log ${GLES20.glGetShaderInfoLog(fs)}")
+			Log.d("com.test", "vs log ${GLES20.glGetShaderInfoLog(vs)}")
+			Log.d("com.test", "fs log ${GLES20.glGetShaderInfoLog(fs)}")
 
-				GLES20.glLinkProgram(program)
+			GLES20.glLinkProgram(program)
 
-				Log.d("com.test", "GL Error ${GLES20.glGetError()}")
+			Log.d("com.test", "GL Error ${GLES20.glGetError()}")
 
 
-				val attr = GLES20.glGetAttribLocation(program, "aPos")
-				val vbo = intArrayOf(0)
-				GLES20.glGenBuffers(1, vbo, 0)
-				GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0])
-				GLES20.glBufferData(
-					GLES20.GL_ARRAY_BUFFER,
-					vertexBuf.capacity(),
-					vertexBuf,
-					GLES20.GL_STATIC_DRAW
-				)
+			val attr = GLES20.glGetAttribLocation(program, "aPos")
+			val vbo = intArrayOf(0)
+			GLES20.glGenBuffers(1, vbo, 0)
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0])
+			GLES20.glBufferData(
+				GLES20.GL_ARRAY_BUFFER,
+				vertexBuf.capacity(),
+				vertexBuf,
+				GLES20.GL_STATIC_DRAW
+			)
 
-				GLES20.glVertexAttribPointer(attr, 3, GLES20.GL_FLOAT, false, 3 * 4, 0)
-				GLES20.glEnableVertexAttribArray(0)
-				GLES20.glUseProgram(program)
+			GLES20.glVertexAttribPointer(attr, 3, GLES20.GL_FLOAT, false, 3 * 4, 0)
+			GLES20.glEnableVertexAttribArray(0)
+			GLES20.glUseProgram(program)
 
-				//	GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
-				//	gl?.updateCanvas()
+			//	GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
+			//	gl?.updateCanvas()
 
-			}
 			gl?.drawArrays(GLES20.GL_TRIANGLES, 0, 3)
 		}
 	}
 
 
 	fun drawImage() {
-		val tmpCanvas = TNSCanvas(this, true)
+		val tmpCanvas = TNSCanvas(this)
 		executor.execute {
 			val file = File(filesDir, "tmpImage.jpg")
 			if (file.exists()) {
@@ -137,7 +137,37 @@ class WebGLActivity : AppCompatActivity() {
 			val asset = TNSImageAsset()
 			asset.loadImageFromPath(file.absolutePath)
 
-//
+
+			runOnUiThread {
+				TNSCanvas.layoutView(contentView!!.width, contentView!!.height, tmpCanvas)
+			}
+			val ctx = tmpCanvas.getContext("2d") as TNSCanvasRenderingContext2D
+			ctx.drawImage(asset, 300f, 300f)
+
+
+			val glCanvas = TNSCanvas(this)
+
+			runOnUiThread {
+				TNSCanvas.layoutView(asset.width, asset.height, glCanvas)
+			}
+
+			val gl = glCanvas.getContext("webgl") as TNSWebGLRenderingContext
+
+			gl.clearColor(1f, 0f, 0f, 1f)
+			gl.clear(gl.COLOR_BUFFER_BIT)
+
+			ctx.drawImage(glCanvas, 0f, 0f)
+
+//			runOnUiThread {
+//			//	TNSCanvas.layoutView(asset.width, asset.height, tmpCanvas)
+//				findViewById<ViewGroup>(android.R.id.content).addView(
+//					tmpCanvas
+//				)
+//			}
+
+			render(tmpCanvas)
+
+
 //			val bm = Bitmap.createBitmap(asset.width, asset.height, Bitmap.Config.ARGB_8888)
 //			asset.copyToBitmap(bm)
 //
@@ -150,23 +180,6 @@ class WebGLActivity : AppCompatActivity() {
 //					)
 //				)
 //			}
-
-			runOnUiThread {
-				TNSCanvas.layoutView(asset.width, asset.height, tmpCanvas)
-			}
-			val ctx = tmpCanvas.getContext("2d") as TNSCanvasRenderingContext2D
-			ctx.drawImage(asset, 0f, 0f)
-
-//			runOnUiThread {
-//			//	TNSCanvas.layoutView(asset.width, asset.height, tmpCanvas)
-//				findViewById<ViewGroup>(android.R.id.content).addView(
-//					tmpCanvas
-//				)
-//			}
-
-			//nativeTexImage2DBuffer
-
-			render(tmpCanvas)
 		}
 
 	}
@@ -213,9 +226,6 @@ class WebGLActivity : AppCompatActivity() {
 		val fragShader = gl.createShader(gl.FRAGMENT_SHADER)
 		gl.shaderSource(fragShader, fragCode)
 		gl.compileShader(fragShader)
-
-
-
 
 
 		// setup GLSL program

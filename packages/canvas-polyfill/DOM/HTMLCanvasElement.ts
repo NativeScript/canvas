@@ -12,7 +12,7 @@ export class HTMLCanvasElement extends Element {
 		if (canvas instanceof Canvas) {
 			this._canvas = canvas;
 		} else {
-			this._canvas = Canvas.createCustomView();
+			this._canvas = (Canvas as any).createCustomView(true);
 		}
 	}
 

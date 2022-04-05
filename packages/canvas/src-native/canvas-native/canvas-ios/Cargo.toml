@@ -1,0 +1,26 @@
+[package]
+name = "canvas-ios"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "canvasnative"
+crate-type = ["staticlib"]
+
+[features]
+default = ["gl"]
+gl = ["canvas-ffi/gl"]
+
+
+
+[dependencies]
+
+[target.'cfg(target_os="ios")'.dependencies]
+gl-bindings = { path = "../gl-bindings" }
+canvas-ffi = { path = "../canvas-ffi" }
+#skia-safe = { version = "0.43.0", features = ["gl"] }
+#skia-safe = { git = "https://github.com/triniwiz/rust-skia", branch="feat/svg" , features = ["gl"] }
+skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl", "svg"] }
+cocoa = { version = "0.24.0" }
+objc = { version = "0.2.4" }
+block = "0.1.6"

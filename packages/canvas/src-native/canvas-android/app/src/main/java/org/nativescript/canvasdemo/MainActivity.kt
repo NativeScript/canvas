@@ -47,7 +47,9 @@ class MainActivity : AppCompatActivity() {
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
-					//	drawPatterWithCanvas(canvas!!)
+				draw2D()
+				//drawPatterWithCanvas(canvas!!)
+				//drawText(canvas!!)
 			}
 		}
 
@@ -315,6 +317,38 @@ class MainActivity : AppCompatActivity() {
 			*/
 
 
+	}
+
+	fun draw2D() {
+		val scale = resources.displayMetrics.density
+		val canvas2 = TNSCanvas(this)
+
+		TNSCanvas.layoutView(
+			300f * scale, 150 * scale, canvas2
+		)
+
+		val ctx = canvas!!.getContext("2d") as TNSCanvasRenderingContext2D
+
+		val ctx2 = canvas2.getContext("2d") as TNSCanvasRenderingContext2D
+
+
+		ctx.font = "normal normal normal 150px times"
+		ctx2.font = "normal normal normal 150px times"
+
+		ctx.shadowBlur = 10f
+		ctx2.shadowBlur = 10f
+		ctx.shadowColor = "green"
+		ctx2.shadowColor = "blue"
+		ctx.shadowOffsetX = 10f
+		ctx2.shadowOffsetX = 10f
+		ctx.shadowOffsetY = 10f
+		ctx2.shadowOffsetY = 10f
+		ctx.strokeText("Help!!!", 0f, 150f)
+		ctx2.strokeText("Help2!!!", 0f, 150f)
+		ctx.fillText("Help!!!", 0f, 300f)
+		ctx2.fillText("Help2!!!", 0f, 300f)
+
+		ctx.drawImage(canvas2, 0f, 150 * scale)
 	}
 
 	fun issue54() {
@@ -1286,10 +1320,14 @@ class MainActivity : AppCompatActivity() {
 		println(msg)
 	}
 
-	fun drawText(ctx: TNSCanvasRenderingContext2D) {
+	fun drawText(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		ctx.font = "48px serif";
 		ctx.fillText("Hi!", 150f, 50f);
-		ctx.direction = TNSTextDirection.Rtl;
+		ctx.direction = TNSTextDirection.Rtl
+		ctx.shadowColor = "red"
+		ctx.shadowBlur = 10f
+		ctx.shadowOffsetX = 10f
 		ctx.fillText("Hi!", 150f, 130f);
 	}
 
@@ -1477,14 +1515,12 @@ class MainActivity : AppCompatActivity() {
 	var didPause = false;
 	override fun onPause() {
 		super.onPause()
-		canvas?.onPause()
 		didPause = true;
 	}
 
 	override fun onResume() {
 		super.onResume()
 		if (didPause) {
-			canvas?.onResume()
 			ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 			ctx?.let {
 				ballExample(it)
@@ -1666,13 +1702,13 @@ class MainActivity : AppCompatActivity() {
 		// Give the pattern a width and height of 50
 		val width = (50 * scale)
 		val height = (50 * scale)
-		TNSCanvas.layoutView(width.toInt(), height.toInt(), patternCanvas)
+		TNSCanvas.layoutView(width,height, patternCanvas)
 		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
 
 
 // Give the pattern a background color and draw an arc
 		patternContext.fillStyle = TNSColor("#fec")
-		val style = patternContext.fillStyle as TNSColor
+		//val style = patternContext.fillStyle as TNSColor
 		patternContext.fillRect(
 			0f, 0f, width, width
 		);

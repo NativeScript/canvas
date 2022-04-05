@@ -8,9 +8,7 @@ import androidx.annotation.RequiresApi
 import java.nio.*
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
-import java.util.*
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by triniwiz on 5/1/20
@@ -21,85 +19,43 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	constructor(canvas: TNSCanvas, attrs: Map<String?, Any?>?) : super(canvas, attrs)
 
 	fun beginQuery(target: Int, query: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			->
-			GLES30.glBeginQuery(target, query)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBeginQuery(target, query)
 	}
 
 	fun beginTransformFeedback(primitiveMode: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glBeginTransformFeedback(primitiveMode)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBeginTransformFeedback(primitiveMode)
+
 	}
 
 	fun bindBufferBase(target: Int, index: Int, buffer: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glBindBufferBase(target, index, buffer)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBindBufferBase(target, index, buffer)
+
 	}
 
 	fun bindBufferRange(target: Int, index: Int, buffer: Int, offset: Int, size: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread { GLES30.glBindBufferRange(target, index, buffer, offset, size) }
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBindBufferRange(target, index, buffer, offset, size)
 	}
 
 	fun bindSampler(unit: Int, sampler: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glBindSampler(unit, sampler)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBindSampler(unit, sampler)
+
 	}
 
 	fun bindTransformFeedback(target: Int, transformFeedback: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glBindTransformFeedback(target, transformFeedback)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBindTransformFeedback(target, transformFeedback)
+
 	}
 
 	fun bindVertexArray(vertexArray: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glBindVertexArray(vertexArray)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBindVertexArray(vertexArray)
+
 	}
 
 	fun blitFramebuffer(
@@ -107,77 +63,37 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		dstX0: Int, dstY0: Int, dstX1: Int, dstY1: Int,
 		mask: Int, filter: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter)
+
 	}
 
 	fun clearBufferfv(buffer: Int, drawbuffer: Int, values: FloatArray?) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glClearBufferfv(buffer, drawbuffer, FloatBuffer.wrap(values))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glClearBufferfv(buffer, drawbuffer, FloatBuffer.wrap(values))
+
 	}
 
 	fun clearBufferiv(buffer: Int, drawbuffer: Int, values: IntArray?) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glClearBufferiv(buffer, drawbuffer, IntBuffer.wrap(values))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glClearBufferiv(buffer, drawbuffer, IntBuffer.wrap(values))
+
 	}
 
 	fun clearBufferuiv(buffer: Int, drawbuffer: Int, values: IntArray?) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glClearBufferuiv(buffer, drawbuffer, IntBuffer.wrap(values))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glClearBufferuiv(buffer, drawbuffer, IntBuffer.wrap(values))
+
 	}
 
 	fun clearBufferfi(buffer: Int, drawbuffer: Int, depth: Float, stencil: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glClearBufferfi(buffer, drawbuffer, depth, stencil)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glClearBufferfi(buffer, drawbuffer, depth, stencil)
+
 	}
 
 	fun clientWaitSync(sync: Long, flags: Int, timeout: Long): Int {
-		val lock = CountDownLatch(1)
-		val value = IntArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glClientWaitSync(sync, flags, timeout)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		return GLES30.glClientWaitSync(sync, flags, timeout)
 	}
 
 	fun compressedTexSubImage3D(
@@ -193,27 +109,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		imageSize: Int,
 		offset: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glCompressedTexSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				imageSize,
-				offset
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glCompressedTexSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			imageSize,
+			offset
+		)
+
 	}
 
 	fun compressedTexSubImage3D(
@@ -230,37 +140,31 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcOffset: Int,
 		srcLengthOverride: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			var size = srcData.size
-			val buffer = ByteBuffer.wrap(srcData)
-			val offset = srcOffset
-			val overrideLength = srcLengthOverride
-			if (srcLengthOverride == 0) {
-				size = size - offset
-			} else if (overrideLength > size - offset) {
+		ensureContextIsCurrent()
+		var size = srcData.size
+		val buffer = ByteBuffer.wrap(srcData)
+		val offset = srcOffset
+		val overrideLength = srcLengthOverride
+		if (srcLengthOverride == 0) {
+			size -= offset
+		} else if (overrideLength > size - offset) {
 
-			}
-			buffer.position(offset)
-			GLES30.glCompressedTexSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				size,
-				buffer
-			)
-			lock.countDown()
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		buffer.position(offset)
+		GLES30.glCompressedTexSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			size,
+			buffer
+		)
+
 	}
 
 	fun compressedTexSubImage3DByteBuffer(
@@ -308,34 +212,28 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcOffset: Int,
 		srcLengthOverride: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			var size = srcData.capacity()
-			if (srcLengthOverride == 0) {
-				size -= srcOffset
-			} else if (srcLengthOverride > size - srcOffset) {
+		ensureContextIsCurrent()
+		var size = srcData.capacity()
+		if (srcLengthOverride == 0) {
+			size -= srcOffset
+		} else if (srcLengthOverride > size - srcOffset) {
 
-			}
-			srcData.position(srcOffset)
-			GLES30.glCompressedTexSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				size,
-				srcData
-			)
-			lock.countDown()
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		srcData.position(srcOffset)
+		GLES30.glCompressedTexSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			size,
+			srcData
+		)
+
 	}
 
 	fun copyBufferSubData(
@@ -345,15 +243,9 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		writeOffset: Int,
 		size: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size)
+
 	}
 
 	fun copyTexSubImage3D(
@@ -367,192 +259,108 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		width: Int,
 		height: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			clearIfComposited()
-			GLES30.glCopyTexSubImage3D(target, level, xoffset, yoffset, zoffset, x, y, width, height)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (e: InterruptedException) {
-			e.printStackTrace()
-		}
+		ensureContextIsCurrent()
+		clearIfComposited()
+		GLES30.glCopyTexSubImage3D(target, level, xoffset, yoffset, zoffset, x, y, width, height)
 	}
 
 	fun createQuery(): Int {
 		val lock = CountDownLatch(1)
 		val query = IntBuffer.allocate(1)
-		runOnGLThread {
-			GLES30.glGenQueries(1, query)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (e: InterruptedException) {
-			e.printStackTrace()
-		}
+		ensureContextIsCurrent()
+		GLES30.glGenQueries(1, query)
 		return query[0]
 	}
 
 	fun createSampler(): Int {
 		val lock = CountDownLatch(1)
 		val sampler = IntBuffer.allocate(1)
-		runOnGLThread {
-			GLES30.glGenSamplers(1, sampler)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glGenSamplers(1, sampler)
+
 		return sampler[0]
 	}
 
 	fun createVertexArray(): Int {
 		val lock = CountDownLatch(1)
 		val array = IntBuffer.allocate(1)
-		runOnGLThread {
-			GLES30.glGenVertexArrays(1, array)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glGenVertexArrays(1, array)
+
 		return array[0]
 	}
 
 	fun createTransformFeedback(): Int {
 		val lock = CountDownLatch(1)
 		val id = IntBuffer.allocate(1)
-		runOnGLThread {
-			GLES30.glGenTransformFeedbacks(1, id)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glGenTransformFeedbacks(1, id)
+
 		return id[0]
 	}
 
 	fun deleteQuery(query: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val id = intArrayOf(query)
-			GLES30.glDeleteQueries(1, id, 0)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val id = intArrayOf(query)
+		GLES30.glDeleteQueries(1, id, 0)
+
 	}
 
 	fun deleteSampler(sampler: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val id = intArrayOf(sampler)
-			GLES30.glDeleteQueries(1, id, 0)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val id = intArrayOf(sampler)
+		GLES30.glDeleteQueries(1, id, 0)
+
 	}
 
 	fun deleteSync(sync: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glDeleteSync(sync.toLong())
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glDeleteSync(sync.toLong())
+
 	}
 
 	fun deleteTransformFeedback(transformFeedback: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val feedback = intArrayOf(transformFeedback)
-			GLES30.glDeleteTransformFeedbacks(1, feedback, 0)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val feedback = intArrayOf(transformFeedback)
+		GLES30.glDeleteTransformFeedbacks(1, feedback, 0)
+
 	}
 
 	fun deleteVertexArray(vertexArray: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val array = intArrayOf(vertexArray)
-			GLES30.glDeleteVertexArrays(1, array, 0)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val array = intArrayOf(vertexArray)
+		GLES30.glDeleteVertexArrays(1, array, 0)
+
 	}
 
 	fun drawArraysInstanced(mode: Int, first: Int, count: Int, instanceCount: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			clearIfComposited()
-			GLES30.glDrawArraysInstanced(mode, first, count, instanceCount)
-			updateCanvas()
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		clearIfComposited()
+		GLES30.glDrawArraysInstanced(mode, first, count, instanceCount)
+		updateCanvas()
+
 	}
 
 	fun drawElementsInstanced(mode: Int, count: Int, type: Int, offset: Int, instanceCount: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			clearIfComposited()
-			GLES30.glDrawElementsInstanced(mode, count, type, offset, instanceCount)
-			updateCanvas()
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		clearIfComposited()
+		GLES30.glDrawElementsInstanced(mode, count, type, offset, instanceCount)
+		updateCanvas()
+
 	}
 
 	fun drawRangeElements(mode: Int, start: Int, end: Int, count: Int, type: Int, offset: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			clearIfComposited()
-			GLES30.glDrawRangeElements(mode, start, end, count, type, offset)
-			updateCanvas()
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		clearIfComposited()
+		GLES30.glDrawRangeElements(mode, start, end, count, type, offset)
+		updateCanvas()
+
 	}
 
 	fun drawBuffers(buffers: IntArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glDrawBuffers(buffers.size, IntBuffer.wrap(buffers))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glDrawBuffers(buffers.size, IntBuffer.wrap(buffers))
+
 	}
 
 
@@ -561,129 +369,87 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	}
 
 	private fun drawBuffers(buffers: IntBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glDrawBuffers(buffers.capacity(), buffers)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glDrawBuffers(buffers.capacity(), buffers)
+
 	}
 
 	fun endQuery(target: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glEndQuery(target)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glEndQuery(target)
+
 	}
 
 	fun endTransformFeedback() {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glEndTransformFeedback()
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glEndTransformFeedback()
+
 	}
 
 	fun fenceSync(condition: Int, flags: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glFenceSync(condition, flags)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glFenceSync(condition, flags)
+
 	}
 
 	fun framebufferTextureLayer(target: Int, attachment: Int, texture: Int, level: Int, layer: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glFramebufferTextureLayer(target, attachment, texture, level, layer)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glFramebufferTextureLayer(target, attachment, texture, level, layer)
+
 	}
 
 	fun getActiveUniformBlockName(program: Int, uniformBlockIndex: Int): String? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<String>(1)
-		runOnGLThread {
-			val maxNameLength = IntBuffer.allocate(1)
-			GLES30.glGetProgramiv(program, GLES30.GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, maxNameLength)
-			val name = ByteArray(maxNameLength[0])
-			val length = IntBuffer.allocate(1)
-			GLES30.glGetActiveUniformBlockName(program, uniformBlockIndex, length, ByteBuffer.wrap(name))
-			if (Build.VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
-				value[0] = String(name, StandardCharsets.UTF_8)
-			} else {
-				value[0] = String(name, Charset.forName("UTF-8"))
-			}
-			lock.countDown()
+		val value: String
+		ensureContextIsCurrent()
+		val maxNameLength = IntBuffer.allocate(1)
+		GLES30.glGetProgramiv(program, GLES30.GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, maxNameLength)
+		val name = ByteArray(maxNameLength[0])
+		val length = IntBuffer.allocate(1)
+		GLES30.glGetActiveUniformBlockName(program, uniformBlockIndex, length, ByteBuffer.wrap(name))
+		if (Build.VERSION.SDK_INT >= VERSION_CODES.KITKAT) {
+			value = String(name, StandardCharsets.UTF_8)
+		} else {
+			value = String(name, Charset.forName("UTF-8"))
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+
+		return value
 	}
 
 	fun getActiveUniformBlockParameter(program: Int, uniformBlockIndex: Int, pname: Int): Any? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<Any>(1)
-		runOnGLThread {
-			when (pname) {
-				GLES30.GL_UNIFORM_BLOCK_BINDING, GLES30.GL_UNIFORM_BLOCK_DATA_SIZE, GLES30.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS -> {
-					val intValue = IntBuffer.allocate(1)
-					GLES30.glGetActiveUniformBlockiv(program, uniformBlockIndex, pname, intValue)
-					value[0] = intValue[0]
-				}
-				GLES30.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES -> {
-					val uniformCount = IntBuffer.allocate(1)
-					GLES30.glGetActiveUniformBlockiv(
-						program,
-						uniformBlockIndex,
-						GLES30.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS,
-						uniformCount
-					)
-					val indices = IntArray(uniformCount[0])
-					GLES30.glGetActiveUniformBlockiv(
-						program,
-						uniformBlockIndex,
-						pname,
-						IntBuffer.wrap(indices)
-					)
-					value[0] = indices
-				}
-				GLES30.GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER, GLES30.GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER -> {
-					val boolValue = IntBuffer.allocate(1)
-					GLES30.glGetActiveUniformBlockiv(program, uniformBlockIndex, pname, boolValue)
-					value[0] = boolValue[0] == GLES30.GL_TRUE
-				}
-				else -> value[0] = null
+		val value: Any?
+		ensureContextIsCurrent()
+		when (pname) {
+			GLES30.GL_UNIFORM_BLOCK_BINDING, GLES30.GL_UNIFORM_BLOCK_DATA_SIZE, GLES30.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS -> {
+				val intValue = IntBuffer.allocate(1)
+				GLES30.glGetActiveUniformBlockiv(program, uniformBlockIndex, pname, intValue)
+				value = intValue[0]
 			}
-			lock.countDown()
+			GLES30.GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES -> {
+				val uniformCount = IntBuffer.allocate(1)
+				GLES30.glGetActiveUniformBlockiv(
+					program,
+					uniformBlockIndex,
+					GLES30.GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS,
+					uniformCount
+				)
+				val indices = IntArray(uniformCount[0])
+				GLES30.glGetActiveUniformBlockiv(
+					program,
+					uniformBlockIndex,
+					pname,
+					IntBuffer.wrap(indices)
+				)
+				value = indices
+			}
+			GLES30.GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER, GLES30.GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER -> {
+				val boolValue = IntBuffer.allocate(1)
+				GLES30.glGetActiveUniformBlockiv(program, uniformBlockIndex, pname, boolValue)
+				value = boolValue[0] == GLES30.GL_TRUE
+			}
+			else -> value = null
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+
+		return value
 	}
 
 	internal enum class ReturnType {
@@ -691,51 +457,43 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	}
 
 	fun getActiveUniforms(program: Int, uniformIndices: IntArray, pname: Int): Any? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<Any>(1)
-		runOnGLThread {
-			val returnType: ReturnType
-			when (pname) {
-				GLES30.GL_UNIFORM_TYPE -> returnType = ReturnType.EnumType
-				GLES30.GL_UNIFORM_SIZE -> returnType = ReturnType.UnsignedIntType
-				GLES30.GL_UNIFORM_BLOCK_INDEX, GLES30.GL_UNIFORM_OFFSET, GLES30.GL_UNIFORM_ARRAY_STRIDE, GLES30.GL_UNIFORM_MATRIX_STRIDE -> returnType =
-					ReturnType.IntType
-				GLES30.GL_UNIFORM_IS_ROW_MAJOR -> returnType = ReturnType.BoolType
-				else -> {
-					value[0] = null
-					lock.countDown()
-					return@runOnGLThread
-				}
+		val value: Any?
+		ensureContextIsCurrent()
+		var returnType: ReturnType?
+		when (pname) {
+			GLES30.GL_UNIFORM_TYPE -> returnType = ReturnType.EnumType
+			GLES30.GL_UNIFORM_SIZE -> returnType = ReturnType.UnsignedIntType
+			GLES30.GL_UNIFORM_BLOCK_INDEX, GLES30.GL_UNIFORM_OFFSET, GLES30.GL_UNIFORM_ARRAY_STRIDE, GLES30.GL_UNIFORM_MATRIX_STRIDE -> returnType =
+				ReturnType.IntType
+			GLES30.GL_UNIFORM_IS_ROW_MAJOR -> returnType = ReturnType.BoolType
+			else -> {
+				value = null
+				return value
 			}
-			val activeUniforms = IntBuffer.allocate(1)
-			GLES30.glGetProgramiv(
-				program, GLES30.GL_ACTIVE_UNIFORMS,
-				activeUniforms
-			)
-			val size = uniformIndices.size
-			for (i in 0 until size) {
-				if (i >= activeUniforms[0]) {
-					value[0] = null
-					lock.countDown()
-					return@runOnGLThread
-				}
-			}
-			val result = IntArray(size)
-			GLES30.glGetActiveUniformsiv(
-				program, uniformIndices.size,
-				IntBuffer.wrap(uniformIndices), pname, IntBuffer.wrap(result)
-			)
-			when (returnType) {
-				ReturnType.IntType, ReturnType.EnumType, ReturnType.UnsignedIntType -> value[0] = result
-				ReturnType.BoolType -> value[0] = fromGLint(result)
-			}
-			lock.countDown()
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
+		val activeUniforms = IntBuffer.allocate(1)
+		GLES30.glGetProgramiv(
+			program, GLES30.GL_ACTIVE_UNIFORMS,
+			activeUniforms
+		)
+		val size = uniformIndices.size
+		for (i in 0 until size) {
+			if (i >= activeUniforms[0]) {
+				value = null
+				return value
+			}
 		}
-		return value[0]
+		val result = IntArray(size)
+		GLES30.glGetActiveUniformsiv(
+			program, uniformIndices.size,
+			IntBuffer.wrap(uniformIndices), pname, IntBuffer.wrap(result)
+		)
+		value = when (returnType) {
+			ReturnType.IntType, ReturnType.EnumType, ReturnType.UnsignedIntType -> result
+			ReturnType.BoolType -> fromGLint(result)
+		}
+
+		return value
 	}
 
 	fun fromGLint(value: IntArray): BooleanArray {
@@ -753,354 +511,263 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		dstOffset: Int,
 		length: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			if (length == 0) {
-			}
-			val size: Int = dstData.size * TNSWebGLRenderingContext.Companion.SIZE_OF_BYTE
-			val typeSize: Int = TNSWebGLRenderingContext.Companion.SIZE_OF_BYTE
-			var byteLength = 0
-			if (length > 0) {
-				// type size is at most 8, so no overflow.
-				byteLength = length * typeSize
-			}
-			var byteOffset = 0
-			if (dstOffset > 0) {
-				// type size is at most 8, so no overflow.
-				byteOffset = dstOffset * typeSize
-			}
-			var total = byteOffset
-			total += byteLength
-			if (total > size) {
-				return@runOnGLThread
-			}
-			if (byteLength == 0) {
-				byteLength = size - byteOffset
-			}
-			GLES30.glBufferSubData(target, byteOffset, byteLength, ByteBuffer.wrap(dstData))
-			lock.countDown()
+		ensureContextIsCurrent()
+		if (length == 0) {
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
+		val size: Int = dstData.size * SIZE_OF_BYTE
+		val typeSize: Int = SIZE_OF_BYTE
+		var byteLength = 0
+		if (length > 0) {
+			// type size is at most 8, so no overflow.
+			byteLength = length * typeSize
 		}
+		var byteOffset = 0
+		if (dstOffset > 0) {
+			// type size is at most 8, so no overflow.
+			byteOffset = dstOffset * typeSize
+		}
+		var total = byteOffset
+		total += byteLength
+		if (total > size) {
+			return
+		}
+		if (byteLength == 0) {
+			byteLength = size - byteOffset
+		}
+		GLES30.glBufferSubData(target, byteOffset, byteLength, ByteBuffer.wrap(dstData))
+
 	}
 
 	fun getFragDataLocation(program: Int, name: String?): Int {
-		val lock = CountDownLatch(1)
-		val value = IntArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glGetFragDataLocation(program, name)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		ensureContextIsCurrent()
+
+		return GLES30.glGetFragDataLocation(program, name)
 	}
 
 	fun getIndexedParameter(target: Int, index: Int): Any? {
-		val lock = CountDownLatch(1)
 		var value: IndexedParameter? = null
-		runOnGLThread {
-			val binding = IndexedParameter()
-			when (target) {
-				GLES30.GL_UNIFORM_BUFFER_BINDING, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_BINDING -> {
-					val newTarget = IntBuffer.allocate(1)
-					GLES30.glGetIntegerv(target, newTarget)
-					// NO BINDING RETURN
-					if (newTarget[0] == 0) {
-						value = null
-					}
-					val buffer = IntBuffer.allocate(1)
-					GLES30.glGetIntegeri_v(newTarget[0], index, buffer)
-					binding.bufferValue = buffer[0]
-					binding.isBuffer = true
-					value = binding
+		ensureContextIsCurrent()
+		val binding = IndexedParameter()
+		when (target) {
+			GLES30.GL_UNIFORM_BUFFER_BINDING, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_BINDING -> {
+				val newTarget = IntBuffer.allocate(1)
+				GLES30.glGetIntegerv(target, newTarget)
+				// NO BINDING RETURN
+				if (newTarget[0] == 0) {
+					return value
 				}
-				GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_SIZE, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_START, GLES30.GL_UNIFORM_BUFFER_SIZE, GLES30.GL_UNIFORM_BUFFER_START -> {
-					val ptr = LongBuffer.allocate(1)
-					GLES30.glGetInteger64i_v(target, index, ptr)
-					binding.isBuffer = false
-					binding.value = ptr[0]
-					value = binding
-				}
-				else -> {
-					value = null
-				}
+				val buffer = IntBuffer.allocate(1)
+				GLES30.glGetIntegeri_v(newTarget[0], index, buffer)
+				binding.bufferValue = buffer[0]
+				binding.isBuffer = true
+				value = binding
 			}
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (e: Exception) {
+			GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_SIZE, GLES30.GL_TRANSFORM_FEEDBACK_BUFFER_START, GLES30.GL_UNIFORM_BUFFER_SIZE, GLES30.GL_UNIFORM_BUFFER_START -> {
+				val ptr = LongBuffer.allocate(1)
+				GLES30.glGetInteger64i_v(target, index, ptr)
+				binding.isBuffer = false
+				binding.value = ptr[0]
+				value = binding
+			}
+			else -> {
+				value = null
+			}
 		}
 		return value
 	}
 
 	fun getInternalformatParameter(target: Int, internalformat: Int, pname: Int): Any? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<Any>(1)
-		runOnGLThread {
-			when (internalformat) {
-				GLES30.GL_RGB, GLES30.GL_RGBA, GLES30.GL_R8UI, GLES30.GL_R8I, GLES30.GL_R16UI, GLES30.GL_R16I, GLES30.GL_R32UI, GLES30.GL_R32I, GLES30.GL_RG8UI, GLES30.GL_RG8I, GLES30.GL_RG16UI, GLES30.GL_RG16I, GLES30.GL_RG32UI, GLES30.GL_RG32I, GLES30.GL_RGBA8UI, GLES30.GL_RGBA8I, GLES30.GL_RGB10_A2UI, GLES30.GL_RGBA16UI, GLES30.GL_RGBA16I, GLES30.GL_RGBA32UI, GLES30.GL_RGBA32I -> {
-					value[0] = IntArray(0)
-					lock.countDown()
-					return@runOnGLThread
-				}
-				GLES30.GL_R8, GLES30.GL_RG8, GLES30.GL_RGB565, GLES30.GL_RGBA8, GLES30.GL_SRGB8_ALPHA8, GLES30.GL_RGB5_A1, GLES30.GL_RGBA4, GLES30.GL_RGB10_A2, GLES30.GL_DEPTH_COMPONENT16, GLES30.GL_DEPTH_COMPONENT24, GLES30.GL_DEPTH_COMPONENT32F, GLES30.GL_DEPTH24_STENCIL8, GLES30.GL_DEPTH32F_STENCIL8, GLES30.GL_STENCIL_INDEX8 -> {
-				}
-				GLES30.GL_R16F, GLES30.GL_RG16F, GLES30.GL_R32F, GLES30.GL_RG32F, GLES30.GL_RGBA32F, GLES30.GL_R11F_G11F_B10F -> {
-				}
-				else -> {
-					value[0] = null
-					lock.countDown()
-					return@runOnGLThread
-				}
+		var value: Any? = null
+		ensureContextIsCurrent()
+		when (internalformat) {
+			GLES30.GL_RGB, GLES30.GL_RGBA, GLES30.GL_R8UI, GLES30.GL_R8I, GLES30.GL_R16UI, GLES30.GL_R16I, GLES30.GL_R32UI, GLES30.GL_R32I, GLES30.GL_RG8UI, GLES30.GL_RG8I, GLES30.GL_RG16UI, GLES30.GL_RG16I, GLES30.GL_RG32UI, GLES30.GL_RG32I, GLES30.GL_RGBA8UI, GLES30.GL_RGBA8I, GLES30.GL_RGB10_A2UI, GLES30.GL_RGBA16UI, GLES30.GL_RGBA16I, GLES30.GL_RGBA32UI, GLES30.GL_RGBA32I -> {
+				value = IntArray(0)
+				return value
 			}
-			if (pname == GLES30.GL_SAMPLES) {
-				val length = IntBuffer.allocate(1)
-				GLES30.glGetInternalformativ(
-					target, internalformat,
-					GLES30.GL_NUM_SAMPLE_COUNTS, 1, length
-				)
-				if (length[0] <= 0) {
-					value[0] = IntArray(0)
-					lock.countDown()
-					return@runOnGLThread
-				}
-				val values = IntArray(length[0])
-				GLES30.glGetInternalformativ(
-					target,
-					internalformat,
-					pname,
-					length[0],
-					IntBuffer.wrap(values)
-				)
-				value[0] = values
-			} else {
-				value[0] = null
+			GLES30.GL_R8, GLES30.GL_RG8, GLES30.GL_RGB565, GLES30.GL_RGBA8, GLES30.GL_SRGB8_ALPHA8, GLES30.GL_RGB5_A1, GLES30.GL_RGBA4, GLES30.GL_RGB10_A2, GLES30.GL_DEPTH_COMPONENT16, GLES30.GL_DEPTH_COMPONENT24, GLES30.GL_DEPTH_COMPONENT32F, GLES30.GL_DEPTH24_STENCIL8, GLES30.GL_DEPTH32F_STENCIL8, GLES30.GL_STENCIL_INDEX8 -> {
 			}
-			lock.countDown()
+			GLES30.GL_R16F, GLES30.GL_RG16F, GLES30.GL_R32F, GLES30.GL_RG32F, GLES30.GL_RGBA32F, GLES30.GL_R11F_G11F_B10F -> {
+			}
+			else -> {
+				value = null
+				return value
+			}
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
+		if (pname == GLES30.GL_SAMPLES) {
+			val length = IntBuffer.allocate(1)
+			GLES30.glGetInternalformativ(
+				target, internalformat,
+				GLES30.GL_NUM_SAMPLE_COUNTS, 1, length
+			)
+			if (length[0] <= 0) {
+				value = IntArray(0)
+				return value
+			}
+			val values = IntArray(length[0])
+			GLES30.glGetInternalformativ(
+				target,
+				internalformat,
+				pname,
+				length[0],
+				IntBuffer.wrap(values)
+			)
+			value = values
+		} else {
+			value = null
 		}
-		return value[0]
+
+		return value
 	}
 
 
 	override fun getParameter(pname: Int): Any? {
-		when (pname) {
+		return when (pname) {
 			COPY_READ_BUFFER_BINDING, COPY_WRITE_BUFFER_BINDING -> {
-				val lock = CountDownLatch(1)
-				val parameter = arrayOfNulls<Any>(1)
-				runOnGLThread {
-					when (pname) {
-						COPY_READ_BUFFER_BINDING, COPY_WRITE_BUFFER_BINDING, DRAW_FRAMEBUFFER_BINDING -> {
-							val param = IntArray(1)
-							GLES30.glGetIntegerv(pname, param, 0)
+				var parameter: Any? = null
+				ensureContextIsCurrent()
+				when (pname) {
+					COPY_READ_BUFFER_BINDING, COPY_WRITE_BUFFER_BINDING, DRAW_FRAMEBUFFER_BINDING -> {
+						val param = IntArray(1)
+						GLES30.glGetIntegerv(pname, param, 0)
+						parameter =
 							if ((pname == COPY_READ_BUFFER_BINDING || pname == COPY_WRITE_BUFFER_BINDING || pname == DRAW_FRAMEBUFFER_BINDING) && param[0] == 0) {
-								parameter[0] = null
+								null
 							} else {
-								parameter[0] = param[0]
+								param[0]
 							}
-						}
 					}
 				}
-				try {
-					lock.await(2, TimeUnit.SECONDS)
-				} catch (ignored: InterruptedException) {
-				}
-				return parameter[0]
+				parameter
 			}
 			else -> {
-				return super.getParameter(pname)
+				super.getParameter(pname)
 			}
 		}
 	}
 
 	fun getQuery(target: Int, pname: Int): Any? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<Any>(1)
-		runOnGLThread {
-			if (pname == GLES30.GL_CURRENT_QUERY) {
-				val params = IntBuffer.allocate(1)
-				GLES30.glGetQueryiv(target, pname, params)
-				value[0] = params[0]
-			} else {
-				value[0] = null
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		return if (pname == GLES30.GL_CURRENT_QUERY) {
+			val params = IntBuffer.allocate(1)
+			GLES30.glGetQueryiv(target, pname, params)
+			params[0]
+		} else {
+			null
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
 	}
 
 	fun getQueryParameter(query: Int, pname: Int): Any? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<Any>(1)
-		runOnGLThread {
-			val params = IntBuffer.allocate(1)
-			GLES30.glGetQueryObjectuiv(query, pname, params)
-			when (pname) {
-				GLES30.GL_QUERY_RESULT -> value[0] = params[0] == GLES30.GL_TRUE
-				GLES30.GL_QUERY_RESULT_AVAILABLE -> value[0] = params
-				else -> value[0] = null
-			}
-			lock.countDown()
+		val value: Any?
+		ensureContextIsCurrent()
+		val params = IntBuffer.allocate(1)
+		GLES30.glGetQueryObjectuiv(query, pname, params)
+		when (pname) {
+			GLES30.GL_QUERY_RESULT -> value = params[0] == GLES30.GL_TRUE
+			GLES30.GL_QUERY_RESULT_AVAILABLE -> value = params
+			else -> value = null
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+
+		return value
 	}
 
 	fun getSamplerParameter(sampler: Int, pname: Int): Any? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<Any>(1)
-		runOnGLThread {
-			when (pname) {
-				TEXTURE_MAX_LOD, TEXTURE_MIN_LOD -> {
-					val floatValue = FloatBuffer.allocate(1)
-					GLES30.glGetSamplerParameterfv(sampler, pname, floatValue)
-					value[0] = floatValue[0]
-				}
-				TEXTURE_COMPARE_FUNC, TEXTURE_COMPARE_MODE, TEXTURE_MAG_FILTER, TEXTURE_MIN_FILTER, TEXTURE_WRAP_R, TEXTURE_WRAP_S, TEXTURE_WRAP_T -> {
-					val intValue = IntBuffer.allocate(1)
-					GLES30.glGetSamplerParameteriv(sampler, pname, intValue)
-					value[0] = intValue[0]
-				}
-				else -> value[0] = null
+		val value: Any?
+		ensureContextIsCurrent()
+		when (pname) {
+			TEXTURE_MAX_LOD, TEXTURE_MIN_LOD -> {
+				val floatValue = FloatBuffer.allocate(1)
+				GLES30.glGetSamplerParameterfv(sampler, pname, floatValue)
+				value = floatValue[0]
 			}
-			lock.countDown()
+			TEXTURE_COMPARE_FUNC, TEXTURE_COMPARE_MODE, TEXTURE_MAG_FILTER, TEXTURE_MIN_FILTER, TEXTURE_WRAP_R, TEXTURE_WRAP_S, TEXTURE_WRAP_T -> {
+				val intValue = IntBuffer.allocate(1)
+				GLES30.glGetSamplerParameteriv(sampler, pname, intValue)
+				value = intValue[0]
+			}
+			else -> value = null
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+
+		return value
 	}
 
 	fun getSyncParameter(sync: Int, pname: Int): Any? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<Any>(1)
-		runOnGLThread {
-			when (pname) {
-				GLES30.GL_OBJECT_TYPE, GLES30.GL_SYNC_STATUS, GLES30.GL_SYNC_CONDITION, GLES30.GL_SYNC_FLAGS -> {
-					val values = IntBuffer.allocate(1)
-					val length = IntBuffer.allocate(1)
-					GLES30.glGetSynciv(sync.toLong(), pname, 1, length, values)
-					value[0] = values[0]
-				}
-				else -> value[0] = null
+		val value: Any?
+		ensureContextIsCurrent()
+		when (pname) {
+			GLES30.GL_OBJECT_TYPE, GLES30.GL_SYNC_STATUS, GLES30.GL_SYNC_CONDITION, GLES30.GL_SYNC_FLAGS -> {
+				val values = IntBuffer.allocate(1)
+				val length = IntBuffer.allocate(1)
+				GLES30.glGetSynciv(sync.toLong(), pname, 1, length, values)
+				value = values[0]
 			}
-			lock.countDown()
+			else -> value = null
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+
+		return value
 	}
 
 	fun getTransformFeedbackVarying(program: Int, index: Int): Any? {
-		val lock = CountDownLatch(1)
-		val info = arrayOfNulls<WebGLActiveInfo>(1)
-		runOnGLThread {
-			val maxIndex = IntBuffer.allocate(1)
-			GLES30.glGetProgramiv(program, GLES30.GL_TRANSFORM_FEEDBACK_VARYINGS, maxIndex)
-			if (index >= maxIndex[0]) {
-				info[0] = null
-				return@runOnGLThread
-			}
-			val maxNameLength = IntArray(1)
-			GLES30.glGetProgramiv(
-				program, GLES30.GL_TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH,
-				maxNameLength, 0
-			)
-			if (maxNameLength[0] <= 0) {
-				info[0] = null
-				return@runOnGLThread
-			}
-			var name = ByteArray(maxNameLength[0])
-			val length = IntArray(1)
-			val size = IntArray(1)
-			val type = IntArray(1)
-			GLES30.glGetTransformFeedbackVarying(
-				program,
-				index,
-				maxNameLength[0],
-				length,
-				0,
-				size,
-				0,
-				type,
-				0,
-				name,
-				0
-			)
-			if (length[0] == 0 || size[0] == 0 || type[0] == 0) {
-				info[0] = null
-				return@runOnGLThread
-			}
-			name = name.copyOfRange(0, length[0])
-			val nameValue = String(name)
-			info[0] = WebGLActiveInfo(nameValue, size[0], type[0])
-			lock.countDown()
+		val info: WebGLActiveInfo?
+		ensureContextIsCurrent()
+		val maxIndex = IntBuffer.allocate(1)
+		GLES30.glGetProgramiv(program, GLES30.GL_TRANSFORM_FEEDBACK_VARYINGS, maxIndex)
+		if (index >= maxIndex[0]) {
+			info = null
+			return info
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
+		val maxNameLength = IntArray(1)
+		GLES30.glGetProgramiv(
+			program, GLES30.GL_TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH,
+			maxNameLength, 0
+		)
+		if (maxNameLength[0] <= 0) {
+			info = null
+			return info
 		}
-		return info[0]
+		var name = ByteArray(maxNameLength[0])
+		val length = IntArray(1)
+		val size = IntArray(1)
+		val type = IntArray(1)
+		GLES30.glGetTransformFeedbackVarying(
+			program,
+			index,
+			maxNameLength[0],
+			length,
+			0,
+			size,
+			0,
+			type,
+			0,
+			name,
+			0
+		)
+		if (length[0] == 0 || size[0] == 0 || type[0] == 0) {
+			info = null
+			return info
+		}
+		name = name.copyOfRange(0, length[0])
+		val nameValue = String(name)
+		info = WebGLActiveInfo(nameValue, size[0], type[0])
+
+		return info
 	}
 
 	fun getUniformBlockIndex(program: Int, uniformBlockName: String?): Int {
-		val lock = CountDownLatch(1)
-		val value = IntArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glGetUniformBlockIndex(program, uniformBlockName)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		ensureContextIsCurrent()
+		return GLES30.glGetUniformBlockIndex(program, uniformBlockName)
 	}
 
-	fun getUniformIndices(program: Int, uniformNames: Array<String?>): IntArray? {
-		val lock = CountDownLatch(1)
-		val value = arrayOfNulls<IntArray>(1)
-		runOnGLThread {
-			val indices = IntArray(uniformNames.size)
-			GLES30.glGetUniformIndices(program, uniformNames, IntBuffer.wrap(indices))
-			value[0] = indices
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+	fun getUniformIndices(program: Int, uniformNames: Array<String?>): IntArray {
+		ensureContextIsCurrent()
+		val indices = IntArray(uniformNames.size)
+		GLES30.glGetUniformIndices(program, uniformNames, IntBuffer.wrap(indices))
+		return indices
 	}
 
 	fun invalidateFramebuffer(target: Int, attachments: IntArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glInvalidateFramebuffer(target, attachments.size, IntBuffer.wrap(attachments))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glInvalidateFramebuffer(target, attachments.size, IntBuffer.wrap(attachments))
+
 	}
 
 	fun invalidateSubFramebuffer(
@@ -1111,117 +778,54 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		width: Int,
 		height: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glInvalidateSubFramebuffer(
-				target,
-				attachments.size,
-				IntBuffer.wrap(attachments),
-				x,
-				y,
-				width,
-				height
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glInvalidateSubFramebuffer(
+			target,
+			attachments.size,
+			IntBuffer.wrap(attachments),
+			x,
+			y,
+			width,
+			height
+		)
+
 	}
 
 	fun isQuery(query: Int): Boolean {
-		val lock = CountDownLatch(1)
-		val value = BooleanArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glIsQuery(query)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		ensureContextIsCurrent()
+		return GLES30.glIsQuery(query)
 	}
 
 	fun isSampler(sampler: Int): Boolean {
-		val lock = CountDownLatch(1)
-		val value = BooleanArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glIsSampler(sampler)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		ensureContextIsCurrent()
+		return GLES30.glIsSampler(sampler)
 	}
 
 	fun isSync(sync: Int): Boolean {
-		val lock = CountDownLatch(1)
-		val value = BooleanArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glIsSync(sync.toLong())
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		ensureContextIsCurrent()
+		return GLES30.glIsSync(sync.toLong())
 	}
 
 	fun isTransformFeedback(transformFeedback: Int): Boolean {
-		val lock = CountDownLatch(1)
-		val value = BooleanArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glIsTransformFeedback(transformFeedback)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		ensureContextIsCurrent()
+		return GLES30.glIsTransformFeedback(transformFeedback)
 	}
 
 	fun isVertexArray(vertexArray: Int): Boolean {
-		val lock = CountDownLatch(1)
-		val value = BooleanArray(1)
-		runOnGLThread {
-			value[0] = GLES30.glIsVertexArray(vertexArray)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
-		return value[0]
+		ensureContextIsCurrent()
+		return GLES30.glIsVertexArray(vertexArray)
 	}
 
 	fun pauseTransformFeedback() {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glPauseTransformFeedback()
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glPauseTransformFeedback()
+
 	}
 
 	fun readBuffer(src: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glReadBuffer(src)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glReadBuffer(src)
+
 	}
 
 	fun renderbufferStorageMultisample(
@@ -1231,51 +835,27 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		width: Int,
 		height: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glRenderbufferStorageMultisample(target, samples, internalFormat, width, height)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glRenderbufferStorageMultisample(target, samples, internalFormat, width, height)
+
 	}
 
 	fun resumeTransformFeedback() {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glResumeTransformFeedback()
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glResumeTransformFeedback()
+
 	}
 
 	fun samplerParameteri(sampler: Int, pname: Int, param: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glSamplerParameteri(sampler, pname, param)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glSamplerParameteri(sampler, pname, param)
+
 	}
 
 	fun samplerParameterf(sampler: Int, pname: Int, param: Float) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glSamplerParameterf(sampler, pname, param)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glSamplerParameterf(sampler, pname, param)
+
 	}
 
 	fun texImage3D(
@@ -1290,26 +870,20 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		offset: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glTexImage3D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				offset
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glTexImage3D(
+			target,
+			level,
+			internalformat,
+			width,
+			height,
+			depth,
+			border,
+			format,
+			type,
+			offset
+		)
+
 	}
 
 
@@ -1325,40 +899,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: ByteBuffer?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				if (it.isDirect) {
-					nativeTexImage3DBuffer(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it,
-						flipYWebGL
-					)
-				} else {
-					nativeTexImage3DByteArray(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it.array(),
-						flipYWebGL
-					)
-				}
-			} ?: run {
-				GLES30.glTexImage3D(
+		ensureContextIsCurrent()
+		source?.let {
+			if (it.isDirect) {
+				nativeTexImage3DBuffer(
 					target,
 					level,
 					internalformat,
@@ -1368,15 +912,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 					border,
 					format,
 					type,
-					null
+					it,
+					flipYWebGL
+				)
+			} else {
+				nativeTexImage3DByteArray(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					depth,
+					border,
+					format,
+					type,
+					it.array(),
+					flipYWebGL
 				)
 			}
-			lock.countDown()
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -1392,40 +960,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: ShortBuffer?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				if (it.isDirect) {
-					nativeTexImage3DBuffer(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it,
-						flipYWebGL
-					)
-				} else {
-					nativeTexImage3DShortArray(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it.array(),
-						flipYWebGL
-					)
-				}
-			} ?: run {
-				GLES30.glTexImage3D(
+		ensureContextIsCurrent()
+		source?.let {
+			if (it.isDirect) {
+				nativeTexImage3DBuffer(
 					target,
 					level,
 					internalformat,
@@ -1435,15 +973,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 					border,
 					format,
 					type,
-					null
+					it,
+					flipYWebGL
+				)
+			} else {
+				nativeTexImage3DShortArray(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					depth,
+					border,
+					format,
+					type,
+					it.array(),
+					flipYWebGL
 				)
 			}
-			lock.countDown()
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -1459,40 +1021,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: IntBuffer?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				if (it.isDirect) {
-					nativeTexImage3DBuffer(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it,
-						flipYWebGL
-					)
-				} else {
-					nativeTexImage3DIntArray(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it.array(),
-						flipYWebGL
-					)
-				}
-			} ?: run {
-				GLES30.glTexImage3D(
+		ensureContextIsCurrent()
+		source?.let {
+			if (it.isDirect) {
+				nativeTexImage3DBuffer(
 					target,
 					level,
 					internalformat,
@@ -1502,15 +1034,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 					border,
 					format,
 					type,
-					null
+					it,
+					flipYWebGL
+				)
+			} else {
+				nativeTexImage3DIntArray(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					depth,
+					border,
+					format,
+					type,
+					it.array(),
+					flipYWebGL
 				)
 			}
-			lock.countDown()
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -1526,40 +1082,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: LongBuffer?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				if (it.isDirect) {
-					nativeTexImage3DBuffer(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it,
-						flipYWebGL
-					)
-				} else {
-					nativeTexImage3DLongArray(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it.array(),
-						flipYWebGL
-					)
-				}
-			} ?: run {
-				GLES30.glTexImage3D(
+		ensureContextIsCurrent()
+		source?.let {
+			if (it.isDirect) {
+				nativeTexImage3DBuffer(
 					target,
 					level,
 					internalformat,
@@ -1569,15 +1095,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 					border,
 					format,
 					type,
-					null
+					it,
+					flipYWebGL
+				)
+			} else {
+				nativeTexImage3DLongArray(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					depth,
+					border,
+					format,
+					type,
+					it.array(),
+					flipYWebGL
 				)
 			}
-			lock.countDown()
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -1593,40 +1143,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: FloatBuffer?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				if (it.isDirect) {
-					nativeTexImage3DBuffer(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it,
-						flipYWebGL
-					)
-				} else {
-					nativeTexImage3DFloatArray(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it.array(),
-						flipYWebGL
-					)
-				}
-			} ?: run {
-				GLES30.glTexImage3D(
+		ensureContextIsCurrent()
+		source?.let {
+			if (it.isDirect) {
+				nativeTexImage3DBuffer(
 					target,
 					level,
 					internalformat,
@@ -1636,15 +1156,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 					border,
 					format,
 					type,
-					null
+					it,
+					flipYWebGL
+				)
+			} else {
+				nativeTexImage3DFloatArray(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					depth,
+					border,
+					format,
+					type,
+					it.array(),
+					flipYWebGL
 				)
 			}
-			lock.countDown()
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -1660,40 +1204,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: DoubleBuffer?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				if (it.isDirect) {
-					nativeTexImage3DBuffer(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it,
-						flipYWebGL
-					)
-				} else {
-					nativeTexImage3DDoubleArray(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						it.array(),
-						flipYWebGL
-					)
-				}
-			} ?: run {
-				GLES30.glTexImage3D(
+		ensureContextIsCurrent()
+		source?.let {
+			if (it.isDirect) {
+				nativeTexImage3DBuffer(
 					target,
 					level,
 					internalformat,
@@ -1703,15 +1217,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 					border,
 					format,
 					type,
-					null
+					it,
+					flipYWebGL
+				)
+			} else {
+				nativeTexImage3DDoubleArray(
+					target,
+					level,
+					internalformat,
+					width,
+					height,
+					depth,
+					border,
+					format,
+					type,
+					it.array(),
+					flipYWebGL
 				)
 			}
-			lock.countDown()
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -1909,42 +1447,36 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: ByteArray?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				nativeTexImage3DByteArray(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		source?.let {
+			nativeTexImage3DByteArray(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -1960,42 +1492,36 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: ShortArray?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				nativeTexImage3DShortArray(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		source?.let {
+			nativeTexImage3DShortArray(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -2011,42 +1537,36 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: IntArray?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				nativeTexImage3DIntArray(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		source?.let {
+			nativeTexImage3DIntArray(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -2062,42 +1582,36 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: LongArray?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				nativeTexImage3DLongArray(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		source?.let {
+			nativeTexImage3DLongArray(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -2113,42 +1627,36 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: FloatArray?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				nativeTexImage3DFloatArray(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		source?.let {
+			nativeTexImage3DFloatArray(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 	fun texImage3D(
@@ -2163,42 +1671,36 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: DoubleArray?
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			source?.let {
-				nativeTexImage3DDoubleArray(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		source?.let {
+			nativeTexImage3DDoubleArray(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexImage3D(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 	fun texImage3D(
@@ -2213,27 +1715,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: Bitmap
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			nativeTexImage3DBitmap(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				source,
-				flipYWebGL
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		nativeTexImage3DBitmap(
+			target,
+			level,
+			internalformat,
+			width,
+			height,
+			depth,
+			border,
+			format,
+			type,
+			source,
+			flipYWebGL
+		)
+
 	}
 
 	fun texImage3D(
@@ -2248,9 +1744,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		source: TNSCanvas
 	) {
-		val ss = source.snapshot()
 		val lock = CountDownLatch(1)
-		runOnGLThread {
+
+
+		var ss: ByteBuffer? = null
+		val bitmap: Bitmap?
+		if (!source.renderer.softwareRenderer) {
+			bitmap = source.renderer.surface?.bitmap
+			if (bitmap == null) {
+				ss = source.snapshot()
+			}
+		} else {
+			bitmap = source.renderer.cpuView?.view
+			source.flush()
+		}
+
+		ensureContextIsCurrent()
+		if (bitmap != null) {
+			nativeTexImage3DBitmap(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				bitmap,
+				flipYWebGL
+			)
+		}
+
+		if (ss != null) {
 			nativeTexImage3DBuffer(
 				target,
 				level,
@@ -2264,12 +1790,8 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				ss,
 				flipYWebGL
 			)
-			lock.countDown()
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 	fun texImage3D(
@@ -2284,39 +1806,27 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		asset: TNSImageAsset
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			nativeTexImage3DAsset(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				asset.nativeImageAsset,
-				flipYWebGL
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		nativeTexImage3DAsset(
+			target,
+			level,
+			internalformat,
+			width,
+			height,
+			depth,
+			border,
+			format,
+			type,
+			asset.nativeImageAsset,
+			flipYWebGL
+		)
+
 	}
 
 	fun texStorage2D(target: Int, levels: Int, internalformat: Int, width: Int, height: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glTexStorage2D(target, levels, internalformat, width, height)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glTexStorage2D(target, levels, internalformat, width, height)
+
 	}
 
 	fun texStorage3D(
@@ -2327,15 +1837,9 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		height: Int,
 		depth: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glTexStorage3D(target, levels, internalformat, width, height, depth)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glTexStorage3D(target, levels, internalformat, width, height, depth)
+
 	}
 
 	fun texSubImage3D(
@@ -2351,27 +1855,21 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		offset: Int
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glTexSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				offset
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glTexSubImage3D(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			offset
+		)
+
 	}
 
 	fun texSubImage3D(
@@ -2387,28 +1885,22 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: Bitmap
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			nativeTexSubImage3DBitmap(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				srcData,
-				flipYWebGL
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		nativeTexSubImage3DBitmap(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			srcData,
+			flipYWebGL
+		)
+
 	}
 
 	fun texSubImage3D(
@@ -2424,9 +1916,40 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		srcData: TNSCanvas
 	) {
-		val ss = srcData.snapshot()
 		val lock = CountDownLatch(1)
-		runOnGLThread {
+
+		var ss: ByteBuffer? = null
+		val bitmap: Bitmap?
+		if (!srcData.renderer.softwareRenderer) {
+			bitmap = srcData.renderer.surface?.bitmap
+			if (bitmap == null) {
+				ss = srcData.snapshot()
+			}
+		} else {
+			bitmap = srcData.renderer.cpuView?.view
+			srcData.flush()
+		}
+
+		ensureContextIsCurrent()
+
+		if (bitmap != null) {
+			nativeTexSubImage3DBitmap(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				bitmap,
+				flipYWebGL
+			)
+		}
+
+		if (ss != null) {
 			nativeTexSubImage3DBuffer(
 				target,
 				level,
@@ -2441,12 +1964,9 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				ss,
 				flipYWebGL
 			)
-			lock.countDown()
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
+
 	}
 
 
@@ -2463,28 +1983,22 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		type: Int,
 		asset: TNSImageAsset
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			nativeTexSubImage3DAsset(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				asset.nativeImageAsset,
-				flipYWebGL
-			)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		nativeTexSubImage3DAsset(
+			target,
+			level,
+			xoffset,
+			yoffset,
+			zoffset,
+			width,
+			height,
+			depth,
+			format,
+			type,
+			asset.nativeImageAsset,
+			flipYWebGL
+		)
+
 	}
 
 
@@ -2872,45 +2386,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: ByteBuffer?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				it.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			it.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -2928,45 +2436,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: ShortBuffer?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				it.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			it.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -2984,45 +2486,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: IntBuffer?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				it.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			it.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -3040,45 +2536,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: LongBuffer?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				it.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			it.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -3096,45 +2586,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: FloatBuffer?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				it.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			it.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -3152,45 +2636,39 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: DoubleBuffer?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				it.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					it,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			it.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				it,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 	fun texSubImage3D(
@@ -3207,49 +2685,43 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: ByteArray?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				val size = it.size
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.put(it)
-				buffer.rewind()
-				buffer.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					buffer,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			val size = it.size
+			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+			buffer.put(it)
+			buffer.rewind()
+			buffer.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				buffer,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -3267,49 +2739,43 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: ShortArray?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				val size = it.size * SIZE_OF_SHORT
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asShortBuffer().put(it)
-				buffer.rewind()
-				buffer.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					buffer,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			val size = it.size * SIZE_OF_SHORT
+			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+			buffer.asShortBuffer().put(it)
+			buffer.rewind()
+			buffer.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				buffer,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 	fun texSubImage3D(
@@ -3326,49 +2792,43 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: IntArray?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				val size = it.size * SIZE_OF_INT
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asIntBuffer().put(it)
-				buffer.rewind()
-				buffer.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					buffer,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			val size = it.size * SIZE_OF_INT
+			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+			buffer.asIntBuffer().put(it)
+			buffer.rewind()
+			buffer.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				buffer,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -3386,49 +2846,43 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: LongArray?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				val size = it.size * SIZE_OF_LONG
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asLongBuffer().put(it)
-				buffer.rewind()
-				buffer.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					buffer,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			val size = it.size * SIZE_OF_LONG
+			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+			buffer.asLongBuffer().put(it)
+			buffer.rewind()
+			buffer.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				buffer,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 
@@ -3446,49 +2900,43 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: FloatArray?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				val size = it.size * SIZE_OF_FLOAT
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asFloatBuffer().put(it)
-				buffer.rewind()
-				buffer.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					buffer,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			val size = it.size * SIZE_OF_FLOAT
+			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+			buffer.asFloatBuffer().put(it)
+			buffer.rewind()
+			buffer.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				buffer,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 	fun texSubImage3D(
@@ -3505,469 +2953,263 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		srcData: DoubleArray?,
 		srcOffset: Int = 0
 	) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			srcData?.let {
-				val size = it.size * SIZE_OF_DOUBLE
-				val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-				buffer.asDoubleBuffer().put(it)
-				buffer.rewind()
-				buffer.position(srcOffset)
-				nativeTexSubImage3DBuffer(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					buffer,
-					flipYWebGL
-				)
-			} ?: run {
-				GLES30.glTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					null
-				)
-			}
-			lock.countDown()
+		ensureContextIsCurrent()
+		srcData?.let {
+			val size = it.size * SIZE_OF_DOUBLE
+			val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+			buffer.asDoubleBuffer().put(it)
+			buffer.rewind()
+			buffer.position(srcOffset)
+			nativeTexSubImage3DBuffer(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				buffer,
+				flipYWebGL
+			)
+		} ?: run {
+			GLES30.glTexSubImage3D(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				null
+			)
 		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+
 	}
 
 	fun transformFeedbackVaryings(program: Int, varyings: Array<String?>?, bufferMode: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glTransformFeedbackVaryings(program, varyings, bufferMode)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glTransformFeedbackVaryings(program, varyings, bufferMode)
+
 	}
 
 	fun uniform1ui(location: Int, v0: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glUniform1ui(location, v0)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glUniform1ui(location, v0)
+
 	}
 
 	fun uniform2ui(location: Int, v0: Int, v1: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glUniform2ui(location, v0, v1)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glUniform2ui(location, v0, v1)
+
 	}
 
 	fun uniform3ui(location: Int, v0: Int, v1: Int, v2: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glUniform3ui(location, v0, v1, v2)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glUniform3ui(location, v0, v1, v2)
+
 	}
 
 	fun uniform4ui(location: Int, v0: Int, v1: Int, v2: Int, v3: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glUniform4ui(location, v0, v1, v2, v3)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glUniform4ui(location, v0, v1, v2, v3)
+
 	}
 
 	fun uniform1uiv(location: Int, data: IntArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 1
-			GLES30.glUniform1uiv(location, count, IntBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 1
+		GLES30.glUniform1uiv(location, count, IntBuffer.wrap(data))
+
 	}
 
 	fun uniform2uiv(location: Int, data: IntArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 2
-			GLES30.glUniform2uiv(location, count, IntBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 2
+		GLES30.glUniform2uiv(location, count, IntBuffer.wrap(data))
+
 	}
 
 	fun uniform3uiv(location: Int, data: IntArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 3
-			GLES30.glUniform3uiv(location, count, IntBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 3
+		GLES30.glUniform3uiv(location, count, IntBuffer.wrap(data))
+
 	}
 
 	fun uniform4uiv(location: Int, data: IntArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 4
-			GLES30.glUniform4uiv(location, count, IntBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 4
+		GLES30.glUniform4uiv(location, count, IntBuffer.wrap(data))
+
 	}
 
 
 	fun uniform1uivBuffer(location: Int, data: IntBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 1
-			GLES30.glUniform1uiv(location, count, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 1
+		GLES30.glUniform1uiv(location, count, data)
+
 	}
 
 	fun uniform2uivBuffer(location: Int, data: IntBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 2
-			GLES30.glUniform2uiv(location, count, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 2
+		GLES30.glUniform2uiv(location, count, data)
+
 	}
 
 	fun uniform3uivBuffer(location: Int, data: IntBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 3
-			GLES30.glUniform3uiv(location, count, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 3
+		GLES30.glUniform3uiv(location, count, data)
+
 	}
 
 	fun uniform4uivBuffer(location: Int, data: IntBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 4
-			GLES30.glUniform4uiv(location, count, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 4
+		GLES30.glUniform4uiv(location, count, data)
+
 	}
 
 	fun uniformBlockBinding(program: Int, uniformBlockIndex: Int, uniformBlockBinding: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding)
+
 	}
 
 	fun uniformMatrix3x2fv(location: Int, transpose: Boolean, data: FloatArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 6
-			GLES30.glUniformMatrix3x2fv(location, count, transpose, FloatBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 6
+		GLES30.glUniformMatrix3x2fv(location, count, transpose, FloatBuffer.wrap(data))
+
 	}
 
 	fun uniformMatrix4x2fv(location: Int, transpose: Boolean, data: FloatArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 8
-			GLES30.glUniformMatrix4x2fv(location, count, transpose, FloatBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 8
+		GLES30.glUniformMatrix4x2fv(location, count, transpose, FloatBuffer.wrap(data))
+
 	}
 
 	fun uniformMatrix2x3fv(location: Int, transpose: Boolean, data: FloatArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 6
-			GLES30.glUniformMatrix2x3fv(location, count, transpose, FloatBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 6
+		GLES30.glUniformMatrix2x3fv(location, count, transpose, FloatBuffer.wrap(data))
+
 	}
 
 	fun uniformMatrix4x3fv(location: Int, transpose: Boolean, data: FloatArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 12
-			GLES30.glUniformMatrix4x3fv(location, count, transpose, FloatBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 12
+		GLES30.glUniformMatrix4x3fv(location, count, transpose, FloatBuffer.wrap(data))
+
 	}
 
 	fun uniformMatrix2x4fv(location: Int, transpose: Boolean, data: FloatArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 8
-			GLES30.glUniformMatrix2x4fv(location, count, transpose, FloatBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 8
+		GLES30.glUniformMatrix2x4fv(location, count, transpose, FloatBuffer.wrap(data))
+
 	}
 
 	fun uniformMatrix3x4fv(location: Int, transpose: Boolean, data: FloatArray) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.size / 12
-			GLES30.glUniformMatrix3x4fv(location, count, transpose, FloatBuffer.wrap(data))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.size / 12
+		GLES30.glUniformMatrix3x4fv(location, count, transpose, FloatBuffer.wrap(data))
+
 	}
 
 
 	fun uniformMatrix3x2fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 6
-			GLES30.glUniformMatrix3x2fv(location, count, transpose, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 6
+		GLES30.glUniformMatrix3x2fv(location, count, transpose, data)
+
 	}
 
 	fun uniformMatrix4x2fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 8
-			GLES30.glUniformMatrix4x2fv(location, count, transpose, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 8
+		GLES30.glUniformMatrix4x2fv(location, count, transpose, data)
+
 	}
 
 	fun uniformMatrix2x3fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 6
-			GLES30.glUniformMatrix2x3fv(location, count, transpose, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 6
+		GLES30.glUniformMatrix2x3fv(location, count, transpose, data)
+
 	}
 
 	fun uniformMatrix4x3fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 12
-			GLES30.glUniformMatrix4x3fv(location, count, transpose, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 12
+		GLES30.glUniformMatrix4x3fv(location, count, transpose, data)
+
 	}
 
 	fun uniformMatrix2x4fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 8
-			GLES30.glUniformMatrix2x4fv(location, count, transpose, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 8
+		GLES30.glUniformMatrix2x4fv(location, count, transpose, data)
+
 	}
 
 	fun uniformMatrix3x4fvBuffer(location: Int, transpose: Boolean, data: FloatBuffer) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			val count = data.capacity() / 12
-			GLES30.glUniformMatrix3x4fv(location, count, transpose, data)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		val count = data.capacity() / 12
+		GLES30.glUniformMatrix3x4fv(location, count, transpose, data)
+
 	}
 
 
 	fun vertexAttribDivisor(index: Int, divisor: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glVertexAttribDivisor(index, divisor)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glVertexAttribDivisor(index, divisor)
+
 	}
 
 	fun vertexAttribI4i(index: Int, v0: Int, v1: Int, v2: Int, v3: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glVertexAttribI4i(index, v0, v1, v2, v3)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glVertexAttribI4i(index, v0, v1, v2, v3)
+
 	}
 
 	fun vertexAttribI4ui(index: Int, v0: Int, v1: Int, v2: Int, v3: Int) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glVertexAttribI4ui(index, v0, v1, v2, v3)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glVertexAttribI4ui(index, v0, v1, v2, v3)
+
 	}
 
 	fun vertexAttribI4iv(index: Int, value: IntArray?) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glVertexAttribI4iv(index, IntBuffer.wrap(value))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glVertexAttribI4iv(index, IntBuffer.wrap(value))
+
 	}
 
 	fun vertexAttribI4uiv(index: Int, value: IntArray?) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glVertexAttribI4uiv(index, IntBuffer.wrap(value))
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glVertexAttribI4uiv(index, IntBuffer.wrap(value))
+
 	}
 
 
 	fun vertexAttribI4ivBuffer(index: Int, value: IntBuffer?) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glVertexAttribI4iv(index, value)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glVertexAttribI4iv(index, value)
 	}
 
 	fun vertexAttribI4uivBuffer(index: Int, value: IntBuffer?) {
-		val lock = CountDownLatch(1)
-		runOnGLThread {
-			GLES30.glVertexAttribI4uiv(index, value)
-			lock.countDown()
-		}
-		try {
-			lock.await(2, TimeUnit.SECONDS)
-		} catch (ignored: InterruptedException) {
-		}
+		ensureContextIsCurrent()
+		GLES30.glVertexAttribI4uiv(index, value)
 	}
 
 	/* Getting GL parameter information */

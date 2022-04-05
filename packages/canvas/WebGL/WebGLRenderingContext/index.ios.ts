@@ -659,7 +659,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._glCheckError('getShaderPrecisionFormat');
 		this._checkArgs('getShaderPrecisionFormat', arguments);
 		const precision = this.context.getShaderPrecisionFormat(shaderType, precisionType);
-		return new WebGLShaderPrecisionFormat(precision.rangeMin, precision.rangeMax, precision.precision);
+		return new WebGLShaderPrecisionFormat(precision);
 	}
 
 	getShaderSource(shader: WebGLShader): string {

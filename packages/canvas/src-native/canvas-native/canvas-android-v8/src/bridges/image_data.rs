@@ -26,9 +26,8 @@ mod ffi {
 }
 
 pub fn canvas_native_image_data_create(width: i32, height: i32) -> Box<ImageData> {
-    Box::new(ImageData(
-        canvas_core::context::pixel_manipulation::ImageData::new(width, height),
-    ))
+    let data = canvas_core::context::pixel_manipulation::ImageData::new(width, height);
+    Box::new(ImageData(data))
 }
 
 pub fn canvas_native_image_data_width(image_data: &ImageData) -> i32 {

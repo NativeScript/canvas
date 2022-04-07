@@ -111,7 +111,7 @@ mod ffi {
 }
 
 pub fn canvas_native_matrix_create() -> Box<Matrix> {
-    Box::new(Matrix::new())
+    Box::new(Matrix(canvas_core::context::matrix::Matrix::new()))
 }
 
 pub fn canvas_native_matrix_update(matrix: &mut Matrix, slice: &[f32]) {
@@ -273,7 +273,7 @@ pub fn canvas_native_matrix_set_m41(matrix: &mut Matrix, m41: f32) {
 }
 
 pub fn canvas_native_matrix_get_m42(matrix: &Matrix) -> f32 {
-    matrix.m42()
+    matrix.inner().m42()
 }
 
 pub fn canvas_native_matrix_set_m42(matrix: &mut Matrix, m42: f32) {

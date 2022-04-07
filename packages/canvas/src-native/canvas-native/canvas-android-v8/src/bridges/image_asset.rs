@@ -1,5 +1,5 @@
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int, c_void};
+use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
@@ -31,6 +31,14 @@ impl Clone for ImageAsset {
 impl ImageAsset {
     pub fn lock(&self) -> MutexGuard<canvas_core::context::image_asset::ImageAsset> {
         self.0.lock()
+    }
+
+    pub fn width(&self) -> c_uint {
+        self.0.lock().width()
+    }
+
+    pub fn height(&self) -> c_uint {
+        self.0.lock().height()
     }
 }
 

@@ -1,9 +1,8 @@
 use std::fmt::format;
 
-use cxx::{CxxString, let_cxx_string};
+use cxx::{let_cxx_string, CxxString, ExternType, type_id};
 use parking_lot::MutexGuard;
 
-use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_core::context::drawing_paths::fill_rule::FillRule;
 use canvas_core::context::fill_and_stroke_styles::pattern::Repetition;
@@ -12,6 +11,7 @@ use canvas_core::context::line_styles::line_cap::LineCap;
 use canvas_core::context::line_styles::line_join::LineJoin;
 use canvas_core::context::text_styles::text_align::TextAlign;
 use canvas_core::context::text_styles::text_direction::TextDirection;
+use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::utils::color::{parse_color, to_parsed_color};
 use canvas_core::utils::image::{
     from_image_slice, from_image_slice_encoded, to_image, to_image_encoded,
@@ -23,7 +23,6 @@ use crate::bridges::matrix::Matrix;
 use crate::bridges::path::Path;
 use crate::gl_context::GLContext;
 
-#[derive(Clone)]
 pub struct CanvasRenderingContext2D {
     context: canvas_core::context::ContextWrapper,
     gl_context: GLContext,
@@ -47,16 +46,14 @@ impl PaintStyle {
 #[derive(Clone, Copy)]
 pub struct TextMetrics(canvas_core::context::drawing_text::text_metrics::TextMetrics);
 
+
+
 #[cxx::bridge]
 mod ffi {
     extern "Rust" {
-        type Matrix;
         type CanvasRenderingContext2D;
         type PaintStyle;
         type TextMetrics;
-        type Path;
-        type ImageData;
-        type ImageAsset;
 
         fn canvas_native_context_create() -> Box<CanvasRenderingContext2D>;
         fn canvas_native_context_get_global_alpha(context: &CanvasRenderingContext2D) -> f32;
@@ -1223,7 +1220,9 @@ pub fn canvas_native_context_is_point_in_path(
     y: f32,
     rule: &str,
 ) -> bool {
-    FillRule::try_from(rule).map_or(false, |rule| context.is_point_in_path(None, x, y, rule))
+    FillRule::try_from(rule).map_or(false, |rule| {
+        context.get_context().is_point_in_path(None, x, y, rule)
+    })
 }
 
 pub fn canvas_native_context_is_point_in_path_with_path(
@@ -1234,7 +1233,9 @@ pub fn canvas_native_context_is_point_in_path_with_path(
     rule: &str,
 ) -> bool {
     FillRule::try_from(rule).map_or(false, |rule| {
-        context.is_point_in_path(Some(path.inner()), x, y, rule)
+        context
+            .get_context()
+            .is_point_in_path(Some(path.inner()), x, y, rule)
     })
 }
 

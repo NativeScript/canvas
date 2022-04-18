@@ -2,12 +2,10 @@
 // Created by Osei Fortune on 22/03/2022.
 //
 
-#ifndef CANVAS_NATIVE_CONCURRENTMAP_H
-#define CANVAS_NATIVE_CONCURRENTMAP_H
+#pragma once
 
 #include <shared_mutex>
 #include "../include/robin_hood.h"
-
 template<class TKey, class TValue>
 class ConcurrentMap {
 public:
@@ -54,6 +52,3 @@ private:
     std::mutex containerMutex_;
     robin_hood::unordered_map<TKey, TValue> container_;
 };
-
-
-#endif //CANVAS_NATIVE_CONCURRENTMAP_H

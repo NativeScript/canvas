@@ -33,7 +33,7 @@ impl ImageData {
     }
 
     pub fn new(width: c_int, height: c_int) -> Self {
-        let data = vec![255u8; (width * height * 4) as usize];
+        let data = vec![0u8; (width * height * 4) as usize];
         let (data, data_len) = Self::to_raw(data);
         Self(Arc::new(ImageDataInner {
             width,
@@ -86,9 +86,9 @@ impl From<&ImageData> for ImageData {
     }
 }
 
-impl Drop for ImageData {
+impl Drop for ImageDataInner {
     fn drop(&mut self) {
-        let _ =
-            unsafe { Box::from_raw(std::slice::from_raw_parts_mut(self.0.data, self.0.data_len)) };
+        // let _ =
+        //     unsafe { Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)) };
     }
 }

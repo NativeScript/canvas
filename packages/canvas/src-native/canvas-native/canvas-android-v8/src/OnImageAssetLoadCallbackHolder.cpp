@@ -3,17 +3,19 @@
 //
 
 #include "OnImageAssetLoadCallbackHolder.h"
+#include "Caches.h"
 
 OnImageAssetLoadCallbackHolder::OnImageAssetLoadCallbackHolder(v8::Isolate *isolate,
                                                                v8::Local<v8::Context> context,
-                                                               v8::Local<v8::Promise::Resolver> resolver) : isolate_(
+                                                               v8::Local<v8::Promise::Resolver> resolver)
+        : isolate_(
         isolate),
-                                                                                                             context_(
-                                                                                                                     isolate,
-                                                                                                                     context),
-                                                                                                             resolver_(
-                                                                                                                     isolate,
-                                                                                                                     resolver) {
+          context_(
+                  isolate,
+                  context),
+          resolver_(
+                  isolate,
+                  resolver) {
 
 }
 
@@ -32,3 +34,16 @@ void OnImageAssetLoadCallbackHolder::complete(bool done) const {
 }
 
 OnImageAssetLoadCallbackHolder::~OnImageAssetLoadCallbackHolder() {}
+
+v8::Isolate *OnImageAssetLoadCallbackHolder::GetIsolate() {
+    return this->isolate_;
+}
+
+void OnImageAssetLoadCallbackHolderComplete(intptr_t callback, bool done) {
+    auto ptr = reinterpret_cast<OnImageAssetLoadCallbackHolder*>(reinterpret_cast<intptr_t *>(callback));
+    ptr->complete(done);
+    auto isolate = ptr->GetIsolate();
+    auto cache = Caches::Get(isolate);
+    cache->OnImageAssetLoadCallbackHolder_->Remove(callback);
+}
+

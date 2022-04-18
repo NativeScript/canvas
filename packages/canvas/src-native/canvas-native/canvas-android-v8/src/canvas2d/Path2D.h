@@ -2,15 +2,13 @@
 // Created by Osei Fortune on 28/03/2022.
 //
 
-#ifndef CANVAS_NATIVE_PATH2D_H
-#define CANVAS_NATIVE_PATH2D_H
+#pragma once
 
 #include "../Common.h"
 #include "../Caches.h"
 #include "../Helpers.h"
 #include "rust/cxx.h"
-#include "canvas-android-v8/src/bridges/path.rs.h"
-
+#include "canvas-android-v8/src/bridges/context.rs.h"
 class Path2D {
 public:
     Path2D(rust::Box <Path> path);
@@ -50,6 +48,3 @@ private:
 
     static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
 };
-
-
-#endif //CANVAS_NATIVE_PATH2D_H

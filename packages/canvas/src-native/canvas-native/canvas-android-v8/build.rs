@@ -43,7 +43,9 @@ impl Display for Target {
 pub fn ndk() -> String {
     std::env::var("ANDROID_NDK").expect("ANDROID_NDK variable not set")
 }
-const FLAGS_STR: &str = "-nostdinc++ -std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
+
+
+const FLAGS_STR: &str = "-std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
 
 const CPP_SOURCE: [&str; 4] = [
     "src/Caches.cpp",
@@ -52,25 +54,47 @@ const CPP_SOURCE: [&str; 4] = [
     "src/ImageAssetImpl.cpp",
 ];
 
-const CPP_2D_SOURCE: [&str; 4] = [
+const CPP_SOURCE_HEADERS: [&str; 4] = [
+    "src/Caches.h",
+    "src/Helpers.h",
+    "src/OnImageAssetLoadCallbackHolder.h",
+    "src/ImageAssetImpl.h",
+];
+
+const CPP_2D_SOURCE: [&str; 5] = [
     // "src/canvas2d/CanvasGradient.cpp",
     // "src/canvas2d/CanvasPattern.cpp",
     // "src/canvas2d/CanvasRenderingContext2D.cpp",
     "src/canvas2d/ImageDataImpl.cpp",
     "src/canvas2d/Path2D.cpp",
     "src/canvas2d/MatrixImpl.cpp",
+    "src/canvas2d/TextMetricsImpl.cpp",
     "src/canvas2d/Canvas2D.cpp",
 ];
 
-const CPP_WEBGL_SOURCE: [&str; 2] = [
-    "src/webgl/WebGL.cpp",
-    "src/webgl/WebGLRenderingContext.cpp"
+const CPP_2D_SOURCE_HEADERS: [&str; 5] = [
+    // "src/canvas2d/CanvasGradient.cpp",
+    // "src/canvas2d/CanvasPattern.cpp",
+    // "src/canvas2d/CanvasRenderingContext2D.cpp",
+    "src/canvas2d/ImageDataImpl.h",
+    "src/canvas2d/Path2D.h",
+    "src/canvas2d/MatrixImpl.h",
+    "src/canvas2d/TextMetricsImpl.h",
+    "src/canvas2d/Canvas2D.h",
 ];
+
+const CPP_WEBGL_SOURCE: [&str; 2] = ["src/webgl/WebGL.cpp", "src/webgl/WebGLRenderingContext.cpp"];
+
+const CPP_WEBGL_SOURCE_HEADERS: [&str; 2] =
+    ["src/webgl/WebGL.h", "src/webgl/WebGLRenderingContext.h"];
 
 const CPP_WEBGL2_SOURCE: [&str; 2] = [
     "src/webgl2/WebGL2.cpp",
-    "src/webgl2/WebGL2RenderingContext.cpp"
+    "src/webgl2/WebGL2RenderingContext.cpp",
 ];
+
+const CPP_WEBGL2_SOURCE_HEADERS: [&str; 2] =
+    ["src/webgl2/WebGL2.h", "src/webgl2/WebGL2RenderingContext.h"];
 
 fn main() {
     let target_str = env::var("TARGET").unwrap();
@@ -94,6 +118,7 @@ fn main() {
     };
 
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=src/bridges/context.rs");
 
     match target.system.borrow() {
         "android" | "androideabi" => {
@@ -170,43 +195,40 @@ fn main() {
     println!("cargo:rustc-link-lib=static=v8"); // the "-l" flag
     println!("cargo:rustc-link-lib=static=zip");
     println!("cargo:rustc-link-arg=-Wl,--allow-multiple-definition");
+    println!("cargo:rustc-link-arg=-Wl,-fuse-ld=lld-13");
+    // println!("cargo:rustc-link-arg=-Wl,-nostdlib++");
+    // println!("cargo:rustc-link-arg=-Wl,-ldl");
     println!("cargo:rustc-link-lib=static=c++abi");
+    println!("cargo:rustc-link-lib=static=c++");
 
-    let mut build = cxx_build::bridges([
-        "src/lib.rs",
-        "src/bridges/image_asset.rs",
-        "src/bridges/path.rs",
-        "src/bridges/utils.rs",
-        "src/bridges/canvas_gradient.rs",
-        "src/bridges/canvas_pattern.rs",
-        "src/bridges/canvas_rendering_context_2d.rs",
-        "src/bridges/image_data.rs",
-        "src/bridges/matrix.rs",
-    ]);
+    let mut build = cxx_build::bridges(["src/lib.rs", "src/bridges/context.rs"]);
 
     build
         .flag("-pthread")
         .cpp_link_stdlib("c++_static")
-        .flag_if_supported("-std=c++17")
+        .flag_if_supported("-std=c++14")
         .flag(&format!("--target={}", target_str))
         .flag(&format!("--sysroot={}/sysroot", ndk()))
-        .flag(&format!("-I{}/sources/android/cpufeatures", ndk()))
+         .flag(&format!("-I{}/sources/android/cpufeatures", ndk()))
         .flag(&format!(
             "-isystem{}/sources/cxx-stl/llvm-libc++/include",
             ndk()
         ))
         .flag(&include_dir)
-        //.define("_LIBCPP_ABI_VERSION", "Cr")
+        .define("_LIBCPP_ABI_UNSTABLE", None)
+        // .define("_LIBCPP_ABI_VERSION", "Cr")
         .define("_LIBCPP_ENABLE_NODISCARD", None)
         .define("_LIBCPP_ABI_UNSTABLE", None)
-        .define("V8_31BIT_SMIS_ON_64BIT_ARCH", None)
-        .define("V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH", None)
+        // .define("V8_31BIT_SMIS_ON_64BIT_ARCH", None)
+        // .define("V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH", None)
         .define("V8_EMBEDDED_BUILTINS", None)
         .files(&CPP_SOURCE)
         .files(&CPP_2D_SOURCE)
         .files(&CPP_WEBGL_SOURCE)
         .files(&CPP_WEBGL2_SOURCE)
         .file("src/Bridge.cpp");
+
+    build.extra_warnings(false);
 
     let mut all: Vec<&str> = vec![];
     all.extend(CPP_SOURCE.as_slice());
@@ -215,6 +237,16 @@ fn main() {
     all.extend(CPP_WEBGL2_SOURCE.as_slice());
 
     for item in all.into_iter() {
+        println!("cargo:rerun-if-changed={}", item);
+    }
+
+    let mut all_headers: Vec<&str> = vec![];
+    all_headers.extend(CPP_SOURCE_HEADERS.as_slice());
+    all_headers.extend(CPP_2D_SOURCE_HEADERS.as_slice());
+    all_headers.extend(CPP_WEBGL_SOURCE_HEADERS.as_slice());
+    all_headers.extend(CPP_WEBGL2_SOURCE_HEADERS.as_slice());
+
+    for item in all_headers.into_iter() {
         println!("cargo:rerun-if-changed={}", item);
     }
 
@@ -235,6 +267,8 @@ fn main() {
     for flag in flags.into_iter() {
         build.flag_if_supported(flag);
     }
+
+
     build.warnings(false);
 
     build.compile("androidv8");

@@ -3,7 +3,6 @@
 //
 
 #include "Bridge.h"
-
 void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     v8::Locker locker(isolate);

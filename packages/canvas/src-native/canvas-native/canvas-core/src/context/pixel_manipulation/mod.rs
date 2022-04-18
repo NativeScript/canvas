@@ -2,7 +2,8 @@ use std::os::raw::{c_float, c_int};
 
 use skia_safe::{AlphaType, ColorType, IPoint, ISize, IVector, ImageInfo, Rect};
 
-use crate::context::pixel_manipulation::image_data::ImageData;
+pub use image_data::*;
+
 use crate::context::Context;
 
 pub mod image_data;

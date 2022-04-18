@@ -2,15 +2,13 @@
 // Created by Osei Fortune on 03/04/2022.
 //
 
-#ifndef CANVAS_NATIVE_MATRIXIMPL_H
-#define CANVAS_NATIVE_MATRIXIMPL_H
+#pragma once
 
 #include "../Common.h"
 #include "../Caches.h"
 #include "../Helpers.h"
 #include "rust/cxx.h"
-#include "canvas-android-v8/src/bridges/matrix.rs.h"
-
+#include "canvas-android-v8/src/bridges/context.rs.h"
 class MatrixImpl {
 public:
     MatrixImpl(rust::Box <Matrix> matrix);
@@ -158,6 +156,3 @@ private:
 
     static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
 };
-
-
-#endif //CANVAS_NATIVE_MATRIXIMPL_H

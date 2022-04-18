@@ -84,7 +84,6 @@ void Path2D::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 }
 
-
 void Path2D::AddPath(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();

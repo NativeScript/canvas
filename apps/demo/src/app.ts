@@ -3,9 +3,9 @@ import { Application, Utils, path as filePath, knownFolders } from '@nativescrip
 declare var __non_webpack_require__;
 __non_webpack_require__('~/libcanvasnativev8.so');
 
-try {
-	java.lang.System.loadLibrary('canvasnativev8');
-} catch (e) {}
+// try {
+// 	java.lang.System.loadLibrary('canvasnativev8');
+// } catch (e) {}
 
 //__non_webpack_require__(`${(Utils.android.getApplicationContext() as android.content.Context).getApplicationInfo().nativeLibraryDir}/libcanvasnativev8.so`)
 
@@ -34,6 +34,26 @@ for (let i = 0; i < count; i++) {
 
 	console.log('count', i);
 }
+
+const matrix = new DOMMatrix();
+
+console.log(matrix.a, matrix.b, matrix.c);
+console.log(matrix.d, matrix.e, matrix.f);
+
+console.log(matrix.is2D);
+
+
+let imageData = new global.ImageData(100,100);
+global.imageData = imageData;
+console.log('imageData', imageData.data);
+
+try{
+	console.log('TextMetrics',new TextMetrics());
+}catch(e){
+	console.log('TextMetrics: error',e);
+}
+
+
 
 const asset = new global.ImageAsset();
 

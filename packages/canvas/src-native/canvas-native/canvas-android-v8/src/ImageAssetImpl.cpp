@@ -3,6 +3,7 @@
 //
 
 #include "ImageAssetImpl.h"
+#include "OnImageAssetLoadCallbackHolder.h"
 
 ImageAssetImpl::ImageAssetImpl(rust::Box <ImageAsset> asset)
         : asset_(std::move(asset)) {}
@@ -152,7 +153,10 @@ void ImageAssetImpl::FromUrlAsync(const v8::FunctionCallbackInfo<v8::Value> &arg
     if (args[0]->IsString()) {
         auto url = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
         auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, promise);
-        canvas_native_image_asset_load_from_url_async(*ptr->asset_, url, callback);
+        auto cache = Caches::Get(isolate);
+        auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t*>(callback.get()));
+        cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
+        canvas_native_image_asset_load_from_url_async(*ptr->asset_, url, key);
     };
 }
 
@@ -178,7 +182,10 @@ void ImageAssetImpl::FromFileAsync(const v8::FunctionCallbackInfo<v8::Value> &ar
     if (args[0]->IsString()) {
         auto path = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
         auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, promise);
-        canvas_native_image_asset_load_from_path_async(*ptr->asset_, rust::String(path), callback);
+        auto cache = Caches::Get(isolate);
+        auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t*>(callback.get()));
+        cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
+        canvas_native_image_asset_load_from_path_async(*ptr->asset_, rust::String(path), key);
     };
 }
 
@@ -207,13 +214,18 @@ void ImageAssetImpl::FromBytesAsync(const v8::FunctionCallbackInfo<v8::Value> &a
     args.GetReturnValue().Set(promise->GetPromise());
     if (args[0]->IsUint8Array() || args[0]->IsUint8ClampedArray()) {
         auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, promise);
+
+        auto cache = Caches::Get(isolate);
+        auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t*>(callback.get()));
+        cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
+
         auto buf = args[0].As<v8::TypedArray>();
         auto offset = buf->ByteOffset();
         auto size = buf->Length();
         auto store = buf->Buffer()->GetBackingStore();
         auto data = static_cast<uint8_t *>(store->Data()) + offset;
         auto buffer = rust::Slice<const uint8_t>(data, size);
-        canvas_native_image_asset_load_from_raw_async(*ptr->asset_, buffer, callback);
+        canvas_native_image_asset_load_from_raw_async(*ptr->asset_, buffer, key);
     };
 }
 
@@ -238,7 +250,10 @@ void ImageAssetImpl::SaveAsync(const v8::FunctionCallbackInfo<v8::Value> &args) 
     auto path = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
     auto format = args[1]->Int32Value(context).FromMaybe(0);
     auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, promise);
-    canvas_native_image_asset_save_path_async(*ptr->asset_, path, format, callback);
+    auto cache = Caches::Get(isolate);
+    auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t*>(callback.get()));
+    cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
+    canvas_native_image_asset_save_path_async(*ptr->asset_, path, format, key);
 }
 
 v8::Local<v8::Function> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {

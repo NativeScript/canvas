@@ -1,5 +1,6 @@
 use encoding_rs::UTF_8;
 
+#[derive(Clone)]
 pub struct TextEncoder {
     inner: &'static encoding_rs::Encoding,
 }

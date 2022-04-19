@@ -4,20 +4,35 @@
 
 #include "CanvasGradient.h"
 
+CanvasGradient::CanvasGradient(rust::Box <PaintStyle> style) : style_(std::move(style)) {}
+
 void CanvasGradient::Init(v8::Isolate *isolate) {
     auto ctorFunc = GetCtorFunc(isolate);
-    auto context = isolate->GetCurrentContext()
+    auto context = isolate->GetCurrentContext();
     auto global = context->Global();
     global->Set(context, v8::String::NewFromUtf8(isolate, "CanvasGradient").ToLocalChecked(), ctorFunc);
 }
 
+CanvasGradient *CanvasGradient::GetPointer(v8::Local<v8::Object> object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+    return static_cast<CanvasGradient *>(ptr);
+}
 
-v8::Local<v8::Object> CanvasGradient::Create(v8::Local<v8::Context> context, intptr_t gradient) {
-    auto ctorFunc = CanvasGradient::GetCtorFunc(context->GetIsolate());
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
-    auto ext = v8::External::New(context->GetIsolate(), reinterpret_cast<void *>(gradient));
+
+v8::Local<v8::Object> CanvasGradient::NewInstance(v8::Isolate *isolate, rust::Box <PaintStyle> style) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::EscapableHandleScope handle_scope(isolate);
+    auto ctorFunc = CanvasGradient::GetCtorFunc(isolate);
+    CanvasGradient *gradient = new CanvasGradient(std::move(style));
+    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    Helpers::SetInternalClassName(isolate, result, "CanvasGradient");
+    auto ext = v8::External::New(isolate, gradient);
     result->SetInternalField(0, ext);
-    return result;
+    return handle_scope.Escape(result);
 }
 
 void CanvasGradient::CreateCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -27,42 +42,40 @@ void CanvasGradient::CreateCallback(const v8::FunctionCallbackInfo<v8::Value> &a
 void CanvasGradient::AddColorStop(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (args.Length() == 2 &&
         ((args[0]->IsNumber() || args[0]->IsNumberObject()) && (args[1]->IsString() || args[1]->IsStringObject()))) {
-        auto obj = args.Holder();
-        auto ptr = static_cast<intptr_t>(reinterpret_cast<size_t>(obj->GetInternalField(
-                0).As<v8::External>()->Value()));
-        auto context = args.GetIsolate()->GetCurrentContext();
-        auto stop = args[0]->NumberValue(context).ToChecked();
-        v8::String::Utf8Value color(args[0]->ToString(context).ToLocalChecked());
-        canvas_native_gradient_add_color_stop(ptr, stop, color);
+        auto isolate = args.GetIsolate();
+        auto ptr = GetPointer(args.Holder());
+        auto context = isolate->GetCurrentContext();
+        auto stop = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto color = Helpers::ConvertFromV8String(isolate, args[1]->ToString(context).ToLocalChecked());
+        canvas_native_gradient_add_color_stop(*ptr->style_, stop, color);
     }
 }
 
 v8::Local<v8::Function> CanvasGradient::GetCtorFunc(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto func = cache->CanvasGradientCtorFunc.get();
+    auto func = cache->CanvasGradientCtor.get();
     if (func != nullptr) {
         return func->Get(isolate);
     }
     auto context = isolate->GetCurrentContext();
-    auto gradientTpl = v8::ObjectTemplate::New(isolate);
-    gradientTpl->SetInternalFieldCount(1);
+    auto gradientTpl = v8::FunctionTemplate::New(isolate, &CreateCallback);
+    gradientTpl->SetClassName(Helpers::ConvertToV8String(isolate, "CanvasGradient"));
+    gradientTpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    auto addColorStopFt = v8::FunctionTemplate::New(isolate, AddColorStop);
-    addColorStopFt->SetClassName(Helpers::ConvertToV8String("CanvasGradient"));
-    gradientTpl->Set(
+    gradientTpl->InstanceTemplate()->Set(
             v8::String::NewFromUtf8(isolate, "addColorStop").ToLocalChecked(),
-            addColorStopFt->GetFunction(context).ToLocalChecked()
+            v8::FunctionTemplate::New(isolate, &AddColorStop)
     );
 
-    Local <Object> obj = class_tpl->NewInstance(context).ToLocalChecked();
+    auto ctor = gradientTpl->GetFunction(context).ToLocalChecked();
 
-    auto tpl = v8::FunctionTemplate::New(isolate, CreateCallback);
+    cache->CanvasGradientCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, ctor);
 
-    auto ctorFunc = tpl->GetFunction(context).ToLocalChecked();
-
-    cache->CanvasGradientCtorFunc = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(ctorFunc);
-
-    return ctorFunc;
+    return ctor;
 }
 
+
+PaintStyle &CanvasGradient::GetPaintStyle() {
+    return *this->style_;
+}
 

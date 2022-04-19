@@ -301,3 +301,8 @@ void Path2D::ToSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {
 }
 
 Path2D::~Path2D() {}
+
+Path &Path2D::GetPath() {
+    return *this->path_;
+}
+

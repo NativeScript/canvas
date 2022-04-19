@@ -533,7 +533,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//setTimeout(()=>{
 		//colorRain(this.canvas);
 		//particlesLarge(this.canvas);
-		rainbowOctopus(this.canvas);
+		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);

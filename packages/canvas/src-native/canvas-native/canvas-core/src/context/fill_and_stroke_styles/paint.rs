@@ -7,7 +7,9 @@ use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::Pattern;
 use crate::context::filter_quality::FilterQuality;
 use crate::context::image_smoothing::ImageSmoothingQuality;
+use crate::context::Context;
 use crate::utils::color::to_parsed_color;
+use crate::ContextWrapper;
 
 #[derive(Clone)]
 pub enum PaintStyle {
@@ -197,6 +199,23 @@ impl Default for Paint {
             fill_style: PaintStyle::Color(Color::BLACK),
             stroke_style: PaintStyle::Color(Color::BLACK),
             image_smoothing_quality: ImageSmoothingQuality::default().into(),
+        }
+    }
+}
+
+pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: bool, color: &str) {
+    let mut context = context.get_context();
+    if let Ok(color) = color.parse::<css_color_parser::Color>() {
+        let style = PaintStyle::Color(skia_safe::Color::from_argb(
+            (color.a * 255.0) as u8,
+            color.r,
+            color.g,
+            color.b,
+        ));
+        if is_fill {
+            context.set_fill_style(style);
+        } else {
+            context.set_stroke_style(style);
         }
     }
 }

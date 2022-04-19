@@ -19,6 +19,8 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 
     ImageAssetImpl::Init(isolate);
+    TextDecoderImpl::Init(isolate);
+    TextEncoderImpl::Init(isolate);
     Canvas2D::Init(isolate);
     WebGL::Init(isolate);
     WebGL2::Init(isolate);

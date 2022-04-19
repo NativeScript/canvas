@@ -8,6 +8,7 @@ use jni::JNIEnv;
 
 use canvas_core::context::text_encoder::TextEncoder;
 
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeInit(
     env: JNIEnv,

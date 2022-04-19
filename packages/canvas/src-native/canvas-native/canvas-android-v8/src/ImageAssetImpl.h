@@ -46,10 +46,12 @@ public:
 
     static void SaveAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static ImageAssetImpl *GetPointer(v8::Local<v8::Object> object);
+
+    ImageAsset& GetImageAsset();
+
 private:
     rust::Box <ImageAsset> asset_;
-
-    static ImageAssetImpl *GetPointer(v8::Local<v8::Object> object);
 
     static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
 };

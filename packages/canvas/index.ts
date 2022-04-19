@@ -21,11 +21,11 @@ export * from './WebGL2';
 export * from './SVG';
 
 
-Object.defineProperty(global, 'CanvasRenderingContext2D', {
-	value: CanvasRenderingContext2D,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'CanvasRenderingContext2D', {
+// 	value: CanvasRenderingContext2D,
+// 	configurable: true,
+// 	writable: true,
+// });
 
 Object.defineProperty(global, 'WebGLRenderingContext', {
 	value: WebGLRenderingContext,
@@ -39,47 +39,47 @@ Object.defineProperty(global, 'WebGL2RenderingContext', {
 	writable: true,
 });
 
-Object.defineProperty(global, 'CanvasPattern', {
-	value: CanvasPattern,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'CanvasPattern', {
+// 	value: CanvasPattern,
+// 	configurable: true,
+// 	writable: true,
+// });
 
-Object.defineProperty(global, 'CanvasGradient', {
-	value: CanvasGradient,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'CanvasGradient', {
+// 	value: CanvasGradient,
+// 	configurable: true,
+// 	writable: true,
+// });
 
-Object.defineProperty(global, 'TextEncoder', {
-	value: TextEncoder,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'TextEncoder', {
+// 	value: TextEncoder,
+// 	configurable: true,
+// 	writable: true,
+// });
 
-Object.defineProperty(global, 'TextDecoder', {
-	value: TextDecoder,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'TextDecoder', {
+// 	value: TextDecoder,
+// 	configurable: true,
+// 	writable: true,
+// });
 
-Object.defineProperty(global, 'Path2D', {
-	value: Path2D,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'Path2D', {
+// 	value: Path2D,
+// 	configurable: true,
+// 	writable: true,
+// });
 
-Object.defineProperty(global, 'ImageData', {
-	value: ImageData,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'ImageData', {
+// 	value: ImageData,
+// 	configurable: true,
+// 	writable: true,
+// });
 
-Object.defineProperty(global, 'DOMMatrix', {
-	value: DOMMatrix,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'DOMMatrix', {
+// 	value: DOMMatrix,
+// 	configurable: true,
+// 	writable: true,
+// });
 
 Object.defineProperty(global, 'ImageBitmap', {
 	value: ImageBitmap,

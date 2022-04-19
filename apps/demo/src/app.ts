@@ -3,6 +3,10 @@ import { Application, Utils, path as filePath, knownFolders } from '@nativescrip
 declare var __non_webpack_require__;
 __non_webpack_require__('~/libcanvasnativev8.so');
 
+try {
+	java.lang.System.loadLibrary('canvasnative');
+} catch (e) {}
+
 // try {
 // 	java.lang.System.loadLibrary('canvasnativev8');
 // } catch (e) {}
@@ -48,10 +52,43 @@ global.imageData = imageData;
 console.log('imageData', imageData.data);
 
 try{
-	console.log('TextMetrics',new TextMetrics());
+	console.log('TextMetrics',TextMetrics);
 }catch(e){
 	console.log('TextMetrics: error',e);
 }
+
+console.log('CanvasGradient',CanvasGradient);
+console.log('CanvasPattern',CanvasPattern);
+
+console.log('__getCanvasRenderingContext2D', global.__getCanvasRenderingContext2D);
+
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+const encoded = encoder.encode("Hi Osei");
+console.log('encoded', encoded);
+
+const decoded = decoder.decode(encoded);
+console.log('decoded', decoded);
+
+
+
+
+
+let utf8decoder = new TextDecoder(); // default 'utf-8' or 'utf8'
+
+let u8arr = new Uint8Array([240, 160, 174, 183]);
+let i8arr = new Int8Array([-16, -96, -82, -73]);
+let u16arr = new Uint16Array([41200, 47022]);
+let i16arr = new Int16Array([-24336, -18514]);
+let i32arr = new Int32Array([-1213292304]);
+
+console.log(utf8decoder.decode(u8arr));
+console.log(utf8decoder.decode(i8arr));
+console.log(utf8decoder.decode(u16arr));
+console.log(utf8decoder.decode(i16arr));
+console.log(utf8decoder.decode(i32arr));
 
 
 

@@ -161,6 +161,20 @@ impl Gradient {
         )
     }
 
+    pub fn add_color_stop_str(&mut self, offset: c_float, color: &str) {
+        if let Ok(color) = color.parse::<css_color_parser::Color>() {
+            self.add_color_stop(
+                offset,
+                skia_safe::Color::from_argb(
+                    (color.a * 255.0) as u8,
+                    color.r,
+                    color.g,
+                    color.b,
+                ),
+            )
+        }
+    }
+
     pub fn add_color_stop(&mut self, offset: c_float, color: Color) {
         let stops = match self {
             Gradient::Linear { stops, .. } => stops,

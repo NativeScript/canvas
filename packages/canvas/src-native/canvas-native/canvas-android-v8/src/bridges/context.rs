@@ -9,6 +9,7 @@ use parking_lot::{Mutex, MutexGuard, RawMutex};
 
 use canvas_core::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_core::context::drawing_paths::fill_rule::FillRule;
+use canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 use canvas_core::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_core::context::image_smoothing::ImageSmoothingQuality;
 use canvas_core::context::line_styles::line_cap::LineCap;
@@ -22,8 +23,6 @@ use canvas_core::utils::image::{
 };
 
 use crate::gl_context::GLContext;
-
-/* CanvasRenderingContext2D */
 
 /* Utils */
 
@@ -96,11 +95,17 @@ pub fn to_rust_string(value: &[c_char]) -> String {
 
 /* Utils */
 
+/* TextEncoder */
 #[derive(Clone)]
-pub struct CanvasGradient(canvas_core::context::fill_and_stroke_styles::gradient::Gradient);
+pub struct TextEncoder(canvas_core::context::text_encoder::TextEncoder);
+/* TextEncoder */
 
+/* TextDecoder */
 #[derive(Clone)]
-pub struct CanvasPattern(canvas_core::context::fill_and_stroke_styles::pattern::Pattern);
+pub struct TextDecoder(canvas_core::context::text_decoder::TextDecoder);
+/* TextDecoder */
+
+/* CanvasRenderingContext2D */
 
 pub struct CanvasRenderingContext2D {
     context: canvas_core::context::ContextWrapper,
@@ -120,6 +125,23 @@ impl PaintStyle {
     pub fn is_empty(&self) -> bool {
         self.0.is_none()
     }
+
+    pub fn style_type(&self) -> ffi::PaintStyleType {
+        if let Some(style) = self.0.as_ref() {
+            return match style {
+                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+                    ffi::PaintStyleType::Color
+                }
+                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+                    ffi::PaintStyleType::Gradient
+                }
+                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+                    ffi::PaintStyleType::Pattern
+                }
+            };
+        }
+        return ffi::PaintStyleType::None;
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -127,6 +149,13 @@ pub struct TextMetrics(canvas_core::context::drawing_text::text_metrics::TextMet
 
 #[cxx::bridge]
 mod ffi {
+    pub(crate) enum PaintStyleType {
+        None,
+        Color,
+        Gradient,
+        Pattern,
+    }
+
     unsafe extern "C++" {
         include!("canvas-android-v8/src/OnImageAssetLoadCallbackHolder.h");
         fn OnImageAssetLoadCallbackHolderComplete(callback: isize, complete: bool);
@@ -140,8 +169,8 @@ mod ffi {
         type Matrix;
         type ImageData;
         type ImageAsset;
-        type CanvasGradient;
-        type CanvasPattern;
+        type TextDecoder;
+        type TextEncoder;
 
         /* Utils */
         fn _log(priority: isize, tag: &str, text: &str);
@@ -306,9 +335,9 @@ mod ffi {
 
         /* ImageData */
         fn canvas_native_image_data_create(width: i32, height: i32) -> Box<ImageData>;
-        fn canvas_native_image_data_width(image_data: &ImageData) -> i32;
-        fn canvas_native_image_data_height(image_data: &ImageData) -> i32;
-        fn canvas_native_image_data(image_data: &mut ImageData) -> &mut [u8];
+        fn canvas_native_image_data_get_width(image_data: &ImageData) -> i32;
+        fn canvas_native_image_data_get_height(image_data: &ImageData) -> i32;
+        fn canvas_native_image_data_get_data(image_data: &mut ImageData) -> &mut [u8];
         fn canvas_native_image_data_get_shared_instance(
             image_data: &mut ImageData,
         ) -> Box<ImageData>;
@@ -392,7 +421,8 @@ mod ffi {
 
         fn canvas_native_text_metrics_get_actual_bounding_box_ascent(metrics: &TextMetrics) -> f32;
 
-        fn canvas_native_text_metrics_get_actual_bounding_box_descent(metrics: &TextMetrics) -> f32;
+        fn canvas_native_text_metrics_get_actual_bounding_box_descent(metrics: &TextMetrics)
+            -> f32;
 
         fn canvas_native_text_metrics_get_font_bounding_box_ascent(metrics: &TextMetrics) -> f32;
 
@@ -409,7 +439,32 @@ mod ffi {
         fn canvas_native_text_metrics_get_ideographic_baseline(metrics: &TextMetrics) -> f32;
         /* TextMetrics */
 
+        /* CanvasGradient */
+        fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, color: &str);
+
+        /* CanvasGradient */
+
+        /* CanvasPattern */
+        fn canvas_native_pattern_set_transform(pattern: &mut PaintStyle, matrix: &Matrix);
+        /* CanvasPattern */
+
+        /* TextDecoder */
+        fn canvas_native_text_decoder_create(decoding: &str) -> Box<TextDecoder>;
+        fn canvas_native_text_decoder_get_encoding(decoder: &mut TextDecoder) -> String;
+        fn canvas_native_text_decoder_decode(decoder: &mut TextDecoder, data: &[u8]) -> String;
+        /* TextDecoder */
+
+        /* TextEncoder */
+        fn canvas_native_text_encoder_create(encoding: &str) -> Box<TextEncoder>;
+        fn canvas_native_text_encoder_get_encoding(decoder: &mut TextEncoder) -> String;
+        fn canvas_native_text_encoder_encode(encoder: &mut TextEncoder, text: &str) -> Vec<u8>;
+        /* TextEncoder */
+
         /* CanvasRenderingContext2D */
+        fn canvas_native_context_create_with_wrapper(
+            context: isize,
+        ) -> Box<CanvasRenderingContext2D>;
+
         fn canvas_native_context_create(
             width: f32,
             height: f32,
@@ -441,6 +496,11 @@ mod ffi {
         fn canvas_native_context_get_image_smoothing_enabled(
             context: &CanvasRenderingContext2D,
         ) -> bool;
+
+        fn canvas_native_context_set_image_smoothing_enabled(
+            context: &mut CanvasRenderingContext2D,
+            enabled: bool,
+        );
 
         fn canvas_native_context_get_image_smoothing_quality(
             context: &CanvasRenderingContext2D,
@@ -506,6 +566,24 @@ mod ffi {
             context: &CanvasRenderingContext2D,
             composition: &str,
         );
+
+        fn canvas_native_paint_style_set_fill_color_with_string(
+            context: &mut CanvasRenderingContext2D,
+            color: &str,
+        );
+
+        fn canvas_native_paint_style_set_stroke_color_with_string(
+            context: &mut CanvasRenderingContext2D,
+            color: &str,
+        );
+
+        fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String;
+
+        fn canvas_native_context_get_style_type(style: &PaintStyle) -> PaintStyleType;
+
+        fn canvas_native_context_get_fill_style(
+            context: &mut CanvasRenderingContext2D,
+        ) -> Box<PaintStyle>;
 
         fn canvas_native_context_set_fill_style(
             context: &mut CanvasRenderingContext2D,
@@ -896,6 +974,15 @@ mod ffi {
     }
 }
 
+fn canvas_native_context_create_with_wrapper(context: isize) -> Box<CanvasRenderingContext2D> {
+    let mut wrapper = unsafe { Box::from_raw(context as *mut ContextWrapper) };
+    let ctx = GLContext::get_current();
+    Box::new(CanvasRenderingContext2D {
+        context: *wrapper,
+        gl_context: ctx,
+    })
+}
+
 pub fn canvas_native_context_create(
     width: f32,
     height: f32,
@@ -1156,6 +1243,36 @@ pub fn canvas_native_context_set_global_composition(
             .get_context()
             .set_global_composite_operation(composition)
     }
+}
+
+pub fn canvas_native_paint_style_set_fill_color_with_string(
+    context: &mut CanvasRenderingContext2D,
+    color: &str,
+) {
+    paint_style_set_color_with_string(&mut context.context, true, color);
+}
+
+pub fn canvas_native_paint_style_set_stroke_color_with_string(
+    context: &mut CanvasRenderingContext2D,
+    color: &str,
+) {
+    paint_style_set_color_with_string(&mut context.context, false, color);
+}
+
+pub fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String {
+    if let Some(color) = color.0.as_ref() {
+        return match color {
+            canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(color) => {
+                to_parsed_color(*color)
+            }
+            _ => String::new(),
+        };
+    }
+    String::new()
+}
+
+pub fn canvas_native_context_get_style_type(style: &PaintStyle) -> ffi::PaintStyleType {
+    style.style_type()
 }
 
 pub fn canvas_native_context_get_fill_style(context: &CanvasRenderingContext2D) -> Box<PaintStyle> {
@@ -2148,15 +2265,15 @@ pub fn canvas_native_image_data_create(width: i32, height: i32) -> Box<ImageData
     Box::new(ImageData::new(data))
 }
 
-pub fn canvas_native_image_data_width(image_data: &ImageData) -> i32 {
+pub fn canvas_native_image_data_get_width(image_data: &ImageData) -> i32 {
     image_data.0.width()
 }
 
-pub fn canvas_native_image_data_height(image_data: &ImageData) -> i32 {
+pub fn canvas_native_image_data_get_height(image_data: &ImageData) -> i32 {
     image_data.0.height()
 }
 
-pub fn canvas_native_image_data(image_data: &mut ImageData) -> &mut [u8] {
+pub fn canvas_native_image_data_get_data(image_data: &mut ImageData) -> &mut [u8] {
     image_data.0.data_mut()
 }
 
@@ -2415,3 +2532,62 @@ pub fn canvas_native_text_metrics_get_ideographic_baseline(metrics: &TextMetrics
 }
 
 /* TextMetrics */
+
+/* CanvasGradient */
+pub fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, color: &str) {
+    if let Some(style) = style.0.as_mut() {
+        match style {
+            canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
+                gradient.add_color_stop_str(stop, color)
+            }
+            _ => {}
+        }
+    }
+}
+
+/* CanvasGradient */
+
+/* CanvasPattern */
+fn canvas_native_pattern_set_transform(pattern: &mut PaintStyle, matrix: &Matrix) {
+    if let Some(pattern) = pattern.0.as_mut() {
+        match pattern {
+            canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(pattern) => {
+                pattern.set_pattern_transform(matrix.inner())
+            }
+            _ => {}
+        }
+    }
+}
+
+/* CanvasPattern */
+
+/* TextDecoder */
+pub fn canvas_native_text_decoder_create(decoding: &str) -> Box<TextDecoder> {
+    Box::new(TextDecoder(
+        canvas_core::context::text_decoder::TextDecoder::new(Some(decoding)),
+    ))
+}
+pub fn canvas_native_text_decoder_decode(decoder: &mut TextDecoder, data: &[u8]) -> String {
+    decoder.0.decode_to_string(data)
+}
+
+pub fn canvas_native_text_decoder_get_encoding(decoder: &mut TextDecoder) -> String {
+    decoder.0.encoding().to_string()
+}
+/* TextDecoder */
+
+/* TextEncoder */
+pub fn canvas_native_text_encoder_create(encoding: &str) -> Box<TextEncoder> {
+    Box::new(TextEncoder(
+        canvas_core::context::text_encoder::TextEncoder::new(Some(encoding)),
+    ))
+}
+pub fn canvas_native_text_encoder_encode(encoder: &mut TextEncoder, text: &str) -> Vec<u8> {
+    encoder.0.encode(text)
+}
+
+pub fn canvas_native_text_encoder_get_encoding(encoder: &mut TextEncoder) -> String {
+    encoder.0.encoding().to_string()
+}
+
+/* TextEncoder */

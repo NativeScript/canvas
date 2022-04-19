@@ -29,8 +29,9 @@ public:
 
     static v8::Local<v8::Object> NewInstance(v8::Isolate* isolate, ImageDataImpl* imageData);
 
-    const ImageData& GetImageData();
-    ImageData& GetImageDataMut();
+    ImageData& GetImageData();
+    const float GetWidth();
+    const float GetHeight();
 private:
     rust::Box<ImageData> imageData_;
     std::shared_ptr<v8::Persistent<v8::Object>> buffer_;

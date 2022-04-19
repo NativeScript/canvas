@@ -44,8 +44,7 @@ void MatrixImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     } else {
         v8::Local<v8::Object> ret = args.This();
-        ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
-                        Helpers::ConvertToV8String(isolate, "DOMMatrix"));
+        Helpers::SetInternalClassName(isolate, ret, "DOMMatrix");
 
         MatrixImpl *matrix = new MatrixImpl(std::move(canvas_native_matrix_create()));
 
@@ -597,4 +596,8 @@ void MatrixImpl::SetM44(v8::Local<v8::String> name, v8::Local<v8::Value> value,
         auto ptr = GetPointer(info.Holder());
         canvas_native_matrix_set_m44(*ptr->matrix_, static_cast<float>(value->NumberValue(context).ToChecked()));
     }
+}
+
+Matrix &MatrixImpl::GetMatrix() {
+    return *this->matrix_;
 }

@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "canvas-android-v8/src/Common.h"
+#include "../Common.h"
 #include "Path2D.h"
-//#include "CanvasGradient.h"
-//#include "CanvasPattern.h"
-//#include "CanvasRenderingContext2DImpl.h"
+#include "CanvasGradient.h"
+#include "CanvasPattern.h"
+#include "CanvasRenderingContext2DImpl.h"
 #include "ImageDataImpl.h"
 #include "MatrixImpl.h"
 #include "TextMetricsImpl.h"

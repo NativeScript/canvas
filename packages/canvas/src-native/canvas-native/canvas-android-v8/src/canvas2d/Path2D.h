@@ -41,10 +41,12 @@ public:
 
     static void ToSVG(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static Path2D *GetPointer(v8::Local<v8::Object> object);
+
+    Path& GetPath();
+
 private:
     rust::Box <Path> path_;
-
-    static Path2D *GetPointer(v8::Local<v8::Object> object);
 
     static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
 };

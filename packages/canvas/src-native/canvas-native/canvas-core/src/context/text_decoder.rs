@@ -2,6 +2,7 @@ use std::ffi::CString;
 
 use encoding_rs::UTF_8;
 
+#[derive(Clone)]
 pub struct TextDecoder {
     inner: &'static encoding_rs::Encoding,
 }
@@ -12,6 +13,11 @@ impl TextDecoder {
         let decoder = encoding_rs::Encoding::for_label(decoding.as_bytes())
             .unwrap_or(UTF_8.output_encoding());
         Self { inner: decoder }
+    }
+
+    pub fn decode_to_string(&mut self, data: &[u8]) -> String {
+        let (res, _) = self.inner.decode_with_bom_removal(data);
+        res.to_string()
     }
 
     pub fn decode(&mut self, data: *const u8, len: usize) -> CString {

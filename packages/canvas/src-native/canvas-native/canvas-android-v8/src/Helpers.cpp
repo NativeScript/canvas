@@ -6,7 +6,7 @@
 
 void Helpers::ThrowIllegalConstructor(v8::Isolate *isolate) {
     auto msg = ConvertToV8String(isolate, "Illegal constructor");
-    auto err = v8::Exception::Error(msg);
+    auto err = v8::Exception::TypeError(msg);
     isolate->ThrowException(err);
 }
 
@@ -25,4 +25,24 @@ rust::String Helpers::ConvertFromV8String(v8::Isolate *isolate, const v8::Local<
     auto wrote = value->WriteUtf8(isolate, buf);
     auto ret = to_rust_string(rust::Slice<const char>(buf, len + 1));
     return ret;
+}
+
+bool Helpers::IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz) {
+    auto context = isolate->GetCurrentContext();
+    auto key = v8::Private::New(isolate,
+                                Helpers::ConvertToV8String(isolate,
+                                                           "class_name"));
+    auto instance = value->GetPrivate(context, key).FromMaybe(
+            Helpers::ConvertToV8String(isolate, "").As<v8::Value>()
+    );
+
+    return std::strcmp(clazz.c_str(),
+                       Helpers::ConvertFromV8String(isolate, instance->ToString(context).ToLocalChecked()).c_str()) ==
+           0;
+}
+
+void Helpers::SetInternalClassName(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz) {
+    auto context = isolate->GetCurrentContext();
+    value->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
+                      Helpers::ConvertToV8String(isolate, clazz));
 }

@@ -88,7 +88,7 @@ void ImageDataImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void ImageDataImpl::GetWidth(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto width = canvas_native_image_data_width(*ptr->imageData_);
+    auto width = canvas_native_image_data_get_width(*ptr->imageData_);
     info.GetReturnValue().Set(
             v8::Integer::New(isolate, static_cast<int32_t>(width))
     );
@@ -97,7 +97,7 @@ void ImageDataImpl::GetWidth(v8::Local<v8::String> name, const v8::PropertyCallb
 void ImageDataImpl::GetHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto width = canvas_native_image_data_height(*ptr->imageData_);
+    auto width = canvas_native_image_data_get_height(*ptr->imageData_);
     info.GetReturnValue().Set(
             v8::Integer::New(isolate, static_cast<int32_t>(width))
     );
@@ -111,7 +111,7 @@ void ImageDataImpl::GetData(v8::Local<v8::String> name, const v8::PropertyCallba
         return;
     }
 //    ImageDataImpl *cptr = new ImageDataImpl(canvas_native_image_data_get_shared_instance(*ptr->imageData_));
-    auto data = canvas_native_image_data(*ptr->imageData_);
+    auto data = canvas_native_image_data_get_data(*ptr->imageData_);
     auto len = static_cast<size_t>(data.size());
     auto store_data = reinterpret_cast<void *>(data.data());
 
@@ -185,10 +185,14 @@ v8::Local<v8::Object> ImageDataImpl::NewInstance(v8::Isolate *isolate, ImageData
     return handle_scope.Escape(ret);
 }
 
-const ImageData& ImageDataImpl::GetImageData() {
+ImageData &ImageDataImpl::GetImageData() {
     return *this->imageData_;
 }
 
-ImageData& ImageDataImpl::GetImageDataMut() {
-    return *this->imageData_;
+const float ImageDataImpl::GetWidth() {
+    return canvas_native_image_data_get_width(*this->imageData_);
+}
+
+const float ImageDataImpl::GetHeight() {
+    return canvas_native_image_data_get_height(*this->imageData_);
 }

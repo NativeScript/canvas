@@ -149,10 +149,11 @@ public:
     static void SetM44(v8::Local<v8::String> name, v8::Local<v8::Value> value,
                        const v8::PropertyCallbackInfo<void> &info);
 
+    static MatrixImpl *GetPointer(v8::Local<v8::Object> object);
+
+    Matrix& GetMatrix();
 private:
     rust::Box <Matrix> matrix_;
-
-    static MatrixImpl *GetPointer(v8::Local<v8::Object> object);
 
     static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
 };

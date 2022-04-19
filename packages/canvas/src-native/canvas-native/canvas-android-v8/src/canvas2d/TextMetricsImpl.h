@@ -2,8 +2,7 @@
 // Created by Osei Fortune on 18/04/2022.
 //
 
-#ifndef CANVAS_NATIVE_TEXTMETRICSIMPL_H
-#define CANVAS_NATIVE_TEXTMETRICSIMPL_H
+#pragma once
 
 #include "../Common.h"
 #include "../Helpers.h"
@@ -53,5 +52,3 @@ private:
     static v8::Local<v8::Object> GetCtor(v8::Isolate *isolate);
 };
 
-
-#endif //CANVAS_NATIVE_TEXTMETRICSIMPL_H

@@ -64,21 +64,21 @@ Object.defineProperty(global, 'FileReader', {
 	writable: true,
 });
 
-if (!((global as any).TextDecoder instanceof TextDecoder)) {
-	Object.defineProperty(global, 'TextDecoder', {
-		value: TextDecoder,
-		configurable: true,
-		writable: true,
-	});
-}
+// if (!((global as any).TextDecoder instanceof TextDecoder)) {
+// 	Object.defineProperty(global, 'TextDecoder', {
+// 		value: TextDecoder,
+// 		configurable: true,
+// 		writable: true,
+// 	});
+// }
 
-if (!((global as any).TextEncoder instanceof TextEncoder)) {
-	Object.defineProperty(global, 'TextEncoder', {
-		value: TextEncoder,
-		configurable: true,
-		writable: true,
-	});
-}
+// if (!((global as any).TextEncoder instanceof TextEncoder)) {
+// 	Object.defineProperty(global, 'TextEncoder', {
+// 		value: TextEncoder,
+// 		configurable: true,
+// 		writable: true,
+// 	});
+// }
 
 if (!((global as any).URL instanceof URL)) {
 	Object.defineProperty(global, 'URL', {

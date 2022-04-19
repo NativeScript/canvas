@@ -47,24 +47,28 @@ pub fn ndk() -> String {
 
 const FLAGS_STR: &str = "-std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
 
-const CPP_SOURCE: [&str; 4] = [
+const CPP_SOURCE: [&str; 6] = [
     "src/Caches.cpp",
     "src/Helpers.cpp",
     "src/OnImageAssetLoadCallbackHolder.cpp",
     "src/ImageAssetImpl.cpp",
+    "src/TextEncoderImpl.cpp",
+    "src/TextDecoderImpl.cpp",
 ];
 
-const CPP_SOURCE_HEADERS: [&str; 4] = [
+const CPP_SOURCE_HEADERS: [&str; 6] = [
     "src/Caches.h",
     "src/Helpers.h",
     "src/OnImageAssetLoadCallbackHolder.h",
     "src/ImageAssetImpl.h",
+    "src/TextEncoderImpl.h",
+    "src/TextDecoderImpl.h",
 ];
 
-const CPP_2D_SOURCE: [&str; 5] = [
-    // "src/canvas2d/CanvasGradient.cpp",
-    // "src/canvas2d/CanvasPattern.cpp",
-    // "src/canvas2d/CanvasRenderingContext2D.cpp",
+const CPP_2D_SOURCE: [&str; 8] = [
+    "src/canvas2d/CanvasGradient.cpp",
+    "src/canvas2d/CanvasPattern.cpp",
+    "src/canvas2d/CanvasRenderingContext2DImpl.cpp",
     "src/canvas2d/ImageDataImpl.cpp",
     "src/canvas2d/Path2D.cpp",
     "src/canvas2d/MatrixImpl.cpp",
@@ -72,10 +76,10 @@ const CPP_2D_SOURCE: [&str; 5] = [
     "src/canvas2d/Canvas2D.cpp",
 ];
 
-const CPP_2D_SOURCE_HEADERS: [&str; 5] = [
-    // "src/canvas2d/CanvasGradient.cpp",
-    // "src/canvas2d/CanvasPattern.cpp",
-    // "src/canvas2d/CanvasRenderingContext2D.cpp",
+const CPP_2D_SOURCE_HEADERS: [&str; 8] = [
+    "src/canvas2d/CanvasGradient.h",
+    "src/canvas2d/CanvasPattern.h",
+    "src/canvas2d/CanvasRenderingContext2DImpl.h",
     "src/canvas2d/ImageDataImpl.h",
     "src/canvas2d/Path2D.h",
     "src/canvas2d/MatrixImpl.h",

@@ -75,7 +75,7 @@ export RUSTFLAGS="$CARGO_FLAGS"
 cd "$NATIVE_SRC"
 
 # Build arm
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features='panic_immediate_abort' --target armv7-linux-androideabi  $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features='panic_immediate_abort' --target armv7-linux-androideabi -p canvas-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME"
@@ -90,7 +90,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_ARMEABI_V7A" "$ANDROID_ARMEABI_V7A_DIR/$LIBCPLUSPLUS
 
 
 # Build arm64
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target aarch64-linux-android  $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target aarch64-linux-android -p canvas-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_AARCH_64_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_AARCH_64_DIR/$OUTPUT_LIB_NAME"
@@ -107,7 +107,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_AARCH_64" "$ANDROID_AARCH_64_DIR/$LIBCPLUSPLUS_NAME"
 
 # Build x86
 
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target i686-linux-android $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target i686-linux-android -p canvas-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_x86_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_x86_DIR/$OUTPUT_LIB_NAME"
@@ -124,7 +124,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_x86" "$ANDROID_x86_DIR/$LIBCPLUSPLUS_NAME"
 
 # Build x86_64
 
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target x86_64-linux-android  $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target x86_64-linux-android -p canvas-android   $BUILD_FLAG
 
 if [[ -f "$ANDROID_x86_64_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_x86_64_DIR/$OUTPUT_LIB_NAME"

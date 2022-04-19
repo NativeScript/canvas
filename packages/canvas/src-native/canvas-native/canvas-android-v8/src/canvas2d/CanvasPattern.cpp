@@ -4,50 +4,34 @@
 
 #include "CanvasPattern.h"
 
+CanvasPattern::CanvasPattern(rust::Box <PaintStyle> style) : style_(std::move(style)) {}
+
 void CanvasPattern::Init(v8::Isolate *isolate) {
     auto ctorFunc = GetCtorFunc(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, v8::String::NewFromUtf8(isolate, "CanvasPattern").ToLocalChecked(), ctorFunc);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "CanvasPattern"), ctorFunc);
 }
 
-v8::Local<v8::Function> CanvasPattern::GetCtorFunc(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto func = cache->CanvasPatternCtorFunc.get();
-    if (func != nullptr) {
-        return func->Get(isolate);
+CanvasPattern *CanvasPattern::GetPointer(v8::Local<v8::Object> object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
     }
-
-    auto context = isolate->GetCurrentContext();
-    auto patternTpl = v8::ObjectTemplate::New(isolate);
-    patternTpl->SetInternalFieldCount(1);
-
-    auto setTransformFunc = v8::FunctionTemplate::New(isolate, SetTransform);
-
-    patternTpl->Set(
-            v8::String::NewFromUtf8(isolate, "setTransform").ToLocalChecked(),
-            setTransformFunc->GetFunction(context).ToLocalChecked()
-    );
-
-    Local <Object> obj = patternTpl->NewInstance(context).ToLocalChecked();
-
-    auto tpl = v8::FunctionTemplate::New(isolate, CreateCallback);
-
-    tpl->SetClassName(Helpers::ConvertToV8String(isolate, "CanvasPattern"));
-
-    auto ctorFunc = tpl->GetFunction(context).ToLocalChecked();
-
-    cache->CanvasPatternCtorFunc = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(ctorFunc);
-
-    return ctorFunc;
+    return static_cast<CanvasPattern *>(ptr);
 }
 
-v8::Local<v8::Object> CanvasPattern::Create(v8::Local<v8::Context> context, intptr_t pattern) {
-    auto ctorFunc = CanvasPattern::GetCtorFunc(context->GetIsolate());
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
-    auto ext = v8::External::New(context->GetIsolate(), reinterpret_cast<void *>(pattern));
+v8::Local<v8::Object> CanvasPattern::NewInstance(v8::Isolate *isolate, rust::Box <PaintStyle> style) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::EscapableHandleScope handle_scope(isolate);
+    auto ctorFunc = CanvasPattern::GetCtorFunc(isolate);
+    CanvasPattern *gradient = new CanvasPattern(std::move(style));
+    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    Helpers::SetInternalClassName(isolate, result, "CanvasPattern");
+    auto ext = v8::External::New(isolate, gradient);
     result->SetInternalField(0, ext);
-    return result;
+    return handle_scope.Escape(result);
 }
 
 void CanvasPattern::CreateCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -56,17 +40,40 @@ void CanvasPattern::CreateCallback(const v8::FunctionCallbackInfo<v8::Value> &ar
 
 void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (args.Length() == 1) {
-        // todo check if instanceof matrix
-        auto obj = args.Holder();
-        auto ptr = static_cast<intptr_t>(reinterpret_cast<size_t>(obj->GetInternalField(
-                0).As<v8::External>()->Value()));
-        auto context = args.GetIsolate()->GetCurrentContext();
-        if (args[0]->IsNullOrUndefined()) {
-            return;
+        auto isolate = args.GetIsolate();
+        auto context = isolate->GetCurrentContext();
+        if (args[0]->IsObject()) {
+            auto matrix = args[0]->ToObject(context).ToLocalChecked();
+            if (Helpers::IsInstanceOf(isolate, matrix, "DOMMatrix")) {
+                auto ptr = GetPointer(args.Holder());
+                auto matrix_ptr = MatrixImpl::GetPointer(matrix);
+                canvas_native_pattern_set_transform(ptr->GetPaintStyle(), matrix_ptr->GetMatrix());
+            }
         }
-        auto matrix = args[0]->ToObject(context).ToLocalChecked();
-        auto matrix_ptr = static_cast<intptr_t>(reinterpret_cast<size_t>(matrix->GetInternalField(
-                0).As<v8::External>()->Value()));
-        canvas_native_pattern_set_transform(ptr, matrix_ptr);
     }
+}
+
+v8::Local<v8::Function> CanvasPattern::GetCtorFunc(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto func = cache->CanvasPatternCtor.get();
+    if (func != nullptr) {
+        return func->Get(isolate);
+    }
+    auto context = isolate->GetCurrentContext();
+    auto patternTpl = v8::FunctionTemplate::New(isolate, &CreateCallback);
+    patternTpl->SetClassName(Helpers::ConvertToV8String(isolate, "CanvasPattern"));
+    patternTpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+    patternTpl->InstanceTemplate()->Set(
+            Helpers::ConvertToV8String(isolate, "setTransform"),
+            v8::FunctionTemplate::New(isolate, &SetTransform)
+    );
+
+    auto ctor = patternTpl->GetFunction(context).ToLocalChecked();
+    cache->CanvasPatternCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, ctor);
+    return ctor;
+}
+
+PaintStyle &CanvasPattern::GetPaintStyle() {
+    return *this->style_;
 }

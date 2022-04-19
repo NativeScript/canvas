@@ -975,12 +975,20 @@ mod ffi {
 }
 
 fn canvas_native_context_create_with_wrapper(context: isize) -> Box<CanvasRenderingContext2D> {
-    let mut wrapper = unsafe { Box::from_raw(context as *mut ContextWrapper) };
-    let ctx = GLContext::get_current();
-    Box::new(CanvasRenderingContext2D {
-        context: *wrapper,
+    let mut wrapper = unsafe { context as *mut ContextWrapper };
+    let mut wrapper = unsafe { &mut *wrapper };
+    console_log("wrapper unboxed");
+    let ctx = GLContext::default();
+    console_log("current gl context");
+    let clone = wrapper.clone();
+    console_log("after clone");
+    let b = Box::new(CanvasRenderingContext2D {
+        context: clone,
         gl_context: ctx,
-    })
+    });
+
+    console_log("context wrapped");
+    b
 }
 
 pub fn canvas_native_context_create(

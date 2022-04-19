@@ -21,8 +21,10 @@ void CanvasRenderingContext2DImpl::Init(v8::Isolate *isolate) {
 
 void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    if (args[0]->IsNumber()) {
-        auto ptr = args[0]->IntegerValue(isolate->GetCurrentContext()).FromMaybe(0);
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0 && !args[0]->IsNullOrUndefined()) {
+        auto ptr = args[0]->IntegerValue(context).FromMaybe(0);
         if (ptr == 0) {
             args.GetReturnValue().Set(v8::Undefined(isolate));
         } else {

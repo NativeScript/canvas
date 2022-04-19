@@ -141,6 +141,12 @@ pub struct Context {
     pub(crate) font_color: Color,
 }
 
+impl Drop for Context {
+    fn drop(&mut self) {
+        log::debug!(target: "JS","Drop Context");
+    }
+}
+
 pub struct ContextWrapper {
     inner: Arc<parking_lot::Mutex<Context>>,
 }
@@ -169,11 +175,22 @@ impl ContextWrapper {
     }
 }
 
+impl Drop for ContextWrapper{
+    fn drop(&mut self) {
+        log::debug!(target: "JS","Drop ContextWrapper");
+    }
+}
+
 impl Clone for ContextWrapper {
     fn clone(&self) -> Self {
+        log::debug!(target: "JS","Cloning ContextWrapper");
         Self {
             inner: Arc::clone(&self.inner),
         }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.inner = Arc::clone(&source.inner)
     }
 }
 

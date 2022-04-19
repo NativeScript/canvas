@@ -2,9 +2,12 @@ let LAF = 0;
 
 export function rainbowOctopus(canvas) {
 
+  console.log('context.canvas.nativeView.getNativeContext()', canvas.nativeView.getNativeContext());
+
   var context = canvas.getContext('2d');
-  console.log('context.canvas.nativeView.getNativeContext()', context.canvas.nativeView.getNativeContext());
-  var ctx = global.__getCanvasRenderingContext2D(context.canvas.nativeView.getNativeContext())/* canvas context */,
+  const value = java.lang.Long.valueOf(context.canvas.nativeView.getNativeContext()) as java.lang.Long;
+  console.log('context.canvas.nativeView.getNativeContext()', value);
+  var ctx = global.__getCanvasRenderingContext2D(value.intValue())/* canvas context */,
     w /* canvas height */, h /* canvas height */,
 
     t = 0,
@@ -25,6 +28,10 @@ export function rainbowOctopus(canvas) {
     hue,
     t_step = 1 / 60,
     requestID;
+
+    console.log(ctx);
+
+
 
   /* FUNCTIONS */
   var trimUnit = function (input_str, unit) {

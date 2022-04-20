@@ -7,8 +7,6 @@
 #include "../Common.h"
 #include "../Helpers.h"
 #include "../Caches.h"
-#include "rust/cxx.h"
-#include "canvas-android-v8/src/bridges/context.rs.h"
 
 class TextMetricsImpl {
 public:
@@ -49,6 +47,6 @@ private:
 
     static TextMetricsImpl *GetPointer(v8::Local<v8::Object> object);
 
-    static v8::Local<v8::Object> GetCtor(v8::Isolate *isolate);
+    static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
 };
 

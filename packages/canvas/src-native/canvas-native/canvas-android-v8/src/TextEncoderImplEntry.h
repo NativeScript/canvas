@@ -5,8 +5,6 @@
 #pragma once
 
 #include "Common.h"
-#include "rust/cxx.h"
-#include "canvas-android-v8/src/bridges/context.rs.h"
 
 struct TextEncoderImplEntry {
     TextEncoderImplEntry(rust::Vec<uint8_t> data) : data_(std::move(data)){}

@@ -6,7 +6,15 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
   function init() {
     //canvas.nativeView.setHandleInvalidationManually(true);
     // Initialize the context of the canvas
-    var ctx = canvas.getContext ? canvas.getContext('2d') : canvas;
+    var context = canvas.getContext ? canvas.getContext('2d') : canvas;
+
+
+  const ptr = context.canvas.nativeView.getNativeContext();
+  console.log('context.canvas.nativeView.getNativeContext()', ptr);
+  const v8Ctx = global.__getCanvasRenderingContext2DImpl(String(ptr));
+
+  
+  var ctx = v8Ctx;
     // canvas.nativeView.handleInvalidationManually = true
 
     // Set the canvas width and height to occupy full window
@@ -14,7 +22,7 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
       H = height || canvas.getMeasuredHeight();
 
     // Some variables for later use
-    var particleCount = 300,
+    var particleCount = 500,
       particles = [],
       minDist = 50,
       dist;

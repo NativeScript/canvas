@@ -42,8 +42,8 @@ void Path2D::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     } else {
         v8::Local<v8::Object> ret = args.This();
-        ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
-                        Helpers::ConvertToV8String(isolate, "Path2D"));
+        Helpers::SetInternalClassName(isolate,ret, "Path2D");
+
         if (args.Length() > 0) {
             auto obj = args[0];
             if (obj->IsString()) {

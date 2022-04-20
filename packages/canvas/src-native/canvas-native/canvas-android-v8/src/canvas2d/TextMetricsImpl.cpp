@@ -38,10 +38,9 @@ v8::Local<v8::Object> TextMetricsImpl::NewInstance(v8::Isolate *isolate, rust::B
     v8::Isolate::Scope isolate_scope(isolate);
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
-    auto ret = GetCtor(isolate);
+    auto ret = GetCtor(isolate)->NewInstance(context).ToLocalChecked();
 
-    ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
-                    Helpers::ConvertToV8String(isolate, "TextMetrics"));
+    Helpers::SetInternalClassName(isolate, ret, "TextMetrics");
 
     TextMetricsImpl *value = new TextMetricsImpl(std::move(metrics));
     auto ext = v8::External::New(isolate, value);
@@ -58,7 +57,7 @@ TextMetricsImpl *TextMetricsImpl::GetPointer(v8::Local<v8::Object> object) {
     return static_cast<TextMetricsImpl *>(ptr);
 }
 
-v8::Local<v8::Object> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::Function> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
     auto tmpl = cache->TextMetricsTmpl.get();
     auto context = isolate->GetCurrentContext();

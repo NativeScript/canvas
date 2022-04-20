@@ -1,7 +1,7 @@
 use std::os::raw::c_float;
 use std::sync::Arc;
 
-use parking_lot::{RawMutex, RawRwLock};
+use parking_lot::{Mutex, RawMutex, RawRwLock};
 use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use skia_safe::{Color, Point, Surface};
 
@@ -172,6 +172,15 @@ impl ContextWrapper {
 
     pub fn into_raw(self) -> *mut ContextWrapper {
         Box::into_raw(self.into_box())
+    }
+
+    pub fn get_inner(&self) -> &Arc<Mutex<Context>> {
+        log::debug!(target: "JS","get_inner");
+        &self.inner
+    }
+
+    pub fn from_inner(inner: Arc<Mutex<Context>>) -> ContextWrapper {
+        Self { inner }
     }
 }
 

@@ -6,7 +6,6 @@
 #include "../Common.h"
 #include "../Caches.h"
 #include "../Helpers.h"
-#include "canvas-android-v8/src/bridges/context.rs.h"
 #include "MatrixImpl.h"
 
 class CanvasPattern {

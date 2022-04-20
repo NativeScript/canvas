@@ -26,6 +26,9 @@ public:
     std::unique_ptr <v8::Persistent<v8::Function>> TextMetricsTmpl = std::unique_ptr<v8::Persistent<v8::Function>>(
             nullptr);
 
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> CanvasRenderingContext2DTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
     std::unique_ptr <v8::Persistent<v8::Function>> CanvasRenderingContext2DCtor = std::unique_ptr<v8::Persistent<v8::Function>>(
             nullptr);
     std::unique_ptr <v8::Persistent<v8::Function>> CanvasGradientCtor = std::unique_ptr<v8::Persistent<v8::Function>>(

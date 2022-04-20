@@ -3,6 +3,7 @@
 //
 
 #include "CanvasGradient.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 CanvasGradient::CanvasGradient(rust::Box <PaintStyle> style) : style_(std::move(style)) {}
 

@@ -1,12 +1,13 @@
 use std::ffi::{CStr, CString};
 use std::fmt::format;
 use std::os::raw::{c_char, c_int, c_uint, c_void};
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
-use cxx::{let_cxx_string, type_id, CxxString, ExternType, SharedPtr};
+use cxx::{CxxString, ExternType, let_cxx_string, SharedPtr, type_id};
 use parking_lot::{Mutex, MutexGuard, RawMutex};
 
+use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_core::context::drawing_paths::fill_rule::FillRule;
 use canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -16,7 +17,6 @@ use canvas_core::context::line_styles::line_cap::LineCap;
 use canvas_core::context::line_styles::line_join::LineJoin;
 use canvas_core::context::text_styles::text_align::TextAlign;
 use canvas_core::context::text_styles::text_direction::TextDirection;
-use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::utils::color::{parse_color, to_parsed_color};
 use canvas_core::utils::image::{
     from_image_slice, from_image_slice_encoded, to_image, to_image_encoded,
@@ -105,6 +105,12 @@ pub struct TextEncoder(canvas_core::context::text_encoder::TextEncoder);
 pub struct TextDecoder(canvas_core::context::text_decoder::TextDecoder);
 /* TextDecoder */
 
+
+/* Raf */
+#[derive(Clone)]
+pub struct Raf(crate::raf::Raf);
+/* Raf */
+
 /* CanvasRenderingContext2D */
 
 pub struct CanvasRenderingContext2D {
@@ -156,9 +162,20 @@ mod ffi {
         Pattern,
     }
 
+    pub(crate) enum InvalidateState {
+        NONE,
+        PENDING,
+        INVALIDATING,
+    }
+
     unsafe extern "C++" {
         include!("canvas-android-v8/src/OnImageAssetLoadCallbackHolder.h");
         fn OnImageAssetLoadCallbackHolderComplete(callback: isize, complete: bool);
+    }
+
+    unsafe extern "C++" {
+        include!("canvas-android-v8/src/OnRafCallback.h");
+        fn OnRafCallbackOnFrame(callback: isize, ts: i64);
     }
 
     extern "Rust" {
@@ -171,6 +188,7 @@ mod ffi {
         type ImageAsset;
         type TextDecoder;
         type TextEncoder;
+        type Raf;
 
         /* Utils */
         fn _log(priority: isize, tag: &str, text: &str);
@@ -460,6 +478,18 @@ mod ffi {
         fn canvas_native_text_encoder_encode(encoder: &mut TextEncoder, text: &str) -> Vec<u8>;
         /* TextEncoder */
 
+        /* Raf */
+        fn canvas_native_raf_create(callback: isize)-> Box<Raf>;
+        fn canvas_native_raf_start(raf: &mut Raf);
+        fn canvas_native_raf_stop(raf: &mut Raf);
+        fn canvas_native_raf_get_started(raf: &Raf) -> bool;
+        /* Raf */
+
+        /* GL */
+        fn canvas_native_context_gl_make_current(context: &CanvasRenderingContext2D)-> bool;
+        fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D)->bool;
+        /* GL */
+
         /* CanvasRenderingContext2D */
         fn canvas_native_context_create_with_wrapper(
             context: isize,
@@ -486,6 +516,8 @@ mod ffi {
             ppi: f32,
             direction: u32,
         ) -> Box<CanvasRenderingContext2D>;
+
+        fn canvas_native_context_flush(context: &CanvasRenderingContext2D);
 
         fn canvas_native_context_get_global_alpha(context: &CanvasRenderingContext2D) -> f32;
         fn canvas_native_context_set_global_alpha(
@@ -975,10 +1007,11 @@ mod ffi {
 }
 
 fn canvas_native_context_create_with_wrapper(context: isize) -> Box<CanvasRenderingContext2D> {
+    console_log(format!("context ptr {:?}", context).as_str());
     let mut wrapper = unsafe { context as *mut ContextWrapper };
     let mut wrapper = unsafe { &mut *wrapper };
     console_log("wrapper unboxed");
-    let ctx = GLContext::default();
+    let ctx = GLContext::get_current();
     console_log("current gl context");
     let clone = wrapper.clone();
     console_log("after clone");
@@ -1932,6 +1965,10 @@ pub fn canvas_native_context_translate(context: &mut CanvasRenderingContext2D, x
     context.get_context().translate(x, y)
 }
 
+pub fn canvas_native_context_flush(context: &CanvasRenderingContext2D) {
+    context.get_context().flush();
+}
+
 /* CanvasRenderingContext2D */
 
 /* Path2D */
@@ -2599,3 +2636,29 @@ pub fn canvas_native_text_encoder_get_encoding(encoder: &mut TextEncoder) -> Str
 }
 
 /* TextEncoder */
+
+
+pub fn canvas_native_raf_create(callback: isize)-> Box<Raf> {
+    Box::new(
+        Raf(crate::raf::Raf::new(Some(Box::new(move |ts|{
+            ffi::OnRafCallbackOnFrame(callback, ts);
+        }))))
+    )
+}
+
+pub fn canvas_native_raf_start(raf: &mut Raf) {
+    raf.0.start();
+}
+pub fn canvas_native_raf_stop(raf: &mut Raf) {
+    raf.0.stop()
+}
+pub fn canvas_native_raf_get_started(raf: &Raf) -> bool {
+    raf.0.started()
+}
+
+pub fn canvas_native_context_gl_make_current(context: &CanvasRenderingContext2D) -> bool {
+    context.gl_context.make_current()
+}
+pub fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D) -> bool {
+    context.gl_context.swap_buffers()
+}

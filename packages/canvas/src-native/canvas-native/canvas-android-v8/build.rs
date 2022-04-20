@@ -47,22 +47,26 @@ pub fn ndk() -> String {
 
 const FLAGS_STR: &str = "-std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
 
-const CPP_SOURCE: [&str; 6] = [
+const CPP_SOURCE: [&str; 8] = [
     "src/Caches.cpp",
     "src/Helpers.cpp",
     "src/OnImageAssetLoadCallbackHolder.cpp",
     "src/ImageAssetImpl.cpp",
     "src/TextEncoderImpl.cpp",
     "src/TextDecoderImpl.cpp",
+    "src/OnRafCallback.cpp",
+    "src/RafImpl.cpp"
 ];
 
-const CPP_SOURCE_HEADERS: [&str; 6] = [
+const CPP_SOURCE_HEADERS: [&str; 8] = [
     "src/Caches.h",
     "src/Helpers.h",
     "src/OnImageAssetLoadCallbackHolder.h",
     "src/ImageAssetImpl.h",
     "src/TextEncoderImpl.h",
     "src/TextDecoderImpl.h",
+    "src/OnRafCallback.h",
+    "src/RafImpl.h"
 ];
 
 const CPP_2D_SOURCE: [&str; 8] = [
@@ -147,10 +151,16 @@ fn main() {
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=android"); // the "-l" flag
                                                       // the resulting bindings.
+
+
+            // println!("cargo:rerun-if-changed={}", "wrapper.h");
             let bindings = bindgen::Builder::default()
                 // The input header we would like to generate
                 // bindings for.
                 .header("wrapper.h")
+                .clang_arg(&format!("--target={}", target_str))
+                .clang_arg(&format!("--sysroot={}/sysroot", ndk()))
+                .clang_arg(&format!("-I{}/sources/android/cpufeatures", ndk()))
                 .clang_arg(&include_dir)
                 // Finish the builder and generate the bindings.
                 .generate()
@@ -208,6 +218,11 @@ fn main() {
     let mut build = cxx_build::bridges(["src/lib.rs", "src/bridges/context.rs"]);
 
     build
+        // .include("include")
+        // .include("src")
+        // .include("src/canvas2d")
+        // .include("src/webgl")
+        // .include("src/webgl2")
         .flag("-pthread")
         .cpp_link_stdlib("c++_static")
         .flag_if_supported("-std=c++14")

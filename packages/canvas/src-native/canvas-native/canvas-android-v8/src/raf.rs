@@ -1,0 +1,104 @@
+use std::sync::Arc;
+
+use libc::c_void;
+
+use crate::choregrapher::{AChoreographer, AChoreographer_frameCallback64, AChoreographer_getInstance, AChoreographer_postFrameCallback, AChoreographer_postFrameCallback64};
+use crate::looper::ALooper_prepare;
+
+type RafCallback = Option<Box<dyn Fn(i64)>>;
+
+struct RafInner {
+    started: bool,
+    callback: RafCallback,
+    use_deprecated: bool,
+}
+pub struct Raf {
+    inner: Arc<parking_lot::Mutex<RafInner>>,
+}
+
+impl Raf {
+    extern "C" fn callback(frame_time_nanos: i64, data: *mut ::std::os::raw::c_void) {
+        if !data.is_null() {
+            let data_ptr = data;
+            let data = data as *mut Raf;
+            let data = unsafe { &mut *data };
+            let lock = data.inner.lock();
+            if !lock.started {
+                return;
+            }
+            if let Some(callback) = lock.callback.as_ref() {
+                callback(frame_time_nanos);
+            }
+
+            unsafe {
+                let instance = AChoreographer_getInstance();
+
+                if lock.use_deprecated {
+                    AChoreographer_postFrameCallback(instance, Some(Raf::callback), data_ptr);
+                    return;
+                }else {
+                    // todo get sdk version
+                   // AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data_ptr);
+                }
+            }
+        }
+    }
+
+    pub fn new(callback: RafCallback) -> Self {
+        Self {
+            inner: Arc::new(parking_lot::Mutex::new(RafInner {
+                started: false,
+                callback,
+                use_deprecated: true,
+            })),
+        }
+    }
+
+    pub fn start(&mut self) {
+        unsafe {
+            ALooper_prepare(0);
+            let instance = AChoreographer_getInstance();
+            let data = Box::into_raw(Box::new(self.clone()));
+            let lock = self.inner.lock();
+            if lock.use_deprecated {
+                AChoreographer_postFrameCallback(instance, Some(Raf::callback), data.cast());
+            }else {
+                // todo get sdk version
+                //AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data.cast());
+            }
+        }
+        let mut lock = self.inner.lock();
+        lock.started = true;
+    }
+
+    pub fn stop(&mut self) {
+        let mut lock = self.inner.lock();
+        lock.started = false;
+    }
+
+    pub fn set_callback(&mut self, callback: RafCallback) {
+        let mut lock = self.inner.lock();
+        lock.callback = callback;
+    }
+
+    pub fn started(&self) -> bool {
+        let mut started = false;
+        {
+            let lock = self.inner.lock();
+            started = lock.started;
+        }
+        started
+    }
+}
+
+impl Clone for Raf {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.inner = Arc::clone(&source.inner)
+    }
+}

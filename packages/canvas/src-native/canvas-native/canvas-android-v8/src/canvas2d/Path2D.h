@@ -7,8 +7,7 @@
 #include "../Common.h"
 #include "../Caches.h"
 #include "../Helpers.h"
-#include "rust/cxx.h"
-#include "canvas-android-v8/src/bridges/context.rs.h"
+
 class Path2D {
 public:
     Path2D(rust::Box <Path> path);

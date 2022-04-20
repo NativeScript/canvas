@@ -7,8 +7,6 @@
 #include "Common.h"
 #include "Caches.h"
 #include "Helpers.h"
-#include "rust/cxx.h"
-#include "canvas-android-v8/src/bridges/context.rs.h"
 
 class TextEncoderImpl {
 public:

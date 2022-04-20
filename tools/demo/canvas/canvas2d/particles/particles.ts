@@ -54,7 +54,13 @@ var Particle = function (x, y) {
 };
 
 function touchParticles(canvas, w?, h?, nativeCanvas?) {
-	const ctx = canvas.getContext ? canvas.getContext('2d') : canvas;
+	const context = canvas.getContext ? canvas.getContext('2d') : canvas;
+
+  const ptr = context.canvas.nativeView.getNativeContext();
+  console.log('context.canvas.nativeView.getNativeContext()', ptr);
+  const v8Ctx = global.__getCanvasRenderingContext2DImpl(String(ptr));
+
+  const ctx = context;
 
 // Set Canvas to be window size
 	//  canvas.width = window.innerWidth;

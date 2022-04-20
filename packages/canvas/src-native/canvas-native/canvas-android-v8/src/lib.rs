@@ -1,5 +1,8 @@
 pub mod bridges;
 pub mod gl_context;
+pub mod raf;
+pub mod choregrapher;
+pub mod looper;
 
 #[cxx::bridge]
 mod ffi {

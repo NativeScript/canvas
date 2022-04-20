@@ -3,6 +3,8 @@
 //
 
 #pragma once
+#pragma process_pending_includes
+
 
 #include "../Common.h"
 #include "../Caches.h"
@@ -14,6 +16,8 @@
 #include "TextMetricsImpl.h"
 #include "../ImageAssetImpl.h"
 #include "Path2D.h"
+#include "../RafImpl.h"
+
 
 class CanvasRenderingContext2DImpl {
 public:
@@ -27,7 +31,7 @@ public:
 
     static void InstanceFromPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, intptr_t context);
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, rust::Box <CanvasRenderingContext2D> ctx);
 
     static void GetShadowColor(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
@@ -219,9 +223,22 @@ public:
 
     static void Translate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    void UpdateInvalidateState();
+
+    InvalidateState GetInvalidateState() const;
+
+    void SetInvalidateState(InvalidateState state);
+
+    void Flush();
+
+    static void Flush(intptr_t context);
 
 private:
     rust::Box <CanvasRenderingContext2D> context_;
+
+    InvalidateState invalidateState_ = InvalidateState::NONE;
+
+    std::shared_ptr<RafImpl> raf_;
 
     static CanvasRenderingContext2DImpl *GetPointer(v8::Local<v8::Object> object);
 

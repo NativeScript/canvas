@@ -5,9 +5,10 @@ export function rainbowOctopus(canvas) {
   console.log('context.canvas.nativeView.getNativeContext()', canvas.nativeView.getNativeContext());
 
   var context = canvas.getContext('2d');
-  const value = java.lang.Long.valueOf(context.canvas.nativeView.getNativeContext()) as java.lang.Long;
-  console.log('context.canvas.nativeView.getNativeContext()', value);
-  var ctx = global.__getCanvasRenderingContext2D(value.intValue())/* canvas context */,
+  const ptr = context.canvas.nativeView.getNativeContext();
+  console.log('context.canvas.nativeView.getNativeContext()', ptr);
+  const v8Ctx = global.__getCanvasRenderingContext2DImpl(String(ptr));
+  var ctx = context/* canvas context */,
     w /* canvas height */, h /* canvas height */,
 
     t = 0,
@@ -29,10 +30,6 @@ export function rainbowOctopus(canvas) {
     t_step = 1 / 60,
     requestID;
 
-    console.log(ctx);
-
-
-
   /* FUNCTIONS */
   var trimUnit = function (input_str, unit) {
     return parseInt(input_str.split(unit)[0], 10);
@@ -40,7 +37,6 @@ export function rainbowOctopus(canvas) {
 
   var spiral = function () {
     ctx.clearRect(0, 0, w, h);
-
     for (var i = 0; i < n * m; i++) {
       beta = i * 2 * PI / (n * m);
       x0 = 0;
@@ -52,7 +48,6 @@ export function rainbowOctopus(canvas) {
       ctx.rotate(t / 3);
       /* only need to set the fillstyle once up here now */
       ctx.fillStyle = 'hsl(' + hue + ', 100%, 65%)';
-
       for (var j = 0; j < p; j++) {
         gamma = j * 2 * PI / p;
         r = max(1, pow(2 * (j * (p - j)), .43) - 10);
@@ -65,12 +60,11 @@ export function rainbowOctopus(canvas) {
         y1 = x0 * sin(beta) + y0 * cos(beta);
 
         /* move it to the position of the arc */
-        /* (remove this for a cool effect) */
+        /* (remove this for a cool effect) */;
         ctx.moveTo(x1, y1);
         /* setup the arc path here */
         ctx.arc(x1, y1, r, 0, 2 * PI);
       }
-
       /* close the 1 path that now is a combination of all the arcs */
       ctx.closePath();
       /* fill the whole path only once now */

@@ -26,14 +26,28 @@ impl GLContext {
     pub fn display(&self) -> Option<&EGLDisplay> {
         self.display.as_ref()
     }
+
+    pub fn make_current(&self) -> bool {
+        egl::make_current(
+            self.display.unwrap_or(egl::EGL_NO_DISPLAY),
+            self.surface.unwrap_or(egl::EGL_NO_SURFACE),
+            self.surface.unwrap_or(egl::EGL_NO_SURFACE),
+            self.context.unwrap_or(egl::EGL_NO_CONTEXT),
+        )
+    }
+
+    pub fn swap_buffers(&self) -> bool {
+        egl::swap_buffers(self.display.unwrap_or(egl::EGL_NO_DISPLAY),self.surface.unwrap_or(egl::EGL_NO_SURFACE))
+    }
+
 }
 
-impl Default  for GLContext{
+impl Default for GLContext {
     fn default() -> Self {
-      Self{
-          surface: None,
-          context: None,
-          display: None
-      }
+        Self {
+            surface: None,
+            context: None,
+            display: None,
+        }
     }
 }

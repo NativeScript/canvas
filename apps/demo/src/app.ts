@@ -1,11 +1,12 @@
 //require('@nativescript/canvas-polyfill');
+// import { CanvasRenderingContext2D } from '@nativescript/canvas';
 import { Application, Utils, path as filePath, knownFolders } from '@nativescript/core';
 declare var __non_webpack_require__;
 __non_webpack_require__('~/libcanvasnativev8.so');
 
-try {
-	java.lang.System.loadLibrary('canvasnative');
-} catch (e) {}
+// try {
+// 	java.lang.System.loadLibrary('canvasnative');
+// } catch (e) {}
 
 // try {
 // 	java.lang.System.loadLibrary('canvasnativev8');
@@ -60,7 +61,9 @@ try{
 console.log('CanvasGradient',CanvasGradient);
 console.log('CanvasPattern',CanvasPattern);
 
-console.log('__getCanvasRenderingContext2D', global.__getCanvasRenderingContext2D);
+console.log('__getCanvasRenderingContext2D', global.__getCanvasRenderingContext2DImpl);
+
+console.log('CanvasRenderingContext2D', CanvasRenderingContext2D);
 
 
 const encoder = new TextEncoder();

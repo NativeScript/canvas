@@ -37,9 +37,29 @@ impl GLContext {
     }
 
     pub fn swap_buffers(&self) -> bool {
-        egl::swap_buffers(self.display.unwrap_or(egl::EGL_NO_DISPLAY),self.surface.unwrap_or(egl::EGL_NO_SURFACE))
+        egl::swap_buffers(
+            self.display.unwrap_or(egl::EGL_NO_DISPLAY),
+            self.surface.unwrap_or(egl::EGL_NO_SURFACE),
+        )
     }
 
+    pub fn get_surface_width(&self) -> i32 {
+        if let (Some(display), Some(surface)) = (self.display(), self.surface()) {
+            let mut width = 0;
+            egl::query_surface(*display, *surface, egl::EGL_WIDTH, &mut width);
+            return width;
+        }
+        0
+    }
+
+    pub fn get_surface_height(&self) -> i32 {
+        if let (Some(display), Some(surface)) = (self.display(), self.surface()) {
+            let mut height = 0;
+            egl::query_surface(*display, *surface, egl::EGL_HEIGHT, &mut height);
+            return height;
+        }
+        0
+    }
 }
 
 impl Default for GLContext {

@@ -47,7 +47,7 @@ pub fn ndk() -> String {
 
 const FLAGS_STR: &str = "-std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
 
-const CPP_SOURCE: [&str; 8] = [
+const CPP_SOURCE: [&str; 9] = [
     "src/Caches.cpp",
     "src/Helpers.cpp",
     "src/OnImageAssetLoadCallbackHolder.cpp",
@@ -55,10 +55,11 @@ const CPP_SOURCE: [&str; 8] = [
     "src/TextEncoderImpl.cpp",
     "src/TextDecoderImpl.cpp",
     "src/OnRafCallback.cpp",
-    "src/RafImpl.cpp"
+    "src/RafImpl.cpp",
+    "src/ObjectCacheEntry.cpp"
 ];
 
-const CPP_SOURCE_HEADERS: [&str; 8] = [
+const CPP_SOURCE_HEADERS: [&str; 9] = [
     "src/Caches.h",
     "src/Helpers.h",
     "src/OnImageAssetLoadCallbackHolder.h",
@@ -66,7 +67,8 @@ const CPP_SOURCE_HEADERS: [&str; 8] = [
     "src/TextEncoderImpl.h",
     "src/TextDecoderImpl.h",
     "src/OnRafCallback.h",
-    "src/RafImpl.h"
+    "src/RafImpl.h",
+    "src/ObjectCacheEntry.h"
 ];
 
 const CPP_2D_SOURCE: [&str; 8] = [
@@ -238,7 +240,7 @@ fn main() {
         // .define("_LIBCPP_ABI_VERSION", "Cr")
         .define("_LIBCPP_ENABLE_NODISCARD", None)
         .define("_LIBCPP_ABI_UNSTABLE", None)
-        // .define("V8_31BIT_SMIS_ON_64BIT_ARCH", None)
+        .define("V8_31BIT_SMIS_ON_64BIT_ARCH", None)
         // .define("V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH", None)
         .define("V8_EMBEDDED_BUILTINS", None)
         .files(&CPP_SOURCE)

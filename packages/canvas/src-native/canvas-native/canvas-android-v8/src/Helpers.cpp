@@ -27,18 +27,57 @@ rust::String Helpers::ConvertFromV8String(v8::Isolate *isolate, const v8::Local<
     return ret;
 }
 
+std::string Helpers::ConvertFromV8StringToString(v8::Isolate *isolate, const v8::Local<v8::String> &value) {
+    if (value.IsEmpty()) {
+        return std::string();
+    }
+    v8::HandleScope handle_scope(isolate);
+    auto len = value->Utf8Length(isolate);
+    char buf[len + 1];
+    auto wrote = value->WriteUtf8(isolate, buf);
+    std::string buffer;
+    write_to_string(rust::Slice<const char>(buf, len + 1), buffer);
+    return buffer;
+}
+
+
 bool Helpers::IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz) {
     auto context = isolate->GetCurrentContext();
-    auto key = v8::Private::New(isolate,
-                                Helpers::ConvertToV8String(isolate,
-                                                           "class_name"));
-    auto instance = value->GetPrivate(context, key).FromMaybe(
-            Helpers::ConvertToV8String(isolate, "").As<v8::Value>()
-    );
+//    auto key = v8::Private::New(isolate,
+//                                Helpers::ConvertToV8String(isolate,
+//                                                           "class_name"));
+//    auto instance = value->GetPrivate(context, key);
+//    if(instance.IsEmpty()){
+//        return false;
+//    }
+//
+//    auto to_cmp = Helpers::ConvertFromV8String(isolate, instance.ToLocalChecked()->ToString(context).ToLocalChecked());
+//    return std::strcmp(clazz.c_str(), to_cmp.c_str()) == 0;
 
-    return std::strcmp(clazz.c_str(),
-                       Helpers::ConvertFromV8String(isolate, instance->ToString(context).ToLocalChecked()).c_str()) ==
-           0;
+    v8::TryCatch tryCatch(isolate);
+    v8::Local<v8::Value> object;
+
+    if (context->Global()
+            ->GetRealNamedProperty(context, Helpers::ConvertToV8String(isolate, clazz))
+            .ToLocal(&object)) {
+        if (object->IsFunction()) {
+            auto name = object.As<v8::Function>()->GetName();
+            if (name->IsString()) {
+                if (std::strcmp(Helpers::ConvertFromV8String(isolate, name.As<v8::String>()).c_str(), clazz.c_str()) ==
+                    0) {
+                    return true;
+                }
+            }
+        }
+        if (object->IsObject() &&
+            value->InstanceOf(context, object.As<v8::Object>())
+                    .FromMaybe(false)) {
+            return true;
+        }
+    }
+
+    if (tryCatch.HasCaught()) tryCatch.Reset();
+    return false;
 }
 
 void Helpers::SetInternalClassName(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz) {

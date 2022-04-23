@@ -7,7 +7,7 @@ export function colorRain(canvas) {
     ctx = canvas.getContext('2d'),
 
     //parameters
-    total = w,
+    total = w/2,
     accelleration = .05,
 
     //afterinitial calculations

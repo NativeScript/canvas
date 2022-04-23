@@ -5,6 +5,7 @@ use std::sync::Arc;
 struct ImageDataInner {
     pub(crate) data: *mut u8,
     pub(crate) data_len: usize,
+    pub(crate) data_cap: usize,
     pub(crate) width: c_int,
     pub(crate) height: c_int,
     pub(crate) scale: f32,
@@ -24,33 +25,35 @@ impl Clone for ImageData {
 }
 
 impl ImageData {
-    fn to_raw(data: Vec<u8>) -> (*mut u8, usize) {
-        let mut slice = data.into_boxed_slice();
-        let ptr = slice.as_mut_ptr();
-        let len = slice.len();
-        Box::into_raw(slice);
-        (ptr, len)
+    fn to_raw(mut data:Vec<u8>) -> (*mut u8, usize, usize) {
+        let ptr = data.as_mut_ptr();
+        let len = data.len();
+        let cap = data.capacity();
+        std::mem::forget(data);
+        (ptr, len, cap)
     }
 
     pub fn new(width: c_int, height: c_int) -> Self {
         let data = vec![0u8; (width * height * 4) as usize];
-        let (data, data_len) = Self::to_raw(data);
+        let (data, data_len, data_cap) = Self::to_raw(data);
         Self(Arc::new(ImageDataInner {
             width,
             height,
             data,
             data_len,
+            data_cap,
             scale: 1.,
         }))
     }
 
     pub fn new_with_data(width: c_int, height: c_int, data: Vec<u8>) -> Self {
-        let (data, data_len) = Self::to_raw(data);
+        let (data, data_len, data_cap) = Self::to_raw(data);
         Self(Arc::new(ImageDataInner {
             width,
             height,
             data,
             data_len,
+            data_cap,
             scale: 1.,
         }))
     }
@@ -88,7 +91,7 @@ impl From<&ImageData> for ImageData {
 
 impl Drop for ImageDataInner {
     fn drop(&mut self) {
-        // let _ =
-        //     unsafe { Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)) };
+        let _ =
+            unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) };
     }
 }

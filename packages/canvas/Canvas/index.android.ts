@@ -13,6 +13,7 @@ export * from './common';
 
 export class Canvas extends CanvasBase {
 	_ready = false;
+	private _2dContextJni: CanvasRenderingContext2D;
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
 	private _webgl2Context: WebGL2RenderingContext;
@@ -204,7 +205,9 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._2dContext) {
-					this._2dContext = new CanvasRenderingContext2D(this._canvas.getContext(type, getNativeOptions(options)));
+					this._2dContextJni = new CanvasRenderingContext2D(this._canvas.getContext(type, getNativeOptions(options)));
+
+					this._2dContext = global.__getCanvasRenderingContext2DImpl(String(this._canvas.getNativeContext()))
 					// @ts-ignore
 					this._2dContext._canvas = this;
 				} else {

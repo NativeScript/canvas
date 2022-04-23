@@ -42,66 +42,75 @@ void Path2D::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     } else {
         v8::Local<v8::Object> ret = args.This();
-        Helpers::SetInternalClassName(isolate,ret, "Path2D");
+       // Helpers::SetInternalClassName(isolate, ret, "Path2D");
 
         if (args.Length() > 0) {
             auto obj = args[0];
             if (obj->IsString()) {
                 auto d = Helpers::ConvertFromV8String(isolate, obj->ToString(context).ToLocalChecked());
-                Path2D *path = new Path2D(std::move(
-                        canvas_native_path_create_with_string(d)));
-                auto ext = v8::External::New(isolate, path);
-                ret->SetInternalField(0, ext);
+                auto path_box = canvas_native_path_create_with_string(d);
+                Path2D *path = new Path2D(std::move(path_box));
+                AddWeakListener(isolate, ret, path);
                 args.GetReturnValue().Set(ret);
                 return;
             } else if (obj->IsObject()) {
                 auto cache = Caches::Get(isolate);
                 auto object = obj->ToObject(context).ToLocalChecked();
-                auto key = v8::Private::New(isolate, Helpers::ConvertToV8String(isolate,
-                                                                                "class_name"));
 
-                auto name = object->GetPrivate(context, key).FromMaybe(
-                        Helpers::ConvertToV8String(isolate, "").As<v8::Value>());
-
-                if (name->ToString(context).ToLocalChecked()->StringEquals(
-                        Helpers::ConvertToV8String(isolate, "Path2D"))) {
-                    auto path_from = GetPointer(obj->ToObject(context).ToLocalChecked());
+                if (Helpers::IsInstanceOf(isolate, object, "Path2D")) {
+                    auto path_from = GetPointer(object);
                     Path2D *path = new Path2D(std::move(canvas_native_path_create_with_path(
                             *path_from->path_
                     )));
-                    auto ext = v8::External::New(isolate, path);
-                    ret->SetInternalField(0, ext);
+                    AddWeakListener(isolate, ret, path);
                     args.GetReturnValue().Set(ret);
                     return;
                 }
             }
+        } else {
+            Path2D *path = new Path2D(std::move(canvas_native_path_create()));
+            AddWeakListener(isolate, ret, path);
+            args.GetReturnValue().Set(ret);
         }
-
-        Path2D *path = new Path2D(std::move(canvas_native_path_create()));
-        auto ext = v8::External::New(isolate, path);
-        ret->SetInternalField(0, ext);
-        args.GetReturnValue().Set(ret);
     }
+}
+
+void Path2D::AddWeakListener(v8::Isolate *isolate, v8::Local<v8::Object> object, Path2D *path) {
+    auto ext = v8::External::New(isolate, path);
+    auto context = isolate->GetCurrentContext();
+    if (object->InternalFieldCount() > 0) {
+        object->SetInternalField(0, ext);
+    } else {
+        object->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "rustPtr")),
+                        ext);
+    }
+    auto persistent = new v8::Persistent<v8::Object>(isolate, object);
+    auto entry = new ObjectCacheEntry(static_cast<void *>(path), persistent);
+    auto callback = [](const v8::WeakCallbackInfo<ObjectCacheEntry> &data) {
+        auto value = data.GetParameter();
+        auto path_ptr = static_cast<Path2D *>(value->data);
+        if (path_ptr != nullptr) {
+            delete path_ptr;
+        }
+        auto persistent_ptr = value->object;
+        if (persistent_ptr != nullptr) {
+            if (!persistent_ptr->IsEmpty()) {
+                persistent_ptr->ClearWeak();
+                persistent_ptr->Reset();
+            }
+        }
+        delete value;
+    };
+    persistent->SetWeak(entry, callback, v8::WeakCallbackType::kFinalizer);
 }
 
 void Path2D::AddPath(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
     if (args[0]->IsObject()) {
+        auto ptr = GetPointer(args.Holder());
         auto object = args[0]->ToObject(context).ToLocalChecked();
-        auto cache = Caches::Get(isolate);
-        auto ctor = cache->Path2DCtor->Get(isolate);
-
-        auto key = v8::Private::New(isolate, Helpers::ConvertToV8String(isolate,
-                                                                        "class_name"));
-
-        auto name = object->GetPrivate(context, key).FromMaybe(
-                Helpers::ConvertToV8String(isolate, "").As<v8::Value>());
-
-
-        if (name->ToString(context).ToLocalChecked()->StringEquals(
-                Helpers::ConvertToV8String(isolate, "Path2D"))) {
+        if(Helpers::IsInstanceOf(isolate,object, "Path2D")){
             auto to_add = GetPointer(object);
             canvas_native_path_add_path(*ptr->path_, *to_add->path_);
         }
@@ -295,9 +304,7 @@ void Path2D::ToSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     auto svg = canvas_native_path_to_string(*ptr->path_);
-    args.GetReturnValue().Set(
-            Helpers::ConvertToV8String(isolate, std::string(svg.begin(), svg.end()))
-    );
+    args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, svg.c_str()));
 }
 
 Path2D::~Path2D() {}

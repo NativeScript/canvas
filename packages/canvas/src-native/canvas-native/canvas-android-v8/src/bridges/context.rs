@@ -1,17 +1,26 @@
+use std::borrow::Cow;
+use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::fmt::format;
+use std::io::{Read, Write};
 use std::os::raw::{c_char, c_int, c_uint, c_void};
+use std::os::unix::io::FromRawFd;
+use std::os::unix::prelude::IntoRawFd;
+use std::pin::Pin;
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 
-use cxx::{CxxString, ExternType, let_cxx_string, SharedPtr, type_id};
+use cxx::{CxxString, ExternType, let_cxx_string, SharedPtr, type_id, UniquePtr};
+use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, MutexGuard, RawMutex};
+use parking_lot::lock_api::RwLock;
 
 use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_core::context::drawing_paths::fill_rule::FillRule;
 use canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 use canvas_core::context::fill_and_stroke_styles::pattern::Repetition;
+use canvas_core::context::image_asset::OutputFormat;
 use canvas_core::context::image_smoothing::ImageSmoothingQuality;
 use canvas_core::context::line_styles::line_cap::LineCap;
 use canvas_core::context::line_styles::line_join::LineJoin;
@@ -24,7 +33,18 @@ use canvas_core::utils::image::{
 
 use crate::gl_context::GLContext;
 
+static THREAD_HANDLE_NEXT_ID: AtomicIsize = AtomicIsize::new(0);
+
+pub static THREAD_HANDLE_MAP: OnceCell<
+    parking_lot::RwLock<HashMap<isize, std::thread::JoinHandle<()>>>,
+> = OnceCell::new();
+
 /* Utils */
+
+fn get_thread_handle_map<'a>(
+) -> &'a parking_lot::RwLock<HashMap<isize, std::thread::JoinHandle<()>>> {
+    THREAD_HANDLE_MAP.get_or_init(|| RwLock::new(HashMap::new()))
+}
 
 #[derive(Clone, Copy)]
 #[repr(isize)]
@@ -84,15 +104,20 @@ pub fn console_log(text: &str) {
 }
 
 pub fn to_rust_string(value: &[c_char]) -> String {
-    let val = unsafe { CStr::from_ptr(value.as_ptr()) }
-        .to_string_lossy()
-        .to_string();
     if value.is_empty() {
         return String::new();
     }
     unsafe { CStr::from_ptr(value.as_ptr()).to_string_lossy().to_string() }
 }
 
+pub fn write_to_string(value: &[c_char], mut buf: Pin<&mut CxxString>) {
+    if value.is_empty() {
+        buf.as_mut().push_str("");
+        return;
+    }
+    let string = unsafe { CStr::from_ptr(value.as_ptr()).to_string_lossy() };
+    buf.push_str(string.as_ref());
+}
 /* Utils */
 
 /* TextEncoder */
@@ -104,7 +129,6 @@ pub struct TextEncoder(canvas_core::context::text_encoder::TextEncoder);
 #[derive(Clone)]
 pub struct TextDecoder(canvas_core::context::text_decoder::TextDecoder);
 /* TextDecoder */
-
 
 /* Raf */
 #[derive(Clone)]
@@ -170,7 +194,7 @@ mod ffi {
 
     unsafe extern "C++" {
         include!("canvas-android-v8/src/OnImageAssetLoadCallbackHolder.h");
-        fn OnImageAssetLoadCallbackHolderComplete(callback: isize, complete: bool);
+        pub(crate) fn OnImageAssetLoadCallbackHolderComplete(callback: isize, complete: bool);
     }
 
     unsafe extern "C++" {
@@ -194,6 +218,7 @@ mod ffi {
         fn _log(priority: isize, tag: &str, text: &str);
         fn console_log(text: &str);
         fn to_rust_string(value: &[c_char]) -> String;
+        fn write_to_string(value: &[c_char], mut buf: Pin<&mut CxxString>);
         /* Utils */
 
         /* Path2D */
@@ -201,6 +226,7 @@ mod ffi {
         fn canvas_native_path_create() -> Box<Path>;
         fn canvas_native_path_create_with_path(path: &Path) -> Box<Path>;
         fn canvas_native_path_create_with_string(string: String) -> Box<Path>;
+        fn canvas_native_path_create_with_str(string: &str) -> Box<Path>;
         fn canvas_native_path_close_path(path: &mut Path);
         fn canvas_native_path_move_to(path: &mut Path, x: f32, y: f32);
         fn canvas_native_path_line_to(path: &mut Path, x: f32, y: f32);
@@ -255,6 +281,8 @@ mod ffi {
         fn canvas_native_path_rect(path: &mut Path, x: f32, y: f32, width: f32, height: f32);
 
         fn canvas_native_path_to_string(path: &Path) -> String;
+
+        fn canvas_native_path_to_str(path: &Path, svg: Pin<&mut CxxString>);
         /* Path2D */
 
         /* DOMMatrix */
@@ -364,19 +392,19 @@ mod ffi {
         /* ImageAsset */
         fn canvas_native_image_asset_create() -> Box<ImageAsset>;
 
-        fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: String) -> bool;
+        fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &str) -> bool;
 
         fn canvas_native_image_asset_load_from_path_async(
             asset: &mut ImageAsset,
-            path: String,
+            path: &str,
             callback: isize,
         );
 
-        fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: String) -> bool;
+        fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str) -> bool;
 
         fn canvas_native_image_asset_load_from_url_async(
             asset: &mut ImageAsset,
-            url: String,
+            url: &str,
             callback: isize,
         );
 
@@ -479,15 +507,15 @@ mod ffi {
         /* TextEncoder */
 
         /* Raf */
-        fn canvas_native_raf_create(callback: isize)-> Box<Raf>;
+        fn canvas_native_raf_create(callback: isize) -> Box<Raf>;
         fn canvas_native_raf_start(raf: &mut Raf);
         fn canvas_native_raf_stop(raf: &mut Raf);
         fn canvas_native_raf_get_started(raf: &Raf) -> bool;
         /* Raf */
 
         /* GL */
-        fn canvas_native_context_gl_make_current(context: &CanvasRenderingContext2D)-> bool;
-        fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D)->bool;
+        fn canvas_native_context_gl_make_current(context: &CanvasRenderingContext2D) -> bool;
+        fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D) -> bool;
         /* GL */
 
         /* CanvasRenderingContext2D */
@@ -718,7 +746,7 @@ mod ffi {
 
         fn canvas_native_context_create_pattern_asset(
             context: &mut CanvasRenderingContext2D,
-            asset: &ImageAsset,
+            asset: &mut ImageAsset,
             repetition: &str,
         ) -> Box<PaintStyle>;
 
@@ -1007,21 +1035,14 @@ mod ffi {
 }
 
 fn canvas_native_context_create_with_wrapper(context: isize) -> Box<CanvasRenderingContext2D> {
-    console_log(format!("context ptr {:?}", context).as_str());
     let mut wrapper = unsafe { context as *mut ContextWrapper };
     let mut wrapper = unsafe { &mut *wrapper };
-    console_log("wrapper unboxed");
     let ctx = GLContext::get_current();
-    console_log("current gl context");
     let clone = wrapper.clone();
-    console_log("after clone");
-    let b = Box::new(CanvasRenderingContext2D {
+    Box::new(CanvasRenderingContext2D {
         context: clone,
         gl_context: ctx,
-    });
-
-    console_log("context wrapped");
-    b
+    })
 }
 
 pub fn canvas_native_context_create(
@@ -1491,10 +1512,10 @@ pub fn canvas_native_context_create_pattern(
 
 pub fn canvas_native_context_create_pattern_asset(
     context: &mut CanvasRenderingContext2D,
-    asset: &ImageAsset,
+    asset: &mut ImageAsset,
     repetition: &str,
 ) -> Box<PaintStyle> {
-    let bytes = asset.lock().rgba_internal_bytes();
+    let bytes = asset.rgba_internal_bytes();
     Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
         None,
         |repetition| {
@@ -1687,7 +1708,7 @@ pub fn canvas_native_context_draw_image_asset(
     d_width: f32,
     d_height: f32,
 ) {
-    let bytes = asset.lock().rgba_internal_bytes();
+    let bytes = asset.rgba_internal_bytes();
     if let Some(image) = from_image_slice(
         bytes.as_slice(),
         asset.width() as i32,
@@ -2009,6 +2030,11 @@ pub fn canvas_native_path_create_with_string(string: String) -> Box<Path> {
     )))
 }
 
+pub fn canvas_native_path_create_with_str(string: &str) -> Box<Path> {
+    let path = Path(canvas_core::context::paths::path::Path::from_str(string));
+    Box::new(path)
+}
+
 pub fn canvas_native_path_close_path(path: &mut Path) {
     path.0.close_path()
 }
@@ -2083,6 +2109,12 @@ pub fn canvas_native_path_rect(path: &mut Path, x: f32, y: f32, width: f32, heig
 
 pub fn canvas_native_path_to_string(path: &Path) -> String {
     path.0.path().to_svg()
+}
+
+pub fn canvas_native_path_to_str(path: &Path, mut svg: Pin<&mut CxxString>) {
+    let value = path.0.path().to_svg();
+    let val = value.as_ref();
+    svg.as_mut().push_str(val);
 }
 
 /* Path 2D */
@@ -2330,37 +2362,71 @@ pub fn canvas_native_image_data_get_shared_instance(image_data: &mut ImageData) 
 
 /* ImageAsset */
 
-pub struct ImageAsset(Arc<Mutex<canvas_core::context::image_asset::ImageAsset>>);
+#[derive(Clone)]
+pub struct ImageAsset(canvas_core::context::image_asset::ImageAsset);
 
 impl Default for ImageAsset {
     fn default() -> Self {
-        Self(Arc::new(Mutex::new(Default::default())))
-    }
-}
-
-impl Clone for ImageAsset {
-    fn clone(&self) -> Self {
-        Self {
-            0: Arc::clone(&self.0),
-        }
-    }
-
-    fn clone_from(&mut self, source: &Self) {
-        self.0 = Arc::clone(&source.0)
+        Self(Default::default())
     }
 }
 
 impl ImageAsset {
-    pub fn lock(&self) -> MutexGuard<canvas_core::context::image_asset::ImageAsset> {
-        self.0.lock()
-    }
 
     pub fn width(&self) -> c_uint {
-        self.0.lock().width()
+        self.0.width()
     }
 
     pub fn height(&self) -> c_uint {
-        self.0.lock().height()
+        self.0.height()
+    }
+
+    pub fn save_path(&mut self, path: &str, format: OutputFormat) -> bool {
+        self.0.save_path(path, format)
+    }
+
+    pub fn load_from_path(&mut self, path: &str) -> bool {
+       self.0.load_from_path(path)
+    }
+
+    pub fn load_from_bytes(&mut self, buf: &[u8]) -> bool {
+        self.0.load_from_bytes(buf)
+    }
+
+    pub fn scale(&mut self, x: c_uint, y: c_uint) -> bool {
+        self.0.scale(x,y)
+    }
+
+    pub fn flip_x(&mut self) -> bool {
+        self.0.flip_x()
+    }
+
+    pub fn flip_x_in_place(&mut self) -> bool {
+        self.0.flip_x_in_place()
+    }
+
+    pub fn flip_y(&mut self) -> bool {
+        self.0.flip_y()
+    }
+
+    pub fn flip_y_in_place(&mut self) -> bool {
+        self.0.flip_x_in_place()
+    }
+
+    pub fn bytes_internal(&mut self) -> Vec<u8> {
+        self.0.bytes_internal()
+    }
+
+    pub fn rgba_internal_bytes(&mut self) -> Vec<u8> {
+        self.0.rgba_internal_bytes()
+    }
+
+    pub fn rgb_internal_bytes(&mut self) -> Vec<u8> {
+        self.0.rgb_internal_bytes()
+    }
+
+    pub fn error(&self) -> Cow<'_, str> {
+        self.0.error()
     }
 }
 
@@ -2368,24 +2434,25 @@ pub fn canvas_native_image_asset_create() -> Box<ImageAsset> {
     Box::new(ImageAsset::default())
 }
 
-pub fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: String) -> bool {
-    asset.lock().load_from_path(&path)
+pub fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &str) -> bool {
+    asset.load_from_path(path)
 }
 
 pub fn canvas_native_image_asset_load_from_path_async(
     asset: &mut ImageAsset,
-    path: String,
+    path: &str,
     callback: isize,
 ) {
     let mut asset = asset.clone();
+    let path = path.to_string();
     std::thread::spawn(move || {
-        let done = asset.lock().load_from_path(path.as_ref());
+        let done = asset.load_from_path(path.as_ref());
         ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
     });
 }
 
 pub fn canvas_native_image_asset_load_from_raw(asset: &mut ImageAsset, array: &[u8]) -> bool {
-    asset.lock().load_from_bytes(array)
+    asset.load_from_bytes(array)
 }
 
 pub fn canvas_native_image_asset_load_from_raw_async(
@@ -2396,87 +2463,193 @@ pub fn canvas_native_image_asset_load_from_raw_async(
     let mut asset = asset.clone();
     let array = array.to_vec();
     std::thread::spawn(move || {
-        let done = asset.lock().load_from_bytes(array.as_slice());
+        let done = asset.load_from_bytes(array.as_slice());
         ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
     });
 }
 
-pub fn canvas_native_image_asset_load_from_url_str(asset: &mut ImageAsset, url: &str) -> bool {
+pub fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str) -> bool {
     use std::fs::File;
     use std::io::prelude::*;
-    if let Ok(res) = ureq::get(url).call() {
+
+    console_log(format!("canvas_native_image_asset_load_from_url_str url {:?}", url).as_str());
+    let resp = ureq::AgentBuilder::new()
+        .redirects(20)
+        .timeout(std::time::Duration::from_secs(60))
+        .build()
+        .get(url);
+
+    if let Ok(res) = resp.call() {
+        if res.status() != 200 {
+            console_log(
+                format!(
+                    "canvas_native_image_asset_load_from_url_str status {:?}",
+                    res.status()
+                )
+                .as_str(),
+            );
+            return false;
+        }
         let mut reader = res.into_reader();
         let mut data = Vec::new();
         return match reader.read_to_end(&mut data) {
-            Ok(_) => asset.lock().load_from_bytes(data.as_slice()),
-            Err(_) => false,
+            Ok(read) => {
+                let mut loaded = false;
+                {
+                    loaded = asset.load_from_bytes(data.as_slice())
+                }
+                console_log(
+                    format!(
+                        "canvas_native_image_asset_load_from_url_str read {:?} & loaded {}",
+                        read, loaded
+                    )
+                    .as_str(),
+                );
+                loaded
+            }
+            Err(e) => {
+                console_log(
+                    format!("canvas_native_image_asset_load_from_url_str error {:?}", e).as_str(),
+                );
+                false
+            }
         };
     }
     false
 }
 
-pub fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: String) -> bool {
-    canvas_native_image_asset_load_from_url_str(asset, url.as_str())
+extern "C" fn looper_callback(
+    fd: std::os::raw::c_int,
+    events: std::os::raw::c_int,
+    data: *mut std::os::raw::c_void,
+) -> std::os::raw::c_int {
+    let mut c_string: Vec<libc::c_char> = Vec::with_capacity(1024);
+    unsafe {
+        libc::read(fd, c_string.as_mut_ptr() as *mut libc::c_void, 1024);
+    }
+    let string = unsafe { CString::from_raw(c_string.as_mut_ptr()) };
+    let mut callback = 0 as isize;
+    let mut done = false;
+    let mut handle_id = 0 as isize;
+    for (i, val) in string
+        .to_string_lossy()
+        .trim()
+        .split(",")
+        .into_iter()
+        .enumerate()
+    {
+        if i == 0 {
+            callback = val.parse::<isize>().unwrap_or_default()
+        }
+
+        if i == 1 {
+            handle_id = val.parse::<isize>().unwrap_or_default();
+        }
+
+        if i == 2 {
+            done = val.contains("true");
+        }
+    }
+
+    let mut map = get_thread_handle_map().write();
+    if let Some(handle) = map.remove(&handle_id) {
+        handle.join().unwrap();
+    };
+
+    ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+    0
 }
 
 pub fn canvas_native_image_asset_load_from_url_async(
     asset: &mut ImageAsset,
-    url: String,
+    url: &str,
     callback: isize,
 ) {
     let mut asset = asset.clone();
     let callback = callback.clone();
+    let url = url.to_string();
+    // let looper = unsafe { crate::looper::ALooper_forThread() };
+    // unsafe { crate::looper::ALooper_acquire(looper); }
+    // let mut fd = [0_i32; 2];
+    // unsafe {
+    //     libc::pipe(fd.as_mut_ptr());
+    // }
+    // unsafe {
+    //     crate::looper::ALooper_addFd(
+    //         looper,
+    //         fd[0],
+    //         0,
+    //         crate::looper::ALOOPER_EVENT_INPUT as c_int,
+    //         Some(looper_callback),
+    //         std::ptr::null_mut(),
+    //     );
+    // }
+    // let id = THREAD_HANDLE_NEXT_ID.load(Ordering::SeqCst) + 1;
+    //
+    // let handle = std::thread::spawn(move || {
+    //     unsafe {crate::looper::ALooper_prepare(0);}
+    //     let done = canvas_native_image_asset_load_from_url(&mut asset, url.as_str());
+    //     let data = format!("{},{},{}", callback, id, done);
+    //     let bytes = data.as_bytes();
+    //     unsafe {
+    //         libc::write(fd[1], bytes.as_ptr() as *const libc::c_void, bytes.len());
+    //     }
+    // });
+    //
+    // get_thread_handle_map().write().insert(id, handle);
+    // THREAD_HANDLE_NEXT_ID.store(id, Ordering::SeqCst);
+
     std::thread::spawn(move || {
-        let done = canvas_native_image_asset_load_from_url_str(&mut asset, url.as_str());
-        ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+        let done = canvas_native_image_asset_load_from_url(&mut asset, url.as_str());
+        unsafe { ffi::OnImageAssetLoadCallbackHolderComplete(callback, done); }
     });
 }
 
 pub fn canvas_native_image_asset_get_bytes(asset: &mut ImageAsset) -> Vec<u8> {
-    asset.lock().bytes_internal()
+    asset.bytes_internal()
 }
 
 pub fn canvas_native_image_asset_get_rgba_bytes(asset: &mut ImageAsset) -> Vec<u8> {
-    asset.lock().rgba_internal_bytes()
+    asset.rgba_internal_bytes()
 }
 
 pub fn canvas_native_image_asset_get_rgb_bytes(asset: &mut ImageAsset) -> Vec<u8> {
-    asset.lock().rgb_internal_bytes()
+    asset.rgb_internal_bytes()
 }
 
 pub fn canvas_native_image_asset_width(asset: &mut ImageAsset) -> u32 {
-    asset.lock().width()
+    asset.width()
 }
 
 pub fn canvas_native_image_asset_height(asset: &mut ImageAsset) -> u32 {
-    asset.lock().height()
+    asset.height()
 }
 
 pub fn canvas_native_image_asset_get_error(asset: &mut ImageAsset) -> String {
-    asset.lock().error().to_string()
+    asset.error().to_string()
 }
 
 pub fn canvas_native_image_asset_has_error(asset: &mut ImageAsset) -> bool {
-    if asset.lock().error().is_empty() {
+    if asset.error().is_empty() {
         return false;
     }
     true
 }
 
 pub fn canvas_native_image_asset_scale(asset: &mut ImageAsset, x: u32, y: u32) -> bool {
-    asset.lock().scale(x, y)
+    asset.scale(x, y)
 }
 
 pub fn canvas_native_image_asset_flip_x(asset: &mut ImageAsset) -> bool {
-    asset.lock().flip_x()
+    asset.flip_x()
 }
 
 pub fn canvas_native_image_asset_flip_x_in_place(asset: &mut ImageAsset) -> bool {
-    asset.lock().flip_x_in_place()
+    asset.flip_x_in_place()
 }
 
 pub fn canvas_native_image_asset_flip_y(asset: &mut ImageAsset) -> bool {
-    asset.lock().flip_y()
+    asset.flip_y()
 }
 
 pub fn canvas_native_image_asset_flip_y_in_place_owned(buf: &mut [u8]) {
@@ -2492,7 +2665,7 @@ pub fn canvas_native_image_asset_flip_x_in_place_owned(buf: &mut [u8]) {
 }
 
 pub fn canvas_native_image_asset_flip_y_in_place(asset: &mut ImageAsset) -> bool {
-    asset.lock().flip_y_in_place()
+    asset.flip_y_in_place()
 }
 
 pub fn canvas_native_image_asset_save_path(
@@ -2500,7 +2673,7 @@ pub fn canvas_native_image_asset_save_path(
     path: &str,
     format: u32,
 ) -> bool {
-    asset.lock().save_path(
+    asset.save_path(
         path,
         canvas_core::context::image_asset::OutputFormat::from(format),
     )
@@ -2515,7 +2688,7 @@ pub fn canvas_native_image_asset_save_path_async(
     let mut asset = asset.clone();
     let path = path.to_string();
     std::thread::spawn(move || {
-        let done = asset.lock().save_path(
+        let done = asset.save_path(
             path.as_ref(),
             canvas_core::context::image_asset::OutputFormat::from(format),
         );
@@ -2637,15 +2810,12 @@ pub fn canvas_native_text_encoder_get_encoding(encoder: &mut TextEncoder) -> Str
 
 /* TextEncoder */
 
-
-pub fn canvas_native_raf_create(callback: isize)-> Box<Raf> {
-    Box::new(
-        Raf(crate::raf::Raf::new(Some(Box::new(move |ts|{
-            ffi::OnRafCallbackOnFrame(callback, ts);
-        }))))
-    )
+/* Raf */
+pub fn canvas_native_raf_create(callback: isize) -> Box<Raf> {
+    Box::new(Raf(crate::raf::Raf::new(Some(Box::new(move |ts| {
+        ffi::OnRafCallbackOnFrame(callback, ts);
+    })))))
 }
-
 pub fn canvas_native_raf_start(raf: &mut Raf) {
     raf.0.start();
 }
@@ -2655,10 +2825,19 @@ pub fn canvas_native_raf_stop(raf: &mut Raf) {
 pub fn canvas_native_raf_get_started(raf: &Raf) -> bool {
     raf.0.started()
 }
+/* Raf */
 
+/* GL */
 pub fn canvas_native_context_gl_make_current(context: &CanvasRenderingContext2D) -> bool {
     context.gl_context.make_current()
 }
 pub fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D) -> bool {
     context.gl_context.swap_buffers()
 }
+/* GL */
+
+/* WebGL */
+/* WebGL */
+
+/* WebGL2 */
+/* WebGL2 */

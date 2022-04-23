@@ -356,7 +356,9 @@ void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::Str
         auto context = isolate->GetCurrentContext();
         auto ptr = GetPointer(info.Holder());
         auto str = value->ToString(context).ToLocalChecked();
-        canvas_native_context_set_global_composition(*ptr->context_, Helpers::ConvertFromV8String(isolate, str));
+        v8::String::Utf8Value val(isolate, str);
+        rust::Str operation(*val, val.length());
+        canvas_native_context_set_global_composition(*ptr->context_, operation);
     }
 }
 
@@ -396,7 +398,8 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> name, v8::
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.Holder());
     if (value->IsString()) {
-        auto color = Helpers::ConvertFromV8String(isolate, value->ToString(context).ToLocalChecked());
+        v8::String::Utf8Value utf8(isolate, value->ToString(context).ToLocalChecked());
+        rust::Str color(*utf8, utf8.length());
         canvas_native_paint_style_set_fill_color_with_string(*ptr->context_, color);
     } else if (!value->IsNullOrUndefined() && value->IsObject()) {
         auto color = value.As<v8::Object>();
@@ -451,7 +454,8 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> name, v8
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.Holder());
     if (value->IsString()) {
-        auto color = Helpers::ConvertFromV8String(isolate, value->ToString(context).ToLocalChecked());
+        v8::String::Utf8Value utf8(isolate, value->ToString(context).ToLocalChecked());
+        rust::Str color(*utf8, utf8.length());
         canvas_native_paint_style_set_stroke_color_with_string(*ptr->context_, color);
     } else if (!value->IsNullOrUndefined() && value->IsObject()) {
         auto color = value.As<v8::Object>();
@@ -807,12 +811,14 @@ void CanvasRenderingContext2DImpl::FillRect(const v8::FunctionCallbackInfo<v8::V
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
-    auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
-    auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-    auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-    auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
-    canvas_native_context_fill_rect(*ptr->context_, x, y, width, height);
-    ptr->UpdateInvalidateState();
+    if(ptr != nullptr){
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        canvas_native_context_fill_rect(*ptr->context_, x, y, width, height);
+        ptr->UpdateInvalidateState();
+    }
 }
 
 void CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value> &args) {

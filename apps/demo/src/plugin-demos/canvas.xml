@@ -11,7 +11,7 @@
                                      <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/>
                                       <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/>
                                      <canvas:Svg id="4" row="1" col="1" width="100%" height="100%" src="{{src4}}" loaded="{{svgViewLoaded}}"/> -->
-    <Button height="40" tap="{{  draw }}" text="Draw"/>
+    <Button height="40" text="Draw"/>
 
     <!-- <ScrollView  rowSpan="4" visibility="{{ show ? 'visible': 'collapse' }}" orientation="vertical">
         <Repeater items="{{ items }}">

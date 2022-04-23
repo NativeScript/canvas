@@ -1,10 +1,14 @@
+use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Seek, SeekFrom};
 use std::os::raw::{c_char, c_uint};
 use std::ptr::{null, null_mut};
+use std::sync::Arc;
 
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, ImageFormat};
+use parking_lot::lock_api::MutexGuard;
+use parking_lot::RawMutex;
 
 use crate::ffi::u8_array::U8Array;
 
@@ -13,7 +17,20 @@ struct ImageAssetInner {
     error: String,
 }
 
-pub struct ImageAsset(ImageAssetInner);
+pub struct ImageAsset(Arc<parking_lot::Mutex<ImageAssetInner>>);
+
+impl Clone for ImageAsset {
+    fn clone(&self) -> Self {
+        Self {
+            0: Arc::clone(&self.0),
+        }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.0 = Arc::clone(&source.0)
+    }
+}
+
 
 impl Default for ImageAsset {
     fn default() -> Self {
@@ -68,29 +85,37 @@ enum ByteType {
 
 impl ImageAsset {
     pub fn new() -> Self {
-        Self(ImageAssetInner {
+        Self(Arc::new(parking_lot::Mutex::new(ImageAssetInner {
             image: None,
             error: String::new(),
-        })
+        })))
+    }
+    fn get_lock(&self) -> MutexGuard<'_, RawMutex, ImageAssetInner> {
+        self.0.lock()
     }
 
-    pub fn error(&self) -> &str {
-        self.0.error.as_str()
+    pub fn error(&self) -> Cow<str> {
+        self.0.lock().error.clone().into()
     }
 
     pub fn error_cstr(&self) -> *const c_char {
-        if self.0.error.is_empty() {
+        let lock = self.get_lock();
+        if lock.error.is_empty() {
             return null();
         }
-        CString::new(self.0.error.as_str()).unwrap().into_raw()
+        CString::new(lock.error.as_str()).unwrap().into_raw()
     }
 
     pub fn width(&self) -> c_uint {
-        self.0.image.as_ref().map(|v| v.width()).unwrap_or_default()
+        self.get_lock()
+            .image
+            .as_ref()
+            .map(|v| v.width())
+            .unwrap_or_default()
     }
 
     pub fn height(&self) -> c_uint {
-        self.0
+        self.get_lock()
             .image
             .as_ref()
             .map(|v| v.height())
@@ -98,10 +123,11 @@ impl ImageAsset {
     }
 
     pub fn load_from_path(&mut self, path: &str) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        self.0.image = None;
+        lock.image = None;
         let file = std::fs::File::open(path);
         match file {
             Ok(file) => {
@@ -115,36 +141,36 @@ impl ImageAsset {
                         match mime {
                             Ok(mime) => match image::load(reader, mime) {
                                 Ok(result) => {
-                                    self.0.image = Some(result);
+                                    lock.image = Some(result);
                                     true
                                 }
                                 Err(e) => {
                                     let error = e.to_string();
-                                    self.0.error.clear();
-                                    self.0.error.push_str(error.as_str());
+                                    lock.error.clear();
+                                    lock.error.push_str(error.as_str());
                                     false
                                 }
                             },
                             Err(e) => {
                                 let error = e.to_string();
-                                self.0.error.clear();
-                                self.0.error.push_str(error.as_str());
+                                lock.error.clear();
+                                lock.error.push_str(error.as_str());
                                 false
                             }
                         }
                     }
                     Err(e) => {
                         let error = e.to_string();
-                        self.0.error.clear();
-                        self.0.error.push_str(error.as_str());
+                        lock.error.clear();
+                        lock.error.push_str(error.as_str());
                         false
                     }
                 }
             }
             Err(e) => {
                 let error = e.to_string();
-                self.0.error.clear();
-                self.0.error.push_str(error.as_str());
+                lock.error.clear();
+                lock.error.push_str(error.as_str());
                 false
             }
         }
@@ -156,135 +182,143 @@ impl ImageAsset {
     }
 
     pub unsafe fn load_from_raw(&mut self, buffer: *const u8, size: usize) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        self.0.image = None;
+        lock.image = None;
         match image::load_from_memory(std::slice::from_raw_parts(buffer, size)) {
             Ok(result) => {
-                self.0.image = Some(result);
+                lock.image = Some(result);
                 true
             }
             Err(e) => {
                 let error = e.to_string();
-                self.0.error.push_str(error.as_str());
+                lock.error.push_str(error.as_str());
                 false
             }
         }
     }
 
     pub fn load_from_bytes(&mut self, buf: &[u8]) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        self.0.image = None;
+        lock.image = None;
         let result = image::load_from_memory(buf);
         match result {
             Ok(result) => {
-                self.0.image = Some(result);
+                lock.image = Some(result);
                 true
             }
             Err(e) => {
                 let error = e.to_string();
-                self.0.error.push_str(error.as_str());
+                lock.error.push_str(error.as_str());
                 false
             }
         }
     }
 
     pub fn load_from_bytes_int(&mut self, buf: &mut [i8]) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        self.0.image = None;
+        lock.image = None;
         match image::load_from_memory(unsafe { std::mem::transmute(buf) }) {
             Ok(result) => {
-                self.0.image = Some(result);
+                lock.image = Some(result);
                 true
             }
             Err(e) => {
                 let error = e.to_string();
-                self.0.error.push_str(error.as_str());
+                lock.error.push_str(error.as_str());
                 false
             }
         }
     }
 
     pub fn scale(&mut self, x: c_uint, y: c_uint) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &self.0.image {
+        match &lock.image {
             Some(image) => {
                 image.resize(x, y, FilterType::Triangle);
                 true
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 false
             }
         }
     }
 
     pub fn flip_x(&mut self) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &self.0.image {
+        match &lock.image {
             Some(image) => {
                 image.fliph();
                 true
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 false
             }
         }
     }
 
     pub fn flip_x_in_place(&mut self) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &mut self.0.image {
+        match &mut lock.image {
             Some(image) => {
                 image::imageops::flip_horizontal_in_place(image);
                 true
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 false
             }
         }
     }
 
     pub fn flip_y(&mut self) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &self.0.image {
+        match &lock.image {
             Some(image) => {
                 image.flipv();
                 true
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 false
             }
         }
     }
 
     pub fn flip_y_in_place(&mut self) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &mut self.0.image {
+        match &mut lock.image {
             Some(image) => {
                 image::imageops::flip_vertical_in_place(image);
                 true
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 false
             }
         }
@@ -295,10 +329,11 @@ impl ImageAsset {
     }
 
     fn bytes_internal_with(&mut self, byte_type: ByteType) -> Vec<u8> {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &self.0.image {
+        match &lock.image {
             Some(image) => {
                 let raw;
                 match byte_type {
@@ -317,7 +352,7 @@ impl ImageAsset {
                 raw
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 vec![]
             }
         }
@@ -336,12 +371,13 @@ impl ImageAsset {
     }
 
     fn bytes_with(&mut self, byte_type: ByteType) -> *mut U8Array {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &self.0.image {
+        match &lock.image {
             Some(image) => {
-                let raw;
+                let mut raw;
                 match byte_type {
                     ByteType::RGB => {
                         let image_ref = image.to_rgb8();
@@ -355,21 +391,21 @@ impl ImageAsset {
                         raw = image.to_bytes();
                     }
                 }
-                let mut pixels = raw.to_vec().into_boxed_slice();
-                let raw_pixels = pixels.as_mut_ptr();
-                let size = pixels.len();
+
                 let data = Box::into_raw(Box::new(U8Array {
-                    data: raw_pixels,
-                    data_len: size,
+                    data: raw.as_mut_ptr(),
+                    data_len: raw.len(),
+                    data_cap: raw.capacity(),
                 }));
-                Box::into_raw(pixels);
+                std::mem::forget(raw);
                 data
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 Box::into_raw(Box::new(U8Array {
                     data: null_mut(),
                     data_len: 0,
+                    data_cap: 0,
                 }))
             }
         }
@@ -389,10 +425,11 @@ impl ImageAsset {
     }
 
     pub fn save_path(&mut self, path: &str, format: OutputFormat) -> bool {
-        if !self.0.error.is_empty() {
-            self.0.error.clear()
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
         }
-        match &self.0.image {
+        match &lock.image {
             Some(image) => {
                 let format = match format {
                     OutputFormat::PNG => ImageFormat::Png,
@@ -408,7 +445,7 @@ impl ImageAsset {
                 done
             }
             _ => {
-                self.0.error.push_str("No Image loaded");
+                lock.error.push_str("No Image loaded");
                 false
             }
         }

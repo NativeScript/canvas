@@ -1,5 +1,5 @@
 import { ImageSource } from '@nativescript/core';
-import { Canvas, ImageAsset, Path2D } from '@nativescript/canvas';
+import { Canvas, ImageAsset } from '@nativescript/canvas';
 import { Screen } from '@nativescript/core';
 import { doesNotReject } from 'assert';
 export function fillStyle(canvas) {
@@ -420,7 +420,10 @@ export function fill(ctx) {
 }
 
 export function fillPath(canvas) {
-	const ctx = canvas.getContext('2d');
+	const context = canvas.getContext('2d');
+	const ctx = global.__getCanvasRenderingContext2DImpl(String(context.canvas.nativeView.getNativeContext()));
+
+
 	// Create path
 	let region = new Path2D();
 	region.moveTo(30, 90);

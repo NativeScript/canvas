@@ -2,30 +2,29 @@
 pub struct U8Array {
     pub data: *mut u8,
     pub data_len: usize,
+    pub data_cap: usize,
 }
 
 impl Into<Vec<u8>> for U8Array {
     fn into(self) -> Vec<u8> {
-        unsafe {
-            Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)).into_vec()
-        }
+        unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) }
     }
 }
 
 impl From<Vec<u8>> for U8Array {
-    fn from(vec: Vec<u8>) -> Self {
-        let mut box_slice = vec.into_boxed_slice();
+    fn from(mut vec: Vec<u8>) -> Self {
         let array = Self {
-            data: box_slice.as_mut_ptr(),
-            data_len: box_slice.len(),
+            data: vec.as_mut_ptr(),
+            data_len: vec.len(),
+            data_cap: vec.capacity(),
         };
-        let _ = Box::into_raw(box_slice);
+        std::mem::forget(vec);
         array
     }
 }
 
 impl Drop for U8Array {
     fn drop(&mut self) {
-        let _ = unsafe { Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)) };
+        let _ = unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) };
     }
 }

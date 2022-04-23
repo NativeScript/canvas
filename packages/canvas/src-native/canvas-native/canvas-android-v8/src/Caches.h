@@ -8,6 +8,7 @@
 #include "ConcurrentMap.h"
 #include "OnImageAssetLoadCallbackHolder.h"
 #include "TextEncoderImplEntry.h"
+#include "ObjectCacheEntry.h"
 
 class Caches {
 public:
@@ -55,10 +56,16 @@ public:
     std::shared_ptr<ConcurrentMap<TextEncoderImplEntry *,
             std::shared_ptr<v8::Persistent<v8::Object>>>> TextEncoderData = std::make_shared<ConcurrentMap<TextEncoderImplEntry *,
             std::shared_ptr<v8::Persistent<v8::Object>>>>();
+
+    void SetPerformingMicrotaskCheckpoint(bool value);
+
+    bool GetPerformingMicrotaskCheckpoint() const;
+
 private:
     static std::shared_ptr <ConcurrentMap<v8::Isolate *,
             std::shared_ptr <Caches>>>
     perIsolateCaches_;
     v8::Isolate *isolate_;
     std::shared_ptr <v8::Persistent<v8::Context>> context_;
+    bool performingMicrotaskCheckpoint_;
 };

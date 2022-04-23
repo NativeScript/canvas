@@ -4,29 +4,28 @@ use std::os::raw::c_float;
 pub struct F32Array {
     pub data: *mut std::os::raw::c_float,
     pub data_len: usize,
+    pub data_cap: usize,
 }
 impl Into<Vec<f32>> for F32Array {
     fn into(self) -> Vec<f32> {
-        unsafe {
-            Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)).into_vec()
-        }
+        unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) }
     }
 }
 
 impl From<Vec<f32>> for F32Array {
-    fn from(vec: Vec<f32>) -> Self {
-        let mut box_slice = vec.into_boxed_slice();
+    fn from(mut vec: Vec<f32>) -> Self {
         let array = Self {
-            data: box_slice.as_mut_ptr(),
-            data_len: box_slice.len(),
+            data: vec.as_mut_ptr(),
+            data_len: vec.len(),
+            data_cap: vec.capacity(),
         };
-        let _ = Box::into_raw(box_slice);
+        std::mem::forget(vec);
         array
     }
 }
 
 impl Drop for F32Array {
     fn drop(&mut self) {
-        let _ = unsafe { Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)) };
+        let _ = unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) };
     }
 }

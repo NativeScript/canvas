@@ -166,13 +166,8 @@ pub extern "C" fn canvas_native_context_snapshot_canvas(
     unsafe {
         let context = &mut *context;
         let mut context = context.get_context();
-        let bytes = context.read_pixels();
-        let mut ptr = bytes.into_boxed_slice();
-        let raw = U8Array {
-            data_len: ptr.len(),
-            data: ptr.as_mut_ptr(),
-        };
-        Box::into_raw(ptr);
+        let mut bytes = context.read_pixels();
+        let raw = U8Array::from(bytes);
         Box::into_raw(Box::new(raw))
     }
 }
@@ -1343,12 +1338,8 @@ pub extern "C" fn canvas_native_context_get_line_dash(
     unsafe {
         let context = &*context;
         let context = context.get_context();
-        let mut line_dash = context.line_dash().to_vec().into_boxed_slice();
-        let array = F32Array {
-            data: line_dash.as_mut_ptr(),
-            data_len: line_dash.len(),
-        };
-        let _ = Box::into_raw(line_dash);
+        let mut line_dash = context.line_dash().to_vec();
+        let array = F32Array::from(line_dash);
         Box::into_raw(Box::new(array))
     }
 }

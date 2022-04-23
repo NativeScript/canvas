@@ -4,9 +4,11 @@
 
 #include "Caches.h"
 
-std::shared_ptr<ConcurrentMap<v8::Isolate*, std::shared_ptr<Caches>>>Caches::perIsolateCaches_ = std::make_shared<ConcurrentMap<v8::Isolate *, std::shared_ptr<Caches>>>();
+std::shared_ptr <ConcurrentMap<v8::Isolate *, std::shared_ptr < Caches>>>
+Caches::perIsolateCaches_ = std::make_shared < ConcurrentMap<v8::Isolate *, std::shared_ptr < Caches>>
+>();
 
-Caches::Caches(v8::Isolate *isolate): isolate_(isolate) {}
+Caches::Caches(v8::Isolate *isolate) : isolate_(isolate) {}
 
 Caches::~Caches() {}
 
@@ -30,4 +32,12 @@ void Caches::SetContext(v8::Local<v8::Context> context) {
 
 v8::Local<v8::Context> Caches::GetContext() {
     return this->context_->Get(this->isolate_);
+}
+
+void Caches::SetPerformingMicrotaskCheckpoint(bool value) {
+    this->performingMicrotaskCheckpoint_ = value;
+}
+
+bool Caches::GetPerformingMicrotaskCheckpoint() const {
+    return this->performingMicrotaskCheckpoint_;
 }

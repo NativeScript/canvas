@@ -14,7 +14,72 @@ __non_webpack_require__('~/libcanvasnativev8.so');
 
 //__non_webpack_require__(`${(Utils.android.getApplicationContext() as android.content.Context).getApplicationInfo().nativeLibraryDir}/libcanvasnativev8.so`)
 
-console.log(global.Path2D);
+
+
+
+// (() => {
+// 	global.ImageAsset.prototype.loadFromUrlAsync = function (url) {
+// 		return new Promise((resolve, reject) => {
+// 			this.loadFromUrlCallback(url, (error, done) => {
+// 				console.log('loadFromUrlCallback', url, done, error);
+// 				if (error) {
+// 					reject(error);
+// 					return;
+// 				}
+// 				if (!error) {
+// 					resolve(done);
+// 				}
+// 			});
+// 		});
+// 	};
+
+// 	global.ImageAsset.prototype.loadFileAsync = function (path) {
+// 		return new Promise((resolve, reject) => {
+// 			global.ImageAsset.prototype.loadFileCallback(path, (error, done) => {
+// 				if (error) {
+// 					reject(error);
+// 					return;
+// 				}
+// 				if (!error) {
+// 					resolve(done);
+// 				}
+// 			});
+// 		});
+// 	};
+
+// 	global.ImageAsset.prototype.loadFromBytesAsync = function (bytes) {
+// 		return new Promise((resolve, reject) => {
+// 			global.ImageAsset.prototype.loadFromBytesCallback(bytes, (error, done) => {
+// 				if (error) {
+// 					reject(error);
+// 					return;
+// 				}
+// 				if (!error) {
+// 					resolve(done);
+// 				}
+// 			});
+// 		});
+// 	};
+
+// 	global.ImageAsset.prototype.saveAsyncAsync = function (path, format) {
+// 		return new Promise((resolve, reject) => {
+// 			global.ImageAsset.prototype.saveCallback(path, format, (done, error) => {
+// 				if (error) {
+// 					reject(error);
+// 					return;
+// 				}
+// 				if (!error) {
+// 					resolve(done);
+// 				}
+// 			});
+// 		});
+// 	};
+// })();
+
+
+
+Application.on('launch', args=>{
+	console.log(global.Path2D);
 
 const count = 1;
 
@@ -27,17 +92,16 @@ for (let i = 0; i < count; i++) {
 
 	console.log('path2');
 
-	const path3 = new global.Path2D("M 10 10 H 90 V 90 H 10 Z");
-
-	console.log('path3');
+	const path3 = new global.Path2D('M 10 10 H 90 V 90 H 10 Z');
 
 	path3.addPath(path2);
+	console.log(path);
+	console.log(path2);
+	console.log(path3);
 
-	console.log(path, path2, path3);
+	console.log(path.__toSVG());
 
-	console.dir(path.__toSVG());
-
-	console.log('count', i);
+	console.log('count', 1 + i);
 }
 
 const matrix = new DOMMatrix();
@@ -47,37 +111,31 @@ console.log(matrix.d, matrix.e, matrix.f);
 
 console.log(matrix.is2D);
 
-
-let imageData = new global.ImageData(100,100);
+let imageData = new global.ImageData(100, 100);
 global.imageData = imageData;
 console.log('imageData', imageData.data);
 
-try{
-	console.log('TextMetrics',TextMetrics);
-}catch(e){
-	console.log('TextMetrics: error',e);
+try {
+	console.log('TextMetrics', TextMetrics);
+} catch (e) {
+	console.log('TextMetrics: error', e);
 }
 
-console.log('CanvasGradient',CanvasGradient);
-console.log('CanvasPattern',CanvasPattern);
+console.log('CanvasGradient', CanvasGradient);
+console.log('CanvasPattern', CanvasPattern);
 
 console.log('__getCanvasRenderingContext2D', global.__getCanvasRenderingContext2DImpl);
 
 console.log('CanvasRenderingContext2D', CanvasRenderingContext2D);
 
-
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-const encoded = encoder.encode("Hi Osei");
+const encoded = encoder.encode('Hi Osei');
 console.log('encoded', encoded);
 
 const decoded = decoder.decode(encoded);
 console.log('decoded', decoded);
-
-
-
-
 
 let utf8decoder = new TextDecoder(); // default 'utf-8' or 'utf8'
 
@@ -93,41 +151,83 @@ console.log(utf8decoder.decode(u16arr));
 console.log(utf8decoder.decode(i16arr));
 console.log(utf8decoder.decode(i32arr));
 
-
-
 const asset = new global.ImageAsset();
-
-console.log(asset);
-
-console.log(asset.width);
-console.log(asset.error);
+const asset2 = new global.ImageAsset();
+const asset3 = new global.ImageAsset();
 
 
-let realPath = '~/assets/file-assets/webgl/rick-and-morty-by-sawuinhaff-da64e7y.png';
-if (typeof realPath === 'string') {
-	if (realPath.startsWith('~/')) {
-		realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
+global.thing = (async () => {
+
+
+	console.log(asset);
+
+	console.log(asset.width);
+	console.log(asset.error);
+
+	let realPath = '~/assets/file-assets/webgl/rick-and-morty-by-sawuinhaff-da64e7y.png';
+	if (typeof realPath === 'string') {
+		if (realPath.startsWith('~/')) {
+			realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
+		}
 	}
-}
-let done = asset.loadFile(realPath);
-console.log(done, asset.width);
+	await asset.loadFile(realPath);
+	console.log('1');
 
-asset.loadFileAsync(realPath).then(done =>{
-	console.log('loadFileAsync done', done);
-	console.log('loadFileAsync', asset.width);
-}).catch(e =>{
-	console.log('loadFileAsync error', e)
-})
+	await asset.loadFile(realPath);
+	console.log('2');
 
-// asset.loadFromUrlAsync("https://interactive-examples.mdn.mozilla.net/media/examples/star.png").then(done =>{
-// 	console.log('loadFromUrlAsync done', done);
-// 	console.log('loadFromUrlAsync', asset.width);
-// }).catch(e =>{
-// 	console.log('loadFromUrlAsync error', e)
-// });
+	await asset.loadFile(realPath);
+	console.log('3');
+	
+ 	await asset.loadFile(realPath);
+	console.log('4');
 
-// let other_done = asset.loadFromUrl("https://interactive-examples.mdn.mozilla.net/media/examples/star.png");
+	await asset2.loadFile(realPath);
+	console.log('5');
+
+	await asset3.loadFile(realPath);
+	console.log('6');
+
+
+	// global.loading.then(done =>{
+	// 	console.log('done ??');
+	// })
+	// let done3 = await asset3.loadFile(realPath);
+	// console.log('1');
+	// console.log(done3, asset3.width);
+	// console.log('done loading assets');
+
+	// console.log(asset.width, asset2.width , asset3.width);
+
+	// const done2 = await asset.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+	// console.log('loadFromUrlCallback', 'asset', done2);
+
+	// const done3 = await asset2.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+	// console.log('loadFromUrlCallback', 'asset', done3);
+
+
+	// asset.loadFromUrlAsync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png').then((done) => {
+	// 	console.log('aadsadasdasdasda');
+	// });
+
+	// asset2.loadFromUrlAsync('https://interactive-examples.mdn.mozilla.net/media/examples/star.png').then((done) => {
+	// 	console.log('asset2', 'asdasdasda');
+	// });
+
+	// asset.loadFileAsync(realPath).then(done =>{
+	// 	console.log('loadFileAsync');
+	// })
+
+	console.log('asdasaaadasda', new Date());
+
+	// await asset2
+	// 	.loadFromUrlAsync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+
+	// await asset3.loadFromUrlAsync("https://interactive-examples.mdn.mozilla.net/media/examples/star.png");
+	//console.log(asset.width, asset2.width, asset3.width);
+})();
 
 // console.log(other_done, asset.width);
+})
 
 Application.run({ moduleName: 'app-root' });

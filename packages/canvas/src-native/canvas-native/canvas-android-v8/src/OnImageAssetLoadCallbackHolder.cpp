@@ -7,43 +7,53 @@
 
 OnImageAssetLoadCallbackHolder::OnImageAssetLoadCallbackHolder(v8::Isolate *isolate,
                                                                v8::Local<v8::Context> context,
-                                                               v8::Local<v8::Promise::Resolver> resolver)
+                                                               v8::Local<v8::Promise::Resolver> callback)
         : isolate_(
         isolate),
           context_(
                   isolate,
                   context),
-          resolver_(
+          callback_(
                   isolate,
-                  resolver) {
+                  callback) {
 
 }
 
 
-void OnImageAssetLoadCallbackHolder::complete(bool done) const {
+void OnImageAssetLoadCallbackHolder::complete(bool done, intptr_t callback) const {
     auto isolate = this->isolate_;
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-    auto promise = resolver_.Get(isolate);
-    auto context = context_.Get(isolate);
-    v8::Context::Scope context_scope(context);
-    v8::MicrotasksScope microtasksScope(isolate,
-                                        v8::MicrotasksScope::kRunMicrotasks);
-    promise->Resolve(context, v8::Boolean::New(isolate, done));
+    auto queueCallback = [](void* data){
+        auto value = static_cast<Data*>(data);
+        auto isolate = value->isolate_;
+        v8::Locker locker(isolate);
+        v8::Isolate::Scope isolate_scope(isolate);
+        v8::HandleScope handle_scope(isolate);
+        auto context = isolate->GetCurrentContext();
+        auto ptr = reinterpret_cast<OnImageAssetLoadCallbackHolder *>(reinterpret_cast<intptr_t *>(value->callback));
+        auto async_callback = ptr->callback_.Get(isolate);
+        async_callback->Resolve(context, v8::Boolean::New(isolate, value->done));
+        auto cache = Caches::Get(isolate);
+        cache->OnImageAssetLoadCallbackHolder_->Remove(value->callback);
+        delete value;
+    };
+    auto data = new Data{callback,done, isolate};
+    isolate->EnqueueMicrotask(queueCallback,data);
 }
 
-OnImageAssetLoadCallbackHolder::~OnImageAssetLoadCallbackHolder() {}
+void OnImageAssetLoadCallbackHolderComplete(intptr_t callback, bool done) {
+    auto ptr = reinterpret_cast<OnImageAssetLoadCallbackHolder *>(reinterpret_cast<intptr_t *>(callback));
+    ptr->complete(done, callback);
+}
+
+
+OnImageAssetLoadCallbackHolder::~OnImageAssetLoadCallbackHolder() {
+    this->callback_.Reset();
+    this->context_.Reset();
+}
 
 v8::Isolate *OnImageAssetLoadCallbackHolder::GetIsolate() {
     return this->isolate_;
 }
-
-void OnImageAssetLoadCallbackHolderComplete(intptr_t callback, bool done) {
-    auto ptr = reinterpret_cast<OnImageAssetLoadCallbackHolder*>(reinterpret_cast<intptr_t *>(callback));
-    ptr->complete(done);
-    auto isolate = ptr->GetIsolate();
-    auto cache = Caches::Get(isolate);
-    cache->OnImageAssetLoadCallbackHolder_->Remove(callback);
-}
-

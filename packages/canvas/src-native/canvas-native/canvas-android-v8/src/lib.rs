@@ -3,6 +3,7 @@ pub mod gl_context;
 pub mod raf;
 pub mod choregrapher;
 pub mod looper;
+pub mod gl;
 
 #[cxx::bridge]
 mod ffi {

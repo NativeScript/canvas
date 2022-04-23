@@ -7,6 +7,7 @@
 #include "../Common.h"
 #include "../Caches.h"
 #include "../Helpers.h"
+#include "../ObjectCacheEntry.h"
 
 class Path2D {
 public:
@@ -17,6 +18,8 @@ public:
     static void Init(v8::Isolate *isolate);
 
     static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void AddWeakListener(v8::Isolate *isolate, v8::Local<v8::Object> object, Path2D* path);
 
     static void AddPath(const v8::FunctionCallbackInfo<v8::Value> &args);
 

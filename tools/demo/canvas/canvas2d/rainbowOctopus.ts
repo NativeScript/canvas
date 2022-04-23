@@ -1,13 +1,7 @@
 let LAF = 0;
 
 export function rainbowOctopus(canvas) {
-
-  console.log('context.canvas.nativeView.getNativeContext()', canvas.nativeView.getNativeContext());
-
   var context = canvas.getContext('2d');
-  const ptr = context.canvas.nativeView.getNativeContext();
-  console.log('context.canvas.nativeView.getNativeContext()', ptr);
-  const v8Ctx = global.__getCanvasRenderingContext2DImpl(String(ptr));
   var ctx = context/* canvas context */,
     w /* canvas height */, h /* canvas height */,
 

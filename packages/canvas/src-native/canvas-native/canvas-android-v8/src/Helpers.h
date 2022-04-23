@@ -14,6 +14,8 @@ public:
 
     static rust::String ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::String> &value);
 
+    static std::string ConvertFromV8StringToString(v8::Isolate *isolate, const v8::Local<v8::String> &value);
+
     static bool IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz);
 
     static void SetInternalClassName(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz);

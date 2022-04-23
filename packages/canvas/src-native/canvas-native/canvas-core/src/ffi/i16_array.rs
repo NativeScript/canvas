@@ -2,30 +2,29 @@
 pub struct I16Array {
     pub data: *mut i16,
     pub data_len: usize,
+    pub data_cap: usize,
 }
 
 impl Into<Vec<i16>> for I16Array {
     fn into(self) -> Vec<i16> {
-        unsafe {
-            Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)).into_vec()
-        }
+        unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) }
     }
 }
 
 impl From<Vec<i16>> for I16Array {
-    fn from(vec: Vec<i16>) -> Self {
-        let mut box_slice = vec.into_boxed_slice();
+    fn from(mut vec: Vec<i16>) -> Self {
         let array = Self {
-            data: box_slice.as_mut_ptr(),
-            data_len: box_slice.len(),
+            data: vec.as_mut_ptr(),
+            data_len: vec.len(),
+            data_cap: vec.capacity(),
         };
-        let _ = Box::into_raw(box_slice);
+        std::mem::forget(vec);
         array
     }
 }
 
 impl Drop for I16Array {
     fn drop(&mut self) {
-        let _ = unsafe { Box::from_raw(std::slice::from_raw_parts_mut(self.data, self.data_len)) };
+        let _ = unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) };
     }
 }

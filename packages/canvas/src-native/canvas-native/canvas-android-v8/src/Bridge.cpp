@@ -8,6 +8,7 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
+    isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 
     auto len = args.Length();
 

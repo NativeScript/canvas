@@ -2283,12 +2283,9 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 			GLES20.GL_FRONT_AND_BACK -> {
 				canvas.renderer.mStencilMask = mask
 				canvas.renderer.mStencilMaskBack = mask
-				canvas.renderer.mStencilMask = mask
-				canvas.renderer.mStencilMaskBack = mask
 			}
 			GLES20.GL_FRONT -> {
 				canvas.renderer.mStencilMask = mask
-				canvas.renderer.mStencilMaskBack = mask
 			}
 			GLES20.GL_BACK -> canvas.renderer.mStencilMaskBack = mask
 			else -> {

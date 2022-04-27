@@ -36,6 +36,17 @@ impl GLContext {
         )
     }
 
+    pub fn remove_if_current(&self){
+        if self.context.is_some() && (egl::get_current_context() == self.context) {
+            egl::make_current(
+                egl::EGL_NO_DISPLAY,
+                egl::EGL_NO_SURFACE,
+                egl::EGL_NO_SURFACE,
+                egl::EGL_NO_CONTEXT
+            )
+        }
+    }
+
     pub fn swap_buffers(&self) -> bool {
         egl::swap_buffers(
             self.display.unwrap_or(egl::EGL_NO_DISPLAY),

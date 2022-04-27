@@ -294,21 +294,23 @@ pub fn create_from_image_asset_src_rect(
     unsafe {
         let asset: *mut ImageAsset = image_asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
-        let width = asset.width() as f32;
-        let height = asset.height() as f32;
-        create_image_asset(
-            bytes.as_slice(),
-            width,
-            height,
-            rect,
-            flip_y,
-            premultiply_alpha,
-            color_space_conversion,
-            resize_quality,
-            resize_width,
-            resize_height,
-        )
+        if let Some(bytes) = asset.get_bytes() {
+            let width = asset.width() as f32;
+            let height = asset.height() as f32;
+            return create_image_asset(
+                bytes,
+                width,
+                height,
+                rect,
+                flip_y,
+                premultiply_alpha,
+                color_space_conversion,
+                resize_quality,
+                resize_width,
+                resize_height,
+            );
+        }
+        return Box::into_raw(Box::new(ImageAsset::new())) as i64;
     }
 }
 

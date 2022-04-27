@@ -24,6 +24,8 @@ stringreader = "0.1.1"
 rand = "0.8.4"
 once_cell = "1.8.0"
 skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["svg"] }
+stb = {path = "/Users/triniwiz/desktop/oss/stb/stb", features = ["stb_image", "stb_image_write", "stb_image_resize"]}
+stb-sys = {path = "/Users/triniwiz/desktop/oss/stb/stb-sys", features = ["stb_image", "stb_image_write", "stb_image_resize"]}
 
 
 

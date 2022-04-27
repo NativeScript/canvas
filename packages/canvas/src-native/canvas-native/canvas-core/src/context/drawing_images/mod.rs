@@ -34,7 +34,7 @@ impl Context {
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
-        let paint = self.state.paint.image_paint();
+        let paint = self.state.paint.image_paint().clone();
         self.surface.canvas().draw_image_rect_with_sampling_options(
             image,
             Some((&src_rect, SrcRectConstraint::Strict)),

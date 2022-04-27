@@ -1,17 +1,17 @@
 import { DemoSharedBase } from '../utils';
-import { ImageSource, ObservableArray, Screen, Color, Application } from '@nativescript/core';
+import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders , path as filePath} from '@nativescript/core';
 import Chart from 'chart.js';
 
 let Matter;
 import { Canvas } from '@nativescript/canvas';
-import { flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, globalCompositeOperation } from './canvas2d';
+import { arcToAnimation, flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, globalCompositeOperation } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import Vex from 'vexflow';
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
-declare var com, java;
+// declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
 import { issue54 } from './issues';
@@ -579,11 +579,37 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const width = Screen.mainScreen.widthPixels;
 		const height = Screen.mainScreen.heightPixels;
 		const ctx = canvas.getContext('2d');
-		const image = new Image();
-		image.onload = () => {
-			ctx.drawImage(image, 0, 0);
-		};
-		image.src = `https://source.unsplash.com/random/${width}x${height}`;
+		ctx.fillRect(300,300,300,300)
+		const asset = new global.ImageAsset();
+
+
+		let realPath = '~/assets/file-assets/webgl/svh.jpeg';
+		//let realPath = '~/assets/file-assets/webgl/Canvas_sun.png';
+		if (typeof realPath === 'string') {
+			if (realPath.startsWith('~/')) {
+				realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
+			}
+		}
+
+		asset.loadFileSync(realPath);
+		//asset.loadFromUrlSync('https://i0.wp.com/www.printmag.com/wp-content/uploads/2021/02/4cbe8d_f1ed2800a49649848102c68fc5a66e53mv2.gif?fit=476%2C280&ssl=1');
+		//asset.loadFromUrl('https://pbs.twimg.com/media/FQaPvSZXwAgfun7?format=png&name=large')
+		//asset.loadFromUrlSync(`https://pbs.twimg.com/media/FQaPvSZXwAgfun7?format=jpg&name=large`);
+		//asset.loadFromUrlSync('https://upload.wikimedia.org/wikipedia/en/0/00/Spider-Man_No_Way_Home_poster.jpg');
+		//asset.loadFromUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+		console.log(asset.error);
+		console.log(asset.width, asset.height);
+		function draw(){
+			ctx.drawImage(asset, 0, 0);
+			requestAnimationFrame(draw);
+		}
+		draw();
+		
+		// const image = new Image();
+		// image.onload = () => {
+		// 	ctx.drawImage(image, 0, 0);
+		// };
+		// image.src = `https://source.unsplash.com/random/${width}x${height}`;
 	}
 
 	playCanvas(canvas) {
@@ -1619,21 +1645,27 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-		try {
-						await sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
-						console.log('after sun');
-						await moon.loadFromUrl('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
-						console.log('after moon');
-						await earth.loadFromUrl('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
-						console.log('after earth');
-					} catch (e) {
-						console.log('solar error:', e);
-					}
+
+		sun.loadUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+		moon.loadUrlSync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
+		earth.loadUrlSync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
+
+
+		// sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png')
+		// .then(done =>{
+		// 	console.log('sun', done);
+		// 	return moon.loadFromUrl('https://mdn.mozillademos.org/files/1443/Canvas_moon.png')
+		// }).then(done =>{
+		// 	console.log('moon', done);
+		// 	return earth.loadFromUrl('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
+		// }).then(done =>{
+		// 	console.log('earth', done);
+		// })
 			
 			
 			
-					console.log(sun.width, moon.width, earth.width);
-					var ctx = canvas.getContext('2d');
+					//console.log(sun.width, moon.width, earth.width);
+					var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 					//ctx.scale(3, 3);
 			
 					function init() {
@@ -1646,10 +1678,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 						if (!ctx) {
 							return;
 						}
-						
-						ctx.globalCompositeOperation = 'destination-over';
+
+						//ctx.globalCompositeOperation = 'destination-over';
 						ctx.clearRect(0, 0, 300, 300); // clear canvas
-			
 						ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
 						ctx.strokeStyle = 'rgba(0, 153, 255, 0.4)';
 						ctx.save();
@@ -1660,29 +1691,25 @@ export class DemoSharedCanvas extends DemoSharedBase {
 						ctx.rotate(((2 * Math.PI) / 60) * time.getSeconds() + ((2 * Math.PI) / 60000) * time.getMilliseconds());
 						ctx.translate(105, 0);
 						ctx.fillRect(0, -12, 40, 24); // Shadow
-						//ctx.drawImage(earth, -12, -12);
-			
+						ctx.drawImage(earth, -12, -12);
+
 						// Moon
 						ctx.save();
 						ctx.rotate(((2 * Math.PI) / 6) * time.getSeconds() + ((2 * Math.PI) / 6000) * time.getMilliseconds());
 						ctx.translate(0, 28.5);
-						//ctx.drawImage(moon, -3.5, -3.5);
+						ctx.drawImage(moon, -3.5, -3.5);
 						ctx.restore();
-			
 						ctx.restore();
-			
 						ctx.beginPath();
 						ctx.arc(150, 150, 105, 0, Math.PI * 2, false); // Earth orbit
 						ctx.stroke();
+						ctx.drawImage(sun, 0, 0, 300, 300);
 			
-						//ctx.drawImage(sun, 0, 0, 300, 300);
-			
-						// if (!didScale) {
-						//     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
-						//     didScale = true;
-						// }
-			
-						window.requestAnimationFrame(draw);
+						// // if (!didScale) {
+						// //     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
+						// //     didScale = true;
+						// // }
+					//	window.requestAnimationFrame(draw);
 					}
 			
 					init();

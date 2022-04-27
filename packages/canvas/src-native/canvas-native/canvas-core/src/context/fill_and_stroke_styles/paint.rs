@@ -1,7 +1,7 @@
 use std::os::raw::c_float;
 
 use skia_safe::paint::{Cap, Style};
-use skia_safe::{Color, Point};
+use skia_safe::{BlendMode, Color, Point};
 
 use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::Pattern;
@@ -129,6 +129,12 @@ impl Paint {
         &mut self.image_paint
     }
 
+    pub(crate) fn set_blend_mode(&mut self, mode: skia_safe::BlendMode) {
+        self.fill_paint.set_blend_mode(mode);
+        self.stroke_paint.set_blend_mode(mode);
+        self.image_paint.set_blend_mode(mode);
+    }
+
     fn shadow_paint(
         mut paint: skia_safe::Paint,
         offset: Point,
@@ -179,7 +185,8 @@ impl Default for Paint {
         fill_paint
             .set_anti_alias(true)
             .set_color(Color::BLACK)
-            .set_style(Style::Fill);
+            .set_style(Style::Fill)
+            .set_blend_mode(BlendMode::SrcOver);
 
         let mut stroke_paint = skia_safe::Paint::default();
         stroke_paint
@@ -188,9 +195,10 @@ impl Default for Paint {
             .set_style(Style::Stroke)
             .set_stroke_miter(10.0)
             .set_stroke_width(1.0)
-            .set_stroke_cap(Cap::Butt);
+            .set_stroke_cap(Cap::Butt)
+            .set_blend_mode(BlendMode::SrcOver);
         let mut image_paint = skia_safe::Paint::default();
-        image_paint.set_anti_alias(true).set_style(Style::Fill);
+        image_paint.set_anti_alias(true).set_style(Style::Fill).set_blend_mode(BlendMode::SrcOver);
 
         Self {
             fill_paint,

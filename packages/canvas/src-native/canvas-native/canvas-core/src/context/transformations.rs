@@ -1,9 +1,11 @@
 use std::f32::consts::PI;
-use std::os::raw::c_float;
+use std::os::raw::{c_float, c_double};
 
 use skia_safe::{M44, Matrix, Point};
 
 use crate::context::Context;
+
+const DEG: f32 = 180.0 / PI;
 
 impl Context {
     pub fn get_transform(&mut self) -> Matrix {
@@ -11,7 +13,7 @@ impl Context {
     }
 
     pub fn rotate(&mut self, angle: c_float) {
-        self.surface.canvas().rotate(angle * (180.0 / PI), None);
+        self.surface.canvas().rotate(angle * DEG, None);
     }
 
     pub fn scale(&mut self, x: c_float, y: c_float) {

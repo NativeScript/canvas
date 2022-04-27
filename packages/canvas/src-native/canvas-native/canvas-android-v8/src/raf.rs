@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use libc::c_void;
 
-use crate::choregrapher::{AChoreographer, AChoreographer_frameCallback64, AChoreographer_getInstance, AChoreographer_postFrameCallback, AChoreographer_postFrameCallback64};
+use crate::choregrapher::{
+    AChoreographer, AChoreographer_frameCallback64, AChoreographer_getInstance,
+    AChoreographer_postFrameCallback, AChoreographer_postFrameCallback64,
+};
 use crate::looper::ALooper_prepare;
 
 type RafCallback = Option<Box<dyn Fn(i64)>>;
@@ -23,7 +26,10 @@ impl Raf {
             let data = data as *mut Raf;
             let data = unsafe { &mut *data };
             let lock = data.inner.lock();
-            if !lock.started {
+            let started = lock.started;
+            if !started {
+                drop(lock);
+                let _ = unsafe { Box::from_raw(data) };
                 return;
             }
             if let Some(callback) = lock.callback.as_ref() {
@@ -36,9 +42,9 @@ impl Raf {
                 if lock.use_deprecated {
                     AChoreographer_postFrameCallback(instance, Some(Raf::callback), data_ptr);
                     return;
-                }else {
+                } else {
                     // todo get sdk version
-                   // AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data_ptr);
+                    // AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data_ptr);
                 }
             }
         }
@@ -62,7 +68,7 @@ impl Raf {
             let lock = self.inner.lock();
             if lock.use_deprecated {
                 AChoreographer_postFrameCallback(instance, Some(Raf::callback), data.cast());
-            }else {
+            } else {
                 // todo get sdk version
                 //AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data.cast());
             }

@@ -1,6 +1,6 @@
 //require('@nativescript/canvas-polyfill');
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
-import { Application, Utils, path as filePath, knownFolders } from '@nativescript/core';
+import { Application, path as filePath, knownFolders } from '@nativescript/core';
 declare var __non_webpack_require__;
 __non_webpack_require__('~/libcanvasnativev8.so');
 
@@ -155,7 +155,7 @@ const asset = new global.ImageAsset();
 const asset2 = new global.ImageAsset();
 const asset3 = new global.ImageAsset();
 
-
+/*
 global.thing = (async () => {
 
 
@@ -170,22 +170,39 @@ global.thing = (async () => {
 			realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
 		}
 	}
-	await asset.loadFile(realPath);
+	
+	asset.loadFile(realPath).then(done =>{
+		console.log(java.lang.Thread.currentThread())
+	});
 	console.log('1');
 
-	await asset.loadFile(realPath);
+	asset2.loadFile(realPath).then(done =>{
+		console.log(java.lang.Thread.currentThread())
+	});
 	console.log('2');
 
-	await asset.loadFile(realPath);
-	console.log('3');
+	asset3.loadFile(realPath).then(done =>{
+		console.log(java.lang.Thread.currentThread())
+	});
 	
- 	await asset.loadFile(realPath);
+	console.log('3');
+
+ 	asset.loadFile(realPath)
+	 .then(done =>{
+		console.log(java.lang.Thread.currentThread())
+	});
 	console.log('4');
 
-	await asset2.loadFile(realPath);
+	asset2.loadFile(realPath)
+	.then(done =>{
+		console.log(java.lang.Thread.currentThread())
+	});
 	console.log('5');
 
-	await asset3.loadFile(realPath);
+	asset3.loadFile(realPath)
+	.then(done =>{
+		console.log(java.lang.Thread.currentThread())
+	});
 	console.log('6');
 
 
@@ -225,7 +242,7 @@ global.thing = (async () => {
 
 	// await asset3.loadFromUrlAsync("https://interactive-examples.mdn.mozilla.net/media/examples/star.png");
 	//console.log(asset.width, asset2.width, asset3.width);
-})();
+})(); */
 
 // console.log(other_done, asset.width);
 })

@@ -110,18 +110,6 @@ void ImageAssetImpl::GetError(v8::Local<v8::String> name, const v8::PropertyCall
     }
 }
 
-void ImageAssetImpl::FlipX(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
-    canvas_native_image_asset_flip_x(*ptr->asset_);
-}
-
-void ImageAssetImpl::FlipY(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
-    canvas_native_image_asset_flip_y(*ptr->asset_);
-}
-
 void ImageAssetImpl::Scale(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
@@ -154,9 +142,6 @@ void ImageAssetImpl::FromUrl(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 void ImageAssetImpl::FromUrlAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::HandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
@@ -169,11 +154,6 @@ void ImageAssetImpl::FromUrlAsync(const v8::FunctionCallbackInfo<v8::Value> &arg
         auto cache = Caches::Get(isolate);
         auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
         cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
-        if(!cache->GetPerformingMicrotaskCheckpoint()){
-            cache->SetPerformingMicrotaskCheckpoint(true);
-            isolate->PerformMicrotaskCheckpoint();
-            cache->SetPerformingMicrotaskCheckpoint(false);
-        }
         canvas_native_image_asset_load_from_url_async(*ptr->asset_, url, key);
     };
 }
@@ -310,21 +290,14 @@ v8::Local<v8::Function> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             Helpers::ConvertToV8String(isolate, "error"),
             &GetError
     );
-
-    tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "flipX"), v8::FunctionTemplate::New(isolate, &FlipX)
-    );
-    tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "flipY"), v8::FunctionTemplate::New(isolate, &FlipY)
-    );
     tmpl->Set(
             Helpers::ConvertToV8String(isolate, "scale"), v8::FunctionTemplate::New(isolate, &Scale)
     );
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "loadFromUrlSync"), v8::FunctionTemplate::New(isolate, &FromUrl)
+            Helpers::ConvertToV8String(isolate, "loadUrlSync"), v8::FunctionTemplate::New(isolate, &FromUrl)
     );
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "loadFromUrl"), v8::FunctionTemplate::New(isolate, &FromUrlAsync)
+            Helpers::ConvertToV8String(isolate, "loadUrl"), v8::FunctionTemplate::New(isolate, &FromUrlAsync)
     );
     tmpl->Set(
             Helpers::ConvertToV8String(isolate, "loadFileSync"),
@@ -337,12 +310,12 @@ v8::Local<v8::Function> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
 
 
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "loadFromBytesSync"),
+            Helpers::ConvertToV8String(isolate, "loadBytesSync"),
             v8::FunctionTemplate::New(isolate, &FromBytes)
     );
 
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "loadFromBytes"),
+            Helpers::ConvertToV8String(isolate, "loadBytes"),
             v8::FunctionTemplate::New(isolate, &FromBytesAsync)
     );
 

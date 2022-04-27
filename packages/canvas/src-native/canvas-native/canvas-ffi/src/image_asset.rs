@@ -40,7 +40,7 @@ pub extern "C" fn canvas_native_image_asset_get_bytes(asset: *mut ImageAsset) ->
     }
     unsafe {
         let asset = &mut *asset;
-        asset.bytes()
+        asset.get_bytes()
     }
 }
 

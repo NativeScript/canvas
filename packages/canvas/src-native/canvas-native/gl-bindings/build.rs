@@ -66,8 +66,6 @@ fn main() {
     };
     println!("cargo:rerun-if-changed=build.rs");
 
-    println!("system {:?}", &target.system);
-    println!("target {:?}", &target);
     match target.system.borrow() {
         "android" | "androideabi" => {
             // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
@@ -123,7 +121,6 @@ fn main() {
         "ios" | "darwin" => {
             let target = std::env::var("TARGET").unwrap();
             let directory = sdk_path(&target).ok();
-            println!("sdk_path {:?}", directory);
             build(directory.as_ref().map(String::as_ref), &target);
         }
         _ => {}

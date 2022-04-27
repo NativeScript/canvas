@@ -675,9 +675,13 @@
       <sourceFolder url="file://$MODULE_DIR$/canvas-android/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/canvas-ffi/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/canvas-ios/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/stb/stb-sys/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/stb/stb/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/stb/stb/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-ffi/target" />
+      <excludeFolder url="file://$MODULE_DIR$/stb/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

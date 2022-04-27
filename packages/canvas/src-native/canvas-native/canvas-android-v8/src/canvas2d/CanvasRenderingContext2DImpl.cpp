@@ -115,7 +115,6 @@ CanvasRenderingContext2DImpl::NewInstance(v8::Isolate *isolate, rust::Box <Canva
 }
 
 void CanvasRenderingContext2DImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    console_log("Create");
     Helpers::ThrowIllegalConstructor(args.GetIsolate());
 }
 
@@ -712,9 +711,9 @@ void CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::
     auto ptr = GetPointer(args.Holder());
     // TODO handle other cases
     if (args.Length() == 3) {
-        auto image = args[0]->ToObject(context).ToLocalChecked();
-        auto dx = args[1]->NumberValue(context).ToChecked();
-        auto dy = args[2]->NumberValue(context).ToChecked();
+        auto image = args[0].As<v8::Object>();
+        auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
         if (Helpers::IsInstanceOf(isolate, image, "ImageAsset")) {
             auto asset = ImageAssetImpl::GetPointer(image);
             canvas_native_context_draw_image_dx_dy_asset(*ptr->context_, asset->GetImageAsset(), dx, dy);
@@ -1045,8 +1044,8 @@ void CanvasRenderingContext2DImpl::Rotate(const v8::FunctionCallbackInfo<v8::Val
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
-    if (args.Length() == 1) {
-        canvas_native_context_rotate(*ptr->context_, static_cast<float>(args[0]->NumberValue(context).ToChecked()));
+    if (args.Length() == 1 && args[0]->IsNumber()) {
+        canvas_native_context_rotate(*ptr->context_, args[0]->NumberValue(context).ToChecked());
     }
 }
 

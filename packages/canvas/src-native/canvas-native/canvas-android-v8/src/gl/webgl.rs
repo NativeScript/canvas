@@ -1,7 +1,6 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_uchar, c_void};
 
-use cxx::W;
 use image::imageops::resize;
 use libc::size_t;
 
@@ -85,8 +84,8 @@ pub fn canvas_native_webgl_blend_color(
 }
 
 pub fn canvas_native_webgl_blend_equation_separate(
-    mode_rgb: i32,
-    mode_alpha: i32,
+    mode_rgb: u32,
+    mode_alpha: u32,
     state: &mut WebGLState,
 ) {
     state.make_current();
@@ -95,7 +94,7 @@ pub fn canvas_native_webgl_blend_equation_separate(
     }
 }
 
-pub fn canvas_native_webgl_blend_equation(mode: i32, state: &mut WebGLState) {
+pub fn canvas_native_webgl_blend_equation(mode: u32, state: &mut WebGLState) {
     state.make_current();
     unsafe {
         gl_bindings::glBlendEquation(mode);
@@ -103,10 +102,10 @@ pub fn canvas_native_webgl_blend_equation(mode: i32, state: &mut WebGLState) {
 }
 
 pub fn canvas_native_webgl_blend_func_separate(
-    src_rgb: i32,
-    dst_rgb: i32,
-    src_alpha: i32,
-    dst_alpha: i32,
+    src_rgb: u32,
+    dst_rgb: u32,
+    src_alpha: u32,
+    dst_alpha: u32,
     state: &mut WebGLState,
 ) {
     state.make_current();
@@ -115,7 +114,7 @@ pub fn canvas_native_webgl_blend_func_separate(
     }
 }
 
-pub fn canvas_native_webgl_blend_func(sfactor: i32, dfactor: i32, state: &mut WebGLState) {
+pub fn canvas_native_webgl_blend_func(sfactor: u32, dfactor: u32, state: &mut WebGLState) {
     state.make_current();
     unsafe {
         gl_bindings::glBlendFunc(sfactor, dfactor);
@@ -130,7 +129,12 @@ pub fn canvas_native_webgl_buffer_data(
 ) {
     state.make_current();
     unsafe {
-        gl_bindings::glBufferData(target, src_data.len(), src_data.as_ptr() as *const c_void, usage);
+        gl_bindings::glBufferData(
+            target,
+            src_data.len().try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
     }
 }
 
@@ -142,7 +146,7 @@ pub fn canvas_native_webgl_buffer_data_none(
 ) {
     state.make_current();
     unsafe {
-        gl_bindings::glBufferData(target, size, 0, usage);
+        gl_bindings::glBufferData(target, size.try_into().unwrap(), std::ptr::null(), usage);
     }
 }
 
@@ -154,7 +158,23 @@ pub fn canvas_native_webgl_buffer_sub_data(
 ) {
     state.make_current();
     unsafe {
-        gl_bindings::glBufferSubData(target, offset, src_data.len(), src_data.as_ptr() as *const c_void);
+        gl_bindings::glBufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            src_data.len().try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+pub fn canvas_native_webgl_buffer_sub_data_none(
+    target: u32,
+    offset: isize,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::glBufferSubData(target, offset.try_into().unwrap(), 0, std::ptr::null());
     }
 }
 
@@ -200,15 +220,20 @@ fn restore_state_after_clear(state: &mut WebGLState) {
             clear_color[2],
             clear_color[3],
         );
-        gl_bindings::glColorMask(color_mask[0], color_mask[1], color_mask[2], color_mask[3]);
+        gl_bindings::glColorMask(
+            color_mask[0] as u8,
+            color_mask[1] as u8,
+            color_mask[2] as u8,
+            color_mask[3] as u8,
+        );
         gl_bindings::glClearDepthf(state.get_clear_depth());
         gl_bindings::glClearStencil(state.get_clear_stencil());
         gl_bindings::glStencilMaskSeparate(1028 /* GL_FRONT */, state.get_stencil_mask());
-        gl_bindings::glDepthMask(state.get_depth_mask());
+        gl_bindings::glDepthMask(state.get_depth_mask() as u8);
     }
 }
 
-fn clear_if_composited(mask: i32, state: &mut WebGLState) -> HowToClear {
+fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
     let combined_clear = mask > 0 && !state.get_scissor_enabled();
     let m = mask & 16384; // GL_COLOR_BUFFER_BIT
     unsafe {
@@ -250,7 +275,9 @@ fn clear_if_composited(mask: i32, state: &mut WebGLState) -> HowToClear {
     if state.get_stencil() {
         if combined_clear && mask & 1024 /* GL_STENCIL_BUFFER_BIT */ != 0 {
             unsafe {
-                gl_bindings::glClearStencil(state.get_clear_stencil() & state.get_stencil_mask())
+                gl_bindings::glClearStencil(
+                    state.get_clear_stencil() & state.get_stencil_mask() as i32,
+                )
             }
         } else {
             unsafe {
@@ -269,15 +296,15 @@ fn clear_if_composited(mask: i32, state: &mut WebGLState) -> HowToClear {
     }
     restore_state_after_clear(state);
     if combined_clear {
-        HowToClear::CombinedClear
+        return HowToClear::CombinedClear;
     }
-    HowToClear.JustClear
+    HowToClear::JustClear
 }
 
-pub fn canvas_native_webgl_clear(mask: i32, state: &mut WebGLState) {
+pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
     state.make_current();
     if clear_if_composited(mask, state) != HowToClear::CombinedClear {
-        unsafe { gl_bindings::glClearColor(red, green, blue, alpha) }
+        unsafe { gl_bindings::glClear(mask) }
     }
     // Flush context
 }
@@ -297,13 +324,13 @@ pub fn canvas_native_webgl_clear_color(
 pub fn canvas_native_webgl_clear_depth(depth: f32, state: &mut WebGLState) {
     state.make_current();
     state.set_clear_depth(depth);
-    unsafe { gl_bindings::glClearDepth(depth) }
+    unsafe { gl_bindings::glClearDepthf(depth) }
 }
 
 pub fn canvas_native_webgl_clear_stencil(stencil: i32, state: &mut WebGLState) {
     state.make_current();
     state.set_clear_stencil(stencil);
-    unsafe { gl_bindings::glClearStencil(depth) }
+    unsafe { gl_bindings::glClearStencil(stencil) }
 }
 
 pub fn canvas_native_webgl_color_mask(
@@ -315,7 +342,7 @@ pub fn canvas_native_webgl_color_mask(
 ) {
     state.make_current();
     state.set_color_mask([red, green, blue, alpha]);
-    unsafe { gl_bindings::glColorMask(red, green, blue, alpha) }
+    unsafe { gl_bindings::glColorMask(red as u8, green as u8, blue as u8, alpha as u8) }
 }
 
 pub fn canvas_native_webgl_commit(_: &mut WebGLState) {
@@ -346,7 +373,7 @@ pub fn canvas_native_webgl_compressed_tex_image2d(
             width,
             height,
             border,
-            pixels.len(),
+            pixels.len().try_into().unwrap(),
             pixels.as_ptr() as *const c_void,
         )
     }
@@ -390,7 +417,15 @@ pub fn canvas_native_webgl_compressed_tex_sub_image2d(
     state.make_current();
     unsafe {
         gl_bindings::glCompressedTexSubImage2D(
-            target, level, xoffset, yoffset, width, height, format, pixels.len(), pixels.as_ptr() as *const c_void,
+            target,
+            level,
+            xoffset,
+            yoffset,
+            width,
+            height,
+            format,
+            pixels.len().try_into().unwrap(),
+            pixels.as_ptr() as *const c_void,
         )
     }
 }
@@ -398,7 +433,7 @@ pub fn canvas_native_webgl_compressed_tex_sub_image2d(
 pub fn canvas_native_webgl_copy_tex_image2d(
     target: u32,
     level: i32,
-    internalformat: i32,
+    internalformat: u32,
     x: i32,
     y: i32,
     width: i32,
@@ -515,7 +550,7 @@ pub fn canvas_native_webgl_depth_func(func: u32, state: &mut WebGLState) {
 
 pub fn canvas_native_webgl_depth_mask(flag: bool, state: &mut WebGLState) {
     state.make_current();
-    unsafe { gl_bindings::glDepthMask(flag) }
+    unsafe { gl_bindings::glDepthMask(flag as u8) }
 }
 
 pub fn canvas_native_webgl_depth_range(z_near: f32, z_far: f32, state: &mut WebGLState) {
@@ -537,12 +572,7 @@ pub fn canvas_native_webgl_disable_vertex_attrib_array(index: u32, state: &mut W
     unsafe { gl_bindings::glDisableVertexAttribArray(index) }
 }
 
-pub fn canvas_native_webgl_draw_arrays(
-    mode: u32,
-    first: i32,
-    count: i32,
-    state: &mut WebGLState,
-) {
+pub fn canvas_native_webgl_draw_arrays(mode: u32, first: i32, count: i32, state: &mut WebGLState) {
     state.make_current();
     clear_if_composited(0, state);
     unsafe { gl_bindings::glDrawArrays(mode, first, count) }
@@ -562,7 +592,7 @@ pub fn canvas_native_webgl_draw_elements(
     // Flush Context
 }
 
-pub fn canvas_native_webgl_enable(cap: GLuint, state: &mut WebGLState) {
+pub fn canvas_native_webgl_enable(cap: u32, state: &mut WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glEnable(cap) }
 }
@@ -619,7 +649,7 @@ pub fn canvas_native_webgl_generate_mipmap(target: u32, state: &mut WebGLState) 
 
 pub fn canvas_native_webgl_get_active_attrib(
     program: u32,
-    index: i32,
+    index: u32,
     state: &mut WebGLState,
 ) -> WebGLActiveInfo {
     state.make_current();
@@ -646,7 +676,7 @@ pub fn canvas_native_webgl_get_active_attrib(
             name_buffer.as_mut_vec().as_mut_ptr() as *mut c_char,
         )
     }
-    name_buffer.resize(name_length, 0);
+    name_buffer.shrink_to(name_length as usize);
     WebGLActiveInfo::new(name_buffer, size, info_type)
 }
 
@@ -679,7 +709,7 @@ pub fn canvas_native_webgl_get_active_uniform(
             name_buffer.as_mut_vec().as_mut_ptr() as *mut c_char,
         )
     };
-    name_buffer.resize(name_length, 0);
+    name_buffer.shrink_to(name_length as usize);
     WebGLActiveInfo::new(name_buffer, size, info_type)
 }
 
@@ -725,7 +755,7 @@ pub fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32 {
 pub fn canvas_native_webgl_get_extension(
     name: &str,
     state: &mut WebGLState,
-) -> Option<dyn WebGLExtension> {
+) -> Option<Box<dyn WebGLExtension>> {
     state.make_current();
     let version = state.get_webgl_version();
     let extensions = unsafe { gl_bindings::glGetString(gl_bindings::GL_EXTENSIONS) };
@@ -739,102 +769,109 @@ pub fn canvas_native_webgl_get_extension(
     let ext = unsafe { CStr::from_ptr(extensions) };
     let extensions = ext.to_string_lossy();
     let extension = if name.eq("EXT_blend_minmax") && extensions.contains("GL_EXT_blend_minmax") {
-        Some(EXT_blend_minmax::new())
+        return Some(Box::new(EXT_blend_minmax::new()));
     } else if name.eq("EXT_color_buffer_half_float")
         && extensions.contains("GL_EXT_color_buffer_half_float")
     {
-        Some(EXT_color_buffer_half_float::new())
+        return Some(Box::new(EXT_color_buffer_half_float::new()));
     } else if name.eq("EXT_disjoint_timer_query")
         && extensions.contains("GL_EXT_disjoint_timer_query")
     {
-        if get_sdk_version() >= JELLY_BEAN_MR2 {
-            Some(EXT_disjoint_timer_query::new(state.clone()))
+        return if get_sdk_version() >= JELLY_BEAN_MR2 {
+            Some(Box::new(EXT_disjoint_timer_query::new(state.clone())))
         } else {
             None
-        }
+        };
     } else if name.eq("EXT_sRGB") && extensions.contains("GL_EXT_sRGB") {
-        Some(EXT_sRGB::new())
+        return Some(Box::new(EXT_sRGB::new()));
     } else if name.eq("EXT_shader_texture_lod") && extensions.contains("GL_EXT_shader_texture_lod")
     {
-        Some(EXT_shader_texture_lod::new())
+        return Some(Box::new(EXT_shader_texture_lod::new()));
     } else if name.eq("EXT_texture_filter_anisotropic")
         && extensions.contains("GL_EXT_texture_filter_anisotropic")
     {
-        Some(EXT_texture_filter_anisotropic::new())
+        return Some(Box::new(EXT_texture_filter_anisotropic::new()));
     } else if name.eq("OES_element_index_uint") && extensions.contains("GL_OES_element_index_uint")
     {
-        Some(OES_element_index_uint::new())
+        return Some(Box::new(OES_element_index_uint::new()));
     } else if name.eq("OES_standard_derivatives")
         && extensions.contains("GL_OES_standard_derivatives")
     {
-        Some(OES_standard_derivatives::new())
+        return Some(Box::new(OES_standard_derivatives::new()));
     } else if name.eq("OES_texture_float")
         && (extensions.contains("GL_OES_texture_float") || version == WebGLVersion::V2)
     {
-        Some(OES_texture_float::new())
+        return Some(Box::new(OES_texture_float::new()));
     } else if name.eq("OES_texture_float_linear")
         && (extensions.contains("GL_OES_texture_float_linear") || version == WebGLVersion::V2)
     {
-        Some(OES_texture_float_linear::new())
+        return Some(Box::new(OES_texture_float_linear::new()));
     } else if name.eq("OES_texture_half_float") && extensions.contains("GL_OES_texture_half_float")
     {
-        Some(OES_texture_half_float::new())
+        return Some(Box::new(OES_texture_half_float::new()));
     } else if name.eq("OES_texture_half_float_linear")
         && extensions.contains("GL_OES_texture_half_float_linear")
     {
-        Some(OES_texture_half_float_linear::new())
+        return Some(Box::new(OES_texture_half_float_linear::new()));
     } else if name.eq("OES_vertex_array_object")
         && extensions.contains("GL_OES_vertex_array_object")
     {
-        if get_sdk_version() >= JELLY_BEAN_MR2 {
-            Some(OES_vertex_array_object::new(state.clone()))
+        return if get_sdk_version() >= JELLY_BEAN_MR2 {
+            Some(Box::new(OES_vertex_array_object::new(state.clone())))
         } else {
             None
-        }
+        };
     } else if name.eq("WEBGL_color_buffer_float")
         && extensions.contains("GL_OES_packed_depth_stencil")
     {
-        Some(WEBGL_color_buffer_float::new())
+        return Some(Box::new(WEBGL_color_buffer_float::new()));
     } else if name.eq("WEBGL_compressed_texture_atc")
         && extensions.contains("GL_AMD_compressed_ATC_texture")
     {
-        Some(WEBGL_compressed_texture_atc::new())
+        return Some(Box::new(WEBGL_compressed_texture_atc::new()));
     } else if name.eq("WEBGL_compressed_texture_etc1")
         && extensions.contains("GL_OES_compressed_ETC1_RGB8_texture")
     {
-        Some(WEBGL_compressed_texture_etc1::new())
+        return Some(Box::new(WEBGL_compressed_texture_etc1::new()));
     } else if name.eq("WEBGL_compressed_texture_s3tc")
         && extensions.contains("GL_EXT_texture_compression_dxt1")
         && extensions.contains("GL_EXT_texture_compression_s3tc")
     {
-        Some(WEBGL_compressed_texture_s3tc::new())
+        return Some(Box::new(WEBGL_compressed_texture_s3tc::new()));
     } else if name.eq("WEBGL_compressed_texture_etc") {
-        if version == WebGLVersion::V2 {
-            return Some(WEBGL_compressed_texture_etc::new());
-        }
-        None
+        return if version == WebGLVersion::V2 {
+            return Some(Box::new(WEBGL_compressed_texture_etc::new()));
+        } else {
+            None
+        };
     } else if name.eq("WEBGL_compressed_texture_pvrtc")
         && extensions.contains("GL_IMG_texture_compression_pvrtc")
     {
-        Some(WEBGL_compressed_texture_pvrtc::new())
+        return Some(Box::new(WEBGL_compressed_texture_pvrtc::new()));
     } else if name.eq("WEBGL_lose_context") {
-        Some(WEBGL_lose_context::new(state.clone()))
+        return Some(Box::new(WEBGL_lose_context::new(state.clone())));
     } else if name.eq("ANGLE_instanced_arrays") {
         if version == WebGLVersion::V2 {
-            if get_sdk_version() >= JELLY_BEAN_MR2 {
-                return Some(ANGLE_instanced_arrays::new(state.clone()));
-            }
+            return if get_sdk_version() >= JELLY_BEAN_MR2 {
+                Some(Box::new(ANGLE_instanced_arrays::new(state.clone())))
+            } else {
+                None
+            };
+        } else {
             None
         }
     } else if name.eq("WEBGL_depth_texture") && extensions.contains("GL_OES_depth_texture") {
-        Some(WEBGL_depth_texture::new())
+        return Some(Box::new(WEBGL_depth_texture::new()));
     } else if name.eq("WEBGL_draw_buffers") {
         if get_sdk_version() >= JELLY_BEAN_MR2 {
             if version == WebGLVersion::V2 || extensions.contains("GL_EXT_draw_buffers") {
-                return Some(WEBGL_draw_buffers::new(state.clone()));
+                return Some(Box::new(WEBGL_draw_buffers::new(state.clone())));
+            } else {
+                None
             }
+        } else {
+            None
         }
-        None
     } else {
         None
     };
@@ -986,11 +1023,11 @@ pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> 
         | gl_bindings::GL_DITHER
         | gl_bindings::GL_POLYGON_OFFSET_FILL
         | gl_bindings::GL_SAMPLE_COVERAGE_INVERT
-        | GL_SCISSOR_TEST
+        | gl_bindings::GL_SCISSOR_TEST
         | gl_bindings::GL_STENCIL_TEST => {
             let mut param = false;
-            unsafe { gl_bindings::glGetBooleanv(pname, &mut param) };
-            return WebGLResult::Boolean(param == 1);
+            unsafe { gl_bindings::glGetBooleanv(pname, &mut (param as u8)) };
+            return WebGLResult::Boolean(param);
         }
         WEBGL_UNPACK_PREMULTIPLY_ALPHA_WEBGL => {
             return WebGLResult::Boolean(state.get_premultiplied_alpha());
@@ -1051,7 +1088,7 @@ pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> 
                 return WebGLResult::None;
             }
             unsafe {
-                return WebGLResult::String(CString::from_raw(params));
+                return WebGLResult::String(CString::from(CStr::from_ptr(params)));
             }
         }
         _ => WebGLResult::None,
@@ -1072,7 +1109,7 @@ pub fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLS
             info.as_mut_vec().as_mut_ptr() as *mut c_char,
         )
     }
-    info.resize(len, 0);
+    info.shrink_to(len.try_into().unwrap());
     info
 }
 
@@ -1127,7 +1164,7 @@ pub fn canvas_native_webgl_get_shader_info_log(shader: u32, state: &mut WebGLSta
             log.as_mut_vec().as_mut_ptr() as *mut c_char,
         )
     }
-    log.resize(len, 0);
+    log.shrink_to(len.try_into().unwrap());
     log
 }
 
@@ -1177,18 +1214,18 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
     let mut source = String::with_capacity(length as usize);
     let mut len = 0;
     unsafe {
-        gl_bindings::glGetShaderSource(shader, length, &mut len, source.as_mut_ptr() as *mut i8)
+        gl_bindings::glGetShaderSource(shader, length, &mut len, source.as_mut_ptr() as *mut c_char)
     }
-    source.length(len, 0);
+    source.shrink_to(len.try_into().unwrap());
     source
 }
 
-pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<&str> {
+pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
     let ext = unsafe { gl_bindings::glGetString(gl_bindings::GL_EXTENSIONS) };
     let extensions = unsafe { CStr::from_ptr(ext) };
     let extensions = extensions.to_string_lossy();
-    extensions.split(" ").collect()
+    extensions.split(" ").map(|f| f.into()).collect()
 }
 
 pub fn canvas_native_webgl_get_tex_parameter(
@@ -1229,7 +1266,7 @@ pub fn canvas_native_webgl_get_uniform(
             &mut length,
             &mut size,
             &mut uniform_type,
-            std::ptr::null(),
+            std::ptr::null_mut(),
         )
     }
     match uniform_type {
@@ -1246,12 +1283,12 @@ pub fn canvas_native_webgl_get_uniform(
         gl_bindings::GL_FLOAT_VEC3 => {
             let mut vec3: Vec<f32> = Vec::with_capacity(3);
             unsafe { gl_bindings::glGetUniformfv(program, location, vec3.as_mut_ptr()) }
-            return WebGLResult::F32Array(vec2);
+            return WebGLResult::F32Array(vec3);
         }
         gl_bindings::GL_FLOAT_VEC4 => {
             let mut vec4: Vec<f32> = Vec::with_capacity(4);
             unsafe { gl_bindings::glGetUniformfv(program, location, vec4.as_mut_ptr()) }
-            return WebGLResult::F32Array(vec2);
+            return WebGLResult::F32Array(vec4);
         }
         gl_bindings::GL_INT | gl_bindings::GL_SAMPLER_2D | gl_bindings::GL_SAMPLER_CUBE => {
             let mut single_int = [0i32; 1];
@@ -1268,32 +1305,38 @@ pub fn canvas_native_webgl_get_uniform(
         gl_bindings::GL_INT_VEC3 => {
             let mut int_vec3: Vec<i32> = Vec::with_capacity(3);
             unsafe { gl_bindings::glGetUniformiv(program, location, int_vec3.as_mut_ptr()) }
-            return WebGLResult::I32Array(int_vec2);
+            return WebGLResult::I32Array(int_vec3);
         }
         gl_bindings::GL_INT_VEC4 => {
             let mut int_vec4: Vec<i32> = Vec::with_capacity(4);
             unsafe { gl_bindings::glGetUniformiv(program, location, int_vec4.as_mut_ptr()) }
-            return WebGLResult::I32Array(int_vec2);
+            return WebGLResult::I32Array(int_vec4);
         }
         gl_bindings::GL_BOOL => {
             let mut single_bool = [0i32; 1];
             unsafe { gl_bindings::glGetUniformiv(program, location, single_bool.as_mut_ptr()) }
-            return WebGLResult::Bool(single_bool[0] == 1);
+            return WebGLResult::Boolean(single_bool[0] == 1);
         }
         gl_bindings::GL_BOOL_VEC2 => {
-            let mut bool_vec2: Vec<i32> = Vec::with_capacity(2);
+            let mut bool_vec2 = [0i32; 2];
             unsafe { gl_bindings::glGetUniformiv(program, location, bool_vec2.as_mut_ptr()) }
-            return WebGLResult::BooleanArray(bool_vec2.iter_mut().map(|item| item == 1).collect());
+            return WebGLResult::BooleanArray(unsafe {
+                std::slice::from_raw_parts(bool_vec2.as_ptr() as *const bool, 2).to_vec()
+            });
         }
         gl_bindings::GL_BOOL_VEC3 => {
-            let mut bool_vec3: Vec<i32> = Vec::with_capacity(3);
+            let mut bool_vec3 = [0i32; 3];
             unsafe { gl_bindings::glGetUniformiv(program, location, bool_vec3.as_mut_ptr()) }
-            return WebGLResult::BooleanArray(bool_vec2.iter_mut().map(|item| item == 1).collect());
+            return WebGLResult::BooleanArray(unsafe {
+                std::slice::from_raw_parts(bool_vec3.as_ptr() as *const bool, 3).to_vec()
+            });
         }
         gl_bindings::GL_BOOL_VEC4 => {
-            let mut bool_vec4: Vec<i32> = Vec::with_capacity(4);
+            let mut bool_vec4 = [0i32; 4];
             unsafe { gl_bindings::glGetUniformiv(program, location, bool_vec4.as_mut_ptr()) }
-            return WebGLResult::BooleanArray(bool_vec2.iter_mut().map(|item| item == 1).collect());
+            return WebGLResult::BooleanArray(unsafe {
+                std::slice::from_raw_parts(bool_vec4.as_ptr() as *const bool, 4).to_vec()
+            });
         }
         gl_bindings::GL_FLOAT_MAT2 => {
             let mut mat2: Vec<f32> = Vec::with_capacity(2);
@@ -1327,7 +1370,8 @@ pub fn canvas_native_webgl_get_vertex_attrib_offset(
 ) -> size_t {
     state.make_current();
     let mut ptr = [0 as size_t; 1];
-    unsafe { gl_bindings::glGetVertexAttribPointerv(index, pname, &ptr.as_mut_ptr()) }
+    let mut ptr_ptr = &mut (ptr.as_mut_ptr() as *mut c_void);
+    unsafe { gl_bindings::glGetVertexAttribPointerv(index, pname, ptr_ptr) }
     ptr[0]
 }
 
@@ -1527,7 +1571,7 @@ pub fn canvas_native_webgl_renderbuffer_storage(
 
 pub fn canvas_native_webgl_sample_coverage(value: f32, invert: bool, state: &mut WebGLState) {
     state.make_current();
-    unsafe { gl_bindings::glSampleCoverage(value, invert) }
+    unsafe { gl_bindings::glSampleCoverage(value, invert as u8) }
 }
 
 pub fn canvas_native_webgl_scissor(
@@ -1630,15 +1674,14 @@ pub fn canvas_native_webgl_tex_image2d_asset(
     target: i32,
     level: i32,
     internalformat: i32,
-    border: i32,
     format: i32,
     image_type: i32,
     asset: &ImageAsset,
     state: &WebGLState,
 ) {
     if let Some(bytes) = asset.get_bytes() {
-        let width = asset.width();
-        let height = asset.height();
+        let width = asset.width() as i32;
+        let height = asset.height() as i32;
         state.make_current();
         unsafe {
             if state.get_flip_y() {
@@ -1658,7 +1701,7 @@ pub fn canvas_native_webgl_tex_image2d_asset(
                     internalformat,
                     width,
                     height,
-                    border,
+                    0,
                     format as u32,
                     image_type as u32,
                     buffer.as_ptr() as *const c_void,
@@ -1673,13 +1716,44 @@ pub fn canvas_native_webgl_tex_image2d_asset(
                 internalformat,
                 width,
                 height,
-                border,
+                0,
                 format as u32,
                 image_type as u32,
                 bytes.as_ptr() as *const c_void,
             );
         }
     }
+}
+
+
+//    texImage2D(target, level, internalformat, width, height, border, format, type)
+//    texImage2D(target, level, internalformat, width, height, border, format, type, pixels) // pixels is instance of ArrayBufferView
+//    texImage2D(target, level, internalformat, format, type)
+//    texImage2D(target, level, internalformat, format, type, pixels)
+
+
+pub fn canvas_native_webgl_tex_image2d_image_none(
+    target: i32,
+    level: i32,
+    internalformat: i32,
+    format: i32,
+    image_type: i32,
+    state: &WebGLState,
+) {
+    state.make_current();
+   unsafe {
+       gl_bindings::glTexImage2D(
+           target as u32,
+           level,
+           internalformat,
+           0,
+           0,
+           0,
+           format as u32,
+           image_type as u32,
+           std::ptr::null(),
+       );
+   }
 }
 
 pub fn canvas_native_webgl_tex_image2d(
@@ -1735,6 +1809,33 @@ pub fn canvas_native_webgl_tex_image2d(
     }
 }
 
+pub fn canvas_native_webgl_tex_image2d_none(
+    target: i32,
+    level: i32,
+    internalformat: i32,
+    width: i32,
+    height: i32,
+    border: i32,
+    format: i32,
+    image_type: i32,
+    state: &WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::glTexImage2D(
+            target as u32,
+            level,
+            internalformat,
+            width,
+            height,
+            border,
+            format as u32,
+            image_type as u32,
+            std::ptr::null(),
+        );
+    }
+}
+
 pub fn canvas_native_webgl_tex_parameterf(target: u32, pname: u32, param: f32, state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glTexParameterf(target, pname, param) }
@@ -1747,7 +1848,7 @@ pub fn canvas_native_webgl_tex_parameteri(target: u32, pname: u32, param: i32, s
 
 pub fn canvas_native_webgl_tex_sub_image2d_asset(
     target: u32,
-    level: u32,
+    level: i32,
     xoffset: i32,
     yoffset: i32,
     format: u32,
@@ -1756,14 +1857,14 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
     state: &WebGLState,
 ) {
     if let Some(bytes) = asset.get_bytes() {
-        let width = asset.width();
-        let height = asset.height();
+        let width = asset.width() as i32;
+        let height = asset.height() as i32;
         state.make_current();
         if state.get_flip_y() {
             let mut buffer = bytes.to_vec();
             canvas_core::utils::gl::flip_in_place(
                 buffer.as_mut_ptr(),
-                buf.len(),
+                bytes.len(),
                 (canvas_core::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
                     * width as i32) as usize,
                 height as usize,
@@ -1794,7 +1895,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
                 height,
                 format as u32,
                 image_type as u32,
-                buf.as_ptr() as *const c_void,
+                bytes.as_ptr() as *const c_void,
             );
         }
     }
@@ -1802,7 +1903,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
 
 pub fn canvas_native_webgl_tex_sub_image2d(
     target: u32,
-    level: u32,
+    level: i32,
     xoffset: i32,
     yoffset: i32,
     width: i32,
@@ -1862,7 +1963,7 @@ pub fn canvas_native_webgl_uniform1fv(location: i32, value: &[f32], state: &WebG
     state.make_current();
     unsafe {
         let count = value.len();
-        gl_bindings::glUniform1fv(location, count, value.as_ptr())
+        gl_bindings::glUniform1fv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
@@ -1875,7 +1976,7 @@ pub fn canvas_native_webgl_uniform1iv(location: i32, value: &[i32], state: &WebG
     state.make_current();
     unsafe {
         let count = value.len();
-        gl_bindings::glUniform1iv(location, count, value.as_ptr())
+        gl_bindings::glUniform1iv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
@@ -1888,7 +1989,7 @@ pub fn canvas_native_webgl_uniform2fv(location: i32, value: &[f32], state: &WebG
     state.make_current();
     unsafe {
         let count = value.len() / 2;
-        gl_bindings::glUniform2fv(location, count, value.as_ptr())
+        gl_bindings::glUniform2fv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
@@ -1901,17 +2002,11 @@ pub fn canvas_native_webgl_uniform2iv(location: i32, value: &[i32], state: &WebG
     state.make_current();
     unsafe {
         let count = value.len() / 2;
-        gl_bindings::glUniform2iv(location, count, value.as_ptr())
+        gl_bindings::glUniform2iv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
-pub fn canvas_native_webgl_uniform3f(
-    location: i32,
-    v0: f32,
-    v1: f32,
-    v2: f32,
-    state: &WebGLState,
-) {
+pub fn canvas_native_webgl_uniform3f(location: i32, v0: f32, v1: f32, v2: f32, state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glUniform3f(location, v0, v1, v2) }
 }
@@ -1920,26 +2015,20 @@ pub fn canvas_native_webgl_uniform3fv(location: i32, value: &[f32], state: &WebG
     state.make_current();
     unsafe {
         let count = value.len() / 3;
-        gl_bindings::glUniform3fv(location, count, value.as_ptr())
+        gl_bindings::glUniform3fv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
-pub fn canvas_native_webgl_uniform3i(
-    location: i32,
-    v0: i32,
-    v1: i32,
-    v2: i32,
-    state: &WebGLState,
-) {
+pub fn canvas_native_webgl_uniform3i(location: i32, v0: i32, v1: i32, v2: i32, state: &WebGLState) {
     state.make_current();
-    unsafe { gl_bindings::glUniform3i(location, v0, v1, v2, v3) }
+    unsafe { gl_bindings::glUniform3i(location, v0, v1, v2) }
 }
 
 pub fn canvas_native_webgl_uniform3iv(location: i32, value: &[i32], state: &WebGLState) {
     state.make_current();
     unsafe {
         let count = value.len() / 3;
-        gl_bindings::glUniform3iv(location, count, value.as_ptr())
+        gl_bindings::glUniform3iv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
@@ -1959,7 +2048,7 @@ pub fn canvas_native_webgl_uniform4fv(location: i32, value: &[f32], state: &WebG
     state.make_current();
     unsafe {
         let count = value.len() / 4;
-        gl_bindings::glUniform4fv(location, count, value.as_ptr())
+        gl_bindings::glUniform4fv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
@@ -1979,7 +2068,7 @@ pub fn canvas_native_webgl_uniform4iv(location: i32, value: &[i32], state: &WebG
     state.make_current();
     unsafe {
         let count = value.len() / 4;
-        gl_bindings::glUniform4iv(location, count, value.as_ptr())
+        gl_bindings::glUniform4iv(location, count.try_into().unwrap(), value.as_ptr())
     }
 }
 
@@ -1992,7 +2081,12 @@ pub fn canvas_native_webgl_uniform_matrix2fv(
     state.make_current();
     unsafe {
         let count = value.len() / 4;
-        gl_bindings::glUniformMatrix2fv(location, count, transpose, value)
+        gl_bindings::glUniformMatrix2fv(
+            location,
+            count.try_into().unwrap(),
+            transpose as u8,
+            value.as_ptr(),
+        )
     }
 }
 
@@ -2005,7 +2099,12 @@ pub fn canvas_native_webgl_uniform_matrix3fv(
     state.make_current();
     unsafe {
         let count = value.len() / 9;
-        gl_bindings::glUniformMatrix3fv(location, count, transpose, value)
+        gl_bindings::glUniformMatrix3fv(
+            location,
+            count.try_into().unwrap(),
+            transpose as u8,
+            value.as_ptr(),
+        )
     }
 }
 
@@ -2018,7 +2117,12 @@ pub fn canvas_native_webgl_uniform_matrix4fv(
     state.make_current();
     unsafe {
         let count = value.len() / 16;
-        gl_bindings::glUniformMatrix4fv(location, count, transpose, value)
+        gl_bindings::glUniformMatrix4fv(
+            location,
+            count.try_into().unwrap(),
+            transpose as u8,
+            value.as_ptr(),
+        )
     }
 }
 
@@ -2037,7 +2141,7 @@ pub fn canvas_native_webgl_vertex_attrib1f(index: u32, v0: f32, state: &WebGLSta
     unsafe { gl_bindings::glVertexAttrib1f(index, v0) }
 }
 
-pub fn canvas_native_webgl_vertex_attrib1fv(index: GLuint, value: &[f32], state: &WebGLState) {
+pub fn canvas_native_webgl_vertex_attrib1fv(index: u32, value: &[f32], state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glVertexAttrib1fv(index, value.as_ptr()) }
 }
@@ -2047,7 +2151,7 @@ pub fn canvas_native_webgl_vertex_attrib2f(index: u32, v0: f32, v1: f32, state: 
     unsafe { gl_bindings::glVertexAttrib2f(index, v0, v1) }
 }
 
-pub fn canvas_native_webgl_vertex_attrib2fv(index: GLuint, value: &[f32], state: &WebGLState) {
+pub fn canvas_native_webgl_vertex_attrib2fv(index: u32, value: &[f32], state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glVertexAttrib2fv(index, value.as_ptr()) }
 }
@@ -2063,7 +2167,7 @@ pub fn canvas_native_webgl_vertex_attrib3f(
     unsafe { gl_bindings::glVertexAttrib3f(index, v0, v1, v2) }
 }
 
-pub fn canvas_native_webgl_vertex_attrib3fv(index: GLuint, value: &[f32], state: &WebGLState) {
+pub fn canvas_native_webgl_vertex_attrib3fv(index: u32, value: &[f32], state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glVertexAttrib3fv(index, value.as_ptr()) }
 }
@@ -2080,7 +2184,7 @@ pub fn canvas_native_webgl_vertex_attrib4f(
     unsafe { gl_bindings::glVertexAttrib4f(index, v0, v1, v2, v3) }
 }
 
-pub fn canvas_native_webgl_vertex_attrib4fv(index: GLuint, value: &[f32], state: &WebGLState) {
+pub fn canvas_native_webgl_vertex_attrib4fv(index: u32, value: &[f32], state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glVertexAttrib4fv(index, value.as_ptr()) }
 }
@@ -2100,20 +2204,14 @@ pub fn canvas_native_webgl_vertex_attrib_pointer(
             index,
             size,
             d_type,
-            normalized,
+            normalized as u8,
             stride,
             offset as *mut c_void,
         )
     }
 }
 
-pub fn canvas_native_webgl_viewport(
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-    state: &WebGLState,
-) {
+pub fn canvas_native_webgl_viewport(x: i32, y: i32, width: i32, height: i32, state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glViewport(x, y, width, height) }
 }

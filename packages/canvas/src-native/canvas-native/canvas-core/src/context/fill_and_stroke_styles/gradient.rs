@@ -165,12 +165,7 @@ impl Gradient {
         if let Ok(color) = color.parse::<css_color_parser::Color>() {
             self.add_color_stop(
                 offset,
-                skia_safe::Color::from_argb(
-                    (color.a * 255.0) as u8,
-                    color.r,
-                    color.g,
-                    color.b,
-                ),
+                skia_safe::Color::from_argb((color.a * 255.0) as u8, color.r, color.g, color.b),
             )
         }
     }

@@ -25,7 +25,7 @@ impl Clone for ImageData {
 }
 
 impl ImageData {
-    fn to_raw(mut data:Vec<u8>) -> (*mut u8, usize, usize) {
+    fn to_raw(mut data: Vec<u8>) -> (*mut u8, usize, usize) {
         let ptr = data.as_mut_ptr();
         let len = data.len();
         let cap = data.capacity();
@@ -91,7 +91,6 @@ impl From<&ImageData> for ImageData {
 
 impl Drop for ImageDataInner {
     fn drop(&mut self) {
-        let _ =
-            unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) };
+        let _ = unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) };
     }
 }

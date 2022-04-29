@@ -198,7 +198,10 @@ impl Default for Paint {
             .set_stroke_cap(Cap::Butt)
             .set_blend_mode(BlendMode::SrcOver);
         let mut image_paint = skia_safe::Paint::default();
-        image_paint.set_anti_alias(true).set_style(Style::Fill).set_blend_mode(BlendMode::SrcOver);
+        image_paint
+            .set_anti_alias(true)
+            .set_style(Style::Fill)
+            .set_blend_mode(BlendMode::SrcOver);
 
         Self {
             fill_paint,

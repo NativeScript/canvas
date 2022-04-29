@@ -27,13 +27,7 @@ pub extern "C" fn flip_y_in_place_3d_i8(
     height: usize,
     depth: usize,
 ) {
-    canvas_core::utils::gl::flip_in_place_3d(
-        data as *mut u8,
-        length,
-        bytes_per_row,
-        height,
-        depth,
-    )
+    canvas_core::utils::gl::flip_in_place_3d(data as *mut u8, length, bytes_per_row, height, depth)
 }
 
 #[no_mangle]

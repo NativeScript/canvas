@@ -27,11 +27,11 @@ export * from './SVG';
 // 	writable: true,
 // });
 
-Object.defineProperty(global, 'WebGLRenderingContext', {
-	value: WebGLRenderingContext,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'WebGLRenderingContext', {
+// 	value: WebGLRenderingContext,
+// 	configurable: true,
+// 	writable: true,
+// });
 
 Object.defineProperty(global, 'WebGL2RenderingContext', {
 	value: WebGL2RenderingContext,

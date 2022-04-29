@@ -1,11 +1,11 @@
 extern crate core;
 
 pub mod bridges;
-pub mod gl_context;
-pub mod raf;
 pub mod choregrapher;
-pub mod looper;
 pub mod gl;
+pub mod gl_context;
+pub mod looper;
+pub mod raf;
 pub mod utils;
 
 #[cxx::bridge]

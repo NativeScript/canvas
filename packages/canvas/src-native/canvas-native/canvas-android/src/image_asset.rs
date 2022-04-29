@@ -290,11 +290,8 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeCopyToBi
     let mut pixels = std::ptr::null_mut() as *mut c_void;
     let pixels_ptr: *mut *mut c_void = &mut pixels;
     unsafe {
-        if crate::utils::bitmap::AndroidBitmap_lockPixels(
-            native_interface as _,
-            bitmap,
-            pixels_ptr,
-        ) < crate::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
+        if crate::utils::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
+            < crate::utils::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
         {
             log::debug!("Get Bitmap Lock Failed");
             return JNI_FALSE;

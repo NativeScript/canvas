@@ -422,6 +422,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	draw() {
+		const gl = this.canvas.getContext('webgl') as WebGLRenderingContext;
+		console.log(gl.ACTIVE_ATTRIBUTES);
+		console.log('WebGLBuffer', WebGLBuffer);
+		const buffer = gl.createBuffer();
+		console.log(buffer);
 		//this.urlTests();
 		//const str = new java.lang.String()
 		// ctx.font = '50px serif';
@@ -514,7 +519,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		this.solar(this.canvas);
+		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)

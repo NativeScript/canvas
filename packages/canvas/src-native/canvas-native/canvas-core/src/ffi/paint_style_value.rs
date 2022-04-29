@@ -2,7 +2,7 @@ use std::os::raw::c_longlong;
 
 use crate::context::fill_and_stroke_styles::paint::PaintStyle;
 
-#[derive(Debug,Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub enum PaintStyleValueType {
     PaintStyleValueTypeColor = 0,

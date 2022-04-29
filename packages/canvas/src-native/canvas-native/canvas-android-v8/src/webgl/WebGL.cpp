@@ -5,5 +5,5 @@
 #include "WebGL.h"
 
 void WebGL::Init(v8::Isolate *isolate) {
-
+    WebGLRenderingContext::Init(isolate);
 }

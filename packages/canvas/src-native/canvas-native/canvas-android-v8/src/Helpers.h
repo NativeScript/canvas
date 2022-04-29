@@ -16,7 +16,11 @@ public:
 
     static std::string ConvertFromV8StringToString(v8::Isolate *isolate, const v8::Local<v8::String> &value);
 
-    static bool IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz);
+    static bool IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Value> value, std::string clazz);
 
     static void SetInternalClassName(v8::Isolate *isolate, v8::Local<v8::Object> value, std::string clazz);
+
+    static void SetPrivate(v8::Isolate *isolate, v8::Local<v8::Object> object, std::string property, v8::Local<v8::Value> value);
+
+    static v8::Local<v8::Value> GetPrivate(v8::Isolate *isolate, v8::Local<v8::Object> object, std::string property);
 };

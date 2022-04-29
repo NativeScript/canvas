@@ -221,7 +221,13 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl', getNativeOptions(options)));
+					// setup env;
+					this._canvas.getContext('webgl', getNativeOptions(options));
+
+					const ctxOpts = Object.assign({version: 'v1'},this._handleContextOptions(type, options));
+					const ctx = global.__getWebGLRenderingContext(ctxOpts);
+					this._webglContext = ctx;
+					//this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl', getNativeOptions(options)));
 					this._webglContext._canvas = this;
 				} else {
 					this._canvas.getContext('webgl', getNativeOptions(options));

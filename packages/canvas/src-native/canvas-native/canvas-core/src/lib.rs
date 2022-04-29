@@ -17,9 +17,7 @@ pub mod prelude;
 pub mod svg;
 pub mod utils;
 
-
 pub mod ios;
-
 
 pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -> String {
     let mut context = context.get_context();

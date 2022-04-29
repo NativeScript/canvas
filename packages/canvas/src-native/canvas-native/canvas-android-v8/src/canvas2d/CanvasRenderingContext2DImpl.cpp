@@ -1300,9 +1300,6 @@ v8::Local<v8::Function> CanvasRenderingContext2DImpl::GetCtor(v8::Isolate *isola
             &SetLineWidth
     );
 
-    console_log("SetAccessor");
-
-
     canvasRenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "addHitRegion"),
             v8::FunctionTemplate::New(isolate, &AddHitRegion)

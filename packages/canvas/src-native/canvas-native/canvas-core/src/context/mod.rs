@@ -1,8 +1,8 @@
 use std::os::raw::c_float;
 use std::sync::Arc;
 
-use parking_lot::{Mutex, RawMutex, RawRwLock};
 use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{Mutex, RawMutex, RawRwLock};
 use skia_safe::{Color, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
@@ -38,11 +38,11 @@ pub mod state;
 pub mod filter_quality;
 pub mod image_asset;
 pub mod matrix;
+pub mod surface;
+pub mod surface_gl;
 pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
-pub mod surface;
-pub mod surface_gl;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Device {
@@ -184,7 +184,7 @@ impl ContextWrapper {
     }
 }
 
-impl Drop for ContextWrapper{
+impl Drop for ContextWrapper {
     fn drop(&mut self) {
         log::debug!(target: "JS","Drop ContextWrapper");
     }

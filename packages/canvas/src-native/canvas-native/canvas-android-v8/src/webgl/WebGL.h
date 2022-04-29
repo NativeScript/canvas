@@ -5,6 +5,8 @@
 #pragma once
 
 #include "../Common.h"
+#include "WebGLRenderingContext.h"
+
 class WebGL {
 public:
     static void Init(v8::Isolate *isolate);

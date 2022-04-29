@@ -1,3 +1,5 @@
+use std::any::Any;
+use std::borrow::Cow;
 use std::ffi::CString;
 use std::os::raw::c_void;
 use std::sync::Arc;
@@ -6,6 +8,7 @@ use cxx::q;
 use parking_lot::lock_api::MutexGuard;
 use parking_lot::RawMutex;
 
+use crate::bridges::context::ffi::WebGLExtensionType;
 use crate::gl_context::GLContext;
 pub use crate::utils::*;
 
@@ -21,6 +24,7 @@ pub const WEBGL_UNPACK_PREMULTIPLY_ALPHA_WEBGL: u32 = 0x9241;
 
 pub const WEBGL_BROWSER_DEFAULT_WEBGL: u32 = 0x9244;
 
+#[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 pub enum HowToClear {
     // Skip clearing the backbuffer.
     Skipped,   // Clear the backbuffer.
@@ -32,7 +36,6 @@ pub enum HowToClear {
 
 pub enum WebGLResult {
     Boolean(bool),
-    GLint(i32),
     I32Array(Vec<i32>),
     F32Array(Vec<f32>),
     BooleanArray(Vec<bool>),
@@ -47,6 +50,7 @@ pub enum WebGLResult {
 pub enum WebGLVersion {
     V1,
     V2,
+    NONE,
 }
 
 struct WebGLStateInner {
@@ -84,11 +88,63 @@ impl WebGLState {
     fn get_lock(&self) -> MutexGuard<RawMutex, WebGLStateInner> {
         self.0.lock()
     }
-    pub(crate) fn set_webgl_version(&self, version: WebGLVersion){
+
+    pub fn new_with_context(
+        context: GLContext,
+        version: WebGLVersion,
+        alpha: bool,
+        antialias: bool,
+        depth: bool,
+        fail_if_major_performance_caveat: bool,
+        power_preference: &str,
+        premultiplied_alpha: bool,
+        preserve_drawing_buffer: bool,
+        stencil: bool,
+        desynchronized: bool,
+        xr_compatible: bool,
+    ) -> Self {
+        Self(Arc::new(parking_lot::Mutex::new(WebGLStateInner {
+            version,
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference: power_preference.to_string(),
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+            gl_context: context,
+            clear_stencil: 0,
+            clear_color: [0., 0., 0., 0.],
+            scissor_enabled: false,
+            clear_depth: 1.,
+            color_mask: [true, true, true, true],
+            stencil_mask: 0xFFFFFFFF,
+            stencil_mask_back: 0xFFFFFFFF,
+            stencil_func_ref: 0,
+            stencil_func_ref_back: 0,
+            stencil_func_mask: 0xFFFFFFFF,
+            stencil_func_mask_back: 0xFFFFFFFF,
+            depth_mask: true,
+            flip_y: false,
+            unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
+        })))
+    }
+
+    pub(crate) fn set_antialias(&self, value: bool) {
+        self.get_lock().antialias = value;
+    }
+
+    pub(crate) fn set_alpha(&self, value: bool) {
+        self.get_lock().alpha = value;
+    }
+    pub(crate) fn set_webgl_version(&self, version: WebGLVersion) {
         self.get_lock().version = version;
     }
 
-    pub(crate) fn set_gl_context(&mut self, context: GLContext){
+    pub(crate) fn set_gl_context(&mut self, context: GLContext) {
         self.get_lock().gl_context = context;
     }
     pub fn get_webgl_version(&mut self) -> WebGLVersion {
@@ -106,6 +162,7 @@ impl WebGLState {
             preserve_drawing_buffer: lock.preserve_drawing_buffer,
             stencil: lock.stencil,
             desynchronized: lock.desynchronized,
+            xr_compatible: lock.xr_compatible,
         }
     }
 
@@ -168,18 +225,23 @@ impl WebGLState {
     pub fn get_alpha(&self) -> bool {
         self.get_lock().alpha
     }
+
     pub fn get_antialias(&self) -> bool {
         self.get_lock().antialias
     }
+
     pub fn get_depth(&self) -> bool {
         self.get_lock().depth
     }
+
     pub fn get_fail_if_major_performance_caveat(&self) -> bool {
         self.get_lock().fail_if_major_performance_caveat
     }
-    pub fn get_power_preference(&self) -> &str {
-        self.get_lock().power_preference.as_str()
+
+    pub fn get_power_preference(&self) -> String {
+        self.get_lock().power_preference.clone()
     }
+
     pub fn get_premultiplied_alpha(&self) -> bool {
         self.get_lock().premultiplied_alpha
     }
@@ -187,12 +249,15 @@ impl WebGLState {
     pub fn get_preserve_drawing_buffer(&self) -> bool {
         self.get_lock().preserve_drawing_buffer
     }
+
     pub fn get_stencil(&self) -> bool {
         self.get_lock().stencil
     }
+
     pub fn get_desynchronized(&self) -> bool {
         self.get_lock().desynchronized
     }
+
     pub fn get_xr_compatible(&self) -> bool {
         self.get_lock().xr_compatible
     }
@@ -266,36 +331,34 @@ impl Clone for WebGLState {
 
 impl Default for WebGLState {
     fn default() -> Self {
-        Self(Arc::new(parking_lot::Mutex::new(
-            WebGLStateInner {
-                version: WebGLVersion::V1,
-                alpha: true,
-                antialias: true,
-                depth: true,
-                fail_if_major_performance_caveat: false,
-                power_preference: "default".to_string(),
-                premultiplied_alpha: true,
-                preserve_drawing_buffer: false,
-                stencil: false,
-                desynchronized: false,
-                xr_compatible: false,
-                gl_context: Default::default(),
-                clear_stencil: 0,
-                clear_color: [0., 0., 0., 0.],
-                scissor_enabled: false,
-                clear_depth: 1.,
-                color_mask: [true, true, true, true],
-                stencil_mask: 0xFFFFFFFF,
-                stencil_mask_back: 0xFFFFFFFF,
-                stencil_func_ref: 0,
-                stencil_func_ref_back: 0,
-                stencil_func_mask: 0xFFFFFFFF,
-                stencil_func_mask_back: 0xFFFFFFFF,
-                depth_mask: true,
-                flip_y: false,
-                unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
-            }
-        )))
+        Self(Arc::new(parking_lot::Mutex::new(WebGLStateInner {
+            version: WebGLVersion::NONE,
+            alpha: true,
+            antialias: true,
+            depth: true,
+            fail_if_major_performance_caveat: false,
+            power_preference: "default".to_string(),
+            premultiplied_alpha: true,
+            preserve_drawing_buffer: false,
+            stencil: false,
+            desynchronized: false,
+            xr_compatible: false,
+            gl_context: Default::default(),
+            clear_stencil: 0,
+            clear_color: [0., 0., 0., 0.],
+            scissor_enabled: false,
+            clear_depth: 1.,
+            color_mask: [true, true, true, true],
+            stencil_mask: 0xFFFFFFFF,
+            stencil_mask_back: 0xFFFFFFFF,
+            stencil_func_ref: 0,
+            stencil_func_ref_back: 0,
+            stencil_func_mask: 0xFFFFFFFF,
+            stencil_func_mask_back: 0xFFFFFFFF,
+            depth_mask: true,
+            flip_y: false,
+            unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
+        })))
     }
 }
 
@@ -406,6 +469,7 @@ pub struct ContextAttributes {
     preserve_drawing_buffer: bool,
     stencil: bool,
     desynchronized: bool,
+    xr_compatible: bool,
 }
 
 impl ContextAttributes {
@@ -421,8 +485,8 @@ impl ContextAttributes {
     pub fn get_fail_if_major_performance_caveat(&self) -> bool {
         self.fail_if_major_performance_caveat
     }
-    pub fn get_power_preference(&self) -> &str {
-        self.power_preference.as_str()
+    pub fn get_power_preference(&self) -> String {
+        self.power_preference.clone()
     }
     pub fn get_premultiplied_alpha(&self) -> bool {
         self.premultiplied_alpha
@@ -442,7 +506,9 @@ impl ContextAttributes {
     }
 }
 
-pub trait WebGLExtension {}
+pub trait WebGLExtension {
+    fn extension_type(&self) -> WebGLExtensionType;
+}
 
 pub struct EXT_blend_minmax {
     min_ext: u32,
@@ -462,7 +528,11 @@ impl EXT_blend_minmax {
         self.max_ext
     }
 }
-impl WebGLExtension for EXT_blend_minmax {}
+impl WebGLExtension for EXT_blend_minmax {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::EXT_blend_minmax
+    }
+}
 
 pub struct EXT_color_buffer_half_float {
     rgba16f_ext: u32,
@@ -501,8 +571,13 @@ impl EXT_color_buffer_half_float {
         self.unsigned_normalized_ext
     }
 }
-impl WebGLExtension for EXT_color_buffer_half_float {}
+impl WebGLExtension for EXT_color_buffer_half_float {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::EXT_color_buffer_half_float
+    }
+}
 
+#[derive(Clone)]
 pub struct EXT_disjoint_timer_query {
     webgl_state: WebGLState,
     query_counter_bits_ext: u32,
@@ -534,6 +609,7 @@ impl EXT_disjoint_timer_query {
             gpu_disjoint_ext,
         }
     }
+
     pub fn create_query_ext(&self) -> u32 {
         self.webgl_state.make_current();
         let mut query = [0u32; 1];
@@ -575,10 +651,10 @@ impl EXT_disjoint_timer_query {
     pub fn get_query_object_ext(&self, target: u32, pname: u32) -> WebGLResult {
         let mut query = [0i32; 1];
         unsafe { gl_bindings::glGetQueryiv(target, pname, query.as_mut_ptr()) }
-        if pname == gl_bindings::QUERY_RESULT_AVAILABLE_EXT {
-            WebGLResult::Boolean(query[0] == gl_bindings::GL_TRUE)
+        if pname == gl_bindings::GL_QUERY_RESULT_AVAILABLE_EXT {
+            return WebGLResult::Boolean(query[0] == 1);
         }
-        WebGLResult::GLint(query[0])
+        WebGLResult::I32(query[0])
     }
 
     pub fn get_query_counter_bits_ext(&self) -> u32 {
@@ -609,7 +685,11 @@ impl EXT_disjoint_timer_query {
         self.gpu_disjoint_ext
     }
 }
-impl WebGLExtension for EXT_disjoint_timer_query {}
+impl WebGLExtension for EXT_disjoint_timer_query {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::EXT_disjoint_timer_query
+    }
+}
 
 pub struct EXT_sRGB {
     srgb_ext: u32,
@@ -632,7 +712,11 @@ impl EXT_sRGB {
         }
     }
 }
-impl WebGLExtension for EXT_sRGB {}
+impl WebGLExtension for EXT_sRGB {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::EXT_sRGB
+    }
+}
 
 pub struct EXT_shader_texture_lod {}
 impl EXT_shader_texture_lod {
@@ -640,7 +724,11 @@ impl EXT_shader_texture_lod {
         Self {}
     }
 }
-impl WebGLExtension for EXT_shader_texture_lod {}
+impl WebGLExtension for EXT_shader_texture_lod {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::EXT_shader_texture_lod
+    }
+}
 
 pub struct EXT_texture_filter_anisotropic {
     max_texture_max_anisotropy_ext: u32,
@@ -656,7 +744,11 @@ impl EXT_texture_filter_anisotropic {
         }
     }
 }
-impl WebGLExtension for EXT_texture_filter_anisotropic {}
+impl WebGLExtension for EXT_texture_filter_anisotropic {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::EXT_texture_filter_anisotropic
+    }
+}
 
 pub struct OES_element_index_uint {
     unsigned_int: u32,
@@ -668,7 +760,11 @@ impl OES_element_index_uint {
         }
     }
 }
-impl WebGLExtension for OES_element_index_uint {}
+impl WebGLExtension for OES_element_index_uint {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_element_index_uint
+    }
+}
 
 pub struct OES_standard_derivatives {
     fragment_shader_derivative_hint_oes: u32,
@@ -676,11 +772,16 @@ pub struct OES_standard_derivatives {
 impl OES_standard_derivatives {
     pub fn new() -> Self {
         Self {
-            fragment_shader_derivative_hint_oes: gl_bindings::FRAGMENT_SHADER_DERIVATIVE_HINT_OES,
+            fragment_shader_derivative_hint_oes:
+                gl_bindings::GL_FRAGMENT_SHADER_DERIVATIVE_HINT_OES,
         }
     }
 }
-impl WebGLExtension for OES_standard_derivatives {}
+impl WebGLExtension for OES_standard_derivatives {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_standard_derivatives
+    }
+}
 
 pub struct OES_texture_float {}
 impl OES_texture_float {
@@ -688,7 +789,11 @@ impl OES_texture_float {
         Self {}
     }
 }
-impl WebGLExtension for OES_texture_float {}
+impl WebGLExtension for OES_texture_float {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_texture_float
+    }
+}
 
 pub struct OES_texture_float_linear {}
 impl OES_texture_float_linear {
@@ -696,7 +801,11 @@ impl OES_texture_float_linear {
         Self {}
     }
 }
-impl WebGLExtension for OES_texture_float_linear {}
+impl WebGLExtension for OES_texture_float_linear {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_texture_float_linear
+    }
+}
 
 pub struct OES_texture_half_float {
     half_float_oes: u32,
@@ -708,7 +817,11 @@ impl OES_texture_half_float {
         }
     }
 }
-impl WebGLExtension for OES_texture_half_float {}
+impl WebGLExtension for OES_texture_half_float {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_texture_half_float
+    }
+}
 
 pub struct OES_texture_half_float_linear {}
 impl OES_texture_half_float_linear {
@@ -716,8 +829,13 @@ impl OES_texture_half_float_linear {
         Self {}
     }
 }
-impl WebGLExtension for OES_texture_half_float_linear {}
+impl WebGLExtension for OES_texture_half_float_linear {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_texture_half_float_linear
+    }
+}
 
+#[derive(Clone)]
 pub struct OES_vertex_array_object {
     webgl_state: WebGLState,
     vertex_array_binding_oes: u32,
@@ -730,26 +848,34 @@ impl OES_vertex_array_object {
         }
     }
 
-    pub fn create_vertex_array_oes() -> u32 {
+    pub fn create_vertex_array_oes(&self) -> u32 {
+        self.webgl_state.make_current();
         let mut array = [0u32; 1];
         unsafe { gl_bindings::glGenVertexArrays(1, array.as_mut_ptr()) };
         return array[0];
     }
 
-    pub fn delete_vertex_array_oes(array_object: u32) {
+    pub fn delete_vertex_array_oes(&self, array_object: u32) {
+        self.webgl_state.make_current();
         let array = [array_object];
         unsafe { gl_bindings::glDeleteVertexArrays(1, array.as_ptr()) };
     }
 
-    pub fn is_vertex_array_oes(array_object: u32) -> bool {
-        unsafe { gl_bindings::glIsVertexArray(array_object) }
+    pub fn is_vertex_array_oes(&self, array_object: u32) -> bool {
+        self.webgl_state.make_current();
+        unsafe { gl_bindings::glIsVertexArray(array_object) != 0 }
     }
 
-    pub fn bind_vertex_array_oes(array_object: u32) {
+    pub fn bind_vertex_array_oes(&self, array_object: u32) {
+        self.webgl_state.make_current();
         unsafe { gl_bindings::glBindVertexArray(array_object) }
     }
 }
-impl WebGLExtension for OES_vertex_array_object {}
+impl WebGLExtension for OES_vertex_array_object {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_vertex_array_object
+    }
+}
 
 pub struct WEBGL_color_buffer_float {
     rgba32f_ext: u32,
@@ -772,7 +898,11 @@ impl WEBGL_color_buffer_float {
         }
     }
 }
-impl WebGLExtension for WEBGL_color_buffer_float {}
+impl WebGLExtension for WEBGL_color_buffer_float {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_color_buffer_float
+    }
+}
 
 pub struct WEBGL_compressed_texture_atc {
     compressed_rgb_atc_webgl: u32,
@@ -789,7 +919,11 @@ impl WEBGL_compressed_texture_atc {
         }
     }
 }
-impl WebGLExtension for WEBGL_compressed_texture_atc {}
+impl WebGLExtension for WEBGL_compressed_texture_atc {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_compressed_texture_atc
+    }
+}
 
 pub struct WEBGL_compressed_texture_etc1 {
     compressed_rgb_etc1_webgl: u32,
@@ -801,7 +935,11 @@ impl WEBGL_compressed_texture_etc1 {
         }
     }
 }
-impl WebGLExtension for WEBGL_compressed_texture_etc1 {}
+impl WebGLExtension for WEBGL_compressed_texture_etc1 {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_compressed_texture_etc1
+    }
+}
 
 pub struct WEBGL_compressed_texture_s3tc {
     compressed_rgb_s3tc_dxt1_ext: u32,
@@ -819,7 +957,36 @@ impl WEBGL_compressed_texture_s3tc {
         }
     }
 }
-impl WebGLExtension for WEBGL_compressed_texture_s3tc {}
+impl WebGLExtension for WEBGL_compressed_texture_s3tc {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_compressed_texture_s3tc
+    }
+}
+
+pub struct WEBGL_compressed_texture_s3tc_srgb {
+    compressed_srgb_s3tc_dxt1_ext: u32,
+    compressed_srgb_alpha_s3tc_dxt1_ext: u32,
+    compressed_srgb_alpha_s3tc_dxt3_ext: u32,
+    compressed_srgb_alpha_s3tc_dxt5_ext: u32,
+}
+impl WEBGL_compressed_texture_s3tc_srgb {
+    pub fn new() -> Self {
+        Self {
+            compressed_srgb_s3tc_dxt1_ext: gl_bindings::GL_COMPRESSED_SRGB_S3TC_DXT1_EXT,
+            compressed_srgb_alpha_s3tc_dxt1_ext:
+                gl_bindings::GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT,
+            compressed_srgb_alpha_s3tc_dxt3_ext:
+                gl_bindings::GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT,
+            compressed_srgb_alpha_s3tc_dxt5_ext:
+                gl_bindings::GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT,
+        }
+    }
+}
+impl WebGLExtension for WEBGL_compressed_texture_s3tc_srgb {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb
+    }
+}
 
 pub struct WEBGL_compressed_texture_etc {
     compressed_r11_eac: u32,
@@ -862,7 +1029,11 @@ impl WEBGL_compressed_texture_etc {
         }
     }
 }
-impl WebGLExtension for WEBGL_compressed_texture_etc {}
+impl WebGLExtension for WEBGL_compressed_texture_etc {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_compressed_texture_etc
+    }
+}
 
 pub struct WEBGL_compressed_texture_pvrtc {
     compressed_rgb_pvrtc_4bppv1_img: u32,
@@ -870,7 +1041,6 @@ pub struct WEBGL_compressed_texture_pvrtc {
     compressed_rgb_pvrtc_2bppv1_img: u32,
     compressed_rgba_pvrtc_2bppv1_img: u32,
 }
-
 impl WEBGL_compressed_texture_pvrtc {
     pub fn new() -> Self {
         Self {
@@ -881,13 +1051,16 @@ impl WEBGL_compressed_texture_pvrtc {
         }
     }
 }
+impl WebGLExtension for WEBGL_compressed_texture_pvrtc {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_compressed_texture_pvrtc
+    }
+}
 
-impl WebGLExtension for WEBGL_compressed_texture_pvrtc {}
-
+#[derive(Clone)]
 pub struct WEBGL_lose_context {
     webgl_state: WebGLState,
 }
-
 impl WEBGL_lose_context {
     pub fn new(state: WebGLState) -> Self {
         Self { webgl_state: state }
@@ -896,18 +1069,21 @@ impl WEBGL_lose_context {
         self.webgl_state.remove_if_current();
     }
 
-    pub fn restore_context(&self) -> bool {
-        self.webgl_state.make_current()
+    pub fn restore_context(&self) {
+        self.webgl_state.make_current();
+    }
+}
+impl WebGLExtension for WEBGL_lose_context {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_lose_context
     }
 }
 
-impl WebGLExtension for WEBGL_lose_context {}
-
+#[derive(Clone)]
 pub struct ANGLE_instanced_arrays {
     webgl_state: WebGLState,
     vertex_attrib_array_divisor_angle: u32,
 }
-
 impl ANGLE_instanced_arrays {
     pub fn new(state: WebGLState) -> Self {
         Self {
@@ -915,17 +1091,20 @@ impl ANGLE_instanced_arrays {
             vertex_attrib_array_divisor_angle: gl_bindings::GL_VERTEX_ATTRIB_ARRAY_DIVISOR,
         }
     }
-    pub fn draw_arrays_instanced_angle(mode: u32, first: i32, count: i32, primcount: i32) {
+    pub fn draw_arrays_instanced_angle(&self, mode: u32, first: i32, count: i32, primcount: i32) {
+        self.webgl_state.make_current();
         unsafe { gl_bindings::glDrawArraysInstanced(mode, first, count, primcount) }
     }
 
     pub fn draw_elements_instanced_angle(
+        &self,
         mode: u32,
         count: i32,
         type_: u32,
         offset: i32,
         primcount: i32,
     ) {
+        self.webgl_state.make_current();
         unsafe {
             gl_bindings::glDrawElementsInstanced(
                 mode,
@@ -937,12 +1116,16 @@ impl ANGLE_instanced_arrays {
         }
     }
 
-    pub fn vertex_attrib_divisor_angle(index: u32, divisor: u32) {
+    pub fn vertex_attrib_divisor_angle(&self, index: u32, divisor: u32) {
+        self.webgl_state.make_current();
         unsafe { gl_bindings::glVertexAttribDivisor(index, divisor) }
     }
 }
-
-impl WebGLExtension for ANGLE_instanced_arrays {}
+impl WebGLExtension for ANGLE_instanced_arrays {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::ANGLE_instanced_arrays
+    }
+}
 
 pub struct WEBGL_depth_texture {
     unsigned_int_24_8_webgl: u32,
@@ -954,8 +1137,13 @@ impl WEBGL_depth_texture {
         }
     }
 }
-impl WebGLExtension for WEBGL_depth_texture {}
+impl WebGLExtension for WEBGL_depth_texture {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_depth_texture
+    }
+}
 
+#[derive(Clone)]
 pub struct WEBGL_draw_buffers {
     webgl_state: WebGLState,
     color_attachment0_webgl: u32,
@@ -993,7 +1181,6 @@ pub struct WEBGL_draw_buffers {
     max_color_attachments_webgl: u32,
     max_draw_buffers_webgl: u32,
 }
-
 impl WEBGL_draw_buffers {
     pub fn new(state: WebGLState) -> Self {
         Self {
@@ -1035,8 +1222,13 @@ impl WEBGL_draw_buffers {
         }
     }
 
-    pub fn draw_buffers_webgl(buffers: &[u32]) {
-        unsafe { gl_bindings::glDrawBuffers(buffers.len(), buffers.as_ptr()) }
+    pub fn draw_buffers_webgl(&self, buffers: &[u32]) {
+        self.webgl_state.make_current();
+        unsafe { gl_bindings::glDrawBuffers(buffers.len().try_into().unwrap(), buffers.as_ptr()) }
     }
 }
-impl WebGLExtension for WEBGL_draw_buffers {}
+impl WebGLExtension for WEBGL_draw_buffers {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::WEBGL_draw_buffers
+    }
+}

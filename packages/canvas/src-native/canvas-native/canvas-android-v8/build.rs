@@ -44,7 +44,6 @@ pub fn ndk() -> String {
     std::env::var("ANDROID_NDK").expect("ANDROID_NDK variable not set")
 }
 
-
 const FLAGS_STR: &str = "-std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
 
 const CPP_SOURCE: [&str; 9] = [
@@ -56,7 +55,7 @@ const CPP_SOURCE: [&str; 9] = [
     "src/TextDecoderImpl.cpp",
     "src/OnRafCallback.cpp",
     "src/RafImpl.cpp",
-    "src/ObjectCacheEntry.cpp"
+    "src/ObjectCacheEntry.cpp",
 ];
 
 const CPP_SOURCE_HEADERS: [&str; 9] = [
@@ -68,7 +67,7 @@ const CPP_SOURCE_HEADERS: [&str; 9] = [
     "src/TextDecoderImpl.h",
     "src/OnRafCallback.h",
     "src/RafImpl.h",
-    "src/ObjectCacheEntry.h"
+    "src/ObjectCacheEntry.h",
 ];
 
 const CPP_2D_SOURCE: [&str; 8] = [
@@ -93,10 +92,90 @@ const CPP_2D_SOURCE_HEADERS: [&str; 8] = [
     "src/canvas2d/Canvas2D.h",
 ];
 
-const CPP_WEBGL_SOURCE: [&str; 2] = ["src/webgl/WebGL.cpp", "src/webgl/WebGLRenderingContext.cpp"];
 
-const CPP_WEBGL_SOURCE_HEADERS: [&str; 2] =
-    ["src/webgl/WebGL.h", "src/webgl/WebGLRenderingContext.h"];
+const CPP_WEBGL_EXT_SOURCE: [&str; 24] = [
+    "src/webgl/extensions/ANGLE_instanced_arraysImpl.cpp",
+    "src/webgl/extensions/EXT_blend_minmaxImpl.cpp",
+    "src/webgl/extensions/EXT_color_buffer_half_floatImpl.cpp",
+    "src/webgl/extensions/EXT_disjoint_timer_queryImpl.cpp",
+    "src/webgl/extensions/EXT_shader_texture_lodImpl.cpp",
+    "src/webgl/extensions/EXT_sRGBImpl.cpp",
+    "src/webgl/extensions/EXT_texture_filter_anisotropicImpl.cpp",
+    "src/webgl/extensions/OES_element_index_uintImpl.cpp",
+    "src/webgl/extensions/OES_standard_derivativesImpl.cpp",
+    "src/webgl/extensions/OES_texture_float_linearImpl.cpp",
+    "src/webgl/extensions/OES_texture_floatImpl.cpp",
+    "src/webgl/extensions/OES_texture_half_float_linearImpl.cpp",
+    "src/webgl/extensions/OES_texture_half_floatImpl.cpp",
+    "src/webgl/extensions/OES_vertex_array_objectImpl.cpp",
+    "src/webgl/extensions/WEBGL_color_buffer_floatImpl.cpp",
+    "src/webgl/extensions/WEBGL_compressed_texture_atcImpl.cpp",
+    "src/webgl/extensions/WEBGL_compressed_texture_etc1Impl.cpp",
+    "src/webgl/extensions/WEBGL_compressed_texture_etcImpl.cpp",
+    "src/webgl/extensions/WEBGL_compressed_texture_pvrtcImpl.cpp",
+    "src/webgl/extensions/WEBGL_compressed_texture_s3tc_srgbImpl.cpp",
+    "src/webgl/extensions/WEBGL_compressed_texture_s3tcImpl.cpp",
+    "src/webgl/extensions/WEBGL_depth_textureImpl.cpp",
+    "src/webgl/extensions/WEBGL_draw_buffersImpl.cpp",
+    "src/webgl/extensions/WEBGL_lose_contextImpl.cpp",
+];
+
+const CPP_WEBGL_EXT_SOURCE_HEADERS: [&str; 24] = [
+    "src/webgl/extensions/ANGLE_instanced_arraysImpl.h",
+    "src/webgl/extensions/EXT_blend_minmaxImpl.h",
+    "src/webgl/extensions/EXT_color_buffer_half_floatImpl.h",
+    "src/webgl/extensions/EXT_disjoint_timer_queryImpl.h",
+    "src/webgl/extensions/EXT_shader_texture_lodImpl.h",
+    "src/webgl/extensions/EXT_sRGBImpl.h",
+    "src/webgl/extensions/EXT_texture_filter_anisotropicImpl.h",
+    "src/webgl/extensions/OES_element_index_uintImpl.h",
+    "src/webgl/extensions/OES_standard_derivativesImpl.h",
+    "src/webgl/extensions/OES_texture_float_linearImpl.h",
+    "src/webgl/extensions/OES_texture_floatImpl.h",
+    "src/webgl/extensions/OES_texture_half_float_linearImpl.h",
+    "src/webgl/extensions/OES_texture_half_floatImpl.h",
+    "src/webgl/extensions/OES_vertex_array_objectImpl.h",
+    "src/webgl/extensions/WEBGL_color_buffer_floatImpl.h",
+    "src/webgl/extensions/WEBGL_compressed_texture_atcImpl.h",
+    "src/webgl/extensions/WEBGL_compressed_texture_etc1Impl.h",
+    "src/webgl/extensions/WEBGL_compressed_texture_etcImpl.h",
+    "src/webgl/extensions/WEBGL_compressed_texture_pvrtcImpl.h",
+    "src/webgl/extensions/WEBGL_compressed_texture_s3tc_srgbImpl.h",
+    "src/webgl/extensions/WEBGL_compressed_texture_s3tcImpl.h",
+    "src/webgl/extensions/WEBGL_depth_textureImpl.h",
+    "src/webgl/extensions/WEBGL_draw_buffersImpl.h",
+    "src/webgl/extensions/WEBGL_lose_contextImpl.h",
+];
+
+
+
+const CPP_WEBGL_SOURCE: [&str; 11] = [
+    "src/webgl/WebGL.cpp",
+    "src/webgl/WebGLRenderingContext.cpp",
+    "src/webgl/WebGLBuffer.cpp",
+    "src/webgl/WebGLFramebuffer.cpp",
+    "src/webgl/WebGLProgram.cpp",
+    "src/webgl/WebGLRenderbuffer.cpp",
+    "src/webgl/WebGLShader.cpp",
+    "src/webgl/WebGLTexture.cpp",
+    "src/webgl/WebGLUniformLocation.cpp",
+    "src/webgl/WebGLShaderPrecisionFormatImpl.cpp",
+    "src/webgl/WebGLActiveInfoImpl.cpp",
+];
+
+const CPP_WEBGL_SOURCE_HEADERS: [&str; 11] = [
+    "src/webgl/WebGL.h",
+    "src/webgl/WebGLRenderingContext.h",
+    "src/webgl/WebGLBuffer.h",
+    "src/webgl/WebGLFramebuffer.h",
+    "src/webgl/WebGLProgram.h",
+    "src/webgl/WebGLRenderbuffer.h",
+    "src/webgl/WebGLShader.h",
+    "src/webgl/WebGLTexture.h",
+    "src/webgl/WebGLUniformLocation.h",
+    "src/webgl/WebGLShaderPrecisionFormatImpl.h",
+    "src/webgl/WebGLActiveInfoImpl.h",
+];
 
 const CPP_WEBGL2_SOURCE: [&str; 2] = [
     "src/webgl2/WebGL2.cpp",
@@ -153,7 +232,6 @@ fn main() {
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=android"); // the "-l" flag
                                                       // the resulting bindings.
-
 
             // println!("cargo:rerun-if-changed={}", "wrapper.h");
             let bindings = bindgen::Builder::default()
@@ -230,7 +308,7 @@ fn main() {
         .flag_if_supported("-std=c++14")
         .flag(&format!("--target={}", target_str))
         .flag(&format!("--sysroot={}/sysroot", ndk()))
-         .flag(&format!("-I{}/sources/android/cpufeatures", ndk()))
+        .flag(&format!("-I{}/sources/android/cpufeatures", ndk()))
         .flag(&format!(
             "-isystem{}/sources/cxx-stl/llvm-libc++/include",
             ndk()
@@ -247,6 +325,7 @@ fn main() {
         .files(&CPP_2D_SOURCE)
         .files(&CPP_WEBGL_SOURCE)
         .files(&CPP_WEBGL2_SOURCE)
+        .files(&CPP_WEBGL_EXT_SOURCE)
         .file("src/Bridge.cpp");
 
     build.extra_warnings(false);
@@ -266,6 +345,8 @@ fn main() {
     all_headers.extend(CPP_2D_SOURCE_HEADERS.as_slice());
     all_headers.extend(CPP_WEBGL_SOURCE_HEADERS.as_slice());
     all_headers.extend(CPP_WEBGL2_SOURCE_HEADERS.as_slice());
+    all_headers.extend(CPP_WEBGL_EXT_SOURCE.as_slice());
+    all_headers.extend(CPP_WEBGL_EXT_SOURCE_HEADERS.as_slice());
 
     for item in all_headers.into_iter() {
         println!("cargo:rerun-if-changed={}", item);
@@ -288,7 +369,6 @@ fn main() {
     for flag in flags.into_iter() {
         build.flag_if_supported(flag);
     }
-
 
     build.warnings(false);
 

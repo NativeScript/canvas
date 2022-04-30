@@ -44,16 +44,10 @@
 #include "extensions/WEBGL_compressed_texture_s3tcImpl.h"
 #include "extensions/WEBGL_compressed_texture_s3tc_srgbImpl.h"
 #include "extensions/WEBGL_depth_textureImpl.h"
-
 #include "extensions/WEBGL_lose_contextImpl.h"
-
 #include "extensions/ANGLE_instanced_arraysImpl.h"
 #include "extensions/WEBGL_draw_buffersImpl.h"
 
-
-
-
-#include <GLES2/gl2.h>
 
 
 class WebGLRenderingContext {
@@ -64,6 +58,10 @@ public:
     WebGLRenderingContext(rust::Box<WebGLState> state);
 
     ~WebGLRenderingContext();
+
+    static void GetDrawingBufferWidth(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetDrawingBufferHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -364,5 +362,5 @@ private:
 
     static WebGLRenderingContext *GetPointer(v8::Local<v8::Object> object);
 
-    static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 };

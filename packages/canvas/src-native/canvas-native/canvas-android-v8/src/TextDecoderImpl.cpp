@@ -15,7 +15,7 @@ void TextDecoderImpl::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "TextDecoder"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "TextDecoder"), ctor->GetFunction(context).ToLocalChecked());
 }
 
 void TextDecoderImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -87,9 +87,9 @@ void TextDecoderImpl::GetEncoding(v8::Local<v8::String> name, const v8::Property
 }
 
 
-v8::Local<v8::Function> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->TextDecoderCtor.get();
+    auto ctor = cache->TextDecoderTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
@@ -99,7 +99,6 @@ v8::Local<v8::Function> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
     ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "TextDecoder"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
 
     auto tmpl = ctorTmpl->InstanceTemplate();
 
@@ -113,8 +112,8 @@ v8::Local<v8::Function> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
             &GetEncoding
     );
 
-    cache->TextDecoderCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->TextDecoderTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 

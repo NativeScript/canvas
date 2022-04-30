@@ -599,7 +599,7 @@ export function points(canvas) {
 export function drawModes(canvas, mode: 'line' | 'points' | 'line_strip' | 'triangle_strip' | 'triangle_fan' | 'triangles' | 'line_loop' = "line") {
   /*======= Creating a canvas =========*/
 
-  var gl = canvas.getContext("experimental-webgl");
+  var gl = canvas.getContext("experimental-webgl") as WebGLRenderingContext;
 
   /*======= Defining and storing the geometry ======*/
 

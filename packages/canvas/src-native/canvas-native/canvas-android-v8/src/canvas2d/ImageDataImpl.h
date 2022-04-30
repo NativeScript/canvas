@@ -33,5 +33,5 @@ public:
 private:
     rust::Box<ImageData> imageData_;
     std::shared_ptr<v8::Persistent<v8::Object>> buffer_;
-    static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 };

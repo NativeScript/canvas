@@ -17,7 +17,7 @@ void WebGLShaderPrecisionFormatImpl::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLShaderPrecisionFormat"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLShaderPrecisionFormat"), ctor->GetFunction(context).ToLocalChecked());
 }
 
 WebGLShaderPrecisionFormatImpl *WebGLShaderPrecisionFormatImpl::GetPointer(v8::Local<v8::Object> object) {
@@ -39,7 +39,7 @@ WebGLShaderPrecisionFormatImpl::NewInstance(v8::Isolate *isolate, rust::Box <Web
     v8::EscapableHandleScope handle_scope(isolate);
     auto ctorFunc = GetCtor(isolate);
     WebGLShaderPrecisionFormatImpl *format = new WebGLShaderPrecisionFormatImpl(std::move(shader));
-    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "WebGLShaderPrecisionFormat");
     auto ext = v8::External::New(isolate, format);
     result->SetInternalField(0, ext);
@@ -73,19 +73,18 @@ void WebGLShaderPrecisionFormatImpl::GetPrecision(v8::Local<v8::String> name,
             canvas_native_webgl_shader_precision_format_get_precision(*ptr->shader_));
 }
 
-v8::Local<v8::Function> WebGLShaderPrecisionFormatImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WebGLShaderPrecisionFormatImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WebGLShaderPrecisionFormatCtor.get();
+    auto ctor = cache->WebGLShaderPrecisionFormatTmpl.get();
 
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
+
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLShaderPrecisionFormat"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
 
@@ -94,6 +93,6 @@ v8::Local<v8::Function> WebGLShaderPrecisionFormatImpl::GetCtor(v8::Isolate *iso
     tmpl->SetAccessor(Helpers::ConvertToV8String(isolate, "precision"), &GetPrecision);
 
 
-    cache->WebGLShaderPrecisionFormatCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WebGLShaderPrecisionFormatTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }

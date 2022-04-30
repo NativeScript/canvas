@@ -14,7 +14,7 @@ public:
 
     static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, rust::Box<OES_vertex_array_object> object);
 
-    static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
     static void CreateVertexArrayOES(const v8::FunctionCallbackInfo<v8::Value> &args);
 

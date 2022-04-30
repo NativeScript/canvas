@@ -4,13 +4,14 @@
 
 #include "CanvasPattern.h"
 
-CanvasPattern::CanvasPattern(rust::Box <PaintStyle> style) : style_(std::move(style)) {}
+CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 
 void CanvasPattern::Init(v8::Isolate *isolate) {
     auto ctorFunc = GetCtorFunc(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "CanvasPattern"), ctorFunc);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "CanvasPattern"),
+                ctorFunc->GetFunction(context).ToLocalChecked());
 }
 
 CanvasPattern *CanvasPattern::GetPointer(v8::Local<v8::Object> object) {
@@ -21,13 +22,13 @@ CanvasPattern *CanvasPattern::GetPointer(v8::Local<v8::Object> object) {
     return static_cast<CanvasPattern *>(ptr);
 }
 
-v8::Local<v8::Object> CanvasPattern::NewInstance(v8::Isolate *isolate, rust::Box <PaintStyle> style) {
+v8::Local<v8::Object> CanvasPattern::NewInstance(v8::Isolate *isolate, rust::Box<PaintStyle> style) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::EscapableHandleScope handle_scope(isolate);
-    auto ctorFunc = CanvasPattern::GetCtorFunc(isolate);
+    auto ctorFunc = GetCtorFunc(isolate);
     CanvasPattern *gradient = new CanvasPattern(std::move(style));
-    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "CanvasPattern");
     auto ext = v8::External::New(isolate, gradient);
     result->SetInternalField(0, ext);
@@ -53,9 +54,9 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
     }
 }
 
-v8::Local<v8::Function> CanvasPattern::GetCtorFunc(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtorFunc(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto func = cache->CanvasPatternCtor.get();
+    auto func = cache->CanvasPatternTmpl.get();
     if (func != nullptr) {
         return func->Get(isolate);
     }
@@ -69,9 +70,9 @@ v8::Local<v8::Function> CanvasPattern::GetCtorFunc(v8::Isolate *isolate) {
             v8::FunctionTemplate::New(isolate, &SetTransform)
     );
 
-    auto ctor = patternTpl->GetFunction(context).ToLocalChecked();
-    cache->CanvasPatternCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, ctor);
-    return ctor;
+    cache->CanvasPatternTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, patternTpl);
+
+    return patternTpl;
 }
 
 PaintStyle &CanvasPattern::GetPaintStyle() {

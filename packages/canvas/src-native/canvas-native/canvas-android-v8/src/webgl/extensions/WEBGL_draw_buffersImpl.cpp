@@ -25,7 +25,7 @@ WEBGL_draw_buffersImpl::NewInstance(v8::Isolate *isolate, rust::Box<WEBGL_draw_b
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     WEBGL_draw_buffersImpl *buffersImpl = new WEBGL_draw_buffersImpl(std::move(buffers));
-    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "WEBGL_draw_buffers");
     auto ext = v8::External::New(isolate, buffersImpl);
     result->SetInternalField(0, ext);
@@ -105,27 +105,24 @@ WEBGL_draw_buffersImpl::NewInstance(v8::Isolate *isolate, rust::Box<WEBGL_draw_b
     return handle_scope.Escape(result);
 }
 
-v8::Local<v8::Function> WEBGL_draw_buffersImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WEBGL_draw_buffersImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_draw_buffersImplCtor.get();
-
+    auto ctor = cache->WEBGL_draw_buffersImplTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_draw_buffers"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
 
     tmpl->Set(Helpers::ConvertToV8String(isolate, "drawBuffersWEBGL"),
               v8::FunctionTemplate::New(isolate, &DrawBuffersWEBGL));
 
-    cache->WEBGL_draw_buffersImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WEBGL_draw_buffersImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(const v8::FunctionCallbackInfo<v8::Value> &args)  {

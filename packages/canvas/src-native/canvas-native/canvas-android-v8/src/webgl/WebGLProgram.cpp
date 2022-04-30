@@ -11,26 +11,22 @@ void WebGLProgram::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLProgram"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLProgram"),
+                ctor->GetFunction(context).ToLocalChecked());
 }
 
-void WebGLProgram::Create(const v8::FunctionCallbackInfo <v8::Value> &args) {
+void WebGLProgram::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Helpers::ThrowIllegalConstructor(args.GetIsolate());
 }
 
-v8::Local<v8::Function> WebGLProgram::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WebGLProgram::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WebGLProgramCtor.get();
+    auto ctor = cache->WebGLProgramTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
-
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLProgram"));
-
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
-
-    cache->WebGLProgramCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WebGLProgramTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }

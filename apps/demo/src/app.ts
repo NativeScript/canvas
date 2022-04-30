@@ -155,6 +155,7 @@ const asset = new global.ImageAsset();
 const asset2 = new global.ImageAsset();
 const asset3 = new global.ImageAsset();
 
+
 /*
 global.thing = (async () => {
 

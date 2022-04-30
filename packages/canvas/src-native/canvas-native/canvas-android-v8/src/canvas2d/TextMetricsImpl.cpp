@@ -15,7 +15,7 @@ void TextMetricsImpl::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "TextMetrics"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "TextMetrics"), ctor->GetFunction(context).ToLocalChecked());
 }
 
 void TextMetricsImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -38,8 +38,7 @@ v8::Local<v8::Object> TextMetricsImpl::NewInstance(v8::Isolate *isolate, rust::B
     v8::Isolate::Scope isolate_scope(isolate);
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
-    auto ret = GetCtor(isolate)->NewInstance(context).ToLocalChecked();
-
+    auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, ret, "TextMetrics");
 
     TextMetricsImpl *value = new TextMetricsImpl(std::move(metrics));
@@ -57,7 +56,7 @@ TextMetricsImpl *TextMetricsImpl::GetPointer(v8::Local<v8::Object> object) {
     return static_cast<TextMetricsImpl *>(ptr);
 }
 
-v8::Local<v8::Function> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
     auto tmpl = cache->TextMetricsTmpl.get();
     auto context = isolate->GetCurrentContext();
@@ -92,9 +91,10 @@ v8::Local<v8::Function> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
     textMetricsTmpl->SetAccessor(Helpers::ConvertToV8String(isolate, "alphabeticBaseline"), &AlphabeticBaseline);
     textMetricsTmpl->SetAccessor(Helpers::ConvertToV8String(isolate, "ideographicBaseline"), &IdeographicBaseline);
 
-    cache->TextMetricsTmpl = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
+    cache->TextMetricsTmpl
+    = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, textMetricsFuncTmpl);
 
-    return func;
+    return textMetricsFuncTmpl;
 }
 
 void TextMetricsImpl::GetWidth(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {

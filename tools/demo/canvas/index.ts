@@ -1,10 +1,10 @@
 import { DemoSharedBase } from '../utils';
-import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders , path as filePath} from '@nativescript/core';
+import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders, path as filePath } from '@nativescript/core';
 import Chart from 'chart.js';
 
 let Matter;
 import { Canvas } from '@nativescript/canvas';
-import { arcToAnimation, flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, globalCompositeOperation } from './canvas2d';
+import { arcToAnimation, flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, globalCompositeOperation, pattern } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
@@ -422,11 +422,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	draw() {
-		const gl = this.canvas.getContext('webgl') as WebGLRenderingContext;
-		console.log(gl.ACTIVE_ATTRIBUTES);
-		console.log('WebGLBuffer', WebGLBuffer);
-		const buffer = gl.createBuffer();
-		console.log(buffer);
 		//this.urlTests();
 		//const str = new java.lang.String()
 		// ctx.font = '50px serif';
@@ -519,7 +514,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		//this.solar(this.canvas);
+		this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -584,9 +579,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const width = Screen.mainScreen.widthPixels;
 		const height = Screen.mainScreen.heightPixels;
 		const ctx = canvas.getContext('2d');
-		ctx.fillRect(300,300,300,300)
+		ctx.fillRect(300, 300, 300, 300);
 		const asset = new global.ImageAsset();
-
 
 		let realPath = '~/assets/file-assets/webgl/svh.jpeg';
 		//let realPath = '~/assets/file-assets/webgl/Canvas_sun.png';
@@ -604,12 +598,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//asset.loadFromUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
 		console.log(asset.error);
 		console.log(asset.width, asset.height);
-		function draw(){
+		function draw() {
 			ctx.drawImage(asset, 0, 0);
 			requestAnimationFrame(draw);
 		}
 		draw();
-		
+
 		// const image = new Image();
 		// image.onload = () => {
 		// 	ctx.drawImage(image, 0, 0);
@@ -1650,11 +1644,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-
 		sun.loadUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
 		moon.loadUrlSync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
 		earth.loadUrlSync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
-
 
 		// sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png')
 		// .then(done =>{
@@ -1666,59 +1658,56 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// }).then(done =>{
 		// 	console.log('earth', done);
 		// })
-			
-			
-			
-					//console.log(sun.width, moon.width, earth.width);
-					var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-					//ctx.scale(3, 3);
-			
-					function init() {
-						window.requestAnimationFrame(draw);
-					}
-			
-					let didScale = false;
-			
-					function draw() {
-						if (!ctx) {
-							return;
-						}
 
-						//ctx.globalCompositeOperation = 'destination-over';
-						ctx.clearRect(0, 0, 300, 300); // clear canvas
-						ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-						ctx.strokeStyle = 'rgba(0, 153, 255, 0.4)';
-						ctx.save();
-						ctx.translate(150, 150);
-			
-						// Earth
-						var time = new Date();
-						ctx.rotate(((2 * Math.PI) / 60) * time.getSeconds() + ((2 * Math.PI) / 60000) * time.getMilliseconds());
-						ctx.translate(105, 0);
-						ctx.fillRect(0, -12, 40, 24); // Shadow
-						ctx.drawImage(earth, -12, -12);
+		//console.log(sun.width, moon.width, earth.width);
+		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		//ctx.scale(3, 3);
+x
+		function init() {
+			window.requestAnimationFrame(draw);
+		}
 
-						// Moon
-						ctx.save();
-						ctx.rotate(((2 * Math.PI) / 6) * time.getSeconds() + ((2 * Math.PI) / 6000) * time.getMilliseconds());
-						ctx.translate(0, 28.5);
-						ctx.drawImage(moon, -3.5, -3.5);
-						ctx.restore();
-						ctx.restore();
-						ctx.beginPath();
-						ctx.arc(150, 150, 105, 0, Math.PI * 2, false); // Earth orbit
-						ctx.stroke();
-						ctx.drawImage(sun, 0, 0, 300, 300);
-			
-						// // if (!didScale) {
-						// //     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
-						// //     didScale = true;
-						// // }
-					//	window.requestAnimationFrame(draw);
-					}
-			
-					init();
-		
+		let didScale = false;
+
+		function draw() {
+			if (!ctx) {
+				return;
+			}
+
+			//ctx.globalCompositeOperation = 'destination-over';
+			ctx.clearRect(0, 0, 300, 300); // clear canvas
+			ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+			ctx.strokeStyle = 'rgba(0, 153, 255, 0.4)';
+			ctx.save();
+			ctx.translate(150, 150);
+
+			// Earth
+			var time = new Date();
+			ctx.rotate(((2 * Math.PI) / 60) * time.getSeconds() + ((2 * Math.PI) / 60000) * time.getMilliseconds());
+			ctx.translate(105, 0);
+			ctx.fillRect(0, -12, 40, 24); // Shadow
+			ctx.drawImage(earth, -12, -12);
+
+			// Moon
+			ctx.save();
+			ctx.rotate(((2 * Math.PI) / 6) * time.getSeconds() + ((2 * Math.PI) / 6000) * time.getMilliseconds());
+			ctx.translate(0, 28.5);
+			ctx.drawImage(moon, -3.5, -3.5);
+			ctx.restore();
+			ctx.restore();
+			ctx.beginPath();
+			ctx.arc(150, 150, 105, 0, Math.PI * 2, false); // Earth orbit
+			ctx.stroke();
+			ctx.drawImage(sun, 0, 0, 300, 300);
+
+			// // if (!didScale) {
+			// //     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
+			// //     didScale = true;
+			// // }
+			//	window.requestAnimationFrame(draw);
+		}
+
+		init();
 	}
 
 	/* TODO after SVG
@@ -2032,7 +2021,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				},
 			},
 		};
-		
 
 		var chart = new Chart(canvas.getContext('2d'), {
 			type: 'bubble',

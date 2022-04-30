@@ -15,7 +15,8 @@ void WebGLActiveInfoImpl::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLActiveInfo"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLActiveInfo"),
+                ctor->GetFunction(context).ToLocalChecked());
 }
 
 WebGLActiveInfoImpl *WebGLActiveInfoImpl::GetPointer(v8::Local<v8::Object> object) {
@@ -36,14 +37,14 @@ v8::Local<v8::Object> WebGLActiveInfoImpl::NewInstance(v8::Isolate *isolate, rus
     v8::EscapableHandleScope handle_scope(isolate);
     auto ctorFunc = GetCtor(isolate);
     WebGLActiveInfoImpl *activeInfo = new WebGLActiveInfoImpl(std::move(info));
-    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "WebGLActiveInfo");
     auto ext = v8::External::New(isolate, activeInfo);
     result->SetInternalField(0, ext);
     return handle_scope.Escape(result);
 }
 
-void WebGLActiveInfoImpl::GetName(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info){
+void WebGLActiveInfoImpl::GetName(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.Holder());
@@ -51,14 +52,14 @@ void WebGLActiveInfoImpl::GetName(v8::Local<v8::String> name, const v8::Property
     info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(info_name)));
 }
 
-void WebGLActiveInfoImpl::GetSize(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info){
+void WebGLActiveInfoImpl::GetSize(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
     info.GetReturnValue().Set(
             canvas_native_webgl_active_info_get_size(*ptr->info_));
 }
 
-void WebGLActiveInfoImpl::GetType(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info){
+void WebGLActiveInfoImpl::GetType(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.Holder());
@@ -66,9 +67,9 @@ void WebGLActiveInfoImpl::GetType(v8::Local<v8::String> name, const v8::Property
             canvas_native_webgl_active_info_get_type(*ptr->info_));
 }
 
-v8::Local<v8::Function> WebGLActiveInfoImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WebGLActiveInfoImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WebGLActiveInfoCtor.get();
+    auto ctor = cache->WebGLActiveInfoTmpl.get();
 
     if (ctor != nullptr) {
         return ctor->Get(isolate);
@@ -78,7 +79,6 @@ v8::Local<v8::Function> WebGLActiveInfoImpl::GetCtor(v8::Isolate *isolate) {
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLActiveInfo"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
 
@@ -87,6 +87,6 @@ v8::Local<v8::Function> WebGLActiveInfoImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->SetAccessor(Helpers::ConvertToV8String(isolate, "type"), &GetType);
 
 
-    cache->WebGLActiveInfoCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WebGLActiveInfoTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }

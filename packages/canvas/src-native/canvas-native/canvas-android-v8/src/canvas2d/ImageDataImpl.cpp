@@ -6,7 +6,7 @@
 
 using namespace v8;
 
-ImageDataImpl::ImageDataImpl(rust::Box <ImageData> imageData) : imageData_(std::move(imageData)) {
+ImageDataImpl::ImageDataImpl(rust::Box<ImageData> imageData) : imageData_(std::move(imageData)) {
 
 }
 
@@ -33,7 +33,8 @@ void ImageDataImpl::Init(v8::Isolate *isolate) {
     auto ctorFunc = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "ImageData"), ctorFunc).ToChecked();
+    global->Set(context, Helpers::ConvertToV8String(isolate, "ImageData"),
+                ctorFunc->GetFunction(context).ToLocalChecked()).ToChecked();
 }
 
 void ImageDataImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -128,9 +129,9 @@ void ImageDataImpl::GetData(v8::Local<v8::String> name, const v8::PropertyCallba
 }
 
 
-v8::Local<v8::Function> ImageDataImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> ImageDataImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto tmpl = cache->ImageDataCtor.get();
+    auto tmpl = cache->ImageDataTmpl.get();
     if (tmpl != nullptr) {
         return tmpl->Get(isolate);
     }
@@ -158,8 +159,8 @@ v8::Local<v8::Function> ImageDataImpl::GetCtor(v8::Isolate *isolate) {
             &GetData
     );
 
-    cache->ImageDataCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->ImageDataTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, image_data_tmpl);
+    return image_data_tmpl;
 }
 
 v8::Local<v8::Object> ImageDataImpl::NewInstance(v8::Isolate *isolate, ImageDataImpl *imageData) {
@@ -168,7 +169,7 @@ v8::Local<v8::Object> ImageDataImpl::NewInstance(v8::Isolate *isolate, ImageData
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ctor = GetCtor(isolate);
-    auto ret = ctor->NewInstance(context).ToLocalChecked();
+    auto ret = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
 
     ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
                     Helpers::ConvertToV8String(isolate, "ImageData"));

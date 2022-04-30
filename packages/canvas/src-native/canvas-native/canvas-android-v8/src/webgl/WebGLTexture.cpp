@@ -11,26 +11,26 @@ void WebGLTexture::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLTexture"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLTexture"),
+                ctor->GetFunction(context).ToLocalChecked());
 }
 
-void WebGLTexture::Create(const v8::FunctionCallbackInfo <v8::Value> &args) {
+void WebGLTexture::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Helpers::ThrowIllegalConstructor(args.GetIsolate());
 }
 
-v8::Local<v8::Function> WebGLTexture::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WebGLTexture::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WebGLTextureCtor.get();
+    auto ctor = cache->WebGLTextureTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
+
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLTexture"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
 
-    cache->WebGLTextureCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WebGLTextureTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }

@@ -50,5 +50,5 @@ public:
 private:
     rust::Box <Path> path_;
 
-    static v8::Local<v8::Function> GetCtor(v8::Isolate *isolate);
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 };

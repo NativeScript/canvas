@@ -4,21 +4,21 @@
 
 #include "CanvasRenderingContext2DImpl.h"
 
-CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(rust::Box <CanvasRenderingContext2D> context) : context_(
+CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(rust::Box<CanvasRenderingContext2D> context) : context_(
         std::move(context)) {
 
 }
 
 CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
     auto raf = this->raf_.get();
-    if(raf != nullptr){
+    if (raf != nullptr) {
         canvas_native_raf_stop(raf->GetRaf());
     }
 }
 
 void CanvasRenderingContext2DImpl::UpdateInvalidateState() {
     auto raf = this->raf_.get();
-    if(raf != nullptr){
+    if (raf != nullptr) {
         if (!canvas_native_raf_get_started(raf->GetRaf())) {
             canvas_native_raf_start(raf->GetRaf());
         }
@@ -60,7 +60,8 @@ void CanvasRenderingContext2DImpl::Init(v8::Isolate *isolate) {
     auto ctorFunc = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "CanvasRenderingContext2D"), ctorFunc);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "CanvasRenderingContext2D"),
+                ctorFunc->GetFunction(context).ToLocalChecked());
     auto funcTpl = v8::FunctionTemplate::New(isolate, &InstanceFromPointer);
     global->Set(context, Helpers::ConvertToV8String(isolate, "__getCanvasRenderingContext2DImpl"),
                 funcTpl->GetFunction(context).ToLocalChecked());
@@ -83,15 +84,12 @@ void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbac
             auto ctx = canvas_native_context_create_with_wrapper(ptr);
             CanvasRenderingContext2DImpl *renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
             auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
-            auto raf_callback = new OnRafCallback(ctx_ptr);
+            auto raf_callback = new OnRafCallback(ctx_ptr, 0);
             auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
             auto raf = canvas_native_raf_create(raf_callback_ptr);
             renderingContext->raf_ = std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf));
 
-
-//            auto ctor = GetCtor(isolate);
-            auto ret = cache->CanvasRenderingContext2DTmpl->Get(isolate)->InstanceTemplate()->NewInstance(
-                    context).ToLocalChecked();
+            auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
             Helpers::SetInternalClassName(isolate, ret, "CanvasRenderingContext2D");
             auto ext = v8::External::New(isolate, renderingContext);
             ret->SetInternalField(0, ext);
@@ -103,11 +101,11 @@ void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbac
 }
 
 v8::Local<v8::Object>
-CanvasRenderingContext2DImpl::NewInstance(v8::Isolate *isolate, rust::Box <CanvasRenderingContext2D> ctx) {
+CanvasRenderingContext2DImpl::NewInstance(v8::Isolate *isolate, rust::Box<CanvasRenderingContext2D> ctx) {
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     CanvasRenderingContext2DImpl *renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
-    auto ret = GetCtor(isolate)->NewInstance(context).ToLocalChecked();
+    auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, ret, "CanvasRenderingContext2D");
     auto ext = v8::External::New(isolate, renderingContext);
     ret->SetInternalField(0, ext);
@@ -258,9 +256,12 @@ void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::String> name, v8
                                                   const v8::PropertyCallbackInfo<void> &info) {
     if (value->IsString()) {
         auto isolate = info.GetIsolate();
+        auto context = isolate->GetCurrentContext();
         auto ptr = GetPointer(info.Holder());
-        auto color = Helpers::ConvertFromV8String(isolate,
-                                                  value->ToString(isolate->GetCurrentContext()).ToLocalChecked());
+
+        v8::String::Utf8Value val(isolate, value->ToString(context).ToLocalChecked());
+        rust::Str color(*val, val.length());
+
         canvas_native_context_set_shadow_color(*ptr->context_, color);
     }
 }
@@ -666,8 +667,8 @@ void CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<
         if (Helpers::IsInstanceOf(isolate, image, "ImageAsset")) {
             auto asset = ImageAssetImpl::GetPointer(image);
             auto rep = Helpers::ConvertFromV8String(isolate, args[1]->ToString(context).ToLocalChecked());
-            rust::Box <PaintStyle> pattern = canvas_native_context_create_pattern_asset(*ptr->context_,
-                                                                                        asset->GetImageAsset(), rep);
+            rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(*ptr->context_,
+                                                                                       asset->GetImageAsset(), rep);
             auto type = canvas_native_context_get_style_type(*pattern);
             if (type == PaintStyleType::None) {
                 args.GetReturnValue().Set(v8::Undefined(isolate));
@@ -810,7 +811,7 @@ void CanvasRenderingContext2DImpl::FillRect(const v8::FunctionCallbackInfo<v8::V
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
-    if(ptr != nullptr){
+    if (ptr != nullptr) {
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
@@ -1183,9 +1184,9 @@ void CanvasRenderingContext2DImpl::Translate(const v8::FunctionCallbackInfo<v8::
 }
 
 
-v8::Local<v8::Function> CanvasRenderingContext2DImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto tmpl = cache->CanvasRenderingContext2DCtor.get();
+    auto tmpl = cache->CanvasRenderingContext2DTmpl.get();
     if (tmpl != nullptr) {
         return tmpl->Get(isolate);
     }
@@ -1522,7 +1523,5 @@ v8::Local<v8::Function> CanvasRenderingContext2DImpl::GetCtor(v8::Isolate *isola
 
     cache->CanvasRenderingContext2DTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate,
                                                                                                  canvasRenderingContextFunc);
-    cache->CanvasRenderingContext2DCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-
-    return func;
+    return canvasRenderingContextFunc;
 }

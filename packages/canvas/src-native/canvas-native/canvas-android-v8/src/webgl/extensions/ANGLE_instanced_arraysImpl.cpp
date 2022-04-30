@@ -26,7 +26,7 @@ ANGLE_instanced_arraysImpl::NewInstance(v8::Isolate *isolate, rust::Box<ANGLE_in
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     ANGLE_instanced_arraysImpl *arraysImpl = new ANGLE_instanced_arraysImpl(std::move(arrays));
-    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "ANGLE_instanced_arrays");
     auto ext = v8::External::New(isolate, arraysImpl);
     result->SetInternalField(0, ext);
@@ -37,19 +37,17 @@ ANGLE_instanced_arraysImpl::NewInstance(v8::Isolate *isolate, rust::Box<ANGLE_in
     return handle_scope.Escape(result);
 }
 
-v8::Local<v8::Function> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->ANGLE_instanced_arraysImplCtor.get();
+    auto ctor = cache->ANGLE_instanced_arraysImplTmpl.get();
 
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ANGLE_instanced_arrays"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
 
@@ -60,8 +58,8 @@ v8::Local<v8::Function> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate *isolate
     tmpl->Set(Helpers::ConvertToV8String(isolate, "vertexAttribDivisorANGLE"),
               v8::FunctionTemplate::New(isolate, &VertexAttribDivisorANGLE));
 
-    cache->ANGLE_instanced_arraysImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->ANGLE_instanced_arraysImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 void ANGLE_instanced_arraysImpl::DrawArraysInstancedANGLE(const v8::FunctionCallbackInfo<v8::Value> &args) {

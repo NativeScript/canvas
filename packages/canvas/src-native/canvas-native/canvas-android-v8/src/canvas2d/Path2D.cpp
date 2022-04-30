@@ -14,7 +14,7 @@ void Path2D::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "Path2D"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "Path2D"), ctor->GetFunction(context).ToLocalChecked());
 }
 
 Path2D *Path2D::GetPointer(v8::Local<v8::Object> object) {
@@ -54,7 +54,6 @@ void Path2D::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 args.GetReturnValue().Set(ret);
                 return;
             } else if (obj->IsObject()) {
-                auto cache = Caches::Get(isolate);
                 auto object = obj->ToObject(context).ToLocalChecked();
 
                 if (Helpers::IsInstanceOf(isolate, object, "Path2D")) {
@@ -240,19 +239,16 @@ void Path2D::Rect(const v8::FunctionCallbackInfo<v8::Value> &args) {
     );
 }
 
-v8::Local<v8::Function> Path2D::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->Path2DCtor.get();
+    auto ctor = cache->Path2DTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
     ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "Path2D"));
-
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
 
     auto tmpl = ctorTmpl->InstanceTemplate();
 
@@ -290,13 +286,12 @@ v8::Local<v8::Function> Path2D::GetCtor(v8::Isolate *isolate) {
             Helpers::ConvertToV8String(isolate, "rect"), v8::FunctionTemplate::New(isolate, &Rect)
     );
 
-
     tmpl->Set(
             Helpers::ConvertToV8String(isolate, "__toSVG"), v8::FunctionTemplate::New(isolate, &ToSVG)
     );
 
-    cache->Path2DCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->Path2DTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 void Path2D::ToSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {

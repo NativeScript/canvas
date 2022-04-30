@@ -9,7 +9,6 @@ OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(rust::Box<OES_vertex_ar
 
 }
 
-
 OES_vertex_array_objectImpl *OES_vertex_array_objectImpl::GetPointer(v8::Local<v8::Object> object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
@@ -26,7 +25,7 @@ OES_vertex_array_objectImpl::NewInstance(v8::Isolate *isolate, rust::Box<OES_ver
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     OES_vertex_array_objectImpl *objectImpl = new OES_vertex_array_objectImpl(std::move(object));
-    auto result = ctorFunc->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "OES_vertex_array_object");
     auto ext = v8::External::New(isolate, objectImpl);
     result->SetInternalField(0, ext);
@@ -37,19 +36,18 @@ OES_vertex_array_objectImpl::NewInstance(v8::Isolate *isolate, rust::Box<OES_ver
     return handle_scope.Escape(result);
 }
 
-v8::Local<v8::Function> OES_vertex_array_objectImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> OES_vertex_array_objectImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->OES_vertex_array_objectImplCtor.get();
+    auto ctor = cache->OES_vertex_array_objectImplTmpl.get();
 
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
+
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "OES_vertex_array_object"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
 
@@ -62,8 +60,8 @@ v8::Local<v8::Function> OES_vertex_array_objectImpl::GetCtor(v8::Isolate *isolat
     tmpl->Set(Helpers::ConvertToV8String(isolate, "BindVertexArrayOES"),
               v8::FunctionTemplate::New(isolate, &BindVertexArrayOES));
 
-    cache->OES_vertex_array_objectImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->OES_vertex_array_objectImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 void OES_vertex_array_objectImpl::CreateVertexArrayOES(const v8::FunctionCallbackInfo<v8::Value> &args) {

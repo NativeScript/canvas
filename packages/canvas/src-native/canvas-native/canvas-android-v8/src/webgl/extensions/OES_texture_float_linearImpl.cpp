@@ -4,9 +4,9 @@
 
 #include "OES_texture_float_linearImpl.h"
 
-v8::Local <v8::Function> OES_texture_float_linearImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> OES_texture_float_linearImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->OES_texture_float_linearImplCtor.get();
+    auto ctor = cache->OES_texture_float_linearImplTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
@@ -15,10 +15,8 @@ v8::Local <v8::Function> OES_texture_float_linearImpl::GetCtor(v8::Isolate *isol
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "OES_texture_float_linear"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
-
-    cache->OES_texture_float_linearImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->OES_texture_float_linearImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 v8::Local<v8::Object> OES_texture_float_linearImpl::NewInstance(v8::Isolate *isolate) {
@@ -27,7 +25,7 @@ v8::Local<v8::Object> OES_texture_float_linearImpl::NewInstance(v8::Isolate *iso
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result,"OES_texture_float_linear");
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
+    Helpers::SetInternalClassName(isolate, result, "OES_texture_float_linear");
     return handle_scope.Escape(result);
 }

@@ -4,21 +4,17 @@
 
 #include "WEBGL_compressed_texture_s3tc_srgbImpl.h"
 
-v8::Local <v8::Function> WEBGL_compressed_texture_s3tc_srgbImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WEBGL_compressed_texture_s3tc_srgbImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_compressed_texture_s3tc_srgbImplCtor.get();
+    auto ctor = cache->WEBGL_compressed_texture_s3tc_srgbImplTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc_srgb"));
-
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
-
-    cache->WEBGL_compressed_texture_s3tc_srgbImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WEBGL_compressed_texture_s3tc_srgbImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate,
+                                                                                                               ctorTmpl);
+    return ctorTmpl;
 }
 
 v8::Local<v8::Object> WEBGL_compressed_texture_s3tc_srgbImpl::NewInstance(v8::Isolate *isolate) {
@@ -27,12 +23,16 @@ v8::Local<v8::Object> WEBGL_compressed_texture_s3tc_srgbImpl::NewInstance(v8::Is
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result,"WEBGL_compressed_texture_s3tc_srgb");
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
+    Helpers::SetInternalClassName(isolate, result, "WEBGL_compressed_texture_s3tc_srgb");
 
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_S3TC_DXT1_EXT"), v8::Int32::New(isolate, GL_COMPRESSED_SRGB_S3TC_DXT1_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT"), v8::Int32::New(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT"), v8::Int32::New(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT"), v8::Int32::New(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT));
+    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_S3TC_DXT1_EXT"),
+                v8::Int32::New(isolate, GL_COMPRESSED_SRGB_S3TC_DXT1_EXT));
+    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT"),
+                v8::Int32::New(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT));
+    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT"),
+                v8::Int32::New(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT));
+    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT"),
+                v8::Int32::New(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT));
     return handle_scope.Escape(result);
 }

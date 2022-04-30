@@ -133,6 +133,14 @@ impl WebGLState {
         })))
     }
 
+    pub fn get_drawing_buffer_width(&self) -> i32 {
+        self.get_lock().gl_context.get_surface_width()
+    }
+
+    pub fn get_drawing_buffer_height(&self) -> i32 {
+        self.get_lock().gl_context.get_surface_height()
+    }
+
     pub(crate) fn set_antialias(&self, value: bool) {
         self.get_lock().antialias = value;
     }
@@ -165,39 +173,31 @@ impl WebGLState {
             xr_compatible: lock.xr_compatible,
         }
     }
-
     pub fn set_clear_color(&mut self, colors: [f32; 4]) {
         let mut lock = self.get_lock();
         lock.clear_color = colors;
     }
-
     pub fn set_stencil_mask(&mut self, mask: u32) {
         self.get_lock().stencil_mask = mask;
     }
-
     pub fn set_stencil_mask_back(&mut self, mask: u32) {
         self.get_lock().stencil_mask_back = mask;
     }
-
     pub fn set_clear_depth(&mut self, depth: f32) {
         let mut lock = self.get_lock();
         lock.clear_depth = depth;
     }
-
     pub fn set_clear_stencil(&mut self, stencil: i32) {
         let mut lock = self.get_lock();
         lock.clear_stencil = stencil;
     }
-
     pub fn set_color_mask(&mut self, mask: [bool; 4]) {
         let mut lock = self.get_lock();
         lock.color_mask = mask;
     }
-
     pub fn set_stencil_func_ref(&mut self, reference: i32) {
         self.get_lock().stencil_func_ref = reference;
     }
-
     pub fn set_stencil_func_ref_back(&mut self, reference: i32) {
         self.get_lock().stencil_func_ref_back = reference;
     }

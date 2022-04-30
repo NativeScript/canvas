@@ -1241,6 +1241,8 @@ pub(crate) mod ffi {
         ) -> i32;
         fn canvas_native_webgl_state_get_flip_y(state: &WebGLState) -> bool;
         fn canvas_native_webgl_state_get_premultiplied_alpha(state: &WebGLState) -> bool;
+        fn canvas_native_webgl_state_get_drawing_buffer_width(state: &WebGLState) -> i32;
+        fn canvas_native_webgl_state_get_drawing_buffer_height(state: &WebGLState) -> i32;
         /* WebGLState */
 
         /* EXT_disjoint_timer_query */
@@ -4225,6 +4227,13 @@ pub fn canvas_native_webgl_state_get_flip_y(state: &WebGLState) -> bool {
 
 pub fn canvas_native_webgl_state_get_premultiplied_alpha(state: &WebGLState) -> bool {
     state.get_inner().get_premultiplied_alpha()
+}
+
+pub fn canvas_native_webgl_state_get_drawing_buffer_width(state: &WebGLState) -> i32 {
+    state.get_inner().drawing_buffer_width()
+}
+pub fn canvas_native_webgl_state_get_drawing_buffer_height(state: &WebGLState) -> i32 {
+    state.get_inner().drawing_buffer_height()
 }
 
 /* WebGLState */

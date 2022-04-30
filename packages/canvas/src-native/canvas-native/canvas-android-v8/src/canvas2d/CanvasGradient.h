@@ -25,6 +25,6 @@ public:
 
 private:
     rust::Box<PaintStyle> style_;
-    static v8::Local<v8::Function> GetCtorFunc(v8::Isolate *isolate);
+    static v8::Local<v8::FunctionTemplate> GetCtorFunc(v8::Isolate *isolate);
 };
 

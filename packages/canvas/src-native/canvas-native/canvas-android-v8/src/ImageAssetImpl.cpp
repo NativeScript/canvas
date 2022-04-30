@@ -5,7 +5,7 @@
 #include "ImageAssetImpl.h"
 #include "OnImageAssetLoadCallbackHolder.h"
 
-ImageAssetImpl::ImageAssetImpl(rust::Box <ImageAsset> asset)
+ImageAssetImpl::ImageAssetImpl(rust::Box<ImageAsset> asset)
         : asset_(std::move(asset)) {}
 
 void ImageAssetImpl::Init(v8::Isolate *isolate) {
@@ -15,7 +15,8 @@ void ImageAssetImpl::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "ImageAsset"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "ImageAsset"),
+                ctor->GetFunction(context).ToLocalChecked());
 }
 
 ImageAssetImpl *ImageAssetImpl::GetPointer(v8::Local<v8::Object> object) {
@@ -261,14 +262,12 @@ void ImageAssetImpl::SaveAsync(const v8::FunctionCallbackInfo<v8::Value> &args) 
     canvas_native_image_asset_save_path_async(*ptr->asset_, path, format, key);
 }
 
-v8::Local<v8::Function> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->ImageAssetCtor.get();
+    auto ctor = cache->ImageAssetTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
-
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ImageAsset"));
 
@@ -329,11 +328,9 @@ v8::Local<v8::Function> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             v8::FunctionTemplate::New(isolate, &SaveAsync)
     );
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
 
-
-    cache->ImageAssetCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->ImageAssetTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 ImageAsset &ImageAssetImpl::GetImageAsset() {

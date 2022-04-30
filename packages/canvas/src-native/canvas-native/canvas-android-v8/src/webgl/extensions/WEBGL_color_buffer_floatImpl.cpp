@@ -4,21 +4,16 @@
 
 #include "WEBGL_color_buffer_floatImpl.h"
 
-v8::Local<v8::Function> WEBGL_color_buffer_floatImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WEBGL_color_buffer_floatImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_color_buffer_floatImplCtor.get();
+    auto ctor = cache->WEBGL_color_buffer_floatImplTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_color_buffer_float"));
-
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
-
-    cache->WEBGL_color_buffer_floatImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WEBGL_color_buffer_floatImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 v8::Local<v8::Object> WEBGL_color_buffer_floatImpl::NewInstance(v8::Isolate *isolate) {
@@ -27,7 +22,7 @@ v8::Local<v8::Object> WEBGL_color_buffer_floatImpl::NewInstance(v8::Isolate *iso
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "WEBGL_color_buffer_float");
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "RGBA32F_EXT"), v8::Int32::New(isolate, GL_RGBA32F_EXT));

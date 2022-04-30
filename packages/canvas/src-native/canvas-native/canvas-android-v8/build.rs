@@ -229,6 +229,9 @@ fn main() {
 
             include_dir.push_str("/sysroot/usr/include");
             //println!("cargo:rustc-link-search={}", include_dir);
+            println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
+            println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
+            println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=android"); // the "-l" flag
                                                       // the resulting bindings.

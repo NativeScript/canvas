@@ -4,21 +4,16 @@
 
 #include "WEBGL_depth_textureImpl.h"
 
-v8::Local <v8::Function> WEBGL_depth_textureImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WEBGL_depth_textureImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_depth_textureImplCtor.get();
+    auto ctor = cache->WEBGL_depth_textureImplTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_depth_texture"));
-
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
-
-    cache->WEBGL_depth_textureImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->WEBGL_depth_textureImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 v8::Local<v8::Object> WEBGL_depth_textureImpl::NewInstance(v8::Isolate *isolate) {
@@ -27,8 +22,9 @@ v8::Local<v8::Object> WEBGL_depth_textureImpl::NewInstance(v8::Isolate *isolate)
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result,"WEBGL_depth_texture");
-    result->Set(context, Helpers::ConvertToV8String(isolate, "UNSIGNED_INT_24_8_WEBGL"), v8::Int32::New(isolate, 0x84FA));
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
+    Helpers::SetInternalClassName(isolate, result, "WEBGL_depth_texture");
+    result->Set(context, Helpers::ConvertToV8String(isolate, "UNSIGNED_INT_24_8_WEBGL"),
+                v8::Int32::New(isolate, 0x84FA));
     return handle_scope.Escape(result);
 }

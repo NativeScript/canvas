@@ -4,7 +4,7 @@ use std::os::raw::{c_char, c_uchar, c_void};
 use image::imageops::resize;
 use libc::size_t;
 
-use crate::bridges::context::ImageAsset;
+use crate::bridges::context::{console_log, ImageAsset};
 use crate::gl::prelude::*;
 
 pub fn canvas_native_webgl_active_texture(texture: u32, state: &mut WebGLState) {
@@ -205,9 +205,10 @@ fn reset(state: &mut WebGLState) {
 
 fn restore_state_after_clear(state: &mut WebGLState) {
     // Restore the state that the context set.
+    state.make_current();
     if state.get_scissor_enabled() {
         unsafe {
-            gl_bindings::glEnable(3089 /* GL_SCISSOR_TEST */)
+            gl_bindings::glEnable(gl_bindings::GL_SCISSOR_TEST)
         }
     }
 
@@ -228,21 +229,22 @@ fn restore_state_after_clear(state: &mut WebGLState) {
         );
         gl_bindings::glClearDepthf(state.get_clear_depth());
         gl_bindings::glClearStencil(state.get_clear_stencil());
-        gl_bindings::glStencilMaskSeparate(1028 /* GL_FRONT */, state.get_stencil_mask());
+        gl_bindings::glStencilMaskSeparate(gl_bindings::GL_FRONT, state.get_stencil_mask());
         gl_bindings::glDepthMask(state.get_depth_mask() as u8);
     }
 }
 
 fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
+    state.make_current();
     let combined_clear = mask > 0 && !state.get_scissor_enabled();
-    let m = mask & 16384; // GL_COLOR_BUFFER_BIT
+
+    let m = mask & gl_bindings::GL_COLOR_BUFFER_BIT;
+
     unsafe {
-        gl_bindings::glDisable(3089); // GL_SCISSOR_TEST
+        gl_bindings::glDisable(gl_bindings::GL_SCISSOR_TEST);
     }
 
-    if combined_clear && m == 16384
-    /* GL_COLOR_BUFFER_BIT */
-    {
+    if combined_clear && m == gl_bindings::GL_COLOR_BUFFER_BIT {
         let get_clear = |state: &mut WebGLState| {
             let mut clear = [0f32; 4];
             let clear_mask = state.get_color_mask();
@@ -286,7 +288,7 @@ fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
             clear_mask = clear_mask | 1024;
 
             unsafe {
-                gl_bindings::glStencilMaskSeparate(1028 /* GL_FRONT */, 0xFFFFFFFF)
+                gl_bindings::glStencilMaskSeparate(gl_bindings::GL_FRONT, 0xFFFFFFFF)
             }
         }
     }
@@ -1725,12 +1727,10 @@ pub fn canvas_native_webgl_tex_image2d_asset(
     }
 }
 
-
 //    texImage2D(target, level, internalformat, width, height, border, format, type)
 //    texImage2D(target, level, internalformat, width, height, border, format, type, pixels) // pixels is instance of ArrayBufferView
 //    texImage2D(target, level, internalformat, format, type)
 //    texImage2D(target, level, internalformat, format, type, pixels)
-
 
 pub fn canvas_native_webgl_tex_image2d_image_none(
     target: i32,
@@ -1741,19 +1741,19 @@ pub fn canvas_native_webgl_tex_image2d_image_none(
     state: &WebGLState,
 ) {
     state.make_current();
-   unsafe {
-       gl_bindings::glTexImage2D(
-           target as u32,
-           level,
-           internalformat,
-           0,
-           0,
-           0,
-           format as u32,
-           image_type as u32,
-           std::ptr::null(),
-       );
-   }
+    unsafe {
+        gl_bindings::glTexImage2D(
+            target as u32,
+            level,
+            internalformat,
+            0,
+            0,
+            0,
+            format as u32,
+            image_type as u32,
+            std::ptr::null(),
+        );
+    }
 }
 
 pub fn canvas_native_webgl_tex_image2d(

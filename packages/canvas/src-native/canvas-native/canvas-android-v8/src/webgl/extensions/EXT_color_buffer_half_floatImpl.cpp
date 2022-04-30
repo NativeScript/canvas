@@ -4,9 +4,9 @@
 
 #include "EXT_color_buffer_half_floatImpl.h"
 
-v8::Local<v8::Function> EXT_color_buffer_half_floatImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> EXT_color_buffer_half_floatImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->EXT_color_buffer_half_floatImplCtor.get();
+    auto ctor = cache->EXT_color_buffer_half_floatImplTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
@@ -15,10 +15,8 @@ v8::Local<v8::Function> EXT_color_buffer_half_floatImpl::GetCtor(v8::Isolate *is
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "EXT_color_buffer_half_float"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
-
-    cache->EXT_color_buffer_half_floatImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->EXT_color_buffer_half_floatImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 v8::Local<v8::Object> EXT_color_buffer_half_floatImpl::NewInstance(v8::Isolate *isolate) {
@@ -27,7 +25,7 @@ v8::Local<v8::Object> EXT_color_buffer_half_floatImpl::NewInstance(v8::Isolate *
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result, "EXT_color_buffer_half_float");
     result->Set(context, Helpers::ConvertToV8String(isolate, "RGBA16F_EXT"), v8::Int32::New(isolate, GL_RGBA16F_EXT));
     result->Set(context, Helpers::ConvertToV8String(isolate, "RGB16F_EXT"), v8::Int32::New(isolate, GL_RGB16F_EXT));

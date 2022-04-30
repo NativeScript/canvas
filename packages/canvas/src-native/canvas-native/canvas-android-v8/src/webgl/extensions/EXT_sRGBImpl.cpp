@@ -4,21 +4,18 @@
 
 #include "EXT_sRGBImpl.h"
 
-v8::Local <v8::Function> EXT_sRGBImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local <v8::FunctionTemplate> EXT_sRGBImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->EXT_sRGBImplCtor.get();
+    auto ctor = cache->EXT_sRGBImplTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "EXT_sRGB"));
 
-    auto func = ctorTmpl->GetFunction(context).ToLocalChecked();
-
-    cache->EXT_sRGBImplCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->EXT_sRGBImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 v8::Local<v8::Object> EXT_sRGBImpl::NewInstance(v8::Isolate *isolate) {
@@ -27,7 +24,7 @@ v8::Local<v8::Object> EXT_sRGBImpl::NewInstance(v8::Isolate *isolate) {
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->NewInstance(context).ToLocalChecked();
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInternalClassName(isolate, result,"EXT_sRGB");
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "SRGB_EXT"), v8::Int32::New(isolate, GL_SRGB_EXT));

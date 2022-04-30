@@ -44,7 +44,15 @@ std::string Helpers::ConvertFromV8StringToString(v8::Isolate *isolate, const v8:
 bool Helpers::IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Value> value, std::string clazz) {
     auto context = isolate->GetCurrentContext();
 
-    if (value.IsEmpty() && !value->IsObject()){
+    if (value.IsEmpty()) {
+        return false;
+    }
+
+    if (value->IsNullOrUndefined()) {
+        return false;
+    }
+
+    if (!value->IsObject()) {
         return false;
     }
 
@@ -66,25 +74,25 @@ bool Helpers::IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Value> value, std
             ->GetRealNamedProperty(context, Helpers::ConvertToV8String(isolate, clazz))
             .ToLocal(&object)) {
 
-        if (object->IsFunction() &&
-            value->ToObject(context).ToLocalChecked()->InstanceOf(context, object.As<v8::Object>())
-                    .FromMaybe(false)) {
-//            auto name = object.As<v8::Function>()->GetName();
-//            auto value_name =  value.As<v8::Function>()->GetName();
-//            if(std::strcmp(
-//                    Helpers::ConvertFromV8String(isolate, name.As<v8::String>()).c_str(),
-//                    Helpers::ConvertFromV8String(isolate, value_name.As<v8::String>()).c_str()
-//                    ) !=
-//               0){
-//                return false;
-//            }
-//            if (name->IsString()) {
-//                if (std::strcmp(Helpers::ConvertFromV8String(isolate, name.As<v8::String>()).c_str(), clazz.c_str()) ==
-//                    0) {
-//                    return true;
-//                }
-//            }
-            return true;
+        if (object->IsFunction()) {
+            auto name = object.As<v8::Function>()->GetName();
+            if (value->IsFunction()) {
+                auto value_name = value.As<v8::Function>()->GetName();
+                if (std::strcmp(
+                        Helpers::ConvertFromV8String(isolate, name.As<v8::String>()).c_str(),
+                        Helpers::ConvertFromV8String(isolate, value_name.As<v8::String>()).c_str()
+                ) !=
+                    0) {
+                    return false;
+                }
+            }
+
+            if (name->IsString()) {
+                if (std::strcmp(Helpers::ConvertFromV8String(isolate, name.As<v8::String>()).c_str(), clazz.c_str()) ==
+                    0) {
+                    return true;
+                }
+            }
         }
         if (object->IsObject() &&
             value->ToObject(context).ToLocalChecked()->InstanceOf(context, object.As<v8::Object>())
@@ -103,20 +111,20 @@ void Helpers::SetInternalClassName(v8::Isolate *isolate, v8::Local<v8::Object> v
                       Helpers::ConvertToV8String(isolate, clazz));
 }
 
-void Helpers::SetPrivate(v8::Isolate *isolate, v8::Local<v8::Object> object, std::string property, v8::Local<v8::Value> value){
+void Helpers::SetPrivate(v8::Isolate *isolate, v8::Local<v8::Object> object, std::string property,
+                         v8::Local<v8::Value> value) {
     auto context = isolate->GetCurrentContext();
-    object->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, property)),
-                      value);
+    auto key = v8::Private::ForApi(isolate, Helpers::ConvertToV8String(isolate, property));
+    object->SetPrivate(context, key, value);
 }
 
 v8::Local<v8::Value> Helpers::GetPrivate(v8::Isolate *isolate, v8::Local<v8::Object> object, std::string property) {
-    v8::EscapableHandleScope handleScope(isolate);
     auto context = isolate->GetCurrentContext();
-    auto value = object->GetPrivate(context,v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, property)));
-
-    if (value.IsEmpty()){
-        return handleScope.Escape(v8::Undefined(isolate));
-    }else {
-        return handleScope.Escape(value.ToLocalChecked());
+    auto key = v8::Private::ForApi(isolate, Helpers::ConvertToV8String(isolate, property));
+    auto value = object->GetPrivate(context, key);
+    if (value.IsEmpty()) {
+        return v8::Undefined(isolate);
+    } else {
+        return value.ToLocalChecked();
     }
 }

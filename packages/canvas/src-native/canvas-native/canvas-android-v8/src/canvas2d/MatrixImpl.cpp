@@ -23,7 +23,7 @@ void MatrixImpl::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "DOMMatrix"), ctor);
+    global->Set(context, Helpers::ConvertToV8String(isolate, "DOMMatrix"), ctor->GetFunction(context).ToLocalChecked());
 }
 
 void MatrixImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -61,9 +61,9 @@ void MatrixImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 }
 
-v8::Local<v8::Function> MatrixImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> MatrixImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->MatrixCtor.get();
+    auto ctor = cache->MatrixTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
@@ -214,9 +214,8 @@ v8::Local<v8::Function> MatrixImpl::GetCtor(v8::Isolate *isolate) {
             &SetM44
     );
 
-
-    cache->MatrixCtor = std::make_unique<v8::Persistent<v8::Function>>(isolate, func);
-    return func;
+    cache->MatrixTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }
 
 void MatrixImpl::GetA(v8::Local<v8::String> name,

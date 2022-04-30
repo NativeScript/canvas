@@ -44,11 +44,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
-		//this.threeDepth(this.canvas);
+		this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
@@ -2862,13 +2862,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var container, stats;
 		var camera, scene, renderer;
 		var controls, water, sun, mesh, mesh2, mesh3;
-		const context = canvas.getContext('webgl2', { antialias: false }) as any;
+		const context = canvas.getContext('webgl', { antialias: false }) as any;
 		renderer = new THREE.WebGLRenderer({ context, antialias: false });
 		renderer.setPixelRatio(1);
 		renderer.setSize(context.drawingBufferWidth, context.drawingBufferHeight);
 		scene = new THREE.Scene();
 		camera = new THREE.PerspectiveCamera(55, context.drawingBufferWidth / context.drawingBufferHeight, 1, 20000);
 		camera.position.set(30, 30, 100);
+
 
 		//
 		sun = new THREE.Vector3();
@@ -3074,7 +3075,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	threeDepth(canvas) {
-		const gl = canvas.getContext('webgl2') as any;
+		const gl = canvas.getContext('webgl') as any;
 		const renderer = new THREE.WebGLRenderer({
 			context: gl,
 		});

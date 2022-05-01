@@ -48,9 +48,10 @@
 #include "extensions/ANGLE_instanced_arraysImpl.h"
 #include "extensions/WEBGL_draw_buffersImpl.h"
 
+#include "WebGLRenderingContextBase.h"
 
 
-class WebGLRenderingContext {
+class WebGLRenderingContext: WebGLRenderingContextBase  {
 
 public:
     static void Init(v8::Isolate *isolate);
@@ -343,24 +344,15 @@ public:
 
     static void SetConstants(v8::Isolate* isolate, v8::Local<v8::ObjectTemplate> tmpl);
 
-    void UpdateInvalidateState();
+    static void SetProps(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> tmpl);
 
-    InvalidateState GetInvalidateState() const;
-
-    void SetInvalidateState(InvalidateState state);
-
-    void Flush();
-
-    static void Flush(intptr_t context);
+    static void SetMethods(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> tmpl);
 
 private:
-    rust::Box<WebGLState> state_;
-
-    InvalidateState invalidateState_ = InvalidateState::NONE;
-
-    std::shared_ptr<RafImpl> raf_;
-
     static WebGLRenderingContext *GetPointer(v8::Local<v8::Object> object);
 
+    static WebGLRenderingContextBase *GetPointerBase(v8::Local<v8::Object> object);
+
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
 };

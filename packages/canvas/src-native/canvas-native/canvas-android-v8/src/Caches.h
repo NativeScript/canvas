@@ -149,6 +149,25 @@ public:
             nullptr);
 
 
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLQueryTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLSamplerTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLSyncTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLTransformFeedbackTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLVertexArrayObjectTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGL2RenderingContextTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+
     std::shared_ptr<ConcurrentMap<intptr_t, std::shared_ptr<OnImageAssetLoadCallbackHolder>>> OnImageAssetLoadCallbackHolder_ = std::make_shared<ConcurrentMap<intptr_t, std::shared_ptr<OnImageAssetLoadCallbackHolder>>>();
 
 

@@ -1,7 +1,6 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_uchar, c_void};
 
-use image::imageops::resize;
 use libc::size_t;
 
 use crate::bridges::context::{console_log, ImageAsset};

@@ -3,6 +3,7 @@
 //
 
 #include "WebGL2.h"
-void WebGL2::Init(v8::Isolate *isolate) {
 
+void WebGL2::Init(v8::Isolate *isolate) {
+    WebGL2RenderingContext::Init(isolate);
 }

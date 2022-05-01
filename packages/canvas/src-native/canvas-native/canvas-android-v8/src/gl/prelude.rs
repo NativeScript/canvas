@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::ffi::CString;
-use std::os::raw::c_void;
+use std::os::raw::{c_long, c_void};
 use std::sync::Arc;
 
 use cxx::q;
@@ -37,6 +37,7 @@ pub enum HowToClear {
 pub enum WebGLResult {
     Boolean(bool),
     I32Array(Vec<i32>),
+    U32Array(Vec<u32>),
     F32Array(Vec<f32>),
     BooleanArray(Vec<bool>),
     U32(u32),
@@ -367,6 +368,7 @@ pub struct WebGLActiveInfo {
     name: String,
     size: i32,
     info_type: u32,
+    is_empty: bool
 }
 
 impl WebGLActiveInfo {
@@ -375,6 +377,16 @@ impl WebGLActiveInfo {
             name,
             size,
             info_type,
+            is_empty: false
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            name: String::new(),
+            size: 0,
+            info_type: 0,
+            is_empty: true
         }
     }
 
@@ -1230,5 +1242,45 @@ impl WEBGL_draw_buffers {
 impl WebGLExtension for WEBGL_draw_buffers {
     fn extension_type(&self) -> WebGLExtensionType {
         WebGLExtensionType::WEBGL_draw_buffers
+    }
+}
+
+
+#[derive(Copy, Clone)]
+pub struct WebGLIndexedParameter {
+    pub(crate) is_buffer: bool,
+    pub(crate) buffer_value: i32,
+    pub(crate) value: c_long,
+}
+
+impl WebGLIndexedParameter {
+    pub fn new(is_buffer: bool, buffer_value: i32, value: c_long) -> Self {
+        Self {
+            is_buffer,
+            buffer_value,
+            value,
+        }
+    }
+
+    pub fn get_is_buffer(&self) -> bool {
+        self.is_buffer
+    }
+
+    pub fn get_buffer_value(&self) -> i32 {
+        self.buffer_value
+    }
+
+    pub fn get_value(&self) -> c_long {
+        self.value
+    }
+}
+
+impl Default for WebGLIndexedParameter {
+    fn default() -> Self {
+        Self {
+            is_buffer: false,
+            buffer_value: 0,
+            value: -1,
+        }
     }
 }

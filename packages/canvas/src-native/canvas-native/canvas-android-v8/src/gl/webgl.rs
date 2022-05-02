@@ -2045,6 +2045,9 @@ pub fn canvas_native_webgl_uniform4f(
 
 pub fn canvas_native_webgl_uniform4fv(location: i32, value: &[f32], state: &WebGLState) {
     state.make_current();
+    console_log(&format!("canvas_native_webgl_uniform4fv {:?}", value));
+    console_log(&format!("location {:?}", location));
+    console_log(&format!("count {:?}", value.len() / 4));
     unsafe {
         let count = value.len() / 4;
         gl_bindings::glUniform4fv(location, count.try_into().unwrap(), value.as_ptr())

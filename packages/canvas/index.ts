@@ -33,11 +33,11 @@ export * from './SVG';
 // 	writable: true,
 // });
 
-Object.defineProperty(global, 'WebGL2RenderingContext', {
-	value: WebGL2RenderingContext,
-	configurable: true,
-	writable: true,
-});
+// Object.defineProperty(global, 'WebGL2RenderingContext', {
+// 	value: WebGL2RenderingContext,
+// 	configurable: true,
+// 	writable: true,
+// });
 
 // Object.defineProperty(global, 'CanvasPattern', {
 // 	value: CanvasPattern,

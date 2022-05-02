@@ -198,6 +198,8 @@ public:
 
     static void GetParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void GetParameterInternal(const v8::FunctionCallbackInfo<v8::Value> &args, uint32_t pnameValue, rust::Box<WebGLResult> result);
+
     static void GetProgramInfoLog(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetProgramParameter(const v8::FunctionCallbackInfo<v8::Value> &args);

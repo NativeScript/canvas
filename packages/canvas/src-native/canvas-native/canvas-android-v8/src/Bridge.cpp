@@ -18,6 +18,35 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
         isolate->ThrowException(err);
         return;
     }
+    auto context = isolate->GetCurrentContext();
+
+
+
+    std::string arrayScript = R"(
+        (function () {
+            // Providing Array Helpers since v8 crashing for now
+
+            global.__Array_Get = function(array, i){
+                if(!Array.isArray){return undefined};
+                return array[i];
+            }
+
+            global.__Array_Set = function(array, i, value){
+                if(!Array.isArray){return};
+                array[i] = value;
+            }
+        })();
+    )";
+
+    auto source = v8::String::NewFromUtf8(isolate, arrayScript.c_str()).ToLocalChecked();
+    Local<Script> script;
+    bool success = Script::Compile(context, source).ToLocal(&script);
+    if(success && !script.IsEmpty()){
+        // todo assert;
+        Local<Value> result;
+        script->Run(context).ToLocal(&result);
+    }
+
 
     ImageAssetImpl::Init(isolate);
     TextDecoderImpl::Init(isolate);

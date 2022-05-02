@@ -401,6 +401,10 @@ impl WebGLActiveInfo {
     pub fn get_type(&self) -> u32 {
         self.info_type
     }
+
+    pub fn get_is_empty(&self) -> bool {
+        self.is_empty
+    }
 }
 
 #[derive(Copy, Clone)]

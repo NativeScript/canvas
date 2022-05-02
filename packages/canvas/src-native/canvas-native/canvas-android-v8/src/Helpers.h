@@ -23,4 +23,8 @@ public:
     static void SetPrivate(v8::Isolate *isolate, v8::Local<v8::Object> object, std::string property, v8::Local<v8::Value> value);
 
     static v8::Local<v8::Value> GetPrivate(v8::Isolate *isolate, v8::Local<v8::Object> object, std::string property);
+
+    static v8::Local<v8::Value> ArrayGet(v8::Isolate *isolate, v8::Local<v8::Array> array, uint32_t i);
+
+    static void ArraySet(v8::Isolate *isolate, v8::Local<v8::Array> array, uint32_t i, v8::Local<v8::Value> value);
 };

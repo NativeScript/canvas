@@ -228,7 +228,7 @@ export class Canvas extends CanvasBase {
 					const ctx = global.__getWebGLRenderingContext(ctxOpts);
 					this._webglContext = ctx;
 					//this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl', getNativeOptions(options)));
-					this._webglContext._canvas = this;
+					(this._webglContext as any).canvas = this;
 				} else {
 					this._canvas.getContext('webgl', getNativeOptions(options));
 				}
@@ -239,8 +239,14 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webgl2Context) {
-					this._webgl2Context = new WebGL2RenderingContext(this.android.getContext('webgl2', getNativeOptions(options)));
-					(this._webgl2Context as any)._canvas = this;
+					// setup env 
+					this.android.getContext('webgl2', getNativeOptions(options));
+
+					const ctxOpts = Object.assign({version: 'v2'},this._handleContextOptions(type, options));
+					const ctx = global.__getWebGL2RenderingContext(ctxOpts);
+					this._webgl2Context = ctx;
+					//this._webgl2Context = new WebGL2RenderingContext(this.android.getContext('webgl2', getNativeOptions(options)));
+					(this._webgl2Context as any).canvas = this;
 				} else {
 					this.android.getContext('webgl2', getNativeOptions(options));
 				}

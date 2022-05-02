@@ -514,7 +514,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		this.solar(this.canvas);
+		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -547,7 +547,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
-		//fog(this.canvas);
+		fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);

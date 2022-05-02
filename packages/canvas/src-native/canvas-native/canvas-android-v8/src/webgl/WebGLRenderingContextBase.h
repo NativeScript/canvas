@@ -7,6 +7,7 @@
 #include "../Common.h"
 #include "../Helpers.h"
 #include "../Caches.h"
+#include "../RafImpl.h"
 
 
 class WebGLRenderingContextBase {

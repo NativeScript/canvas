@@ -128,3 +128,45 @@ v8::Local<v8::Value> Helpers::GetPrivate(v8::Isolate *isolate, v8::Local<v8::Obj
         return value.ToLocalChecked();
     }
 }
+
+v8::Local<v8::Value> Helpers::ArrayGet(v8::Isolate *isolate, v8::Local<v8::Array> array, uint32_t i) {
+    v8::TryCatch tryCatch(isolate);
+    v8::Local<v8::Value> object;
+    auto context = isolate->GetCurrentContext();
+
+    if (context->Global()
+            ->GetRealNamedProperty(context, Helpers::ConvertToV8String(isolate, "__Array_Get"))
+            .ToLocal(&object)) {
+        if (object->IsFunction()) {
+            auto func = object.As<v8::Function>();
+            v8::Local<v8::Value> argv[] = {
+                    array, v8::Uint32::New(isolate, i)
+            };
+            auto value = func->Call(context, context->Global(), 2, argv);
+            if (!value.IsEmpty()) {
+                return value.ToLocalChecked();
+            }
+        }
+    }
+
+    return v8::Undefined(isolate);
+}
+
+void Helpers::ArraySet(v8::Isolate *isolate, v8::Local<v8::Array> array, uint32_t i, v8::Local<v8::Value> value) {
+    v8::TryCatch tryCatch(isolate);
+    v8::Local<v8::Value> object;
+    auto context = isolate->GetCurrentContext();
+
+    if (context->Global()
+            ->GetRealNamedProperty(context, Helpers::ConvertToV8String(isolate, "__Array_Set"))
+            .ToLocal(&object)) {
+        if (object->IsFunction()) {
+            auto func = object.As<v8::Function>();
+            v8::Local<v8::Value> argv[] = {
+                    array, v8::Uint32::New(isolate, i), value
+            };
+            func->Call(context, context->Global(), 3, argv);
+        }
+    }
+
+}

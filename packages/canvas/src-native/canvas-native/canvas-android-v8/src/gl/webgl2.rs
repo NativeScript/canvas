@@ -5,6 +5,7 @@ use libc::{c_uint, c_ulong, size_t};
 
 use crate::bridges::context::{console_log, ImageAsset};
 use crate::gl::prelude::*;
+use crate::gl::webgl::canvas_native_webgl_get_parameter;
 
 pub struct GLSync(gl_bindings::GLsync);
 
@@ -43,7 +44,15 @@ pub fn canvas_native_webgl2_bind_buffer_range(
     state: &mut WebGLState,
 ) {
     state.make_current();
-    unsafe { gl_bindings::glBindBufferRange(target, index, buffer, offset.try_into().unwrap(), size.try_into().unwrap()) }
+    unsafe {
+        gl_bindings::glBindBufferRange(
+            target,
+            index,
+            buffer,
+            offset.try_into().unwrap(),
+            size.try_into().unwrap(),
+        )
+    }
 }
 
 pub fn canvas_native_webgl2_bind_sampler(unit: u32, sampler: u32, state: &mut WebGLState) {
@@ -639,7 +648,13 @@ pub fn canvas_native_webgl2_get_indexed_parameter(
             }
 
             let mut buffer = [0i32];
-            unsafe { gl_bindings::glGetIntegeri_v(new_target[0].try_into().unwrap(), index, buffer.as_mut_ptr()) }
+            unsafe {
+                gl_bindings::glGetIntegeri_v(
+                    new_target[0].try_into().unwrap(),
+                    index,
+                    buffer.as_mut_ptr(),
+                )
+            }
             binding.buffer_value = buffer[0];
             binding.is_buffer = true;
             return binding;
@@ -665,7 +680,7 @@ pub fn canvas_native_webgl2_get_internalformat_parameter(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-let mut result: Option<WebGLResult> = None;
+    let mut result: Option<WebGLResult> = None;
     match internalformat {
         gl_bindings::GL_RGB
         | gl_bindings::GL_RGBA
@@ -689,7 +704,7 @@ let mut result: Option<WebGLResult> = None;
         | gl_bindings::GL_RGBA32UI
         | gl_bindings::GL_RGBA32I => {
             result = Some(WebGLResult::I32Array(Vec::with_capacity(0)));
-        },
+        }
         gl_bindings::GL_R8
         | gl_bindings::GL_RG8
         | gl_bindings::GL_RGB565
@@ -712,11 +727,11 @@ let mut result: Option<WebGLResult> = None;
         | gl_bindings::GL_R11F_G11F_B10F => {}
         _ => {
             result = Some(WebGLResult::None);
-        },
+        }
     }
 
     if result.is_some() {
-        return result.unwrap()
+        return result.unwrap();
     }
     return if pname == gl_bindings::GL_SAMPLES {
         let mut length = [0i32];
@@ -745,6 +760,23 @@ let mut result: Option<WebGLResult> = None;
         WebGLResult::I32Array(values)
     } else {
         WebGLResult::None
+    };
+}
+
+pub fn canvas_native_webgl2_get_parameter(pname: u32, state: &mut WebGLState) -> WebGLResult {
+    state.make_current();
+    match pname {
+        gl_bindings::GL_COPY_READ_BUFFER_BINDING
+        | gl_bindings::GL_COPY_WRITE_BUFFER_BINDING
+        | gl_bindings::GL_DRAW_FRAMEBUFFER_BINDING => {
+            let mut params = [0i32];
+            unsafe { gl_bindings::glGetIntegerv(pname, params.as_mut_ptr()) }
+            if params[0] == 0 {
+                return WebGLResult::None;
+            }
+            return WebGLResult::I32(params[0]);
+        }
+        _ => canvas_native_webgl_get_parameter(pname, state),
     }
 }
 
@@ -1103,8 +1135,7 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
                 canvas_core::utils::gl::flip_in_place_3d(
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    (canvas_core::utils::gl::bytes_per_pixel(type_ as u32, format as u32)
-                        as i32
+                    (canvas_core::utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32
                         * width) as usize,
                     height as usize,
                     depth as usize,
@@ -1275,7 +1306,7 @@ pub fn canvas_native_webgl2_tex_sub_image3d_none(
     format: u32,
     type_: u32,
     offset: usize,
-    state: &mut WebGLState
+    state: &mut WebGLState,
 ) {
     state.make_current();
     unsafe {
@@ -1310,6 +1341,37 @@ pub fn canvas_native_webgl2_tex_sub_image3d(
     state: &mut WebGLState,
 ) {
     state.make_current();
+
+    if state.get_flip_y() {
+        let mut buffer = buf.to_vec();
+        canvas_core::utils::gl::flip_in_place_3d(
+            buffer.as_mut_ptr(),
+            buffer.len(),
+            (canvas_core::utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width)
+                as usize,
+            height as usize,
+            depth as usize,
+        );
+
+        unsafe {
+            gl_bindings::glTexSubImage3D(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                zoffset,
+                width,
+                height,
+                depth,
+                format,
+                type_,
+                buffer.as_ptr() as *const c_void,
+            );
+        }
+
+        return;
+    }
+
     unsafe {
         gl_bindings::glTexSubImage3D(
             target,
@@ -1324,6 +1386,72 @@ pub fn canvas_native_webgl2_tex_sub_image3d(
             type_,
             buf.as_ptr() as *const c_void,
         );
+    }
+}
+
+pub fn canvas_native_webgl2_tex_sub_image3d_asset(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    zoffset: i32,
+    width: i32,
+    height: i32,
+    depth: i32,
+    format: u32,
+    type_: u32,
+    asset: &ImageAsset,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+
+    if let Some(bytes) = asset.get_bytes() {
+        state.make_current();
+        unsafe {
+            if state.get_flip_y() {
+                let mut buffer = bytes.to_vec();
+                canvas_core::utils::gl::flip_in_place_3d(
+                    buffer.as_mut_ptr(),
+                    buffer.len(),
+                    (canvas_core::utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32
+                        * asset.width() as i32) as usize,
+                    asset.height() as usize,
+                    depth as usize,
+                );
+
+                unsafe {
+                    gl_bindings::glTexSubImage3D(
+                        target,
+                        level,
+                        xoffset,
+                        yoffset,
+                        zoffset,
+                        width,
+                        height,
+                        depth,
+                        format,
+                        type_,
+                        buffer.as_ptr() as *const c_void,
+                    );
+                }
+
+                return;
+            }
+
+            gl_bindings::glTexSubImage3D(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                zoffset,
+                width,
+                height,
+                depth,
+                format,
+                type_,
+                bytes.as_ptr() as *const c_void,
+            );
+        }
     }
 }
 

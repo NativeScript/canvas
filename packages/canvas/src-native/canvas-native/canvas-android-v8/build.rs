@@ -92,7 +92,6 @@ const CPP_2D_SOURCE_HEADERS: [&str; 8] = [
     "src/canvas2d/Canvas2D.h",
 ];
 
-
 const CPP_WEBGL_EXT_SOURCE: [&str; 24] = [
     "src/webgl/extensions/ANGLE_instanced_arraysImpl.cpp",
     "src/webgl/extensions/EXT_blend_minmaxImpl.cpp",
@@ -147,10 +146,9 @@ const CPP_WEBGL_EXT_SOURCE_HEADERS: [&str; 24] = [
     "src/webgl/extensions/WEBGL_lose_contextImpl.h",
 ];
 
-
-
-const CPP_WEBGL_SOURCE: [&str; 11] = [
+const CPP_WEBGL_SOURCE: [&str; 12] = [
     "src/webgl/WebGL.cpp",
+    "src/webgl/WebGLRenderingContextBase.cpp",
     "src/webgl/WebGLRenderingContext.cpp",
     "src/webgl/WebGLBuffer.cpp",
     "src/webgl/WebGLFramebuffer.cpp",
@@ -163,8 +161,9 @@ const CPP_WEBGL_SOURCE: [&str; 11] = [
     "src/webgl/WebGLActiveInfoImpl.cpp",
 ];
 
-const CPP_WEBGL_SOURCE_HEADERS: [&str; 11] = [
+const CPP_WEBGL_SOURCE_HEADERS: [&str; 12] = [
     "src/webgl/WebGL.h",
+    "src/webgl/WebGLRenderingContextBase.h",
     "src/webgl/WebGLRenderingContext.h",
     "src/webgl/WebGLBuffer.h",
     "src/webgl/WebGLFramebuffer.h",
@@ -177,13 +176,25 @@ const CPP_WEBGL_SOURCE_HEADERS: [&str; 11] = [
     "src/webgl/WebGLActiveInfoImpl.h",
 ];
 
-const CPP_WEBGL2_SOURCE: [&str; 2] = [
+const CPP_WEBGL2_SOURCE: [&str; 7] = [
     "src/webgl2/WebGL2.cpp",
     "src/webgl2/WebGL2RenderingContext.cpp",
+    "src/webgl2/WebGLQuery.cpp",
+    "src/webgl2/WebGLSampler.cpp",
+    "src/webgl2/WebGLSyncImpl.cpp",
+    "src/webgl2/WebGLTransformFeedback.cpp",
+    "src/webgl2/WebGLVertexArrayObject.cpp",
 ];
 
-const CPP_WEBGL2_SOURCE_HEADERS: [&str; 2] =
-    ["src/webgl2/WebGL2.h", "src/webgl2/WebGL2RenderingContext.h"];
+const CPP_WEBGL2_SOURCE_HEADERS: [&str; 7] = [
+    "src/webgl2/WebGL2.h",
+    "src/webgl2/WebGL2RenderingContext.h",
+    "src/webgl2/WebGLQuery.h",
+    "src/webgl2/WebGLSampler.h",
+    "src/webgl2/WebGLSyncImpl.h",
+    "src/webgl2/WebGLTransformFeedback.h",
+    "src/webgl2/WebGLVertexArrayObject.h",
+];
 
 fn main() {
     let target_str = env::var("TARGET").unwrap();

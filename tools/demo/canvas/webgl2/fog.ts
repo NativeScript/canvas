@@ -120,15 +120,15 @@ void main() {
       new Uint8Array([0, 0, 255, 255]));
     // Asynchronously load an image
 
-    ImageSource.fromUrl("https://webgl2fundamentals.org/webgl/resources/f-texture.png")
-      .then(image => {
-        // Now that the image has loaded make copy it to the texture.
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        gl.generateMipmap(gl.TEXTURE_2D);
-      }).catch(e => {
-      console.log('image failed: ', e);
-    });
+    // ImageSource.fromUrl("https://webgl2fundamentals.org/webgl/resources/f-texture.png")
+    //   .then(image => {
+    //     // Now that the image has loaded make copy it to the texture.
+    //     gl.bindTexture(gl.TEXTURE_2D, texture);
+    //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    //     gl.generateMipmap(gl.TEXTURE_2D);
+    //   }).catch(e => {
+    //   console.log('image failed: ', e);
+    // });
 
     function radToDeg(r) {
       return r * 180 / Math.PI;
@@ -175,8 +175,10 @@ void main() {
       // Tell WebGL how to convert from clip space to pixels
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
+
       gl.enable(gl.CULL_FACE);
       gl.enable(gl.DEPTH_TEST);
+
 
       // Animate the rotation
       modelYRotationRadians += -0.7 * deltaTime;
@@ -213,10 +215,27 @@ void main() {
       // Tell the shader to use texture unit 0 for u_texture
       gl.uniform1i(textureLocation, 0);
 
+      
+      console.log('uniform1i');
+
+      console.log('b4 uniform4fv', fogColorLocation, fogColor);
+
+      console.log(gl.getError());
+
       // set the fog color and near, far settings
       gl.uniform4fv(fogColorLocation, fogColor);
+
+      console.log('uniform4fv');
+
       gl.uniform1f(fogNearLocation, settings.fogNear);
+
+      console.log('fogNear');
+
       gl.uniform1f(fogFarLocation, settings.fogFar);
+
+      console.log('uniform1f');
+
+      console.log('asdasdasdas');
 
       const numCubes = 40;
       for (let i = 0; i <= numCubes; ++i) {

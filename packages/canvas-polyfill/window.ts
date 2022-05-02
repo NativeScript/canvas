@@ -24,9 +24,9 @@ import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext
 (global as any).window.Canvas = (global as any).Canvas = (global as any).Canvas || HTMLCanvasElement;
 //(global as any).window.CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D || CanvasRenderingContext2D;
 //(global as any).window.WebGLRenderingContext = (global as any).WebGLRenderingContext = (global as any).WebGLRenderingContext || WebGLRenderingContext;
-(global as any).window.WebGL2RenderingContext = (global as any).WebGL2RenderingContext = (global as any).WebGL2RenderingContext || WebGL2RenderingContext;
+// (global as any).window.WebGL2RenderingContext = (global as any).WebGL2RenderingContext = (global as any).WebGL2RenderingContext || WebGL2RenderingContext;
 
-(global as any).window.ImageData = (global as any).ImageData = (global as any).ImageData || ImageData;
+// (global as any).window.ImageData = (global as any).ImageData = (global as any).ImageData || ImageData;
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {

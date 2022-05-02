@@ -76,15 +76,15 @@ public:
 
     static void CreateVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void DeleteQueryWithQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void DeleteQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void DeleteSamplerWithSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void DeleteSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void DeleteSyncWithSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void DeleteSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void DeleteTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void DeleteVertexArrayWithVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void DeleteVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void DrawArraysInstanced(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -115,6 +115,8 @@ public:
     static void GetIndexedParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetInternalformatParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void GetParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetQueryParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -160,11 +162,11 @@ public:
 
     static void TexStorage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void TexStorage3D(const v8::FunctionCallbackInfo<v8::Value> &arg);
+    static void TexStorage3D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void TexSubImage3D(const v8::FunctionCallbackInfo<v8::Value> &arg);
+    static void TexSubImage3D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void TransformFeedbackVaryings(const v8::FunctionCallbackInfo<v8::Value> &arg);
+    static void TransformFeedbackVaryings(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Uniform1ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -210,7 +212,7 @@ private:
 
     static WebGL2RenderingContext *GetPointer(v8::Local<v8::Object> object);
 
-    static WebGL2RenderingContextBase *GetPointerBase(v8::Local<v8::Object> object);
+    static WebGLRenderingContextBase *GetPointerBase(v8::Local<v8::Object> object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 };

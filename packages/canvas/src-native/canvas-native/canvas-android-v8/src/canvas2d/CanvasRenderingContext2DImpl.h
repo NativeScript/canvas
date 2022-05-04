@@ -40,6 +40,14 @@ public:
                    const v8::PropertyCallbackInfo<void> &info);
 
     static void
+    GetFont(v8::Local<v8::String> name,
+                   const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void SetFont(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+                               const v8::PropertyCallbackInfo<void> &info);
+
+
+    static void
     GetGlobalAlpha(v8::Local<v8::String> name,
                    const v8::PropertyCallbackInfo<v8::Value> &info);
 

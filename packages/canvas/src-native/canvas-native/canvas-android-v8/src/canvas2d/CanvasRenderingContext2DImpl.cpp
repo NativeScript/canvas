@@ -74,15 +74,43 @@ void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbac
     v8::HandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     // sent as a string until we can get the java long from the js object
-    if (args.Length() > 0 && args[0]->IsString()) {
-        auto ptr_str = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
-        auto ptr = std::atoll(ptr_str.c_str());
-        if (ptr == 0) {
+    if (args.Length() > 0) {
+        auto ptr = 0;
+        if (args[0]->IsString()) {
+            auto ptr_str = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
+            ptr = std::atoll(ptr_str.c_str());
+        }
+
+        if (args.Length() == 1 && ptr == 0) {
             args.GetReturnValue().Set(v8::Undefined(isolate));
         } else {
             auto cache = Caches::Get(isolate);
-            auto ctx = canvas_native_context_create_with_wrapper(ptr);
-            CanvasRenderingContext2DImpl *renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
+
+            CanvasRenderingContext2DImpl *renderingContext = nullptr;
+
+            if (args.Length() == 7) {
+                auto width = args[0];
+                auto height = args[1];
+                auto density = args[2];
+                auto fontColor = args[3];
+                auto ppi = args[4];
+                auto direction = args[5];
+                auto alpha = args[6];
+                auto ctx = canvas_native_context_create_gl_no_window(
+                        static_cast<float>(width->NumberValue(context).ToChecked()),
+                        static_cast<float>(height->NumberValue(context).ToChecked()),
+                        static_cast<float>(density->NumberValue(context).ToChecked()),
+                        fontColor->Int32Value(context).ToChecked(),
+                        static_cast<float>(ppi->NumberValue(context).ToChecked()),
+                        direction->Uint32Value(context).ToChecked(),
+                        alpha->BooleanValue(isolate)
+                );
+                renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
+            } else {
+                auto ctx = canvas_native_context_create_with_wrapper(ptr);
+                renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
+            }
+
             auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
             auto raf_callback = new OnRafCallback(ctx_ptr, 0);
             auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
@@ -123,6 +151,30 @@ CanvasRenderingContext2DImpl *CanvasRenderingContext2DImpl::GetPointer(v8::Local
     }
     return static_cast<CanvasRenderingContext2DImpl *>(ptr);
 }
+
+
+void
+CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> name,
+                                      const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto isolate = info.GetIsolate();
+    auto ptr = GetPointer(info.Holder());
+    auto font = canvas_native_context_get_font(*ptr->context_);
+    info.GetReturnValue().Set(
+            Helpers::ConvertToV8String(isolate, font.c_str())
+    );
+}
+
+void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+                                           const v8::PropertyCallbackInfo<void> &info) {
+    if (value->IsString()) {
+        auto isolate = info.GetIsolate();
+        auto ptr = GetPointer(info.Holder());
+        v8::String::Utf8Value val(isolate, value->ToString(isolate->GetCurrentContext()).ToLocalChecked());
+        rust::Str font(*val, val.length());
+        canvas_native_context_set_font(*ptr->context_, font);
+    }
+}
+
 
 void
 CanvasRenderingContext2DImpl::GetGlobalAlpha(v8::Local<v8::String> name,
@@ -1075,16 +1127,22 @@ void CanvasRenderingContext2DImpl::SetLineDash(const v8::FunctionCallbackInfo<v8
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
-    if (args.Length() == 1 && args[0]->IsArray()) {
-        auto segments = args[0].As<v8::Array>();
-        auto len = segments->Length();
-        std::vector<float> data;
-        for (int i = 0; i < len; ++i) {
-            data.push_back(
-                    static_cast<float>(segments->Get(context, i).ToLocalChecked()->NumberValue(context).ToChecked()));
+    if (args.Length() == 1) {
+        auto vec = args[0];
+        if (vec->IsArray()) {
+            auto segments = vec.As<v8::Array>();
+            auto len = segments->Length();
+            std::vector<float> data;
+            for (int i = 0; i < len; ++i) {
+                auto item = Helpers::ArrayGet(context, segments, i);
+                data.push_back(static_cast<float>(item->NumberValue(context).ToChecked()));
+            }
+            rust::Slice<const float> slice{data.data(), data.size()};
+            canvas_native_context_set_line_dash(*ptr->context_, slice);
+        } else if (vec->IsFloat32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const float>(vec.As<v8::TypedArray>());
+            canvas_native_context_set_line_dash(*ptr->context_, slice);
         }
-        rust::Slice<const float> slice{data.data(), data.size()};
-        canvas_native_context_set_line_dash(*ptr->context_, slice);
     }
 }
 
@@ -1204,6 +1262,12 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
             Helpers::ConvertToV8String(isolate, "globalAlpha"),
             &GetGlobalAlpha,
             &SetGlobalAlpha
+    );
+
+    canvasRenderingContextTpl->SetAccessor(
+            Helpers::ConvertToV8String(isolate, "font"),
+            &GetFont,
+            &SetFont
     );
 
     canvasRenderingContextTpl->SetAccessor(

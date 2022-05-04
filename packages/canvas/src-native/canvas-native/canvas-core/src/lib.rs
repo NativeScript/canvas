@@ -20,7 +20,7 @@ pub mod utils;
 pub mod ios;
 
 pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -> String {
-    let mut context = context.get_context();
+    let mut context = context.get_context_mut();
     let image = context.surface.image_snapshot();
 
     let mut quality = quality;
@@ -61,7 +61,7 @@ pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -
 }
 
 pub(crate) fn to_data(context: &mut ContextWrapper) -> Vec<u8> {
-    let mut context = context.get_context();
+    let mut context = context.get_context_mut();
     let width = context.surface.width();
     let height = context.surface.height();
     let image = context.surface.image_snapshot();
@@ -90,7 +90,7 @@ pub(crate) fn flush_custom_surface(
     dst: &mut [u8],
 ) {
     unsafe {
-        let mut context = context.get_context();
+        let mut context = context.get_context_mut();
         context.surface.flush();
         let info = ImageInfo::new(
             ISize::new(width, height),
@@ -112,7 +112,7 @@ pub(crate) fn flush_custom_surface(
 
 pub(crate) fn snapshot_canvas(context: &mut ContextWrapper) -> Option<Vec<u8>> {
     unsafe {
-        let mut context = context.get_context();
+        let mut context = context.get_context_mut();
         context.surface.flush_and_submit();
         let snapshot = context.surface.image_snapshot();
         if let Some(data) = snapshot.encode_to_data(EncodedImageFormat::PNG) {
@@ -124,7 +124,7 @@ pub(crate) fn snapshot_canvas(context: &mut ContextWrapper) -> Option<Vec<u8>> {
 
 pub(crate) fn snapshot_canvas_raw(context: &mut ContextWrapper) -> Vec<u8> {
     unsafe {
-        let mut context = context.get_context();
+        let mut context = context.get_context_mut();
         let info = ImageInfo::new(
             ISize::new(context.surface.width(), context.surface.height()),
             ColorType::RGBA8888,

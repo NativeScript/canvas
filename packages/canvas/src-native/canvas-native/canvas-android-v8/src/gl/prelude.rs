@@ -68,6 +68,7 @@ struct WebGLStateInner {
     stencil: bool,
     desynchronized: bool,
     xr_compatible: bool,
+    is_canvas: bool,
     clear_stencil: i32,
     clear_color: [f32; 4],
     scissor_enabled: bool,
@@ -103,6 +104,7 @@ impl WebGLState {
         stencil: bool,
         desynchronized: bool,
         xr_compatible: bool,
+        is_canvas: bool
     ) -> Self {
         Self(Arc::new(parking_lot::Mutex::new(WebGLStateInner {
             version,
@@ -116,6 +118,7 @@ impl WebGLState {
             stencil,
             desynchronized,
             xr_compatible,
+            is_canvas,
             gl_context: context,
             clear_stencil: 0,
             clear_color: [0., 0., 0., 0.],
@@ -132,6 +135,10 @@ impl WebGLState {
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })))
+    }
+
+    pub(crate) fn get_context(&self) -> GLContext {
+        self.get_lock().gl_context.clone()
     }
 
     pub fn get_drawing_buffer_width(&self) -> i32 {
@@ -172,6 +179,7 @@ impl WebGLState {
             stencil: lock.stencil,
             desynchronized: lock.desynchronized,
             xr_compatible: lock.xr_compatible,
+            is_canvas: lock.is_canvas
         }
     }
     pub fn set_clear_color(&mut self, colors: [f32; 4]) {
@@ -344,6 +352,7 @@ impl Default for WebGLState {
             stencil: false,
             desynchronized: false,
             xr_compatible: false,
+            is_canvas: false,
             gl_context: Default::default(),
             clear_stencil: 0,
             clear_color: [0., 0., 0., 0.],
@@ -368,7 +377,7 @@ pub struct WebGLActiveInfo {
     name: String,
     size: i32,
     info_type: u32,
-    is_empty: bool
+    is_empty: bool,
 }
 
 impl WebGLActiveInfo {
@@ -377,7 +386,7 @@ impl WebGLActiveInfo {
             name,
             size,
             info_type,
-            is_empty: false
+            is_empty: false,
         }
     }
 
@@ -386,7 +395,7 @@ impl WebGLActiveInfo {
             name: String::new(),
             size: 0,
             info_type: 0,
-            is_empty: true
+            is_empty: true,
         }
     }
 
@@ -486,9 +495,41 @@ pub struct ContextAttributes {
     stencil: bool,
     desynchronized: bool,
     xr_compatible: bool,
+    is_canvas: bool,
 }
 
 impl ContextAttributes {
+    pub fn new(
+        alpha: bool,
+        antialias: bool,
+        depth: bool,
+        fail_if_major_performance_caveat: bool,
+        power_preference: &str,
+        premultiplied_alpha: bool,
+        preserve_drawing_buffer: bool,
+        stencil: bool,
+        desynchronized: bool,
+        xr_compatible: bool,
+        is_canvas: bool,
+    ) -> Self {
+        Self {
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference: power_preference.to_string(),
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+            is_canvas,
+        }
+    }
+
+    pub(crate) fn get_is_canvas(&self) -> bool {
+        self.is_canvas
+    }
     pub fn get_alpha(&self) -> bool {
         self.alpha
     }
@@ -507,7 +548,6 @@ impl ContextAttributes {
     pub fn get_premultiplied_alpha(&self) -> bool {
         self.premultiplied_alpha
     }
-
     pub fn get_preserve_drawing_buffer(&self) -> bool {
         self.preserve_drawing_buffer
     }
@@ -519,6 +559,42 @@ impl ContextAttributes {
     }
     pub fn get_xr_compatible(&self) -> bool {
         self.xr_compatible
+    }
+
+    pub fn set_alpha(&mut self, value: bool) {
+        self.alpha = value;
+    }
+    pub fn set_antialias(&mut self, value: bool) {
+        self.antialias = value;
+    }
+    pub fn set_depth(&mut self, value: bool) {
+        self.depth = value;
+    }
+    pub fn set_fail_if_major_performance_caveat(&mut self, value: bool) {
+        self.fail_if_major_performance_caveat = value;
+    }
+
+    pub fn set_power_preference(&mut self, value: &str) {
+        self.power_preference = value.to_string();
+    }
+
+    pub fn set_premultiplied_alpha(&mut self, value: bool) {
+        self.premultiplied_alpha = value;
+    }
+
+    pub fn set_preserve_drawing_buffer(&mut self, value: bool) {
+        self.preserve_drawing_buffer = value;
+    }
+    pub fn set_stencil(&mut self, value: bool) {
+        self.stencil = value;
+    }
+
+    pub fn set_desynchronized(&mut self, value: bool) {
+        self.desynchronized = value;
+    }
+
+    pub fn set_xr_compatible(&mut self, value: bool) {
+        self.xr_compatible = value;
     }
 }
 
@@ -1248,7 +1324,6 @@ impl WebGLExtension for WEBGL_draw_buffers {
         WebGLExtensionType::WEBGL_draw_buffers
     }
 }
-
 
 #[derive(Copy, Clone)]
 pub struct WebGLIndexedParameter {

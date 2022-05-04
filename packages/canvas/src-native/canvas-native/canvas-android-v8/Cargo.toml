@@ -9,13 +9,13 @@ name = "canvasnativev8"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-cxx-build = "1.0"
+cxx-build = "1.0.66"
 bindgen = "0.59.2"
 
 [dependencies]
 canvas-core = { path = "../canvas-core" , features = ["gl"]}
 gl-bindings = { path = "../gl-bindings" }
-cxx = "1.0"
+cxx = "1.0.66"
 ureq = "2.4.0"
 image = "0.23.7"
 parking_lot = "0.12.0"

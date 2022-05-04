@@ -1,5 +1,5 @@
 use std::os::raw::c_float;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::{Mutex, RawMutex, RawRwLock};
@@ -141,14 +141,9 @@ pub struct Context {
     pub(crate) font_color: Color,
 }
 
-impl Drop for Context {
-    fn drop(&mut self) {
-        log::debug!(target: "JS","Drop Context");
-    }
-}
 
 pub struct ContextWrapper {
-    inner: Arc<parking_lot::Mutex<Context>>,
+    inner: Arc<parking_lot::RwLock<Context>>,
 }
 
 unsafe impl Send for ContextWrapper {}
@@ -158,12 +153,16 @@ unsafe impl Sync for ContextWrapper {}
 impl ContextWrapper {
     pub fn new(context: Context) -> ContextWrapper {
         Self {
-            inner: Arc::new(parking_lot::Mutex::new(context)),
+            inner: Arc::new(parking_lot::RwLock::new(context)),
         }
     }
 
-    pub fn get_context(&self) -> MutexGuard<'_, RawMutex, Context> {
-        self.inner.lock()
+    pub fn get_context(&self) -> RwLockReadGuard<'_, RawRwLock, Context> {
+        self.inner.read()
+    }
+
+    pub fn get_context_mut(&self) -> RwLockWriteGuard<'_, RawRwLock, Context> {
+        self.inner.write()
     }
 
     pub fn into_box(self) -> Box<ContextWrapper> {
@@ -174,25 +173,17 @@ impl ContextWrapper {
         Box::into_raw(self.into_box())
     }
 
-    pub fn get_inner(&self) -> &Arc<Mutex<Context>> {
-        log::debug!(target: "JS","get_inner");
+    pub fn get_inner(&self) -> &Arc<parking_lot::RwLock<Context>> {
         &self.inner
     }
 
-    pub fn from_inner(inner: Arc<Mutex<Context>>) -> ContextWrapper {
+    pub fn from_inner(inner: Arc<parking_lot::RwLock<Context>>) -> ContextWrapper {
         Self { inner }
-    }
-}
-
-impl Drop for ContextWrapper {
-    fn drop(&mut self) {
-        log::debug!(target: "JS","Drop ContextWrapper");
     }
 }
 
 impl Clone for ContextWrapper {
     fn clone(&self) -> Self {
-        log::debug!(target: "JS","Cloning ContextWrapper");
         Self {
             inner: Arc::clone(&self.inner),
         }

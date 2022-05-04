@@ -9,15 +9,14 @@ use std::os::raw::{c_char, c_int, c_uint, c_ulong, c_void};
 use std::os::unix::io::FromRawFd;
 use std::os::unix::prelude::IntoRawFd;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
+use std::sync::Arc;
 
-use cxx::{CxxString, ExternType, let_cxx_string, SharedPtr, type_id, UniquePtr};
+use cxx::{let_cxx_string, type_id, CxxString, ExternType, SharedPtr, UniquePtr};
 use once_cell::sync::OnceCell;
-use parking_lot::{Mutex, MutexGuard, RawMutex};
-use parking_lot::lock_api::RwLock;
+use parking_lot::lock_api::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
 
-use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_core::context::drawing_paths::fill_rule::FillRule;
 use canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -28,6 +27,7 @@ use canvas_core::context::line_styles::line_cap::LineCap;
 use canvas_core::context::line_styles::line_join::LineJoin;
 use canvas_core::context::text_styles::text_align::TextAlign;
 use canvas_core::context::text_styles::text_direction::TextDirection;
+use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::utils::color::{parse_color, to_parsed_color};
 use canvas_core::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded,
@@ -143,13 +143,17 @@ pub struct Raf(crate::raf::Raf);
 /* CanvasRenderingContext2D */
 
 pub struct CanvasRenderingContext2D {
-    context: canvas_core::context::ContextWrapper,
+    context: ContextWrapper,
     gl_context: GLContext,
 }
 
 impl CanvasRenderingContext2D {
-    pub fn get_context(&self) -> MutexGuard<Context> {
+    pub fn get_context(&self) -> RwLockReadGuard<'_, RawRwLock, Context> {
         self.context.get_context()
+    }
+
+    pub fn get_context_mut(&self) -> RwLockWriteGuard<'_, RawRwLock, Context> {
+        self.context.get_context_mut()
     }
 }
 
@@ -604,7 +608,7 @@ pub(crate) mod ffi {
             direction: u32,
         ) -> Box<CanvasRenderingContext2D>;
 
-        pub fn canvas_native_context_create_gl(
+        fn canvas_native_context_create_gl(
             width: f32,
             height: f32,
             density: f32,
@@ -616,7 +620,20 @@ pub(crate) mod ffi {
             direction: u32,
         ) -> Box<CanvasRenderingContext2D>;
 
+        fn canvas_native_context_create_gl_no_window(
+            width: f32,
+            height: f32,
+            density: f32,
+            font_color: i32,
+            ppi: f32,
+            direction: u32,
+            alpha: bool,
+        ) -> Box<CanvasRenderingContext2D>;
+
         fn canvas_native_context_flush(context: &CanvasRenderingContext2D);
+
+        fn canvas_native_context_get_font(context: &CanvasRenderingContext2D) -> String;
+        fn canvas_native_context_set_font(context: &mut CanvasRenderingContext2D, font: &str);
 
         fn canvas_native_context_get_global_alpha(context: &CanvasRenderingContext2D) -> f32;
         fn canvas_native_context_set_global_alpha(
@@ -1339,6 +1356,23 @@ pub(crate) mod ffi {
             stencil: bool,
             desynchronized: bool,
             xr_compatible: bool,
+        ) -> Box<WebGLState>;
+
+        fn canvas_native_webgl_create_no_window(
+            width: i32,
+            height: i32,
+            version: &str,
+            alpha: bool,
+            antialias: bool,
+            depth: bool,
+            fail_if_major_performance_caveat: bool,
+            power_preference: &str,
+            premultiplied_alpha: bool,
+            preserve_drawing_buffer: bool,
+            stencil: bool,
+            desynchronized: bool,
+            xr_compatible: bool,
+            is_bool: bool,
         ) -> Box<WebGLState>;
 
         fn canvas_native_webgl_active_texture(texture: u32, state: &mut WebGLState);
@@ -2518,18 +2552,20 @@ pub(crate) mod ffi {
             state: &mut WebGLState,
         );
 
-        fn canvas_native_webgl2_tex_sub_image3d_asset(target: u32,
-                                                      level: i32,
-                                                      xoffset: i32,
-                                                      yoffset: i32,
-                                                      zoffset: i32,
-                                                      width: i32,
-                                                      height: i32,
-                                                      depth: i32,
-                                                      format: u32,
-                                                      type_: u32,
-                                                      asset: &ImageAsset,
-                                                      state: &mut WebGLState);
+        fn canvas_native_webgl2_tex_sub_image3d_asset(
+            target: u32,
+            level: i32,
+            xoffset: i32,
+            yoffset: i32,
+            zoffset: i32,
+            width: i32,
+            height: i32,
+            depth: i32,
+            format: u32,
+            type_: u32,
+            asset: &ImageAsset,
+            state: &mut WebGLState,
+        );
 
         fn canvas_native_webgl2_tex_sub_image3d_offset(
             target: u32,
@@ -2734,12 +2770,75 @@ pub fn canvas_native_context_create_gl(
     })
 }
 
+pub fn canvas_native_context_create_gl_no_window(
+    width: f32,
+    height: f32,
+    density: f32,
+    font_color: i32,
+    ppi: f32,
+    direction: u32,
+    alpha: bool,
+) -> Box<CanvasRenderingContext2D> {
+    let mut state = *canvas_native_webgl_create_no_window(
+        width as i32,
+        height as i32,
+        "canvas",
+        alpha,
+        false,
+        false,
+        false,
+        "default",
+        true,
+        false,
+        false,
+        false,
+        false,
+        true,
+    );
+
+    let mut buffer_id = [0i32];
+
+    unsafe {
+        gl_bindings::glGetIntegerv(gl_bindings::GL_FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr())
+    }
+
+    let alpha = state.get_inner().get_alpha();
+
+    let is_current = state.get_inner_mut().make_current();
+
+    let gl_context = GLContext::get_current();
+
+    let context = ContextWrapper::new(Context::new_gl(
+        width,
+        height,
+        density,
+        buffer_id[0],
+        0,
+        alpha,
+        font_color,
+        ppi,
+        TextDirection::from(direction),
+    ));
+
+    Box::new(CanvasRenderingContext2D {
+        context,
+        gl_context,
+    })
+}
+
+fn canvas_native_context_get_font(context: &CanvasRenderingContext2D) -> String {
+    context.context.get_context().font().to_string()
+}
+fn canvas_native_context_set_font(context: &mut CanvasRenderingContext2D, font: &str) {
+    context.context.get_context_mut().set_font(font);
+}
+
 pub fn canvas_native_context_get_global_alpha(context: &CanvasRenderingContext2D) -> f32 {
     context.context.get_context().global_alpha()
 }
 
 pub fn canvas_native_context_set_global_alpha(context: &mut CanvasRenderingContext2D, alpha: f32) {
-    context.context.get_context().set_global_alpha(alpha);
+    context.context.get_context_mut().set_global_alpha(alpha);
 }
 
 pub fn canvas_native_context_get_image_smoothing_enabled(
@@ -2754,7 +2853,7 @@ pub fn canvas_native_context_set_image_smoothing_enabled(
 ) {
     context
         .context
-        .get_context()
+        .get_context_mut()
         .set_image_smoothing_enabled(enabled)
 }
 
@@ -2777,15 +2876,15 @@ pub fn canvas_native_context_set_image_smoothing_quality(
     match quality {
         "low" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_image_smoothing_quality(ImageSmoothingQuality::Low),
         "medium" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_image_smoothing_quality(ImageSmoothingQuality::Medium),
         "high" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_image_smoothing_quality(ImageSmoothingQuality::High),
         _ => {}
     }
@@ -2805,15 +2904,15 @@ pub fn canvas_native_context_set_line_join(context: &mut CanvasRenderingContext2
     match join {
         "bevel" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_line_join(LineJoin::JoinBevel),
         "miter" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_line_join(LineJoin::JoinMiter),
         "round" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_line_join(LineJoin::JoinRound),
         _ => {}
     }
@@ -2833,12 +2932,12 @@ pub fn canvas_native_context_set_line_cap(context: &mut CanvasRenderingContext2D
     match cap {
         "round" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_line_cap(LineCap::CapRound),
-        "butt" => context.context.get_context().set_line_cap(LineCap::CapButt),
+        "butt" => context.context.get_context_mut().set_line_cap(LineCap::CapButt),
         "square" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_line_cap(LineCap::CapSquare),
         _ => {}
     }
@@ -2849,7 +2948,7 @@ pub fn canvas_native_context_get_miter_limit(context: &CanvasRenderingContext2D)
 }
 
 pub fn canvas_native_context_set_miter_limit(context: &mut CanvasRenderingContext2D, limit: f32) {
-    context.context.get_context().set_miter_limit(limit);
+    context.context.get_context_mut().set_miter_limit(limit);
 }
 
 pub fn canvas_native_context_get_shadow_color(context: &CanvasRenderingContext2D) -> String {
@@ -2858,7 +2957,7 @@ pub fn canvas_native_context_get_shadow_color(context: &CanvasRenderingContext2D
 }
 
 pub fn canvas_native_context_set_shadow_color(context: &mut CanvasRenderingContext2D, color: &str) {
-    let mut lock = context.context.get_context();
+    let mut lock = context.context.get_context_mut();
     if let Some(color) = parse_color(color) {
         lock.set_shadow_color(color);
     }
@@ -2869,7 +2968,7 @@ pub fn canvas_native_context_get_shadow_blur(context: &CanvasRenderingContext2D)
 }
 
 pub fn canvas_native_context_set_shadow_blur(context: &mut CanvasRenderingContext2D, blur: f32) {
-    context.context.get_context().set_shadow_blur(blur)
+    context.context.get_context_mut().set_shadow_blur(blur)
 }
 
 pub fn canvas_native_context_get_shadow_offset_x(context: &CanvasRenderingContext2D) -> f32 {
@@ -2877,7 +2976,7 @@ pub fn canvas_native_context_get_shadow_offset_x(context: &CanvasRenderingContex
 }
 
 pub fn canvas_native_context_set_shadow_offset_x(context: &mut CanvasRenderingContext2D, x: f32) {
-    context.context.get_context().set_shadow_offset_x(x)
+    context.context.get_context_mut().set_shadow_offset_x(x)
 }
 
 pub fn canvas_native_context_get_shadow_offset_y(context: &CanvasRenderingContext2D) -> f32 {
@@ -2885,7 +2984,7 @@ pub fn canvas_native_context_get_shadow_offset_y(context: &CanvasRenderingContex
 }
 
 pub fn canvas_native_context_set_shadow_offset_y(context: &mut CanvasRenderingContext2D, y: f32) {
-    context.context.get_context().set_shadow_offset_y(y)
+    context.context.get_context_mut().set_shadow_offset_y(y)
 }
 
 pub fn canvas_native_context_get_text_align(context: &CanvasRenderingContext2D) -> String {
@@ -2906,21 +3005,21 @@ pub fn canvas_native_context_set_text_align(
     match alignment {
         "start" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_text_align(TextAlign::START),
         "left" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_text_align(TextAlign::LEFT),
         "center" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_text_align(TextAlign::CENTER),
         "right" => context
             .context
-            .get_context()
+            .get_context_mut()
             .set_text_align(TextAlign::RIGHT),
-        "end" => context.context.get_context().set_text_align(TextAlign::END),
+        "end" => context.context.get_context_mut().set_text_align(TextAlign::END),
         _ => {}
     }
 }
@@ -2941,7 +3040,7 @@ pub fn canvas_native_context_set_global_composition(
     if let Some(composition) = CompositeOperationType::from_str(composition) {
         context
             .context
-            .get_context()
+            .get_context_mut()
             .set_global_composite_operation(composition)
     }
 }
@@ -2986,7 +3085,7 @@ pub fn canvas_native_context_set_fill_style(
 ) {
     if !style.is_empty() {
         context
-            .get_context()
+            .get_context_mut()
             .set_fill_style(style.0.as_ref().unwrap().clone())
     }
 }
@@ -3005,7 +3104,7 @@ pub fn canvas_native_context_set_stroke_style(
 ) {
     if !style.is_empty() {
         context
-            .get_context()
+            .get_context_mut()
             .set_stroke_style(style.0.as_ref().unwrap().clone())
     }
 }
@@ -3015,7 +3114,7 @@ pub fn canvas_native_context_get_line_width(context: &CanvasRenderingContext2D) 
 }
 
 pub fn canvas_native_context_set_line_width(context: &mut CanvasRenderingContext2D, width: f32) {
-    context.get_context().set_line_width(width);
+    context.get_context_mut().set_line_width(width);
 }
 
 pub fn canvas_native_context_get_line_dash_offset(context: &CanvasRenderingContext2D) -> f32 {
@@ -3026,7 +3125,7 @@ pub fn canvas_native_context_set_line_dash_offset(
     context: &mut CanvasRenderingContext2D,
     offset: f32,
 ) {
-    context.get_context().set_line_dash_offset(offset)
+    context.get_context_mut().set_line_dash_offset(offset)
 }
 
 pub fn canvas_native_context_get_line_dash(context: &CanvasRenderingContext2D) -> Vec<f32> {
@@ -3034,7 +3133,7 @@ pub fn canvas_native_context_get_line_dash(context: &CanvasRenderingContext2D) -
 }
 
 pub fn canvas_native_context_set_line_dash(context: &mut CanvasRenderingContext2D, dash: &[f32]) {
-    context.get_context().set_line_dash(dash)
+    context.get_context_mut().set_line_dash(dash)
 }
 
 pub fn canvas_native_context_arc(
@@ -3047,7 +3146,7 @@ pub fn canvas_native_context_arc(
     anticlockwise: bool,
 ) {
     context
-        .get_context()
+        .get_context_mut()
         .arc(x, y, radius, start_angle, end_angle, anticlockwise)
 }
 
@@ -3059,11 +3158,11 @@ pub fn canvas_native_context_arc_to(
     y2: f32,
     radius: f32,
 ) {
-    context.get_context().arc_to(x1, y1, x2, y2, radius)
+    context.get_context_mut().arc_to(x1, y1, x2, y2, radius)
 }
 
 pub fn canvas_native_context_begin_path(context: &mut CanvasRenderingContext2D) {
-    context.get_context().begin_path()
+    context.get_context_mut().begin_path()
 }
 
 pub fn canvas_native_context_bezier_curve_to(
@@ -3076,7 +3175,7 @@ pub fn canvas_native_context_bezier_curve_to(
     y: f32,
 ) {
     context
-        .get_context()
+        .get_context_mut()
         .bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
 }
 
@@ -3087,7 +3186,7 @@ pub fn canvas_native_context_clear_rect(
     width: f32,
     height: f32,
 ) {
-    context.get_context().clear_rect(x, y, width, height)
+    context.get_context_mut().clear_rect(x, y, width, height)
 }
 
 pub fn canvas_native_context_clip(
@@ -3097,19 +3196,19 @@ pub fn canvas_native_context_clip(
 ) {
     if let Ok(rule) = FillRule::try_from(rule) {
         context
-            .get_context()
+            .get_context_mut()
             .clip(Some(path.inner_mut()), Some(rule))
     }
 }
 
 pub fn canvas_native_context_clip_rule(context: &mut CanvasRenderingContext2D, rule: &str) {
     if let Ok(rule) = FillRule::try_from(rule) {
-        context.get_context().clip(None, Some(rule))
+        context.get_context_mut().clip(None, Some(rule))
     }
 }
 
 pub fn canvas_native_context_close_path(context: &mut CanvasRenderingContext2D) {
-    context.get_context().close_path()
+    context.get_context_mut().close_path()
 }
 
 pub fn canvas_native_context_create_image_data(width: i32, height: i32) -> Box<ImageData> {
@@ -3261,7 +3360,7 @@ pub fn canvas_native_context_draw_image(
     d_height: f32,
 ) {
     if let Some(image) = from_image_slice(data, width as i32, height as i32) {
-        context.get_context().draw_image_src_xywh_dst_xywh(
+        context.get_context_mut().draw_image_src_xywh_dst_xywh(
             &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
         )
     }
@@ -3277,7 +3376,7 @@ pub fn canvas_native_context_draw_image_encoded_dx_dy(
         let width = image.width() as f32;
         let height = image.height() as f32;
         context
-            .get_context()
+            .get_context_mut()
             .draw_image_src_xywh_dst_xywh(&image, 0.0, 0.0, width, height, dx, dy, width, height)
     }
 }
@@ -3293,7 +3392,7 @@ pub fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
     if let Some(image) = from_image_slice_encoded(data) {
         let width = image.width() as f32;
         let height = image.height() as f32;
-        context.get_context().draw_image_src_xywh_dst_xywh(
+        context.get_context_mut().draw_image_src_xywh_dst_xywh(
             &image, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
         )
     }
@@ -3312,7 +3411,7 @@ pub fn canvas_native_context_draw_image_encoded(
     d_height: f32,
 ) {
     if let Some(image) = from_image_slice_encoded(data) {
-        context.get_context().draw_image_src_xywh_dst_xywh(
+        context.get_context_mut().draw_image_src_xywh_dst_xywh(
             &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
         )
     }
@@ -3364,13 +3463,13 @@ pub fn canvas_native_context_draw_image_asset(
     if let Some(bytes) = asset.get_bytes() {
         if has_alpha {
             if let Some(image) = from_image_slice_no_copy(bytes, width as c_int, height as c_int) {
-                context.get_context().draw_image_src_xywh_dst_xywh(
+                context.get_context_mut().draw_image_src_xywh_dst_xywh(
                     &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
                 )
             }
         } else {
             if let Some(image) = from_bitmap_slice(bytes, width as c_int, height as c_int) {
-                context.get_context().draw_image_src_xywh_dst_xywh(
+                context.get_context_mut().draw_image_src_xywh_dst_xywh(
                     &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
                 )
             }
@@ -3389,7 +3488,7 @@ pub fn canvas_native_context_ellipse(
     end_angle: f32,
     anticlockwise: bool,
 ) {
-    context.get_context().ellipse(
+    context.get_context_mut().ellipse(
         x,
         y,
         radius_x,
@@ -3403,7 +3502,7 @@ pub fn canvas_native_context_ellipse(
 
 pub fn canvas_native_context_fill(context: &mut CanvasRenderingContext2D, rule: &str) {
     if let Ok(rule) = FillRule::try_from(rule) {
-        context.get_context().fill(None, rule)
+        context.get_context_mut().fill(None, rule)
     }
 }
 
@@ -3413,7 +3512,7 @@ pub fn canvas_native_context_fill_with_path(
     rule: &str,
 ) {
     if let Ok(rule) = FillRule::try_from(rule) {
-        context.get_context().fill(Some(path.inner_mut()), rule)
+        context.get_context_mut().fill(Some(path.inner_mut()), rule)
     }
 }
 
@@ -3424,7 +3523,7 @@ pub fn canvas_native_context_fill_rect(
     width: f32,
     height: f32,
 ) {
-    context.get_context().fill_rect_xywh(x, y, width, height);
+    context.get_context_mut().fill_rect_xywh(x, y, width, height);
 }
 
 pub fn canvas_native_context_fill_text(
@@ -3434,7 +3533,7 @@ pub fn canvas_native_context_fill_text(
     y: f32,
     width: f32,
 ) {
-    context.get_context().fill_text(text, x, y, width)
+    context.get_context_mut().fill_text(text, x, y, width)
 }
 
 pub fn canvas_native_context_get_image_data(
@@ -3445,13 +3544,13 @@ pub fn canvas_native_context_get_image_data(
     sh: f32,
 ) -> Box<ImageData> {
     Box::new(ImageData(
-        context.get_context().get_image_data(sx, sy, sw, sh),
+        context.get_context_mut().get_image_data(sx, sy, sw, sh),
     ))
 }
 
 pub fn canvas_native_context_get_transform(context: &mut CanvasRenderingContext2D) -> Box<Matrix> {
     Box::new(Matrix(canvas_core::context::matrix::Matrix::from(
-        context.get_context().get_transform(),
+        context.get_context_mut().get_transform(),
     )))
 }
 
@@ -3462,7 +3561,7 @@ pub fn canvas_native_context_is_point_in_path(
     rule: &str,
 ) -> bool {
     FillRule::try_from(rule).map_or(false, |rule| {
-        context.get_context().is_point_in_path(None, x, y, rule)
+        context.get_context_mut().is_point_in_path(None, x, y, rule)
     })
 }
 
@@ -3475,7 +3574,7 @@ pub fn canvas_native_context_is_point_in_path_with_path(
 ) -> bool {
     FillRule::try_from(rule).map_or(false, |rule| {
         context
-            .get_context()
+            .get_context_mut()
             .is_point_in_path(Some(path.inner()), x, y, rule)
     })
 }
@@ -3485,7 +3584,7 @@ pub fn canvas_native_context_is_point_in_stroke(
     x: f32,
     y: f32,
 ) -> bool {
-    context.get_context().is_point_in_stroke(None, x, y)
+    context.get_context_mut().is_point_in_stroke(None, x, y)
 }
 
 pub fn canvas_native_context_is_point_in_stroke_with_path(
@@ -3495,12 +3594,12 @@ pub fn canvas_native_context_is_point_in_stroke_with_path(
     y: f32,
 ) -> bool {
     context
-        .get_context()
+        .get_context_mut()
         .is_point_in_stroke(Some(path.inner()), x, y)
 }
 
 pub fn canvas_native_context_line_to(context: &mut CanvasRenderingContext2D, x: f32, y: f32) {
-    context.get_context().line_to(x, y)
+    context.get_context_mut().line_to(x, y)
 }
 
 pub fn canvas_native_context_measure_text(
@@ -3513,7 +3612,7 @@ pub fn canvas_native_context_measure_text(
 }
 
 pub fn canvas_native_context_move_to(context: &mut CanvasRenderingContext2D, x: f32, y: f32) {
-    context.get_context().move_to(x, y)
+    context.get_context_mut().move_to(x, y)
 }
 
 pub fn canvas_native_context_put_image_data(
@@ -3526,7 +3625,7 @@ pub fn canvas_native_context_put_image_data(
     dirty_width: f32,
     dirty_height: f32,
 ) {
-    context.get_context().put_image_data(
+    context.get_context_mut().put_image_data(
         image_data.inner(),
         dx,
         dy,
@@ -3544,7 +3643,7 @@ pub fn canvas_native_context_quadratic_curve_to(
     x: f32,
     y: f32,
 ) {
-    context.get_context().quadratic_curve_to(cpx, cpy, x, y)
+    context.get_context_mut().quadratic_curve_to(cpx, cpy, x, y)
 }
 
 pub fn canvas_native_context_rect(
@@ -3554,27 +3653,27 @@ pub fn canvas_native_context_rect(
     width: f32,
     height: f32,
 ) {
-    context.get_context().rect(x, y, width, height)
+    context.get_context_mut().rect(x, y, width, height)
 }
 
 pub fn canvas_native_context_reset_transform(context: &mut CanvasRenderingContext2D) {
-    context.get_context().reset_transform()
+    context.get_context_mut().reset_transform()
 }
 
 pub fn canvas_native_context_restore(context: &mut CanvasRenderingContext2D) {
-    context.get_context().restore()
+    context.get_context_mut().restore()
 }
 
 pub fn canvas_native_context_rotate(context: &mut CanvasRenderingContext2D, angle: f32) {
-    context.get_context().rotate(angle)
+    context.get_context_mut().rotate(angle)
 }
 
 pub fn canvas_native_context_save(context: &mut CanvasRenderingContext2D) {
-    context.get_context().save()
+    context.get_context_mut().save()
 }
 
 pub fn canvas_native_context_scale(context: &mut CanvasRenderingContext2D, x: f32, y: f32) {
-    context.get_context().scale(x, y)
+    context.get_context_mut().scale(x, y)
 }
 
 pub fn canvas_native_context_set_transform(
@@ -3586,7 +3685,7 @@ pub fn canvas_native_context_set_transform(
     e: f32,
     f: f32,
 ) {
-    context.get_context().set_transform(a, b, c, d, e, f)
+    context.get_context_mut().set_transform(a, b, c, d, e, f)
 }
 
 pub fn canvas_native_context_set_transform_matrix(
@@ -3594,18 +3693,18 @@ pub fn canvas_native_context_set_transform_matrix(
     matrix: &mut Matrix,
 ) {
     let matrix = matrix.inner_mut().to_m33();
-    context.get_context().set_transform_matrix(&matrix)
+    context.get_context_mut().set_transform_matrix(&matrix)
 }
 
 pub fn canvas_native_context_stroke(context: &mut CanvasRenderingContext2D) {
-    context.get_context().stroke(None)
+    context.get_context_mut().stroke(None)
 }
 
 pub fn canvas_native_context_stroke_with_path(
     context: &mut CanvasRenderingContext2D,
     path: &mut Path,
 ) {
-    context.get_context().stroke(Some(path.inner_mut()))
+    context.get_context_mut().stroke(Some(path.inner_mut()))
 }
 
 pub fn canvas_native_context_stroke_rect(
@@ -3615,7 +3714,7 @@ pub fn canvas_native_context_stroke_rect(
     width: f32,
     height: f32,
 ) {
-    context.get_context().stroke_rect_xywh(x, y, width, height);
+    context.get_context_mut().stroke_rect_xywh(x, y, width, height);
 }
 
 pub fn canvas_native_context_stroke_text(
@@ -3625,7 +3724,7 @@ pub fn canvas_native_context_stroke_text(
     y: f32,
     width: f32,
 ) {
-    context.get_context().stroke_text(text, x, y, width)
+    context.get_context_mut().stroke_text(text, x, y, width)
 }
 
 pub fn canvas_native_context_transform(
@@ -3637,15 +3736,15 @@ pub fn canvas_native_context_transform(
     e: f32,
     f: f32,
 ) {
-    context.get_context().transform(a, b, c, d, e, f)
+    context.get_context_mut().transform(a, b, c, d, e, f)
 }
 
 pub fn canvas_native_context_translate(context: &mut CanvasRenderingContext2D, x: f32, y: f32) {
-    context.get_context().translate(x, y)
+    context.get_context_mut().translate(x, y)
 }
 
 pub fn canvas_native_context_flush(context: &CanvasRenderingContext2D) {
-    context.get_context().flush();
+    context.get_context_mut().flush();
 }
 
 /* CanvasRenderingContext2D */
@@ -4465,6 +4564,7 @@ impl WebGLState {
         stencil: bool,
         desynchronized: bool,
         xr_compatible: bool,
+        is_canvas: bool,
     ) -> Self {
         Self(crate::gl::prelude::WebGLState::new_with_context(
             context,
@@ -4479,6 +4579,7 @@ impl WebGLState {
             stencil,
             desynchronized,
             xr_compatible,
+            is_canvas,
         ))
     }
     pub fn get_inner(&self) -> &crate::gl::prelude::WebGLState {
@@ -5077,7 +5178,70 @@ pub fn canvas_native_webgl_create(
         stencil,
         desynchronized,
         xr_compatible,
+        false,
     );
+    Box::new(inner)
+}
+
+pub fn canvas_native_webgl_create_no_window(
+    width: i32,
+    height: i32,
+    version: &str,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: &str,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+    is_canvas: bool,
+) -> Box<WebGLState> {
+    let mut surface = 0;
+    let version = if version.eq("v1") || version.eq("canvas") {
+        surface = 1;
+        WebGLVersion::V1
+    } else if version.eq("v2") {
+        surface = 2;
+        WebGLVersion::V2
+    } else {
+        WebGLVersion::NONE
+    };
+
+    let mut attrs = crate::gl::prelude::ContextAttributes::new(
+        alpha,
+        antialias,
+        depth,
+        fail_if_major_performance_caveat,
+        power_preference,
+        premultiplied_alpha,
+        preserve_drawing_buffer,
+        stencil,
+        desynchronized,
+        xr_compatible,
+        is_canvas,
+    );
+
+    let ctx = GLContext::new_with_no_window(width, height, surface, &mut attrs);
+
+    let inner = WebGLState::new_with_context(
+        ctx,
+        version,
+        attrs.get_alpha(),
+        attrs.get_antialias(),
+        attrs.get_depth(),
+        attrs.get_fail_if_major_performance_caveat(),
+        attrs.get_power_preference().as_str(),
+        attrs.get_premultiplied_alpha(),
+        attrs.get_preserve_drawing_buffer(),
+        attrs.get_stencil(),
+        attrs.get_desynchronized(),
+        attrs.get_xr_compatible(),
+        attrs.get_is_canvas(),
+    );
+
     Box::new(inner)
 }
 
@@ -7327,29 +7491,34 @@ pub fn canvas_native_webgl2_tex_sub_image3d(
     )
 }
 
-pub fn canvas_native_webgl2_tex_sub_image3d_asset(target: u32,
-                                              level: i32,
-                                              xoffset: i32,
-                                              yoffset: i32,
-                                              zoffset: i32,
-                                              width: i32,
-                                              height: i32,
-                                              depth: i32,
-                                              format: u32,
-                                              type_: u32,
-                                              asset: &ImageAsset,
-                                              state: &mut WebGLState) {
-    crate::gl::webgl2::canvas_native_webgl2_tex_sub_image3d_asset(target,
-                                                                  level,
-                                                                  xoffset,
-                                                                  yoffset,
-                                                                  zoffset,
-                                                                  width,
-                                                                  height,
-                                                                  depth,
-                                                                  format,
-                                                                  type_,
-                                                                  asset, state.get_inner_mut());
+pub fn canvas_native_webgl2_tex_sub_image3d_asset(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    zoffset: i32,
+    width: i32,
+    height: i32,
+    depth: i32,
+    format: u32,
+    type_: u32,
+    asset: &ImageAsset,
+    state: &mut WebGLState,
+) {
+    crate::gl::webgl2::canvas_native_webgl2_tex_sub_image3d_asset(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        zoffset,
+        width,
+        height,
+        depth,
+        format,
+        type_,
+        asset,
+        state.get_inner_mut(),
+    );
 }
 
 pub fn canvas_native_webgl2_tex_sub_image3d_offset(

@@ -129,35 +129,43 @@ v8::Local<v8::Value> Helpers::GetPrivate(v8::Isolate *isolate, v8::Local<v8::Obj
     }
 }
 
-v8::Local<v8::Value> Helpers::ArrayGet(v8::Isolate *isolate, v8::Local<v8::Array> array, uint32_t i) {
+v8::Local<v8::Value> Helpers::ArrayGet(v8::Local<v8::Context> context, v8::Local<v8::Array> array, uint32_t i) {
+    auto isolate = context->GetIsolate();
+    auto global = context->Global();
+
     v8::TryCatch tryCatch(isolate);
     v8::Local<v8::Value> object;
-    auto context = isolate->GetCurrentContext();
+    v8::Local<v8::Value> value;
 
-    if (context->Global()
-            ->GetRealNamedProperty(context, Helpers::ConvertToV8String(isolate, "__Array_Get"))
+    if (global->Get(context, Helpers::ConvertToV8String(isolate, "__Array_Get"))
             .ToLocal(&object)) {
         if (object->IsFunction()) {
-            auto func = object.As<v8::Function>();
+            v8::HandleScope scope(isolate);
+
+            auto func = v8::Local<v8::Function>::Cast(object);
             v8::Local<v8::Value> argv[] = {
                     array, v8::Uint32::New(isolate, i)
             };
-            auto value = func->Call(context, context->Global(), 2, argv);
-            if (!value.IsEmpty()) {
-                return value.ToLocalChecked();
-            }
+            auto argc = sizeof(argv) / sizeof(v8::Local<v8::Value>);
+
+            console_log(std::to_string(argc));
+
+            func->Call(context, global, argc, argv).ToLocal(&value);
+
+            return value;
         }
     }
-
     return v8::Undefined(isolate);
 }
 
-void Helpers::ArraySet(v8::Isolate *isolate, v8::Local<v8::Array> array, uint32_t i, v8::Local<v8::Value> value) {
+void
+Helpers::ArraySet(v8::Local<v8::Context> context, v8::Local<v8::Array> array, uint32_t i, v8::Local<v8::Value> value) {
+    auto isolate = context->GetIsolate();
+    auto global = context->Global();
     v8::TryCatch tryCatch(isolate);
     v8::Local<v8::Value> object;
-    auto context = isolate->GetCurrentContext();
 
-    if (context->Global()
+    if (global
             ->GetRealNamedProperty(context, Helpers::ConvertToV8String(isolate, "__Array_Set"))
             .ToLocal(&object)) {
         if (object->IsFunction()) {

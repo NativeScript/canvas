@@ -473,7 +473,17 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
 		//	fillRule(this.canvas);
-		//const ctx = this.canvas.getContext('2d');
+		const ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+
+		const display = android.opengl.EGL14.eglGetDisplay(android.opengl.EGL14.EGL_DEFAULT_DISPLAY);
+		const ext = android.opengl.EGL14.eglQueryString(display, android.opengl.EGL14.EGL_EXTENSIONS);
+
+		console.log(ext);
+		android.util.Log.d("com.test", ext);
+
+		console.log(0x3054)
+		ctx.setLineDash([1,2]);
+		console.log(ctx.getLineDash());
 		//clip(this.canvas);
 		//fillStyle(this.canvas);
 		// font(this.canvas);
@@ -547,7 +557,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
-		fog(this.canvas);
+		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);

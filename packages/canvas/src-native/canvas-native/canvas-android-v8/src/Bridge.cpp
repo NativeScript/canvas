@@ -3,12 +3,13 @@
 //
 
 #include "Bridge.h"
+
 void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-    isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
+   // isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 
     auto len = args.Length();
 
@@ -18,35 +19,32 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
         isolate->ThrowException(err);
         return;
     }
-    auto context = isolate->GetCurrentContext();
 
-
-
-    std::string arrayScript = R"(
-        (function () {
-            // Providing Array Helpers since v8 crashing for now
-
-            global.__Array_Get = function(array, i){
-                if(!Array.isArray){return undefined};
-                return array[i];
-            }
-
-            global.__Array_Set = function(array, i, value){
-                if(!Array.isArray){return};
-                array[i] = value;
-            }
-        })();
-    )";
-
-    auto source = v8::String::NewFromUtf8(isolate, arrayScript.c_str()).ToLocalChecked();
-    Local<Script> script;
-    bool success = Script::Compile(context, source).ToLocal(&script);
-    if(success && !script.IsEmpty()){
-        // todo assert;
-        Local<Value> result;
-        script->Run(context).ToLocal(&result);
-    }
-
+//    v8::TryCatch tryCatch(isolate);
+//    v8::
+//    auto context = isolate->GetCurrentContext();
+//    std::string arrayScript = R"(
+//        (function(){
+//        })();
+//    )";
+//    console_log("1");
+//    auto source = v8::String::NewFromUtf8(isolate, arrayScript.c_str()).ToLocalChecked();
+//    console_log("2");
+//    auto val = Helpers::ConvertFromV8String(isolate, source);
+//    console_log(val);
+//    v8::Local<v8::Script> script;
+//    bool success = v8::Script::Compile(context, source).ToLocal(&script);
+//    console_log("3");
+//    if (success && !script.IsEmpty()) {
+//        // todo assert;
+//        v8::Local<v8::Value> result;
+//        script->Run(context).ToLocal(&result);
+//        console_log("4");
+//    }else {
+//        if(tryCatch.HasCaught()){
+//            console_log("HasCaught");
+//        }
+//    }
 
     ImageAssetImpl::Init(isolate);
     TextDecoderImpl::Init(isolate);

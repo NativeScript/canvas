@@ -54,20 +54,18 @@ impl Context {
     }
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {
-        // TODO ?
-        let line_dash: Cow<[f32]>;
+        let line_dash;
         let is_odd = (dash.len() % 2) != 0;
         if is_odd {
-            line_dash = Cow::from([dash, dash].concat())
+            line_dash = [dash, dash].concat();
         } else {
-            line_dash = dash.into()
+            line_dash = dash.to_vec()
         }
         let mut effect: Option<PathEffect> = None;
         if !line_dash.is_empty() {
-            effect = PathEffect::dash(line_dash.as_ref(), self.state.line_dash_offset);
+            effect = PathEffect::dash(line_dash.as_slice(), self.state.line_dash_offset);
         }
-        let slice = line_dash.as_ref();
-        self.state.line_dash_list.splice(.., slice.iter().cloned());
+        self.state.line_dash_list = line_dash;
         self.state.paint.stroke_paint_mut().set_path_effect(effect);
     }
 

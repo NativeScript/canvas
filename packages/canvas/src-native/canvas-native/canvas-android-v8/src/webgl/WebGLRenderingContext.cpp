@@ -31,6 +31,7 @@ void WebGLRenderingContext::Init(v8::Isolate *isolate) {
     auto global = context->Global();
     global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLRenderingContext"),
                 ctorFunc->GetFunction(context).ToLocalChecked());
+
     auto funcTpl = v8::FunctionTemplate::New(isolate, &InstanceFromPointer);
     global->Set(context, Helpers::ConvertToV8String(isolate, "__getWebGLRenderingContext"),
                 funcTpl->GetFunction(context).ToLocalChecked());
@@ -151,20 +152,51 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
         } else {
             auto cache = Caches::Get(isolate);
 
-            auto ctx = canvas_native_webgl_create(
-                    rust::Str(version),
-                    alpha,
-                    antialias,
-                    depth,
-                    fail_if_major_performance_caveat,
-                    rust::Str(power_preference),
-                    premultiplied_alpha,
-                    preserve_drawing_buffer,
-                    stencil,
-                    desynchronized,
-                    xr_compatible
-            );
-            WebGLRenderingContext *renderingContext = new WebGLRenderingContext(std::move(ctx));
+            WebGLRenderingContext *renderingContext = nullptr;
+
+            if (args.Length() == 7) {
+                auto width = args[1];
+                auto height = args[2];
+                auto density = args[3];
+                auto fontColor = args[4];
+                auto ppi = args[5];
+                auto direction = args[6];
+                auto ctx = canvas_native_webgl_create_no_window(
+                        width->Int32Value(context).ToChecked(),
+                        height->Int32Value(context).ToChecked(),
+                        rust::Str(version),
+                        alpha,
+                        antialias,
+                        depth,
+                        fail_if_major_performance_caveat,
+                        rust::Str(power_preference),
+                        premultiplied_alpha,
+                        preserve_drawing_buffer,
+                        stencil,
+                        desynchronized,
+                        xr_compatible,
+                        false
+                );
+                renderingContext = new WebGLRenderingContext(std::move(ctx));
+
+            } else {
+                auto ctx = canvas_native_webgl_create(
+                        rust::Str(version),
+                        alpha,
+                        antialias,
+                        depth,
+                        fail_if_major_performance_caveat,
+                        rust::Str(power_preference),
+                        premultiplied_alpha,
+                        preserve_drawing_buffer,
+                        stencil,
+                        desynchronized,
+                        xr_compatible
+                );
+
+                renderingContext = new WebGLRenderingContext(std::move(ctx));
+            }
+
 
             auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
             auto raf_callback = new OnRafCallback(ctx_ptr, 1);
@@ -3375,9 +3407,6 @@ void WebGLRenderingContext::Uniform4iv(const v8::FunctionCallbackInfo<v8::Value>
 
 void WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::HandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     v8::TryCatch tryCatch(isolate);
     auto ptr = GetPointerBase(args.Holder());
@@ -3402,8 +3431,8 @@ void WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value>
                 auto len = array->Length();
 
                 std::vector<float> buf;
-                for (uint32_t i = 0; i < array->Length(); ++i) {
-                    auto item = Helpers::ArrayGet(isolate, array, i);
+                for (int i = 0; i < array->Length(); ++i) {
+                    auto item = Helpers::ArrayGet(context, array, i);
                     buf.push_back(static_cast<float>(item->NumberValue(context).ToChecked()));
                 }
                 rust::Slice<const float> slice(buf.data(), buf.size());

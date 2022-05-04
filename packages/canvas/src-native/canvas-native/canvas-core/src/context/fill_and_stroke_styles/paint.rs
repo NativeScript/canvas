@@ -215,7 +215,7 @@ impl Default for Paint {
 }
 
 pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: bool, color: &str) {
-    let mut context = context.get_context();
+    let mut context = context.get_context_mut();
     if let Ok(color) = color.parse::<css_color_parser::Color>() {
         let style = PaintStyle::Color(skia_safe::Color::from_argb(
             (color.a * 255.0) as u8,

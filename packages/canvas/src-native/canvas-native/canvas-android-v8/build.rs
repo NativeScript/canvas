@@ -44,7 +44,11 @@ pub fn ndk() -> String {
     std::env::var("ANDROID_NDK").expect("ANDROID_NDK variable not set")
 }
 
-const FLAGS_STR: &str = "-std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
+const FLAGS_STR: &str = "-std=c++14 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti";
+
+const FLAGS_RELEASE: &str = "-O3 -fvisibility=hidden -ffunction-sections -fno-data-sections";
+
+const FLAGS_DEBUG: &str = "-g";
 
 const CPP_SOURCE: [&str; 9] = [
     "src/Caches.cpp",
@@ -220,31 +224,33 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src/bridges/context.rs");
 
+    let mut build_target = "".to_string();
+
+    println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
+    println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
+    println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
+    println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
+    println!("cargo:rustc-link-lib=android"); // the "-l" flag
+
     match target.system.borrow() {
         "android" | "androideabi" => {
-            let build_target;
             include_dir.push_str(&ndk());
             // after moving to newer ndk
             // include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
             if target.architecture.eq("armv7") {
-                build_target = "armv7-linux-androideabi";
+                build_target = "armv7-linux-androideabi".to_string();
             } else if target.architecture.eq("aarch64") {
-                build_target = "aarch64-linux-android";
+                build_target = "aarch64-linux-android".to_string();
             } else if target.architecture.eq("i686") {
-                build_target = "i686-linux-android";
+                build_target = "i686-linux-android".to_string();
             } else if target.architecture.eq("x86_64") {
-                build_target = "x86_64-linux-android";
+                build_target = "x86_64-linux-android".to_string();
             } else {
                 return;
             }
 
             include_dir.push_str("/sysroot/usr/include");
             //println!("cargo:rustc-link-search={}", include_dir);
-            println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
-            println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
-            println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
-            println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
-            println!("cargo:rustc-link-lib=android"); // the "-l" flag
                                                       // the resulting bindings.
 
             // println!("cargo:rerun-if-changed={}", "wrapper.h");
@@ -303,37 +309,36 @@ fn main() {
     println!("cargo:rustc-link-lib=static=v8"); // the "-l" flag
     println!("cargo:rustc-link-lib=static=zip");
     println!("cargo:rustc-link-arg=-Wl,--allow-multiple-definition");
-    println!("cargo:rustc-link-arg=-Wl,-fuse-ld=lld-13");
-    // println!("cargo:rustc-link-arg=-Wl,-nostdlib++");
-    // println!("cargo:rustc-link-arg=-Wl,-ldl");
+    println!("cargo:rustc-link-arg=-Wl,-fuse-ld=lld");
     println!("cargo:rustc-link-lib=static=c++abi");
     println!("cargo:rustc-link-lib=static=c++");
 
     let mut build = cxx_build::bridges(["src/lib.rs", "src/bridges/context.rs"]);
 
     build
-        // .include("include")
-        // .include("src")
-        // .include("src/canvas2d")
-        // .include("src/webgl")
-        // .include("src/webgl2")
+        .flag("-nostdinc")
         .flag("-pthread")
         .cpp_link_stdlib("c++_static")
         .flag_if_supported("-std=c++14")
         .flag(&format!("--target={}", target_str))
-        .flag(&format!("--sysroot={}/sysroot", ndk()))
-        .flag(&format!("-I{}/sources/android/cpufeatures", ndk()))
+        .flag(&format!(
+            "--sysroot={}/sysroot",
+            ndk()
+        ))
         .flag(&format!(
             "-isystem{}/sources/cxx-stl/llvm-libc++/include",
             ndk()
         ))
-        .flag(&include_dir)
-        .define("_LIBCPP_ABI_UNSTABLE", None)
-        // .define("_LIBCPP_ABI_VERSION", "Cr")
+        .include(&format!("{}/sources/android/cpufeatures", ndk()))
+        .include("include")
+        .include("include/libc++")
+        .include("include/inspector")
+        .include("include/libplatform")
+        .define("_LIBCPP_ABI_VERSION", "Cr")
         .define("_LIBCPP_ENABLE_NODISCARD", None)
         .define("_LIBCPP_ABI_UNSTABLE", None)
         .define("V8_31BIT_SMIS_ON_64BIT_ARCH", None)
-        // .define("V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH", None)
+        .define("V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH", None)
         .define("V8_EMBEDDED_BUILTINS", None)
         .files(&CPP_SOURCE)
         .files(&CPP_2D_SOURCE)
@@ -343,6 +348,8 @@ fn main() {
         .file("src/Bridge.cpp");
 
     build.extra_warnings(false);
+
+    println!("cargo:rerun-if-changed=src/Bridge.cpp");
 
     let mut all: Vec<&str> = vec![];
     all.extend(CPP_SOURCE.as_slice());
@@ -383,6 +390,16 @@ fn main() {
     for flag in flags.into_iter() {
         build.flag_if_supported(flag);
     }
+
+    let flags_release: Vec<_> = FLAGS_RELEASE.split(" ").collect();
+    for flag in flags_release.into_iter() {
+        build.flag_if_supported(flag);
+    }
+
+    // let flags_debug: Vec<_> = FLAGS_DEBUG.split(" ").collect();
+    // for flag in flags_debug.into_iter() {
+    //     build.flag_if_supported(flag);
+    // }
 
     build.warnings(false);
 

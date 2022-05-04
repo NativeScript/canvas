@@ -141,26 +141,55 @@ void WebGL2RenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<
             }
         }
 
-
         if (version.compare("v1") == 0 || version.compare("v2") == 0) {
             args.GetReturnValue().Set(v8::Undefined(isolate));
         } else {
             auto cache = Caches::Get(isolate);
 
-            auto ctx = canvas_native_webgl_create(
-                    rust::Str(version),
-                    alpha,
-                    antialias,
-                    depth,
-                    fail_if_major_performance_caveat,
-                    rust::Str(power_preference),
-                    premultiplied_alpha,
-                    preserve_drawing_buffer,
-                    stencil,
-                    desynchronized,
-                    xr_compatible
-            );
-            WebGL2RenderingContext *renderingContext = new WebGL2RenderingContext(std::move(ctx));
+            WebGL2RenderingContext *renderingContext = nullptr;
+
+            if (args.Length() == 7) {
+                auto width = args[1];
+                auto height = args[2];
+                auto density = args[3];
+                auto fontColor = args[4];
+                auto ppi = args[5];
+                auto direction = args[6];
+                auto ctx = canvas_native_webgl_create_no_window(
+                        width->Int32Value(context).ToChecked(),
+                        height->Int32Value(context).ToChecked(),
+                        rust::Str(version),
+                        alpha,
+                        antialias,
+                        depth,
+                        fail_if_major_performance_caveat,
+                        rust::Str(power_preference),
+                        premultiplied_alpha,
+                        preserve_drawing_buffer,
+                        stencil,
+                        desynchronized,
+                        xr_compatible,
+                        false
+                );
+
+                renderingContext = new WebGL2RenderingContext(std::move(ctx));
+            } else {
+                auto ctx = canvas_native_webgl_create(
+                        rust::Str(version),
+                        alpha,
+                        antialias,
+                        depth,
+                        fail_if_major_performance_caveat,
+                        rust::Str(power_preference),
+                        premultiplied_alpha,
+                        preserve_drawing_buffer,
+                        stencil,
+                        desynchronized,
+                        xr_compatible
+                );
+                renderingContext = new WebGL2RenderingContext(std::move(ctx));
+            }
+
 
             auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
             auto raf_callback = new OnRafCallback(ctx_ptr, 2);
@@ -320,7 +349,8 @@ void WebGL2RenderingContext::BindTransformFeedback(const v8::FunctionCallbackInf
     auto transformFeedback = args[1];
 
     if (target->IsNumber() && Helpers::IsInstanceOf(isolate, transformFeedback, "WebGLTransformFeedback")) {
-        auto transformFeedbackValue = Helpers::GetPrivate(isolate, transformFeedback.As<v8::Object>(), "instance")->ToUint32(context);
+        auto transformFeedbackValue = Helpers::GetPrivate(isolate, transformFeedback.As<v8::Object>(),
+                                                          "instance")->ToUint32(context);
         canvas_native_webgl2_bind_transform_feedback(
                 target->Uint32Value(context).ToChecked(),
                 transformFeedbackValue.ToLocalChecked()->Value(),
@@ -337,7 +367,8 @@ void WebGL2RenderingContext::BindVertexArray(const v8::FunctionCallbackInfo<v8::
     auto vertexArray = args[0];
 
     if (Helpers::IsInstanceOf(isolate, vertexArray, "WebGLVertexArrayObject")) {
-        auto vertexArrayValue = Helpers::GetPrivate(isolate, vertexArray.As<v8::Object>(), "instance")->ToUint32(context);
+        auto vertexArrayValue = Helpers::GetPrivate(isolate, vertexArray.As<v8::Object>(), "instance")->ToUint32(
+                context);
         canvas_native_webgl2_bind_vertex_array(
                 vertexArrayValue.ToLocalChecked()->Value(),
                 ptr->GetPointer()
@@ -785,7 +816,8 @@ void WebGL2RenderingContext::DeleteTransformFeedback(const v8::FunctionCallbackI
     auto transformFeedback = args[0];
 
     if (Helpers::IsInstanceOf(isolate, transformFeedback, "WebGLTransformFeedback")) {
-        auto transformFeedbackValue = Helpers::GetPrivate(isolate, transformFeedback.As<v8::Object>(), "instance")->ToUint32(context);
+        auto transformFeedbackValue = Helpers::GetPrivate(isolate, transformFeedback.As<v8::Object>(),
+                                                          "instance")->ToUint32(context);
         canvas_native_webgl2_delete_transform_feedback(
                 transformFeedbackValue.ToLocalChecked()->Value(),
                 ptr->GetPointer()
@@ -800,7 +832,8 @@ void WebGL2RenderingContext::DeleteVertexArray(const v8::FunctionCallbackInfo<v8
     auto vertexArray = args[0];
 
     if (Helpers::IsInstanceOf(isolate, vertexArray, "WebGLVertexArrayObject")) {
-        auto vertexArrayValue = Helpers::GetPrivate(isolate, vertexArray.As<v8::Object>(), "instance")->ToUint32(context);
+        auto vertexArrayValue = Helpers::GetPrivate(isolate, vertexArray.As<v8::Object>(), "instance")->ToUint32(
+                context);
         canvas_native_webgl2_delete_vertex_array_with_vertex_array(
                 vertexArrayValue.ToLocalChecked()->Value(),
                 ptr->GetPointer()

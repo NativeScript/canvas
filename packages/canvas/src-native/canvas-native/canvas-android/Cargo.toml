@@ -28,9 +28,11 @@ openssl = { version = "0.10.38", features = ["vendored"] }
 jni = { version = "0.19.0", default-features = false }
 android_logger = "0.9.0"
 parking_lot = "0.12.0"
-skia-safe = { git = "https://github.com/triniwiz/rust-skia", branch="feat/svg" , features = ["gl", "svg"] }
+#skia-safe = { git = "https://github.com/triniwiz/rust-skia", branch="feat/svg" , features = ["gl", "svg"] }
 #skia-safe = { version = "0.43.0", features = ["gl"] }
 #skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl", "svg"] }
+skia-bindings = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a" , features = ["gl", "svg"]}
+skia-safe = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a",  features = ["gl", "svg"]}
 rgb = {version = "0.8.32", features = ["argb"]}
 log = "0.4.8"
 css-color-parser = "0.1.2"

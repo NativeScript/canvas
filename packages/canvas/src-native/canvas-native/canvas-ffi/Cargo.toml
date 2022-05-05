@@ -25,7 +25,7 @@ canvas-core = { path = "../canvas-core" }
 #skia-safe = { version = "0.43.0", features = ["gl"] }
 #skia-safe = { git = "https://github.com/triniwiz/rust-skia", branch="feat/svg" , features = ["gl"] }
 #skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl", "svg"] }
-skia-bindings = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a" , features = ["gl", "svg"]}
-skia-safe = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a",  features = ["gl", "svg"]}
+skia-bindings = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a6" , features = ["gl", "svg"]}
+skia-safe = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a6",  features = ["gl", "svg"]}
 image = "0.23.7"
 css-color-parser = "0.1.2"

@@ -23,10 +23,11 @@ log = "0.4.8"
 stringreader = "0.1.1"
 rand = "0.8.4"
 once_cell = "1.8.0"
-skia-safe = { git = "https://github.com/triniwiz/rust-skia", features = ["svg"] , branch = "feat/svg" }
-stb = {path = "/Users/triniwiz/desktop/oss/stb/stb", features = ["stb_image", "stb_image_write", "stb_image_resize"]}
-stb-sys = {path = "/Users/triniwiz/desktop/oss/stb/stb-sys", features = ["stb_image", "stb_image_write", "stb_image_resize"]}
+skia-bindings = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a" , features = ["gl", "svg"]}
+skia-safe = {git="https://github.com/triniwiz/rust-skia.git", rev = "d35b2a",  features = ["gl", "svg"]}
 
+stb = {git = "https://github.com/triniwiz/stb.git", rev ="d197a1b",  features = ["stb_image", "stb_image_write", "stb_image_resize"]}
+stb-sys = {git = "https://github.com/triniwiz/stb.git",rev ="d197a1b", features = ["stb_image", "stb_image_write", "stb_image_resize"]}
 
 
 

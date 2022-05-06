@@ -763,7 +763,7 @@ pub fn canvas_native_webgl_get_extension(
     #[allow(non_snake_case)]
     let JELLY_BEAN_MR2 = 18;
 
-    let ext = unsafe { CStr::from_ptr(std::mem::transmute()) };
+    let ext = unsafe { CStr::from_ptr(std::mem::transmute(extensions)) };
     let extensions = ext.to_string_lossy();
     let extension = if name.eq("EXT_blend_minmax") && extensions.contains("GL_EXT_blend_minmax") {
         return Some(Box::new(EXT_blend_minmax::new()));

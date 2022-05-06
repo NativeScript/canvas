@@ -22,10 +22,7 @@ cbindgen = "0.20.0"
 [dependencies]
 gl-bindings = { path = "../gl-bindings" }
 canvas-core = { path = "../canvas-core" }
-#skia-safe = { version = "0.43.0", features = ["gl"] }
-#skia-safe = { git = "https://github.com/triniwiz/rust-skia", branch="feat/svg" , features = ["gl"] }
-#skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl", "svg"] }
-skia-bindings = {git="https://github.com/triniwiz/rust-skia.git", rev = "c3376683" , features = ["gl", "svg"]}
-skia-safe = {git="https://github.com/triniwiz/rust-skia.git", rev = "c3376683",  features = ["gl", "svg"]}
+skia-bindings = { git = "https://github.com/triniwiz/rust-skia.git", rev = "d60f2c94", features = ["gl"] }
+skia-safe = { git = "https://github.com/triniwiz/rust-skia.git", rev = "d60f2c94", features = ["gl"] }
 image = "0.23.7"
 css-color-parser = "0.1.2"

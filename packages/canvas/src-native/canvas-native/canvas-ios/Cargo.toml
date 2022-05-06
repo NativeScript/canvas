@@ -18,11 +18,8 @@ gl = ["canvas-ffi/gl"]
 [target.'cfg(target_os="ios")'.dependencies]
 gl-bindings = { path = "../gl-bindings" }
 canvas-ffi = { path = "../canvas-ffi" }
-#skia-safe = { version = "0.43.0", features = ["gl"] }
-#skia-safe = { git = "https://github.com/triniwiz/rust-skia", branch="feat/svg" , features = ["gl"] }
-#skia-safe = { path = "/Users/triniwiz/desktop/oss/rust-skia/skia-safe", features = ["gl", "svg"] }
-skia-bindings = {git="https://github.com/triniwiz/rust-skia.git", rev = "c3376683" , features = ["gl", "svg"]}
-skia-safe = {git="https://github.com/triniwiz/rust-skia.git", rev = "c3376683",  features = ["gl", "svg"]}
+skia-bindings = { git = "https://github.com/triniwiz/rust-skia.git", rev = "d60f2c94", features = ["gl"] }
+skia-safe = { git = "https://github.com/triniwiz/rust-skia.git", rev = "d60f2c94", features = ["gl"] }
 cocoa = { version = "0.24.0" }
 objc = { version = "0.2.4" }
 block = "0.1.6"

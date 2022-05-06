@@ -206,9 +206,7 @@ fn restore_state_after_clear(state: &mut WebGLState) {
     // Restore the state that the context set.
     state.make_current();
     if state.get_scissor_enabled() {
-        unsafe {
-            gl_bindings::glEnable(gl_bindings::GL_SCISSOR_TEST)
-        }
+        unsafe { gl_bindings::glEnable(gl_bindings::GL_SCISSOR_TEST) }
     }
 
     unsafe {
@@ -286,9 +284,7 @@ fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
             }
             clear_mask = clear_mask | 1024;
 
-            unsafe {
-                gl_bindings::glStencilMaskSeparate(gl_bindings::GL_FRONT, 0xFFFFFFFF)
-            }
+            unsafe { gl_bindings::glStencilMaskSeparate(gl_bindings::GL_FRONT, 0xFFFFFFFF) }
         }
     }
 
@@ -767,7 +763,7 @@ pub fn canvas_native_webgl_get_extension(
     #[allow(non_snake_case)]
     let JELLY_BEAN_MR2 = 18;
 
-    let ext = unsafe { CStr::from_ptr(extensions) };
+    let ext = unsafe { CStr::from_ptr(std::mem::transmute()) };
     let extensions = ext.to_string_lossy();
     let extension = if name.eq("EXT_blend_minmax") && extensions.contains("GL_EXT_blend_minmax") {
         return Some(Box::new(EXT_blend_minmax::new()));
@@ -1089,7 +1085,9 @@ pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> 
                 return WebGLResult::None;
             }
             unsafe {
-                return WebGLResult::String(CString::from(CStr::from_ptr(params)));
+                return WebGLResult::String(CString::from(CStr::from_ptr(std::mem::transmute(
+                    params,
+                ))));
             }
         }
         _ => WebGLResult::None,
@@ -1224,7 +1222,7 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
     let ext = unsafe { gl_bindings::glGetString(gl_bindings::GL_EXTENSIONS) };
-    let extensions = unsafe { CStr::from_ptr(ext) };
+    let extensions = unsafe { CStr::from_ptr(std::mem::transmute(ext)) };
     let extensions = extensions.to_string_lossy();
     extensions.split(" ").map(|f| f.into()).collect()
 }

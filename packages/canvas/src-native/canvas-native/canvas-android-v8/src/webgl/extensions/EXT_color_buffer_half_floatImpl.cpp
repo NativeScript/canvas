@@ -3,6 +3,7 @@
 //
 
 #include "EXT_color_buffer_half_floatImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 v8::Local<v8::FunctionTemplate> EXT_color_buffer_half_floatImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);

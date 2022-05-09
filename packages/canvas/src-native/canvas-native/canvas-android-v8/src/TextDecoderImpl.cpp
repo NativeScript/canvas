@@ -3,6 +3,8 @@
 //
 
 #include "TextDecoderImpl.h"
+#include "rust/cxx.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 TextDecoderImpl::TextDecoderImpl(rust::Box<TextDecoder> decoder) : decoder_(std::move(decoder)) {
 
@@ -48,7 +50,10 @@ void TextDecoderImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         }
         std::string decoding("utf-8");
         if (args.Length() == 1 && args[0]->IsString()) {
-            decoding = std::string(Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked()));
+            auto val = args[0]->ToString(context).ToLocalChecked();
+            v8::String::Utf8Value utf8(isolate, val);
+            std::string value(*utf8, utf8.length());
+            decoding = value;
         }
 
         auto ret = args.This();
@@ -80,7 +85,8 @@ void TextDecoderImpl::GetEncoding(v8::Local<v8::String> name, const v8::Property
     auto isolate = info.GetIsolate();
     auto self = info.Holder();
     auto ptr = GetPointer(self);
-    auto encoding = canvas_native_text_decoder_get_encoding(*ptr->decoder_);
+    std::string encoding;
+    canvas_native_text_decoder_get_encoding(*ptr->decoder_, encoding);
     info.GetReturnValue().Set(
             Helpers::ConvertToV8String(isolate, encoding.c_str())
     );
@@ -139,7 +145,8 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto data = static_cast<std::uint8_t *>(store->Data());
             auto size = store->ByteLength();
             rust::Slice<const uint8_t> slice{data, size};
-            auto decoded = canvas_native_text_decoder_decode(*ptr->decoder_, slice);
+            std::string decoded;
+            canvas_native_text_decoder_decode(*ptr->decoder_, slice, decoded);
             args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, decoded.c_str()));
         } else if (args[0]->IsArrayBufferView()) {
             auto buf = args[0].As<v8::ArrayBufferView>();
@@ -150,7 +157,8 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto data = static_cast<std::uint8_t *>(store->Data()) + offset;
             auto size = store->ByteLength();
             rust::Slice<const uint8_t> slice{data, size};
-            auto decoded = canvas_native_text_decoder_decode(*ptr->decoder_, slice);
+            std::string decoded;
+            canvas_native_text_decoder_decode(*ptr->decoder_, slice, decoded);
             args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, decoded.c_str()));
         }
 

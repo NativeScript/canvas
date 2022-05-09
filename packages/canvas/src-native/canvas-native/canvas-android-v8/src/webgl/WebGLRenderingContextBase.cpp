@@ -3,6 +3,7 @@
 //
 
 #include "WebGLRenderingContextBase.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state) : state_(std::move(state)) {
 

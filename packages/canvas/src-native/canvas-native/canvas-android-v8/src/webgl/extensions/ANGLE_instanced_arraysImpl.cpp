@@ -3,6 +3,7 @@
 //
 
 #include "ANGLE_instanced_arraysImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(rust::Box<ANGLE_instanced_arrays> arrays) : arrays_(
         std::move(arrays)) {

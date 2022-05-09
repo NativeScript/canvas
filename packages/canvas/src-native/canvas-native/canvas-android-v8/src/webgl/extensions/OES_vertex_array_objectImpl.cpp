@@ -3,6 +3,7 @@
 //
 
 #include "OES_vertex_array_objectImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(rust::Box<OES_vertex_array_object> object) : object_(
         std::move(object)) {

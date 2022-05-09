@@ -11,7 +11,8 @@ void CanvasGradient::Init(v8::Isolate *isolate) {
     auto ctorFunc = GetCtorFunc(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, v8::String::NewFromUtf8(isolate, "CanvasGradient").ToLocalChecked(), ctorFunc->GetFunction(context).ToLocalChecked());
+    global->Set(context, v8::String::NewFromUtf8(isolate, "CanvasGradient").ToLocalChecked(),
+                ctorFunc->GetFunction(context).ToLocalChecked());
 }
 
 CanvasGradient *CanvasGradient::GetPointer(v8::Local<v8::Object> object) {
@@ -47,7 +48,7 @@ void CanvasGradient::AddColorStop(const v8::FunctionCallbackInfo<v8::Value> &arg
         auto ptr = GetPointer(args.Holder());
         auto context = isolate->GetCurrentContext();
         auto stop = static_cast<float>(args[0]->NumberValue(context).ToChecked());
-        auto color = Helpers::ConvertFromV8String(isolate, args[1]->ToString(context).ToLocalChecked());
+        auto color = Helpers::ConvertFromV8String(isolate, args[1]);
         canvas_native_gradient_add_color_stop(*ptr->style_, stop, color);
     }
 }

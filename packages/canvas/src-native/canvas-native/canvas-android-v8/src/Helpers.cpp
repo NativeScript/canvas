@@ -3,6 +3,8 @@
 //
 
 #include "Helpers.h"
+#include "rust/cxx.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 void Helpers::ThrowIllegalConstructor(v8::Isolate *isolate) {
     auto msg = ConvertToV8String(isolate, "Illegal constructor");
@@ -14,32 +16,26 @@ v8::Local<v8::String> Helpers::ConvertToV8String(v8::Isolate *isolate, const std
     return v8::String::NewFromUtf8(isolate, string.c_str()).ToLocalChecked();
 }
 
-
-rust::String Helpers::ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::String> &value) {
+std::string Helpers::ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
     if (value.IsEmpty()) {
         return std::string();
     }
-    v8::HandleScope handle_scope(isolate);
-    auto len = value->Utf8Length(isolate);
-    char buf[len + 1];
-    auto wrote = value->WriteUtf8(isolate, buf);
-    auto ret = to_rust_string(rust::Slice<const char>(buf, len + 1));
-    return ret;
-}
 
-std::string Helpers::ConvertFromV8StringToString(v8::Isolate *isolate, const v8::Local<v8::String> &value) {
-    if (value.IsEmpty()) {
+    if (value->IsStringObject()) {
+        v8::Local<v8::String> obj = value.As<v8::StringObject>()->ValueOf();
+        return ConvertFromV8String(isolate, obj);
+    }
+
+    v8::String::Utf8Value result(isolate, value);
+
+    const char *val = *result;
+
+    if (val == nullptr) {
         return std::string();
     }
-    v8::HandleScope handle_scope(isolate);
-    auto len = value->Utf8Length(isolate);
-    char buf[len + 1];
-    auto wrote = value->WriteUtf8(isolate, buf);
-    std::string buffer;
-    write_to_string(rust::Slice<const char>(buf, len + 1), buffer);
-    return buffer;
-}
 
+    return std::string(*result);
+}
 
 bool Helpers::IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Value> value, std::string clazz) {
     auto context = isolate->GetCurrentContext();
@@ -76,11 +72,16 @@ bool Helpers::IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Value> value, std
 
         if (object->IsFunction()) {
             auto name = object.As<v8::Function>()->GetName();
+            v8::String::Utf8Value a(isolate, name.As<v8::String>());
+            std::string a_val(*a, a.length());
+
             if (value->IsFunction()) {
                 auto value_name = value.As<v8::Function>()->GetName();
+                v8::String::Utf8Value b(isolate, value_name.As<v8::String>());
+                std::string b_val(*b, b.length());
                 if (std::strcmp(
-                        Helpers::ConvertFromV8String(isolate, name.As<v8::String>()).c_str(),
-                        Helpers::ConvertFromV8String(isolate, value_name.As<v8::String>()).c_str()
+                        a_val.c_str(),
+                        b_val.c_str()
                 ) !=
                     0) {
                     return false;
@@ -88,7 +89,7 @@ bool Helpers::IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Value> value, std
             }
 
             if (name->IsString()) {
-                if (std::strcmp(Helpers::ConvertFromV8String(isolate, name.As<v8::String>()).c_str(), clazz.c_str()) ==
+                if (std::strcmp(a_val.c_str(), clazz.c_str()) ==
                     0) {
                     return true;
                 }
@@ -147,8 +148,6 @@ v8::Local<v8::Value> Helpers::ArrayGet(v8::Local<v8::Context> context, v8::Local
                     array, v8::Uint32::New(isolate, i)
             };
             auto argc = sizeof(argv) / sizeof(v8::Local<v8::Value>);
-
-            console_log(std::to_string(argc));
 
             func->Call(context, global, argc, argv).ToLocal(&value);
 

@@ -3,6 +3,7 @@
 //
 
 #include "Path2D.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 Path2D::Path2D(rust::Box <Path> path)
         : path_(std::move(path)) {}
@@ -298,7 +299,8 @@ void Path2D::ToSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
-    auto svg = canvas_native_path_to_string(*ptr->path_);
+    std::string svg;
+    canvas_native_path_to_string(*ptr->path_, svg);
     args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, svg.c_str()));
 }
 

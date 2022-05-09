@@ -4,6 +4,8 @@
 
 #include "TextEncoderImpl.h"
 #include "TextEncoderImplEntry.h"
+#include "rust/cxx.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 TextEncoderImpl::TextEncoderImpl(rust::Box<TextEncoder> encoder) : encoder_(std::move(encoder)) {
 
@@ -81,7 +83,8 @@ void TextEncoderImpl::GetEncoding(v8::Local<v8::String> name, const v8::Property
     auto isolate = info.GetIsolate();
     auto self = info.Holder();
     auto ptr = GetPointer(self);
-    auto encoding = canvas_native_text_encoder_get_encoding(*ptr->encoder_);
+    std::string encoding;
+    canvas_native_text_encoder_get_encoding(*ptr->encoder_, encoding);
     info.GetReturnValue().Set(
             Helpers::ConvertToV8String(isolate, encoding.c_str())
     );
@@ -120,8 +123,11 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     if (args.Length() == 1) {
-        auto text = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
-        rust::Vec<std::uint8_t> data = canvas_native_text_encoder_encode(*ptr->encoder_, text);
+        auto val = args[0]->ToString(context).ToLocalChecked();
+        v8::String::Utf8Value utf8(isolate, val);
+        std::string text(*utf8, utf8.length());
+
+        auto data = canvas_native_text_encoder_encode(*ptr->encoder_, text);
         TextEncoderImplEntry *entry = new TextEncoderImplEntry(std::move(data));
 
         auto len = entry->GetSize();

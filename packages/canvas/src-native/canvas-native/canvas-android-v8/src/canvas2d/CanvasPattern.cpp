@@ -3,6 +3,7 @@
 //
 
 #include "CanvasPattern.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Common.h"
+#include "rust/cxx.h"
 
 class Helpers {
 public:
@@ -12,9 +13,7 @@ public:
 
     static v8::Local<v8::String> ConvertToV8String(v8::Isolate *isolate, const std::string &string);
 
-    static rust::String ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::String> &value);
-
-    static std::string ConvertFromV8StringToString(v8::Isolate *isolate, const v8::Local<v8::String> &value);
+    static std::string ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value);
 
     static bool IsInstanceOf(v8::Isolate *isolate, v8::Local<v8::Value> value, std::string clazz);
 

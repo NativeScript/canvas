@@ -3,6 +3,7 @@
 //
 
 #include "MatrixImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 MatrixImpl::MatrixImpl(rust::Box <Matrix> matrix) : matrix_(std::move(matrix)) {
 

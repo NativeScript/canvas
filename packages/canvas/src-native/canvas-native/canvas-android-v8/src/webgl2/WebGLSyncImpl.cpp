@@ -3,6 +3,7 @@
 //
 
 #include "WebGLSyncImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGLSyncImpl::WebGLSyncImpl(rust::Box<WebGLSync> sync) : sync_(std::move(sync)) {
 }

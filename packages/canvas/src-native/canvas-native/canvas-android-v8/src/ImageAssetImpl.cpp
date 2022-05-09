@@ -4,6 +4,8 @@
 
 #include "ImageAssetImpl.h"
 #include "OnImageAssetLoadCallbackHolder.h"
+#include "rust/cxx.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 ImageAssetImpl::ImageAssetImpl(rust::Box<ImageAsset> asset)
         : asset_(std::move(asset)) {}
@@ -106,8 +108,9 @@ void ImageAssetImpl::GetError(v8::Local<v8::String> name, const v8::PropertyCall
     if (!has_error) {
         info.GetReturnValue().Set(v8::Undefined(isolate));
     } else {
-        auto err = canvas_native_image_asset_get_error(*ptr->asset_);
-        info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(err)));
+        std::string error;
+        canvas_native_image_asset_get_error(*ptr->asset_, error);
+        info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, error));
     }
 }
 
@@ -133,7 +136,7 @@ void ImageAssetImpl::FromUrl(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (args[0]->IsString()) {
         auto val = args[0]->ToString(context).ToLocalChecked();
         v8::String::Utf8Value utf8(isolate, val);
-        rust::Str url(*utf8, utf8.length());
+        std::string url(*utf8, utf8.length());
         auto done = canvas_native_image_asset_load_from_url(*ptr->asset_, url);
         args.GetReturnValue().Set(done);
     } else {
@@ -150,7 +153,7 @@ void ImageAssetImpl::FromUrlAsync(const v8::FunctionCallbackInfo<v8::Value> &arg
     if (args[0]->IsString()) {
         auto val = args[0]->ToString(context).ToLocalChecked();
         v8::String::Utf8Value utf8(isolate, val);
-        rust::Str url(*utf8, utf8.length());
+        std::string url(*utf8, utf8.length());
         auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, resolver);
         auto cache = Caches::Get(isolate);
         auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
@@ -167,7 +170,7 @@ void ImageAssetImpl::FromFile(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (args[0]->IsString()) {
         auto val = args[0]->ToString(context).ToLocalChecked();
         v8::String::Utf8Value utf8(isolate, val);
-        rust::Str path(*utf8, utf8.length());
+        std::string path(*utf8, utf8.length());
         auto done = canvas_native_image_asset_load_from_path(*ptr->asset_, path);
         args.GetReturnValue().Set(done);
     }
@@ -186,7 +189,7 @@ void ImageAssetImpl::FromFileAsync(const v8::FunctionCallbackInfo<v8::Value> &ar
     if (args[0]->IsString()) {
         auto val = args[0]->ToString(context).ToLocalChecked();
         v8::String::Utf8Value utf8(isolate, val);
-        rust::Str path(*utf8, utf8.length());
+        std::string path(*utf8, utf8.length());
         auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, resolver);
         auto cache = Caches::Get(isolate);
         auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
@@ -240,7 +243,9 @@ void ImageAssetImpl::Save(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto context = isolate->GetCurrentContext();
     auto self = args.Holder();
     auto ptr = GetPointer(self);
-    auto path = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
+    auto val = args[0]->ToString(context).ToLocalChecked();
+    v8::String::Utf8Value utf8(isolate, val);
+    std::string path(*utf8, utf8.length());
     auto format = args[1]->Int32Value(context).FromMaybe(0);
     auto done = canvas_native_image_asset_save_path(*ptr->asset_, path, format);
     args.GetReturnValue().Set(done);
@@ -253,7 +258,9 @@ void ImageAssetImpl::SaveAsync(const v8::FunctionCallbackInfo<v8::Value> &args) 
     auto ptr = GetPointer(self);
     auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
     args.GetReturnValue().Set(resolver->GetPromise());
-    auto path = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
+    auto val = args[0]->ToString(context).ToLocalChecked();
+    v8::String::Utf8Value utf8(isolate, val);
+    std::string path(*utf8, utf8.length());
     auto format = args[1]->Int32Value(context).FromMaybe(0);
     auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, resolver);
     auto cache = Caches::Get(isolate);
@@ -269,6 +276,7 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
         return ctor->Get(isolate);
     }
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
+
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ImageAsset"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
@@ -289,14 +297,18 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             Helpers::ConvertToV8String(isolate, "error"),
             &GetError
     );
+
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "scale"), v8::FunctionTemplate::New(isolate, &Scale)
+            Helpers::ConvertToV8String(isolate, "scale"),
+            v8::FunctionTemplate::New(isolate, &Scale)
     );
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "loadUrlSync"), v8::FunctionTemplate::New(isolate, &FromUrl)
+            Helpers::ConvertToV8String(isolate, "loadUrlSync"),
+            v8::FunctionTemplate::New(isolate, &FromUrl)
     );
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "loadUrl"), v8::FunctionTemplate::New(isolate, &FromUrlAsync)
+            Helpers::ConvertToV8String(isolate, "loadUrl"),
+            v8::FunctionTemplate::New(isolate, &FromUrlAsync)
     );
     tmpl->Set(
             Helpers::ConvertToV8String(isolate, "loadFileSync"),
@@ -304,9 +316,9 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
     );
 
     tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "loadFile"), v8::FunctionTemplate::New(isolate, &FromFileAsync)
+            Helpers::ConvertToV8String(isolate, "loadFile"),
+            v8::FunctionTemplate::New(isolate, &FromFileAsync)
     );
-
 
     tmpl->Set(
             Helpers::ConvertToV8String(isolate, "loadBytesSync"),
@@ -327,7 +339,6 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             Helpers::ConvertToV8String(isolate, "save"),
             v8::FunctionTemplate::New(isolate, &SaveAsync)
     );
-
 
     cache->ImageAssetTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;

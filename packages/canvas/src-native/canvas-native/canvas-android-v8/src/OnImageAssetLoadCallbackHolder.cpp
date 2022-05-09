@@ -4,6 +4,7 @@
 
 #include "OnImageAssetLoadCallbackHolder.h"
 #include "Caches.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 OnImageAssetLoadCallbackHolder::OnImageAssetLoadCallbackHolder(v8::Isolate *isolate,
                                                                v8::Local<v8::Context> context,

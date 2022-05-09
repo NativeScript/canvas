@@ -3,6 +3,7 @@
 //
 
 #include "CanvasRenderingContext2DImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(rust::Box<CanvasRenderingContext2D> context) : context_(
         std::move(context)) {
@@ -158,20 +159,20 @@ CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> name,
                                       const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto font = canvas_native_context_get_font(*ptr->context_);
+    std::string font;
+    canvas_native_context_get_font(*ptr->context_, font);
     info.GetReturnValue().Set(
-            Helpers::ConvertToV8String(isolate, font.c_str())
+            Helpers::ConvertToV8String(isolate, font)
     );
 }
 
 void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> name, v8::Local<v8::Value> value,
                                            const v8::PropertyCallbackInfo<void> &info) {
-    if (value->IsString()) {
+    if (value->IsString() || value->IsStringObject()) {
         auto isolate = info.GetIsolate();
         auto ptr = GetPointer(info.Holder());
-        v8::String::Utf8Value val(isolate, value->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-        rust::Str font(*val, val.length());
-        canvas_native_context_set_font(*ptr->context_, font);
+        auto val = Helpers::ConvertFromV8String(isolate, value);
+        canvas_native_context_set_font(*ptr->context_, val);
     }
 }
 
@@ -215,8 +216,9 @@ void CanvasRenderingContext2DImpl::GetImageSmoothingQuality(v8::Local<v8::String
                                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto quality = canvas_native_context_get_image_smoothing_quality(*ptr->context_);
-    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, quality.c_str()));
+    std::string quality;
+    canvas_native_context_get_image_smoothing_quality(*ptr->context_, quality);
+    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, quality));
 }
 
 void CanvasRenderingContext2DImpl::SetImageSmoothingQuality(v8::Local<v8::String> name, v8::Local<v8::Value> value,
@@ -237,8 +239,9 @@ void CanvasRenderingContext2DImpl::GetLineJoin(v8::Local<v8::String> name,
                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto join = canvas_native_context_get_line_join(*ptr->context_);
-    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, join.c_str()));
+    std::string join;
+    canvas_native_context_get_line_join(*ptr->context_, join);
+    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, join));
 }
 
 void CanvasRenderingContext2DImpl::SetLineJoin(v8::Local<v8::String> name, v8::Local<v8::Value> value,
@@ -257,8 +260,9 @@ void CanvasRenderingContext2DImpl::GetLineCap(v8::Local<v8::String> name,
                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto cap = canvas_native_context_get_line_cap(*ptr->context_);
-    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, cap.c_str()));
+    std::string cap;
+    canvas_native_context_get_line_cap(*ptr->context_, cap);
+    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, cap));
 }
 
 void CanvasRenderingContext2DImpl::SetLineCap(v8::Local<v8::String> name, v8::Local<v8::Value> value,
@@ -296,24 +300,22 @@ void CanvasRenderingContext2DImpl::GetShadowColor(v8::Local<v8::String> name,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto color = canvas_native_context_get_shadow_color(*ptr->context_);
+    std::string color;
+    canvas_native_context_get_shadow_color(*ptr->context_, color);
     info.GetReturnValue().Set(
             Helpers::ConvertToV8String(
-                    isolate, color.c_str()
+                    isolate, color
             )
     );
 }
 
 void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::String> name, v8::Local<v8::Value> value,
                                                   const v8::PropertyCallbackInfo<void> &info) {
-    if (value->IsString()) {
+    if (value->IsString() || value->IsStringObject()) {
         auto isolate = info.GetIsolate();
         auto context = isolate->GetCurrentContext();
         auto ptr = GetPointer(info.Holder());
-
-        v8::String::Utf8Value val(isolate, value->ToString(context).ToLocalChecked());
-        rust::Str color(*val, val.length());
-
+        auto color = Helpers::ConvertFromV8String(isolate, value);
         canvas_native_context_set_shadow_color(*ptr->context_, color);
     }
 }
@@ -376,18 +378,19 @@ void CanvasRenderingContext2DImpl::GetTextAlign(v8::Local<v8::String> name,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto ret = canvas_native_context_get_text_align(*ptr->context_);
-    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ret.c_str()));
+    std::string align;
+    canvas_native_context_get_text_align(*ptr->context_, align);
+    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, align));
 }
 
 void CanvasRenderingContext2DImpl::SetTextAlign(v8::Local<v8::String> name, v8::Local<v8::Value> value,
                                                 const v8::PropertyCallbackInfo<void> &info) {
-    if (value->IsString()) {
+    if (value->IsString() || value->IsStringObject()) {
         auto isolate = info.GetIsolate();
         auto context = isolate->GetCurrentContext();
         auto ptr = GetPointer(info.Holder());
-        auto alignment = Helpers::ConvertFromV8String(isolate, value->ToString(context).ToLocalChecked());
-        canvas_native_context_set_text_align(*ptr->context_, alignment);
+        auto align = Helpers::ConvertFromV8String(isolate, value);
+        canvas_native_context_set_text_align(*ptr->context_, align);
     }
 }
 
@@ -395,22 +398,21 @@ void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::Str
                                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.Holder());
-    auto ret = canvas_native_context_get_global_composition(*ptr->context_);
+    std::string composite;
+    canvas_native_context_get_global_composition(*ptr->context_, composite);
     info.GetReturnValue().Set(
-            Helpers::ConvertToV8String(isolate, ret.c_str())
+            Helpers::ConvertToV8String(isolate, composite)
     );
 }
 
 void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::String> name, v8::Local<v8::Value> value,
                                                                const v8::PropertyCallbackInfo<void> &info) {
-    if (value->IsString()) {
+    if (value->IsString() || value->IsStringObject()) {
         auto isolate = info.GetIsolate();
         auto context = isolate->GetCurrentContext();
         auto ptr = GetPointer(info.Holder());
-        auto str = value->ToString(context).ToLocalChecked();
-        v8::String::Utf8Value val(isolate, str);
-        rust::Str operation(*val, val.length());
-        canvas_native_context_set_global_composition(*ptr->context_, operation);
+        auto val = Helpers::ConvertFromV8String(isolate, value);
+        canvas_native_context_set_global_composition(*ptr->context_, val);
     }
 }
 
@@ -424,8 +426,9 @@ void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> name,
 
     switch (type) {
         case PaintStyleType::Color: {
-            auto color = canvas_native_paint_style_get_color_string(*style);
-            info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, color.c_str()));
+            std::string color;
+            canvas_native_paint_style_get_color_string(*style, color);
+            info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, color));
             break;
         }
         case PaintStyleType::Gradient: {
@@ -449,10 +452,9 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> name, v8::
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.Holder());
-    if (value->IsString()) {
-        v8::String::Utf8Value utf8(isolate, value->ToString(context).ToLocalChecked());
-        rust::Str color(*utf8, utf8.length());
-        canvas_native_paint_style_set_fill_color_with_string(*ptr->context_, color);
+    if (value->IsString() || value->IsStringObject()) {
+        auto val = Helpers::ConvertFromV8String(isolate, value);
+        canvas_native_paint_style_set_fill_color_with_string(*ptr->context_, val);
     } else if (!value->IsNullOrUndefined() && value->IsObject()) {
         auto color = value.As<v8::Object>();
         if (Helpers::IsInstanceOf(isolate, color, "CanvasPattern")) {
@@ -480,8 +482,9 @@ void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::String> name,
     PaintStyleType type = canvas_native_context_get_style_type(*style);
     switch (type) {
         case PaintStyleType::Color: {
-            auto color = canvas_native_paint_style_get_color_string(*style);
-            info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, color.c_str()));
+            std::string color;
+            canvas_native_paint_style_get_color_string(*style, color);
+            info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, color));
             break;
         }
         case PaintStyleType::Gradient: {
@@ -505,10 +508,9 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> name, v8
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.Holder());
-    if (value->IsString()) {
-        v8::String::Utf8Value utf8(isolate, value->ToString(context).ToLocalChecked());
-        rust::Str color(*utf8, utf8.length());
-        canvas_native_paint_style_set_stroke_color_with_string(*ptr->context_, color);
+    if (value->IsString() || value->IsStringObject()) {
+        auto val = Helpers::ConvertFromV8String(isolate, value);
+        canvas_native_paint_style_set_stroke_color_with_string(*ptr->context_, val);
     } else if (!value->IsNullOrUndefined() && value->IsObject()) {
         auto color = value.As<v8::Object>();
         if (Helpers::IsInstanceOf(isolate, color, "CanvasPattern")) {
@@ -650,10 +652,11 @@ void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     if (args.Length() == 0) {
-        canvas_native_context_clip_rule(*ptr->context_, "nonzero");
-    } else if (args[0]->IsString()) {
+        std::string rule("nonzero");
+        canvas_native_context_clip_rule(*ptr->context_, rule);
+    } else if (args[0]->IsString() || args[0]->IsStringObject()) {
         // TODO throw for invalid enum
-        auto value = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
+        auto value = Helpers::ConvertFromV8String(isolate, args[0]);
         canvas_native_context_clip_rule(*ptr->context_, value);
     }
 }
@@ -718,7 +721,7 @@ void CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<
         // TODO handle other cases
         if (Helpers::IsInstanceOf(isolate, image, "ImageAsset")) {
             auto asset = ImageAssetImpl::GetPointer(image);
-            auto rep = Helpers::ConvertFromV8String(isolate, args[1]->ToString(context).ToLocalChecked());
+            auto rep = Helpers::ConvertFromV8String(isolate, args[1]);
             rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(*ptr->context_,
                                                                                        asset->GetImageAsset(), rep);
             auto type = canvas_native_context_get_style_type(*pattern);
@@ -833,28 +836,30 @@ void CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value
     auto ptr = GetPointer(args.Holder());
     if (args.Length() == 2) {
         auto object = args[0]->ToObject(context).ToLocalChecked();
-        auto rule = args[1]->ToString(context).ToLocalChecked();
+        auto rule = args[1];
         if (Helpers::IsInstanceOf(isolate, object, "Path2D")) {
             auto path = Path2D::GetPointer(object);
-            canvas_native_context_fill_with_path(*ptr->context_, path->GetPath(),
-                                                 Helpers::ConvertFromV8String(isolate, rule));
+            auto val = Helpers::ConvertFromV8String(isolate, rule);
+            canvas_native_context_fill_with_path(*ptr->context_, path->GetPath(), val);
             ptr->UpdateInvalidateState();
         }
     } else if (args.Length() == 1) {
         if (args[0]->IsString()) {
-            canvas_native_context_fill(*ptr->context_, Helpers::ConvertFromV8String(isolate, args[0]->ToString(
-                    context).ToLocalChecked()));
+            auto val = Helpers::ConvertFromV8String(isolate, args[0]);
+            canvas_native_context_fill(*ptr->context_, val);
             ptr->UpdateInvalidateState();
         } else if (args[0]->IsObject()) {
             auto object = args[0]->ToObject(context).ToLocalChecked();
             if (Helpers::IsInstanceOf(isolate, object, "Path2D")) {
                 auto path = Path2D::GetPointer(object);
-                canvas_native_context_fill_with_path(*ptr->context_, path->GetPath(), "nonzero");
+                std::string rule("nonzero");
+                canvas_native_context_fill_with_path(*ptr->context_, path->GetPath(), rule);
                 ptr->UpdateInvalidateState();
             }
         }
     } else {
-        canvas_native_context_fill(*ptr->context_, "nonzero");
+        std::string rule("nonzero");
+        canvas_native_context_fill(*ptr->context_, rule);
         ptr->UpdateInvalidateState();
     }
 }
@@ -878,7 +883,7 @@ void CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::V
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     if (args.Length() >= 3) {
-        auto text = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
+        auto text = Helpers::ConvertFromV8String(isolate, args[0]);
         auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
         float width = -1;
@@ -930,19 +935,20 @@ void CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<
     if (args.Length() == 2) {
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-        auto ret = canvas_native_context_is_point_in_path(*ptr->context_, x, y, "nonzero");
+        std::string rule("nonzero");
+        auto ret = canvas_native_context_is_point_in_path(*ptr->context_, x, y, rule);
         args.GetReturnValue().Set(ret);
     } else if (args.Length() == 3 && args[2]->IsString()) {
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-        auto rule = Helpers::ConvertFromV8String(isolate, args[2]->ToString(context).ToLocalChecked());
+        auto rule = Helpers::ConvertFromV8String(isolate, args[2]);
         auto ret = canvas_native_context_is_point_in_path(*ptr->context_, x, y, rule);
         args.GetReturnValue().Set(ret);
     } else if (args.Length() == 4 && args[0]->IsObject() && args[3]->IsString()) {
         auto path = args[0]->ToObject(context).ToLocalChecked();
         auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-        auto rule = Helpers::ConvertFromV8String(isolate, args[3]->ToString(context).ToLocalChecked());
+        auto rule = Helpers::ConvertFromV8String(isolate, args[3]);
         if (Helpers::IsInstanceOf(isolate, path, "Path2D")) {
             auto path_ptr = Path2D::GetPointer(path);
             auto ret = canvas_native_context_is_point_in_path_with_path(*ptr->context_, path_ptr->GetPath(), x, y,
@@ -999,7 +1005,7 @@ void CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
-    auto text = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
+    auto text = Helpers::ConvertFromV8String(isolate, args[0]);
     auto metrics = canvas_native_context_measure_text(*ptr->context_, text);
     args.GetReturnValue().Set(TextMetricsImpl::NewInstance(isolate, std::move(metrics)));
 }
@@ -1206,7 +1212,7 @@ void CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8:
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     if (args.Length() >= 3) {
-        auto text = Helpers::ConvertFromV8String(isolate, args[0]->ToString(context).ToLocalChecked());
+        auto text = Helpers::ConvertFromV8String(isolate, args[0]);
         auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
         float maxWidth = static_cast<float>(args[3]->NumberValue(context).FromMaybe(-1));

@@ -3,6 +3,7 @@
 //
 
 #include "WEBGL_draw_buffersImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(rust::Box<WEBGL_draw_buffers> buffers) : buffers_(
         std::move(buffers)) {

@@ -3,6 +3,7 @@
 //
 
 #include "OES_element_index_uintImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 v8::Local<v8::FunctionTemplate> OES_element_index_uintImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);

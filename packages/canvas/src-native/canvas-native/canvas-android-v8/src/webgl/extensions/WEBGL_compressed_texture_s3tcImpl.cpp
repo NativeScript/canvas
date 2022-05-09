@@ -3,6 +3,7 @@
 //
 
 #include "WEBGL_compressed_texture_s3tcImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 v8::Local<v8::FunctionTemplate> WEBGL_compressed_texture_s3tcImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);

@@ -3,6 +3,7 @@
 //
 
 #include "WebGLActiveInfoImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGLActiveInfoImpl::WebGLActiveInfoImpl(rust::Box<WebGLActiveInfo> info) : info_(std::move(info)) {
 
@@ -48,8 +49,9 @@ void WebGLActiveInfoImpl::GetName(v8::Local<v8::String> name, const v8::Property
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.Holder());
-    auto info_name = canvas_native_webgl_active_info_get_name(*ptr->info_);
-    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(info_name)));
+    std::string info_name;
+    canvas_native_webgl_active_info_get_name(*ptr->info_, info_name);
+    info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, info_name));
 }
 
 void WebGLActiveInfoImpl::GetSize(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {

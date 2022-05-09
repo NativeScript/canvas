@@ -3,6 +3,7 @@
 //
 
 #include "WebGLUniformLocation.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 void WebGLUniformLocation::Init(v8::Isolate *isolate) {
     v8::Locker locker(isolate);

@@ -3,6 +3,7 @@
 //
 
 #include "WebGLTexture.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 void WebGLTexture::Init(v8::Isolate *isolate) {
     v8::Locker locker(isolate);

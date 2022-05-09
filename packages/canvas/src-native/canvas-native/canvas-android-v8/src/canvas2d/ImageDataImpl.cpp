@@ -3,6 +3,7 @@
 //
 
 #include "ImageDataImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 using namespace v8;
 

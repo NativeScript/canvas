@@ -3,6 +3,7 @@
 //
 
 #include "WebGLTransformFeedback.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 void WebGLTransformFeedback::Init(v8::Isolate *isolate) {
     v8::Locker locker(isolate);

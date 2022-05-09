@@ -3,6 +3,7 @@
 //
 
 #include "WebGLRenderingContext.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state) : WebGLRenderingContextBase(
         std::move(state)) {
@@ -55,7 +56,7 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
         auto antialias = true;
         auto depth = true;
         auto fail_if_major_performance_caveat = false;
-        rust::Str power_preference("default");
+        std::string power_preference("default");
         auto premultiplied_alpha = true;
         auto preserve_drawing_buffer = false;
         auto stencil = false;
@@ -66,7 +67,7 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
         if (!versionMaybe.IsEmpty()) {
             auto versionStr = versionMaybe.ToLocalChecked();
             if (versionStr->IsString()) {
-                version = Helpers::ConvertFromV8StringToString(isolate, versionStr.As<v8::String>());
+                version = Helpers::ConvertFromV8String(isolate, versionStr);
             }
         }
 
@@ -99,9 +100,8 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
         if (!powerPreferenceMaybe.IsEmpty()) {
             auto powerPreferenceLocal = powerPreferenceMaybe.ToLocalChecked();
             if (powerPreferenceLocal->IsString()) {
-                power_preference = rust::Str(
-                        Helpers::ConvertFromV8StringToString(isolate,
-                                                             powerPreferenceLocal->ToString(context).ToLocalChecked()));
+                power_preference = Helpers::ConvertFromV8String(isolate,
+                                                                powerPreferenceLocal);
             }
         }
 
@@ -164,12 +164,12 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
                 auto ctx = canvas_native_webgl_create_no_window(
                         width->Int32Value(context).ToChecked(),
                         height->Int32Value(context).ToChecked(),
-                        rust::Str(version),
+                        version,
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(power_preference),
+                        power_preference,
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -181,12 +181,12 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
 
             } else {
                 auto ctx = canvas_native_webgl_create(
-                        rust::Str(version),
+                        version,
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(power_preference),
+                        power_preference,
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -278,8 +278,7 @@ void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8
             auto programValue = Helpers::GetPrivate(isolate, p, "instance")->ToUint32(context);
             auto indexValue = index->ToUint32(context);
 
-            v8::String::Utf8Value val(isolate, name->ToString(context).ToLocalChecked());
-            rust::Str nameValue(*val, val.length());
+            auto nameValue = Helpers::ConvertFromV8String(isolate, name);
 
             canvas_native_webgl_bind_attrib_location(
                     programValue.ToLocalChecked()->Value(),
@@ -1411,8 +1410,7 @@ void WebGLRenderingContext::GetAttribLocation(const v8::FunctionCallbackInfo<v8:
         if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                v8::String::Utf8Value val(isolate, name->ToString(context).ToLocalChecked());
-                rust::Str nameValue(*val, val.length());
+                auto nameValue = Helpers::ConvertFromV8String(isolate, name);
 
                 auto location = canvas_native_webgl_get_attrib_location(
                         instance->Uint32Value(context).ToChecked(),
@@ -1468,9 +1466,10 @@ void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<
     ret->Set(context, Helpers::ConvertToV8String(isolate, "failIfMajorPerformanceCaveat"),
              v8::Boolean::New(isolate, fail_if_major_performance_caveat));
 
-    auto power_preference = canvas_native_webgl_context_attribute_get_get_power_preference(*attr);
+    std::string power_preference;
+    canvas_native_webgl_context_attribute_get_get_power_preference(*attr, power_preference);
     ret->Set(context, Helpers::ConvertToV8String(isolate, "powerPreference"),
-             Helpers::ConvertToV8String(isolate, power_preference.c_str()));
+             Helpers::ConvertToV8String(isolate, power_preference));
 
     auto premultiplied_alpha = canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(*attr);
     ret->Set(context, Helpers::ConvertToV8String(isolate, "premultipliedAlpha"),
@@ -1514,8 +1513,9 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
         args.GetReturnValue().Set(v8::Undefined(isolate));
         return;
     }
-    auto ext = canvas_native_webgl_get_extension(
-            Helpers::ConvertFromV8StringToString(isolate, name->ToString(context).ToLocalChecked()), ptr->GetPointer());
+
+    auto val = Helpers::ConvertFromV8String(isolate, name);
+    auto ext = canvas_native_webgl_get_extension(val, ptr->GetPointer());
 
     if (canvas_native_webgl_context_extension_is_none(*ext)) {
         args.GetReturnValue().Set(v8::Undefined(isolate));
@@ -1815,7 +1815,8 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
         case GL_SHADING_LANGUAGE_VERSION:
         case GL_VENDOR:
         case GL_VERSION: {
-            auto ret = canvas_native_webgl_result_get_string(*result);
+            std::string ret;
+            canvas_native_webgl_result_get_string(*result, ret);
             args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ret.c_str()));
         }
         default:
@@ -1851,12 +1852,14 @@ void WebGLRenderingContext::GetProgramInfoLog(const v8::FunctionCallbackInfo<v8:
         if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                auto ret = canvas_native_webgl_get_program_info_log(
+                std::string log;
+                canvas_native_webgl_get_program_info_log(
                         instance->Uint32Value(context).ToChecked(),
+                        log,
                         ptr->GetPointer()
                 );
 
-                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ret.c_str()));
+                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, log));
                 return;
             }
         }
@@ -1937,12 +1940,14 @@ void WebGLRenderingContext::GetShaderInfoLog(const v8::FunctionCallbackInfo<v8::
         if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                auto ret = canvas_native_webgl_get_shader_info_log(
+                std::string log;
+                 canvas_native_webgl_get_shader_info_log(
                         instance->Uint32Value(context).ToChecked(),
+                        log,
                         ptr->GetPointer()
                 );
 
-                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ret.c_str()));
+                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, log));
                 return;
             }
         }
@@ -2020,12 +2025,14 @@ void WebGLRenderingContext::GetShaderSource(const v8::FunctionCallbackInfo<v8::V
         if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                auto ret = canvas_native_webgl_get_shader_source(
+                std::string source;
+                canvas_native_webgl_get_shader_source(
                         instance->Uint32Value(context).ToChecked(),
+                        source,
                         ptr->GetPointer()
                 );
 
-                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ret.c_str()));
+                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, source));
                 return;
             }
         }
@@ -2080,8 +2087,7 @@ void WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
 
-                v8::String::Utf8Value val(isolate, name->ToString(context).ToLocalChecked());
-                rust::Str nameValue(*val, val.length());
+                auto nameValue = Helpers::ConvertFromV8String(isolate, name);
 
                 auto ret = canvas_native_webgl_get_uniform_location(
                         instance->Uint32Value(context).ToChecked(),
@@ -2129,9 +2135,10 @@ void WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value>
                         args.GetReturnValue().Set(v8::Null(isolate));
                         break;
                     case WebGLResultType::String: {
-                        auto str = canvas_native_webgl_result_get_string(*val);
+                        std::string str;
+                        canvas_native_webgl_result_get_string(*val, str);
                         args.GetReturnValue().Set(
-                                Helpers::ConvertToV8String(isolate, str.c_str())
+                                Helpers::ConvertToV8String(isolate, str)
                         );
                     }
                         break;
@@ -2580,8 +2587,7 @@ void WebGLRenderingContext::ShaderSource(const v8::FunctionCallbackInfo<v8::Valu
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
 
-                v8::String::Utf8Value val(isolate, source->ToString(context).ToLocalChecked());
-                rust::Str sourceValue(*val, val.length());
+                auto sourceValue = Helpers::ConvertFromV8String(isolate, source);
 
                 canvas_native_webgl_shader_source(instance->Uint32Value(context).ToChecked(), sourceValue,
                                                   ptr->GetPointer());

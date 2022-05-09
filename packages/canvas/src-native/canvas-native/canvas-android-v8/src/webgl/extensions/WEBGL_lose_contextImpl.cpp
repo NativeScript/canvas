@@ -3,7 +3,7 @@
 //
 
 #include "WEBGL_lose_contextImpl.h"
-
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WEBGL_lose_contextImpl::WEBGL_lose_contextImpl(rust::Box<WEBGL_lose_context> context) : context_(
         std::move(context)) {

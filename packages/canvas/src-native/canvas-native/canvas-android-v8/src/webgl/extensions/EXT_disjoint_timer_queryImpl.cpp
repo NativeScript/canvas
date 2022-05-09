@@ -3,6 +3,7 @@
 //
 
 #include "EXT_disjoint_timer_queryImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 EXT_disjoint_timer_queryImpl::EXT_disjoint_timer_queryImpl(rust::Box<EXT_disjoint_timer_query> query) : query_(
         std::move(query)) {

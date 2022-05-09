@@ -927,7 +927,7 @@ pub fn canvas_native_webgl2_get_uniform_block_index(
 
 pub fn canvas_native_webgl2_get_uniform_indices(
     program: u32,
-    uniform_names: &[&str],
+    uniform_names: &[String],
     state: &mut WebGLState,
 ) -> Vec<u32> {
     state.make_current();
@@ -935,7 +935,8 @@ pub fn canvas_native_webgl2_get_uniform_indices(
     let mut count: Vec<u32> = Vec::with_capacity(uniform_names.len());
     let mut buffer: Vec<CString> = Vec::with_capacity(uniform_names.len());
     for name in uniform_names.into_iter() {
-        buffer.push(CString::new(*name).unwrap())
+        let name = CString::new(name.as_str()).unwrap();
+        buffer.push(name);
     }
 
     let buf: Vec<*const c_char> = buffer.iter().map(|f| f.as_ptr()).collect();
@@ -1485,7 +1486,7 @@ pub fn canvas_native_webgl2_tex_sub_image3d_offset(
 
 pub fn canvas_native_webgl2_transform_feedback_varyings(
     program: u32,
-    varyings: &[&str],
+    varyings: &[String],
     buffer_mode: u32,
     state: &mut WebGLState,
 ) {
@@ -1494,7 +1495,7 @@ pub fn canvas_native_webgl2_transform_feedback_varyings(
     // todo improve performance ... no allocation :D
     let mut buf: Vec<CString> = Vec::with_capacity(varyings.len());
     for vary in varyings.into_iter() {
-        buf.push(CString::new(*vary).unwrap())
+        buf.push(CString::new(vary.as_str()).unwrap())
     }
 
     let buffer: Vec<*const c_char> = buf.iter().map(|f| f.as_ptr()).collect();

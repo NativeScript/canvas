@@ -3,6 +3,7 @@
 //
 
 #include "WebGL2RenderingContext.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGL2RenderingContext::WebGL2RenderingContext(rust::Box<WebGLState> state) : WebGLRenderingContextBase(
         std::move(state)) {
@@ -50,7 +51,7 @@ void WebGL2RenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<
         auto antialias = true;
         auto depth = true;
         auto fail_if_major_performance_caveat = false;
-        rust::Str power_preference("default");
+        std::string power_preference("default");
         auto premultiplied_alpha = true;
         auto preserve_drawing_buffer = false;
         auto stencil = false;
@@ -61,7 +62,7 @@ void WebGL2RenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<
         if (!versionMaybe.IsEmpty()) {
             auto versionStr = versionMaybe.ToLocalChecked();
             if (versionStr->IsString()) {
-                version = Helpers::ConvertFromV8StringToString(isolate, versionStr.As<v8::String>());
+                version = Helpers::ConvertFromV8String(isolate, versionStr);
             }
         }
 
@@ -94,9 +95,7 @@ void WebGL2RenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<
         if (!powerPreferenceMaybe.IsEmpty()) {
             auto powerPreferenceLocal = powerPreferenceMaybe.ToLocalChecked();
             if (powerPreferenceLocal->IsString()) {
-                power_preference = rust::Str(
-                        Helpers::ConvertFromV8StringToString(isolate,
-                                                             powerPreferenceLocal->ToString(context).ToLocalChecked()));
+                power_preference = Helpers::ConvertFromV8String(isolate, powerPreferenceLocal);
             }
         }
 
@@ -158,12 +157,12 @@ void WebGL2RenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<
                 auto ctx = canvas_native_webgl_create_no_window(
                         width->Int32Value(context).ToChecked(),
                         height->Int32Value(context).ToChecked(),
-                        rust::Str(version),
+                        version,
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(power_preference),
+                        power_preference,
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -175,12 +174,12 @@ void WebGL2RenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<
                 renderingContext = new WebGL2RenderingContext(std::move(ctx));
             } else {
                 auto ctx = canvas_native_webgl_create(
-                        rust::Str(version),
+                        version,
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(power_preference),
+                        power_preference,
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -986,12 +985,14 @@ void WebGL2RenderingContext::GetActiveUniformBlockName(const v8::FunctionCallbac
     auto uniformBlockIndex = args[1];
     if (args.Length() > 1 && Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
         auto programValue = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance")->ToUint32(context);
-        auto ret = canvas_native_webgl2_get_active_uniform_block_name(
+        std::string name;
+        canvas_native_webgl2_get_active_uniform_block_name(
                 programValue.ToLocalChecked()->Value(),
                 uniformBlockIndex->Uint32Value(context).ToChecked(),
+                name,
                 ptr->GetPointer()
         );
-        args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ret.c_str()));
+        args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, name));
     }
 
 }
@@ -1160,8 +1161,7 @@ void WebGL2RenderingContext::GetFragDataLocation(const v8::FunctionCallbackInfo<
     if (args.Length() > 1 && Helpers::IsInstanceOf(isolate, program, "WebGLProgram") && name->IsString()) {
         auto programValue = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance")->ToUint32(context);
 
-        v8::String::Utf8Value val(isolate, name->ToString(context).ToLocalChecked());
-        rust::Str nameValue(*val, val.length());
+        auto nameValue = Helpers::ConvertFromV8String(isolate, name);
 
 
         auto ret = canvas_native_webgl2_get_frag_data_location(
@@ -1533,17 +1533,14 @@ void WebGL2RenderingContext::GetUniformIndices(const v8::FunctionCallbackInfo<v8
         if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram") && uniformNames->IsArray()) {
             auto programValue = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance")->ToUint32(context);
             auto array = uniformNames.As<v8::Array>();
-            std::vector <rust::Str> buf;
+            std::vector <std::string> buf;
 
             for (int j = 0; j < array->Length(); ++j) {
                 auto name = array->Get(context, j).ToLocalChecked();
-                v8::String::Utf8Value val(isolate, name->ToString(context).ToLocalChecked());
-                rust::Str nameValue(*val, val.length());
+                auto nameValue = Helpers::ConvertFromV8String(isolate, name);
                 buf.push_back(nameValue);
             }
-            rust::Slice<const rust::Str> slice(buf.data(), buf.size());
-
-            auto ret = canvas_native_webgl2_get_uniform_indices(programValue.ToLocalChecked()->Value(), slice,
+            auto ret = canvas_native_webgl2_get_uniform_indices(programValue.ToLocalChecked()->Value(), buf,
                                                                 ptr->GetPointer());
 
             auto result = v8::Array::New(isolate, ret.size());
@@ -2126,20 +2123,18 @@ void WebGL2RenderingContext::TransformFeedbackVaryings(const v8::FunctionCallbac
             if (!instance.IsEmpty()) {
 
                 auto array = varyings.As<v8::Array>();
-                std::vector <rust::Str> buf;
+                std::vector <std::string> buf;
 
                 for (int j = 0; j < array->Length(); ++j) {
                     auto name = array->Get(context, j).ToLocalChecked();
-                    v8::String::Utf8Value val(isolate, name->ToString(context).ToLocalChecked());
-                    rust::Str nameValue(*val, val.length());
+                    auto nameValue = Helpers::ConvertFromV8String(isolate, name);
                     buf.push_back(nameValue);
                 }
 
-                rust::Slice<const rust::Str> slice(buf.data(), buf.size());
 
                 canvas_native_webgl2_transform_feedback_varyings(
                         instance->Uint32Value(context).ToChecked(),
-                        slice,
+                        buf,
                         bufferMode->Uint32Value(context).ToChecked(),
                         ptr->GetPointer()
                 );

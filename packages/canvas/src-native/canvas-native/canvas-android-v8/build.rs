@@ -251,7 +251,7 @@ fn main() {
 
             include_dir.push_str("/sysroot/usr/include");
             //println!("cargo:rustc-link-search={}", include_dir);
-                                                      // the resulting bindings.
+            // the resulting bindings.
 
             // println!("cargo:rerun-if-changed={}", "wrapper.h");
             let bindings = bindgen::Builder::default()
@@ -278,7 +278,6 @@ fn main() {
     }
 
     let mut dir_tmp = "";
-
     if target.architecture.eq("armv7") {
         dir_tmp = "vendor/armeabi-v7a";
         println!(
@@ -310,27 +309,37 @@ fn main() {
     println!("cargo:rustc-link-lib=static=zip");
     println!("cargo:rustc-link-arg=-Wl,--allow-multiple-definition");
     println!("cargo:rustc-link-arg=-Wl,-fuse-ld=lld");
-    println!("cargo:rustc-link-lib=static=c++abi");
-    println!("cargo:rustc-link-lib=static=c++");
+    // println!("cargo:rustc-link-lib=static=c++abi");
+    // println!("cargo:rustc-link-lib=static=c++");
 
     let mut build = cxx_build::bridges(["src/lib.rs", "src/bridges/context.rs"]);
 
     build
-        .flag("-nostdinc")
+        //.flag("-nostdinc")
         .flag("-pthread")
+        //.flag("-fvisibility-inlines-hidden")
         .cpp_link_stdlib("c++_static")
         .flag_if_supported("-std=c++14")
         .flag(&format!("--target={}", target_str))
-        .flag(&format!(
-            "--sysroot={}/sysroot",
-            ndk()
-        ))
-        .flag(&format!(
-            "-isystem{}/sources/cxx-stl/llvm-libc++/include",
-            ndk()
-        ))
+        .flag(&format!("--sysroot={}/sysroot", ndk()))
+        // .flag(&format!(
+        //     "-isystem{}/sources/cxx-stl/llvm-libc++/include",
+        //     ndk()
+        // ))
+        // .flag(&format!(
+        //     "{}/sources/cxx-stl/llvm-libc++abi/include",
+        //     ndk()
+        // ))
+        // .flag(&format!(
+        //     "-isystem{}/sources/cxx-stl/llvm-libc++/include",
+        //     ndk()
+        // ))
         .include(&format!("{}/sources/android/cpufeatures", ndk()))
+        .include(&format!("{}/sources/android/support/include", ndk()))
         .include("include")
+        // .flag(&format!(
+        //     "-isysteminclude/libc++"
+        // ))
         .include("include/libc++")
         .include("include/inspector")
         .include("include/libplatform")
@@ -343,8 +352,8 @@ fn main() {
         .files(&CPP_SOURCE)
         .files(&CPP_2D_SOURCE)
         .files(&CPP_WEBGL_SOURCE)
-        .files(&CPP_WEBGL2_SOURCE)
         .files(&CPP_WEBGL_EXT_SOURCE)
+        .files(&CPP_WEBGL2_SOURCE)
         .file("src/Bridge.cpp");
 
     build.extra_warnings(false);
@@ -377,12 +386,14 @@ fn main() {
         build.define("ANDROID_PLATFORM", "android-21");
         build.define("APP_PLATFORM", "android-21");
         build.define("V8_COMPRESS_POINTERS", None);
+        build.define("__ANDROID_API__", "21");
     }
 
     if target.architecture.eq("armv7") || target.architecture.eq("x86") {
         build.define("ANDROID_PLATFORM", "android-17");
         build.define("APP_PLATFORM", "android-17");
         build.define("V8_COMPRESS_POINTERS", None);
+        build.define("__ANDROID_API__", "17");
     }
 
     let flags: Vec<_> = FLAGS_STR.split(" ").collect();

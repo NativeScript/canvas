@@ -30,14 +30,18 @@ if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Lo
 }
 
 const ppi = (Utils.ad.getApplicationContext() as android.content.Context).getResources().getDisplayMetrics().density * 160;
-
-__non_webpack_require__('~/libcanvasnativev8.so');
+try{
+	__non_webpack_require__('~/libcanvasnativev8.so');
+}catch(e){
+	console.log('__non_webpack_require__', e);
+}
+console.log('loaded');
 
 const ctx: CanvasRenderingContext2D = global.__getCanvasRenderingContext2DImpl(300, 300, 1, -16777216, ppi, direction, true);
+console.log('asdasdasdas');
 ctx.lineDashOffset = 10;
-const array = new Float32Array([1, 2, 3, 4]);
-console.log(array);
-ctx.setLineDash(array as any);
+console.log('asdasdasdas');
+ctx.setLineDash([1, 2, 3, 4]);
 
 console.log(ctx.getLineDash());
 // try {

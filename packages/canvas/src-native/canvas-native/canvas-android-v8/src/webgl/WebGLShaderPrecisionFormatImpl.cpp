@@ -3,6 +3,7 @@
 //
 
 #include "WebGLShaderPrecisionFormatImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGLShaderPrecisionFormatImpl::WebGLShaderPrecisionFormatImpl(rust::Box <WebGLShaderPrecisionFormat> shader) : shader_(
         std::move(shader)) {

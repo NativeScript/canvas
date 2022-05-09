@@ -3,6 +3,7 @@
 //
 
 #include "TextMetricsImpl.h"
+#include "canvas-android-v8/src/bridges/context.rs.h"
 
 TextMetricsImpl::TextMetricsImpl(rust::Box <TextMetrics> metrics) : metrics_(std::move(metrics)) {
 

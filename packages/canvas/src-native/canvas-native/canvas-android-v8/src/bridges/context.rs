@@ -12,7 +12,8 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 use std::sync::Arc;
 
-use cxx::{let_cxx_string, type_id, CxxString, ExternType, SharedPtr, UniquePtr};
+#[feature(alloc)]
+use cxx::{let_cxx_string, type_id, CxxString, CxxVector, ExternType, SharedPtr, UniquePtr};
 use once_cell::sync::OnceCell;
 use parking_lot::lock_api::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
@@ -92,8 +93,10 @@ extern "C" {
     pub fn __android_log_write(prio: c_int, tag: *const c_char, text: *const c_char) -> c_int;
 }
 
-pub fn _log(priority: isize, tag: &str, text: &str) {
-    __log(priority.try_into().unwrap(), tag, text);
+pub fn _log(priority: isize, tag: Pin<&mut CxxString>, text: Pin<&mut CxxString>) {
+    let tag = tag.to_string_lossy();
+    let text = text.to_string_lossy();
+    __log(priority.try_into().unwrap(), tag.as_ref(), text.as_ref());
 }
 
 pub fn __log(priority: LogPriority, tag: &str, text: &str) {
@@ -104,8 +107,9 @@ pub fn __log(priority: LogPriority, tag: &str, text: &str) {
     }
 }
 
-pub fn console_log(text: &str) {
-    __log(LogPriority::INFO, "JS", text);
+pub fn console_log(text: &CxxString) {
+    let text = text.to_string_lossy();
+    __log(LogPriority::INFO, "JS", text.as_ref());
 }
 
 pub fn to_rust_string(value: &[c_char]) -> String {
@@ -123,6 +127,7 @@ pub fn write_to_string(value: &[c_char], mut buf: Pin<&mut CxxString>) {
     let string = unsafe { CStr::from_ptr(value.as_ptr()).to_string_lossy() };
     buf.push_str(string.as_ref());
 }
+
 /* Utils */
 
 /* TextEncoder */
@@ -254,7 +259,7 @@ pub(crate) mod ffi {
 
     unsafe extern "C++" {
         include!("canvas-android-v8/src/OnRafCallback.h");
-        fn OnRafCallbackOnFrame(callback: isize, ts: i64);
+        pub(crate) fn OnRafCallbackOnFrame(callback: isize, ts: i64);
     }
 
     extern "Rust" {
@@ -304,8 +309,8 @@ pub(crate) mod ffi {
         type WebGLIndexedParameter;
 
         /* Utils */
-        fn _log(priority: isize, tag: &str, text: &str);
-        fn console_log(text: &str);
+        fn _log(priority: isize, tag: Pin<&mut CxxString>, text: Pin<&mut CxxString>);
+        fn console_log(text: &CxxString);
         fn to_rust_string(value: &[c_char]) -> String;
         fn write_to_string(value: &[c_char], mut buf: Pin<&mut CxxString>);
         /* Utils */
@@ -314,8 +319,8 @@ pub(crate) mod ffi {
         fn canvas_native_path_add_path(path: &mut Path, path_to_add: &Path);
         fn canvas_native_path_create() -> Box<Path>;
         fn canvas_native_path_create_with_path(path: &Path) -> Box<Path>;
-        fn canvas_native_path_create_with_string(string: String) -> Box<Path>;
-        fn canvas_native_path_create_with_str(string: &str) -> Box<Path>;
+        fn canvas_native_path_create_with_string(string: Pin<&mut CxxString>) -> Box<Path>;
+        fn canvas_native_path_create_with_str(string: Pin<&mut CxxString>) -> Box<Path>;
         fn canvas_native_path_close_path(path: &mut Path);
         fn canvas_native_path_move_to(path: &mut Path, x: f32, y: f32);
         fn canvas_native_path_line_to(path: &mut Path, x: f32, y: f32);
@@ -369,7 +374,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_path_rect(path: &mut Path, x: f32, y: f32, width: f32, height: f32);
 
-        fn canvas_native_path_to_string(path: &Path) -> String;
+        fn canvas_native_path_to_string(path: &Path, value: Pin<&mut CxxString>);
 
         fn canvas_native_path_to_str(path: &Path, svg: Pin<&mut CxxString>);
         /* Path2D */
@@ -481,19 +486,25 @@ pub(crate) mod ffi {
         /* ImageAsset */
         fn canvas_native_image_asset_create() -> Box<ImageAsset>;
 
-        fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &str) -> bool;
+        fn canvas_native_image_asset_load_from_path(
+            asset: &mut ImageAsset,
+            path: Pin<&mut CxxString>,
+        ) -> bool;
 
         fn canvas_native_image_asset_load_from_path_async(
             asset: &mut ImageAsset,
-            path: &str,
+            path: Pin<&mut CxxString>,
             callback: isize,
         );
 
-        fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str) -> bool;
+        fn canvas_native_image_asset_load_from_url(
+            asset: &mut ImageAsset,
+            url: Pin<&mut CxxString>,
+        ) -> bool;
 
         fn canvas_native_image_asset_load_from_url_async(
             asset: &mut ImageAsset,
-            url: &str,
+            url: Pin<&mut CxxString>,
             callback: isize,
         );
 
@@ -511,7 +522,10 @@ pub(crate) mod ffi {
 
         fn canvas_native_image_asset_height(asset: &mut ImageAsset) -> u32;
 
-        fn canvas_native_image_asset_get_error(asset: &mut ImageAsset) -> String;
+        unsafe fn canvas_native_image_asset_get_error(
+            asset: &mut ImageAsset,
+            error: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_image_asset_has_error(asset: &mut ImageAsset) -> bool;
 
@@ -519,13 +533,13 @@ pub(crate) mod ffi {
 
         fn canvas_native_image_asset_save_path(
             asset: &mut ImageAsset,
-            path: &str,
+            path: Pin<&mut CxxString>,
             format: u32,
         ) -> bool;
 
         fn canvas_native_image_asset_save_path_async(
             asset: &mut ImageAsset,
-            path: &str,
+            path: Pin<&mut CxxString>,
             format: u32,
             callback: isize,
         );
@@ -559,7 +573,11 @@ pub(crate) mod ffi {
         /* TextMetrics */
 
         /* CanvasGradient */
-        fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, color: &str);
+        fn canvas_native_gradient_add_color_stop(
+            style: &mut PaintStyle,
+            stop: f32,
+            color: Pin<&mut CxxString>,
+        );
 
         /* CanvasGradient */
 
@@ -568,15 +586,28 @@ pub(crate) mod ffi {
         /* CanvasPattern */
 
         /* TextDecoder */
-        fn canvas_native_text_decoder_create(decoding: &str) -> Box<TextDecoder>;
-        fn canvas_native_text_decoder_get_encoding(decoder: &mut TextDecoder) -> String;
-        fn canvas_native_text_decoder_decode(decoder: &mut TextDecoder, data: &[u8]) -> String;
+        fn canvas_native_text_decoder_create(decoding: Pin<&mut CxxString>) -> Box<TextDecoder>;
+        fn canvas_native_text_decoder_get_encoding(
+            decoder: &mut TextDecoder,
+            encoding: Pin<&mut CxxString>,
+        );
+        fn canvas_native_text_decoder_decode(
+            decoder: &mut TextDecoder,
+            data: &[u8],
+            text: Pin<&mut CxxString>,
+        );
         /* TextDecoder */
 
         /* TextEncoder */
-        fn canvas_native_text_encoder_create(encoding: &str) -> Box<TextEncoder>;
-        fn canvas_native_text_encoder_get_encoding(decoder: &mut TextEncoder) -> String;
-        fn canvas_native_text_encoder_encode(encoder: &mut TextEncoder, text: &str) -> Vec<u8>;
+        fn canvas_native_text_encoder_create(encoding: Pin<&mut CxxString>) -> Box<TextEncoder>;
+        fn canvas_native_text_encoder_get_encoding(
+            decoder: &mut TextEncoder,
+            encoding: Pin<&mut CxxString>,
+        );
+        fn canvas_native_text_encoder_encode(
+            encoder: &mut TextEncoder,
+            text: Pin<&mut CxxString>,
+        ) -> Vec<u8>;
         /* TextEncoder */
 
         /* Raf */
@@ -632,8 +663,14 @@ pub(crate) mod ffi {
 
         fn canvas_native_context_flush(context: &CanvasRenderingContext2D);
 
-        fn canvas_native_context_get_font(context: &CanvasRenderingContext2D) -> String;
-        fn canvas_native_context_set_font(context: &mut CanvasRenderingContext2D, font: &str);
+        fn canvas_native_context_get_font(
+            context: &CanvasRenderingContext2D,
+            font: Pin<&mut CxxString>,
+        );
+        fn canvas_native_context_set_font(
+            context: &mut CanvasRenderingContext2D,
+            font: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_get_global_alpha(context: &CanvasRenderingContext2D) -> f32;
         fn canvas_native_context_set_global_alpha(
@@ -652,20 +689,33 @@ pub(crate) mod ffi {
 
         fn canvas_native_context_get_image_smoothing_quality(
             context: &CanvasRenderingContext2D,
-        ) -> String;
+            quality: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_set_image_smoothing_quality(
             context: &mut CanvasRenderingContext2D,
-            quality: &str,
+            quality: Pin<&mut CxxString>,
         );
 
-        fn canvas_native_context_get_line_join(context: &CanvasRenderingContext2D) -> String;
+        fn canvas_native_context_get_line_join(
+            context: &CanvasRenderingContext2D,
+            join: Pin<&mut CxxString>,
+        );
 
-        fn canvas_native_context_set_line_join(context: &mut CanvasRenderingContext2D, join: &str);
+        fn canvas_native_context_set_line_join(
+            context: &mut CanvasRenderingContext2D,
+            join: Pin<&mut CxxString>,
+        );
 
-        fn canvas_native_context_get_line_cap(context: &CanvasRenderingContext2D) -> String;
+        fn canvas_native_context_get_line_cap(
+            context: &CanvasRenderingContext2D,
+            cap: Pin<&mut CxxString>,
+        );
 
-        fn canvas_native_context_set_line_cap(context: &mut CanvasRenderingContext2D, cap: &str);
+        fn canvas_native_context_set_line_cap(
+            context: &mut CanvasRenderingContext2D,
+            cap: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_get_miter_limit(context: &CanvasRenderingContext2D) -> f32;
 
@@ -674,11 +724,14 @@ pub(crate) mod ffi {
             limit: f32,
         );
 
-        fn canvas_native_context_get_shadow_color(context: &CanvasRenderingContext2D) -> String;
+        fn canvas_native_context_get_shadow_color(
+            context: &CanvasRenderingContext2D,
+            color: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_set_shadow_color(
             context: &mut CanvasRenderingContext2D,
-            color: &str,
+            color: Pin<&mut CxxString>,
         );
 
         fn canvas_native_context_get_shadow_blur(context: &CanvasRenderingContext2D) -> f32;
@@ -699,33 +752,40 @@ pub(crate) mod ffi {
             y: f32,
         );
 
-        fn canvas_native_context_get_text_align(context: &CanvasRenderingContext2D) -> String;
+        fn canvas_native_context_get_text_align(
+            context: &CanvasRenderingContext2D,
+            align: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_set_text_align(
             context: &mut CanvasRenderingContext2D,
-            alignment: &str,
+            alignment: Pin<&mut CxxString>,
         );
 
         fn canvas_native_context_get_global_composition(
             context: &CanvasRenderingContext2D,
-        ) -> String;
+            composition: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_set_global_composition(
             context: &CanvasRenderingContext2D,
-            composition: &str,
+            composition: Pin<&mut CxxString>,
         );
 
         fn canvas_native_paint_style_set_fill_color_with_string(
             context: &mut CanvasRenderingContext2D,
-            color: &str,
+            color: Pin<&mut CxxString>,
         );
 
         fn canvas_native_paint_style_set_stroke_color_with_string(
             context: &mut CanvasRenderingContext2D,
-            color: &str,
+            color: Pin<&mut CxxString>,
         );
 
-        fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String;
+        fn canvas_native_paint_style_get_color_string(
+            color: &mut PaintStyle,
+            style: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_get_style_type(style: &PaintStyle) -> PaintStyleType;
 
@@ -807,10 +867,13 @@ pub(crate) mod ffi {
         fn canvas_native_context_clip(
             context: &mut CanvasRenderingContext2D,
             path: &mut Path,
-            rule: &str,
+            rule: Pin<&mut CxxString>,
         );
 
-        fn canvas_native_context_clip_rule(context: &mut CanvasRenderingContext2D, rule: &str);
+        fn canvas_native_context_clip_rule(
+            context: &mut CanvasRenderingContext2D,
+            rule: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_close_path(context: &mut CanvasRenderingContext2D);
 
@@ -829,19 +892,19 @@ pub(crate) mod ffi {
             data: &[u8],
             width: i32,
             height: i32,
-            repetition: &str,
+            repetition: Pin<&mut CxxString>,
         ) -> Box<PaintStyle>;
 
         fn canvas_native_context_create_pattern_asset(
             context: &mut CanvasRenderingContext2D,
             asset: &mut ImageAsset,
-            repetition: &str,
+            repetition: Pin<&mut CxxString>,
         ) -> Box<PaintStyle>;
 
         fn canvas_native_context_create_pattern_encoded(
             context: &mut CanvasRenderingContext2D,
             data: &[u8],
-            repetition: &str,
+            repetition: Pin<&mut CxxString>,
         ) -> Box<PaintStyle>;
 
         fn canvas_native_context_create_radial_gradient(
@@ -959,12 +1022,15 @@ pub(crate) mod ffi {
             anticlockwise: bool,
         );
 
-        fn canvas_native_context_fill(context: &mut CanvasRenderingContext2D, rule: &str);
+        fn canvas_native_context_fill(
+            context: &mut CanvasRenderingContext2D,
+            rule: Pin<&mut CxxString>,
+        );
 
         fn canvas_native_context_fill_with_path(
             context: &mut CanvasRenderingContext2D,
             path: &mut Path,
-            rule: &str,
+            rule: Pin<&mut CxxString>,
         );
 
         fn canvas_native_context_fill_rect(
@@ -977,7 +1043,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_context_fill_text(
             context: &mut CanvasRenderingContext2D,
-            text: &str,
+            text: Pin<&mut CxxString>,
             x: f32,
             y: f32,
             width: f32,
@@ -999,7 +1065,7 @@ pub(crate) mod ffi {
             context: &mut CanvasRenderingContext2D,
             x: f32,
             y: f32,
-            rule: &str,
+            rule: Pin<&mut CxxString>,
         ) -> bool;
 
         fn canvas_native_context_is_point_in_path_with_path(
@@ -1007,7 +1073,7 @@ pub(crate) mod ffi {
             path: &mut Path,
             x: f32,
             y: f32,
-            rule: &str,
+            rule: Pin<&mut CxxString>,
         ) -> bool;
 
         fn canvas_native_context_is_point_in_stroke(
@@ -1027,7 +1093,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_context_measure_text(
             context: &mut CanvasRenderingContext2D,
-            text: &str,
+            text: Pin<&mut CxxString>,
         ) -> Box<TextMetrics>;
 
         fn canvas_native_context_move_to(context: &mut CanvasRenderingContext2D, x: f32, y: f32);
@@ -1100,7 +1166,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_context_stroke_text(
             context: &mut CanvasRenderingContext2D,
-            text: &str,
+            text: Pin<&mut CxxString>,
             x: f32,
             y: f32,
             width: f32,
@@ -1122,7 +1188,10 @@ pub(crate) mod ffi {
 
         /* WebGLActiveInfo */
 
-        fn canvas_native_webgl_active_info_get_name(info: &WebGLActiveInfo) -> &str;
+        fn canvas_native_webgl_active_info_get_name(
+            info: &WebGLActiveInfo,
+            name: Pin<&mut CxxString>,
+        );
         fn canvas_native_webgl_active_info_get_size(info: &WebGLActiveInfo) -> i32;
         fn canvas_native_webgl_active_info_get_type(info: &WebGLActiveInfo) -> u32;
         fn canvas_native_webgl_active_info_get_is_empty(info: &WebGLActiveInfo) -> bool;
@@ -1152,7 +1221,8 @@ pub(crate) mod ffi {
         ) -> bool;
         fn canvas_native_webgl_context_attribute_get_get_power_preference(
             attr: &ContextAttributes,
-        ) -> String;
+            power_preference: Pin<&mut CxxString>,
+        );
         fn canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(
             attr: &ContextAttributes,
         ) -> bool;
@@ -1258,7 +1328,7 @@ pub(crate) mod ffi {
         fn canvas_native_webgl_result_get_u32(result: &WebGLResult) -> u32;
         fn canvas_native_webgl_result_get_i32(result: &WebGLResult) -> i32;
         fn canvas_native_webgl_result_get_f32(result: &WebGLResult) -> f32;
-        fn canvas_native_webgl_result_get_string(result: &WebGLResult) -> String;
+        fn canvas_native_webgl_result_get_string(result: &WebGLResult, value: Pin<&mut CxxString>);
         fn canvas_native_webgl_result_get_is_none(result: &WebGLResult) -> bool;
 
         /* WebGLResult */
@@ -1345,12 +1415,12 @@ pub(crate) mod ffi {
         /* WebGLRenderingContext */
 
         fn canvas_native_webgl_create(
-            version: &str,
+            version: Pin<&mut CxxString>,
             alpha: bool,
             antialias: bool,
             depth: bool,
             fail_if_major_performance_caveat: bool,
-            power_preference: &str,
+            power_preference: Pin<&mut CxxString>,
             premultiplied_alpha: bool,
             preserve_drawing_buffer: bool,
             stencil: bool,
@@ -1361,12 +1431,12 @@ pub(crate) mod ffi {
         fn canvas_native_webgl_create_no_window(
             width: i32,
             height: i32,
-            version: &str,
+            version: Pin<&mut CxxString>,
             alpha: bool,
             antialias: bool,
             depth: bool,
             fail_if_major_performance_caveat: bool,
-            power_preference: &str,
+            power_preference: Pin<&mut CxxString>,
             premultiplied_alpha: bool,
             preserve_drawing_buffer: bool,
             stencil: bool,
@@ -1382,7 +1452,7 @@ pub(crate) mod ffi {
         fn canvas_native_webgl_bind_attrib_location(
             program: u32,
             index: u32,
-            name: &str,
+            name: Pin<&mut CxxString>,
             state: &mut WebGLState,
         );
 
@@ -1644,7 +1714,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_webgl_get_attrib_location(
             program: u32,
-            name: &str,
+            name: Pin<&mut CxxString>,
             state: &mut WebGLState,
         ) -> i32;
 
@@ -1660,7 +1730,7 @@ pub(crate) mod ffi {
         fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32;
 
         fn canvas_native_webgl_get_extension(
-            name: &str,
+            name: Pin<&mut CxxString>,
             state: &mut WebGLState,
         ) -> Box<WebGLExtension>;
 
@@ -1676,8 +1746,11 @@ pub(crate) mod ffi {
             state: &mut WebGLState,
         ) -> Box<WebGLResult>;
 
-        fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLState)
-            -> String;
+        fn canvas_native_webgl_get_program_info_log(
+            program: u32,
+            log: Pin<&mut CxxString>,
+            state: &mut WebGLState,
+        );
 
         fn canvas_native_webgl_get_program_parameter(
             program: u32,
@@ -1691,7 +1764,11 @@ pub(crate) mod ffi {
             state: &mut WebGLState,
         ) -> i32;
 
-        fn canvas_native_webgl_get_shader_info_log(shader: u32, state: &mut WebGLState) -> String;
+        fn canvas_native_webgl_get_shader_info_log(
+            shader: u32,
+            log: Pin<&mut CxxString>,
+            state: &mut WebGLState,
+        );
 
         fn canvas_native_webgl_get_shader_parameter(
             shader: u32,
@@ -1699,52 +1776,55 @@ pub(crate) mod ffi {
             state: &mut WebGLState,
         ) -> Box<WebGLResult>;
 
-        pub fn canvas_native_webgl_get_shader_precision_format(
+        fn canvas_native_webgl_get_shader_precision_format(
             shader_type: u32,
             precision_type: u32,
             state: &mut WebGLState,
         ) -> Box<WebGLShaderPrecisionFormat>;
 
-        pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState)
-            -> String;
+        fn canvas_native_webgl_get_shader_source(
+            shader: u32,
+            source: Pin<&mut CxxString>,
+            state: &mut WebGLState,
+        );
 
-        pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String>;
+        fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String>;
 
-        pub fn canvas_native_webgl_get_tex_parameter(
+        fn canvas_native_webgl_get_tex_parameter(
             target: u32,
             pname: u32,
             state: &mut WebGLState,
         ) -> i32;
 
-        pub fn canvas_native_webgl_get_uniform_location(
+        fn canvas_native_webgl_get_uniform_location(
             program: u32,
-            name: &str,
+            name: Pin<&mut CxxString>,
             state: &mut WebGLState,
         ) -> i32;
 
-        pub fn canvas_native_webgl_get_uniform(
+        fn canvas_native_webgl_get_uniform(
             program: u32,
             location: i32,
             state: &mut WebGLState,
         ) -> Box<WebGLResult>;
 
-        pub fn canvas_native_webgl_get_vertex_attrib_offset(
+        fn canvas_native_webgl_get_vertex_attrib_offset(
             index: u32,
             pname: u32,
             state: &mut WebGLState,
         ) -> usize;
 
-        pub fn canvas_native_webgl_get_vertex_attrib(
+        fn canvas_native_webgl_get_vertex_attrib(
             index: u32,
             pname: u32,
             state: &mut WebGLState,
         ) -> Box<WebGLResult>;
 
-        pub fn canvas_native_webgl_get_is_context_lost(state: &mut WebGLState) -> bool;
+        fn canvas_native_webgl_get_is_context_lost(state: &mut WebGLState) -> bool;
 
-        pub fn canvas_native_webgl_hint(target: u32, mode: u32, state: &mut WebGLState);
+        fn canvas_native_webgl_hint(target: u32, mode: u32, state: &mut WebGLState);
 
-        pub fn canvas_native_webgl_is_buffer(buffer: u32, state: &mut WebGLState) -> bool;
+        fn canvas_native_webgl_is_buffer(buffer: u32, state: &mut WebGLState) -> bool;
 
         fn canvas_native_webgl_is_enabled(cap: u32, state: &mut WebGLState) -> bool;
 
@@ -1817,7 +1897,11 @@ pub(crate) mod ffi {
             state: &mut WebGLState,
         );
 
-        fn canvas_native_webgl_shader_source(shader: u32, source: &str, state: &mut WebGLState);
+        fn canvas_native_webgl_shader_source(
+            shader: u32,
+            source: Pin<&mut CxxString>,
+            state: &mut WebGLState,
+        );
 
         fn canvas_native_webgl_stencil_func(
             func: u32,
@@ -2296,8 +2380,9 @@ pub(crate) mod ffi {
         fn canvas_native_webgl2_get_active_uniform_block_name(
             program: u32,
             uniform_block_index: u32,
-            state: &mut WebGLState,
-        ) -> String;
+            name: Pin<&mut CxxString>,
+            state: &mut WebGLState
+        );
 
         fn canvas_native_webgl2_get_active_uniform_block_parameter(
             program: u32,
@@ -2324,7 +2409,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_webgl2_get_frag_data_location(
             program: u32,
-            name: &str,
+            name: Pin<&mut CxxString>,
             state: &mut WebGLState,
         ) -> i32;
 
@@ -2378,13 +2463,13 @@ pub(crate) mod ffi {
 
         fn canvas_native_webgl2_get_uniform_block_index(
             program: u32,
-            uniform_block_name: &str,
+            uniform_block_name: Pin<&mut CxxString>,
             state: &mut WebGLState,
         ) -> u32;
 
         fn canvas_native_webgl2_get_uniform_indices(
             program: u32,
-            uniform_names: &[&str],
+            uniform_names: &CxxVector<CxxString>,
             state: &mut WebGLState,
         ) -> Vec<u32>;
 
@@ -2585,7 +2670,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_webgl2_transform_feedback_varyings(
             program: u32,
-            varyings: &[&str],
+            varyings: &CxxVector<CxxString>,
             buffer_mode: u32,
             state: &mut WebGLState,
         );
@@ -2779,15 +2864,17 @@ pub fn canvas_native_context_create_gl_no_window(
     direction: u32,
     alpha: bool,
 ) -> Box<CanvasRenderingContext2D> {
+    let_cxx_string!(version = "canvas");
+    let_cxx_string!(power_preference = "default");
     let mut state = *canvas_native_webgl_create_no_window(
         width as i32,
         height as i32,
-        "canvas",
+        version,
         alpha,
         false,
         false,
         false,
-        "default",
+        power_preference,
         true,
         false,
         false,
@@ -2826,11 +2913,15 @@ pub fn canvas_native_context_create_gl_no_window(
     })
 }
 
-fn canvas_native_context_get_font(context: &CanvasRenderingContext2D) -> String {
-    context.context.get_context().font().to_string()
+fn canvas_native_context_get_font(context: &CanvasRenderingContext2D, font: Pin<&mut CxxString>) {
+    font.push_str(context.context.get_context().font());
 }
-fn canvas_native_context_set_font(context: &mut CanvasRenderingContext2D, font: &str) {
-    context.context.get_context_mut().set_font(font);
+fn canvas_native_context_set_font(
+    context: &mut CanvasRenderingContext2D,
+    font: Pin<&mut CxxString>,
+) {
+    let font = String::from_utf8_lossy(font.as_bytes());
+    context.context.get_context_mut().set_font(font.as_ref());
 }
 
 pub fn canvas_native_context_get_global_alpha(context: &CanvasRenderingContext2D) -> f32 {
@@ -2859,21 +2950,23 @@ pub fn canvas_native_context_set_image_smoothing_enabled(
 
 pub fn canvas_native_context_get_image_smoothing_quality(
     context: &CanvasRenderingContext2D,
-) -> String {
+    quality: Pin<&mut CxxString>,
+) {
     let ret = match context.context.get_context().get_image_smoothing_quality() {
         ImageSmoothingQuality::Low => "low",
         ImageSmoothingQuality::Medium => "medium",
         ImageSmoothingQuality::High => "high",
     };
 
-    ret.to_string()
+    quality.push_str(ret);
 }
 
 pub fn canvas_native_context_set_image_smoothing_quality(
     context: &mut CanvasRenderingContext2D,
-    quality: &str,
+    quality: Pin<&mut CxxString>,
 ) {
-    match quality {
+    let quality = quality.to_string_lossy();
+    match quality.as_ref() {
         "low" => context
             .context
             .get_context_mut()
@@ -2890,18 +2983,25 @@ pub fn canvas_native_context_set_image_smoothing_quality(
     }
 }
 
-pub fn canvas_native_context_get_line_join(context: &CanvasRenderingContext2D) -> String {
+pub fn canvas_native_context_get_line_join(
+    context: &CanvasRenderingContext2D,
+    join: Pin<&mut CxxString>,
+) {
     let ret = match context.context.get_context().line_join() {
         LineJoin::JoinBevel => "bevel",
         LineJoin::JoinMiter => "miter",
         LineJoin::JoinRound => "round",
     };
 
-    ret.to_string()
+    join.push_str(ret);
 }
 
-pub fn canvas_native_context_set_line_join(context: &mut CanvasRenderingContext2D, join: &str) {
-    match join {
+pub fn canvas_native_context_set_line_join(
+    context: &mut CanvasRenderingContext2D,
+    join: Pin<&mut CxxString>,
+) {
+    let join = join.to_string_lossy();
+    match join.as_ref() {
         "bevel" => context
             .context
             .get_context_mut()
@@ -2918,23 +3018,33 @@ pub fn canvas_native_context_set_line_join(context: &mut CanvasRenderingContext2
     }
 }
 
-pub fn canvas_native_context_get_line_cap(context: &CanvasRenderingContext2D) -> String {
+pub fn canvas_native_context_get_line_cap(
+    context: &CanvasRenderingContext2D,
+    cap: Pin<&mut CxxString>,
+) {
     let ret = match context.context.get_context().line_cap() {
         LineCap::CapRound => "round",
         LineCap::CapButt => "butt",
         LineCap::CapSquare => "square",
     };
 
-    ret.to_string()
+    cap.push_str(ret);
 }
 
-pub fn canvas_native_context_set_line_cap(context: &mut CanvasRenderingContext2D, cap: &str) {
-    match cap {
+pub fn canvas_native_context_set_line_cap(
+    context: &mut CanvasRenderingContext2D,
+    cap: Pin<&mut CxxString>,
+) {
+    let cap = cap.to_string_lossy();
+    match cap.as_ref() {
         "round" => context
             .context
             .get_context_mut()
             .set_line_cap(LineCap::CapRound),
-        "butt" => context.context.get_context_mut().set_line_cap(LineCap::CapButt),
+        "butt" => context
+            .context
+            .get_context_mut()
+            .set_line_cap(LineCap::CapButt),
         "square" => context
             .context
             .get_context_mut()
@@ -2951,14 +3061,22 @@ pub fn canvas_native_context_set_miter_limit(context: &mut CanvasRenderingContex
     context.context.get_context_mut().set_miter_limit(limit);
 }
 
-pub fn canvas_native_context_get_shadow_color(context: &CanvasRenderingContext2D) -> String {
-    let color = context.context.get_context().shadow_color();
-    to_parsed_color(color)
+pub fn canvas_native_context_get_shadow_color(
+    context: &CanvasRenderingContext2D,
+    color: Pin<&mut CxxString>,
+) {
+    let value = context.context.get_context().shadow_color();
+    let ret = to_parsed_color(value);
+    color.push_str(ret.as_str());
 }
 
-pub fn canvas_native_context_set_shadow_color(context: &mut CanvasRenderingContext2D, color: &str) {
+pub fn canvas_native_context_set_shadow_color(
+    context: &mut CanvasRenderingContext2D,
+    color: Pin<&mut CxxString>,
+) {
     let mut lock = context.context.get_context_mut();
-    if let Some(color) = parse_color(color) {
+    let color = color.to_string_lossy();
+    if let Some(color) = parse_color(color.as_ref()) {
         lock.set_shadow_color(color);
     }
 }
@@ -2987,22 +3105,27 @@ pub fn canvas_native_context_set_shadow_offset_y(context: &mut CanvasRenderingCo
     context.context.get_context_mut().set_shadow_offset_y(y)
 }
 
-pub fn canvas_native_context_get_text_align(context: &CanvasRenderingContext2D) -> String {
-    match context.context.get_context().text_align() {
+pub fn canvas_native_context_get_text_align(
+    context: &CanvasRenderingContext2D,
+    align: Pin<&mut CxxString>,
+) {
+    let ret = match context.context.get_context().text_align() {
         TextAlign::START => "start",
         TextAlign::LEFT => "left",
         TextAlign::CENTER => "center",
         TextAlign::RIGHT => "right",
         TextAlign::END => "end",
-    }
-    .to_string()
+    };
+
+    align.push_str(ret);
 }
 
 pub fn canvas_native_context_set_text_align(
     context: &mut CanvasRenderingContext2D,
-    alignment: &str,
+    alignment: Pin<&mut CxxString>,
 ) {
-    match alignment {
+    let alignment = alignment.to_string_lossy();
+    match alignment.as_ref() {
         "start" => context
             .context
             .get_context_mut()
@@ -3019,25 +3142,33 @@ pub fn canvas_native_context_set_text_align(
             .context
             .get_context_mut()
             .set_text_align(TextAlign::RIGHT),
-        "end" => context.context.get_context_mut().set_text_align(TextAlign::END),
+        "end" => context
+            .context
+            .get_context_mut()
+            .set_text_align(TextAlign::END),
         _ => {}
     }
 }
 
-pub fn canvas_native_context_get_global_composition(context: &CanvasRenderingContext2D) -> String {
-    context
+pub fn canvas_native_context_get_global_composition(
+    context: &CanvasRenderingContext2D,
+    composition: Pin<&mut CxxString>,
+) {
+    let ret = context
         .context
         .get_context()
         .global_composite_operation()
-        .to_str()
-        .to_string()
+        .to_str();
+
+    composition.push_str(ret);
 }
 
 pub fn canvas_native_context_set_global_composition(
     context: &CanvasRenderingContext2D,
-    composition: &str,
+    composition: Pin<&mut CxxString>,
 ) {
-    if let Some(composition) = CompositeOperationType::from_str(composition) {
+    let composition = composition.to_string_lossy();
+    if let Some(composition) = CompositeOperationType::from_str(composition.as_ref()) {
         context
             .context
             .get_context_mut()
@@ -3047,28 +3178,33 @@ pub fn canvas_native_context_set_global_composition(
 
 pub fn canvas_native_paint_style_set_fill_color_with_string(
     context: &mut CanvasRenderingContext2D,
-    color: &str,
+    color: Pin<&mut CxxString>,
 ) {
-    paint_style_set_color_with_string(&mut context.context, true, color);
+    let color = color.to_string_lossy();
+    paint_style_set_color_with_string(&mut context.context, true, color.as_ref());
 }
 
 pub fn canvas_native_paint_style_set_stroke_color_with_string(
     context: &mut CanvasRenderingContext2D,
-    color: &str,
+    color: Pin<&mut CxxString>,
 ) {
-    paint_style_set_color_with_string(&mut context.context, false, color);
+    let color = color.to_string_lossy();
+    paint_style_set_color_with_string(&mut context.context, false, color.as_ref());
 }
 
-pub fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String {
+pub fn canvas_native_paint_style_get_color_string(
+    color: &mut PaintStyle,
+    style: Pin<&mut CxxString>,
+) {
     if let Some(color) = color.0.as_ref() {
         return match color {
             canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(color) => {
-                to_parsed_color(*color)
+                let ret = to_parsed_color(*color);
+                style.push_str(ret.as_str());
             }
-            _ => String::new(),
+            _ => {}
         };
     }
-    String::new()
 }
 
 pub fn canvas_native_context_get_style_type(style: &PaintStyle) -> ffi::PaintStyleType {
@@ -3192,17 +3328,22 @@ pub fn canvas_native_context_clear_rect(
 pub fn canvas_native_context_clip(
     context: &mut CanvasRenderingContext2D,
     path: &mut Path,
-    rule: &str,
+    rule: Pin<&mut CxxString>,
 ) {
-    if let Ok(rule) = FillRule::try_from(rule) {
+    let rule = rule.to_string_lossy();
+    if let Ok(rule) = FillRule::try_from(rule.as_ref()) {
         context
             .get_context_mut()
             .clip(Some(path.inner_mut()), Some(rule))
     }
 }
 
-pub fn canvas_native_context_clip_rule(context: &mut CanvasRenderingContext2D, rule: &str) {
-    if let Ok(rule) = FillRule::try_from(rule) {
+pub fn canvas_native_context_clip_rule(
+    context: &mut CanvasRenderingContext2D,
+    rule: Pin<&mut CxxString>,
+) {
+    let rule = rule.to_string_lossy();
+    if let Ok(rule) = FillRule::try_from(rule.as_ref()) {
         context.get_context_mut().clip(None, Some(rule))
     }
 }
@@ -3234,29 +3375,30 @@ pub fn canvas_native_context_create_pattern(
     data: &[u8],
     width: i32,
     height: i32,
-    repetition: &str,
+    repetition: Pin<&mut CxxString>,
 ) -> Box<PaintStyle> {
-    Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
-        None,
-        |repetition| {
+    let repetition = repetition.to_string_lossy();
+    Box::new(PaintStyle(
+        Repetition::try_from(repetition.as_ref()).map_or(None, |repetition| {
             from_image_slice(data, width, height).map(|image| {
                 canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
             })
-        },
-    )))
+        }),
+    ))
 }
 
 pub fn canvas_native_context_create_pattern_asset(
     context: &mut CanvasRenderingContext2D,
     asset: &mut ImageAsset,
-    repetition: &str,
+    repetition: Pin<&mut CxxString>,
 ) -> Box<PaintStyle> {
     let has_alpha = asset.get_channels() == 4;
+    let repetition = repetition.to_string_lossy();
     if let Some(bytes) = asset.get_bytes() {
         return if has_alpha {
-            Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
+            Box::new(PaintStyle(Repetition::try_from(repetition.as_ref()).map_or(
                 None,
                 |repetition| {
                     from_image_slice(bytes, asset.width() as i32, asset.height() as i32).map(|image| {
@@ -3267,7 +3409,7 @@ pub fn canvas_native_context_create_pattern_asset(
                 },
             )))
         } else {
-            Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
+            Box::new(PaintStyle(Repetition::try_from(repetition.as_ref()).map_or(
                 None,
                 |repetition| {
                     from_bitmap_slice(bytes, asset.width() as i32, asset.height() as i32).map(|image| {
@@ -3285,18 +3427,18 @@ pub fn canvas_native_context_create_pattern_asset(
 pub fn canvas_native_context_create_pattern_encoded(
     context: &mut CanvasRenderingContext2D,
     data: &[u8],
-    repetition: &str,
+    repetition: Pin<&mut CxxString>,
 ) -> Box<PaintStyle> {
-    Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
-        None,
-        |repetition| {
+    let repetition = repetition.to_string_lossy();
+    Box::new(PaintStyle(
+        Repetition::try_from(repetition.as_ref()).map_or(None, |repetition| {
             from_image_slice_encoded(data).map(|image| {
                 canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
             })
-        },
-    )))
+        }),
+    ))
 }
 
 pub fn canvas_native_context_create_radial_gradient(
@@ -3500,8 +3642,12 @@ pub fn canvas_native_context_ellipse(
     )
 }
 
-pub fn canvas_native_context_fill(context: &mut CanvasRenderingContext2D, rule: &str) {
-    if let Ok(rule) = FillRule::try_from(rule) {
+pub fn canvas_native_context_fill(
+    context: &mut CanvasRenderingContext2D,
+    rule: Pin<&mut CxxString>,
+) {
+    let rule = rule.to_string_lossy();
+    if let Ok(rule) = FillRule::try_from(rule.as_ref()) {
         context.get_context_mut().fill(None, rule)
     }
 }
@@ -3509,9 +3655,10 @@ pub fn canvas_native_context_fill(context: &mut CanvasRenderingContext2D, rule: 
 pub fn canvas_native_context_fill_with_path(
     context: &mut CanvasRenderingContext2D,
     path: &mut Path,
-    rule: &str,
+    rule: Pin<&mut CxxString>,
 ) {
-    if let Ok(rule) = FillRule::try_from(rule) {
+    let rule = rule.to_string_lossy();
+    if let Ok(rule) = FillRule::try_from(rule.as_ref()) {
         context.get_context_mut().fill(Some(path.inner_mut()), rule)
     }
 }
@@ -3523,17 +3670,22 @@ pub fn canvas_native_context_fill_rect(
     width: f32,
     height: f32,
 ) {
-    context.get_context_mut().fill_rect_xywh(x, y, width, height);
+    context
+        .get_context_mut()
+        .fill_rect_xywh(x, y, width, height);
 }
 
 pub fn canvas_native_context_fill_text(
     context: &mut CanvasRenderingContext2D,
-    text: &str,
+    text: Pin<&mut CxxString>,
     x: f32,
     y: f32,
     width: f32,
 ) {
-    context.get_context_mut().fill_text(text, x, y, width)
+    let text = text.to_string_lossy();
+    context
+        .get_context_mut()
+        .fill_text(text.as_ref(), x, y, width)
 }
 
 pub fn canvas_native_context_get_image_data(
@@ -3558,9 +3710,10 @@ pub fn canvas_native_context_is_point_in_path(
     context: &mut CanvasRenderingContext2D,
     x: f32,
     y: f32,
-    rule: &str,
+    rule: Pin<&mut CxxString>,
 ) -> bool {
-    FillRule::try_from(rule).map_or(false, |rule| {
+    let rule = rule.to_string_lossy();
+    FillRule::try_from(rule.as_ref()).map_or(false, |rule| {
         context.get_context_mut().is_point_in_path(None, x, y, rule)
     })
 }
@@ -3570,9 +3723,10 @@ pub fn canvas_native_context_is_point_in_path_with_path(
     path: &mut Path,
     x: f32,
     y: f32,
-    rule: &str,
+    rule: Pin<&mut CxxString>,
 ) -> bool {
-    FillRule::try_from(rule).map_or(false, |rule| {
+    let rule = rule.to_string_lossy();
+    FillRule::try_from(rule.as_ref()).map_or(false, |rule| {
         context
             .get_context_mut()
             .is_point_in_path(Some(path.inner()), x, y, rule)
@@ -3604,8 +3758,9 @@ pub fn canvas_native_context_line_to(context: &mut CanvasRenderingContext2D, x: 
 
 pub fn canvas_native_context_measure_text(
     context: &mut CanvasRenderingContext2D,
-    text: &str,
+    text: Pin<&mut CxxString>,
 ) -> Box<TextMetrics> {
+    let text = text.to_string_lossy();
     Box::new(TextMetrics(
         context.get_context().measure_text(text.as_ref()),
     ))
@@ -3714,17 +3869,22 @@ pub fn canvas_native_context_stroke_rect(
     width: f32,
     height: f32,
 ) {
-    context.get_context_mut().stroke_rect_xywh(x, y, width, height);
+    context
+        .get_context_mut()
+        .stroke_rect_xywh(x, y, width, height);
 }
 
 pub fn canvas_native_context_stroke_text(
     context: &mut CanvasRenderingContext2D,
-    text: &str,
+    text: Pin<&mut CxxString>,
     x: f32,
     y: f32,
     width: f32,
 ) {
-    context.get_context_mut().stroke_text(text, x, y, width)
+    let text = text.to_string_lossy();
+    context
+        .get_context_mut()
+        .stroke_text(text.as_ref(), x, y, width)
 }
 
 pub fn canvas_native_context_transform(
@@ -3781,14 +3941,18 @@ pub fn canvas_native_path_create_with_path(path: &Path) -> Box<Path> {
     Box::new(path.clone())
 }
 
-pub fn canvas_native_path_create_with_string(string: String) -> Box<Path> {
+pub fn canvas_native_path_create_with_string(string: Pin<&mut CxxString>) -> Box<Path> {
+    let string = string.to_string_lossy();
     Box::new(Path(canvas_core::context::paths::path::Path::from_str(
-        string.as_str(),
+        string.as_ref(),
     )))
 }
 
-pub fn canvas_native_path_create_with_str(string: &str) -> Box<Path> {
-    let path = Path(canvas_core::context::paths::path::Path::from_str(string));
+pub fn canvas_native_path_create_with_str(string: Pin<&mut CxxString>) -> Box<Path> {
+    let string = string.to_string_lossy();
+    let path = Path(canvas_core::context::paths::path::Path::from_str(
+        string.as_ref(),
+    ));
     Box::new(path)
 }
 
@@ -3864,8 +4028,9 @@ pub fn canvas_native_path_rect(path: &mut Path, x: f32, y: f32, width: f32, heig
     path.0.rect(x, y, width, height)
 }
 
-pub fn canvas_native_path_to_string(path: &Path) -> String {
-    path.0.path().to_svg()
+pub fn canvas_native_path_to_string(path: &Path, value: Pin<&mut CxxString>) {
+    let ret = path.0.path().to_svg();
+    value.push_str(ret.as_str());
 }
 
 pub fn canvas_native_path_to_str(path: &Path, mut svg: Pin<&mut CxxString>) {
@@ -4181,20 +4346,26 @@ pub fn canvas_native_image_asset_create() -> Box<ImageAsset> {
     Box::new(ImageAsset::default())
 }
 
-pub fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &str) -> bool {
-    asset.load_from_path(path)
+pub fn canvas_native_image_asset_load_from_path(
+    asset: &mut ImageAsset,
+    path: Pin<&mut CxxString>,
+) -> bool {
+    let path = path.to_string_lossy();
+    asset.load_from_path(path.as_ref())
 }
 
 pub fn canvas_native_image_asset_load_from_path_async(
     asset: &mut ImageAsset,
-    path: &str,
+    path: Pin<&mut CxxString>,
     callback: isize,
 ) {
     let mut asset = asset.clone();
     let path = path.to_string();
     std::thread::spawn(move || {
         let done = asset.load_from_path(path.as_ref());
-        ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+        unsafe {
+            ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+        }
     });
 }
 
@@ -4211,11 +4382,21 @@ pub fn canvas_native_image_asset_load_from_raw_async(
     let array = array.to_vec();
     std::thread::spawn(move || {
         let done = asset.load_from_bytes(array.as_slice());
-        ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+        unsafe {
+            ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+        }
     });
 }
 
-pub fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str) -> bool {
+pub fn canvas_native_image_asset_load_from_url(
+    asset: &mut ImageAsset,
+    url: Pin<&mut CxxString>,
+) -> bool {
+    let url = url.to_string_lossy();
+    canvas_native_image_asset_load_from_url_internal(asset, url.as_ref())
+}
+
+fn canvas_native_image_asset_load_from_url_internal(asset: &mut ImageAsset, url: &str) -> bool {
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -4282,7 +4463,9 @@ extern "C" fn looper_callback(
         }
     }
 
-    ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+    unsafe {
+        ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+    }
     let mut map = get_thread_handle_map().write();
     if let Some(handle) = map.remove(&handle_id) {
         handle.join().unwrap();
@@ -4292,7 +4475,7 @@ extern "C" fn looper_callback(
 
 pub fn canvas_native_image_asset_load_from_url_async(
     asset: &mut ImageAsset,
-    url: &str,
+    url: Pin<&mut CxxString>,
     callback: isize,
 ) {
     let mut asset = asset.clone();
@@ -4330,7 +4513,7 @@ pub fn canvas_native_image_asset_load_from_url_async(
     // THREAD_HANDLE_NEXT_ID.store(id, Ordering::SeqCst);
 
     std::thread::spawn(move || {
-        let done = canvas_native_image_asset_load_from_url(&mut asset, url.as_str());
+        let done = canvas_native_image_asset_load_from_url_internal(&mut asset, url.as_str());
         unsafe {
             ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
         }
@@ -4349,8 +4532,9 @@ pub fn canvas_native_image_asset_height(asset: &mut ImageAsset) -> u32 {
     asset.height()
 }
 
-pub fn canvas_native_image_asset_get_error(asset: &mut ImageAsset) -> String {
-    asset.error().to_string()
+pub fn canvas_native_image_asset_get_error(asset: &mut ImageAsset, error: Pin<&mut CxxString>) {
+    let ret = asset.error().to_string();
+    error.push_str(ret.as_str());
 }
 
 pub fn canvas_native_image_asset_has_error(asset: &mut ImageAsset) -> bool {
@@ -4366,18 +4550,19 @@ pub fn canvas_native_image_asset_scale(asset: &mut ImageAsset, x: u32, y: u32) -
 
 pub fn canvas_native_image_asset_save_path(
     asset: &mut ImageAsset,
-    path: &str,
+    path: Pin<&mut CxxString>,
     format: u32,
 ) -> bool {
+    let path = path.to_string_lossy();
     asset.save_path(
-        path,
+        path.as_ref(),
         canvas_core::context::image_asset::OutputFormat::from(format),
     )
 }
 
 pub fn canvas_native_image_asset_save_path_async(
     asset: &mut ImageAsset,
-    path: &str,
+    path: Pin<&mut CxxString>,
     format: u32,
     callback: isize,
 ) {
@@ -4389,7 +4574,9 @@ pub fn canvas_native_image_asset_save_path_async(
             canvas_core::context::image_asset::OutputFormat::from(format),
         );
 
-        ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+        unsafe {
+            ffi::OnImageAssetLoadCallbackHolderComplete(callback, done);
+        }
     });
 }
 
@@ -4448,11 +4635,16 @@ pub fn canvas_native_text_metrics_get_ideographic_baseline(metrics: &TextMetrics
 /* TextMetrics */
 
 /* CanvasGradient */
-pub fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, color: &str) {
+pub fn canvas_native_gradient_add_color_stop(
+    style: &mut PaintStyle,
+    stop: f32,
+    color: Pin<&mut CxxString>,
+) {
+    let color = color.to_string_lossy();
     if let Some(style) = style.0.as_mut() {
         match style {
             canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
-                gradient.add_color_stop_str(stop, color)
+                gradient.add_color_stop_str(stop, color.as_ref())
             }
             _ => {}
         }
@@ -4476,43 +4668,64 @@ fn canvas_native_pattern_set_transform(pattern: &mut PaintStyle, matrix: &Matrix
 /* CanvasPattern */
 
 /* TextDecoder */
-pub fn canvas_native_text_decoder_create(decoding: &str) -> Box<TextDecoder> {
+pub fn canvas_native_text_decoder_create(decoding: Pin<&mut CxxString>) -> Box<TextDecoder> {
+    let decoding = decoding.to_string_lossy();
     Box::new(TextDecoder(
-        canvas_core::context::text_decoder::TextDecoder::new(Some(decoding)),
+        canvas_core::context::text_decoder::TextDecoder::new(Some(decoding.as_ref())),
     ))
 }
 
-pub fn canvas_native_text_decoder_decode(decoder: &mut TextDecoder, data: &[u8]) -> String {
-    decoder.0.decode_to_string(data)
+pub fn canvas_native_text_decoder_decode(
+    decoder: &mut TextDecoder,
+    data: &[u8],
+    text: Pin<&mut CxxString>,
+) {
+    let ret = decoder.0.decode_to_string(data);
+    text.push_str(ret.as_str());
 }
 
-pub fn canvas_native_text_decoder_get_encoding(decoder: &mut TextDecoder) -> String {
-    decoder.0.encoding().to_string()
+pub fn canvas_native_text_decoder_get_encoding(
+    decoder: &mut TextDecoder,
+    encoding: Pin<&mut CxxString>,
+) {
+    let ret = decoder.0.encoding().to_string();
+    encoding.push_str(ret.as_str());
 }
 /* TextDecoder */
 
 /* TextEncoder */
-pub fn canvas_native_text_encoder_create(encoding: &str) -> Box<TextEncoder> {
+pub fn canvas_native_text_encoder_create(encoding: Pin<&mut CxxString>) -> Box<TextEncoder> {
+    let encoding = encoding.to_string_lossy();
     Box::new(TextEncoder(
-        canvas_core::context::text_encoder::TextEncoder::new(Some(encoding)),
+        canvas_core::context::text_encoder::TextEncoder::new(Some(encoding.as_ref())),
     ))
 }
 
-pub fn canvas_native_text_encoder_encode(encoder: &mut TextEncoder, text: &str) -> Vec<u8> {
-    encoder.0.encode(text)
+pub fn canvas_native_text_encoder_encode(
+    encoder: &mut TextEncoder,
+    text: Pin<&mut CxxString>,
+) -> Vec<u8> {
+    let text = text.to_string_lossy();
+    encoder.0.encode(text.as_ref())
 }
 
-pub fn canvas_native_text_encoder_get_encoding(encoder: &mut TextEncoder) -> String {
-    encoder.0.encoding().to_string()
+pub fn canvas_native_text_encoder_get_encoding(
+    encoder: &mut TextEncoder,
+    encoding: Pin<&mut CxxString>,
+) {
+    let ret = encoder.0.encoding().to_string();
+    encoding.push_str(ret.as_str());
 }
 
 /* TextEncoder */
 
 /* Raf */
 pub fn canvas_native_raf_create(callback: isize) -> Box<Raf> {
-    Box::new(Raf(crate::raf::Raf::new(Some(Box::new(move |ts| {
-        ffi::OnRafCallbackOnFrame(callback, ts);
-    })))))
+    Box::new(Raf(crate::raf::Raf::new(Some(Box::new(
+        move |ts| unsafe {
+            ffi::OnRafCallbackOnFrame(callback, ts);
+        },
+    )))))
 }
 
 pub fn canvas_native_raf_start(raf: &mut Raf) {
@@ -4757,8 +4970,8 @@ pub struct WebGLResult(crate::gl::prelude::WebGLResult);
 
 /* WebGLActiveInfo */
 
-pub fn canvas_native_webgl_active_info_get_name(info: &WebGLActiveInfo) -> &str {
-    info.get_name()
+pub fn canvas_native_webgl_active_info_get_name(info: &WebGLActiveInfo, name: Pin<&mut CxxString>) {
+    name.push_str(info.get_name());
 }
 
 pub fn canvas_native_webgl_active_info_get_size(info: &WebGLActiveInfo) -> i32 {
@@ -4818,8 +5031,10 @@ pub fn canvas_native_webgl_context_attribute_get_get_fail_if_major_performance_c
 
 pub fn canvas_native_webgl_context_attribute_get_get_power_preference(
     attr: &ContextAttributes,
-) -> String {
-    attr.get_power_preference()
+    power_preference: Pin<&mut CxxString>,
+) {
+    let ret = attr.get_power_preference();
+    power_preference.push_str(ret.as_str());
 }
 
 pub fn canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(
@@ -4896,7 +5111,7 @@ pub fn canvas_native_webgl_context_extension_to_oes_vertex_array_object(
 /* WebGLExtension */
 
 /* WebGLResult */
-fn canvas_native_webgl_result_get_type(result: &WebGLResult) -> ffi::WebGLResultType {
+fn canvas_native_webgl_result_get_type(result: &WebGLResult) -> WebGLResultType {
     match result.0 {
         crate::gl::prelude::WebGLResult::Boolean(_) => WebGLResultType::Boolean,
         crate::gl::prelude::WebGLResult::I32Array(_) => WebGLResultType::I32Array,
@@ -4960,11 +5175,14 @@ fn canvas_native_webgl_result_get_f32(result: &WebGLResult) -> f32 {
         _ => 0.,
     }
 }
-fn canvas_native_webgl_result_get_string(result: &WebGLResult) -> String {
+fn canvas_native_webgl_result_get_string(result: &WebGLResult, value: Pin<&mut CxxString>) {
     match result.0 {
-        crate::gl::prelude::WebGLResult::String(ref value) => value.to_string_lossy().to_string(),
-        _ => String::new(),
-    }
+        crate::gl::prelude::WebGLResult::String(ref result) => {
+            let val = result.to_string_lossy();
+            value.push_str(val.as_ref())
+        }
+        _ => {}
+    };
 }
 fn canvas_native_webgl_result_get_is_none(result: &WebGLResult) -> bool {
     match result.0 {
@@ -5145,26 +5363,29 @@ fn canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(
 /* OES_vertex_array_object */
 
 pub fn canvas_native_webgl_create(
-    version: &str,
+    version: Pin<&mut CxxString>,
     alpha: bool,
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: &str,
+    power_preference: Pin<&mut CxxString>,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
     desynchronized: bool,
     xr_compatible: bool,
 ) -> Box<WebGLState> {
+    let version = version.to_string_lossy();
+    let power_preference = power_preference.to_string_lossy();
     let ctx = GLContext::get_current();
-    let version = if version.eq("v1") {
+    let version = if version.as_ref().eq("v1") {
         WebGLVersion::V1
-    } else if version.eq("v2") {
+    } else if version.as_ref().eq("v2") {
         WebGLVersion::V2
     } else {
         WebGLVersion::NONE
     };
+
     let inner = WebGLState::new_with_context(
         ctx,
         version,
@@ -5172,7 +5393,7 @@ pub fn canvas_native_webgl_create(
         antialias,
         depth,
         fail_if_major_performance_caveat,
-        power_preference,
+        power_preference.as_ref(),
         premultiplied_alpha,
         preserve_drawing_buffer,
         stencil,
@@ -5186,12 +5407,12 @@ pub fn canvas_native_webgl_create(
 pub fn canvas_native_webgl_create_no_window(
     width: i32,
     height: i32,
-    version: &str,
+    version: Pin<&mut CxxString>,
     alpha: bool,
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: &str,
+    power_preference: Pin<&mut CxxString>,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -5200,10 +5421,12 @@ pub fn canvas_native_webgl_create_no_window(
     is_canvas: bool,
 ) -> Box<WebGLState> {
     let mut surface = 0;
-    let version = if version.eq("v1") || version.eq("canvas") {
+    let version = version.to_string_lossy();
+    let power_preference = power_preference.to_string_lossy();
+    let version = if version.as_ref().eq("v1") || version.as_ref().eq("canvas") {
         surface = 1;
         WebGLVersion::V1
-    } else if version.eq("v2") {
+    } else if version.as_ref().eq("v2") {
         surface = 2;
         WebGLVersion::V2
     } else {
@@ -5215,7 +5438,7 @@ pub fn canvas_native_webgl_create_no_window(
         antialias,
         depth,
         fail_if_major_performance_caveat,
-        power_preference,
+        power_preference.as_ref(),
         premultiplied_alpha,
         preserve_drawing_buffer,
         stencil,
@@ -5256,13 +5479,14 @@ pub fn canvas_native_webgl_attach_shader(program: u32, shader: u32, state: &mut 
 pub fn canvas_native_webgl_bind_attrib_location(
     program: u32,
     index: u32,
-    name: &str,
+    name: Pin<&mut CxxString>,
     state: &mut WebGLState,
 ) {
+    let name = name.to_string_lossy();
     crate::gl::webgl::canvas_native_webgl_bind_attrib_location(
         program,
         index,
-        name,
+        name.as_ref(),
         state.get_inner_mut(),
     )
 }
@@ -5759,10 +5983,15 @@ pub fn canvas_native_webgl_get_attached_shaders(program: u32, state: &mut WebGLS
 
 pub fn canvas_native_webgl_get_attrib_location(
     program: u32,
-    name: &str,
+    name: Pin<&mut CxxString>,
     state: &mut WebGLState,
 ) -> i32 {
-    crate::gl::webgl::canvas_native_webgl_get_attrib_location(program, name, state.get_inner_mut())
+    let name = name.to_string_lossy();
+    crate::gl::webgl::canvas_native_webgl_get_attrib_location(
+        program,
+        name.as_ref(),
+        state.get_inner_mut(),
+    )
 }
 
 pub fn canvas_native_webgl_get_buffer_parameter(
@@ -5784,11 +6013,12 @@ pub fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32 {
 }
 
 pub fn canvas_native_webgl_get_extension(
-    name: &str,
+    name: Pin<&mut CxxString>,
     state: &mut WebGLState,
 ) -> Box<WebGLExtension> {
+    let name = name.to_string_lossy();
     Box::new(WebGLExtension(
-        crate::gl::webgl::canvas_native_webgl_get_extension(name, state.get_inner_mut()),
+        crate::gl::webgl::canvas_native_webgl_get_extension(name.as_ref(), state.get_inner_mut()),
     ))
 }
 
@@ -5832,8 +6062,14 @@ pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> 
     ))
 }
 
-pub fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLState) -> String {
-    crate::gl::webgl::canvas_native_webgl_get_program_info_log(program, state.get_inner_mut())
+pub fn canvas_native_webgl_get_program_info_log(
+    program: u32,
+    log: Pin<&mut CxxString>,
+    state: &mut WebGLState,
+) {
+    let ret =
+        crate::gl::webgl::canvas_native_webgl_get_program_info_log(program, state.get_inner_mut());
+    log.push_str(ret.as_ref());
 }
 
 pub fn canvas_native_webgl_get_program_parameter(
@@ -5862,8 +6098,15 @@ pub fn canvas_native_webgl_get_renderbuffer_parameter(
     )
 }
 
-pub fn canvas_native_webgl_get_shader_info_log(shader: u32, state: &mut WebGLState) -> String {
-    crate::gl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut())
+pub fn canvas_native_webgl_get_shader_info_log(
+    shader: u32,
+    log: Pin<&mut CxxString>,
+    state: &mut WebGLState,
+) {
+    let ret =
+        crate::gl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut());
+
+    log.push_str(ret.as_str());
 }
 
 pub fn canvas_native_webgl_get_shader_parameter(
@@ -5894,8 +6137,14 @@ pub fn canvas_native_webgl_get_shader_precision_format(
     ))
 }
 
-pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState) -> String {
-    crate::gl::webgl::canvas_native_webgl_get_shader_source(shader, state.get_inner_mut())
+pub fn canvas_native_webgl_get_shader_source(
+    shader: u32,
+    source: Pin<&mut CxxString>,
+    state: &mut WebGLState,
+) {
+    let ret =
+        crate::gl::webgl::canvas_native_webgl_get_shader_source(shader, state.get_inner_mut());
+    source.push_str(ret.as_str());
 }
 
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
@@ -5912,10 +6161,15 @@ pub fn canvas_native_webgl_get_tex_parameter(
 
 pub fn canvas_native_webgl_get_uniform_location(
     program: u32,
-    name: &str,
+    name: Pin<&mut CxxString>,
     state: &mut WebGLState,
 ) -> i32 {
-    crate::gl::webgl::canvas_native_webgl_get_uniform_location(program, name, state.get_inner_mut())
+    let name = name.to_string_lossy();
+    crate::gl::webgl::canvas_native_webgl_get_uniform_location(
+        program,
+        name.as_ref(),
+        state.get_inner_mut(),
+    )
 }
 
 pub fn canvas_native_webgl_get_uniform(
@@ -6103,8 +6357,17 @@ pub fn canvas_native_webgl_scissor(
     crate::gl::webgl::canvas_native_webgl_scissor(x, y, width, height, state.get_inner_mut())
 }
 
-pub fn canvas_native_webgl_shader_source(shader: u32, source: &str, state: &mut WebGLState) {
-    crate::gl::webgl::canvas_native_webgl_shader_source(shader, source, state.get_inner_mut())
+pub fn canvas_native_webgl_shader_source(
+    shader: u32,
+    source: Pin<&mut CxxString>,
+    state: &mut WebGLState,
+) {
+    let source = source.to_string_lossy();
+    crate::gl::webgl::canvas_native_webgl_shader_source(
+        shader,
+        source.as_ref(),
+        state.get_inner_mut(),
+    )
 }
 
 pub fn canvas_native_webgl_stencil_func(
@@ -6966,13 +7229,16 @@ pub fn canvas_native_webgl2_framebuffer_texture_layer(
 pub fn canvas_native_webgl2_get_active_uniform_block_name(
     program: u32,
     uniform_block_index: u32,
-    state: &mut WebGLState,
-) -> String {
-    crate::gl::webgl2::canvas_native_webgl2_get_active_uniform_block_name(
+    name: Pin<&mut CxxString>,
+    state: &mut WebGLState
+) {
+    let ret = crate::gl::webgl2::canvas_native_webgl2_get_active_uniform_block_name(
         program,
         uniform_block_index,
         state.get_inner_mut(),
-    )
+    );
+
+    name.push_str(ret.as_str());
 }
 
 pub fn canvas_native_webgl2_get_active_uniform_block_parameter(
@@ -7027,12 +7293,13 @@ pub fn canvas_native_webgl2_get_buffer_sub_data(
 
 pub fn canvas_native_webgl2_get_frag_data_location(
     program: u32,
-    name: &str,
+    name: Pin<&mut CxxString>,
     state: &mut WebGLState,
 ) -> i32 {
+    let name = name.to_string_lossy();
     crate::gl::webgl2::canvas_native_webgl2_get_frag_data_location(
         program,
-        name,
+        name.as_ref(),
         state.get_inner_mut(),
     )
 }
@@ -7141,24 +7408,26 @@ pub fn canvas_native_webgl2_get_transform_feedback_varying(
 
 pub fn canvas_native_webgl2_get_uniform_block_index(
     program: u32,
-    uniform_block_name: &str,
+    uniform_block_name: Pin<&mut CxxString>,
     state: &mut WebGLState,
 ) -> u32 {
+    let uniform_block_name = uniform_block_name.to_string_lossy();
     crate::gl::webgl2::canvas_native_webgl2_get_uniform_block_index(
         program,
-        uniform_block_name,
+        uniform_block_name.as_ref(),
         state.get_inner_mut(),
     )
 }
 
 pub fn canvas_native_webgl2_get_uniform_indices(
     program: u32,
-    uniform_names: &[&str],
+    uniform_names: &CxxVector<CxxString>,
     state: &mut WebGLState,
 ) -> Vec<u32> {
+    let uniform_names: Vec<String> = uniform_names.iter().map(|i| i.to_string()).collect();
     crate::gl::webgl2::canvas_native_webgl2_get_uniform_indices(
         program,
-        uniform_names,
+        uniform_names.as_slice(),
         state.get_inner_mut(),
     )
 }
@@ -7555,13 +7824,14 @@ pub fn canvas_native_webgl2_tex_sub_image3d_offset(
 
 pub fn canvas_native_webgl2_transform_feedback_varyings(
     program: u32,
-    varyings: &[&str],
+    varyings: &CxxVector<CxxString>,
     buffer_mode: u32,
     state: &mut WebGLState,
 ) {
+    let varyings: Vec<String> = varyings.iter().map(|i| i.to_string()).collect();
     crate::gl::webgl2::canvas_native_webgl2_transform_feedback_varyings(
         program,
-        varyings,
+        varyings.as_slice(),
         buffer_mode,
         state.get_inner_mut(),
     )

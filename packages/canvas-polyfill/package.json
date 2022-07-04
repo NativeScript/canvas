@@ -33,6 +33,7 @@
   "readmeFilename": "README.md",
   "bootstrapper": "@nativescript/plugin-seed",
   "dependencies": {
+    "@nativescript/canvas": "*",
     "xmldom": "~0.6.0"
   }
 }

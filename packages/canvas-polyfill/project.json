@@ -1,5 +1,4 @@
 {
-	"root": "packages/canvas-polyfill",
 	"sourceRoot": "packages/canvas-polyfill",
 	"projectType": "library",
 	"generators": {},

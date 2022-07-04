@@ -1,5 +1,4 @@
 {
-	"root": "packages/canvas-phaser",
 	"sourceRoot": "packages/canvas-phaser",
 	"projectType": "library",
 	"generators": {},

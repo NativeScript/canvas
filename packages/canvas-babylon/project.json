@@ -1,5 +1,4 @@
 {
-	"root": "packages/canvas-babylon",
 	"sourceRoot": "packages/canvas-babylon",
 	"projectType": "library",
 	"generators": {},

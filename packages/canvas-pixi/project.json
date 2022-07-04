@@ -1,5 +1,4 @@
 {
-	"root": "packages/canvas-pixi",
 	"sourceRoot": "packages/canvas-pixi",
 	"projectType": "library",
 	"generators": {},

@@ -1,5 +1,4 @@
 {
-	"root": "packages/canvas-three",
 	"sourceRoot": "packages/canvas-three",
 	"projectType": "library",
 	"generators": {},

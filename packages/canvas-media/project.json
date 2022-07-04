@@ -1,5 +1,4 @@
 {
-	"root": "packages/canvas-media",
 	"sourceRoot": "packages/canvas-media",
 	"projectType": "library",
 	"generators": {},

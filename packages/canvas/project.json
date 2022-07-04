@@ -1,5 +1,4 @@
 {
-	"root": "packages/canvas",
 	"sourceRoot": "packages/canvas",
 	"projectType": "library",
 	"generators": {},

@@ -1,5 +1,4 @@
 {
-	"root": "apps/demo-vue/",
 	"sourceRoot": "apps/demo-vue/src",
 	"projectType": "application",
 	"prefix": "demo",

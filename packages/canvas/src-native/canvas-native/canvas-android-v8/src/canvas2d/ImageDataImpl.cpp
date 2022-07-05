@@ -13,12 +13,11 @@ ImageDataImpl::ImageDataImpl(rust::Box<ImageData> imageData) : imageData_(std::m
 
 ImageDataImpl::~ImageDataImpl() {
     if (this->buffer_.get() != nullptr) {
-        this->buffer_->ClearWeak();
         this->buffer_->Reset();
     }
 }
 
-ImageDataImpl *ImageDataImpl::GetPointer(v8::Local<v8::Object> object) {
+ImageDataImpl *ImageDataImpl::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
         return nullptr;
@@ -67,22 +66,15 @@ void ImageDataImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
             return;
         }
         auto ret = args.This();
-        ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
-                        Helpers::ConvertToV8String(isolate, "ImageData"));
+        Helpers::SetInstanceType(isolate, ret, ObjectType::ImageData);
+
         ImageDataImpl *imageData = new ImageDataImpl(std::move(canvas_native_image_data_create(
                 args[0]->Int32Value(context).ToChecked(),
                 args[1]->Int32Value(context).ToChecked()
         )));
 
         auto ext = v8::External::New(isolate, imageData);
-
-        if (ret->InternalFieldCount() > 0) {
-            ret->SetInternalField(0, ext);
-        } else {
-            ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "rustPtr")),
-                            ext);
-        }
-
+        ret->SetInternalField(0, ext);
         args.GetReturnValue().Set(ret);
     }
 }
@@ -112,20 +104,20 @@ void ImageDataImpl::GetData(v8::Local<v8::String> name, const v8::PropertyCallba
         info.GetReturnValue().Set(ptr->buffer_.get()->Get(isolate));
         return;
     }
-//    ImageDataImpl *cptr = new ImageDataImpl(canvas_native_image_data_get_shared_instance(*ptr->imageData_));
+    ImageDataImpl *cptr = new ImageDataImpl(canvas_native_image_data_get_shared_instance(*ptr->imageData_));
     auto data = canvas_native_image_data_get_data(*ptr->imageData_);
     auto len = static_cast<size_t>(data.size());
     auto store_data = reinterpret_cast<void *>(data.data());
 
-    auto callback = [](const v8::WeakCallbackInfo<ImageDataImpl> &data) {
-        auto value = data.GetParameter();
-        delete value;
+
+    auto callback = [](void *data, size_t length,
+                       void *deleter_data) {
+        delete reinterpret_cast<ImageDataImpl *>(deleter_data);
     };
 
-    auto buffer = v8::ArrayBuffer::New(isolate, store_data, len);
+    auto buffer = Helpers::CreateArrayBuffer(isolate, store_data, len, callback, cptr);
     auto array = v8::Uint8ClampedArray::New(buffer, 0, len);
-    ptr->buffer_ = std::make_shared<v8::Persistent<v8::Object>>(isolate, array);
-    ptr->buffer_->SetWeak(ptr, callback, v8::WeakCallbackType::kFinalizer);
+
     info.GetReturnValue().Set(array);
 }
 
@@ -136,14 +128,11 @@ v8::Local<v8::FunctionTemplate> ImageDataImpl::GetCtor(v8::Isolate *isolate) {
     if (tmpl != nullptr) {
         return tmpl->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     auto image_data_tmpl = v8::FunctionTemplate::New(isolate, &Create);
     image_data_tmpl->InstanceTemplate()->SetInternalFieldCount(1);
     image_data_tmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ImageData"));
 
-    auto func = image_data_tmpl->GetFunction(context).ToLocalChecked();
-
-    auto instanceTmpl = image_data_tmpl->InstanceTemplate();
+    auto instanceTmpl = image_data_tmpl->PrototypeTemplate();
 
     instanceTmpl->SetAccessor(
             Helpers::ConvertToV8String(isolate, "width"),
@@ -171,19 +160,9 @@ v8::Local<v8::Object> ImageDataImpl::NewInstance(v8::Isolate *isolate, ImageData
     auto context = isolate->GetCurrentContext();
     auto ctor = GetCtor(isolate);
     auto ret = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-
-    ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
-                    Helpers::ConvertToV8String(isolate, "ImageData"));
-
+    Helpers::SetInstanceType(isolate, ret, ObjectType::ImageData);
     auto ext = v8::External::New(isolate, imageData);
-
-    if (ret->InternalFieldCount() > 0) {
-        ret->SetInternalField(0, ext);
-    } else {
-        ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "rustPtr")),
-                        ext);
-    }
-
+    ret->SetInternalField(0, ext);
     return handle_scope.Escape(ret);
 }
 

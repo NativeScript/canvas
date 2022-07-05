@@ -26,7 +26,7 @@ v8::Local<v8::Object> EXT_sRGBImpl::NewInstance(v8::Isolate *isolate) {
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result,"EXT_sRGB");
+    Helpers::SetInstanceType(isolate, result, ObjectType::EXT_sRGB);
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "SRGB_EXT"), v8::Int32::New(isolate, GL_SRGB_EXT));
     result->Set(context, Helpers::ConvertToV8String(isolate, "SRGB_ALPHA_EXT"), v8::Int32::New(isolate, GL_SRGB_ALPHA_EXT));

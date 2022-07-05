@@ -1,13 +1,15 @@
 use skia_safe::Color;
 
 pub fn parse_color(value: &str) -> Option<Color> {
-    match value.parse::<css_color_parser::Color>() {
-        Ok(color) => Some(Color::from_argb(
-            (color.a * 255.0) as u8,
-            color.r,
-            color.g,
-            color.b,
-        )),
+    match value.parse::<csscolorparser::Color>() {
+        Ok(color) => {
+            let color = color.rgba_u8();
+            Some(Color::from_argb(
+            color.3,
+            color.0,
+            color.1,
+            color.2,
+        ))},
         _ => None,
     }
 }
@@ -29,12 +31,16 @@ pub fn to_parsed_color(color: Color) -> String {
             to_hex(color.b())
         )
     } else {
+        let alpha = color.a() as f32 / 255.0;
+        let alpha = (alpha * 100.0).round() / 100.0;
+        let alpha = format!("{:.15}", alpha);
+        let alpha = alpha.trim_end_matches('0');
         format!(
-            "rgba({},{},{},{})",
+            "rgba({}, {}, {}, {})",
             color.r(),
             color.g(),
             color.b(),
-            (color.a() as f32 / 255.0)
+            if alpha == "0." { "0" } else { alpha }
         )
     }
 }

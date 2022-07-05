@@ -20,7 +20,7 @@ void WebGLSyncImpl::Init(v8::Isolate *isolate) {
 }
 
 
-WebGLSyncImpl *WebGLSyncImpl::GetPointer(v8::Local<v8::Object> object) {
+WebGLSyncImpl *WebGLSyncImpl::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
         return nullptr;
@@ -39,7 +39,7 @@ v8::Local<v8::Object> WebGLSyncImpl::NewInstance(v8::Isolate *isolate, rust::Box
     auto ctorFunc = GetCtor(isolate);
     WebGLSyncImpl *syncImpl = new WebGLSyncImpl(std::move(sync));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WebGLSync");
+    Helpers::SetInstanceType(isolate, result, ObjectType::WebGLSync);
     auto ext = v8::External::New(isolate, syncImpl);
     result->SetInternalField(0, ext);
     return handle_scope.Escape(result);

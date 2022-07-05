@@ -25,7 +25,8 @@ v8::Local<v8::Object> WEBGL_compressed_texture_etcImpl::NewInstance(v8::Isolate 
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WEBGL_compressed_texture_etc");
+
+    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_compressed_texture_etc);
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_R11_EAC"),
                 v8::Int32::New(isolate, GL_COMPRESSED_R11_EAC));

@@ -5,27 +5,17 @@
 #include "WebGLRenderingContextBase.h"
 #include "canvas-android-v8/src/bridges/context.rs.h"
 
-WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state) : state_(std::move(state)) {
-
-}
+WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state) : state_(std::move(state)) {}
 
 void WebGLRenderingContextBase::UpdateInvalidateState() {
-    auto raf = this->raf_.get();
+    auto raf = this->GetRaf();
     if (raf != nullptr) {
         if (!canvas_native_raf_get_started(raf->GetRaf())) {
             canvas_native_raf_start(raf->GetRaf());
         }
     }
 
-    this->invalidateState_ = InvalidateState::PENDING;
-}
-
-InvalidateState WebGLRenderingContextBase::GetInvalidateState() const {
-    return this->invalidateState_;
-}
-
-void WebGLRenderingContextBase::SetInvalidateState(InvalidateState state) {
-    this->invalidateState_ = state;
+    this->SetInvalidateState(InvalidateState::PENDING);
 }
 
 void WebGLRenderingContextBase::Flush() {
@@ -44,10 +34,26 @@ void WebGLRenderingContextBase::Flush(intptr_t context) {
     }
 }
 
-WebGLState &WebGLRenderingContextBase::GetPointer() {
+WebGLState &WebGLRenderingContextBase::GetState() {
     return *this->state_;
 }
 
 void WebGLRenderingContextBase::SetRaf(std::shared_ptr <RafImpl> raf) {
     this->raf_ = raf;
+}
+
+RafImpl *WebGLRenderingContextBase::GetRaf() {
+    return this->raf_.get();
+}
+
+void WebGLRenderingContextBase::SetInvalidateState(InvalidateState state) {
+    this->invalidateState_ = state;
+}
+
+InvalidateState WebGLRenderingContextBase::GetInvalidateState() const {
+    return this->invalidateState_;
+}
+
+WebGLRenderingContextBase::~WebGLRenderingContextBase() {
+
 }

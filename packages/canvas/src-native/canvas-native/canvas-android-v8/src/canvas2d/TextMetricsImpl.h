@@ -45,7 +45,7 @@ public:
 private:
     rust::Box <TextMetrics> metrics_;
 
-    static TextMetricsImpl *GetPointer(v8::Local<v8::Object> object);
+    static TextMetricsImpl *GetPointer(const v8::Local<v8::Object>& object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 };

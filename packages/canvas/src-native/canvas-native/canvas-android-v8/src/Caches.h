@@ -43,6 +43,10 @@ public:
             nullptr);
     std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> ImageAssetTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> ImageBitmapTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
     std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> MatrixTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 

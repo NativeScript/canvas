@@ -11,6 +11,7 @@
 #include "../Caches.h"
 
 #include "../ImageAssetImpl.h"
+#include "../ImageBitmapImpl.h"
 #include "../RafImpl.h"
 
 #include "WebGLBuffer.h"
@@ -344,16 +345,14 @@ public:
 
     static void Viewport(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void SetConstants(v8::Isolate* isolate, v8::Local<v8::ObjectTemplate> tmpl);
+    static void SetConstants(v8::Isolate* isolate, const v8::Local<v8::ObjectTemplate>& tmpl);
 
-    static void SetProps(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> tmpl);
+    static void SetProps(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& tmpl);
 
-    static void SetMethods(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> tmpl);
+    static void SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& tmpl);
 
 private:
-    static WebGLRenderingContext *GetPointer(v8::Local<v8::Object> object);
-
-    static WebGLRenderingContextBase *GetPointerBase(v8::Local<v8::Object> object);
+    static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object>& object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 

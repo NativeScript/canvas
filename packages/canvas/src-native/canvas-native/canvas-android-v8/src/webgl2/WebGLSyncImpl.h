@@ -20,7 +20,7 @@ public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
-    static WebGLSyncImpl *GetPointer(v8::Local<v8::Object> object);
+    static WebGLSyncImpl *GetPointer(const v8::Local<v8::Object>& object);
 
     WebGLSync &GetSync();
 

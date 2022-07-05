@@ -31,3 +31,14 @@ v8::Local<v8::FunctionTemplate> WebGLShader::GetCtor(v8::Isolate *isolate) {
     cache->WebGLShaderTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }
+
+v8::Local<v8::Object> WebGLShader::NewInstance(v8::Isolate *isolate, uint32_t shader) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::EscapableHandleScope handle_scope(isolate);
+    auto ctorFunc = GetCtor(isolate);
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    Helpers::SetPrivate(isolate, result, "instance", v8::Uint32::New(isolate, shader));
+    Helpers::SetInstanceType(isolate, result, ObjectType::WebGLShader);
+    return handle_scope.Escape(result);
+}

@@ -4,12 +4,55 @@ import Chart from 'chart.js';
 
 let Matter;
 import { Canvas } from '@nativescript/canvas';
-import { arcToAnimation, flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, globalCompositeOperation, pattern } from './canvas2d';
+import {
+	arcToAnimation,
+	flappyBird,
+	arc,
+	arcTo,
+	cancelParticlesColor,
+	cancelParticlesLarge,
+	cancelRain,
+	cancelRainbowOctopus,
+	cancelSwarm,
+	clip,
+	cloth,
+	colorRain,
+	createLinearGradient,
+	createRadialGradient,
+	ellipse,
+	fillPath,
+	fillRule,
+	filterBlur,
+	imageBlock,
+	imageSmoothingEnabled,
+	imageSmoothingQuality,
+	isPointInStrokeTouch,
+	lineWidth,
+	march,
+	multiStrokeStyle,
+	particlesColor,
+	particlesLarge,
+	patternWithCanvas,
+	rainbowOctopus,
+	scale,
+	shadowBlur,
+	shadowColor,
+	swarm,
+	textAlign,
+	touchParticles,
+	globalCompositeOperation,
+	pattern,
+	font,
+	fillStyle,
+	globalAlpha,
+	lineCap,
+	lineDashOffset,
+} from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import Vex from 'vexflow';
-import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points } from './webgl';
+import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
@@ -25,7 +68,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		this.draw();
+		//this.draw();
 	}
 
 	svgViewLoaded(args) {
@@ -473,17 +516,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
 		//	fillRule(this.canvas);
-		const ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-
-		const display = android.opengl.EGL14.eglGetDisplay(android.opengl.EGL14.EGL_DEFAULT_DISPLAY);
-		const ext = android.opengl.EGL14.eglQueryString(display, android.opengl.EGL14.EGL_EXTENSIONS);
-
-		console.log(ext);
-		android.util.Log.d("com.test", ext);
-
-		console.log(0x3054)
-		ctx.setLineDash([1,2]);
-		console.log(ctx.getLineDash());
+		//fillStyle(this.canvas);
+		//ctx.setLineDash([1,2]);
+		//console.log(ctx.getLineDash());
 		//clip(this.canvas);
 		//fillStyle(this.canvas);
 		// font(this.canvas);
@@ -509,7 +544,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// arcToAnimation(this.canvas);
 		// ellipse(this.canvas);
 		//fillPath(this.canvas);
-		//imageBlock(this.canvas);
+		//flappyBird(this.canvas);
+			//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
 		//patternWithCanvas(this.canvas);
@@ -528,7 +564,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
-		//swarm(this.canvas);
+		swarm(this.canvas);
 		//this.bubbleChart(this.canvas);
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;
@@ -555,9 +591,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//swarm(this.canvas);
 		// canvas.nativeView.handleInvalidationManually = true;
 		//  setTimeout(() => {
-		//draw_instanced(this.canvas);
+	//	draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
-		//fog(this.canvas);
+
+	//	fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
@@ -574,10 +611,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//cubeRotation(this.canvas);
 		//main(this.canvas)
 		//this.pointStyle(this.canvas);
-		// this.matterJSExample(this.canvas);
+		//this.matterJSExample(this.canvas);
 		//this.matterJSCar(this.canvas);
 		//this.multiCanvas(this.canvas);
-		// triangle(this.canvas);
+		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
@@ -1671,8 +1708,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		//console.log(sun.width, moon.width, earth.width);
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		//ctx.scale(3, 3);
-x
+		ctx.scale(3, 3);
 		function init() {
 			window.requestAnimationFrame(draw);
 		}
@@ -1684,7 +1720,7 @@ x
 				return;
 			}
 
-			//ctx.globalCompositeOperation = 'destination-over';
+			ctx.globalCompositeOperation = 'destination-over';
 			ctx.clearRect(0, 0, 300, 300); // clear canvas
 			ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
 			ctx.strokeStyle = 'rgba(0, 153, 255, 0.4)';
@@ -1714,7 +1750,7 @@ x
 			// //     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
 			// //     didScale = true;
 			// // }
-			//	window.requestAnimationFrame(draw);
+			window.requestAnimationFrame(draw);
 		}
 
 		init();

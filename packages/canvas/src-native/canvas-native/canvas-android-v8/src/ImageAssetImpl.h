@@ -40,7 +40,7 @@ public:
 
     static void SaveAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static ImageAssetImpl *GetPointer(v8::Local<v8::Object> object);
+    static ImageAssetImpl *GetPointer(const v8::Local<v8::Object>& object);
 
     ImageAsset& GetImageAsset();
 

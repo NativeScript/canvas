@@ -162,10 +162,11 @@ impl Gradient {
     }
 
     pub fn add_color_stop_str(&mut self, offset: c_float, color: &str) {
-        if let Ok(color) = color.parse::<css_color_parser::Color>() {
+        if let Ok(color) = color.parse::<csscolorparser::Color>() {
+            let color = color.rgba_u8();
             self.add_color_stop(
                 offset,
-                skia_safe::Color::from_argb((color.a * 255.0) as u8, color.r, color.g, color.b),
+                Color::from_argb(color.3, color.0, color.1, color.2),
             )
         }
     }

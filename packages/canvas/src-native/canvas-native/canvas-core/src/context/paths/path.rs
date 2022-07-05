@@ -152,7 +152,7 @@ impl Path {
 
     pub fn begin_path(&mut self) {
         if !self.0.is_empty() {
-            self.0.rewind();
+            self.0.reset();
         }
     }
 

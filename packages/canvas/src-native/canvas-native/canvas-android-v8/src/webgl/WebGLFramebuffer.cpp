@@ -26,9 +26,19 @@ v8::Local<v8::FunctionTemplate> WebGLFramebuffer::GetCtor(v8::Isolate *isolate) 
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLFramebuffer"));
     cache->WebGLFramebufferTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+v8::Local<v8::Object> WebGLFramebuffer::NewInstance(v8::Isolate *isolate, uint32_t buffer) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::EscapableHandleScope handle_scope(isolate);
+    auto ctorFunc = GetCtor(isolate);
+    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
+    Helpers::SetPrivate(isolate, result, "instance", v8::Uint32::New(isolate, buffer));
+    Helpers::SetInstanceType(isolate, result, ObjectType::WebGLFramebuffer);
+    return handle_scope.Escape(result);
 }

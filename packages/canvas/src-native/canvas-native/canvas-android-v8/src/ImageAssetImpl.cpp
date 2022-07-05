@@ -19,29 +19,15 @@ void ImageAssetImpl::Init(v8::Isolate *isolate) {
     auto global = context->Global();
     global->Set(context, Helpers::ConvertToV8String(isolate, "ImageAsset"),
                 ctor->GetFunction(context).ToLocalChecked());
+
 }
 
-ImageAssetImpl *ImageAssetImpl::GetPointer(v8::Local<v8::Object> object) {
-    if (object->InternalFieldCount() > 0) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-        if (ptr == nullptr) {
-            return nullptr;
-        }
-        return static_cast<ImageAssetImpl *>(ptr);
-    } else {
-        auto isolate = object->GetIsolate();
-        auto context = isolate->GetCurrentContext();
-        auto ptr = object->GetPrivate(context,
-                                      v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "rustPtr")));
-        if (!ptr.IsEmpty()) {
-            auto ret = ptr.ToLocalChecked().As<v8::External>()->Value();
-            if (ret == nullptr) {
-                return nullptr;
-            }
-            return static_cast<ImageAssetImpl *>(ret);
-        }
+ImageAssetImpl *ImageAssetImpl::GetPointer(const v8::Local<v8::Object> &object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
         return nullptr;
     }
+    return static_cast<ImageAssetImpl *>(ptr);
 }
 
 void ImageAssetImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -49,8 +35,6 @@ void ImageAssetImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-
     if (!args.IsConstructCall()) {
         auto err = v8::Exception::Error(
                 Helpers::ConvertToV8String(
@@ -62,19 +46,11 @@ void ImageAssetImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     } else {
         v8::Local<v8::Object> ret = args.This();
-        ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "class_name")),
-                        Helpers::ConvertToV8String(isolate, "ImageAsset"));
+        Helpers::SetInstanceType(isolate, ret, ObjectType::ImageAsset);
 
         ImageAssetImpl *asset = new ImageAssetImpl(std::move(canvas_native_image_asset_create()));
         auto ext = v8::External::New(isolate, asset);
-
-        if (ret->InternalFieldCount() > 0) {
-            ret->SetInternalField(0, ext);
-        } else {
-            ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "rustPtr")),
-                            ext);
-        }
-
+        ret->SetInternalField(0, ext);
         args.GetReturnValue().Set(ret);
     }
 }
@@ -84,8 +60,7 @@ void ImageAssetImpl::GetWidth(v8::Local<v8::String> name, const v8::PropertyCall
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-    auto self = info.Holder();
-    auto ptr = GetPointer(self);
+    auto ptr = GetPointer(info.This());
     info.GetReturnValue().Set(canvas_native_image_asset_width(*ptr->asset_));
 }
 
@@ -94,31 +69,26 @@ void ImageAssetImpl::GetHeight(v8::Local<v8::String> name, const v8::PropertyCal
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-
-    auto self = info.Holder();
-    auto ptr = GetPointer(self);
+    auto ptr = GetPointer(info.This());
     info.GetReturnValue().Set(canvas_native_image_asset_height(*ptr->asset_));
 }
 
 void ImageAssetImpl::GetError(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
-    auto self = info.Holder();
-    auto ptr = GetPointer(self);
+    auto ptr = GetPointer(info.This());
     auto has_error = canvas_native_image_asset_has_error(*ptr->asset_);
     if (!has_error) {
         info.GetReturnValue().Set(v8::Undefined(isolate));
     } else {
-        std::string error;
-        canvas_native_image_asset_get_error(*ptr->asset_, error);
-        info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, error));
+        auto error = canvas_native_image_asset_get_error(*ptr->asset_);
+        info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, error.c_str()));
     }
 }
 
 void ImageAssetImpl::Scale(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
+    auto ptr = GetPointer(args.This());
     auto x = args[0]->Int32Value(context).FromMaybe(0);
     auto y = args[1]->Int32Value(context).FromMaybe(0);
     if (x > 0 && y > 0) {
@@ -131,13 +101,11 @@ void ImageAssetImpl::FromUrl(const v8::FunctionCallbackInfo<v8::Value> &args) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();;
-    auto ptr = GetPointer(args.Holder());
-    if (args[0]->IsString()) {
-        auto val = args[0]->ToString(context).ToLocalChecked();
-        v8::String::Utf8Value utf8(isolate, val);
-        std::string url(*utf8, utf8.length());
-        auto done = canvas_native_image_asset_load_from_url(*ptr->asset_, url);
+    auto context = isolate->GetCurrentContext();
+    auto ptr = GetPointer(args.This());
+    if (Helpers::IsString(args[0])) {
+        auto url = Helpers::GetString(isolate, args[0]);
+        auto done = canvas_native_image_asset_load_from_url(*ptr->asset_, rust::Str(url.c_str(), url.size()));
         args.GetReturnValue().Set(done);
     } else {
         args.GetReturnValue().Set(false);
@@ -147,31 +115,26 @@ void ImageAssetImpl::FromUrl(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void ImageAssetImpl::FromUrlAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
-    auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
-    args.GetReturnValue().Set(resolver->GetPromise());
-    if (args[0]->IsString()) {
-        auto val = args[0]->ToString(context).ToLocalChecked();
-        v8::String::Utf8Value utf8(isolate, val);
-        std::string url(*utf8, utf8.length());
-        auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, resolver);
+    auto ptr = GetPointer(args.This());
+    auto url = args[0];
+    auto cb = args[1];
+    if (Helpers::IsString(url) && cb->IsFunction()) {
+        auto val = Helpers::GetString(isolate, url);
+        auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, cb.As<v8::Function>());
         auto cache = Caches::Get(isolate);
         auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
         cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
-        canvas_native_image_asset_load_from_url_async(*ptr->asset_, url, key);
+        canvas_native_image_asset_load_from_url_async(*ptr->asset_, rust::Str(val.c_str(), val.size()), key);
     };
 }
 
 void ImageAssetImpl::FromFile(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
-    if (args[0]->IsString()) {
-        auto val = args[0]->ToString(context).ToLocalChecked();
-        v8::String::Utf8Value utf8(isolate, val);
-        std::string path(*utf8, utf8.length());
-        auto done = canvas_native_image_asset_load_from_path(*ptr->asset_, path);
+    auto ptr = GetPointer(args.This());
+    if (Helpers::IsString(args[0])) {
+        auto path = Helpers::GetString(isolate, args[0]);
+        auto done = canvas_native_image_asset_load_from_path(ptr->GetImageAsset(),
+                                                             rust::Str(path.c_str(), path.size()));
         args.GetReturnValue().Set(done);
     }
 }
@@ -182,26 +145,21 @@ void ImageAssetImpl::FromFileAsync(const v8::FunctionCallbackInfo<v8::Value> &ar
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
-    auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
-    args.GetReturnValue().Set(resolver->GetPromise());
-    if (args[0]->IsString()) {
-        auto val = args[0]->ToString(context).ToLocalChecked();
-        v8::String::Utf8Value utf8(isolate, val);
-        std::string path(*utf8, utf8.length());
-        auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, resolver);
+    auto ptr = GetPointer(args.This());
+    auto file = args[0];
+    auto cb = args[1];
+    if (Helpers::IsString(file) && cb->IsFunction()) {
+        auto path = Helpers::GetString(isolate, file);
+        auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, cb.As<v8::Function>());
         auto cache = Caches::Get(isolate);
         auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
         cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
-        canvas_native_image_asset_load_from_path_async(*ptr->asset_, path, key);
+        canvas_native_image_asset_load_from_path_async(*ptr->asset_, rust::Str(path.c_str(), path.size()), key);
     };
 }
 
 void ImageAssetImpl::FromBytes(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
+    auto ptr = GetPointer(args.This());
     if (args[0]->IsUint8Array() || args[0]->IsUint8ClampedArray()) {
         auto buf = args[0].As<v8::TypedArray>();
         auto offset = buf->ByteOffset();
@@ -217,12 +175,10 @@ void ImageAssetImpl::FromBytes(const v8::FunctionCallbackInfo<v8::Value> &args) 
 void ImageAssetImpl::FromBytesAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
-    auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
-    args.GetReturnValue().Set(resolver->GetPromise());
-    if ((args[0]->IsUint8Array() || args[0]->IsUint8ClampedArray())) {
-        auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, resolver);
+    auto ptr = GetPointer(args.This());
+    auto cb = args[1];
+    if ((args[0]->IsUint8Array() || args[0]->IsUint8ClampedArray()) && cb->IsFunction()) {
+        auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, cb.As<v8::Function>());
 
         auto cache = Caches::Get(isolate);
         auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
@@ -241,32 +197,29 @@ void ImageAssetImpl::FromBytesAsync(const v8::FunctionCallbackInfo<v8::Value> &a
 void ImageAssetImpl::Save(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
-    auto val = args[0]->ToString(context).ToLocalChecked();
-    v8::String::Utf8Value utf8(isolate, val);
-    std::string path(*utf8, utf8.length());
+    auto ptr = GetPointer(args.This());
+    auto path = Helpers::GetString(isolate, args[0]);
     auto format = args[1]->Int32Value(context).FromMaybe(0);
-    auto done = canvas_native_image_asset_save_path(*ptr->asset_, path, format);
+    auto done = canvas_native_image_asset_save_path(*ptr->asset_, rust::Str(path.c_str(), path.size()), format);
     args.GetReturnValue().Set(done);
 }
 
 void ImageAssetImpl::SaveAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto self = args.Holder();
-    auto ptr = GetPointer(self);
-    auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
-    args.GetReturnValue().Set(resolver->GetPromise());
-    auto val = args[0]->ToString(context).ToLocalChecked();
-    v8::String::Utf8Value utf8(isolate, val);
-    std::string path(*utf8, utf8.length());
-    auto format = args[1]->Int32Value(context).FromMaybe(0);
-    auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, resolver);
-    auto cache = Caches::Get(isolate);
-    auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
-    cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
-    canvas_native_image_asset_save_path_async(*ptr->asset_, path, format, key);
+    auto ptr = GetPointer(args.This());
+    auto val = args[0];
+    auto formatVal = args[1];
+    auto cb = args[2];
+    if (Helpers::IsString(val) && Helpers::IsNumber(formatVal) && cb->IsFunction()) {
+        auto path = Helpers::GetString(isolate, val->ToString(context).ToLocalChecked());
+        auto format = formatVal->Int32Value(context).FromMaybe(0);
+        auto callback = std::make_shared<OnImageAssetLoadCallbackHolder>(isolate, context, cb.As<v8::Function>());
+        auto cache = Caches::Get(isolate);
+        auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
+        cache->OnImageAssetLoadCallbackHolder_->Insert(key, callback);
+        canvas_native_image_asset_save_path_async(*ptr->asset_, rust::Str(path.c_str(), path.size()), format, key);
+    }
 }
 
 v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
@@ -279,9 +232,9 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ImageAsset"));
 
-    auto tmpl = ctorTmpl->InstanceTemplate();
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    tmpl->SetInternalFieldCount(1);
+    auto tmpl = ctorTmpl->PrototypeTemplate();
 
     tmpl->SetAccessor(
             Helpers::ConvertToV8String(isolate, "width"),

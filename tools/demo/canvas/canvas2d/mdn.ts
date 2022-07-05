@@ -49,8 +49,9 @@ export function imageSmoothingEnabled(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.font = '16px sans-serif';
 	ctx.textAlign = 'center';
-	const src = ImageSource.fromUrl('https://interactive-examples.mdn.mozilla.net/media/examples/star.png');
-	src.then(img => {
+	const img =  new global.ImageAsset();
+	img.loadUrlAsync('https://interactive-examples.mdn.mozilla.net/media/examples/star.png')
+	.then(done => {
 		const w = img.width,
 			h = img.height;
 
@@ -79,14 +80,17 @@ export function imageSmoothingQuality(canvas) {
 export function imageBlock(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.save();
-	const asset = new ImageAsset();
-	asset.loadFromUrlAsync('https://mdn.mozillademos.org/files/5397/rhino.jpg')
+	const asset = new global.ImageAsset();
+	asset.loadUrlAsync('https://mdn.mozillademos.org/files/5397/rhino.jpg')
 		.then(done => {
-			for (var i = 0; i < 4; i++) {
-				for (var j = 0; j < 3; j++) {
-					ctx.drawImage(asset, (j * 50) * Screen.mainScreen.scale, (i * 38) * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
-				}
-			}
+			console.log(asset.width);
+			// for (var i = 0; i < 4; i++) {
+			// 	for (var j = 0; j < 3; j++) {
+			// 		ctx.drawImage(asset, (j * 50) * Screen.mainScreen.scale, (i * 38) * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
+			// 	}
+			// }
+
+			ctx.drawImage(asset, 0,0);
 		});
 }
 
@@ -421,7 +425,6 @@ export function fill(ctx) {
 
 export function fillPath(canvas) {
 	const context = canvas.getContext('2d');
-	const ctx = global.__getCanvasRenderingContext2DImpl(String(context.canvas.nativeView.getNativeContext()));
 
 
 	// Create path
@@ -435,8 +438,8 @@ export function fillPath(canvas) {
 	region.closePath();
 
 	// Fill path
-	ctx.fillStyle = 'green';
-	ctx.fill(region, 'evenodd');
+	context.fillStyle = 'green';
+	context.fill(region, 'evenodd');
 }
 
 export function createLinearGradient(canvas) {

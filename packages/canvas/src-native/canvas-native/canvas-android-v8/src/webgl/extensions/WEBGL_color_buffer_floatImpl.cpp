@@ -24,7 +24,7 @@ v8::Local<v8::Object> WEBGL_color_buffer_floatImpl::NewInstance(v8::Isolate *iso
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WEBGL_color_buffer_float");
+    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_color_buffer_float);
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "RGBA32F_EXT"), v8::Int32::New(isolate, GL_RGBA32F_EXT));
     result->Set(context, Helpers::ConvertToV8String(isolate, "RGB32F_EXT"), v8::Int32::New(isolate, GL_RGB32F_EXT));

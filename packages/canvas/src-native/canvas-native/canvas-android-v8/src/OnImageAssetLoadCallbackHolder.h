@@ -10,7 +10,7 @@
 class OnImageAssetLoadCallbackHolder {
 public:
     OnImageAssetLoadCallbackHolder(v8::Isolate *isolate, v8::Local<v8::Context> context,
-                                   v8::Local<v8::Promise::Resolver> callback);
+                                   v8::Local<v8::Function> callback);
 
     ~OnImageAssetLoadCallbackHolder();
 
@@ -24,7 +24,7 @@ public:
     };
 
 private:
-    v8::Global<v8::Promise::Resolver> callback_;
+    v8::Global<v8::Function> callback_;
     v8::Isolate *isolate_;
     v8::Global<v8::Context> context_;
 };

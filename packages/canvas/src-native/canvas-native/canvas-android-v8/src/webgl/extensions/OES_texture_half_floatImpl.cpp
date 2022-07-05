@@ -24,7 +24,7 @@ v8::Local<v8::Object> OES_texture_half_floatImpl::NewInstance(v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "OES_texture_half_float");
+    Helpers::SetInstanceType(isolate, result, ObjectType::OES_texture_half_float);
     result->Set(context, Helpers::ConvertToV8String(isolate, "HALF_FLOAT_OES"),
                 v8::Int32::New(isolate, GL_HALF_FLOAT_OES));
     return handle_scope.Escape(result);

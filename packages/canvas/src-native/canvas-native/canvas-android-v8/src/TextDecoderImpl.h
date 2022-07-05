@@ -13,7 +13,7 @@ public:
     TextDecoderImpl(rust::Box<TextDecoder> decoder);
     static void Init(v8::Isolate *isolate);
     static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
-    static TextDecoderImpl *GetPointer(v8::Local<v8::Object> object);
+    static TextDecoderImpl *GetPointer(const v8::Local<v8::Object>& object);
 
     static void GetEncoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
     static void Decode(const v8::FunctionCallbackInfo<v8::Value> &args);

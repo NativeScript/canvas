@@ -1,5 +1,5 @@
 use std::borrow::Borrow;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, format, Formatter};
 use std::path::{Path, PathBuf};
 use std::{env, fmt};
 
@@ -50,7 +50,7 @@ const FLAGS_RELEASE: &str = "-O3 -fvisibility=hidden -ffunction-sections -fno-da
 
 const FLAGS_DEBUG: &str = "-g";
 
-const CPP_SOURCE: [&str; 9] = [
+const CPP_SOURCE: [&str; 10] = [
     "src/Caches.cpp",
     "src/Helpers.cpp",
     "src/OnImageAssetLoadCallbackHolder.cpp",
@@ -60,9 +60,10 @@ const CPP_SOURCE: [&str; 9] = [
     "src/OnRafCallback.cpp",
     "src/RafImpl.cpp",
     "src/ObjectCacheEntry.cpp",
+    "src/ImageBitmapImpl.cpp",
 ];
 
-const CPP_SOURCE_HEADERS: [&str; 9] = [
+const CPP_SOURCE_HEADERS: [&str; 10] = [
     "src/Caches.h",
     "src/Helpers.h",
     "src/OnImageAssetLoadCallbackHolder.h",
@@ -72,6 +73,7 @@ const CPP_SOURCE_HEADERS: [&str; 9] = [
     "src/OnRafCallback.h",
     "src/RafImpl.h",
     "src/ObjectCacheEntry.h",
+    "src/ImageBitmapImpl.h",
 ];
 
 const CPP_2D_SOURCE: [&str; 8] = [
@@ -315,13 +317,15 @@ fn main() {
     let mut build = cxx_build::bridges(["src/lib.rs", "src/bridges/context.rs"]);
 
     build
-        //.flag("-nostdinc")
+        .flag("-nostdinc++")
         .flag("-pthread")
         //.flag("-fvisibility-inlines-hidden")
         .cpp_link_stdlib("c++_static")
         .flag_if_supported("-std=c++14")
         .flag(&format!("--target={}", target_str))
+       //.flag(&format!("-isystem {}/sysroot", ndk()))
         .flag(&format!("--sysroot={}/sysroot", ndk()))
+        //.flag(&format!("--gcc-toolchain={}/toolchains/llvm/prebuilt/darwin-x86_64",ndk()))
         // .flag(&format!(
         //     "-isystem{}/sources/cxx-stl/llvm-libc++/include",
         //     ndk()
@@ -348,7 +352,7 @@ fn main() {
         .define("_LIBCPP_ABI_UNSTABLE", None)
         .define("V8_31BIT_SMIS_ON_64BIT_ARCH", None)
         .define("V8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH", None)
-        .define("V8_EMBEDDED_BUILTINS", None)
+        //.define("V8_EMBEDDED_BUILTINS", None)
         .files(&CPP_SOURCE)
         .files(&CPP_2D_SOURCE)
         .files(&CPP_WEBGL_SOURCE)
@@ -387,6 +391,7 @@ fn main() {
         build.define("APP_PLATFORM", "android-21");
         build.define("V8_COMPRESS_POINTERS", None);
         build.define("__ANDROID_API__", "21");
+        build.define("ANDROID_PLATFORM_LEVEL", "21");
     }
 
     if target.architecture.eq("armv7") || target.architecture.eq("x86") {
@@ -394,6 +399,7 @@ fn main() {
         build.define("APP_PLATFORM", "android-17");
         build.define("V8_COMPRESS_POINTERS", None);
         build.define("__ANDROID_API__", "17");
+        build.define("ANDROID_PLATFORM_LEVEL", "17");
     }
 
     let flags: Vec<_> = FLAGS_STR.split(" ").collect();
@@ -403,14 +409,14 @@ fn main() {
     }
 
     let flags_release: Vec<_> = FLAGS_RELEASE.split(" ").collect();
-    for flag in flags_release.into_iter() {
-        build.flag_if_supported(flag);
-    }
-
-    // let flags_debug: Vec<_> = FLAGS_DEBUG.split(" ").collect();
-    // for flag in flags_debug.into_iter() {
+    // for flag in flags_release.into_iter() {
     //     build.flag_if_supported(flag);
     // }
+
+    let flags_debug: Vec<_> = FLAGS_DEBUG.split(" ").collect();
+    for flag in flags_debug.into_iter() {
+        build.flag_if_supported(flag);
+    }
 
     build.warnings(false);
 

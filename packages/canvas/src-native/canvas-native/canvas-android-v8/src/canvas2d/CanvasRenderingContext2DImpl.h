@@ -231,6 +231,8 @@ public:
 
     static void Translate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     void UpdateInvalidateState();
 
     InvalidateState GetInvalidateState() const;

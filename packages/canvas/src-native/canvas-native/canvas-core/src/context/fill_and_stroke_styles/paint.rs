@@ -50,6 +50,7 @@ impl Paint {
         self.image_smoothing_quality = image_smoothing_quality
     }
 
+    #[inline]
     fn update_paint_style(&mut self, is_fill: bool) {
         let style;
         if is_fill {
@@ -69,12 +70,12 @@ impl Paint {
                 if is_fill {
                     self.fill_paint.set_shader(Pattern::to_pattern_shader(
                         pattern,
-                        self.image_smoothing_quality.into(),
+                        self.image_smoothing_quality,
                     ));
                 } else {
                     self.stroke_paint.set_shader(Pattern::to_pattern_shader(
                         pattern,
-                        self.image_smoothing_quality.into(),
+                        self.image_smoothing_quality,
                     ));
                 }
             }
@@ -88,6 +89,7 @@ impl Paint {
         }
     }
 
+    #[inline]
     pub fn set_style(&mut self, is_fill: bool, style: PaintStyle) {
         if is_fill {
             self.fill_style = style;
@@ -97,6 +99,7 @@ impl Paint {
         self.update_paint_style(is_fill);
     }
 
+    #[inline]
     pub fn style(&self, is_fill: bool) -> &PaintStyle {
         if is_fill {
             &self.fill_style
@@ -129,7 +132,7 @@ impl Paint {
         &mut self.image_paint
     }
 
-    pub(crate) fn set_blend_mode(&mut self, mode: skia_safe::BlendMode) {
+    pub(crate) fn set_blend_mode(&mut self, mode: BlendMode) {
         self.fill_paint.set_blend_mode(mode);
         self.stroke_paint.set_blend_mode(mode);
         self.image_paint.set_blend_mode(mode);
@@ -214,14 +217,16 @@ impl Default for Paint {
     }
 }
 
+#[inline]
 pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: bool, color: &str) {
     let mut context = context.get_context_mut();
-    if let Ok(color) = color.parse::<css_color_parser::Color>() {
-        let style = PaintStyle::Color(skia_safe::Color::from_argb(
-            (color.a * 255.0) as u8,
-            color.r,
-            color.g,
-            color.b,
+    if let Ok(color) = color.parse::<csscolorparser::Color>() {
+        let color = color.rgba_u8();
+        let style = PaintStyle::Color(Color::from_argb(
+            color.3,
+            color.0,
+            color.1,
+            color.2,
         ));
         if is_fill {
             context.set_fill_style(style);

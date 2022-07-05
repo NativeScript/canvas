@@ -2,7 +2,7 @@ use std::os::raw::{c_float, c_int, c_longlong};
 
 use canvas_core::context::image_asset::ImageAsset;
 use canvas_core::image_bitmap::{
-    create_from_image_asset_src_rect, create_from_image_data, create_image_asset,
+    create_from_image_asset_src_rect_raw, create_from_image_data_raw, create_image_asset_raw,
     create_image_asset_encoded,
 };
 
@@ -24,7 +24,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_bytes(
     }
     let slice = unsafe { std::slice::from_raw_parts(image_bytes, image_size) };
 
-    create_image_asset(
+    create_image_asset_raw(
         slice,
         image_width,
         image_height,
@@ -59,7 +59,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_bytes_src_rect(
         return Box::into_raw(Box::new(ImageAsset::new())) as c_longlong;
     }
     let slice = unsafe { std::slice::from_raw_parts(image_bytes, image_size) };
-    create_image_asset(
+    create_image_asset_raw(
         slice,
         image_width,
         image_height,
@@ -83,7 +83,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_image_asset(
     resize_width: c_float,
     resize_height: c_float,
 ) -> c_longlong {
-    create_from_image_asset_src_rect(
+    create_from_image_asset_src_rect_raw(
         asset,
         None,
         flip_y,
@@ -109,7 +109,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_image_asset_src_rect(
     resize_width: c_float,
     resize_height: c_float,
 ) -> c_longlong {
-    create_from_image_asset_src_rect(
+    create_from_image_asset_src_rect_raw(
         asset,
         Some(skia_safe::Rect::from_xywh(sx, sy, s_width, s_height)),
         flip_y,
@@ -190,7 +190,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_image_data(
     resize_width: c_float,
     resize_height: c_float,
 ) -> c_longlong {
-    create_from_image_data(
+    create_from_image_data_raw(
         image_data,
         None,
         flip_y,
@@ -216,7 +216,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_image_data_src_rect(
     resize_width: c_float,
     resize_height: c_float,
 ) -> c_longlong {
-    create_from_image_data(
+    create_from_image_data_raw(
         image_data,
         Some(skia_safe::Rect::from_xywh(sx, sy, s_width, s_height)),
         flip_y,

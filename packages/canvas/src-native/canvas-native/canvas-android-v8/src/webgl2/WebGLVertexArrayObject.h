@@ -15,4 +15,6 @@ public:
     static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, uint32_t object);
 };

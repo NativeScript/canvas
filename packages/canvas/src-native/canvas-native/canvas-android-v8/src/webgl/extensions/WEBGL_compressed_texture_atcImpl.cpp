@@ -25,8 +25,7 @@ v8::Local<v8::Object> WEBGL_compressed_texture_atcImpl::NewInstance(v8::Isolate 
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WEBGL_compressed_texture_atc");
-
+    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_compressed_texture_atc);
     result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_RGB_ATC_WEBGL"),
                 v8::Int32::New(isolate, GL_ATC_RGB_AMD));
     result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL"),

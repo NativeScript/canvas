@@ -19,7 +19,7 @@ public:
 
     static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void AddWeakListener(v8::Isolate *isolate, v8::Local<v8::Object> object, Path2D* path);
+    static void AddWeakListener(v8::Isolate *isolate, const v8::Local<v8::Object>& object, Path2D* path);
 
     static void AddPath(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -43,7 +43,7 @@ public:
 
     static void ToSVG(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static Path2D *GetPointer(v8::Local<v8::Object> object);
+    static Path2D *GetPointer(const v8::Local<v8::Object>& object);
 
     Path& GetPath();
 

@@ -11,7 +11,6 @@ v8::Local<v8::FunctionTemplate> EXT_color_buffer_half_floatImpl::GetCtor(v8::Iso
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "EXT_color_buffer_half_float"));
@@ -27,7 +26,7 @@ v8::Local<v8::Object> EXT_color_buffer_half_floatImpl::NewInstance(v8::Isolate *
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "EXT_color_buffer_half_float");
+    Helpers::SetInstanceType(isolate, result, ObjectType::EXT_color_buffer_half_float);
     result->Set(context, Helpers::ConvertToV8String(isolate, "RGBA16F_EXT"), v8::Int32::New(isolate, GL_RGBA16F_EXT));
     result->Set(context, Helpers::ConvertToV8String(isolate, "RGB16F_EXT"), v8::Int32::New(isolate, GL_RGB16F_EXT));
     result->Set(context, Helpers::ConvertToV8String(isolate, "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT"),

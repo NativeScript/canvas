@@ -23,7 +23,7 @@ public:
 
     static void GetData(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static ImageDataImpl *GetPointer(v8::Local<v8::Object> object);
+    static ImageDataImpl *GetPointer(const v8::Local<v8::Object>& object);
 
     static v8::Local<v8::Object> NewInstance(v8::Isolate* isolate, ImageDataImpl* imageData);
 

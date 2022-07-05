@@ -5,8 +5,9 @@ use std::os::raw::{c_long, c_void};
 use std::sync::Arc;
 
 use cxx::q;
-use parking_lot::lock_api::MutexGuard;
-use parking_lot::RawMutex;
+use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{RawMutex, RawRwLock};
+use crate::bridges::context::{__log, LogPriority};
 
 use crate::bridges::context::ffi::WebGLExtensionType;
 use crate::gl_context::GLContext;
@@ -47,13 +48,14 @@ pub enum WebGLResult {
     None,
 }
 
-#[derive(Copy, Clone, PartialOrd, PartialEq)]
+#[derive(Copy, Clone, PartialOrd, PartialEq, Debug)]
 pub enum WebGLVersion {
     V1,
     V2,
     NONE,
 }
 
+#[derive(Debug)]
 struct WebGLStateInner {
     version: WebGLVersion,
     gl_context: GLContext,
@@ -84,11 +86,16 @@ struct WebGLStateInner {
     unpack_colorspace_conversion_webgl: i32,
 }
 
-pub struct WebGLState(Arc<parking_lot::Mutex<WebGLStateInner>>);
+#[derive(Debug)]
+pub struct WebGLState(Arc<parking_lot::RwLock<WebGLStateInner>>);
 
 impl WebGLState {
-    fn get_lock(&self) -> MutexGuard<RawMutex, WebGLStateInner> {
-        self.0.lock()
+    fn get(&self) -> RwLockReadGuard<'_, RawRwLock, WebGLStateInner> {
+        self.0.read()
+    }
+
+    fn get_mut(&self) -> RwLockWriteGuard<'_, RawRwLock, WebGLStateInner> {
+        self.0.write()
     }
 
     pub fn new_with_context(
@@ -106,7 +113,7 @@ impl WebGLState {
         xr_compatible: bool,
         is_canvas: bool
     ) -> Self {
-        Self(Arc::new(parking_lot::Mutex::new(WebGLStateInner {
+        let mut ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
             version,
             alpha,
             antialias,
@@ -134,40 +141,42 @@ impl WebGLState {
             depth_mask: true,
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
-        })))
+        })));
+
+        ctx
     }
 
     pub(crate) fn get_context(&self) -> GLContext {
-        self.get_lock().gl_context.clone()
+        self.get().gl_context.clone()
     }
 
     pub fn get_drawing_buffer_width(&self) -> i32 {
-        self.get_lock().gl_context.get_surface_width()
+        self.get().gl_context.get_surface_width()
     }
 
     pub fn get_drawing_buffer_height(&self) -> i32 {
-        self.get_lock().gl_context.get_surface_height()
+        self.get().gl_context.get_surface_height()
     }
 
     pub(crate) fn set_antialias(&self, value: bool) {
-        self.get_lock().antialias = value;
+        self.get_mut().antialias = value;
     }
 
     pub(crate) fn set_alpha(&self, value: bool) {
-        self.get_lock().alpha = value;
+        self.get_mut().alpha = value;
     }
     pub(crate) fn set_webgl_version(&self, version: WebGLVersion) {
-        self.get_lock().version = version;
+        self.get_mut().version = version;
     }
 
     pub(crate) fn set_gl_context(&mut self, context: GLContext) {
-        self.get_lock().gl_context = context;
+        self.get_mut().gl_context = context;
     }
     pub fn get_webgl_version(&mut self) -> WebGLVersion {
-        self.get_lock().version
+        self.get().version
     }
     pub fn get_context_attributes(&self) -> ContextAttributes {
-        let lock = self.get_lock();
+        let lock = self.get();
         ContextAttributes {
             alpha: lock.alpha,
             antialias: lock.antialias,
@@ -183,148 +192,144 @@ impl WebGLState {
         }
     }
     pub fn set_clear_color(&mut self, colors: [f32; 4]) {
-        let mut lock = self.get_lock();
-        lock.clear_color = colors;
+        self.get_mut().clear_color = colors;
     }
     pub fn set_stencil_mask(&mut self, mask: u32) {
-        self.get_lock().stencil_mask = mask;
+        self.get_mut().stencil_mask = mask;
     }
     pub fn set_stencil_mask_back(&mut self, mask: u32) {
-        self.get_lock().stencil_mask_back = mask;
+        self.get_mut().stencil_mask_back = mask;
     }
     pub fn set_clear_depth(&mut self, depth: f32) {
-        let mut lock = self.get_lock();
-        lock.clear_depth = depth;
+        self.get_mut().clear_depth = depth;
     }
     pub fn set_clear_stencil(&mut self, stencil: i32) {
-        let mut lock = self.get_lock();
-        lock.clear_stencil = stencil;
+        self.get_mut().clear_stencil = stencil;
     }
     pub fn set_color_mask(&mut self, mask: [bool; 4]) {
-        let mut lock = self.get_lock();
-        lock.color_mask = mask;
+       self.get_mut().color_mask = mask;
     }
     pub fn set_stencil_func_ref(&mut self, reference: i32) {
-        self.get_lock().stencil_func_ref = reference;
+        self.get_mut().stencil_func_ref = reference;
     }
     pub fn set_stencil_func_ref_back(&mut self, reference: i32) {
-        self.get_lock().stencil_func_ref_back = reference;
+        self.get_mut().stencil_func_ref_back = reference;
     }
 
     pub fn set_stencil_func_mask(&mut self, mask: u32) {
-        self.get_lock().stencil_func_mask = mask;
+        self.get_mut().stencil_func_mask = mask;
     }
 
     pub fn set_stencil_func_mask_back(&mut self, mask: u32) {
-        self.get_lock().stencil_func_mask_back = mask;
+        self.get_mut().stencil_func_mask_back = mask;
     }
 
     pub fn set_premultiplied_alpha(&mut self, premultiply: bool) {
-        self.get_lock().premultiplied_alpha = premultiply;
+        self.get_mut().premultiplied_alpha = premultiply;
     }
 
     pub fn set_unpack_colorspace_conversion_webgl(&mut self, color_space: i32) {
-        self.get_lock().unpack_colorspace_conversion_webgl = color_space;
+        self.get_mut().unpack_colorspace_conversion_webgl = color_space;
     }
 
     pub fn set_flip_y(&mut self, flip: bool) {
-        self.get_lock().flip_y = flip;
+        self.get_mut().flip_y = flip;
     }
 
     pub fn get_alpha(&self) -> bool {
-        self.get_lock().alpha
+        self.get().alpha
     }
 
     pub fn get_antialias(&self) -> bool {
-        self.get_lock().antialias
+        self.get().antialias
     }
 
     pub fn get_depth(&self) -> bool {
-        self.get_lock().depth
+        self.get().depth
     }
 
     pub fn get_fail_if_major_performance_caveat(&self) -> bool {
-        self.get_lock().fail_if_major_performance_caveat
+        self.get().fail_if_major_performance_caveat
     }
 
     pub fn get_power_preference(&self) -> String {
-        self.get_lock().power_preference.clone()
+        self.get().power_preference.clone()
     }
 
     pub fn get_premultiplied_alpha(&self) -> bool {
-        self.get_lock().premultiplied_alpha
+        self.get().premultiplied_alpha
     }
 
     pub fn get_preserve_drawing_buffer(&self) -> bool {
-        self.get_lock().preserve_drawing_buffer
+        self.get().preserve_drawing_buffer
     }
 
     pub fn get_stencil(&self) -> bool {
-        self.get_lock().stencil
+        self.get().stencil
     }
 
     pub fn get_desynchronized(&self) -> bool {
-        self.get_lock().desynchronized
+        self.get().desynchronized
     }
 
     pub fn get_xr_compatible(&self) -> bool {
-        self.get_lock().xr_compatible
+        self.get().xr_compatible
     }
 
     pub fn get_scissor_enabled(&self) -> bool {
-        self.get_lock().scissor_enabled
+        self.get().scissor_enabled
     }
 
     pub fn get_depth_mask(&self) -> bool {
-        self.get_lock().depth_mask
+        self.get().depth_mask
     }
 
     pub fn get_clear_stencil(&self) -> i32 {
-        self.get_lock().clear_stencil
+        self.get().clear_stencil
     }
 
     pub fn get_stencil_mask(&self) -> u32 {
-        self.get_lock().stencil_mask
+        self.get().stencil_mask
     }
 
     pub fn get_clear_color(&self) -> [f32; 4] {
-        self.get_lock().clear_color
+        self.get().clear_color
     }
 
     pub fn get_color_mask(&self) -> [bool; 4] {
-        self.get_lock().color_mask
+        self.get().color_mask
     }
 
     pub fn get_clear_depth(&self) -> f32 {
-        self.get_lock().clear_depth
+        self.get().clear_depth
     }
 
     pub fn get_flip_y(&self) -> bool {
-        self.get_lock().flip_y
+        self.get().flip_y
     }
 
     pub fn get_unpack_colorspace_conversion_webgl(&self) -> i32 {
-        self.get_lock().unpack_colorspace_conversion_webgl
+        self.get().unpack_colorspace_conversion_webgl
     }
 
     pub fn drawing_buffer_width(&self) -> i32 {
-        self.get_lock().gl_context.get_surface_width()
+        self.get().gl_context.get_surface_width()
     }
 
     pub fn drawing_buffer_height(&self) -> i32 {
-        self.get_lock().gl_context.get_surface_height()
+        self.get().gl_context.get_surface_height()
     }
 
     pub fn make_current(&self) -> bool {
-        self.get_lock().gl_context.make_current()
+        self.get().gl_context.make_current()
     }
 
     pub fn swap_buffers(&self) -> bool {
-        self.get_lock().gl_context.swap_buffers()
+        self.get().gl_context.swap_buffers()
     }
 
     pub fn remove_if_current(&self) {
-        self.get_lock().gl_context.remove_if_current();
+        self.get().gl_context.remove_if_current();
     }
 }
 
@@ -340,7 +345,7 @@ impl Clone for WebGLState {
 
 impl Default for WebGLState {
     fn default() -> Self {
-        Self(Arc::new(parking_lot::Mutex::new(WebGLStateInner {
+        Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
             version: WebGLVersion::NONE,
             alpha: true,
             antialias: true,

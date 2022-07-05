@@ -27,6 +27,6 @@ public:
     static void GetType(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 private:
     rust::Box<WebGLActiveInfo> info_;
-    static WebGLActiveInfoImpl *GetPointer(v8::Local<v8::Object> object);
+    static WebGLActiveInfoImpl *GetPointer(const v8::Local<v8::Object>& object);
 };
 

@@ -11,7 +11,6 @@ v8::Local<v8::FunctionTemplate> OES_element_index_uintImpl::GetCtor(v8::Isolate 
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "OES_element_index_uint"));
@@ -27,7 +26,7 @@ v8::Local<v8::Object> OES_element_index_uintImpl::NewInstance(v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "OES_element_index_uint");
+    Helpers::SetInstanceType(isolate, result, ObjectType::OES_element_index_uint);
     result->Set(context, Helpers::ConvertToV8String(isolate, "UNSIGNED_INT"), v8::Int32::New(isolate, GL_UNSIGNED_INT));
     return handle_scope.Escape(result);
 }

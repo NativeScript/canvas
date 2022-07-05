@@ -17,7 +17,8 @@ void TextDecoderImpl::Init(v8::Isolate *isolate) {
     auto ctor = GetCtor(isolate);
     auto context = isolate->GetCurrentContext();
     auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "TextDecoder"), ctor->GetFunction(context).ToLocalChecked());
+    global->Set(context, Helpers::ConvertToV8String(isolate, "TextDecoder"),
+                ctor->GetFunction(context).ToLocalChecked());
 }
 
 void TextDecoderImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -42,38 +43,30 @@ void TextDecoderImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
                     Helpers::ConvertToV8String(
                             isolate,
                             "Failed to construct 'TextDecoder': The encoding label provided ('" +
-                                    std::string(Helpers::ConvertFromV8String(isolate,args[0]->ToString(context).ToLocalChecked())) + "') is invalid"
+                            std::string(Helpers::ConvertFromV8String(isolate,
+                                                                     args[0]->ToString(context).ToLocalChecked())) +
+                            "') is invalid"
                     )
             );
             isolate->ThrowException(err);
             return;
         }
         std::string decoding("utf-8");
-        if (args.Length() == 1 && args[0]->IsString()) {
-            auto val = args[0]->ToString(context).ToLocalChecked();
-            v8::String::Utf8Value utf8(isolate, val);
-            std::string value(*utf8, utf8.length());
-            decoding = value;
+        if (args.Length() == 1 && Helpers::IsString(args[0])) {
+            decoding = Helpers::GetString(isolate, args[0]);
         }
 
         auto ret = args.This();
-        Helpers::SetInternalClassName(isolate, ret, "TextDecoder");
-        auto decoder = canvas_native_text_decoder_create(decoding);
+        Helpers::SetInstanceType(isolate, ret, ObjectType::TextDecoder);
+        auto decoder = canvas_native_text_decoder_create(rust::Str(decoding.c_str(), decoding.size()));
         TextDecoderImpl *impl = new TextDecoderImpl(std::move(decoder));
         auto ext = v8::External::New(isolate, impl);
-
-        if (ret->InternalFieldCount() > 0) {
-            ret->SetInternalField(0, ext);
-        } else {
-            ret->SetPrivate(context, v8::Private::New(isolate, Helpers::ConvertToV8String(isolate, "rustPtr")),
-                            ext);
-        }
-
+        ret->SetInternalField(0, ext);
         args.GetReturnValue().Set(ret);
     }
 }
 
-TextDecoderImpl *TextDecoderImpl::GetPointer(v8::Local<v8::Object> object) {
+TextDecoderImpl *TextDecoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
         return nullptr;
@@ -83,10 +76,8 @@ TextDecoderImpl *TextDecoderImpl::GetPointer(v8::Local<v8::Object> object) {
 
 void TextDecoderImpl::GetEncoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
-    auto self = info.Holder();
-    auto ptr = GetPointer(self);
-    std::string encoding;
-    canvas_native_text_decoder_get_encoding(*ptr->decoder_, encoding);
+    auto ptr = GetPointer(info.This());
+    auto encoding = canvas_native_text_decoder_get_encoding(*ptr->decoder_);
     info.GetReturnValue().Set(
             Helpers::ConvertToV8String(isolate, encoding.c_str())
     );
@@ -99,16 +90,14 @@ v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
     ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "TextDecoder"));
 
+    auto tmpl = ctorTmpl->PrototypeTemplate();
 
-    auto tmpl = ctorTmpl->InstanceTemplate();
-
-    tmpl->SetInternalFieldCount(1);
     tmpl->Set(
             Helpers::ConvertToV8String(isolate, "decode"), v8::FunctionTemplate::New(isolate, &Decode)
     );
@@ -125,10 +114,10 @@ v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
 
 void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     if (args.Length() == 1) {
-        if (!args[0]->IsArrayBuffer() || !args[0]->IsArrayBufferView()) {
+        auto buf = args[0];
+        if (!buf->IsArrayBuffer() && !buf->IsArrayBufferView() && !buf->IsTypedArray()) {
 
             auto err = v8::Exception::TypeError(
                     Helpers::ConvertToV8String(
@@ -139,26 +128,22 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
             isolate->ThrowException(err);
             return;
         }
-        if (args[0]->IsArrayBuffer()) {
-            auto buf = args[0].As<v8::ArrayBuffer>();
-            auto store = buf->GetBackingStore();
+        if (buf->IsArrayBuffer()) {
+            auto buffer = buf.As<v8::ArrayBuffer>();
+            auto store = buffer->GetBackingStore();
             auto data = static_cast<std::uint8_t *>(store->Data());
             auto size = store->ByteLength();
             rust::Slice<const uint8_t> slice{data, size};
-            std::string decoded;
-            canvas_native_text_decoder_decode(*ptr->decoder_, slice, decoded);
+            auto decoded = canvas_native_text_decoder_decode(*ptr->decoder_, slice);
             args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, decoded.c_str()));
-        } else if (args[0]->IsArrayBufferView()) {
-            auto buf = args[0].As<v8::ArrayBufferView>();
-
-            auto offset = buf->ByteOffset();
-            auto store = buf->Buffer()->GetBackingStore();
-
+        } else if (buf->IsArrayBufferView() || buf->IsTypedArray()) {
+            auto buffer = buf.As<v8::TypedArray>();
+            auto offset = buffer->ByteOffset();
+            auto store = buffer->Buffer()->GetBackingStore();
             auto data = static_cast<std::uint8_t *>(store->Data()) + offset;
             auto size = store->ByteLength();
             rust::Slice<const uint8_t> slice{data, size};
-            std::string decoded;
-            canvas_native_text_decoder_decode(*ptr->decoder_, slice, decoded);
+            auto decoded = canvas_native_text_decoder_decode(*ptr->decoder_, slice);
             args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, decoded.c_str()));
         }
 

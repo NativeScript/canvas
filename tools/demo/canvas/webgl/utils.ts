@@ -11,17 +11,28 @@ export function createProgramFromScripts(gl, shaderSources) {
             // Create the shader object
             const vertexShader = gl.createShader(gl.VERTEX_SHADER);
 
+            console.log('vertexShader', vertexShader);
+
+            console.log(element.src);
             // Load the shader source
             gl.shaderSource(vertexShader, element.src);
 
+            console.log('shaderSource');
+
             // Compile the shader
             gl.compileShader(vertexShader);
+
+            console.log('compileShader');
 
             // Check the compile status
             let compiled = gl.getShaderParameter(
                 vertexShader,
                 gl.COMPILE_STATUS
             );
+
+
+            console.log('compiled', compiled);
+
             if (!compiled) {
                 // Something went wrong during compilation; get the error
                 const lastError = gl.getShaderInfoLog(vertexShader);

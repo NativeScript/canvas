@@ -9,7 +9,6 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-    // isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 
     auto len = args.Length();
 
@@ -21,6 +20,7 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 
     ImageAssetImpl::Init(isolate);
+    ImageBitmapImpl::Init(isolate);
     TextDecoderImpl::Init(isolate);
     TextEncoderImpl::Init(isolate);
     Canvas2D::Init(isolate);

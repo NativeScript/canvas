@@ -19,7 +19,7 @@ public:
 
     static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, rust::Box<PaintStyle> style);
 
-    static CanvasPattern *GetPointer(v8::Local<v8::Object> object);
+    static CanvasPattern *GetPointer(const v8::Local<v8::Object>& object);
 
     PaintStyle& GetPaintStyle();
 private:

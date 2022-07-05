@@ -5,6 +5,7 @@
 #include "CanvasPattern.h"
 #include "canvas-android-v8/src/bridges/context.rs.h"
 
+
 CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 
 void CanvasPattern::Init(v8::Isolate *isolate) {
@@ -15,7 +16,7 @@ void CanvasPattern::Init(v8::Isolate *isolate) {
                 ctorFunc->GetFunction(context).ToLocalChecked());
 }
 
-CanvasPattern *CanvasPattern::GetPointer(v8::Local<v8::Object> object) {
+CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object>& object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
         return nullptr;
@@ -30,7 +31,7 @@ v8::Local<v8::Object> CanvasPattern::NewInstance(v8::Isolate *isolate, rust::Box
     auto ctorFunc = GetCtorFunc(isolate);
     CanvasPattern *gradient = new CanvasPattern(std::move(style));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "CanvasPattern");
+    Helpers::SetInstanceType(isolate, result, ObjectType::CanvasPattern);
     auto ext = v8::External::New(isolate, gradient);
     result->SetInternalField(0, ext);
     return handle_scope.Escape(result);
@@ -46,8 +47,8 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
         auto context = isolate->GetCurrentContext();
         if (args[0]->IsObject()) {
             auto matrix = args[0]->ToObject(context).ToLocalChecked();
-            if (Helpers::IsInstanceOf(isolate, matrix, "DOMMatrix")) {
-                auto ptr = GetPointer(args.Holder());
+            if (Helpers::GetInstanceType(isolate, matrix) == ObjectType::Matrix) {
+                auto ptr = GetPointer(args.This());
                 auto matrix_ptr = MatrixImpl::GetPointer(matrix);
                 canvas_native_pattern_set_transform(ptr->GetPaintStyle(), matrix_ptr->GetMatrix());
             }
@@ -61,12 +62,12 @@ v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtorFunc(v8::Isolate *isolate)
     if (func != nullptr) {
         return func->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     auto patternTpl = v8::FunctionTemplate::New(isolate, &CreateCallback);
     patternTpl->SetClassName(Helpers::ConvertToV8String(isolate, "CanvasPattern"));
-    patternTpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    patternTpl->InstanceTemplate()->Set(
+    patternTpl->PrototypeTemplate()->SetInternalFieldCount(1);
+
+    patternTpl->PrototypeTemplate()->Set(
             Helpers::ConvertToV8String(isolate, "setTransform"),
             v8::FunctionTemplate::New(isolate, &SetTransform)
     );

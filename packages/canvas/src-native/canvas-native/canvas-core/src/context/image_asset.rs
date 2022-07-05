@@ -87,6 +87,24 @@ enum ByteType {
 }
 
 impl ImageAsset {
+    pub fn copy(asset: &ImageAsset) -> Option<ImageAsset> {
+        let asset = asset.0.lock();
+        if let Some(data) = &asset.image {
+            return match stb::image::stbi_load_from_memory(data.as_slice(), Channels::RgbAlpha) {
+                None => None,
+                Some((info, data)) => {
+                    let mut inner = ImageAssetInner {
+                        image: Some(data),
+                        info: Some(info),
+                        error: String::new(),
+                        did_resize: false,
+                    };
+                    return Some(Self(Arc::new(parking_lot::Mutex::new(inner))));
+                }
+            }
+        }
+        None
+    }
     pub fn new() -> Self {
         stb::image::stbi_convert_iphone_png_to_rgb(true);
         Self(Arc::new(parking_lot::Mutex::new(ImageAssetInner {
@@ -167,7 +185,7 @@ impl ImageAsset {
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
     where
-        R: std::io::Read + std::io::Seek,
+        R: Read + Seek,
     {
         let mut lock = self.get_lock();
         if !lock.error.is_empty() {

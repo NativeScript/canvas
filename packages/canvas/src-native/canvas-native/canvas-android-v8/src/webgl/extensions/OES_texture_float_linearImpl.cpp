@@ -11,7 +11,7 @@ v8::Local<v8::FunctionTemplate> OES_texture_float_linearImpl::GetCtor(v8::Isolat
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
+
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "OES_texture_float_linear"));
@@ -27,6 +27,6 @@ v8::Local<v8::Object> OES_texture_float_linearImpl::NewInstance(v8::Isolate *iso
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "OES_texture_float_linear");
+    Helpers::SetInstanceType(isolate, result, ObjectType::OES_texture_float_linear);
     return handle_scope.Escape(result);
 }

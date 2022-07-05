@@ -28,6 +28,6 @@ public:
 private:
     rust::Box<WebGLShaderPrecisionFormat> shader_;
 
-    static WebGLShaderPrecisionFormatImpl *GetPointer(v8::Local<v8::Object> object);
+    static WebGLShaderPrecisionFormatImpl *GetPointer(const v8::Local<v8::Object>& object);
 };
 

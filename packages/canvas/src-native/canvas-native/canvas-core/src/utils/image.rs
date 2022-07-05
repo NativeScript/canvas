@@ -60,7 +60,7 @@ pub fn from_image_slice(image_slice: &[u8], width: c_int, height: c_int) -> Opti
     let info = ImageInfo::new(
         ISize::new(width, height),
         ColorType::RGBA8888,
-        AlphaType::Premul,
+        AlphaType::Unpremul,
         None,
     );
     Image::from_raster_data(&info, Data::new_copy(image_slice), (width * 4) as usize)

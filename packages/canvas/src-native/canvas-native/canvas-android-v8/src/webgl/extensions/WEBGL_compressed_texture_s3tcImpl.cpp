@@ -25,7 +25,8 @@ v8::Local<v8::Object> WEBGL_compressed_texture_s3tcImpl::NewInstance(v8::Isolate
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WEBGL_compressed_texture_s3tc");
+    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_compressed_texture_s3tc);
+
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_RGB_S3TC_DXT1_EXT"),
                 v8::Int32::New(isolate, GL_COMPRESSED_RGB_S3TC_DXT1_EXT));

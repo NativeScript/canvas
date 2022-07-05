@@ -28,7 +28,7 @@ ANGLE_instanced_arraysImpl::NewInstance(v8::Isolate *isolate, rust::Box<ANGLE_in
     auto ctorFunc = GetCtor(isolate);
     ANGLE_instanced_arraysImpl *arraysImpl = new ANGLE_instanced_arraysImpl(std::move(arrays));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "ANGLE_instanced_arrays");
+    Helpers::SetInstanceType(isolate, result, ObjectType::ANGLE_instanced_arrays);
     auto ext = v8::External::New(isolate, arraysImpl);
     result->SetInternalField(0, ext);
 
@@ -49,8 +49,9 @@ v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate 
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ANGLE_instanced_arrays"));
 
-    auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+    auto tmpl = ctorTmpl->PrototypeTemplate();
 
     tmpl->Set(Helpers::ConvertToV8String(isolate, "drawArraysInstancedANGLE"),
               v8::FunctionTemplate::New(isolate, &DrawArraysInstancedANGLE));
@@ -66,7 +67,7 @@ v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate 
 void ANGLE_instanced_arraysImpl::DrawArraysInstancedANGLE(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     auto mode = args[0];
     auto first = args[1];
     auto count = args[2];
@@ -85,7 +86,7 @@ void ANGLE_instanced_arraysImpl::DrawArraysInstancedANGLE(const v8::FunctionCall
 void ANGLE_instanced_arraysImpl::DrawElementsInstancedANGLE(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
 
     auto mode = args[0];
     auto count = args[1];
@@ -106,7 +107,7 @@ void ANGLE_instanced_arraysImpl::DrawElementsInstancedANGLE(const v8::FunctionCa
 void ANGLE_instanced_arraysImpl::VertexAttribDivisorANGLE(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
 
     auto index = args[0];
     auto divisor = args[1];

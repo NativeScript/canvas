@@ -27,7 +27,7 @@ EXT_disjoint_timer_queryImpl::NewInstance(v8::Isolate *isolate, rust::Box<EXT_di
     auto ctorFunc = GetCtor(isolate);
     EXT_disjoint_timer_queryImpl *queryImpl = new EXT_disjoint_timer_queryImpl(std::move(query));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "EXT_disjoint_timer_query");
+    Helpers::SetInstanceType(isolate, result, ObjectType::EXT_disjoint_timer_query);
     auto ext = v8::External::New(isolate, queryImpl);
     result->SetInternalField(0, ext);
 
@@ -60,18 +60,22 @@ v8::Local<v8::FunctionTemplate> EXT_disjoint_timer_queryImpl::GetCtor(v8::Isolat
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "EXT_disjoint_timer_query"));
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    auto tmpl = ctorTmpl->PrototypeTemplate();
 
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "createQueryExt"), v8::FunctionTemplate::New(isolate, &CreateQueryExt));
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "deleteQueryExt"), v8::FunctionTemplate::New(isolate, &DeleteQueryExt));
+    tmpl->Set(Helpers::ConvertToV8String(isolate, "createQueryExt"),
+              v8::FunctionTemplate::New(isolate, &CreateQueryExt));
+    tmpl->Set(Helpers::ConvertToV8String(isolate, "deleteQueryExt"),
+              v8::FunctionTemplate::New(isolate, &DeleteQueryExt));
     tmpl->Set(Helpers::ConvertToV8String(isolate, "isQueryExt"), v8::FunctionTemplate::New(isolate, &IsQueryExt));
     tmpl->Set(Helpers::ConvertToV8String(isolate, "beginQueryExt"), v8::FunctionTemplate::New(isolate, &BeginQueryExt));
     tmpl->Set(Helpers::ConvertToV8String(isolate, "endQueryExt"), v8::FunctionTemplate::New(isolate, &EndQueryExt));
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "queryCounterExt"), v8::FunctionTemplate::New(isolate, &QueryCounterExt));
+    tmpl->Set(Helpers::ConvertToV8String(isolate, "queryCounterExt"),
+              v8::FunctionTemplate::New(isolate, &QueryCounterExt));
     tmpl->Set(Helpers::ConvertToV8String(isolate, "getQueryExt"), v8::FunctionTemplate::New(isolate, &GetQueryExt));
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "qetQueryObjectExt"), v8::FunctionTemplate::New(isolate, &GetQueryObjectExt));
+    tmpl->Set(Helpers::ConvertToV8String(isolate, "qetQueryObjectExt"),
+              v8::FunctionTemplate::New(isolate, &GetQueryObjectExt));
 
     cache->EXT_disjoint_timer_queryImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;

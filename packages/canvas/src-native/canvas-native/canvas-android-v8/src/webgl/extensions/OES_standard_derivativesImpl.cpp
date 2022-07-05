@@ -24,7 +24,7 @@ v8::Local<v8::Object> OES_standard_derivativesImpl::NewInstance(v8::Isolate *iso
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "OES_standard_derivatives");
+    Helpers::SetInstanceType(isolate, result, ObjectType::OES_standard_derivatives);
     result->Set(context, Helpers::ConvertToV8String(isolate, "FRAGMENT_SHADER_DERIVATIVE_HINT_OES"),
                 v8::Int32::New(isolate, GL_FRAGMENT_SHADER_DERIVATIVE_HINT_OES));
     return handle_scope.Escape(result);

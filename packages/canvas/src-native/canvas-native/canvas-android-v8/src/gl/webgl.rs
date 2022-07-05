@@ -1833,6 +1833,36 @@ pub fn canvas_native_webgl_tex_image2d_none(
     }
 }
 
+
+pub fn canvas_native_webgl_tex_image2d_image_asset(
+    target: i32,
+    level: i32,
+    internalformat: i32,
+    format: i32,
+    image_type: i32,
+    image_asset: &ImageAsset,
+    state: &WebGLState,
+) {
+    state.make_current();
+    let bytes = image_asset.get_bytes().unwrap_or(&[0u8]);
+    unsafe {
+        gl_bindings::glTexImage2D(
+            target as u32,
+            level,
+            internalformat,
+            0,
+            format,
+            image_type,
+            gl_bindings::GL_RGBA as u32,
+            image_type as u32,
+            bytes.as_ptr() as *const c_void
+        );
+    }
+}
+
+
+
+
 pub fn canvas_native_webgl_tex_parameterf(target: u32, pname: u32, param: f32, state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::glTexParameterf(target, pname, param) }

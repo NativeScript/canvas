@@ -27,7 +27,7 @@ OES_vertex_array_objectImpl::NewInstance(v8::Isolate *isolate, rust::Box<OES_ver
     auto ctorFunc = GetCtor(isolate);
     OES_vertex_array_objectImpl *objectImpl = new OES_vertex_array_objectImpl(std::move(object));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "OES_vertex_array_object");
+    Helpers::SetInstanceType(isolate, result, ObjectType::OES_vertex_array_object);
     auto ext = v8::External::New(isolate, objectImpl);
     result->SetInternalField(0, ext);
 
@@ -49,8 +49,9 @@ v8::Local<v8::FunctionTemplate> OES_vertex_array_objectImpl::GetCtor(v8::Isolate
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "OES_vertex_array_object"));
 
-    auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+    auto tmpl = ctorTmpl->PrototypeTemplate();
 
     tmpl->Set(Helpers::ConvertToV8String(isolate, "createVertexArrayOES"),
               v8::FunctionTemplate::New(isolate, &CreateVertexArrayOES));
@@ -66,8 +67,7 @@ v8::Local<v8::FunctionTemplate> OES_vertex_array_objectImpl::GetCtor(v8::Isolate
 }
 
 void OES_vertex_array_objectImpl::CreateVertexArrayOES(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     args.GetReturnValue().Set(
             canvas_native_webgl_oes_vertex_array_object_create_vertex_array_oes(*ptr->object_)
     );
@@ -76,7 +76,7 @@ void OES_vertex_array_objectImpl::CreateVertexArrayOES(const v8::FunctionCallbac
 void OES_vertex_array_objectImpl::DeleteVertexArrayOES(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     auto array_object = args[0];
     canvas_native_webgl_oes_vertex_array_object_delete_vertex_array_oes(
             array_object->Uint32Value(context).ToChecked(),
@@ -87,7 +87,7 @@ void OES_vertex_array_objectImpl::DeleteVertexArrayOES(const v8::FunctionCallbac
 void OES_vertex_array_objectImpl::IsVertexArrayOES(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     auto array_object = args[0];
     args.GetReturnValue().Set(
             canvas_native_webgl_oes_vertex_array_object_is_vertex_array_oes(
@@ -100,7 +100,7 @@ void OES_vertex_array_objectImpl::IsVertexArrayOES(const v8::FunctionCallbackInf
 void OES_vertex_array_objectImpl::BindVertexArrayOES(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     auto array_object = args[0];
     canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(
             array_object->Uint32Value(context).ToChecked(),

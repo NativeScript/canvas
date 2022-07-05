@@ -26,10 +26,9 @@ WEBGL_lose_contextImpl::NewInstance(v8::Isolate *isolate, rust::Box<WEBGL_lose_c
     auto ctorFunc = GetCtor(isolate);
     WEBGL_lose_contextImpl *contextImpl = new WEBGL_lose_contextImpl(std::move(context));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WEBGL_lose_context");
+    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_lose_context);
     auto ext = v8::External::New(isolate, contextImpl);
     result->SetInternalField(0, ext);
-
     return handle_scope.Escape(result);
 }
 
@@ -43,8 +42,10 @@ v8::Local<v8::FunctionTemplate> WEBGL_lose_contextImpl::GetCtor(v8::Isolate *iso
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ANGLE_instanced_arrays"));
-    auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+    auto tmpl = ctorTmpl->PrototypeTemplate();
 
     tmpl->Set(Helpers::ConvertToV8String(isolate, "loseContext"),
               v8::FunctionTemplate::New(isolate, &LoseContext));
@@ -57,16 +58,12 @@ v8::Local<v8::FunctionTemplate> WEBGL_lose_contextImpl::GetCtor(v8::Isolate *iso
 }
 
 void WEBGL_lose_contextImpl::LoseContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
 
     canvas_native_webgl_lose_context_lose_context(*ptr->context_);
 }
 
 void WEBGL_lose_contextImpl::RestoreContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     canvas_native_webgl_lose_context_restore_context(*ptr->context_);
 }

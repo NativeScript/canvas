@@ -19,7 +19,7 @@ public:
 
     static void AddColorStop(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static CanvasGradient *GetPointer(v8::Local<v8::Object> object);
+    static CanvasGradient *GetPointer(const v8::Local<v8::Object>& object);
 
     PaintStyle& GetPaintStyle();
 

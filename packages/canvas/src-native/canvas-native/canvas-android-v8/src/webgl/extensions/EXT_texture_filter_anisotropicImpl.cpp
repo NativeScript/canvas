@@ -13,7 +13,7 @@ v8::Local<v8::FunctionTemplate> EXT_texture_filter_anisotropicImpl::GetCtor(v8::
     }
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "EXT_texture_filter_anisotropicImpl"));
+    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "EXT_texture_filter_anisotropic"));
 
     cache->EXT_texture_filter_anisotropicImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate,
                                                                                                            ctorTmpl);
@@ -27,7 +27,8 @@ v8::Local<v8::Object> EXT_texture_filter_anisotropicImpl::NewInstance(v8::Isolat
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "EXT_texture_filter_anisotropic");
+
+    Helpers::SetInstanceType(isolate, result, ObjectType::EXT_texture_filter_anisotropic);
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "MAX_TEXTURE_MAX_ANISOTROPY_EXT"),
                 v8::Int32::New(isolate, GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT));

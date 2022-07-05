@@ -24,6 +24,6 @@ v8::Local<v8::Object> OES_texture_floatImpl::NewInstance(v8::Isolate *isolate) {
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "OES_texture_float");
+    Helpers::SetInstanceType(isolate, result, ObjectType::OES_texture_float);
     return handle_scope.Escape(result);
 }

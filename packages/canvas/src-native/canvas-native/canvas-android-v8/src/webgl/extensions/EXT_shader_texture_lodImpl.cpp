@@ -26,6 +26,6 @@ v8::Local<v8::Object> EXT_shader_texture_lodImpl::NewInstance(v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "EXT_shader_texture_lod");
+    Helpers::SetInstanceType(isolate, result, ObjectType::EXT_shader_texture_lod);
     return handle_scope.Escape(result);
 }

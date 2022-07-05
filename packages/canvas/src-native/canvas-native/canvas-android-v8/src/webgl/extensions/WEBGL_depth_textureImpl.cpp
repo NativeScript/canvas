@@ -24,7 +24,7 @@ v8::Local<v8::Object> WEBGL_depth_textureImpl::NewInstance(v8::Isolate *isolate)
     auto context = isolate->GetCurrentContext();
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WEBGL_depth_texture");
+    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_depth_texture);
     result->Set(context, Helpers::ConvertToV8String(isolate, "UNSIGNED_INT_24_8_WEBGL"),
                 v8::Int32::New(isolate, 0x84FA));
     return handle_scope.Escape(result);

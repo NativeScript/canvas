@@ -14,6 +14,24 @@ class WebGLRenderingContextBase {
 public:
     WebGLRenderingContextBase(rust::Box<WebGLState> state);
 
+    ~WebGLRenderingContextBase();
+
+    static WebGLRenderingContextBase *GetPointerBase(const v8::Local<v8::Object> &object) {
+        auto ptrValue = object->GetInternalField(0);
+
+        if(ptrValue.IsEmpty()){
+            return nullptr;
+        }
+
+        void* ptr = ptrValue.As<v8::External>()->Value();
+
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+
+        return (WebGLRenderingContextBase *) (ptr);
+    }
+
     void UpdateInvalidateState();
 
     InvalidateState GetInvalidateState() const;
@@ -24,14 +42,18 @@ public:
 
     static void Flush(intptr_t context);
 
-    WebGLState& GetPointer();
+    WebGLState &GetState();
 
     void SetRaf(std::shared_ptr <RafImpl> raf);
-protected:
+
+    RafImpl *GetRaf();
+
+
+private:
     rust::Box<WebGLState> state_;
 
     InvalidateState invalidateState_ = InvalidateState::NONE;
 
-    std::shared_ptr <RafImpl> raf_;
+    std::shared_ptr <RafImpl> raf_ = nullptr;
 };
 

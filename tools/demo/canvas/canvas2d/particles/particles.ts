@@ -3,7 +3,7 @@ import {GestureTypes, TouchGestureEventData, Screen} from '@nativescript/core';
 let LAF = 0;
 
 var config = {
-	particleNumber: 10,
+	particleNumber: 40,
 	maxParticleSize: 10,
 	maxSpeed: 40,
 	colorVariation: 10
@@ -56,9 +56,9 @@ var Particle = function (x, y) {
 function touchParticles(canvas, w?, h?, nativeCanvas?) {
 	const context = canvas.getContext ? canvas.getContext('2d') : canvas;
 
-  const ptr = context.canvas.nativeView.getNativeContext();
-  console.log('context.canvas.nativeView.getNativeContext()', ptr);
-  const v8Ctx = global.__getCanvasRenderingContext2DImpl(String(ptr));
+ // const ptr = context.canvas.nativeView.getNativeContext();
+ // console.log('context.canvas.nativeView.getNativeContext()', ptr);
+  //const v8Ctx = global.__getCanvasRenderingContext2DImpl(String(ptr));
 
   const ctx = context;
 

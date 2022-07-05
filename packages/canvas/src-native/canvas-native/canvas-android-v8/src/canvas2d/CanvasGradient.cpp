@@ -15,7 +15,7 @@ void CanvasGradient::Init(v8::Isolate *isolate) {
                 ctorFunc->GetFunction(context).ToLocalChecked());
 }
 
-CanvasGradient *CanvasGradient::GetPointer(v8::Local<v8::Object> object) {
+CanvasGradient *CanvasGradient::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
         return nullptr;
@@ -28,10 +28,10 @@ v8::Local<v8::Object> CanvasGradient::NewInstance(v8::Isolate *isolate, rust::Bo
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::EscapableHandleScope handle_scope(isolate);
-    auto ctorFunc = CanvasGradient::GetCtorFunc(isolate);
+    auto ctorFunc = GetCtorFunc(isolate);
     CanvasGradient *gradient = new CanvasGradient(std::move(style));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "CanvasGradient");
+    Helpers::SetInstanceType(isolate, result, ObjectType::CanvasGradient);
     auto ext = v8::External::New(isolate, gradient);
     result->SetInternalField(0, ext);
     return handle_scope.Escape(result);
@@ -43,13 +43,13 @@ void CanvasGradient::CreateCallback(const v8::FunctionCallbackInfo<v8::Value> &a
 
 void CanvasGradient::AddColorStop(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (args.Length() == 2 &&
-        ((args[0]->IsNumber() || args[0]->IsNumberObject()) && (args[1]->IsString() || args[1]->IsStringObject()))) {
+        Helpers::IsNumber(args[0]) && Helpers::IsString(args[1])) {
         auto isolate = args.GetIsolate();
-        auto ptr = GetPointer(args.Holder());
+        auto ptr = GetPointer(args.This());
         auto context = isolate->GetCurrentContext();
         auto stop = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto color = Helpers::ConvertFromV8String(isolate, args[1]);
-        canvas_native_gradient_add_color_stop(*ptr->style_, stop, color);
+        canvas_native_gradient_add_color_stop(*ptr->style_, stop, rust::Str(color.c_str(), color.size()));
     }
 }
 
@@ -59,12 +59,11 @@ v8::Local<v8::FunctionTemplate> CanvasGradient::GetCtorFunc(v8::Isolate *isolate
     if (func != nullptr) {
         return func->Get(isolate);
     }
-    auto context = isolate->GetCurrentContext();
     auto gradientTpl = v8::FunctionTemplate::New(isolate, &CreateCallback);
     gradientTpl->SetClassName(Helpers::ConvertToV8String(isolate, "CanvasGradient"));
     gradientTpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    gradientTpl->InstanceTemplate()->Set(
+    gradientTpl->PrototypeTemplate()->Set(
             v8::String::NewFromUtf8(isolate, "addColorStop").ToLocalChecked(),
             v8::FunctionTemplate::New(isolate, &AddColorStop)
     );

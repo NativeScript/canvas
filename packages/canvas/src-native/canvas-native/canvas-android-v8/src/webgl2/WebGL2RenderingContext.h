@@ -30,11 +30,11 @@ public:
 
     static void InstanceFromPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void SetConstants(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> tmpl);
+    static void SetConstants(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& tmpl);
 
-    static void SetProps(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> webgl2RenderingContextTpl);
+    static void SetProps(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& webgl2RenderingContextTpl);
 
-    static void SetMethods(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> webgl2RenderingContextTpl);
+    static void SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& webgl2RenderingContextTpl);
 
     static void BeginQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -210,9 +210,7 @@ public:
 
 private:
 
-    static WebGL2RenderingContext *GetPointer(v8::Local<v8::Object> object);
-
-    static WebGLRenderingContextBase *GetPointerBase(v8::Local<v8::Object> object);
+    static WebGL2RenderingContext *GetPointer(const v8::Local<v8::Object>& object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 };

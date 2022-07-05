@@ -6,11 +6,17 @@
 #include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state) : WebGLRenderingContextBase(
-        std::move(state)) {
-
-}
+        std::move(state)) {}
 
 WebGLRenderingContext::~WebGLRenderingContext() {}
+
+WebGLRenderingContext *WebGLRenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
+    auto ptr = GetPointerBase(object);
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+    return (WebGLRenderingContext *) (ptr);
+}
 
 void WebGLRenderingContext::Init(v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -44,13 +50,10 @@ void WebGLRenderingContext::Create(const v8::FunctionCallbackInfo<v8::Value> &ar
 
 void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::HandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
 
-    if (args.Length() > 0 && args[0]->IsObject()) {
-        auto config = args[0].As<v8::Object>();
+    if (Helpers::IsObject(args[0])) {
+        auto config = args[0]->ToObject(context).ToLocalChecked();
         std::string version("none");
         auto alpha = true;
         auto antialias = true;
@@ -63,18 +66,17 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
         auto desynchronized = false;
         auto xr_compatible = false;
 
+
         auto versionMaybe = config->Get(context, Helpers::ConvertToV8String(isolate, "version"));
         if (!versionMaybe.IsEmpty()) {
-            auto versionStr = versionMaybe.ToLocalChecked();
-            if (versionStr->IsString()) {
-                version = Helpers::ConvertFromV8String(isolate, versionStr);
-            }
+            auto versionValue = versionMaybe.ToLocalChecked();
+            version = Helpers::ConvertFromV8String(isolate, versionValue->ToString(context).ToLocalChecked());
         }
 
         auto alphaMaybe = config->Get(context, Helpers::ConvertToV8String(isolate, "alpha"));
         if (!alphaMaybe.IsEmpty()) {
             auto alphaLocal = alphaMaybe.ToLocalChecked();
-            if (alphaLocal->IsBoolean()) {
+            if (Helpers::IsBoolean(alphaLocal)) {
                 alpha = alphaLocal->BooleanValue(isolate);
             }
         }
@@ -82,7 +84,7 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
         auto antialiasMaybe = config->Get(context, Helpers::ConvertToV8String(isolate, "antialias"));
         if (!antialiasMaybe.IsEmpty()) {
             auto antialiasLocal = antialiasMaybe.ToLocalChecked();
-            if (antialiasLocal->IsBoolean()) {
+            if (Helpers::IsBoolean(antialiasLocal)) {
                 antialias = antialiasLocal->BooleanValue(isolate);
             }
         }
@@ -146,9 +148,9 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
             }
         }
 
-
-        if (version.compare("v1") == 0 || version.compare("v2") == 0) {
-            args.GetReturnValue().Set(v8::Undefined(isolate));
+        if (version != "v1" && version != "v2") {
+            args.GetReturnValue().SetUndefined();
+            return;
         } else {
             auto cache = Caches::Get(isolate);
 
@@ -164,12 +166,12 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
                 auto ctx = canvas_native_webgl_create_no_window(
                         width->Int32Value(context).ToChecked(),
                         height->Int32Value(context).ToChecked(),
-                        version,
+                        rust::Str(version.c_str(), version.size()),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        power_preference,
+                        rust::Str(power_preference.c_str(), power_preference.size()),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -181,12 +183,12 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
 
             } else {
                 auto ctx = canvas_native_webgl_create(
-                        version,
+                        rust::Str(version.c_str(), version.size()),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        power_preference,
+                        rust::Str(power_preference.c_str(), power_preference.size()),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -197,59 +199,49 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
                 renderingContext = new WebGLRenderingContext(std::move(ctx));
             }
 
-
             auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
             auto raf_callback = new OnRafCallback(ctx_ptr, 1);
             auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
             auto raf = canvas_native_raf_create(raf_callback_ptr);
             renderingContext->SetRaf(std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf)));
-            auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(
-                    context).ToLocalChecked();
-            Helpers::SetInternalClassName(isolate, ret, "WebGLRenderingContext");
+
+            auto _raf = renderingContext->GetRaf();
+            canvas_native_raf_start(_raf->GetRaf());
+
+            auto tmpl = GetCtor(isolate)->InstanceTemplate();
+            tmpl->SetInternalFieldCount(1);
+            auto ret = tmpl->NewInstance(context).ToLocalChecked();
+            Helpers::SetInstanceType(isolate, ret, ObjectType::WebGLRenderingContext);
+
             auto ext = v8::External::New(isolate, renderingContext);
             ret->SetInternalField(0, ext);
+
             args.GetReturnValue().Set(ret);
         }
         return;
     }
-    args.GetReturnValue().Set(v8::Undefined(isolate));
-}
-
-WebGLRenderingContext *WebGLRenderingContext::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-    if (ptr == nullptr) {
-        return nullptr;
-    }
-    return static_cast<WebGLRenderingContext *>(ptr);
-}
-
-WebGLRenderingContextBase *WebGLRenderingContext::GetPointerBase(v8::Local<v8::Object> object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-    if (ptr == nullptr) {
-        return nullptr;
-    }
-    return static_cast<WebGLRenderingContextBase *>(ptr);
+    args.GetReturnValue().SetUndefined();
 }
 
 void WebGLRenderingContext::ActiveTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0 && args[0]->IsNumber()) {
         auto texture = args[0]->ToUint32(context);
-        canvas_native_webgl_active_texture(texture.ToLocalChecked()->Value(), ptr->GetPointer());
+        canvas_native_webgl_active_texture(texture.ToLocalChecked()->Value(), ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto shader = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram") &&
-            Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
+            Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto p = program.As<v8::Object>();
             auto s = shader.As<v8::Object>();
             auto programValue = Helpers::GetPrivate(isolate, p, "instance")->ToUint32(context);
@@ -257,7 +249,7 @@ void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Valu
             canvas_native_webgl_attach_shader(
                     programValue.ToLocalChecked()->Value(),
                     shaderValue.ToLocalChecked()->Value(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -266,13 +258,15 @@ void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto program = args[0];
         auto index = args[1];
         auto name = args[2];
 
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram") && index->IsNumber() && name->IsString()) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
+            index->IsNumber() &&
+            name->IsString()) {
             auto p = program.As<v8::Object>();
             auto i = index.As<v8::Object>();
             auto programValue = Helpers::GetPrivate(isolate, p, "instance")->ToUint32(context);
@@ -283,8 +277,8 @@ void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8
             canvas_native_webgl_bind_attrib_location(
                     programValue.ToLocalChecked()->Value(),
                     indexValue.ToLocalChecked()->Value(),
-                    nameValue,
-                    ptr->GetPointer()
+                    rust::Str(nameValue.c_str(), nameValue.size()),
+                    ptr->GetState()
             );
         }
     }
@@ -294,20 +288,20 @@ void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8
 void WebGLRenderingContext::BindBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto buffer = args[1];
 
         if (target->IsNumber()) {
             auto targetValue = target->ToUint32(context);
-            if (Helpers::IsInstanceOf(isolate, buffer, "WebGLBuffer")) {
+            if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLBuffer) {
                 auto b = buffer->ToObject(context).ToLocalChecked();
                 auto bufferValue = Helpers::GetPrivate(isolate, b, "instance")->ToUint32(context);
                 canvas_native_webgl_bind_buffer(
                         targetValue.ToLocalChecked()->Value(),
                         bufferValue.ToLocalChecked()->Value(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             } else {
                 // unbind
@@ -315,7 +309,7 @@ void WebGLRenderingContext::BindBuffer(const v8::FunctionCallbackInfo<v8::Value>
                 canvas_native_webgl_bind_buffer(
                         targetValue.ToLocalChecked()->Value(),
                         0,
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -325,21 +319,21 @@ void WebGLRenderingContext::BindBuffer(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::BindFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto framebuffer = args[1];
 
         if (target->IsNumber()) {
             auto targetValue = target->ToUint32(context);
-            if (Helpers::IsInstanceOf(isolate, framebuffer, "WebGLFramebuffer")) {
+            if (Helpers::GetInstanceType(isolate, framebuffer) == ObjectType::WebGLFramebuffer) {
                 auto f = framebuffer.As<v8::Object>();
                 auto framebufferValue = Helpers::GetPrivate(isolate, f, "instance")->ToUint32(context);
 
                 canvas_native_webgl_bind_frame_buffer(
                         targetValue.ToLocalChecked()->Value(),
                         framebufferValue.ToLocalChecked()->Value(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             } else {
                 // null value
@@ -347,7 +341,7 @@ void WebGLRenderingContext::BindFramebuffer(const v8::FunctionCallbackInfo<v8::V
                 canvas_native_webgl_bind_frame_buffer(
                         targetValue.ToLocalChecked()->Value(),
                         0,
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -357,12 +351,12 @@ void WebGLRenderingContext::BindFramebuffer(const v8::FunctionCallbackInfo<v8::V
 void WebGLRenderingContext::BindRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto renderbuffer = args[1];
-
-        if (Helpers::IsInstanceOf(isolate, renderbuffer, "WebGLRenderbuffer") && target->IsNumber()) {
+        if (Helpers::GetInstanceType(isolate, renderbuffer) == ObjectType::WebGLRenderbuffer &&
+            target->IsNumber()) {
             auto r = renderbuffer.As<v8::Object>();
             auto renderbufferValue = Helpers::GetPrivate(isolate, r, "instance")->ToUint32(context);
             auto targetValue = target->ToUint32(context);
@@ -370,7 +364,7 @@ void WebGLRenderingContext::BindRenderbuffer(const v8::FunctionCallbackInfo<v8::
             canvas_native_webgl_bind_render_buffer(
                     targetValue.ToLocalChecked()->Value(),
                     renderbufferValue.ToLocalChecked()->Value(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -379,12 +373,13 @@ void WebGLRenderingContext::BindRenderbuffer(const v8::FunctionCallbackInfo<v8::
 void WebGLRenderingContext::BindTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto texture = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, texture, "WebGLTexture") && target->IsNumber()) {
+        if (Helpers::GetInstanceType(isolate, texture) == ObjectType::WebGLTexture &&
+            target->IsNumber()) {
             auto t = texture.As<v8::Object>();
             auto textureValue = Helpers::GetPrivate(isolate, t, "instance")->ToUint32(context);
             auto targetValue = target->ToUint32(context);
@@ -392,7 +387,7 @@ void WebGLRenderingContext::BindTexture(const v8::FunctionCallbackInfo<v8::Value
             canvas_native_webgl_bind_texture(
                     targetValue.ToLocalChecked()->Value(),
                     textureValue.ToLocalChecked()->Value(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -401,7 +396,7 @@ void WebGLRenderingContext::BindTexture(const v8::FunctionCallbackInfo<v8::Value
 void WebGLRenderingContext::BlendColor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto red = args[0];
         auto green = args[1];
@@ -413,7 +408,7 @@ void WebGLRenderingContext::BlendColor(const v8::FunctionCallbackInfo<v8::Value>
                 static_cast<float>(green->NumberValue(context).ToChecked()),
                 static_cast<float>(blue->NumberValue(context).ToChecked()),
                 static_cast<float>(alpha->NumberValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -421,7 +416,7 @@ void WebGLRenderingContext::BlendColor(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::BlendEquationSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto modeRGB = args[0];
         auto modeAlpha = args[1];
@@ -429,7 +424,7 @@ void WebGLRenderingContext::BlendEquationSeparate(const v8::FunctionCallbackInfo
         canvas_native_webgl_blend_equation_separate(
                 modeRGB->Uint32Value(context).ToChecked(),
                 modeAlpha->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -437,12 +432,12 @@ void WebGLRenderingContext::BlendEquationSeparate(const v8::FunctionCallbackInfo
 void WebGLRenderingContext::BlendEquation(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto mode = args[0];
         canvas_native_webgl_blend_equation(
                 mode->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -450,7 +445,7 @@ void WebGLRenderingContext::BlendEquation(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::BlendFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto srcRGB = args[0];
         auto dstRGB = args[1];
@@ -462,7 +457,7 @@ void WebGLRenderingContext::BlendFuncSeparate(const v8::FunctionCallbackInfo<v8:
                 dstRGB->Uint32Value(context).ToChecked(),
                 srcAlpha->Uint32Value(context).ToChecked(),
                 dstAlpha->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -470,7 +465,7 @@ void WebGLRenderingContext::BlendFuncSeparate(const v8::FunctionCallbackInfo<v8:
 void WebGLRenderingContext::BlendFunc(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto sfactor = args[0];
         auto dfactor = args[1];
@@ -478,7 +473,7 @@ void WebGLRenderingContext::BlendFunc(const v8::FunctionCallbackInfo<v8::Value> 
         canvas_native_webgl_blend_func(
                 sfactor->Uint32Value(context).ToChecked(),
                 dfactor->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -486,7 +481,7 @@ void WebGLRenderingContext::BlendFunc(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto target = args[0];
         auto usage = args[1];
@@ -495,7 +490,7 @@ void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value>
                 target->Uint32Value(context).ToChecked(),
                 0,
                 usage->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     } else if (args.Length() == 3) {
         auto target = args[0];
@@ -512,14 +507,14 @@ void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value>
                     target->Uint32Value(context).ToChecked(),
                     buf,
                     usage->Uint32Value(context).ToChecked(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         } else {
             canvas_native_webgl_buffer_data_none(
                     target->Uint32Value(context).ToChecked(),
                     static_cast<ssize_t>(sizeOrBuf->IntegerValue(context).ToChecked()),
                     usage->Uint32Value(context).ToChecked(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -528,7 +523,7 @@ void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto target = args[0];
         auto offset = args[1];
@@ -536,7 +531,7 @@ void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Val
         canvas_native_webgl_buffer_sub_data_none(
                 target->Uint32Value(context).ToChecked(),
                 static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     } else if (args.Length() == 3) {
         auto target = args[0];
@@ -553,7 +548,7 @@ void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Val
                     target->Uint32Value(context).ToChecked(),
                     static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
                     buf,
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         } else if (buf->IsArrayBuffer()) {
             auto arrayBuffer = buf.As<v8::ArrayBuffer>();
@@ -563,7 +558,7 @@ void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Val
                     target->Uint32Value(context).ToChecked(),
                     static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
                     buf,
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -572,7 +567,7 @@ void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::CheckFramebufferStatus(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto target = args[0];
 
@@ -581,7 +576,7 @@ void WebGLRenderingContext::CheckFramebufferStatus(const v8::FunctionCallbackInf
 
             auto ret = canvas_native_webgl_check_frame_buffer_status(
                     targetValue.ToLocalChecked()->Value(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
             args.GetReturnValue().Set(ret);
         }
@@ -594,7 +589,7 @@ void WebGLRenderingContext::CheckFramebufferStatus(const v8::FunctionCallbackInf
 void WebGLRenderingContext::ClearColor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto red = args[0];
         auto green = args[1];
@@ -606,7 +601,7 @@ void WebGLRenderingContext::ClearColor(const v8::FunctionCallbackInfo<v8::Value>
                 static_cast<float>(green->NumberValue(context).ToChecked()),
                 static_cast<float>(blue->NumberValue(context).ToChecked()),
                 static_cast<float>(alpha->NumberValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -614,13 +609,13 @@ void WebGLRenderingContext::ClearColor(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::ClearDepth(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto depth = args[0];
 
         canvas_native_webgl_clear_depth(
                 static_cast<float>(depth->NumberValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -628,12 +623,12 @@ void WebGLRenderingContext::ClearDepth(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::ClearStencil(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto stencil = args[0];
         canvas_native_webgl_clear_stencil(
                 stencil->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -641,13 +636,13 @@ void WebGLRenderingContext::ClearStencil(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::Clear(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto mask = args[0];
 
         canvas_native_webgl_clear(
                 mask->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
 
         ptr->UpdateInvalidateState();
@@ -657,7 +652,7 @@ void WebGLRenderingContext::Clear(const v8::FunctionCallbackInfo<v8::Value> &arg
 void WebGLRenderingContext::ColorMask(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto red = args[0];
         auto green = args[1];
@@ -669,7 +664,7 @@ void WebGLRenderingContext::ColorMask(const v8::FunctionCallbackInfo<v8::Value> 
                 green->BooleanValue(isolate),
                 blue->BooleanValue(isolate),
                 alpha->BooleanValue(isolate),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 
@@ -682,15 +677,15 @@ void WebGLRenderingContext::Commit(const v8::FunctionCallbackInfo<v8::Value> &ar
 void WebGLRenderingContext::CompileShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto shader = args[0];
-        if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto s = shader.As<v8::Object>();
             auto shaderValue = Helpers::GetPrivate(isolate, s, "instance")->ToUint32(context);
             canvas_native_webgl_compile_shader(
                     shaderValue.ToLocalChecked()->Value(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -699,7 +694,7 @@ void WebGLRenderingContext::CompileShader(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 6) {
         auto target = args[0];
         auto level = args[1];
@@ -715,7 +710,7 @@ void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<
                 width->Int32Value(context).ToChecked(),
                 height->Int32Value(context).ToChecked(),
                 border->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     } else if (args.Length() > 6) {
         auto target = args[0];
@@ -739,7 +734,7 @@ void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<
                     height->Int32Value(context).ToChecked(),
                     border->Int32Value(context).ToChecked(),
                     buf,
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -748,7 +743,7 @@ void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<
 void WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 7) {
         auto target = args[0];
         auto level = args[1];
@@ -773,7 +768,7 @@ void WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackIn
                     height->Int32Value(context).ToChecked(),
                     format->Uint32Value(context).ToChecked(),
                     buf,
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -782,7 +777,7 @@ void WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackIn
 void WebGLRenderingContext::CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 7) {
         auto target = args[0];
         auto level = args[1];
@@ -802,7 +797,7 @@ void WebGLRenderingContext::CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Va
                 width->Int32Value(context).ToChecked(),
                 height->Int32Value(context).ToChecked(),
                 border->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -810,7 +805,7 @@ void WebGLRenderingContext::CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Va
 void WebGLRenderingContext::CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 7) {
         auto target = args[0];
         auto level = args[1];
@@ -830,7 +825,7 @@ void WebGLRenderingContext::CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8:
                 y->Int32Value(context).ToChecked(),
                 width->Int32Value(context).ToChecked(),
                 height->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -838,72 +833,55 @@ void WebGLRenderingContext::CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8:
 void WebGLRenderingContext::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto buffer = canvas_native_webgl_create_buffer(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto buffer = canvas_native_webgl_create_buffer(ptr->GetState());
     if (buffer == 0) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
+        args.GetReturnValue().SetUndefined();
     } else {
-        auto ctor = WebGLBuffer::GetCtor(isolate);
-        auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-        Helpers::SetInternalClassName(isolate, instance, "WebGLBuffer");
-        Helpers::SetPrivate(isolate, instance, "instance", v8::Uint32::New(isolate, buffer));
-        args.GetReturnValue().Set(instance);
+        args.GetReturnValue().Set(WebGLBuffer::NewInstance(isolate, buffer));
     }
 }
 
 void WebGLRenderingContext::CreateFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto ret = canvas_native_webgl_create_framebuffer(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto ret = canvas_native_webgl_create_framebuffer(ptr->GetState());
     if (ret == 0) {
         args.GetReturnValue().Set(v8::Undefined(isolate));
         return;
     }
-
-    auto ctor = WebGLFramebuffer::GetCtor(isolate);
-    auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, instance, "WebGLFramebuffer");
-    Helpers::SetPrivate(isolate, instance, "instance", v8::Uint32::New(isolate, ret));
-    args.GetReturnValue().Set(instance);
+    args.GetReturnValue().Set(WebGLFramebuffer::NewInstance(isolate, ret));
 }
 
 void WebGLRenderingContext::CreateProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto ret = canvas_native_webgl_create_program(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto ret = canvas_native_webgl_create_program(ptr->GetState());
     if (ret == 0) {
         args.GetReturnValue().Set(v8::Undefined(isolate));
         return;
     }
-    auto ctor = WebGLProgram::GetCtor(isolate);
-    auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, instance, "WebGLProgram");
-    Helpers::SetPrivate(isolate, instance, "instance", v8::Uint32::New(isolate, ret));
-    args.GetReturnValue().Set(instance);
+    args.GetReturnValue().Set(WebGLProgram::NewInstance(isolate, ret));
 }
 
 void WebGLRenderingContext::CreateRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto ret = canvas_native_webgl_create_renderbuffer(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto ret = canvas_native_webgl_create_renderbuffer(ptr->GetState());
     if (ret == 0) {
         args.GetReturnValue().Set(v8::Undefined(isolate));
         return;
     }
-    auto ctor = WebGLRenderbuffer::GetCtor(isolate);
-    auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, instance, "WebGLRenderbuffer");
-    Helpers::SetPrivate(isolate, instance, "instance", v8::Uint32::New(isolate, ret));
-    args.GetReturnValue().Set(instance);
+    args.GetReturnValue().Set(WebGLRenderbuffer::NewInstance(isolate, ret));
 }
 
 void WebGLRenderingContext::CreateShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 0) {
         args.GetReturnValue().Set(v8::Undefined(isolate));
         return;
@@ -912,44 +890,36 @@ void WebGLRenderingContext::CreateShader(const v8::FunctionCallbackInfo<v8::Valu
         // todo throw ?
     }
     auto type = args[0]->Uint32Value(context).ToChecked();
-    auto ret = canvas_native_webgl_create_shader(type, ptr->GetPointer());
+    auto ret = canvas_native_webgl_create_shader(type, ptr->GetState());
     if (ret == 0) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
+        args.GetReturnValue().SetUndefined();
         return;
     }
-    auto ctor = WebGLShader::GetCtor(isolate);
-    auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, instance, "WebGLShader");
-    Helpers::SetPrivate(isolate, instance, "instance", v8::Uint32::New(isolate, ret));
-    args.GetReturnValue().Set(instance);
+    args.GetReturnValue().Set(WebGLShader::NewInstance(isolate, ret));
 }
 
 void WebGLRenderingContext::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto ret = canvas_native_webgl_create_texture(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto ret = canvas_native_webgl_create_texture(ptr->GetState());
     if (ret == 0) {
         args.GetReturnValue().Set(v8::Undefined(isolate));
         return;
     }
-    auto ctor = WebGLTexture::GetCtor(isolate);
-    auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, instance, "WebGLTexture");
-    Helpers::SetPrivate(isolate, instance, "instance", v8::Uint32::New(isolate, ret));
-    args.GetReturnValue().Set(instance);
+    args.GetReturnValue().Set(WebGLTexture::NewInstance(isolate, ret));
 }
 
 void WebGLRenderingContext::CullFace(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto mode = args[0];
 
         canvas_native_webgl_cull_face(
                 mode->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -957,15 +927,15 @@ void WebGLRenderingContext::CullFace(const v8::FunctionCallbackInfo<v8::Value> &
 void WebGLRenderingContext::DeleteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto buffer = args[0];
-        if (Helpers::IsInstanceOf(isolate, buffer, "WebGLBuffer")) {
+        if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLBuffer) {
             auto instance = Helpers::GetPrivate(isolate, buffer.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_delete_buffer(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -975,15 +945,15 @@ void WebGLRenderingContext::DeleteBuffer(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::DeleteFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto buffer = args[0];
-        if (Helpers::IsInstanceOf(isolate, buffer, "WebGLFramebuffer")) {
+        if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLFramebuffer) {
             auto instance = Helpers::GetPrivate(isolate, buffer.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_delete_framebuffer(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -993,15 +963,15 @@ void WebGLRenderingContext::DeleteFramebuffer(const v8::FunctionCallbackInfo<v8:
 void WebGLRenderingContext::DeleteProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto program = args[0];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_delete_framebuffer(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -1011,15 +981,15 @@ void WebGLRenderingContext::DeleteProgram(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::DeleteRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto buffer = args[0];
-        if (Helpers::IsInstanceOf(isolate, buffer, "WebGLRenderbuffer")) {
+        if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLRenderbuffer) {
             auto instance = Helpers::GetPrivate(isolate, buffer.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_delete_renderbuffer(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -1029,15 +999,15 @@ void WebGLRenderingContext::DeleteRenderbuffer(const v8::FunctionCallbackInfo<v8
 void WebGLRenderingContext::DeleteShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto shader = args[0];
-        if (Helpers::IsInstanceOf(isolate, shader, "WebGLRenderbuffer")) {
+        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLRenderbuffer) {
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_delete_shader(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -1047,15 +1017,15 @@ void WebGLRenderingContext::DeleteShader(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::DeleteTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto texture = args[0];
-        if (Helpers::IsInstanceOf(isolate, texture, "WebGLTexture")) {
+        if (Helpers::GetInstanceType(isolate, texture) == ObjectType::WebGLTexture) {
             auto instance = Helpers::GetPrivate(isolate, texture.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_delete_texture(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -1065,13 +1035,13 @@ void WebGLRenderingContext::DeleteTexture(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::DepthFunc(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto func = args[0];
 
         canvas_native_webgl_depth_func(
                 func->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1079,13 +1049,13 @@ void WebGLRenderingContext::DepthFunc(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::DepthMask(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto mask = args[0];
 
         canvas_native_webgl_depth_mask(
                 mask->BooleanValue(isolate),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1094,7 +1064,7 @@ void WebGLRenderingContext::DepthRange(const v8::FunctionCallbackInfo<v8::Value>
 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto zNear = args[0];
         auto zFar = args[1];
@@ -1102,7 +1072,7 @@ void WebGLRenderingContext::DepthRange(const v8::FunctionCallbackInfo<v8::Value>
         canvas_native_webgl_depth_range(
                 static_cast<float>(zNear->NumberValue(context).ToChecked()),
                 static_cast<float>(zFar->NumberValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1110,12 +1080,12 @@ void WebGLRenderingContext::DepthRange(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::DetachShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto shader = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram") &&
-            Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
+            Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto p = program.As<v8::Object>();
             auto s = shader.As<v8::Object>();
             auto programValue = Helpers::GetPrivate(isolate, p, "instance")->ToUint32(context);
@@ -1123,7 +1093,7 @@ void WebGLRenderingContext::DetachShader(const v8::FunctionCallbackInfo<v8::Valu
             canvas_native_webgl_detach_shader(
                     programValue.ToLocalChecked()->Value(),
                     shaderValue.ToLocalChecked()->Value(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -1132,13 +1102,13 @@ void WebGLRenderingContext::DetachShader(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::DisableVertexAttribArray(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto index = args[0];
 
         canvas_native_webgl_disable_vertex_attrib_array(
                 index->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1146,13 +1116,13 @@ void WebGLRenderingContext::DisableVertexAttribArray(const v8::FunctionCallbackI
 void WebGLRenderingContext::Disable(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto cap = args[0];
 
         canvas_native_webgl_disable(
                 cap->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1160,7 +1130,7 @@ void WebGLRenderingContext::Disable(const v8::FunctionCallbackInfo<v8::Value> &a
 void WebGLRenderingContext::DrawArrays(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto mode = args[0];
         auto first = args[1];
@@ -1170,7 +1140,7 @@ void WebGLRenderingContext::DrawArrays(const v8::FunctionCallbackInfo<v8::Value>
                 mode->Uint32Value(context).ToChecked(),
                 first->Int32Value(context).ToChecked(),
                 count->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
         ptr->UpdateInvalidateState();
     }
@@ -1179,7 +1149,7 @@ void WebGLRenderingContext::DrawArrays(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::DrawElements(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto mode = args[0];
         auto count = args[1];
@@ -1191,7 +1161,7 @@ void WebGLRenderingContext::DrawElements(const v8::FunctionCallbackInfo<v8::Valu
                 count->Int32Value(context).ToChecked(),
                 type->Uint32Value(context).ToChecked(),
                 static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
         ptr->UpdateInvalidateState();
     }
@@ -1200,13 +1170,13 @@ void WebGLRenderingContext::DrawElements(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::EnableVertexAttribArray(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto index = args[0];
 
         canvas_native_webgl_enable_vertex_attrib_array(
                 index->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1214,13 +1184,13 @@ void WebGLRenderingContext::EnableVertexAttribArray(const v8::FunctionCallbackIn
 void WebGLRenderingContext::Enable(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto cap = args[0];
 
         canvas_native_webgl_enable(
                 cap->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1228,31 +1198,32 @@ void WebGLRenderingContext::Enable(const v8::FunctionCallbackInfo<v8::Value> &ar
 void WebGLRenderingContext::Finish(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     canvas_native_webgl_finish(
-            ptr->GetPointer()
+            ptr->GetState()
     );
 }
 
 void WebGLRenderingContext::Flush(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     canvas_native_webgl_flush(
-            ptr->GetPointer()
+            ptr->GetState()
     );
 }
 
 void WebGLRenderingContext::FramebufferRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 4) {
         auto target = args[0];
         auto attachment = args[1];
         auto renderbuffertarget = args[2];
         auto renderbuffer = args[3];
-        if (Helpers::IsInstanceOf(isolate, renderbuffer, "WebGLRenderbuffer")) {
+
+        if (Helpers::GetInstanceType(isolate, renderbuffer) == ObjectType::WebGLRenderbuffer) {
             auto instance = Helpers::GetPrivate(isolate, renderbuffer.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_framebuffer_renderbuffer(
@@ -1260,7 +1231,7 @@ void WebGLRenderingContext::FramebufferRenderbuffer(const v8::FunctionCallbackIn
                         attachment->Uint32Value(context).ToChecked(),
                         renderbuffertarget->Uint32Value(context).ToChecked(),
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -1270,14 +1241,14 @@ void WebGLRenderingContext::FramebufferRenderbuffer(const v8::FunctionCallbackIn
 void WebGLRenderingContext::FramebufferTexture2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 5) {
         auto target = args[0];
         auto attachment = args[1];
         auto textarget = args[2];
         auto texture = args[3];
         auto level = args[4];
-        if (Helpers::IsInstanceOf(isolate, texture, "WebGLTexture")) {
+        if (Helpers::GetInstanceType(isolate, texture) == ObjectType::WebGLTexture) {
             auto instance = Helpers::GetPrivate(isolate, texture.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_framebuffer_texture2d(
@@ -1286,7 +1257,7 @@ void WebGLRenderingContext::FramebufferTexture2D(const v8::FunctionCallbackInfo<
                         textarget->Uint32Value(context).ToChecked(),
                         instance->Uint32Value(context).ToChecked(),
                         level->Int32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -1296,13 +1267,13 @@ void WebGLRenderingContext::FramebufferTexture2D(const v8::FunctionCallbackInfo<
 void WebGLRenderingContext::FrontFace(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto mode = args[0];
 
         canvas_native_webgl_front_face(
                 mode->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1310,13 +1281,13 @@ void WebGLRenderingContext::FrontFace(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::GenerateMipmap(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto target = args[0];
 
         canvas_native_webgl_generate_mipmap(
                 target->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -1324,17 +1295,17 @@ void WebGLRenderingContext::GenerateMipmap(const v8::FunctionCallbackInfo<v8::Va
 void WebGLRenderingContext::GetActiveAttrib(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto index = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto info = canvas_native_webgl_get_active_attrib(
                         instance->Uint32Value(context).ToChecked(),
                         index->Int32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
                 auto ret = WebGLActiveInfoImpl::NewInstance(isolate, std::move(info));
                 args.GetReturnValue().Set(ret);
@@ -1342,23 +1313,23 @@ void WebGLRenderingContext::GetActiveAttrib(const v8::FunctionCallbackInfo<v8::V
             }
         }
     }
-    args.GetReturnValue().Set(v8::Undefined(isolate));
+    args.GetReturnValue().SetUndefined();
 }
 
 void WebGLRenderingContext::GetActiveUniform(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto index = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto info = canvas_native_webgl_get_active_uniform(
                         instance->Uint32Value(context).ToChecked(),
                         index->Int32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
                 auto ret = WebGLActiveInfoImpl::NewInstance(isolate, std::move(info));
                 args.GetReturnValue().Set(ret);
@@ -1366,31 +1337,27 @@ void WebGLRenderingContext::GetActiveUniform(const v8::FunctionCallbackInfo<v8::
             }
         }
     }
-    args.GetReturnValue().Set(v8::Undefined(isolate));
+    args.GetReturnValue().SetUndefined();
 }
 
 void WebGLRenderingContext::GetAttachedShaders(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto info = canvas_native_webgl_get_attached_shaders(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
                 auto len = info.size();
                 auto array = v8::Array::New(isolate, len);
-                auto ctor = WebGLShader::GetCtor(isolate);
                 for (int i = 0; i < len; ++i) {
                     auto shader = info[i];
-                    auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-                    Helpers::SetInternalClassName(isolate, instance, "WebGLShader");
-                    Helpers::SetPrivate(isolate, instance, "instance", v8::Uint32::New(isolate, shader));
-                    array->Set(context, i, instance);
+                    array->Set(context, i, WebGLShader::NewInstance(isolate, shader));
                 }
                 args.GetReturnValue().Set(array);
                 return;
@@ -1403,19 +1370,19 @@ void WebGLRenderingContext::GetAttachedShaders(const v8::FunctionCallbackInfo<v8
 void WebGLRenderingContext::GetAttribLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto name = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto nameValue = Helpers::ConvertFromV8String(isolate, name);
 
                 auto location = canvas_native_webgl_get_attrib_location(
                         instance->Uint32Value(context).ToChecked(),
-                        nameValue,
-                        ptr->GetPointer()
+                        rust::Str(nameValue.c_str(), nameValue.size()),
+                        ptr->GetState()
                 );
                 args.GetReturnValue().Set(location);
                 return;
@@ -1428,7 +1395,7 @@ void WebGLRenderingContext::GetAttribLocation(const v8::FunctionCallbackInfo<v8:
 void WebGLRenderingContext::GetBufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto pname = args[1];
@@ -1436,7 +1403,7 @@ void WebGLRenderingContext::GetBufferParameter(const v8::FunctionCallbackInfo<v8
         auto param = canvas_native_webgl_get_buffer_parameter(
                 target->Uint32Value(context).ToChecked(),
                 pname->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
 
         args.GetReturnValue().Set(param);
@@ -1449,8 +1416,8 @@ void WebGLRenderingContext::GetBufferParameter(const v8::FunctionCallbackInfo<v8
 void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto attr = canvas_native_webgl_get_context_attributes(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto attr = canvas_native_webgl_get_context_attributes(ptr->GetState());
     auto ret = v8::Object::New(isolate);
     auto alpha = canvas_native_webgl_context_attribute_get_get_alpha(*attr);
     ret->Set(context, Helpers::ConvertToV8String(isolate, "alpha"), v8::Boolean::New(isolate, alpha));
@@ -1466,10 +1433,9 @@ void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<
     ret->Set(context, Helpers::ConvertToV8String(isolate, "failIfMajorPerformanceCaveat"),
              v8::Boolean::New(isolate, fail_if_major_performance_caveat));
 
-    std::string power_preference;
-    canvas_native_webgl_context_attribute_get_get_power_preference(*attr, power_preference);
+    auto power_preference = canvas_native_webgl_context_attribute_get_get_power_preference(*attr);
     ret->Set(context, Helpers::ConvertToV8String(isolate, "powerPreference"),
-             Helpers::ConvertToV8String(isolate, power_preference));
+             Helpers::ConvertToV8String(isolate, power_preference.c_str()));
 
     auto premultiplied_alpha = canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(*attr);
     ret->Set(context, Helpers::ConvertToV8String(isolate, "premultipliedAlpha"),
@@ -1494,8 +1460,8 @@ void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<
 void WebGLRenderingContext::GetError(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto ret = canvas_native_webgl_get_error(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto ret = canvas_native_webgl_get_error(ptr->GetState());
     args.GetReturnValue().Set(ret);
 }
 
@@ -1503,22 +1469,22 @@ void WebGLRenderingContext::GetError(const v8::FunctionCallbackInfo<v8::Value> &
 void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 0) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
+        args.GetReturnValue().SetUndefined();
         return;
     }
     auto name = args[0];
     if (!name->IsString()) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
+        args.GetReturnValue().SetUndefined();
         return;
     }
 
     auto val = Helpers::ConvertFromV8String(isolate, name);
-    auto ext = canvas_native_webgl_get_extension(val, ptr->GetPointer());
+    auto ext = canvas_native_webgl_get_extension(rust::Str(val.c_str(), val.size()), ptr->GetState());
 
     if (canvas_native_webgl_context_extension_is_none(*ext)) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
+        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -1606,7 +1572,7 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
         }
             break;
         case WebGLExtensionType::None:
-            args.GetReturnValue().Set(v8::Undefined(isolate));
+            args.GetReturnValue().SetUndefined();
             break;
     }
 }
@@ -1614,7 +1580,7 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::GetFramebufferAttachmentParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
 
     if (args.Length() > 2) {
         auto target = args[0];
@@ -1624,24 +1590,16 @@ void WebGLRenderingContext::GetFramebufferAttachmentParameter(const v8::Function
                 target->Uint32Value(context).ToChecked(),
                 attachment->Uint32Value(context).ToChecked(),
                 pname->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
         if (canvas_native_webgl_framebuffer_attachment_parameter_get_is_texture(*ret)) {
-            auto ctor = WebGLTexture::GetCtor(isolate);
-            auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
             auto value = canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret);
-            Helpers::SetInternalClassName(isolate, instance, "WebGLTexture");
-            Helpers::SetPrivate(isolate, instance, "instance", v8::Int32::New(isolate, value));
-            args.GetReturnValue().Set(instance);
+            args.GetReturnValue().Set(WebGLTexture::NewInstance(isolate, value));
             return;
         }
         if (canvas_native_webgl_framebuffer_attachment_parameter_get_is_renderbuffer(*ret)) {
-            auto ctor = WebGLRenderbuffer::GetCtor(isolate);
-            auto instance = ctor->InstanceTemplate()->NewInstance(context).ToLocalChecked();
             auto value = canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret);
-            Helpers::SetInternalClassName(isolate, instance, "WebGLRenderbuffer");
-            Helpers::SetPrivate(isolate, instance, "instance", v8::Int32::New(isolate, value));
-            args.GetReturnValue().Set(instance);
+            args.GetReturnValue().Set(WebGLRenderbuffer::NewInstance(isolate, value));
             return;
         }
 
@@ -1655,7 +1613,7 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
                                                  rust::Box<WebGLResult> result) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     switch (pnameValue) {
         case GL_ACTIVE_TEXTURE:
         case GL_ALPHA_BITS:
@@ -1719,7 +1677,7 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
                  pnameValue == GL_TEXTURE_BINDING_CUBE_MAP || pnameValue == GL_RENDERBUFFER_BINDING ||
                  pnameValue == GL_FRAMEBUFFER_BINDING) &&
                 value == 0) {
-                args.GetReturnValue().Set(v8::Null(isolate));
+                args.GetReturnValue().SetNull();
                 break;
             }
             args.GetReturnValue().Set(value);
@@ -1727,7 +1685,7 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
             break;
         case UNPACK_COLORSPACE_CONVERSION_WEBGL:
             args.GetReturnValue().Set(
-                    canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(ptr->GetPointer())
+                    canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(ptr->GetState())
             );
 
             break;
@@ -1759,10 +1717,10 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
         }
             break;
         case UNPACK_FLIP_Y_WEBGL:
-            args.GetReturnValue().Set(canvas_native_webgl_state_get_flip_y(ptr->GetPointer()));
+            args.GetReturnValue().Set(canvas_native_webgl_state_get_flip_y(ptr->GetState()));
             break;
         case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
-            args.GetReturnValue().Set(canvas_native_webgl_state_get_premultiplied_alpha(ptr->GetPointer()));
+            args.GetReturnValue().Set(canvas_native_webgl_state_get_premultiplied_alpha(ptr->GetState()));
             break;
         case GL_BLEND:
         case GL_CULL_FACE:
@@ -1815,12 +1773,11 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
         case GL_SHADING_LANGUAGE_VERSION:
         case GL_VENDOR:
         case GL_VERSION: {
-            std::string ret;
-            canvas_native_webgl_result_get_string(*result, ret);
-            args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ret.c_str()));
+            auto ret = canvas_native_webgl_result_get_string(*result);
+            args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(ret.data(), ret.size())));
         }
         default:
-            args.GetReturnValue().Set(v8::Null(isolate));
+            args.GetReturnValue().SetNull();
             break;
 
     }
@@ -1829,13 +1786,13 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
 void WebGLRenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
 
     // TODO remove extra allocations
     if (args.Length() > 0) {
         auto pname = args[0];
         auto pnameValue = pname->Uint32Value(context).ToChecked();
-        auto result = canvas_native_webgl_get_parameter(pname->Uint32Value(context).ToChecked(), ptr->GetPointer());
+        auto result = canvas_native_webgl_get_parameter(pname->Uint32Value(context).ToChecked(), ptr->GetState());
 
         GetParameterInternal(args, pnameValue, std::move(result));
         return;
@@ -1846,20 +1803,18 @@ void WebGLRenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::GetProgramInfoLog(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto program = args[0];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                std::string log;
-                canvas_native_webgl_get_program_info_log(
+                auto log = canvas_native_webgl_get_program_info_log(
                         instance->Uint32Value(context).ToChecked(),
-                        log,
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
 
-                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, log));
+                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(log.data(), log.size())));
                 return;
             }
         }
@@ -1872,21 +1827,21 @@ void WebGLRenderingContext::GetProgramInfoLog(const v8::FunctionCallbackInfo<v8:
 void WebGLRenderingContext::GetProgramParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto pname = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto ret = canvas_native_webgl_get_program_parameter(
                         instance->Uint32Value(context).ToChecked(),
                         pname->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
 
                 if (canvas_native_webgl_result_get_is_none(*ret)) {
-                    args.GetReturnValue().Set(v8::Null(isolate));
+                    args.GetReturnValue().SetNull();
                     return;
                 }
                 switch (pname->Uint32Value(context).ToChecked()) {
@@ -1906,72 +1861,67 @@ void WebGLRenderingContext::GetProgramParameter(const v8::FunctionCallbackInfo<v
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::GetRenderbufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-// target: number, pname: number
-// number
-
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto pname = args[1];
         auto ret = canvas_native_webgl_get_renderbuffer_parameter(
                 target->Uint32Value(context).ToChecked(),
                 pname->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
         args.GetReturnValue().Set(ret);
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::GetShaderInfoLog(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto shader = args[0];
-        if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                std::string log;
-                 canvas_native_webgl_get_shader_info_log(
+                auto log = canvas_native_webgl_get_shader_info_log(
                         instance->Uint32Value(context).ToChecked(),
-                        log,
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
 
-                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, log));
+                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(log.data(), log.size())));
                 return;
             }
         }
     }
 
     // todo check return
-    args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ""));
+    args.GetReturnValue().SetEmptyString();
 }
 
 void WebGLRenderingContext::GetShaderParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto shader = args[0];
         auto pname = args[1];
-        if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto pnameValue = pname->Uint32Value(context).ToChecked();
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto ret = canvas_native_webgl_get_shader_parameter(
                         instance->Uint32Value(context).ToChecked(),
                         pnameValue,
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
 
                 if (canvas_native_webgl_result_get_is_none(*ret)) {
@@ -1992,61 +1942,60 @@ void WebGLRenderingContext::GetShaderParameter(const v8::FunctionCallbackInfo<v8
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::GetShaderPrecisionFormat(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto shaderType = args[0];
         auto precisionType = args[1];
         auto ret = canvas_native_webgl_get_shader_precision_format(
                 shaderType->Uint32Value(context).ToChecked(),
                 precisionType->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
         args.GetReturnValue().Set(WebGLShaderPrecisionFormatImpl::NewInstance(isolate, std::move(ret)));
         return;
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 
 }
 
 void WebGLRenderingContext::GetShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto shader = args[0];
-        if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                std::string source;
-                canvas_native_webgl_get_shader_source(
+                auto source = canvas_native_webgl_get_shader_source(
                         instance->Uint32Value(context).ToChecked(),
-                        source,
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
 
-                args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, source));
+                args.GetReturnValue().Set(
+                        Helpers::ConvertToV8String(isolate, std::string(source.data(), source.size())));
                 return;
             }
         }
     }
 
     // todo check return
-    args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ""));
+    args.GetReturnValue().SetEmptyString();
 }
 
 void WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto exts = canvas_native_webgl_get_supported_extensions(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto exts = canvas_native_webgl_get_supported_extensions(ptr->GetState());
     auto len = exts.size();
     auto array = v8::Array::New(isolate, len);
     for (int i = 0; i < len; ++i) {
@@ -2059,31 +2008,31 @@ void WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInf
 void WebGLRenderingContext::GetTexParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto pname = args[1];
         auto ret = canvas_native_webgl_get_tex_parameter(
                 target->Uint32Value(context).ToChecked(),
                 pname->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
         args.GetReturnValue().Set(ret);
         return;
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto name = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
 
@@ -2091,40 +2040,36 @@ void WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8
 
                 auto ret = canvas_native_webgl_get_uniform_location(
                         instance->Uint32Value(context).ToChecked(),
-                        nameValue,
-                        ptr->GetPointer()
+                        rust::Str(nameValue.c_str(), nameValue.size()),
+                        ptr->GetState()
                 );
 
-                auto location = WebGLUniformLocation::GetCtor(isolate)->InstanceTemplate()->NewInstance(
-                        context).ToLocalChecked();
-                Helpers::SetInternalClassName(isolate, location, "WebGLUniformLocation");
-                Helpers::SetPrivate(isolate, location, "instance", v8::Int32::New(isolate, ret));
-                args.GetReturnValue().Set(location);
+                args.GetReturnValue().Set(WebGLUniformLocation::NewInstance(isolate, ret));
                 return;
             }
         }
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto program = args[0];
         auto location = args[1];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram") &&
-            Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
+            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto programInstance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             auto locationInstance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!programInstance.IsEmpty() && !locationInstance.IsEmpty()) {
 
                 auto val = canvas_native_webgl_get_uniform(programInstance->Uint32Value(context).ToChecked(),
                                                            location->Uint32Value(context).ToChecked(),
-                                                           ptr->GetPointer());
+                                                           ptr->GetState());
                 switch (canvas_native_webgl_result_get_type(*val)) {
                     case WebGLResultType::Boolean:
                         args.GetReturnValue().Set(
@@ -2135,10 +2080,9 @@ void WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value>
                         args.GetReturnValue().Set(v8::Null(isolate));
                         break;
                     case WebGLResultType::String: {
-                        std::string str;
-                        canvas_native_webgl_result_get_string(*val, str);
+                        auto str = canvas_native_webgl_result_get_string(*val);
                         args.GetReturnValue().Set(
-                                Helpers::ConvertToV8String(isolate, str)
+                                Helpers::ConvertToV8String(isolate, std::string(str.data(), str.size()))
                         );
                     }
                         break;
@@ -2214,37 +2158,37 @@ void WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value>
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::GetVertexAttribOffset(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto index = args[0];
         auto pname = args[1];
         auto ret = canvas_native_webgl_get_vertex_attrib_offset(index->Uint32Value(context).ToChecked(),
                                                                 pname->Uint32Value(context).ToChecked(),
-                                                                ptr->GetPointer());
+                                                                ptr->GetState());
         args.GetReturnValue().Set(v8::Number::New(isolate, static_cast<double>(ret)));
         return;
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto index = args[0];
         auto pname = args[1];
         auto pnameValue = pname->Uint32Value(context).ToChecked();
         auto ret = canvas_native_webgl_get_vertex_attrib(index->Uint32Value(context).ToChecked(),
-                                                         pnameValue, ptr->GetPointer());
+                                                         pnameValue, ptr->GetState());
 
         if (pnameValue == GL_CURRENT_VERTEX_ATTRIB) {
             auto val = canvas_native_webgl_result_get_f32_array(*ret);
@@ -2267,31 +2211,31 @@ void WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::V
     }
 
     // todo check return
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGLRenderingContext::Hint(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto target = args[0];
         auto mode = args[1];
         canvas_native_webgl_hint(target->Uint32Value(context).ToChecked(), mode->Uint32Value(context).ToChecked(),
-                                 ptr->GetPointer());
+                                 ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::IsBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto buffer = args[0];
-        if (Helpers::IsInstanceOf(isolate, buffer, "WebGLBuffer")) {
+        if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLBuffer) {
             auto instance = Helpers::GetPrivate(isolate, buffer.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                auto ret = canvas_native_webgl_is_buffer(instance->Uint32Value(context).ToChecked(), ptr->GetPointer());
+                auto ret = canvas_native_webgl_is_buffer(instance->Uint32Value(context).ToChecked(), ptr->GetState());
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -2306,18 +2250,18 @@ void WebGLRenderingContext::IsBuffer(const v8::FunctionCallbackInfo<v8::Value> &
 void WebGLRenderingContext::IsContextLost(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
-    auto ret = canvas_native_webgl_get_is_context_lost(ptr->GetPointer());
+    auto ptr = GetPointerBase(args.This());
+    auto ret = canvas_native_webgl_get_is_context_lost(ptr->GetState());
     args.GetReturnValue().Set(ret);
 }
 
 void WebGLRenderingContext::IsEnabled(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto cap = args[0];
-        auto ret = canvas_native_webgl_is_enabled(cap->Uint32Value(context).ToChecked(), ptr->GetPointer());
+        auto ret = canvas_native_webgl_is_enabled(cap->Uint32Value(context).ToChecked(), ptr->GetState());
         args.GetReturnValue().Set(ret);
         return;
     }
@@ -2327,14 +2271,14 @@ void WebGLRenderingContext::IsEnabled(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::IsFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto framebuffer = args[0];
-        if (Helpers::IsInstanceOf(isolate, framebuffer, "WebGLFramebuffer")) {
+        if (Helpers::GetInstanceType(isolate, framebuffer) == ObjectType::WebGLFramebuffer) {
             auto instance = Helpers::GetPrivate(isolate, framebuffer.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto ret = canvas_native_webgl_is_framebuffer(instance->Uint32Value(context).ToChecked(),
-                                                              ptr->GetPointer());
+                                                              ptr->GetState());
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -2349,14 +2293,14 @@ void WebGLRenderingContext::IsFramebuffer(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::IsProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto program = args[0];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto ret = canvas_native_webgl_is_program(instance->Uint32Value(context).ToChecked(),
-                                                          ptr->GetPointer());
+                                                          ptr->GetState());
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -2371,14 +2315,14 @@ void WebGLRenderingContext::IsProgram(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::IsRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto renderbuffer = args[0];
-        if (Helpers::IsInstanceOf(isolate, renderbuffer, "WebGLRenderbuffer")) {
+        if (Helpers::GetInstanceType(isolate, renderbuffer) == ObjectType::WebGLRenderbuffer) {
             auto instance = Helpers::GetPrivate(isolate, renderbuffer.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto ret = canvas_native_webgl_is_renderbuffer(instance->Uint32Value(context).ToChecked(),
-                                                               ptr->GetPointer());
+                                                               ptr->GetState());
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -2393,13 +2337,13 @@ void WebGLRenderingContext::IsRenderbuffer(const v8::FunctionCallbackInfo<v8::Va
 void WebGLRenderingContext::IsShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto shader = args[0];
-        if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                auto ret = canvas_native_webgl_is_shader(instance->Uint32Value(context).ToChecked(), ptr->GetPointer());
+                auto ret = canvas_native_webgl_is_shader(instance->Uint32Value(context).ToChecked(), ptr->GetState());
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -2414,14 +2358,14 @@ void WebGLRenderingContext::IsShader(const v8::FunctionCallbackInfo<v8::Value> &
 void WebGLRenderingContext::IsTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto texture = args[0];
-        if (Helpers::IsInstanceOf(isolate, texture, "WebGLTexture")) {
+        if (Helpers::GetInstanceType(isolate, texture) == ObjectType::WebGLTexture) {
             auto instance = Helpers::GetPrivate(isolate, texture.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto ret = canvas_native_webgl_is_texture(instance->Uint32Value(context).ToChecked(),
-                                                          ptr->GetPointer());
+                                                          ptr->GetState());
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -2436,23 +2380,23 @@ void WebGLRenderingContext::IsTexture(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::LineWidth(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto width = args[0];
-        canvas_native_webgl_line_width(static_cast<float>(width->NumberValue(context).ToChecked()), ptr->GetPointer());
+        canvas_native_webgl_line_width(static_cast<float>(width->NumberValue(context).ToChecked()), ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::LinkProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto program = args[0];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
-                canvas_native_webgl_link_program(instance->Uint32Value(context).ToChecked(), ptr->GetPointer());
+                canvas_native_webgl_link_program(instance->Uint32Value(context).ToChecked(), ptr->GetState());
             }
         }
     }
@@ -2461,14 +2405,14 @@ void WebGLRenderingContext::LinkProgram(const v8::FunctionCallbackInfo<v8::Value
 void WebGLRenderingContext::PixelStorei(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto pname = args[0];
         auto param = args[1];
         canvas_native_webgl_pixel_storei(
                 pname->Uint32Value(context).ToChecked(),
                 param->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2476,14 +2420,14 @@ void WebGLRenderingContext::PixelStorei(const v8::FunctionCallbackInfo<v8::Value
 void WebGLRenderingContext::PolygonOffset(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto factor = args[0];
         auto units = args[1];
         canvas_native_webgl_polygon_offset(
                 static_cast<float>(factor->NumberValue(context).ToChecked()),
                 static_cast<float>(units->NumberValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2491,7 +2435,7 @@ void WebGLRenderingContext::PolygonOffset(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::ReadPixels(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 6) {
         auto x = args[0];
         auto y = args[1];
@@ -2518,7 +2462,7 @@ void WebGLRenderingContext::ReadPixels(const v8::FunctionCallbackInfo<v8::Value>
                 format->Uint32Value(context).ToChecked(),
                 type->Uint32Value(context).ToChecked(),
                 slice,
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2526,7 +2470,7 @@ void WebGLRenderingContext::ReadPixels(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::RenderbufferStorage(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto target = args[0];
         auto internalFormat = args[1];
@@ -2537,7 +2481,7 @@ void WebGLRenderingContext::RenderbufferStorage(const v8::FunctionCallbackInfo<v
                 internalFormat->Uint32Value(context).ToChecked(),
                 width->Int32Value(context).ToChecked(),
                 height->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2545,14 +2489,14 @@ void WebGLRenderingContext::RenderbufferStorage(const v8::FunctionCallbackInfo<v
 void WebGLRenderingContext::SampleCoverage(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto value = args[0];
         auto invert = args[1];
         canvas_native_webgl_sample_coverage(
                 static_cast<float>(value->NumberValue(context).ToChecked()),
                 invert->BooleanValue(isolate),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2560,7 +2504,7 @@ void WebGLRenderingContext::SampleCoverage(const v8::FunctionCallbackInfo<v8::Va
 void WebGLRenderingContext::Scissor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto x = args[0];
         auto y = args[1];
@@ -2571,7 +2515,7 @@ void WebGLRenderingContext::Scissor(const v8::FunctionCallbackInfo<v8::Value> &a
                 y->Int32Value(context).ToChecked(),
                 width->Int32Value(context).ToChecked(),
                 height->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2579,18 +2523,21 @@ void WebGLRenderingContext::Scissor(const v8::FunctionCallbackInfo<v8::Value> &a
 void WebGLRenderingContext::ShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto shader = args[0];
         auto source = args[1];
-        if (Helpers::IsInstanceOf(isolate, shader, "WebGLShader")) {
+
+
+        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
             auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
 
                 auto sourceValue = Helpers::ConvertFromV8String(isolate, source);
 
-                canvas_native_webgl_shader_source(instance->Uint32Value(context).ToChecked(), sourceValue,
-                                                  ptr->GetPointer());
+                canvas_native_webgl_shader_source(instance->Uint32Value(context).ToChecked(),
+                                                  rust::Str(sourceValue.c_str(), sourceValue.size()),
+                                                  ptr->GetState());
             }
         }
     }
@@ -2599,7 +2546,7 @@ void WebGLRenderingContext::ShaderSource(const v8::FunctionCallbackInfo<v8::Valu
 void WebGLRenderingContext::StencilFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto face = args[0];
         auto func = args[1];
@@ -2610,7 +2557,7 @@ void WebGLRenderingContext::StencilFuncSeparate(const v8::FunctionCallbackInfo<v
                 func->Uint32Value(context).ToChecked(),
                 ref->Uint32Value(context).ToChecked(),
                 mask->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2618,7 +2565,7 @@ void WebGLRenderingContext::StencilFuncSeparate(const v8::FunctionCallbackInfo<v
 void WebGLRenderingContext::StencilFunc(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto func = args[0];
         auto ref = args[1];
@@ -2627,7 +2574,7 @@ void WebGLRenderingContext::StencilFunc(const v8::FunctionCallbackInfo<v8::Value
                 func->Uint32Value(context).ToChecked(),
                 ref->Uint32Value(context).ToChecked(),
                 mask->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2635,14 +2582,14 @@ void WebGLRenderingContext::StencilFunc(const v8::FunctionCallbackInfo<v8::Value
 void WebGLRenderingContext::StencilMaskSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto face = args[0];
         auto mask = args[1];
         canvas_native_webgl_stencil_mask_separate(
                 face->Uint32Value(context).ToChecked(),
                 mask->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2650,12 +2597,12 @@ void WebGLRenderingContext::StencilMaskSeparate(const v8::FunctionCallbackInfo<v
 void WebGLRenderingContext::StencilMask(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto mask = args[0];
         canvas_native_webgl_stencil_mask(
                 mask->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2663,7 +2610,7 @@ void WebGLRenderingContext::StencilMask(const v8::FunctionCallbackInfo<v8::Value
 void WebGLRenderingContext::StencilOpSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto face = args[0];
         auto fail = args[1];
@@ -2674,7 +2621,7 @@ void WebGLRenderingContext::StencilOpSeparate(const v8::FunctionCallbackInfo<v8:
                 fail->Uint32Value(context).ToChecked(),
                 zfail->Uint32Value(context).ToChecked(),
                 zpass->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2682,7 +2629,7 @@ void WebGLRenderingContext::StencilOpSeparate(const v8::FunctionCallbackInfo<v8:
 void WebGLRenderingContext::StencilOp(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto fail = args[0];
         auto zfail = args[1];
@@ -2691,7 +2638,7 @@ void WebGLRenderingContext::StencilOp(const v8::FunctionCallbackInfo<v8::Value> 
                 fail->Uint32Value(context).ToChecked(),
                 zfail->Uint32Value(context).ToChecked(),
                 zpass->Uint32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2700,7 +2647,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
 
     if (args.Length() == 5) {
         auto target = args[0];
@@ -2715,7 +2662,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
                 internalformat->Int32Value(context).ToChecked(),
                 format->Int32Value(context).ToChecked(),
                 type->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
 
     } else if (args.Length() == 6) {
@@ -2725,8 +2672,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
         auto format = args[3];
         auto type = args[4];
         auto pixels = args[5];
-
-        if (Helpers::IsInstanceOf(isolate, pixels, "ImageAsset")) {
+        if (Helpers::GetInstanceType(isolate, pixels) == ObjectType::ImageAsset) {
             auto asset = ImageAssetImpl::GetPointer(pixels->ToObject(context).ToLocalChecked());
             canvas_native_webgl_tex_image2d_asset(
                     target->Int32Value(context).ToChecked(),
@@ -2735,7 +2681,18 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
                     format->Int32Value(context).ToChecked(),
                     type->Int32Value(context).ToChecked(),
                     asset->GetImageAsset(),
-                    ptr->GetPointer()
+                    ptr->GetState()
+            );
+        } else if (Helpers::GetInstanceType(isolate, pixels) == ObjectType::ImageBitmap) {
+            auto bitmap = ImageBitmapImpl::GetPointer(pixels.As<v8::Object>());
+            canvas_native_webgl_tex_image2d_asset(
+                    target->Int32Value(context).ToChecked(),
+                    level->Int32Value(context).ToChecked(),
+                    internalformat->Int32Value(context).ToChecked(),
+                    format->Int32Value(context).ToChecked(),
+                    type->Int32Value(context).ToChecked(),
+                    bitmap->GetImageAsset(),
+                    ptr->GetState()
             );
         }
     } else if (args.Length() == 8) {
@@ -2756,7 +2713,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
                 border->Int32Value(context).ToChecked(),
                 format->Int32Value(context).ToChecked(),
                 type->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     } else if (args.Length() == 9) {
         auto target = args[0];
@@ -2785,7 +2742,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
                     format->Int32Value(context).ToChecked(),
                     type->Int32Value(context).ToChecked(),
                     buf,
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
             return;
         }
@@ -2800,7 +2757,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
                     border->Int32Value(context).ToChecked(),
                     format->Int32Value(context).ToChecked(),
                     type->Int32Value(context).ToChecked(),
-                    ptr->GetPointer()
+                    ptr->GetState()
             );
         }
     }
@@ -2809,7 +2766,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::TexParameterf(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto target = args[0];
         auto pname = args[1];
@@ -2818,7 +2775,7 @@ void WebGLRenderingContext::TexParameterf(const v8::FunctionCallbackInfo<v8::Val
                 target->Uint32Value(context).ToChecked(),
                 pname->Uint32Value(context).ToChecked(),
                 static_cast<float>(param->NumberValue(context).ToChecked()),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2826,7 +2783,7 @@ void WebGLRenderingContext::TexParameterf(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::TexParameteri(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto target = args[0];
         auto pname = args[1];
@@ -2835,7 +2792,7 @@ void WebGLRenderingContext::TexParameteri(const v8::FunctionCallbackInfo<v8::Val
                 target->Uint32Value(context).ToChecked(),
                 pname->Uint32Value(context).ToChecked(),
                 param->Int32Value(context).ToChecked(),
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 }
@@ -2843,7 +2800,7 @@ void WebGLRenderingContext::TexParameteri(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
 
     if (args.Length() == 7) {
         auto target = args[0];
@@ -2854,7 +2811,7 @@ void WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Val
         auto type = args[5];
         auto pixels = args[6];
 
-        if (Helpers::IsInstanceOf(isolate, pixels, "ImageAsset")) {
+        if (Helpers::GetInstanceType(isolate, pixels) == ObjectType::ImageAsset) {
             auto asset = ImageAssetImpl::GetPointer(pixels->ToObject(context).ToLocalChecked());
 
             canvas_native_webgl_tex_sub_image2d_asset(
@@ -2865,7 +2822,20 @@ void WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Val
                     format->Uint32Value(context).ToChecked(),
                     type->Int32Value(context).ToChecked(),
                     asset->GetImageAsset(),
-                    ptr->GetPointer()
+                    ptr->GetState()
+            );
+        } else if (Helpers::GetInstanceType(isolate, pixels) == ObjectType::ImageBitmap) {
+            auto bitmap = ImageBitmapImpl::GetPointer(pixels->ToObject(context).ToLocalChecked());
+
+            canvas_native_webgl_tex_sub_image2d_asset(
+                    target->Uint32Value(context).ToChecked(),
+                    level->Int32Value(context).ToChecked(),
+                    xoffset->Int32Value(context).ToChecked(),
+                    yoffset->Int32Value(context).ToChecked(),
+                    format->Uint32Value(context).ToChecked(),
+                    type->Int32Value(context).ToChecked(),
+                    bitmap->GetImageAsset(),
+                    ptr->GetState()
             );
         }
 
@@ -2898,7 +2868,7 @@ void WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Val
                 format->Uint32Value(context).ToChecked(),
                 type->Int32Value(context).ToChecked(),
                 buf,
-                ptr->GetPointer()
+                ptr->GetState()
         );
     }
 
@@ -2908,18 +2878,18 @@ void WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Val
 void WebGLRenderingContext::VertexAttrib1f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-        canvas_native_webgl_vertex_attrib1f(index, v0, ptr->GetPointer());
+        canvas_native_webgl_vertex_attrib1f(index, v0, ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::VertexAttrib1fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = args[1];
@@ -2929,7 +2899,7 @@ void WebGLRenderingContext::VertexAttrib1fv(const v8::FunctionCallbackInfo<v8::V
             auto store = buffer->GetBackingStore();
             auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
             rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-            canvas_native_webgl_vertex_attrib1fv(index, buf, ptr->GetPointer());
+            canvas_native_webgl_vertex_attrib1fv(index, buf, ptr->GetState());
         }
     }
 }
@@ -2937,19 +2907,19 @@ void WebGLRenderingContext::VertexAttrib1fv(const v8::FunctionCallbackInfo<v8::V
 void WebGLRenderingContext::VertexAttrib2f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 3) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto v1 = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-        canvas_native_webgl_vertex_attrib2f(index, v0, v1, ptr->GetPointer());
+        canvas_native_webgl_vertex_attrib2f(index, v0, v1, ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::VertexAttrib2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = args[1];
@@ -2959,7 +2929,7 @@ void WebGLRenderingContext::VertexAttrib2fv(const v8::FunctionCallbackInfo<v8::V
             auto store = buffer->GetBackingStore();
             auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
             rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-            canvas_native_webgl_vertex_attrib2fv(index, buf, ptr->GetPointer());
+            canvas_native_webgl_vertex_attrib2fv(index, buf, ptr->GetState());
         }
     }
 }
@@ -2967,20 +2937,20 @@ void WebGLRenderingContext::VertexAttrib2fv(const v8::FunctionCallbackInfo<v8::V
 void WebGLRenderingContext::VertexAttrib3f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 4) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto v1 = static_cast<float>(args[2]->NumberValue(context).ToChecked());
         auto v2 = static_cast<float>(args[3]->NumberValue(context).ToChecked());
-        canvas_native_webgl_vertex_attrib3f(index, v0, v1, v2, ptr->GetPointer());
+        canvas_native_webgl_vertex_attrib3f(index, v0, v1, v2, ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::VertexAttrib3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = args[1];
@@ -2990,7 +2960,7 @@ void WebGLRenderingContext::VertexAttrib3fv(const v8::FunctionCallbackInfo<v8::V
             auto store = buffer->GetBackingStore();
             auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
             rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-            canvas_native_webgl_vertex_attrib3fv(index, buf, ptr->GetPointer());
+            canvas_native_webgl_vertex_attrib3fv(index, buf, ptr->GetState());
         }
     }
 }
@@ -2998,21 +2968,21 @@ void WebGLRenderingContext::VertexAttrib3fv(const v8::FunctionCallbackInfo<v8::V
 void WebGLRenderingContext::VertexAttrib4f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 5) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto v1 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto v2 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto v3 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-        canvas_native_webgl_vertex_attrib4f(index, v0, v1, v2, v3, ptr->GetPointer());
+        canvas_native_webgl_vertex_attrib4f(index, v0, v1, v2, v3, ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::VertexAttrib4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto v0 = args[1];
@@ -3022,7 +2992,7 @@ void WebGLRenderingContext::VertexAttrib4fv(const v8::FunctionCallbackInfo<v8::V
             auto store = buffer->GetBackingStore();
             auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
             rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-            canvas_native_webgl_vertex_attrib4fv(index, buf, ptr->GetPointer());
+            canvas_native_webgl_vertex_attrib4fv(index, buf, ptr->GetState());
         }
     }
 }
@@ -3030,7 +3000,7 @@ void WebGLRenderingContext::VertexAttrib4fv(const v8::FunctionCallbackInfo<v8::V
 void WebGLRenderingContext::VertexAttribPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 6) {
         auto index = args[0]->Uint32Value(context).ToChecked();
         auto size = args[1]->Int32Value(context).ToChecked();
@@ -3038,24 +3008,24 @@ void WebGLRenderingContext::VertexAttribPointer(const v8::FunctionCallbackInfo<v
         auto normalized = args[3]->BooleanValue(isolate);
         auto stride = args[4]->Int32Value(context).ToChecked();
         auto offset = static_cast<ssize_t>(args[5]->IntegerValue(context).ToChecked());
-        canvas_native_webgl_vertex_attrib_pointer(index, size, type, normalized, stride, offset, ptr->GetPointer());
+        canvas_native_webgl_vertex_attrib_pointer(index, size, type, normalized, stride, offset, ptr->GetState());
     }
 }
 
 void WebGLRenderingContext::Uniform1f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto location = args[0];
         auto v0 = args[1];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform1f(
                         instance->Int32Value(context).ToChecked(),
                         static_cast<float>(v0->NumberValue(context).ToChecked()),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3065,12 +3035,12 @@ void WebGLRenderingContext::Uniform1f(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::Uniform1iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation") && v0->IsInt32Array()) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation && v0->IsInt32Array()) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto array = v0.As<v8::Int32Array>();
@@ -3078,7 +3048,7 @@ void WebGLRenderingContext::Uniform1iv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const int32_t> buf(reinterpret_cast<int32_t *>(data), array->Length());
-                canvas_native_webgl_uniform1iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform1iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             }
         }
     }
@@ -3087,12 +3057,12 @@ void WebGLRenderingContext::Uniform1iv(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::Uniform1fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (instance.IsEmpty()) {
                 return;
@@ -3103,7 +3073,7 @@ void WebGLRenderingContext::Uniform1fv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-                canvas_native_webgl_uniform1fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform1fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             } else if (v0->IsArray()) {
                 auto array = v0.As<v8::Array>();
                 auto len = array->Length();
@@ -3119,7 +3089,7 @@ void WebGLRenderingContext::Uniform1fv(const v8::FunctionCallbackInfo<v8::Value>
                     }
                 }
                 rust::Slice<const float> slice(buf.data(), buf.size());
-                canvas_native_webgl_uniform1fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetPointer());
+                canvas_native_webgl_uniform1fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetState());
             }
         }
     }
@@ -3128,17 +3098,17 @@ void WebGLRenderingContext::Uniform1fv(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::Uniform1i(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 1) {
         auto location = args[0];
         auto v0 = args[1];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform1i(
                         instance->Int32Value(context).ToChecked(),
                         v0->Int32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3148,19 +3118,19 @@ void WebGLRenderingContext::Uniform1i(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::Uniform2f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto location = args[0];
         auto v0 = args[1];
         auto v1 = args[2];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform2f(
                         instance->Int32Value(context).ToChecked(),
                         static_cast<float>(v0->NumberValue(context).ToChecked()),
                         static_cast<float>(v1->NumberValue(context).ToChecked()),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3170,12 +3140,12 @@ void WebGLRenderingContext::Uniform2f(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::Uniform2iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation") && v0->IsInt32Array()) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation && v0->IsInt32Array()) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto array = v0.As<v8::Int32Array>();
@@ -3183,7 +3153,7 @@ void WebGLRenderingContext::Uniform2iv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const int32_t> buf(reinterpret_cast<int32_t *>(data), array->Length());
-                canvas_native_webgl_uniform2iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform2iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             }
         }
     }
@@ -3192,12 +3162,12 @@ void WebGLRenderingContext::Uniform2iv(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::Uniform2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (instance.IsEmpty()) {
                 return;
@@ -3208,7 +3178,7 @@ void WebGLRenderingContext::Uniform2fv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-                canvas_native_webgl_uniform2fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform2fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             } else if (v0->IsArray()) {
                 auto array = v0.As<v8::Array>();
                 auto len = array->Length();
@@ -3224,7 +3194,7 @@ void WebGLRenderingContext::Uniform2fv(const v8::FunctionCallbackInfo<v8::Value>
                     }
                 }
                 rust::Slice<const float> slice(buf.data(), buf.size());
-                canvas_native_webgl_uniform2fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetPointer());
+                canvas_native_webgl_uniform2fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetState());
             }
         }
     }
@@ -3233,19 +3203,19 @@ void WebGLRenderingContext::Uniform2fv(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::Uniform2i(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 2) {
         auto location = args[0];
         auto v0 = args[1];
         auto v1 = args[2];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform2i(
                         instance->Int32Value(context).ToChecked(),
                         v0->Int32Value(context).ToChecked(),
                         v1->Int32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3255,13 +3225,13 @@ void WebGLRenderingContext::Uniform2i(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::Uniform3f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto location = args[0];
         auto v0 = args[1];
         auto v1 = args[2];
         auto v2 = args[3];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform3f(
@@ -3269,7 +3239,7 @@ void WebGLRenderingContext::Uniform3f(const v8::FunctionCallbackInfo<v8::Value> 
                         static_cast<float>(v0->NumberValue(context).ToChecked()),
                         static_cast<float>(v1->NumberValue(context).ToChecked()),
                         static_cast<float>(v2->NumberValue(context).ToChecked()),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3279,12 +3249,12 @@ void WebGLRenderingContext::Uniform3f(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::Uniform3iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation") && v0->IsInt32Array()) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation && v0->IsInt32Array()) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto array = v0.As<v8::Int32Array>();
@@ -3292,7 +3262,7 @@ void WebGLRenderingContext::Uniform3iv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const int32_t> buf(reinterpret_cast<int32_t *>(data), array->Length());
-                canvas_native_webgl_uniform3iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform3iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             }
         }
     }
@@ -3301,12 +3271,12 @@ void WebGLRenderingContext::Uniform3iv(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::Uniform3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (instance.IsEmpty()) {
                 return;
@@ -3317,7 +3287,7 @@ void WebGLRenderingContext::Uniform3fv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-                canvas_native_webgl_uniform3fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform3fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             } else if (v0->IsArray()) {
                 auto array = v0.As<v8::Array>();
                 auto len = array->Length();
@@ -3333,7 +3303,7 @@ void WebGLRenderingContext::Uniform3fv(const v8::FunctionCallbackInfo<v8::Value>
                     }
                 }
                 rust::Slice<const float> slice(buf.data(), buf.size());
-                canvas_native_webgl_uniform3fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetPointer());
+                canvas_native_webgl_uniform3fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetState());
             }
         }
     }
@@ -3342,13 +3312,13 @@ void WebGLRenderingContext::Uniform3fv(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::Uniform3i(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 3) {
         auto location = args[0];
         auto v0 = args[1];
         auto v1 = args[2];
         auto v2 = args[3];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform3i(
@@ -3356,7 +3326,7 @@ void WebGLRenderingContext::Uniform3i(const v8::FunctionCallbackInfo<v8::Value> 
                         v0->Int32Value(context).ToChecked(),
                         v1->Int32Value(context).ToChecked(),
                         v2->Int32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3366,14 +3336,14 @@ void WebGLRenderingContext::Uniform3i(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::Uniform4f(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 4) {
         auto location = args[0];
         auto v0 = args[1];
         auto v1 = args[2];
         auto v2 = args[3];
         auto v3 = args[4];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform4f(
@@ -3382,7 +3352,7 @@ void WebGLRenderingContext::Uniform4f(const v8::FunctionCallbackInfo<v8::Value> 
                         static_cast<float>(v1->NumberValue(context).ToChecked()),
                         static_cast<float>(v2->NumberValue(context).ToChecked()),
                         static_cast<float>(v3->NumberValue(context).ToChecked()),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3392,12 +3362,12 @@ void WebGLRenderingContext::Uniform4f(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::Uniform4iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation") && v0->IsInt32Array()) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation && v0->IsInt32Array()) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 auto array = v0.As<v8::Int32Array>();
@@ -3405,7 +3375,7 @@ void WebGLRenderingContext::Uniform4iv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const int32_t> buf(reinterpret_cast<int32_t *>(data), array->Length());
-                canvas_native_webgl_uniform4iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform4iv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             }
         }
     }
@@ -3415,12 +3385,12 @@ void WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value>
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     v8::TryCatch tryCatch(isolate);
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 2) {
         auto location = args[0];
         auto v0 = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (instance.IsEmpty()) {
                 return;
@@ -3431,18 +3401,18 @@ void WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value>
                 auto store = buffer->GetBackingStore();
                 auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
                 rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
-                canvas_native_webgl_uniform4fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetPointer());
+                canvas_native_webgl_uniform4fv(instance->Int32Value(context).ToChecked(), buf, ptr->GetState());
             } else if (v0->IsArray()) {
-                auto array = v8::Local<v8::Array>::Cast(v0);
+                auto array = v0.As<v8::Array>();
                 auto len = array->Length();
 
                 std::vector<float> buf;
-                for (int i = 0; i < array->Length(); ++i) {
-                    auto item = Helpers::ArrayGet(context, array, i);
+                for (int i = 0; i < len; ++i) {
+                    auto item = Helpers::ObjectGet(context, array, (uint32_t) i);
                     buf.push_back(static_cast<float>(item->NumberValue(context).ToChecked()));
                 }
                 rust::Slice<const float> slice(buf.data(), buf.size());
-                canvas_native_webgl_uniform4fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetPointer());
+                canvas_native_webgl_uniform4fv(instance->Int32Value(context).ToChecked(), slice, ptr->GetState());
             }
         }
     }
@@ -3451,14 +3421,14 @@ void WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::Uniform4i(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 4) {
         auto location = args[0];
         auto v0 = args[1];
         auto v1 = args[2];
         auto v2 = args[3];
         auto v3 = args[4];
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation")) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_uniform4i(
@@ -3467,7 +3437,7 @@ void WebGLRenderingContext::Uniform4i(const v8::FunctionCallbackInfo<v8::Value> 
                         v1->Int32Value(context).ToChecked(),
                         v2->Int32Value(context).ToChecked(),
                         v3->Int32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3477,13 +3447,14 @@ void WebGLRenderingContext::Uniform4i(const v8::FunctionCallbackInfo<v8::Value> 
 void WebGLRenderingContext::UniformMatrix2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 3) {
         auto location = args[0];
         auto transpose = args[1];
         auto value = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation") && value->IsFloat32Array()) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
+            value->IsFloat32Array()) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (instance.IsEmpty()) {
                 return;
@@ -3495,7 +3466,7 @@ void WebGLRenderingContext::UniformMatrix2fv(const v8::FunctionCallbackInfo<v8::
             auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
             rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
             canvas_native_webgl_uniform_matrix2fv(instance->Int32Value(context).ToChecked(),
-                                                  transpose->BooleanValue(isolate), buf, ptr->GetPointer());
+                                                  transpose->BooleanValue(isolate), buf, ptr->GetState());
         }
     }
 }
@@ -3503,13 +3474,14 @@ void WebGLRenderingContext::UniformMatrix2fv(const v8::FunctionCallbackInfo<v8::
 void WebGLRenderingContext::UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 3) {
         auto location = args[0];
         auto transpose = args[1];
         auto value = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation") && value->IsFloat32Array()) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
+            value->IsFloat32Array()) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (instance.IsEmpty()) {
                 return;
@@ -3521,7 +3493,7 @@ void WebGLRenderingContext::UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::
             auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
             rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
             canvas_native_webgl_uniform_matrix3fv(instance->Int32Value(context).ToChecked(),
-                                                  transpose->BooleanValue(isolate), buf, ptr->GetPointer());
+                                                  transpose->BooleanValue(isolate), buf, ptr->GetState());
         }
     }
 }
@@ -3529,13 +3501,14 @@ void WebGLRenderingContext::UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::
 void WebGLRenderingContext::UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 3) {
         auto location = args[0];
         auto transpose = args[1];
         auto value = args[1];
 
-        if (Helpers::IsInstanceOf(isolate, location, "WebGLUniformLocation") && value->IsFloat32Array()) {
+        if (Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
+            value->IsFloat32Array()) {
             auto instance = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance");
             if (instance.IsEmpty()) {
                 return;
@@ -3547,7 +3520,7 @@ void WebGLRenderingContext::UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::
             auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
             rust::Slice<const float> buf(reinterpret_cast<float *>(data), array->Length());
             canvas_native_webgl_uniform_matrix4fv(instance->Int32Value(context).ToChecked(),
-                                                  transpose->BooleanValue(isolate), buf, ptr->GetPointer());
+                                                  transpose->BooleanValue(isolate), buf, ptr->GetState());
         }
     }
 }
@@ -3555,15 +3528,15 @@ void WebGLRenderingContext::UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::
 void WebGLRenderingContext::UseProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto program = args[0];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_use_program(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3573,15 +3546,15 @@ void WebGLRenderingContext::UseProgram(const v8::FunctionCallbackInfo<v8::Value>
 void WebGLRenderingContext::ValidateProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto program = args[0];
-        if (Helpers::IsInstanceOf(isolate, program, "WebGLProgram")) {
+        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
             auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
             if (!instance.IsEmpty()) {
                 canvas_native_webgl_validate_program(
                         instance->Uint32Value(context).ToChecked(),
-                        ptr->GetPointer()
+                        ptr->GetState()
                 );
             }
         }
@@ -3591,13 +3564,13 @@ void WebGLRenderingContext::ValidateProgram(const v8::FunctionCallbackInfo<v8::V
 void WebGLRenderingContext::Viewport(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.Holder());
+    auto ptr = GetPointerBase(args.This());
     if (args.Length() == 4) {
         auto x = args[0]->Int32Value(context).ToChecked();
         auto y = args[1]->Int32Value(context).ToChecked();
         auto width = args[2]->Int32Value(context).ToChecked();
         auto height = args[3]->Int32Value(context).ToChecked();
-        canvas_native_webgl_viewport(x, y, width, height, ptr->GetPointer());
+        canvas_native_webgl_viewport(x, y, width, height, ptr->GetState());
     }
 }
 
@@ -3606,16 +3579,26 @@ void WebGLRenderingContext::GetDrawingBufferWidth(v8::Local<v8::String> name,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(info.Holder());
-    info.GetReturnValue().Set(canvas_native_webgl_state_get_drawing_buffer_width(ptr->GetPointer()));
+
+    auto ptr = GetPointerBase(info.This());
+
+    int32_t ret = 0;
+    if (ptr != nullptr) {
+        ret = canvas_native_webgl_state_get_drawing_buffer_width(ptr->GetState());
+    }
+    info.GetReturnValue().Set(ret);
 }
 
 void WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::String> name,
                                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(info.Holder());
-    info.GetReturnValue().Set(canvas_native_webgl_state_get_drawing_buffer_height(ptr->GetPointer()));
+    auto ptr = GetPointerBase(info.This());
+    int32_t ret = 0;
+    if (ptr != nullptr) {
+        ret = canvas_native_webgl_state_get_drawing_buffer_height(ptr->GetState());
+    }
+    info.GetReturnValue().Set(ret);
 }
 
 v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isolate) {
@@ -3630,7 +3613,7 @@ v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isol
     webglRenderingContextFunc->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLRenderingContext"));
     webglRenderingContextFunc->InstanceTemplate()->SetInternalFieldCount(1);
 
-    auto webglRenderingContextTpl = webglRenderingContextFunc->InstanceTemplate();
+    auto webglRenderingContextTpl = webglRenderingContextFunc->PrototypeTemplate();
 
     SetConstants(isolate, webglRenderingContextTpl);
 
@@ -3643,7 +3626,7 @@ v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isol
     return webglRenderingContextFunc;
 }
 
-void WebGLRenderingContext::SetConstants(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> tmpl) {
+void WebGLRenderingContext::SetConstants(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl) {
     tmpl->Set(isolate, "DEPTH_BUFFER_BIT", v8::Uint32::New(isolate, 0x00000100));
 
     tmpl->Set(isolate, "STENCIL_BUFFER_BIT", v8::Uint32::New(isolate, 0x00000400));
@@ -4084,12 +4067,12 @@ void WebGLRenderingContext::SetConstants(v8::Isolate *isolate, v8::Local<v8::Obj
     tmpl->Set(isolate, "UNPACK_COLORSPACE_CONVERSION_WEBGL", v8::Uint32::New(isolate, 0x9243));
 }
 
-void WebGLRenderingContext::SetProps(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> webglRenderingContextTpl) {
+void
+WebGLRenderingContext::SetProps(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &webglRenderingContextTpl) {
     webglRenderingContextTpl->SetAccessor(
             Helpers::ConvertToV8String(isolate, "drawingBufferWidth"),
             &GetDrawingBufferWidth
     );
-
 
     webglRenderingContextTpl->SetAccessor(
             Helpers::ConvertToV8String(isolate, "drawingBufferHeight"),
@@ -4097,7 +4080,8 @@ void WebGLRenderingContext::SetProps(v8::Isolate *isolate, v8::Local<v8::ObjectT
     );
 }
 
-void WebGLRenderingContext::SetMethods(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> webglRenderingContextTpl) {
+void
+WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &webglRenderingContextTpl) {
 
     webglRenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "activeTexture"),

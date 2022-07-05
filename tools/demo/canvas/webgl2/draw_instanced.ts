@@ -32,7 +32,6 @@ export function draw_instanced(canvas) {
 
   // -- Init WebGL Context
   var gl = canvas.getContext('webgl2');
-  console.log(gl);
   var isWebGL2 = !!gl;
   if (!isWebGL2) {
     alert('WebGL 2 is not available.')

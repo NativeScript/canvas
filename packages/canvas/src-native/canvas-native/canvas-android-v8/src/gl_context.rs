@@ -448,7 +448,7 @@ impl GLContext {
             self.display.unwrap_or(egl::EGL_NO_DISPLAY),
             self.surface.unwrap_or(egl::EGL_NO_SURFACE),
             self.surface.unwrap_or(egl::EGL_NO_SURFACE),
-            self.context.unwrap_or(egl::EGL_NO_CONTEXT),
+            self.context.unwrap_or(EGL_NO_CONTEXT),
         )
     }
 
@@ -473,7 +473,7 @@ impl GLContext {
     pub fn get_surface_width(&self) -> i32 {
         if let (Some(display), Some(surface)) = (self.display(), self.surface()) {
             let mut width = 0;
-            egl::query_surface(*display, *surface, egl::EGL_WIDTH, &mut width);
+            egl::query_surface(*display, *surface, EGL_WIDTH, &mut width);
             return width;
         }
         0
@@ -482,7 +482,7 @@ impl GLContext {
     pub fn get_surface_height(&self) -> i32 {
         if let (Some(display), Some(surface)) = (self.display(), self.surface()) {
             let mut height = 0;
-            egl::query_surface(*display, *surface, egl::EGL_HEIGHT, &mut height);
+            egl::query_surface(*display, *surface, EGL_HEIGHT, &mut height);
             return height;
         }
         0

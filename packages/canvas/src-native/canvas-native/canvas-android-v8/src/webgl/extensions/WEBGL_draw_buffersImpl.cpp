@@ -27,7 +27,7 @@ WEBGL_draw_buffersImpl::NewInstance(v8::Isolate *isolate, rust::Box<WEBGL_draw_b
     auto ctorFunc = GetCtor(isolate);
     WEBGL_draw_buffersImpl *buffersImpl = new WEBGL_draw_buffersImpl(std::move(buffers));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInternalClassName(isolate, result, "WEBGL_draw_buffers");
+    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_draw_buffers);
     auto ext = v8::External::New(isolate, buffersImpl);
     result->SetInternalField(0, ext);
 
@@ -116,8 +116,9 @@ v8::Local<v8::FunctionTemplate> WEBGL_draw_buffersImpl::GetCtor(v8::Isolate *iso
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_draw_buffers"));
 
-    auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+    auto tmpl = ctorTmpl->PrototypeTemplate();
 
     tmpl->Set(Helpers::ConvertToV8String(isolate, "drawBuffersWEBGL"),
               v8::FunctionTemplate::New(isolate, &DrawBuffersWEBGL));
@@ -126,27 +127,27 @@ v8::Local<v8::FunctionTemplate> WEBGL_draw_buffersImpl::GetCtor(v8::Isolate *iso
     return ctorTmpl;
 }
 
-void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(const v8::FunctionCallbackInfo<v8::Value> &args)  {
+void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.Holder());
+    auto ptr = GetPointer(args.This());
     auto buffers = args[0];
-    if(buffers->IsArray()){
+    if (buffers->IsArray()) {
         auto buffersVal = buffers.As<v8::Array>();
         auto len = buffersVal->Length();
-        std::vector<uint32_t> buf;
+        std::vector <uint32_t> buf;
         for (int j = 0; j < len; ++j) {
-            auto item = buffersVal->Get(context,j);
-            if(item.IsEmpty()){
+            auto item = buffersVal->Get(context, j);
+            if (item.IsEmpty()) {
                 // todo verify
                 buf.push_back(0);
-            }else {
+            } else {
                 buf.push_back(item.ToLocalChecked()->Uint32Value(context).ToChecked());
             }
 
         }
         rust::Slice<const uint32_t> slice(buf.data(), buf.size());
-        canvas_native_webgl_draw_buffers_draw_buffers_webgl(slice,*ptr->buffers_);
+        canvas_native_webgl_draw_buffers_draw_buffers_webgl(slice, *ptr->buffers_);
     }
 
 }

@@ -461,7 +461,7 @@ pub fn canvas_native_webgl2_get_active_uniform_block_name(
             &mut max_name_length,
         )
     }
-    let mut name = String::with_capacity(max_name_length as usize);
+    let mut name = vec![0;max_name_length as usize];
     let mut length = 0i32;
 
     unsafe {
@@ -470,11 +470,12 @@ pub fn canvas_native_webgl2_get_active_uniform_block_name(
             uniform_block_index,
             max_name_length,
             &mut length,
-            name.as_mut_vec().as_mut_ptr() as *mut c_char,
+            name.as_mut_ptr() as *mut c_char,
         )
     }
     name.shrink_to(length as usize);
-    name
+    let c_str = unsafe{CStr::from_ptr(name.as_ptr())};
+    c_str.to_string_lossy().to_string()
 }
 
 pub fn canvas_native_webgl2_get_active_uniform_block_parameter(
@@ -891,7 +892,7 @@ pub fn canvas_native_webgl2_get_transform_feedback_varying(
     if max_name_length[0] <= 0 {
         return WebGLActiveInfo::empty();
     }
-    let mut name = String::with_capacity(max_name_length[0] as usize);
+    let mut name = vec![0;max_name_length[0] as usize];
     let mut length = [0i32];
     let mut size = [0i32];
     let mut type_ = [0u32];
@@ -904,7 +905,7 @@ pub fn canvas_native_webgl2_get_transform_feedback_varying(
             length.as_mut_ptr(),
             size.as_mut_ptr(),
             type_.as_mut_ptr(),
-            name.as_mut_vec().as_mut_ptr() as *mut c_char,
+            name.as_mut_ptr() as *mut c_char,
         )
     }
     if length[0] == 0 || size[0] == 0 || type_[0] == 0 {
@@ -912,7 +913,8 @@ pub fn canvas_native_webgl2_get_transform_feedback_varying(
     }
     name.shrink_to(length[0] as usize);
 
-    WebGLActiveInfo::new(name, size[0], type_[0])
+    let c_str = unsafe{CStr::from_ptr(name.as_ptr())};
+    WebGLActiveInfo::new(c_str.to_string_lossy().to_string(), size[0], type_[0])
 }
 
 pub fn canvas_native_webgl2_get_uniform_block_index(

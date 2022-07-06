@@ -52,7 +52,6 @@ void main() {
 			return;
 		}
 
-		console.log(gl);
 
 		// Use our boilerplate utils to compile the shaders and link into a program
 		var program = createProgramFromScripts(gl, [
@@ -60,7 +59,6 @@ void main() {
 			{ type: 'fragment', src: fragmentShaderSource },
 		]);
 
-		console.log(program);
 
 		// look up where the vertex data needs to go.
 		var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
@@ -73,17 +71,6 @@ void main() {
 		var fogColorLocation = gl.getUniformLocation(program, 'u_fogColor');
 		var fogNearLocation = gl.getUniformLocation(program, 'u_fogNear');
 		var fogFarLocation = gl.getUniformLocation(program, 'u_fogFar');
-
-		console.log(
-			positionAttributeLocation,
-			texcoordAttributeLocation,
-			projectionLocation,
-			worldViewLocation,
-			textureLocation,
-			fogColorLocation,
-			fogNearLocation,
-			fogFarLocation
-		);
 
 		// Create a vertex array object (attribute state)
 		var vao = gl.createVertexArray();
@@ -136,25 +123,24 @@ void main() {
 
 		const asset = new global.ImageAsset();
 
-		// asset.loadUrlAsync("https://webgl2fundamentals.org/webgl/resources/f-texture.png")
-		//   .then(done => {
-		//     // Now that the image has loaded make copy it to the texture.
-		//     gl.bindTexture(gl.TEXTURE_2D, texture);
-		//     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
-		//     gl.generateMipmap(gl.TEXTURE_2D);
-		//   }).catch(e => {
-		//   console.log('image failed: ', e);
-		// });
-
-		console.log('aaaa');
-		asset.loadUrlAsync('https://webgl2fundamentals.org/webgl/resources/f-texture.png').then((done) => {
-			if (done) {
-				// Now that the image has loaded make copy it to the texture.
-				gl.bindTexture(gl.TEXTURE_2D, texture);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
-				gl.generateMipmap(gl.TEXTURE_2D);
-			}
+		asset.loadUrlAsync("https://webgl2fundamentals.org/webgl/resources/f-texture.png")
+		  .then(done => {
+		    // Now that the image has loaded make copy it to the texture.
+		    gl.bindTexture(gl.TEXTURE_2D, texture);
+		    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
+		    gl.generateMipmap(gl.TEXTURE_2D);
+		  }).catch(e => {
+		  console.log('image failed: ', e);
 		});
+
+		// asset.loadUrlAsync('https://webgl2fundamentals.org/webgl/resources/f-texture.png').then((done) => {
+		// 	if (done) {
+		// 		// Now that the image has loaded make copy it to the texture.
+		// 		gl.bindTexture(gl.TEXTURE_2D, texture);
+		// 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
+		// 		gl.generateMipmap(gl.TEXTURE_2D);
+		// 	}
+		// });
 
 		// ImageSource.fromUrl("https://webgl2fundamentals.org/webgl/resources/f-texture.png")
 		//   .then(image => {

@@ -5,7 +5,6 @@
 #pragma once
 #pragma process_pending_includes
 
-
 #include "../Common.h"
 #include "../Caches.h"
 #include "../Helpers.h"

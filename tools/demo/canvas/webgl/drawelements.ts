@@ -7,7 +7,6 @@ export function drawElements(canvas, drawingBufferWidth?, drawingBufferHeight?, 
 
     drawingBufferWidth = drawingBufferWidth || gl.drawingBufferWidth;
     drawingBufferHeight = drawingBufferHeight || gl.drawingBufferHeight;
-    console.log(drawingBufferWidth, drawingBufferHeight)
 
     var vertexShaderSrc = `
   attribute vec2 a_position;

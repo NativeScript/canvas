@@ -44,9 +44,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
-		this.threeDepth(this.canvas);
+		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
-		//this.skinningAndMorphing(this.canvas);
+		this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
 		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
@@ -54,7 +54,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeKeyframes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-	//this.gtlfLoader(this.canvas);
+		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
@@ -2693,7 +2693,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			loader.load(
 				this.root + '/models/gltf/RobotExpressive/RobotExpressive.glb',
 				function (gltf) {
-					console.log('loaded');
 					model = gltf.scene;
 					scene.add(model);
 
@@ -2847,7 +2846,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			requestAnimationFrame(animate);
 
-			renderer.render(scene, camera);
+			//renderer.render(scene, camera);
 
 			//stats.update();
 
@@ -3076,9 +3075,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 	threeDepth(canvas) {
 		const gl = canvas.getContext('webgl') as any;
+
 		const renderer = new THREE.WebGLRenderer({
 			context: gl,
 		});
+
 		renderer.shadowMap.enabled = true;
 		renderer.shadowMap.type = THREE.BasicShadowMap;
 
@@ -3153,11 +3154,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			requestAnimationFrame(animate);
 			cube.rotation.x += 0.01;
 			cube.rotation.y += 0.01;
-			renderer.render(scene, camera);
+			//renderer.render(scene, camera);
 		};
 
 		animate();
 		renderer.render(scene, camera);
+
 	}
 
 	webgl_buffergeometry_drawrange(canvas) {

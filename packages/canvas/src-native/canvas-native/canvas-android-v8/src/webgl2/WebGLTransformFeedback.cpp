@@ -38,7 +38,7 @@ v8::Local<v8::Object> WebGLTransformFeedback::NewInstance(v8::Isolate *isolate, 
     v8::EscapableHandleScope handle_scope(isolate);
     auto ctorFunc = GetCtor(isolate);
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetPrivate(isolate, result, "instance", v8::Uint32::New(isolate, query));
+    Helpers::SetPrivate(isolate, result, "instance", v8::Uint32::New(isolate, feedback));
     Helpers::SetInstanceType(isolate, result, ObjectType::WebGLTransformFeedback);
     return handle_scope.Escape(result);
 }

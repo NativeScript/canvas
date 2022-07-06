@@ -3,7 +3,7 @@ import {GestureTypes, TouchGestureEventData, Screen} from '@nativescript/core';
 let LAF = 0;
 
 var config = {
-	particleNumber: 40,
+	particleNumber: 20,
 	maxParticleSize: 10,
 	maxSpeed: 40,
 	colorVariation: 10

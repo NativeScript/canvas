@@ -9,6 +9,31 @@
 const char *Helpers::LOG_TAG = "JS";
 int Helpers::m_maxLogcatObjectSize = 4096;
 
+std::string Helpers::RGBAToHex(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+
+    std::stringstream ss;
+
+    if (a < 255) {
+        ss << "rgba(";
+        ss << static_cast<int>(r);
+        ss << ",";
+        ss << static_cast<int>(g);
+        ss << ",";
+        ss << static_cast<int>(b);
+        ss << ",";
+        ss << ((float) (a) / (float) 255);
+        ss << ")";
+    } else {
+        ss << "#";
+        ss << std::hex << std::setfill('0');
+        ss << std::hex << std::setw(2) << static_cast<int>(r);
+        ss << std::hex << std::setw(2) << static_cast<int>(g);
+        ss << std::hex << std::setw(2) << static_cast<int>(b);
+    }
+
+    return ss.str();
+}
+
 void Helpers::sendToADBLogcat(const std::string &message, android_LogPriority logPriority) {
     // limit the size of the message that we send to logcat using the predefined value in package.json
     auto messageToLog = message;
@@ -44,7 +69,8 @@ void Helpers::ThrowIllegalConstructor(v8::Isolate *isolate) {
 }
 
 v8::Local<v8::String> Helpers::ConvertToV8String(v8::Isolate *isolate, const std::string &string) {
-    return v8::String::NewFromUtf8(isolate, string.c_str()).ToLocalChecked();
+    return v8::String::NewFromUtf8(isolate, string.c_str(), v8::NewStringType::kNormal,
+                                   string.length()).ToLocalChecked();
 }
 
 std::string Helpers::ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
@@ -286,12 +312,17 @@ v8::Local<v8::Script> Helpers::ScriptCompileAndRun(v8::Isolate *isolate, const s
 }
 
 void Helpers::SetInstanceType(v8::Isolate *isolate, const v8::Local<v8::Object> &object, ObjectType type) {
-    Helpers::SetPrivate(isolate, object, "__instanceType", v8::Uint32::New(isolate, (uint32_t)type));
+    Helpers::SetPrivate(isolate, object, "__instanceType", v8::Uint32::New(isolate, (uint32_t) type));
 }
 
 ObjectType Helpers::GetInstanceType(v8::Isolate *isolate, const v8::Local<v8::Value> &object) {
     auto context = isolate->GetCurrentContext();
-    if(object.IsEmpty()){
+
+    if (object->IsNullOrUndefined()) {
+        return ObjectType::Unknown;
+    }
+
+    if (object.IsEmpty()) {
         return ObjectType::Unknown;
     }
     auto ret = Helpers::GetPrivate(isolate, object.As<v8::Object>(), "__instanceType");

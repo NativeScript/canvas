@@ -47,6 +47,8 @@ import {
 	globalAlpha,
 	lineCap,
 	lineDashOffset,
+	shadowOffsetX,
+	strokeStyle,
 } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
@@ -525,6 +527,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
+
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -535,7 +538,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowColor(this.canvas);
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
-		// strokeStyle(this.canvas);
+		 //strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
 		//textAlign(this.canvas)
 		//arc(this.canvas);
@@ -545,7 +548,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ellipse(this.canvas);
 		//fillPath(this.canvas);
 		//flappyBird(this.canvas);
-			//imageBlock(this.canvas);
+		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
 		//patternWithCanvas(this.canvas);
@@ -564,7 +567,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
-		swarm(this.canvas);
+		//swarm(this.canvas);
 		//this.bubbleChart(this.canvas);
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;
@@ -591,19 +594,19 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//swarm(this.canvas);
 		// canvas.nativeView.handleInvalidationManually = true;
 		//  setTimeout(() => {
-	//	draw_instanced(this.canvas);
+		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
 
-	//	fog(this.canvas);
+		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
-		// interactiveCube(this.canvas);
+		//interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
-		//fog(this.canvas);
+		fog(this.canvas);
 		// }, 1000);
 		//cubeRotation(this.canvas);
 		//},3000)

@@ -361,6 +361,14 @@ void WebGL2RenderingContext::BindVertexArray(const v8::FunctionCallbackInfo<v8::
     auto ptr = GetPointerBase(args.This());
     auto vertexArray = args[0];
 
+    if (vertexArray->IsNull()) {
+        canvas_native_webgl2_bind_vertex_array(
+                0,
+                ptr->GetState()
+        );
+        return;
+    }
+
     if (Helpers::GetInstanceType(isolate, vertexArray) == ObjectType::WebGLVertexArrayObject) {
         auto vertexArrayValue = Helpers::GetPrivate(isolate, vertexArray.As<v8::Object>(), "instance")->ToUint32(
                 context);
@@ -443,12 +451,12 @@ void WebGL2RenderingContext::ClearBufferfv(const v8::FunctionCallbackInfo<v8::Va
             std::vector<float> buf;
             auto len = array->Length();
             for (int j = 0; j < len; ++j) {
-                auto item = array->Get(context, j);
+                auto item = Helpers::ObjectGet(context, array, j);
                 if (item.IsEmpty()) {
                     buf.push_back(std::nanf(""));
                 } else {
                     buf.push_back(
-                            static_cast<float>(item.ToLocalChecked()->NumberValue(context).ToChecked())
+                            static_cast<float>(item->NumberValue(context).ToChecked())
                     );
                 }
             }
@@ -491,9 +499,9 @@ void WebGL2RenderingContext::ClearBufferiv(const v8::FunctionCallbackInfo<v8::Va
             std::vector <int32_t> buf;
             auto len = array->Length();
             for (int j = 0; j < len; ++j) {
-                auto item = array->Get(context, j);
+                auto item = Helpers::ObjectGet(context, array, j);
                 buf.push_back(
-                        item.ToLocalChecked()->Int32Value(context).ToChecked()
+                        item->Int32Value(context).ToChecked()
                 );
             }
 
@@ -506,11 +514,7 @@ void WebGL2RenderingContext::ClearBufferiv(const v8::FunctionCallbackInfo<v8::Va
             );
 
         } else if (values->IsInt32Array()) {
-            auto buff = values.As<v8::TypedArray>();
-            auto array = buff->Buffer();
-            auto store = array->GetBackingStore();
-            auto data = static_cast<uint8_t *>(store->Data()) + buff->ByteOffset();
-            rust::Slice<const int32_t> slice(reinterpret_cast<int32_t *>(data), buff->Length());
+            auto slice = Helpers::GetTypedArrayData<const int32_t>(values.As<v8::TypedArray>());
             canvas_native_webgl2_clear_bufferiv(
                     bufferValue.ToLocalChecked()->Value(),
                     drawbuffer->Int32Value(context).ToChecked(),
@@ -535,9 +539,9 @@ void WebGL2RenderingContext::ClearBufferuiv(const v8::FunctionCallbackInfo<v8::V
             std::vector <uint32_t> buf;
             auto len = array->Length();
             for (int j = 0; j < len; ++j) {
-                auto item = array->Get(context, j);
+                auto item = Helpers::ObjectGet(context, array, j);
                 buf.push_back(
-                        item.ToLocalChecked()->Uint32Value(context).ToChecked()
+                        item->Uint32Value(context).ToChecked()
                 );
             }
 
@@ -550,11 +554,7 @@ void WebGL2RenderingContext::ClearBufferuiv(const v8::FunctionCallbackInfo<v8::V
             );
 
         } else if (values->IsUint32Array()) {
-            auto buff = values.As<v8::TypedArray>();
-            auto array = buff->Buffer();
-            auto store = array->GetBackingStore();
-            auto data = static_cast<uint8_t *>(store->Data()) + buff->ByteOffset();
-            rust::Slice<const uint32_t> slice(reinterpret_cast<uint32_t *>(data), buff->Length());
+            auto slice = Helpers::GetTypedArrayData<const uint32_t>(values.As<v8::TypedArray>());
             canvas_native_webgl2_clear_bufferuiv(
                     bufferValue.ToLocalChecked()->Value(),
                     drawbuffer->Int32Value(context).ToChecked(),
@@ -841,6 +841,8 @@ void WebGL2RenderingContext::DrawArraysInstanced(const v8::FunctionCallbackInfo<
                 instanceCount->Int32Value(context).ToChecked(),
                 ptr->GetState()
         );
+
+        ptr->UpdateInvalidateState();
     }
 }
 
@@ -854,7 +856,7 @@ void WebGL2RenderingContext::DrawBuffers(const v8::FunctionCallbackInfo<v8::Valu
         std::vector <uint32_t> buf;
         auto len = array->Length();
         for (int j = 0; j < len; ++j) {
-            auto item = array->Get(context, j).ToLocalChecked();
+            auto item = Helpers::ObjectGet(context, array, j);
             buf.push_back(item->Uint32Value(context).ToChecked());
         }
         rust::Slice<const uint32_t> slice(buf.data(), buf.size());
@@ -880,6 +882,8 @@ void WebGL2RenderingContext::DrawElementsInstanced(const v8::FunctionCallbackInf
                 instanceCount->Int32Value(context).ToChecked(),
                 ptr->GetState()
         );
+
+        ptr->UpdateInvalidateState();
     }
 }
 
@@ -903,6 +907,8 @@ void WebGL2RenderingContext::DrawRangeElements(const v8::FunctionCallbackInfo<v8
                 static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
                 ptr->GetState()
         );
+
+        ptr->UpdateInvalidateState();
     }
 }
 
@@ -1007,9 +1013,10 @@ void WebGL2RenderingContext::GetActiveUniformBlockParameter(const v8::FunctionCa
                 auto size = value.size() * sizeof(int32_t);
                 auto buf = v8::ArrayBuffer::New(isolate, size);
                 auto array = v8::Uint32Array::New(buf, 0, size);
-                for (int j = 0; j < value.size(); ++j) {
+                auto len = value.size();
+                for (int j = 0; j < len; ++j) {
                     auto item = value[j];
-                    array->Set(context, j, v8::Uint32::New(isolate, item));
+                    Helpers::ObjectSet(context, array, j, v8::Uint32::New(isolate, item));
                 }
                 args.GetReturnValue().Set(array);
             }
@@ -1026,7 +1033,7 @@ void WebGL2RenderingContext::GetActiveUniformBlockParameter(const v8::FunctionCa
         }
         return;
     }
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 
 }
 
@@ -1060,9 +1067,10 @@ void WebGL2RenderingContext::GetActiveUniforms(const v8::FunctionCallbackInfo<v8
             case GL_UNIFORM_SIZE: {
                 auto value = canvas_native_webgl_result_get_u32_array(*ret);
                 auto array = v8::Array::New(isolate, value.size());
-                for (int j = 0; j < value.size(); ++j) {
+                auto len = value.size();
+                for (int j = 0; j < len; ++j) {
                     auto item = value[j];
-                    array->Set(context, j, v8::Uint32::New(isolate, item));
+                    Helpers::ObjectSet(context, array, j, v8::Uint32::New(isolate, item));
                 }
                 args.GetReturnValue().Set(array);
             }
@@ -1073,30 +1081,32 @@ void WebGL2RenderingContext::GetActiveUniforms(const v8::FunctionCallbackInfo<v8
             case GL_UNIFORM_MATRIX_STRIDE: {
                 auto value = canvas_native_webgl_result_get_i32_array(*ret);
                 auto array = v8::Array::New(isolate, value.size());
-                for (int j = 0; j < value.size(); ++j) {
+                auto len = value.size();
+                for (int j = 0; j < len; ++j) {
                     auto item = value[j];
-                    array->Set(context, j, v8::Int32::New(isolate, item));
+                    Helpers::ObjectSet(context, array, j, v8::Int32::New(isolate, item));
                 }
                 args.GetReturnValue().Set(array);
             }
             case GL_UNIFORM_IS_ROW_MAJOR: {
                 auto value = canvas_native_webgl_result_get_bool_array(*ret);
-                auto array = v8::Array::New(isolate, value.size());
-                for (int j = 0; j < value.size(); ++j) {
+                auto len = value.size();
+                auto array = v8::Array::New(isolate, len);
+                for (int j = 0; j < len; ++j) {
                     bool item = value[j] == 1;
-                    array->Set(context, j, v8::Boolean::New(isolate, item));
+                    Helpers::ObjectSet(context, array, j, v8::Boolean::New(isolate, item));
                 }
                 args.GetReturnValue().Set(array);
             }
                 break;
             default:
-                args.GetReturnValue().Set(v8::Null(isolate));
+                args.GetReturnValue().SetNull();
                 break;
         }
 
         return;
     }
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGL2RenderingContext::GetBufferSubData(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -1288,9 +1298,10 @@ void WebGL2RenderingContext::GetInternalformatParameter(const v8::FunctionCallba
             auto size = value.size() * sizeof(int32_t);
             auto ab = v8::ArrayBuffer::New(isolate, size);
             auto array = v8::Int32Array::New(ab, 0, size);
-            for (int j = 0; j < value.size(); ++j) {
+            auto len = value.size();
+            for (int j = 0; j < len; ++j) {
                 auto item = value[j];
-                array->Set(context, j, v8::Int32::New(isolate, item));
+                Helpers::ObjectSet(context, array, j, v8::Int32::New(isolate, item));
             }
             args.GetReturnValue().Set(array);
 
@@ -1325,7 +1336,7 @@ void WebGL2RenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Val
         }
         return;
     }
-    args.GetReturnValue().Set(v8::Null(isolate));
+    args.GetReturnValue().SetNull();
 }
 
 void WebGL2RenderingContext::GetQueryParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -1514,9 +1525,9 @@ void WebGL2RenderingContext::GetUniformIndices(const v8::FunctionCallbackInfo<v8
             auto programValue = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance")->ToUint32(context);
             auto array = uniformNames.As<v8::Array>();
             rust::Vec<rust::Str> store;
-
-            for (int j = 0; j < array->Length(); ++j) {
-                auto name = array->Get(context, j).ToLocalChecked();
+            auto len = array->Length();
+            for (int j = 0; j < len; ++j) {
+                auto name = Helpers::ObjectGet(context, array, j);
                 auto nameValue = Helpers::ConvertFromV8String(isolate, name);
                 rust::Str val(nameValue.c_str(), nameValue.size());
                 store.push_back(val);
@@ -1525,10 +1536,11 @@ void WebGL2RenderingContext::GetUniformIndices(const v8::FunctionCallbackInfo<v8
             auto ret = canvas_native_webgl2_get_uniform_indices(programValue.ToLocalChecked()->Value(), buf,
                                                                 ptr->GetState());
 
-            auto result = v8::Array::New(isolate, ret.size());
-            for (int j = 0; j < ret.size(); ++j) {
+            auto retSize = ret.size();
+            auto result = v8::Array::New(isolate, retSize);
+            for (int j = 0; j < retSize; ++j) {
                 auto item = ret[j];
-                result->Set(context, j, v8::Uint32::New(isolate, item));
+                Helpers::ObjectSet(context, result, j, v8::Uint32::New(isolate, item));
             }
 
             args.GetReturnValue().Set(result);
@@ -1549,8 +1561,9 @@ void WebGL2RenderingContext::InvalidateFramebuffer(const v8::FunctionCallbackInf
         auto array = attachments.As<v8::Array>();
         std::vector <uint32_t> buf;
 
-        for (int j = 0; j < array->Length(); ++j) {
-            auto item = array->Get(context, j).ToLocalChecked();
+        auto len = array->Length();
+        for (int j = 0; j < len; ++j) {
+            auto item = Helpers::ObjectGet(context, array, j);
             buf.push_back(item->Uint32Value(context).ToChecked());
         }
         rust::Slice<const uint32_t> slice(buf.data(), buf.size());
@@ -1575,8 +1588,9 @@ void WebGL2RenderingContext::InvalidateSubFramebuffer(const v8::FunctionCallback
         auto array = attachments.As<v8::Array>();
         std::vector <uint32_t> buf;
 
-        for (int j = 0; j < array->Length(); ++j) {
-            auto item = array->Get(context, j).ToLocalChecked();
+        auto len = array->Length();
+        for (int j = 0; j < len; ++j) {
+            auto item = Helpers::ObjectGet(context, array, j);
             buf.push_back(item->Uint32Value(context).ToChecked());
         }
         rust::Slice<const uint32_t> slice(buf.data(), buf.size());
@@ -1677,7 +1691,6 @@ void WebGL2RenderingContext::IsTransformFeedback(const v8::FunctionCallbackInfo<
 void WebGL2RenderingContext::IsVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    ZXL
     auto ptr = GetPointerBase(args.This());
     if (args.Length() > 0) {
         auto vertexArray = args[0];
@@ -2108,8 +2121,9 @@ void WebGL2RenderingContext::TransformFeedbackVaryings(const v8::FunctionCallbac
                 auto array = varyings.As<v8::Array>();
                 rust::Vec<rust::Str> store;
 
-                for (int j = 0; j < array->Length(); ++j) {
-                    auto name = array->Get(context, j).ToLocalChecked();
+                auto len = array->Length();
+                for (int j = 0; j < len; ++j) {
+                    auto name = Helpers::ObjectGet(context, array, j);
                     auto nameValue = Helpers::ConvertFromV8String(isolate, name);
                     rust::Str val(nameValue.data(), nameValue.size());
                     store.push_back(val);
@@ -3192,6 +3206,7 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
             Helpers::ConvertToV8String(isolate, "uniformBlockBinding"),
             v8::FunctionTemplate::New(isolate, &UniformBlockBinding)
     );
+
 
     webgl2RenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "uniformMatrix2x3fv"),

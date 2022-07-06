@@ -7,7 +7,7 @@ pub mod gl_context;
 pub mod looper;
 pub mod raf;
 pub mod utils;
-
+pub mod jni;
 
 
 #[cxx::bridge]

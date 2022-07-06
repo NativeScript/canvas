@@ -3,7 +3,7 @@ use std::os::raw::{c_char, c_uchar, c_void};
 
 use libc::size_t;
 
-use crate::bridges::context::{console_log, ImageAsset};
+use crate::bridges::context::{__log, console_log, ImageAsset, LogPriority};
 use crate::gl::prelude::*;
 
 pub fn canvas_native_webgl_active_texture(texture: u32, state: &mut WebGLState) {
@@ -661,7 +661,8 @@ pub fn canvas_native_webgl_get_active_attrib(
             &mut length,
         )
     }
-    let mut name_buffer = String::with_capacity(length as usize);
+    let mut name_buffer = vec![0; length as usize];
+
     unsafe {
         gl_bindings::glGetActiveAttrib(
             program,
@@ -670,11 +671,15 @@ pub fn canvas_native_webgl_get_active_attrib(
             &mut name_length,
             &mut size,
             &mut info_type,
-            name_buffer.as_mut_vec().as_mut_ptr() as *mut c_char,
+            name_buffer.as_mut_ptr() as *mut c_char,
         )
     }
+
     name_buffer.shrink_to(name_length as usize);
-    WebGLActiveInfo::new(name_buffer, size, info_type)
+
+    let c_str = unsafe { CStr::from_ptr(name_buffer.as_ptr()) };
+
+    WebGLActiveInfo::new(c_str.to_string_lossy().to_string(), size, info_type)
 }
 
 pub fn canvas_native_webgl_get_active_uniform(
@@ -694,7 +699,8 @@ pub fn canvas_native_webgl_get_active_uniform(
             &mut length,
         )
     }
-    let mut name_buffer = String::with_capacity(length as usize);
+    let mut name_buffer = vec![0; length as usize];
+
     unsafe {
         gl_bindings::glGetActiveUniform(
             program,
@@ -703,11 +709,15 @@ pub fn canvas_native_webgl_get_active_uniform(
             &mut name_length,
             &mut size,
             &mut info_type,
-            name_buffer.as_mut_vec().as_mut_ptr() as *mut c_char,
+            name_buffer.as_mut_ptr() as *mut c_char,
         )
     };
+
     name_buffer.shrink_to(name_length as usize);
-    WebGLActiveInfo::new(name_buffer, size, info_type)
+
+    let c_str = unsafe { CStr::from_ptr(name_buffer.as_ptr()) };
+
+    WebGLActiveInfo::new(c_str.to_string_lossy().to_string(), size, info_type)
 }
 
 pub fn canvas_native_webgl_get_attached_shaders(program: u32, state: &mut WebGLState) -> Vec<u32> {
@@ -765,8 +775,12 @@ pub fn canvas_native_webgl_get_extension(
 
     let ext = unsafe { CStr::from_ptr(std::mem::transmute(extensions)) };
     let extensions = ext.to_string_lossy();
-    let extension = if name.eq("EXT_blend_minmax") && extensions.contains("GL_EXT_blend_minmax") {
-        return Some(Box::new(EXT_blend_minmax::new()));
+
+    let extension = if name.eq("EXT_blend_minmax") {
+        if version == WebGLVersion::V2 || extensions.contains("GL_EXT_blend_minmax") {
+            return Some(Box::new(EXT_blend_minmax::new()));
+        }
+        None
     } else if name.eq("EXT_color_buffer_half_float")
         && extensions.contains("GL_EXT_color_buffer_half_float")
     {
@@ -784,9 +798,7 @@ pub fn canvas_native_webgl_get_extension(
     } else if name.eq("EXT_shader_texture_lod") && extensions.contains("GL_EXT_shader_texture_lod")
     {
         return Some(Box::new(EXT_shader_texture_lod::new()));
-    } else if name.eq("EXT_texture_filter_anisotropic")
-        && extensions.contains("GL_EXT_texture_filter_anisotropic")
-    {
+    } else if name.eq("EXT_texture_filter_anisotropic") {
         return Some(Box::new(EXT_texture_filter_anisotropic::new()));
     } else if name.eq("OES_element_index_uint") && extensions.contains("GL_OES_element_index_uint")
     {
@@ -1098,18 +1110,19 @@ pub fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLS
     state.make_current();
     let mut length = 0i32;
     unsafe { gl_bindings::glGetProgramiv(program, gl_bindings::GL_INFO_LOG_LENGTH, &mut length) }
-    let mut info = String::with_capacity(length as usize);
+    let mut info = vec![0; length as usize];
     let mut len = 0;
     unsafe {
         gl_bindings::glGetProgramInfoLog(
             program,
             length,
             &mut len,
-            info.as_mut_vec().as_mut_ptr() as *mut c_char,
+            info.as_mut_ptr() as *mut c_char,
         )
     }
     info.shrink_to(len.try_into().unwrap());
-    info
+    let c_str = unsafe { CStr::from_ptr(info.as_ptr()) };
+    c_str.to_string_lossy().to_string()
 }
 
 pub fn canvas_native_webgl_get_program_parameter(
@@ -1153,18 +1166,19 @@ pub fn canvas_native_webgl_get_shader_info_log(shader: u32, state: &mut WebGLSta
     state.make_current();
     let mut length = 0i32;
     unsafe { gl_bindings::glGetShaderiv(shader, gl_bindings::GL_INFO_LOG_LENGTH, &mut length) }
-    let mut log = String::with_capacity(length as usize);
+    let mut log = vec![0; length as usize];
     let mut len = 0;
     unsafe {
         gl_bindings::glGetShaderInfoLog(
             shader,
             length,
             &mut len,
-            log.as_mut_vec().as_mut_ptr() as *mut c_char,
+            log.as_mut_ptr() as *mut c_char,
         )
     }
     log.shrink_to(len.try_into().unwrap());
-    log
+    let c_str = unsafe { CStr::from_ptr(log.as_ptr()) };
+    c_str.to_string_lossy().to_string()
 }
 
 pub fn canvas_native_webgl_get_shader_parameter(
@@ -1210,13 +1224,14 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
     state.make_current();
     let mut length = 0i32;
     unsafe { gl_bindings::glGetShaderiv(shader, gl_bindings::GL_SHADER_SOURCE_LENGTH, &mut length) }
-    let mut source = String::with_capacity(length as usize);
+    let mut source = vec![0; length as usize];
     let mut len = 0;
     unsafe {
         gl_bindings::glGetShaderSource(shader, length, &mut len, source.as_mut_ptr() as *mut c_char)
     }
     source.shrink_to(len.try_into().unwrap());
-    source
+    let c_str = unsafe { CStr::from_ptr(source.as_ptr()) };
+    c_str.to_string_lossy().to_string()
 }
 
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
@@ -1833,7 +1848,6 @@ pub fn canvas_native_webgl_tex_image2d_none(
     }
 }
 
-
 pub fn canvas_native_webgl_tex_image2d_image_asset(
     target: i32,
     level: i32,
@@ -1855,13 +1869,10 @@ pub fn canvas_native_webgl_tex_image2d_image_asset(
             image_type,
             gl_bindings::GL_RGBA as u32,
             image_type as u32,
-            bytes.as_ptr() as *const c_void
+            bytes.as_ptr() as *const c_void,
         );
     }
 }
-
-
-
 
 pub fn canvas_native_webgl_tex_parameterf(target: u32, pname: u32, param: f32, state: &WebGLState) {
     state.make_current();

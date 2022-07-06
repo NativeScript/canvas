@@ -60,7 +60,7 @@ const CPP_SOURCE: [&str; 10] = [
     "src/OnRafCallback.cpp",
     "src/RafImpl.cpp",
     "src/ObjectCacheEntry.cpp",
-    "src/ImageBitmapImpl.cpp",
+    "src/ImageBitmapImpl.cpp"
 ];
 
 const CPP_SOURCE_HEADERS: [&str; 10] = [
@@ -73,7 +73,7 @@ const CPP_SOURCE_HEADERS: [&str; 10] = [
     "src/OnRafCallback.h",
     "src/RafImpl.h",
     "src/ObjectCacheEntry.h",
-    "src/ImageBitmapImpl.h",
+    "src/ImageBitmapImpl.h"
 ];
 
 const CPP_2D_SOURCE: [&str; 8] = [
@@ -409,14 +409,14 @@ fn main() {
     }
 
     let flags_release: Vec<_> = FLAGS_RELEASE.split(" ").collect();
-    // for flag in flags_release.into_iter() {
-    //     build.flag_if_supported(flag);
-    // }
-
-    let flags_debug: Vec<_> = FLAGS_DEBUG.split(" ").collect();
-    for flag in flags_debug.into_iter() {
+    for flag in flags_release.into_iter() {
         build.flag_if_supported(flag);
     }
+
+    // let flags_debug: Vec<_> = FLAGS_DEBUG.split(" ").collect();
+    // for flag in flags_debug.into_iter() {
+    //     build.flag_if_supported(flag);
+    // }
 
     build.warnings(false);
 

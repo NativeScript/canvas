@@ -128,7 +128,6 @@ void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbac
             canvas_native_raf_start(_raf->GetRaf());
 
             auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-            //Helpers::SetInternalClassName(isolate, ret, "CanvasRenderingContext2D");
 
             auto ext = v8::External::New(isolate, renderingContext);
             ret->SetInternalField(0, ext);
@@ -303,12 +302,20 @@ void CanvasRenderingContext2DImpl::GetShadowColor(v8::Local<v8::String> name,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.This());
-    auto color = canvas_native_context_get_shadow_color(*ptr->context_);
-    info.GetReturnValue().Set(
-            Helpers::ConvertToV8String(
-                    isolate, color.c_str()
-            )
-    );
+
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+
+    canvas_native_context_get_shadow_color_rgba(*ptr->context_, r, g, b, a);
+
+    auto color = Helpers::RGBAToHex(r, g, b, a);
+
+    auto ret = Helpers::ConvertToV8String(isolate, color);
+
+    info.GetReturnValue().Set(ret);
+
 }
 
 void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::String> name, v8::Local<v8::Value> value,
@@ -318,7 +325,15 @@ void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::String> name, v8
         auto context = isolate->GetCurrentContext();
         auto ptr = GetPointer(info.This());
         auto color = Helpers::ConvertFromV8String(isolate, value);
-        canvas_native_context_set_shadow_color(*ptr->context_, rust::Str(color.c_str(), color.size()));
+
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+
+        canvas_native_parse_css_color_rgba(rust::Str(color.c_str(), color.size()), r, g, b, a);
+
+        canvas_native_context_set_shadow_color_rgba(*ptr->context_, r, g, b, a);
     }
 }
 
@@ -420,26 +435,37 @@ void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> name,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.This());
-    auto style = canvas_native_context_get_fill_style(*ptr->context_);
-    PaintStyleType type = canvas_native_context_get_style_type(*style);
+    PaintStyleType type = canvas_native_context_get_current_fill_style_type(*ptr->context_);
 
     switch (type) {
         case PaintStyleType::Color: {
-            rust::String color = canvas_native_paint_style_get_color_string(*style);
-            info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(color.c_str(), color.size())));
+            uint8_t r;
+            uint8_t g;
+            uint8_t b;
+            uint8_t a;
+
+            canvas_native_paint_style_get_current_fill_color_r_g_b_a(*ptr->context_, r, g, b, a);
+
+            auto color = Helpers::RGBAToHex(r, g, b, a);
+
+            auto ret = Helpers::ConvertToV8String(isolate, color);
+
+            info.GetReturnValue().Set(ret);
             break;
         }
         case PaintStyleType::Gradient: {
+            auto style = canvas_native_context_get_fill_style(*ptr->context_);
             info.GetReturnValue().Set(CanvasGradient::NewInstance(isolate, std::move(style)));
             break;
         }
         case PaintStyleType::Pattern: {
+            auto style = canvas_native_context_get_fill_style(*ptr->context_);
             info.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(style)));
             break;
         }
         case PaintStyleType::None: {
             // should not reach here .... throw ? run for your life
-            info.GetReturnValue().Set(v8::Undefined(isolate));
+            info.GetReturnValue().SetUndefined();
             break;
         }
     }
@@ -453,7 +479,14 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> name, v8::
     if (ptr == nullptr) { return; }
     if (Helpers::IsString(value)) {
         auto val = Helpers::ConvertFromV8String(isolate, value);
-        canvas_native_paint_style_set_fill_color_with_c_str(*ptr->context_, val.c_str());
+
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+
+        canvas_native_parse_css_color_rgba(rust::Str(val.c_str(), val.size()), r, g, b, a);
+        canvas_native_paint_style_set_fill_color_with_rgba(*ptr->context_, r, g, b, a);
     } else if (!value->IsNullOrUndefined() && value->IsObject()) {
         auto color = value.As<v8::Object>();
         if (Helpers::GetInstanceType(isolate, color) == ObjectType::CanvasPattern) {
@@ -475,19 +508,30 @@ void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::String> name,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto isolate = info.GetIsolate();
     auto ptr = GetPointer(info.This());
-    auto style = canvas_native_context_get_stroke_style(*ptr->context_);
-    PaintStyleType type = canvas_native_context_get_style_type(*style);
+    PaintStyleType type = canvas_native_context_get_current_stroke_style_type(*ptr->context_);
     switch (type) {
         case PaintStyleType::Color: {
-            rust::String color = canvas_native_paint_style_get_color_string(*style);
-            info.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(color.c_str(), color.size())));
+            uint8_t r;
+            uint8_t g;
+            uint8_t b;
+            uint8_t a;
+
+            canvas_native_paint_style_get_current_stroke_color_r_g_b_a(*ptr->context_, r, g, b, a);
+
+            auto color = Helpers::RGBAToHex(r, g, b, a);
+
+            auto ret = Helpers::ConvertToV8String(isolate, color);
+
+            info.GetReturnValue().Set(ret);
             break;
         }
         case PaintStyleType::Gradient: {
+            auto style = canvas_native_context_get_stroke_style(*ptr->context_);
             info.GetReturnValue().Set(CanvasGradient::NewInstance(isolate, std::move(style)));
             break;
         }
         case PaintStyleType::Pattern: {
+            auto style = canvas_native_context_get_stroke_style(*ptr->context_);
             info.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(style)));
             break;
         }
@@ -506,7 +550,13 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> name, v8
     auto ptr = GetPointer(info.This());
     if (Helpers::IsString(value)) {
         auto val = Helpers::ConvertFromV8String(isolate, value);
-        canvas_native_paint_style_set_stroke_color_with_c_str(*ptr->context_, val.c_str());
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+
+        canvas_native_parse_css_color_rgba(rust::Str(val.c_str(), val.size()), r, g, b, a);
+        canvas_native_paint_style_set_stroke_color_with_rgba(*ptr->context_, r, g, b, a);
     } else if (Helpers::IsObject(value)) {
         auto color = value.As<v8::Object>();
         if (Helpers::GetInstanceType(isolate, color) == ObjectType::CanvasPattern) {
@@ -724,7 +774,7 @@ void CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<
                                                                                                  rep.size()));
             auto type = canvas_native_context_get_style_type(*pattern);
             if (type == PaintStyleType::None) {
-                args.GetReturnValue().Set(v8::Undefined(isolate));
+                args.GetReturnValue().SetUndefined();
             } else {
                 args.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(pattern)));
             }

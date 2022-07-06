@@ -4,13 +4,23 @@ pub fn parse_color(value: &str) -> Option<Color> {
     match value.parse::<csscolorparser::Color>() {
         Ok(color) => {
             let color = color.rgba_u8();
-            Some(Color::from_argb(
-            color.3,
-            color.0,
-            color.1,
-            color.2,
-        ))},
+            Some(Color::from_argb(color.3, color.0, color.1, color.2))
+        }
         _ => None,
+    }
+}
+
+pub fn parse_color_rgba(value: &str, r: &mut u8, g: &mut u8, b: &mut u8, a: &mut u8) -> bool {
+    match value.parse::<csscolorparser::Color>() {
+        Ok(color) => {
+            let color = color.rgba_u8();
+            *r = color.0;
+            *g = color.1;
+            *b = color.2;
+            *a = color.3;
+            true
+        }
+        _ => false,
     }
 }
 

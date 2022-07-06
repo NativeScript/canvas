@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+
 #include "Common.h"
 #include "rust/cxx.h"
 #include "../include/v8.h"
@@ -77,6 +81,8 @@ public:
 
     static int m_maxLogcatObjectSize;
 
+    static std::string RGBAToHex(uint8_t r,uint8_t g, uint8_t b, uint8_t a);
+
     static void sendToADBLogcat(const std::string &message, android_LogPriority logPriority);
 
     static void LogToConsole(const std::string &message);
@@ -139,7 +145,7 @@ public:
         auto buffer = array->Buffer();
         auto store = buffer->GetBackingStore();
         auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
-        rust::Slice<T> slice(reinterpret_cast<T *>(data), array->Length());
+        rust::Slice<T> slice(reinterpret_cast<T *>(data), (array->ByteLength() / sizeof(T)));
         return std::move(slice);
     }
 

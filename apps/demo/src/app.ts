@@ -40,77 +40,122 @@ const handlePath = function (path) {
 	return path;
 };
 
+(global as any).__debug_browser_polyfill_image = true;
 
-const oldSave = global.ImageAsset.prototype.save;
-const oldSaveSync = global.ImageAsset.prototype.saveSync;
-global.ImageAsset.prototype.save = function (path, format, done) {
-	oldSave(handlePath(path), format, done);
-};
+class ImageAssetImpl extends (global as any).ImageAsset {
+	save(path, format, done) {
+		super.save(handlePath(path), format, done);
+	}
 
-global.ImageAsset.prototype.saveSync = function (path, format) {
-	return oldSaveSync(handlePath(path), format);
-};
+	saveSync(path, format) {
+		return super.saveSync(handlePath(path), format);
+	}
 
-global.ImageAsset.prototype.saveAsync = function (path, format) {
-	return new Promise((resolve, reject) => {
-		global.ImageAsset.prototype.save(path, format, (done) => {
-			resolve(done);
+	saveAsync(path, format) {
+		return new Promise((resolve, reject) => {
+			this.save(path, format, (done) => {
+				resolve(done);
+			});
 		});
-	});
-};
+	}
 
-const oldLoadBytes = global.ImageAsset.prototype.loadBytes;
-const oldLoadBytesSync = global.ImageAsset.prototype.loadBytesSync;
-global.ImageAsset.prototype.loadBytes = function (bytes, done) {
-	oldLoadBytes(bytes, done);
-};
-
-global.ImageAsset.prototype.loadBytesSync = function (bytes) {
-	return oldLoadBytesSync(bytes);
-};
-
-global.ImageAsset.prototype.loadBytesAsync = function (bytes) {
-	return new Promise((resolve, reject) => {
-		global.ImageAsset.prototype.loadBytes(bytes, function (done) {
-			resolve(done);
+	loadBytesAsync(bytes) {
+		return new Promise((resolve, reject) => {
+			this.loadBytes(bytes, function (done) {
+				resolve(done);
+			});
 		});
-	});
-};
+	}
 
+	loadFile(file, done) {
+		super.loadFile(handlePath(file), done);
+	}
 
-const oldLoadFile = global.ImageAsset.prototype.loadFile;
-const oldLoadFileSync = global.ImageAsset.prototype.loadFileSync;
+	loadFileSync(file) {
+		return super.loadFileSync(handlePath(file));
+	}
 
-global.ImageAsset.prototype.loadFile = function (file, done) {
-	oldLoadFile(handlePath(file), done);
-};
-
-global.ImageAsset.prototype.loadFileSync = function (file) {
-	return oldLoadFileSync(handlePath(file));
-};
-
-global.ImageAsset.prototype.loadFileAsync = function (file) {
-	return new Promise((resolve, reject) => {
-		global.ImageAsset.prototype.loadFile(file, (done) => {
-			resolve(done);
+	loadFileAsync(file) {
+		return new Promise((resolve, reject) => {
+			this.loadFile(file, (done) => {
+				resolve(done);
+			});
 		});
-	});
-};
+	}
 
-global.ImageAsset.prototype.loadUrlAsync = function (url) {
-	console.log('loadUrlAsync');
-	return new Promise((resolve, reject) => {
-		console.log(global.ImageAsset.prototype.loadUrl);
-		global.ImageAsset.prototype.loadUrl(url, (done) => {
-			resolve(done);
+	loadUrlAsync(url) {
+		return new Promise((resolve, reject) => {
+			this.loadUrl(url, (done) => {
+				resolve(done);
+			});
 		});
-	});
-};
+	}
+}
+
+class WebGLRenderingContextImpl extends (global as any).WebGLRenderingContext {
+	texImage2D(...args) {
+		if (arguments.length === 6) {
+			const image = arguments[5];
+			if (image && image.android instanceof android.graphics.Bitmap) {
+				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
+				return;
+			} else if(image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')){
+				args[5] = image._asset;
+			}
+		}
+		super.texImage2D(...args);
+	}
+}
+
+class WebGL2RenderingContextImpl extends (global as any).WebGL2RenderingContext {
+	texImage2D(...args) {
+		if (arguments.length === 6) {
+			const image = arguments[5];
+			if (image && image.android instanceof android.graphics.Bitmap) {
+				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
+				return;
+			} else if(image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')){
+				args[5] = image._asset;
+			}
+		}
+		super.texImage2D(...args);
+	}
+}
+
+class CanvasRenderingContext2D extends (global as any).CanvasRenderingContext2D {
+	drawImage(...args) {
+		if (arguments.length === 3) {
+			const image = arguments[0];
+			if (image && image.android instanceof android.graphics.Bitmap) {
+				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
+				return;
+			}
+		}
+	
+		if (arguments.length === 5) {
+			const image = arguments[0];
+			if (image && image.android instanceof android.graphics.Bitmap) {
+				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
+				return;
+			}
+		}
+	
+		if (arguments.length === 9) {
+			const image = arguments[0];
+			if (image && image.android instanceof android.graphics.Bitmap) {
+				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.width, 0, arguments[3], arguments[4], image.android, this.__flipY);
+				return;
+			}
+		}
+		super.CanvasRenderingContext2D.prototype.drawImage(...arguments);
+	}
+}
 
 
-console.log('asdasd', global.ImageAsset.prototype.loadUrlAsync);
-
-
+global.WebGLRenderingContext = WebGLRenderingContextImpl as any;
+global.WebGL2RenderingContext = WebGL2RenderingContextImpl as any;
+global.CanvasRenderingContext2D = CanvasRenderingContext2D as any;
+global.ImageAsset = ImageAssetImpl;
 
 // } catch (e) {
 // 	console.log('__non_webpack_require__', e);

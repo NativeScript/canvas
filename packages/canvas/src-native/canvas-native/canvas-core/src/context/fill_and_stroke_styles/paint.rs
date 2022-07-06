@@ -222,16 +222,29 @@ pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: 
     let mut context = context.get_context_mut();
     if let Ok(color) = color.parse::<csscolorparser::Color>() {
         let color = color.rgba_u8();
-        let style = PaintStyle::Color(Color::from_argb(
-            color.3,
-            color.0,
-            color.1,
-            color.2,
-        ));
+        let style = PaintStyle::Color(Color::from_argb(color.3, color.0, color.1, color.2));
         if is_fill {
             context.set_fill_style(style);
         } else {
             context.set_stroke_style(style);
         }
+    }
+}
+
+#[inline]
+pub fn paint_style_set_color_with_rgba(
+    context: &mut ContextWrapper,
+    is_fill: bool,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+) {
+    let mut context = context.get_context_mut();
+    let style = PaintStyle::Color(Color::from_argb(a, r, g, b));
+    if is_fill {
+        context.set_fill_style(style);
+    } else {
+        context.set_stroke_style(style);
     }
 }

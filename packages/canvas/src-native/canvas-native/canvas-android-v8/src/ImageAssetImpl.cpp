@@ -47,7 +47,6 @@ void ImageAssetImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         v8::Local<v8::Object> ret = args.This();
         Helpers::SetInstanceType(isolate, ret, ObjectType::ImageAsset);
-
         ImageAssetImpl *asset = new ImageAssetImpl(std::move(canvas_native_image_asset_create()));
         auto ext = v8::External::New(isolate, asset);
         ret->SetInternalField(0, ext);
@@ -101,7 +100,6 @@ void ImageAssetImpl::FromUrl(const v8::FunctionCallbackInfo<v8::Value> &args) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.This());
     if (Helpers::IsString(args[0])) {
         auto url = Helpers::GetString(isolate, args[0]);
@@ -131,8 +129,12 @@ void ImageAssetImpl::FromUrlAsync(const v8::FunctionCallbackInfo<v8::Value> &arg
 void ImageAssetImpl::FromFile(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto ptr = GetPointer(args.This());
+    Helpers::LogToConsole("IsString");
     if (Helpers::IsString(args[0])) {
+        Helpers::LogToConsole("IsString");
         auto path = Helpers::GetString(isolate, args[0]);
+        Helpers::LogToConsole("GetString");
+
         auto done = canvas_native_image_asset_load_from_path(ptr->GetImageAsset(),
                                                              rust::Str(path.c_str(), path.size()));
         args.GetReturnValue().Set(done);

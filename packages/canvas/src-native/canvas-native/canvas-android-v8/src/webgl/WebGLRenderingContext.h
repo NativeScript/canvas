@@ -52,7 +52,7 @@
 #include "WebGLRenderingContextBase.h"
 
 
-class WebGLRenderingContext: WebGLRenderingContextBase  {
+class WebGLRenderingContext : WebGLRenderingContextBase {
 
 public:
     static void Init(v8::Isolate *isolate);
@@ -64,6 +64,9 @@ public:
     static void GetDrawingBufferWidth(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetDrawingBufferHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetFlipY(v8::Local<v8::String> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -199,7 +202,8 @@ public:
 
     static void GetParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void GetParameterInternal(const v8::FunctionCallbackInfo<v8::Value> &args, uint32_t pnameValue, rust::Box<WebGLResult> result);
+    static void GetParameterInternal(const v8::FunctionCallbackInfo<v8::Value> &args, uint32_t pnameValue,
+                                     rust::Box<WebGLResult> result);
 
     static void GetProgramInfoLog(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -345,14 +349,14 @@ public:
 
     static void Viewport(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void SetConstants(v8::Isolate* isolate, const v8::Local<v8::ObjectTemplate>& tmpl);
+    static void SetConstants(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl);
 
-    static void SetProps(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& tmpl);
+    static void SetProps(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl);
 
-    static void SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& tmpl);
+    static void SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl);
 
 private:
-    static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object>& object);
+    static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 

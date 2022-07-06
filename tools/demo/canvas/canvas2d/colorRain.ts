@@ -35,10 +35,10 @@ export function colorRain(canvas) {
 		for (var i = 0; i < total; ++i) {
 			var currentY = dots[i] - 1;
 			dots[i] += dotsVel[i] += accelleration;
-
+			//const randomColor = Math.floor(Math.random()*16777215).toString(16);
 			ctx.fillStyle = `hsl(${colors[i]}, 80%, 50%)`;
 			ctx.fillRect(occupation * i, currentY, size, dotsVel[i] + 1);
-
+			
 			if (dots[i] > h && Math.random() < 0.01) {
 				dots[i] = dotsVel[i] = 0;
 			}

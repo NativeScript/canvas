@@ -1,6 +1,6 @@
 import { Element } from './Element';
 import { knownFolders, path, File } from '@nativescript/core';
-import { ImageAsset } from '@nativescript/canvas';
+// import { ImageAsset } from '@nativescript/canvas';
 declare const qos_class_t;
 const background_queue = global.isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
 const main_queue = global.isIOS ? dispatch_get_current_queue() : undefined;
@@ -41,7 +41,7 @@ export class HTMLImageElement extends Element {
 	private _onload: any;
 	private _complete: any;
 	private _base64: string;
-	_asset: ImageAsset;
+	_asset;
 	_imageSource: any;
 	__id: any;
 
@@ -78,7 +78,7 @@ export class HTMLImageElement extends Element {
 
 	constructor(props?) {
 		super('img');
-		this._asset = new ImageAsset();
+		this._asset = new global.ImageAsset();
 		this.__id = getUUID();
 		this._onload = () => { };
 		if (props !== null && typeof props === 'object') {
@@ -159,10 +159,11 @@ export class HTMLImageElement extends Element {
 			}
 
 			if (typeof this.src === 'string') {
+				this.emitter.emit('loading', { target: this });
 				let async = this.decoding !== 'sync';
 				if (this.src.startsWith('http')) {
 					if (!async) {
-						const loaded = this._asset.loadFromUrl(this.src);
+						const loaded = this._asset.loadUrlSync(this.src);
 						if (loaded) {
 							this.width = this._asset.width;
 							this.height = this._asset.height;
@@ -171,7 +172,7 @@ export class HTMLImageElement extends Element {
 							this.emitter.emit('error', { target: this });
 						}
 					} else {
-						this._asset.loadFromUrlAsync(this.src).then(() => {
+						this._asset.loadUrlAsync(this.src).then(() => {
 							this.width = this._asset.width;
 							this.height = this._asset.height;
 							this.complete = true;
@@ -183,7 +184,7 @@ export class HTMLImageElement extends Element {
 					if (!this.width || !this.height) {
 						this.complete = false;
 						if (!async) {
-							const loaded = this._asset.loadFile(this.src);
+							const loaded = this._asset.loadFileSync(this.src);
 							if (loaded) {
 								this.width = this._asset.width;
 								this.height = this._asset.height;

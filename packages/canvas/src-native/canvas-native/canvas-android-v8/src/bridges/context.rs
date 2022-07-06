@@ -170,7 +170,6 @@ impl CanvasRenderingContext2D {
 pub struct PaintStyle(Option<canvas_core::context::fill_and_stroke_styles::paint::PaintStyle>);
 
 impl PaintStyle {
-
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.0.is_none()
@@ -666,7 +665,7 @@ pub(crate) mod ffi {
             font_color: i32,
             ppi: f32,
             direction: u32,
-            alpha: bool
+            alpha: bool,
         ) -> Box<CanvasRenderingContext2D>;
 
         fn canvas_native_context_create(
@@ -753,9 +752,25 @@ pub(crate) mod ffi {
 
         fn canvas_native_context_get_shadow_color(context: &CanvasRenderingContext2D) -> String;
 
+        fn canvas_native_context_get_shadow_color_rgba(
+            context: &CanvasRenderingContext2D,
+            r: &mut u8,
+            g: &mut u8,
+            b: &mut u8,
+            a: &mut u8,
+        );
+
         fn canvas_native_context_set_shadow_color(
             context: &mut CanvasRenderingContext2D,
             color: &str,
+        );
+
+        fn canvas_native_context_set_shadow_color_rgba(
+            context: &mut CanvasRenderingContext2D,
+            r: u8,
+            g: u8,
+            b: u8,
+            a: u8,
         );
 
         fn canvas_native_context_get_shadow_blur(context: &CanvasRenderingContext2D) -> f32;
@@ -797,8 +812,32 @@ pub(crate) mod ffi {
         );
 
         unsafe fn canvas_native_paint_style_set_fill_color_with_c_str(
-        context: &mut CanvasRenderingContext2D,
-        color: *const c_char
+            context: &mut CanvasRenderingContext2D,
+            color: *const c_char,
+        );
+
+        fn canvas_native_parse_css_color_rgba(
+            value: &str,
+            r: &mut u8,
+            g: &mut u8,
+            b: &mut u8,
+            a: &mut u8,
+        ) -> bool;
+
+        fn canvas_native_paint_style_set_stroke_color_with_rgba(
+            context: &mut CanvasRenderingContext2D,
+            r: u8,
+            g: u8,
+            b: u8,
+            a: u8,
+        );
+
+        fn canvas_native_paint_style_set_fill_color_with_rgba(
+            context: &mut CanvasRenderingContext2D,
+            r: u8,
+            g: u8,
+            b: u8,
+            a: u8,
         );
 
         fn canvas_native_paint_style_set_stroke_color_with_string(
@@ -813,7 +852,39 @@ pub(crate) mod ffi {
 
         fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String;
 
+        fn canvas_native_paint_style_get_current_stroke_color_string(
+            context: &mut CanvasRenderingContext2D,
+        ) -> String;
+
+        fn canvas_native_paint_style_get_current_stroke_color_r_g_b_a(
+            context: &mut CanvasRenderingContext2D,
+            r: &mut u8,
+            g: &mut u8,
+            b: &mut u8,
+            a: &mut u8,
+        );
+
+        fn canvas_native_paint_style_get_current_fill_color_string(
+            context: &mut CanvasRenderingContext2D,
+        ) -> String;
+
+        fn canvas_native_paint_style_get_current_fill_color_r_g_b_a(
+            context: &mut CanvasRenderingContext2D,
+            r: &mut u8,
+            g: &mut u8,
+            b: &mut u8,
+            a: &mut u8,
+        );
+
         fn canvas_native_context_get_style_type(style: &PaintStyle) -> PaintStyleType;
+
+        fn canvas_native_context_get_current_fill_style_type(
+            context: &mut CanvasRenderingContext2D,
+        ) -> PaintStyleType;
+
+        fn canvas_native_context_get_current_stroke_style_type(
+            context: &mut CanvasRenderingContext2D,
+        ) -> PaintStyleType;
 
         fn canvas_native_context_get_fill_style(
             context: &mut CanvasRenderingContext2D,
@@ -1992,8 +2063,6 @@ pub(crate) mod ffi {
             state: &mut WebGLState,
         );
 
-
-
         fn canvas_native_webgl_tex_parameterf(
             target: u32,
             pname: u32,
@@ -2856,7 +2925,7 @@ fn canvas_native_context_create_with_current(
     font_color: i32,
     ppi: f32,
     direction: u32,
-    alpha: bool
+    alpha: bool,
 ) -> Box<CanvasRenderingContext2D> {
     unsafe {
         gl_bindings::glViewport(0, 0, width as i32, height as i32);
@@ -3119,11 +3188,32 @@ pub fn canvas_native_context_get_shadow_color(context: &CanvasRenderingContext2D
     to_parsed_color(value)
 }
 
+pub fn canvas_native_context_get_shadow_color_rgba(
+    context: &CanvasRenderingContext2D,
+    r: &mut u8,
+    g: &mut u8,
+    b: &mut u8,
+    a: &mut u8,
+) {
+    context.context.get_context().shadow_color_rgba(r, g, b, a);
+}
+
 pub fn canvas_native_context_set_shadow_color(context: &mut CanvasRenderingContext2D, color: &str) {
     let mut lock = context.context.get_context_mut();
     if let Some(color) = parse_color(color) {
         lock.set_shadow_color(color);
     }
+}
+
+fn canvas_native_context_set_shadow_color_rgba(
+    context: &mut CanvasRenderingContext2D,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+) {
+    let mut lock = context.context.get_context_mut();
+    lock.set_shadow_color_rgba(r, g, b, a);
 }
 
 pub fn canvas_native_context_get_shadow_blur(context: &CanvasRenderingContext2D) -> f32 {
@@ -3222,24 +3312,26 @@ pub fn canvas_native_paint_style_set_fill_color_with_c_str(
     context: &mut CanvasRenderingContext2D,
     color: *const c_char,
 ) {
-    if color.is_null() {return;}
+    if color.is_null() {
+        return;
+    }
     let color = unsafe { CStr::from_ptr(color) };
     let color = color.to_string_lossy();
     paint_style_set_color_with_string(&mut context.context, true, color.as_ref());
 }
-
 
 #[inline]
 pub fn canvas_native_paint_style_set_stroke_color_with_c_str(
     context: &mut CanvasRenderingContext2D,
     color: *const c_char,
 ) {
-    if color.is_null() {return;}
+    if color.is_null() {
+        return;
+    }
     let color = unsafe { CStr::from_ptr(color) };
     let color = color.to_string_lossy();
     paint_style_set_color_with_string(&mut context.context, false, color.as_ref());
 }
-
 
 #[inline]
 pub fn canvas_native_paint_style_set_stroke_color_with_string(
@@ -3247,6 +3339,53 @@ pub fn canvas_native_paint_style_set_stroke_color_with_string(
     color: &str,
 ) {
     paint_style_set_color_with_string(&mut context.context, false, color);
+}
+
+#[inline]
+pub fn canvas_native_paint_style_set_stroke_color_with_rgba(
+    context: &mut CanvasRenderingContext2D,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+) {
+    canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_rgba(
+        &mut context.context,
+        false,
+        r,
+        g,
+        b,
+        a,
+    );
+}
+
+#[inline]
+pub fn canvas_native_paint_style_set_fill_color_with_rgba(
+    context: &mut CanvasRenderingContext2D,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+) {
+    canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_rgba(
+        &mut context.context,
+        true,
+        r,
+        g,
+        b,
+        a,
+    );
+}
+
+#[inline(always)]
+pub fn canvas_native_parse_css_color_rgba(
+    value: &str,
+    r: &mut u8,
+    g: &mut u8,
+    b: &mut u8,
+    a: &mut u8,
+) -> bool {
+    canvas_core::utils::color::parse_color_rgba(value, r, g, b, a)
 }
 
 #[inline]
@@ -3262,8 +3401,116 @@ pub fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> Str
     return String::new();
 }
 
+fn canvas_native_paint_style_get_current_stroke_color_string(
+    context: &mut CanvasRenderingContext2D,
+) -> String {
+    let lock = context.get_context();
+    match lock.stroke_style() {
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+            to_parsed_color(*stroke)
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+            String::with_capacity(0)
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+            String::with_capacity(0)
+        }
+    }
+}
+
+fn canvas_native_paint_style_get_current_stroke_color_r_g_b_a(
+    context: &mut CanvasRenderingContext2D,
+    r: &mut u8,
+    g: &mut u8,
+    b: &mut u8,
+    a: &mut u8,
+) {
+    let lock = context.get_context();
+    match lock.stroke_style() {
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+            *r = stroke.r();
+            *g = stroke.g();
+            *b = stroke.b();
+            *a = stroke.a();
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
+    }
+}
+
+fn canvas_native_paint_style_get_current_fill_color_r_g_b_a(
+    context: &mut CanvasRenderingContext2D,
+    r: &mut u8,
+    g: &mut u8,
+    b: &mut u8,
+    a: &mut u8,
+) {
+    let lock = context.get_context();
+    match lock.fill_style() {
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+            *r = stroke.r();
+            *g = stroke.g();
+            *b = stroke.b();
+            *a = stroke.a();
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
+    }
+}
+
+fn canvas_native_paint_style_get_current_fill_color_string(
+    context: &mut CanvasRenderingContext2D,
+) -> String {
+    let lock = context.get_context();
+    match lock.fill_style() {
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+            to_parsed_color(*stroke)
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+            String::with_capacity(0)
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+            String::with_capacity(0)
+        }
+    }
+}
+
 pub fn canvas_native_context_get_style_type(style: &PaintStyle) -> ffi::PaintStyleType {
     style.style_type()
+}
+
+pub fn canvas_native_context_get_current_fill_style_type(
+    context: &mut CanvasRenderingContext2D,
+) -> ffi::PaintStyleType {
+    let lock = context.get_context();
+    return match lock.fill_style() {
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+            ffi::PaintStyleType::Color
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+            ffi::PaintStyleType::Gradient
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+            ffi::PaintStyleType::Pattern
+        }
+    };
+}
+
+pub fn canvas_native_context_get_current_stroke_style_type(
+    context: &mut CanvasRenderingContext2D,
+) -> ffi::PaintStyleType {
+    let lock = context.get_context();
+    return match lock.fill_style() {
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+            ffi::PaintStyleType::Color
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+            ffi::PaintStyleType::Gradient
+        }
+        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+            ffi::PaintStyleType::Pattern
+        }
+    };
 }
 
 #[inline]
@@ -4465,10 +4712,7 @@ pub fn canvas_native_image_asset_load_from_path_async(
     //     }
     // });
 
-
-    execute_in_thread(callback, move || {
-        asset.load_from_path(path.as_ref())
-    });
+    execute_in_thread(callback, move || asset.load_from_path(path.as_ref()));
 }
 
 pub fn canvas_native_image_asset_load_from_raw(asset: &mut ImageAsset, array: &[u8]) -> bool {
@@ -4489,9 +4733,7 @@ pub fn canvas_native_image_asset_load_from_raw_async(
     //     }
     // });
 
-    execute_in_thread(callback, move || {
-        asset.load_from_bytes(array.as_slice())
-    });
+    execute_in_thread(callback, move || asset.load_from_bytes(array.as_slice()));
 }
 
 pub fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str) -> bool {
@@ -4532,29 +4774,20 @@ fn canvas_native_image_asset_load_from_url_internal(asset: &mut ImageAsset, url:
     false
 }
 
-extern "C" fn looper_callback(
-    fd: c_int,
-    events: c_int,
-    data: *mut c_void,
-) -> c_int {
+extern "C" fn looper_callback(fd: c_int, events: c_int, data: *mut c_void) -> c_int {
     let mut string = String::new();
     let mut buf: [c_char; 256] = [0; 256];
     unsafe {
         let mut ret = 0;
         while ret == 0 {
             ret = libc::read(fd, buf.as_mut_ptr() as *mut libc::c_void, 256);
-            let val = unsafe{ CStr::from_ptr(buf.as_ptr())};
+            let val = unsafe { CStr::from_ptr(buf.as_ptr()) };
             string.push_str(val.to_string_lossy().as_ref());
         }
     }
     let mut callback = 0 as isize;
     let mut done = false;
-    for (i, val) in string
-        .trim()
-        .split(",")
-        .into_iter()
-        .enumerate()
-    {
+    for (i, val) in string.trim().split(",").into_iter().enumerate() {
         if i == 0 {
             callback = val.parse::<isize>().unwrap_or_default()
         }
@@ -4581,7 +4814,6 @@ pub fn canvas_native_image_asset_load_from_url_async(
     execute_in_thread(callback, move || {
         canvas_native_image_asset_load_from_url_internal(&mut asset, url.as_str())
     });
-
 
     // std::thread::spawn(move || {
     //     let done = canvas_native_image_asset_load_from_url_internal(&mut asset, url.as_str());
@@ -4630,11 +4862,14 @@ pub fn canvas_native_image_asset_save_path(
 }
 
 fn execute_in_thread<F>(callback: isize, func: F)
-    where F: FnOnce() -> bool + Send + 'static {
-
+where
+    F: FnOnce() -> bool + Send + 'static,
+{
     let looper = unsafe { crate::looper::ALooper_forThread() };
 
-    unsafe { crate::looper::ALooper_acquire(looper); }
+    unsafe {
+        crate::looper::ALooper_acquire(looper);
+    }
 
     let mut fd = [0_i32; 2];
 
@@ -4653,7 +4888,9 @@ fn execute_in_thread<F>(callback: isize, func: F)
     }
 
     std::thread::spawn(move || {
-        unsafe {crate::looper::ALooper_prepare(0);}
+        unsafe {
+            crate::looper::ALooper_prepare(0);
+        }
         let done = func();
         let data = format!("{},{}", callback, done);
         let bytes = data.as_bytes();
@@ -4678,7 +4915,6 @@ pub fn canvas_native_image_asset_save_path_async(
             canvas_core::context::image_asset::OutputFormat::from(format),
         )
     });
-
 
     // std::thread::spawn(move || {
     //     let done = asset.save_path(
@@ -5267,7 +5503,12 @@ fn canvas_native_webgl_result_get_string(result: &WebGLResult) -> String {
     match result.0 {
         crate::gl::prelude::WebGLResult::String(ref result) => {
             let val = result.to_string_lossy();
-            ret = val.to_string();
+
+            if val.contains("OpenGL ES 3.0") {
+                return "WebGL 2.0 (OpenGL ES 3.0 NativeScript)".to_string();
+            }
+
+            ret = "WebGL 1.0 (OpenGL ES 2.0 NativeScript)".to_string();
         }
         _ => {
             ret = String::default();
@@ -6578,9 +6819,6 @@ fn canvas_native_webgl_tex_image2d_image_asset(
         state.get_inner_mut(),
     )
 }
-
-
-
 
 pub fn canvas_native_webgl_tex_parameterf(target: u32, pname: u32, param: f32, state: &WebGLState) {
     crate::gl::webgl::canvas_native_webgl_tex_parameterf(target, pname, param, state.get_inner())

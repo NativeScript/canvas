@@ -8,6 +8,7 @@ export class URL {
 	#native: java.net.URI;
 	#isBlobURL = false;
 	constructor(url: string, base?: string | URL) {
+		console.log('URL');
 		if (url?.startsWith?.('blob:')) {
 			this.#isBlobURL = true;
 		}
@@ -197,7 +198,7 @@ export class URL {
 
 	public static createObjectURL(object: any, options = null): string {
 		const buf = (Blob as any).InternalAccessor.getBuffer(object);
-		if (!!buf || object instanceof Blob || object instanceof File) {
+		if (buf || object instanceof Blob || object instanceof File) {
 			const id = this.getUUID();
 			const exists = Folder.exists(path.join(knownFolders.documents().path, BLOB_DIR));
 			if (!exists) {

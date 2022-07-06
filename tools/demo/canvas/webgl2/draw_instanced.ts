@@ -82,7 +82,6 @@ export function draw_instanced(canvas) {
 
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, 2);
 
-
   // -- Delete WebGL resources
   gl.deleteBuffer(vertexPosBuffer);
   gl.deleteBuffer(vertexColorBuffer);

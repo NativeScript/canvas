@@ -14,6 +14,8 @@ export class HTMLCanvasElement extends Element {
 		} else {
 			this._canvas = (Canvas as any).createCustomView(true);
 		}
+
+		this.__instanceType = 52;
 	}
 
 	set width(value) {
@@ -33,10 +35,15 @@ export class HTMLCanvasElement extends Element {
 	}
 
 	toDataURL(type, encoderOptions) {
+		console.log('toDataURL', type);
 		return this._canvas.toDataURL(type, encoderOptions);
 	}
 
 	getContext(contextType, contextOptions) {
-		return this._canvas.getContext(contextType, contextOptions);
+		const ctx = this._canvas.getContext(contextType, contextOptions);
+		ctx.canvas = this;
+		(this as any).__native__context = ctx;
+		return ctx;
 	}
+
 }

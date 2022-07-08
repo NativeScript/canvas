@@ -4,6 +4,7 @@
 
 #include "CanvasRenderingContext2DImpl.h"
 #include "canvas-android-v8/src/bridges/context.rs.h"
+#include "../webgl/WebGLRenderingContextBase.h"
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(rust::Box<CanvasRenderingContext2D> context) : context_(
         std::move(context)) {
@@ -86,7 +87,6 @@ void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbac
             return;
         } else {
             auto cache = Caches::Get(isolate);
-            CanvasRenderingContext2DImpl *renderingContext = nullptr;
 
             if (offscreenValue->IsBoolean() || offscreenValue->IsBooleanObject()) {
                 offscreen = offscreenValue->BooleanValue(isolate);
@@ -102,7 +102,8 @@ void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbac
                         direction->Uint32Value(context).ToChecked(),
                         alpha->BooleanValue(isolate)
                 );
-                renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
+                auto ret = NewInstance(isolate, std::move(ctx));
+                args.GetReturnValue().Set(ret);
             } else {
                 auto ctx = canvas_native_context_create_with_current(
                         static_cast<float>(width->NumberValue(context).ToChecked()),
@@ -113,26 +114,11 @@ void CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbac
                         direction->Uint32Value(context).ToChecked(),
                         alpha->BooleanValue(isolate)
                 );
-                renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
+                auto ret = NewInstance(isolate, std::move(ctx));
+                args.GetReturnValue().Set(ret);
+                return;
             }
 
-
-            auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
-            auto raf_callback = new OnRafCallback(ctx_ptr, 0);
-            auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
-            auto raf = canvas_native_raf_create(raf_callback_ptr);
-            renderingContext->raf_ = std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf));
-
-
-            auto _raf = renderingContext->raf_.get();
-            canvas_native_raf_start(_raf->GetRaf());
-
-            auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-
-            auto ext = v8::External::New(isolate, renderingContext);
-            ret->SetInternalField(0, ext);
-
-            args.GetReturnValue().Set(ret);
         }
         return;
     }
@@ -144,12 +130,36 @@ CanvasRenderingContext2DImpl::NewInstance(v8::Isolate *isolate, rust::Box<Canvas
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     CanvasRenderingContext2DImpl *renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
+
+
+    auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
+    auto raf_callback = new OnRafCallback(ctx_ptr, 0);
+    auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
+    auto raf = canvas_native_raf_create(raf_callback_ptr);
+    renderingContext->raf_ = std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf));
+
+
+    auto _raf = renderingContext->raf_.get();
+    canvas_native_raf_start(_raf->GetRaf());
+
+
     auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInstanceType(isolate, ret, ObjectType::CanvasRenderingContext2D);
-    auto ext = v8::External::New(isolate, renderingContext);
-    ret->SetInternalField(0, ext);
+    AddWeakListener(isolate, ret, renderingContext);
     return handle_scope.Escape(ret);
 }
+
+void CanvasRenderingContext2DImpl::Resize(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto ptr = GetPointer(args.This());
+    auto width = args[0];
+    auto height = args[1];
+    canvas_native_context_resize(*ptr->context_, static_cast<float>(width->NumberValue(context).FromMaybe(1)),
+                                 static_cast<float>(width->NumberValue(context).FromMaybe(1)));
+
+}
+
 
 void CanvasRenderingContext2DImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Helpers::ThrowIllegalConstructor(args.GetIsolate());
@@ -765,7 +775,8 @@ void CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<
     if (args.Length() == 2) {
         auto image = args[0]->ToObject(context).ToLocalChecked();
         // TODO handle other cases
-        if (Helpers::GetInstanceType(isolate, image) == ObjectType::ImageAsset) {
+        auto type = Helpers::GetInstanceType(isolate, image);
+        if (type == ObjectType::ImageAsset) {
             auto asset = ImageAssetImpl::GetPointer(image);
             auto rep = Helpers::ConvertFromV8String(isolate, args[1]);
             rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(*ptr->context_,
@@ -779,11 +790,72 @@ void CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<
                 args.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(pattern)));
             }
             return;
+        } else if (type == ObjectType::CanvasRenderingContext2D) {
+            auto source = CanvasRenderingContext2DImpl::GetPointer(image);
+            auto rep = Helpers::ConvertFromV8String(isolate, args[1]);
+            rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
+                    *source->context_,
+                    *ptr->context_,
+                    rust::Str(rep.c_str(),
+                              rep.size()));
+            auto type = canvas_native_context_get_style_type(*pattern);
+            if (type == PaintStyleType::None) {
+                args.GetReturnValue().SetUndefined();
+            } else {
+                args.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(pattern)));
+            }
+            return;
+        } else if (type == ObjectType::WebGLRenderingContext || type == ObjectType::WebGL2RenderingContext) {
+            auto source = WebGLRenderingContextBase::GetPointerBase(image);
+            auto rep = Helpers::ConvertFromV8String(isolate, args[1]);
+            rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_webgl(
+                    source->GetState(),
+                    *ptr->context_,
+                    rust::Str(rep.c_str(),
+                              rep.size()));
+            auto type = canvas_native_context_get_style_type(*pattern);
+            if (type == PaintStyleType::None) {
+                args.GetReturnValue().SetUndefined();
+            } else {
+                args.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(pattern)));
+            }
+            return;
         }
 
-        args.GetReturnValue().Set(v8::Undefined(isolate));
+        args.GetReturnValue().SetUndefined();
     } else {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
+        args.GetReturnValue().SetUndefined();
+    }
+}
+
+void CanvasRenderingContext2DImpl::CreatePatternAndroid(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto ptr = GetPointer(args.This());
+    if (args.Length() == 2 && Helpers::IsString(args[0])) {
+        auto bytes = Helpers::GetString(isolate, args[0]);
+        char *endptr;
+        auto bytes_addr = std::strtoll(bytes.c_str(), &endptr, 10);
+        if (bytes_addr == 0) {
+            args.GetReturnValue().SetUndefined();
+            return;
+        }
+
+        auto rep = Helpers::ConvertFromV8String(isolate, args[1]);
+        rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_bytes(*ptr->context_,
+                                                                                   bytes_addr,
+                                                                                   rust::Str(rep.c_str(),
+                                                                                             rep.size()));
+        auto type = canvas_native_context_get_style_type(*pattern);
+        if (type == PaintStyleType::None) {
+            args.GetReturnValue().SetUndefined();
+        } else {
+            args.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(pattern)));
+        }
+
+        args.GetReturnValue().SetUndefined();
+    } else {
+        args.GetReturnValue().SetUndefined();
     }
 }
 
@@ -818,7 +890,12 @@ void CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::
         auto image = args[0].As<v8::Object>();
         auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-        if (Helpers::GetInstanceType(isolate, image) == ObjectType::ImageAsset) {
+        auto type = Helpers::GetInstanceType(isolate, image);
+        if (type == ObjectType::ImageAsset) {
+            auto asset = ImageAssetImpl::GetPointer(image);
+            canvas_native_context_draw_image_dx_dy_asset(*ptr->context_, asset->GetImageAsset(), dx, dy);
+            ptr->UpdateInvalidateState();
+        } else if (type == ObjectType::ImageBitmap) {
             auto asset = ImageAssetImpl::GetPointer(image);
             canvas_native_context_draw_image_dx_dy_asset(*ptr->context_, asset->GetImageAsset(), dx, dy);
             ptr->UpdateInvalidateState();
@@ -829,7 +906,14 @@ void CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::
         auto dy = args[2]->NumberValue(context).ToChecked();
         auto dWidth = args[3]->NumberValue(context).ToChecked();
         auto dHeight = args[4]->NumberValue(context).ToChecked();
-        if (Helpers::GetInstanceType(isolate, image) == ObjectType::ImageAsset) {
+
+        auto type = Helpers::GetInstanceType(isolate, image);
+        if (type == ObjectType::ImageAsset) {
+            auto asset = ImageAssetImpl::GetPointer(image);
+            canvas_native_context_draw_image_dx_dy_dw_dh_asset(*ptr->context_, asset->GetImageAsset(), dx, dy, dWidth,
+                                                               dHeight);
+            ptr->UpdateInvalidateState();
+        }else if (type == ObjectType::ImageBitmap) {
             auto asset = ImageAssetImpl::GetPointer(image);
             canvas_native_context_draw_image_dx_dy_dw_dh_asset(*ptr->context_, asset->GetImageAsset(), dx, dy, dWidth,
                                                                dHeight);
@@ -845,7 +929,15 @@ void CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::
         auto dy = args[6]->NumberValue(context).ToChecked();
         auto dWidth = args[7]->NumberValue(context).ToChecked();
         auto dHeight = args[8]->NumberValue(context).ToChecked();
-        if (Helpers::GetInstanceType(isolate, image) == ObjectType::ImageAsset) {
+
+        auto type = Helpers::GetInstanceType(isolate, image);
+
+        if (type == ObjectType::ImageAsset) {
+            auto asset = ImageAssetImpl::GetPointer(image);
+            canvas_native_context_draw_image_asset(*ptr->context_, asset->GetImageAsset(), sx, sy, sWidth, sHeight, dx,
+                                                   dy, dWidth, dHeight);
+            ptr->UpdateInvalidateState();
+        } else if (type == ObjectType::ImageBitmap) {
             auto asset = ImageAssetImpl::GetPointer(image);
             canvas_native_context_draw_image_asset(*ptr->context_, asset->GetImageAsset(), sx, sy, sWidth, sHeight, dx,
                                                    dy, dWidth, dHeight);
@@ -1199,7 +1291,6 @@ void CanvasRenderingContext2DImpl::SetLineDash(const v8::FunctionCallbackInfo<v8
     }
 }
 
-
 void CanvasRenderingContext2DImpl::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
@@ -1221,7 +1312,6 @@ void CanvasRenderingContext2DImpl::SetTransform(const v8::FunctionCallbackInfo<v
     }
 }
 
-
 void CanvasRenderingContext2DImpl::Stroke(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
@@ -1238,7 +1328,6 @@ void CanvasRenderingContext2DImpl::Stroke(const v8::FunctionCallbackInfo<v8::Val
         ptr->UpdateInvalidateState();
     }
 }
-
 
 void CanvasRenderingContext2DImpl::StrokeRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
@@ -1323,7 +1412,6 @@ void CanvasRenderingContext2DImpl::ToDataURL(const v8::FunctionCallbackInfo<v8::
     args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, std::string(data.c_str(), data.size())));
 }
 
-
 v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
     auto tmpl = cache->CanvasRenderingContext2DTmpl.get();
@@ -1337,6 +1425,12 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     canvasRenderingContextFunc->InstanceTemplate()->SetInternalFieldCount(1);
 
     auto canvasRenderingContextTpl = canvasRenderingContextFunc->PrototypeTemplate();
+
+
+    canvasRenderingContextTpl->Set(
+            Helpers::ConvertToV8String(isolate, "__resize"),
+            v8::FunctionTemplate::New(isolate, &Resize)
+    );
 
     canvasRenderingContextTpl->SetAccessor(
             Helpers::ConvertToV8String(isolate, "globalAlpha"),
@@ -1506,6 +1600,10 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
             v8::FunctionTemplate::New(isolate, &CreatePattern)
     );
 
+    canvasRenderingContextTpl->Set(
+            Helpers::ConvertToV8String(isolate, "__createPatternWithBitmap"),
+            v8::FunctionTemplate::New(isolate, &CreatePatternAndroid)
+    );
 
     canvasRenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "createRadialGradient"),
@@ -1673,4 +1771,8 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     cache->CanvasRenderingContext2DTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate,
                                                                                                  canvasRenderingContextFunc);
     return canvasRenderingContextFunc;
+}
+
+CanvasRenderingContext2D &CanvasRenderingContext2DImpl::GetContext() {
+    return *this->context_;
 }

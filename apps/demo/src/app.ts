@@ -1,27 +1,9 @@
 //require('@nativescript/canvas-polyfill');
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
-import { Application, path as filePath, knownFolders, Utils, path as nsPath } from '@nativescript/core';
+import { Canvas } from '@nativescript/canvas';
+import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource } from '@nativescript/core';
+import { Color } from 'phaser';
 declare var __non_webpack_require__;
-
-(function () {
-	// Providing Array Helpers since v8 crashing for now
-
-	global.__Array_Get = (array, i) => {
-		if (!Array.isArray(array)) {
-			return undefined;
-		}
-		console.log('__Array_Get', array, i);
-		console.log(array[i]);
-		return array[i];
-	};
-
-	global.__Array_Set = (array, i, value) => {
-		if (!Array.isArray(array)) {
-			return;
-		}
-		array[i] = value;
-	};
-})();
 
 let direction = 0;
 
@@ -31,6 +13,7 @@ if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Lo
 
 const ppi = (Utils.ad.getApplicationContext() as android.content.Context).getResources().getDisplayMetrics().density * 160;
 // try {
+
 __non_webpack_require__('~/libcanvasnativev8.so');
 
 const handlePath = function (path) {
@@ -40,7 +23,9 @@ const handlePath = function (path) {
 	return path;
 };
 
-(global as any).__debug_browser_polyfill_image = true;
+java.lang.System.load(handlePath('~/libcanvasnativev8.so'));
+
+(global as any).__debug_browser_polyfill_image = false;
 
 class ImageAssetImpl extends (global as any).ImageAsset {
 	save(path, format, done) {
@@ -99,7 +84,7 @@ class WebGLRenderingContextImpl extends (global as any).WebGLRenderingContext {
 			if (image && image.android instanceof android.graphics.Bitmap) {
 				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
 				return;
-			} else if(image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')){
+			} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 				args[5] = image._asset;
 			}
 		}
@@ -109,12 +94,13 @@ class WebGLRenderingContextImpl extends (global as any).WebGLRenderingContext {
 
 class WebGL2RenderingContextImpl extends (global as any).WebGL2RenderingContext {
 	texImage2D(...args) {
+		console.log('WebGL2RenderingContextImpl');
 		if (arguments.length === 6) {
 			const image = arguments[5];
 			if (image && image.android instanceof android.graphics.Bitmap) {
 				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
 				return;
-			} else if(image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')){
+			} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 				args[5] = image._asset;
 			}
 		}
@@ -122,7 +108,7 @@ class WebGL2RenderingContextImpl extends (global as any).WebGL2RenderingContext 
 	}
 }
 
-class CanvasRenderingContext2D extends (global as any).CanvasRenderingContext2D {
+class CanvasRenderingContext2DImpl extends (global as any).CanvasRenderingContext2D {
 	drawImage(...args) {
 		if (arguments.length === 3) {
 			const image = arguments[0];
@@ -131,7 +117,7 @@ class CanvasRenderingContext2D extends (global as any).CanvasRenderingContext2D 
 				return;
 			}
 		}
-	
+
 		if (arguments.length === 5) {
 			const image = arguments[0];
 			if (image && image.android instanceof android.graphics.Bitmap) {
@@ -139,7 +125,7 @@ class CanvasRenderingContext2D extends (global as any).CanvasRenderingContext2D 
 				return;
 			}
 		}
-	
+
 		if (arguments.length === 9) {
 			const image = arguments[0];
 			if (image && image.android instanceof android.graphics.Bitmap) {
@@ -147,14 +133,13 @@ class CanvasRenderingContext2D extends (global as any).CanvasRenderingContext2D 
 				return;
 			}
 		}
-		super.CanvasRenderingContext2D.prototype.drawImage(...arguments);
+		super.drawImage(...arguments);
 	}
 }
 
-
 global.WebGLRenderingContext = WebGLRenderingContextImpl as any;
 global.WebGL2RenderingContext = WebGL2RenderingContextImpl as any;
-global.CanvasRenderingContext2D = CanvasRenderingContext2D as any;
+global.CanvasRenderingContext2D = CanvasRenderingContext2DImpl as any;
 global.ImageAsset = ImageAssetImpl;
 
 // } catch (e) {
@@ -166,5 +151,15 @@ global.ImageAsset = ImageAssetImpl;
 // console.log('CanvasRenderingContext2D', CanvasRenderingContext2D);
 
 // const ctx: CanvasRenderingContext2D = global.__getCanvasRenderingContext2DImpl(300, 300, 1, -16777216, ppi, direction, true);
+declare const jp;
+
+Application.on('launch', (args) => {
+	if (global.isAndroid) {
+		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext())
+		.seat(jp.wasabeef.takt.Seat.TOP_CENTER)
+		.color(-65536)
+	}
+});
+
 
 Application.run({ moduleName: 'app-root' });

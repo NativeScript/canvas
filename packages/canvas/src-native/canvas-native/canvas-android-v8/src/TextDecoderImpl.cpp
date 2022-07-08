@@ -60,8 +60,7 @@ void TextDecoderImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         Helpers::SetInstanceType(isolate, ret, ObjectType::TextDecoder);
         auto decoder = canvas_native_text_decoder_create(rust::Str(decoding.c_str(), decoding.size()));
         TextDecoderImpl *impl = new TextDecoderImpl(std::move(decoder));
-        auto ext = v8::External::New(isolate, impl);
-        ret->SetInternalField(0, ext);
+        AddWeakListener(isolate, ret, impl);
         args.GetReturnValue().Set(ret);
     }
 }

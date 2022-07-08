@@ -10,20 +10,25 @@
 #include "../RafImpl.h"
 
 
+enum class WebGLRenderingVersion : uint8_t {
+    V1,
+    V2
+};
+
 class WebGLRenderingContextBase {
 public:
-    WebGLRenderingContextBase(rust::Box<WebGLState> state);
+    WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version);
 
     ~WebGLRenderingContextBase();
 
     static WebGLRenderingContextBase *GetPointerBase(const v8::Local<v8::Object> &object) {
         auto ptrValue = object->GetInternalField(0);
 
-        if(ptrValue.IsEmpty()){
+        if (ptrValue.IsEmpty()) {
             return nullptr;
         }
 
-        void* ptr = ptrValue.As<v8::External>()->Value();
+        void *ptr = ptrValue.As<v8::External>()->Value();
 
         if (ptr == nullptr) {
             return nullptr;
@@ -48,9 +53,13 @@ public:
 
     RafImpl *GetRaf();
 
+    WebGLRenderingVersion GetVersion() const;
+
 
 private:
     rust::Box<WebGLState> state_;
+
+    WebGLRenderingVersion version_;
 
     InvalidateState invalidateState_ = InvalidateState::NONE;
 

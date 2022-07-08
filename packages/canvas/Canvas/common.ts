@@ -203,6 +203,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (typeof value === 'string') {
 			value = PercentLength.parse(value);
 		}
+		console.log(value);
 		if (typeof value === 'number') {
 			// treat as px
 			return value || 0;
@@ -213,9 +214,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				return Utils.layout.toDevicePixels(value.value) || 0;
 			} else if (value.unit === '%') {
 				if (Application.orientation() === 'portrait') {
-					return type === 'width' ? Screen.mainScreen.widthPixels : Screen.mainScreen.heightPixels * value.value || 0;
+					return type === 'width' ? Screen.mainScreen.widthPixels * value.value || 0 : Screen.mainScreen.heightPixels * value.value || 0;
 				} else if (Application.orientation() === 'landscape') {
-					return type === 'width' ? Screen.mainScreen.widthPixels : Screen.mainScreen.heightPixels * value.value || 0;
+					return type === 'width' ? Screen.mainScreen.widthPixels * value.value || 0 : Screen.mainScreen.heightPixels * value.value || 0;
 				} else {
 					return 0;
 				}

@@ -70,7 +70,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		//this.draw();
+		this.draw();
 	}
 
 	svgViewLoaded(args) {
@@ -606,7 +606,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
-		fog(this.canvas);
+		//fog(this.canvas);
 		// }, 1000);
 		//cubeRotation(this.canvas);
 		//},3000)
@@ -616,7 +616,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.pointStyle(this.canvas);
 		//this.matterJSExample(this.canvas);
 		//this.matterJSCar(this.canvas);
-		//this.multiCanvas(this.canvas);
+		this.multiCanvas(this.canvas);
 		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
@@ -1253,7 +1253,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	multiCanvas(canvas) {
 		if (canvas.id === 'canvas1') {
-			swarm(canvas);
+			//swarm(canvas);
+			this.zen3dCube(canvas);
 		}
 		if (canvas.id === 'canvas2') {
 			this.clock(canvas);
@@ -1263,7 +1264,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			this.solar(canvas);
 		}
 		if (canvas.id === 'canvas4') {
-			main(this.canvas);
+			main(canvas);
 		}
 	}
 
@@ -1463,10 +1464,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		patternContext.fillRect(0, 0, patternCanvas.width * scale, patternCanvas.height * scale);
 		patternContext.arc(0, 0, 50 * scale, 0, 0.5 * Math.PI);
 		patternContext.stroke();
-
+		
 		// Create our primary canvas and fill it with the pattern
 		const ctx = canvas.getContext('2d');
-		ctx.fillStyle = ctx.createPattern(patternCanvas, 'repeat');
+		ctx.fillStyle = ctx.createPattern(patternContext, 'repeat');
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	}
 
@@ -1711,7 +1712,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		//console.log(sun.width, moon.width, earth.width);
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		ctx.scale(3, 3);
+		//ctx.scale(3, 3);
 		function init() {
 			window.requestAnimationFrame(draw);
 		}

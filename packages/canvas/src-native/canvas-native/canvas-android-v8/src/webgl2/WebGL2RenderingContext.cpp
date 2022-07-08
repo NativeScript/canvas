@@ -6,7 +6,7 @@
 #include "canvas-android-v8/src/bridges/context.rs.h"
 
 WebGL2RenderingContext::WebGL2RenderingContext(rust::Box<WebGLState> state) : WebGLRenderingContextBase(
-        std::move(state)) {}
+        std::move(state), WebGLRenderingVersion::V2) {}
 
 WebGL2RenderingContext::~WebGL2RenderingContext() {}
 
@@ -207,8 +207,7 @@ void WebGL2RenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<
 
             auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
             Helpers::SetInstanceType(isolate, ret, ObjectType::WebGL2RenderingContext);
-            auto ext = v8::External::New(isolate, renderingContext);
-            ret->SetInternalField(0, ext);
+            AddWeakListener(isolate, ret, renderingContext);
             args.GetReturnValue().Set(ret);
         }
         return;
@@ -2164,22 +2163,35 @@ void WebGL2RenderingContext::Uniform1uiv(const v8::FunctionCallbackInfo<v8::Valu
     auto ptr = GetPointerBase(args.This());
     auto location = args[0];
     auto data = args[1];
-    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsUint32Array()) {
+    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
 
-        auto len = data.As<v8::Uint32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const uint32_t> slice(reinterpret_cast<uint32_t *>(data), len);
+        if (data->IsUint32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform1uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        } else {
+            std::vector <uint32_t> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                buf.push_back(item->Uint32Value(context).ToChecked());
+            }
 
-        canvas_native_webgl2_uniform1uiv(
-                locationValue.ToLocalChecked()->Value(),
-                slice,
-                ptr->GetState()
-        );
+            rust::Slice<const uint32_t> slice(buf.data(), len);
+
+            canvas_native_webgl2_uniform1uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        }
+
+
     }
 }
 
@@ -2207,22 +2219,33 @@ void WebGL2RenderingContext::Uniform2uiv(const v8::FunctionCallbackInfo<v8::Valu
     auto ptr = GetPointerBase(args.This());
     auto location = args[0];
     auto data = args[1];
-    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsUint32Array()) {
+    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
 
-        auto len = data.As<v8::Uint32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const uint32_t> slice(reinterpret_cast<uint32_t *>(data), len);
+        if (data->IsUint32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform2uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        } else {
+            std::vector <uint32_t> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                buf.push_back(item->Uint32Value(context).ToChecked());
+            }
 
-        canvas_native_webgl2_uniform2uiv(
-                locationValue.ToLocalChecked()->Value(),
-                slice,
-                ptr->GetState()
-        );
+            rust::Slice<const uint32_t> slice(buf.data(), len);
+
+            canvas_native_webgl2_uniform2uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2253,22 +2276,33 @@ void WebGL2RenderingContext::Uniform3uiv(const v8::FunctionCallbackInfo<v8::Valu
     auto ptr = GetPointerBase(args.This());
     auto location = args[0];
     auto data = args[1];
-    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsUint32Array()) {
+    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
 
-        auto len = data.As<v8::Uint32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const uint32_t> slice(reinterpret_cast<uint32_t *>(data), len);
+        if (data->IsUint32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform3uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        } else {
+            std::vector <uint32_t> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                buf.push_back(item->Uint32Value(context).ToChecked());
+            }
 
-        canvas_native_webgl2_uniform3uiv(
-                locationValue.ToLocalChecked()->Value(),
-                slice,
-                ptr->GetState()
-        );
+            rust::Slice<const uint32_t> slice(buf.data(), len);
+
+            canvas_native_webgl2_uniform3uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2300,22 +2334,33 @@ void WebGL2RenderingContext::Uniform4uiv(const v8::FunctionCallbackInfo<v8::Valu
     auto ptr = GetPointerBase(args.This());
     auto location = args[0];
     auto data = args[1];
-    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsUint32Array()) {
+    if (args.Length() > 1 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
 
-        auto len = data.As<v8::Uint32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const uint32_t> slice(reinterpret_cast<uint32_t *>(data), len);
+        if (data->IsUint32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform4uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        } else {
+            std::vector <uint32_t> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                buf.push_back(item->Uint32Value(context).ToChecked());
+            }
 
-        canvas_native_webgl2_uniform4uiv(
-                locationValue.ToLocalChecked()->Value(),
-                slice,
-                ptr->GetState()
-        );
+            rust::Slice<const uint32_t> slice(buf.data(), len);
+
+            canvas_native_webgl2_uniform4uiv(
+                    locationValue.ToLocalChecked()->Value(),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2344,23 +2389,39 @@ void WebGL2RenderingContext::UniformMatrix2x3fv(const v8::FunctionCallbackInfo<v
     auto location = args[0];
     auto transpose = args[1];
     auto data = args[2];
-    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsFloat32Array()) {
+    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
 
-        auto len = data.As<v8::Float32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const float> slice(reinterpret_cast<float *>(data), len);
+        if (data->IsFloat32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform_matrix2x3fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (data->IsArray()) {
+            std::vector<float> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                if (!item.IsEmpty()) {
+                    buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item)));
+                } else {
+                    buf.push_back(std::nanf(""));
+                }
+            }
 
-        canvas_native_webgl2_uniform_matrix2x3fv(
-                locationValue.ToLocalChecked()->Value(),
-                transpose->BooleanValue(isolate),
-                slice,
-                ptr->GetState()
-        );
+            rust::Slice<const float> slice(buf.data(), len);
+
+            canvas_native_webgl2_uniform_matrix2x3fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2371,23 +2432,39 @@ void WebGL2RenderingContext::UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v
     auto location = args[0];
     auto transpose = args[1];
     auto data = args[2];
-    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsFloat32Array()) {
+    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
 
-        auto len = data.As<v8::Float32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const float> slice(reinterpret_cast<float *>(data), len);
+        if (data->IsFloat32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform_matrix2x4fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (data->IsArray()) {
+            std::vector<float> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                if (!item.IsEmpty()) {
+                    buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item)));
+                } else {
+                    buf.push_back(std::nanf(""));
+                }
+            }
 
-        canvas_native_webgl2_uniform_matrix2x4fv(
-                locationValue.ToLocalChecked()->Value(),
-                transpose->BooleanValue(isolate),
-                slice,
-                ptr->GetState()
-        );
+            rust::Slice<const float> slice(buf.data(), len);
+
+            canvas_native_webgl2_uniform_matrix2x4fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2398,23 +2475,39 @@ void WebGL2RenderingContext::UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v
     auto location = args[0];
     auto transpose = args[1];
     auto data = args[2];
-    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsFloat32Array()) {
+    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
 
-        auto len = data.As<v8::Float32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const float> slice(reinterpret_cast<float *>(data), len);
+        if (data->IsFloat32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform_matrix3x2fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (data->IsArray()) {
+            std::vector<float> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                if (!item.IsEmpty()) {
+                    buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item)));
+                } else {
+                    buf.push_back(std::nanf(""));
+                }
+            }
 
-        canvas_native_webgl2_uniform_matrix3x2fv(
-                locationValue.ToLocalChecked()->Value(),
-                transpose->BooleanValue(isolate),
-                slice,
-                ptr->GetState()
-        );
+            rust::Slice<const float> slice(buf.data(), len);
+
+            canvas_native_webgl2_uniform_matrix3x2fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2425,23 +2518,38 @@ void WebGL2RenderingContext::UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v
     auto location = args[0];
     auto transpose = args[1];
     auto data = args[2];
-    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsFloat32Array()) {
+    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
+        if (data->IsFloat32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform_matrix3x4fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (data->IsArray()) {
+            std::vector<float> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                if (!item.IsEmpty()) {
+                    buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item)));
+                } else {
+                    buf.push_back(std::nanf(""));
+                }
+            }
 
-        auto len = data.As<v8::Float32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const float> slice(reinterpret_cast<float *>(data), len);
+            rust::Slice<const float> slice(buf.data(), len);
 
-        canvas_native_webgl2_uniform_matrix3x4fv(
-                locationValue.ToLocalChecked()->Value(),
-                transpose->BooleanValue(isolate),
-                slice,
-                ptr->GetState()
-        );
+            canvas_native_webgl2_uniform_matrix3x4fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2452,23 +2560,38 @@ void WebGL2RenderingContext::UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v
     auto location = args[0];
     auto transpose = args[1];
     auto data = args[2];
-    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsFloat32Array()) {
+    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
+        if (data->IsFloat32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform_matrix4x2fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (data->IsArray()) {
+            std::vector<float> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                if (!item.IsEmpty()) {
+                    buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item)));
+                } else {
+                    buf.push_back(std::nanf(""));
+                }
+            }
 
-        auto len = data.As<v8::Float32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const float> slice(reinterpret_cast<float *>(data), len);
+            rust::Slice<const float> slice(buf.data(), len);
 
-        canvas_native_webgl2_uniform_matrix4x2fv(
-                locationValue.ToLocalChecked()->Value(),
-                transpose->BooleanValue(isolate),
-                slice,
-                ptr->GetState()
-        );
+            canvas_native_webgl2_uniform_matrix4x2fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2479,23 +2602,38 @@ void WebGL2RenderingContext::UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v
     auto location = args[0];
     auto transpose = args[1];
     auto data = args[2];
-    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation &&
-        data->IsFloat32Array()) {
+    if (args.Length() > 2 && Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
         auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(), "instance")->ToInt32(context);
+        if (data->IsFloat32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
+            canvas_native_webgl2_uniform_matrix4x3fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (data->IsArray()) {
+            std::vector<float> buf;
+            auto array = data.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                if (!item.IsEmpty()) {
+                    buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item)));
+                } else {
+                    buf.push_back(std::nanf(""));
+                }
+            }
 
-        auto len = data.As<v8::Float32Array>()->Length();
-        auto buf = data.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const float> slice(reinterpret_cast<float *>(data), len);
+            rust::Slice<const float> slice(buf.data(), len);
 
-        canvas_native_webgl2_uniform_matrix4x3fv(
-                locationValue.ToLocalChecked()->Value(),
-                transpose->BooleanValue(isolate),
-                slice,
-                ptr->GetState()
-        );
+            canvas_native_webgl2_uniform_matrix4x3fv(
+                    locationValue.ToLocalChecked()->Value(),
+                    transpose->BooleanValue(isolate),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2542,18 +2680,31 @@ void WebGL2RenderingContext::VertexAttribI4iv(const v8::FunctionCallbackInfo<v8:
     auto ptr = GetPointerBase(args.This());
     auto index = args[0];
     auto value = args[1];
-    if (args.Length() > 1 && value->IsInt32Array()) {
-        auto len = value.As<v8::Int32Array>()->Length();
-        auto buf = value.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const int32_t> slice(reinterpret_cast<int32_t *>(data), len);
-        canvas_native_webgl2_vertex_attrib_i4iv(
-                index->Uint32Value(context).ToChecked(),
-                slice,
-                ptr->GetState()
-        );
+    if (args.Length() > 1) {
+        if (value->IsInt32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const int32_t>(value.As<v8::TypedArray>());
+            canvas_native_webgl2_vertex_attrib_i4iv(
+                    index->Uint32Value(context).ToChecked(),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (value->IsArray()) {
+            std::vector <int32_t> buf;
+            auto array = value.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                buf.push_back(item->Uint32Value(context).ToChecked());
+            }
+
+            rust::Slice<const int32_t> slice(buf.data(), len);
+
+            canvas_native_webgl2_vertex_attrib_i4iv(
+                    index->Uint32Value(context).ToChecked(),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 
@@ -2585,18 +2736,31 @@ void WebGL2RenderingContext::VertexAttribI4uiv(const v8::FunctionCallbackInfo<v8
     auto ptr = GetPointerBase(args.This());
     auto index = args[0];
     auto value = args[1];
-    if (args.Length() > 1 && value->IsUint32Array()) {
-        auto len = value.As<v8::Uint32Array>()->Length();
-        auto buf = value.As<v8::ArrayBufferView>();
-        auto array = buf->Buffer();
-        auto store = array->GetBackingStore();
-        auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-        rust::Slice<const uint32_t> slice(reinterpret_cast<uint32_t *>(data), len);
-        canvas_native_webgl2_vertex_attrib_i4uiv(
-                index->Uint32Value(context).ToChecked(),
-                slice,
-                ptr->GetState()
-        );
+    if (args.Length() > 1) {
+        if (value->IsUint32Array()) {
+            auto slice = Helpers::GetTypedArrayData<const uint32_t>(value.As<v8::TypedArray>());
+            canvas_native_webgl2_vertex_attrib_i4uiv(
+                    index->Uint32Value(context).ToChecked(),
+                    slice,
+                    ptr->GetState()
+            );
+        } else if (value->IsArray()) {
+            std::vector <uint32_t> buf;
+            auto array = value.As<v8::Array>();
+            auto len = array->Length();
+            for (int i = 0; i < len; i++) {
+                auto item = Helpers::ObjectGet(context, array, i);
+                buf.push_back(item->Uint32Value(context).ToChecked());
+            }
+
+            rust::Slice<const uint32_t> slice(buf.data(), len);
+
+            canvas_native_webgl2_vertex_attrib_i4uiv(
+                    index->Uint32Value(context).ToChecked(),
+                    slice,
+                    ptr->GetState()
+            );
+        }
     }
 }
 

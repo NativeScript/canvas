@@ -35,11 +35,8 @@ v8::Local<v8::Object> TextMetricsImpl::NewInstance(v8::Isolate *isolate, rust::B
     auto context = isolate->GetCurrentContext();
     auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInstanceType(isolate, ret, ObjectType::TextMetrics);
-
     TextMetricsImpl *value = new TextMetricsImpl(std::move(metrics));
-    auto ext = v8::External::New(isolate, value);
-    ret->SetInternalField(0, ext);
-
+    AddWeakListener(isolate, ret, value);
     return handle_scope.Escape(ret);
 }
 

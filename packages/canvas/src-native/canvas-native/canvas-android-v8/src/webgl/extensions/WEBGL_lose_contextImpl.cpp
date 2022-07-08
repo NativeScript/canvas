@@ -27,8 +27,7 @@ WEBGL_lose_contextImpl::NewInstance(v8::Isolate *isolate, rust::Box<WEBGL_lose_c
     WEBGL_lose_contextImpl *contextImpl = new WEBGL_lose_contextImpl(std::move(context));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_lose_context);
-    auto ext = v8::External::New(isolate, contextImpl);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, contextImpl);
     return handle_scope.Escape(result);
 }
 

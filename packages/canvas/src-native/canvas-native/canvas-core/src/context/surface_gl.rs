@@ -85,7 +85,7 @@ impl Context {
         alpha: bool,
         ppi: f32,
     ) {
-        let interface = skia_safe::gpu::gl::Interface::new_native();
+        let interface = Interface::new_native();
         let ctx = skia_safe::gpu::DirectContext::new_gl(interface, None);
         if ctx.is_none() {
             return;

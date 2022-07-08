@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Common.h"
+#include "ObjectCacheEntry.h"
 #include "Helpers.h"
 
 class OnImageAssetLoadCallbackHolder {

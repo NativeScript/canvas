@@ -43,8 +43,7 @@ WebGLShaderPrecisionFormatImpl::NewInstance(v8::Isolate *isolate, rust::Box<WebG
     WebGLShaderPrecisionFormatImpl *format = new WebGLShaderPrecisionFormatImpl(std::move(shader));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::WebGLShaderPrecisionFormat);
-    auto ext = v8::External::New(isolate, format);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, format);
     return handle_scope.Escape(result);
 }
 

@@ -3,7 +3,8 @@ use std::sync::{Arc, RwLock};
 
 use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::{Mutex, RawMutex, RawRwLock};
-use skia_safe::{Color, Point, Surface};
+use skia_safe::{Color, Image, Point, Surface};
+use stb::image::{Data, Info};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use drawing_text::typography::Font;
@@ -141,7 +142,6 @@ pub struct Context {
     pub(crate) font_color: Color,
 }
 
-
 pub struct ContextWrapper {
     inner: Arc<parking_lot::RwLock<Context>>,
 }
@@ -180,6 +180,42 @@ impl ContextWrapper {
     pub fn from_inner(inner: Arc<parking_lot::RwLock<Context>>) -> ContextWrapper {
         Self { inner }
     }
+
+    #[cfg(feature = "gl")]
+    pub fn resize_gl(&mut self, width: f32, height: f32) {
+        let mut context = self.get_context_mut();
+        let device = context.device;
+
+        let mut ctx = &mut *context;
+
+        let mut fb = [0];
+        unsafe {
+            gl_bindings::glClearColor(0., 0., 0., 0.);
+            gl_bindings::glClear(gl_bindings::GL_COLOR_BUFFER_BIT);
+            gl_bindings::glViewport(0, 0, width as i32, height as i32);
+            gl_bindings::glGetIntegerv(gl_bindings::GL_FRAMEBUFFER_BINDING, fb.as_mut_ptr());
+        }
+
+        Context::resize_gl(
+            ctx,
+            width,
+            height,
+            device.density,
+            fb[0],
+            device.samples as i32,
+            device.alpha,
+            device.ppi,
+        );
+    }
+
+    pub fn resize(&mut self, width: f32, height: f32) {
+        let mut context = self.get_context_mut();
+        let device = context.device;
+
+        let mut ctx = &mut *context;
+
+        Context::resize(ctx, width, height, device.density, device.alpha, device.ppi);
+    }
 }
 
 impl Clone for ContextWrapper {
@@ -206,17 +242,17 @@ impl Context {
 
     pub fn clear_canvas(&mut self) {
         self.surface.canvas().clear(Color::TRANSPARENT);
-        self.surface.flush();
+        self.flush();
     }
 
     pub fn flush(&mut self) {
-        self.surface.flush();
+        self.surface.flush_and_submit();
     }
 
     pub fn read_pixels(&mut self) -> Vec<u8> {
         self.flush();
         let info = self.surface.image_info();
-        let size = info.min_row_bytes() * info.height() as usize;
+        let size = info.height() as usize * info.min_row_bytes();
         let mut buf = vec![0_u8; size];
 
         self.surface.read_pixels(
@@ -226,6 +262,48 @@ impl Context {
             skia_safe::IPoint::new(0, 0),
         );
         buf
+    }
+
+    pub fn read_pixels_to_data(&mut self) -> Option<(Info, Data<u8>)> {
+        let buf = self.read_pixels();
+        stb::image::stbi_load_from_memory(buf.as_slice(), stb::image::Channels::RgbAlpha)
+    }
+
+    pub fn read_pixels_into_bitmap(&mut self) -> skia_safe::Bitmap {
+        self.flush();
+        let info = self.surface.image_info();
+        let mut bm = skia_safe::Bitmap::new();
+        bm.alloc_pixels_flags(&info);
+        self.surface
+            .read_pixels_to_bitmap(&bm, skia_safe::IPoint::new(0, 0));
+        bm
+    }
+
+    pub fn read_pixels_into_image(&mut self) -> Option<Image> {
+        self.flush();
+        let info = self.surface.image_info();
+        let mut bm = skia_safe::Bitmap::new();
+        bm.alloc_pixels_flags(&info);
+        self.surface
+            .read_pixels_to_bitmap(&bm, skia_safe::IPoint::new(0, 0));
+        Image::from_bitmap(&bm)
+    }
+
+    pub fn image_snapshot(&mut self) -> Image {
+        self.surface.image_snapshot()
+    }
+
+    pub fn read_pixels_to_encoded_data(&mut self) -> Option<skia_safe::Data>{
+        let image = self.surface.image_snapshot();
+        image.encode_to_data_with_quality(
+            skia_safe::EncodedImageFormat::PNG,
+            100,
+        )
+    }
+
+    pub fn snapshot(&mut self) -> Image {
+        self.flush();
+        self.surface.image_snapshot()
     }
 
     pub fn draw_on_surface(&mut self, surface: &mut Surface) {

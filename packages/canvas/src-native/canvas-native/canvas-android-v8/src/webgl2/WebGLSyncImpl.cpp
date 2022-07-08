@@ -40,8 +40,7 @@ v8::Local<v8::Object> WebGLSyncImpl::NewInstance(v8::Isolate *isolate, rust::Box
     WebGLSyncImpl *syncImpl = new WebGLSyncImpl(std::move(sync));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::WebGLSync);
-    auto ext = v8::External::New(isolate, syncImpl);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, syncImpl);
     return handle_scope.Escape(result);
 }
 

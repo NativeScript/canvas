@@ -72,9 +72,7 @@ void ImageDataImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 args[0]->Int32Value(context).ToChecked(),
                 args[1]->Int32Value(context).ToChecked()
         )));
-
-        auto ext = v8::External::New(isolate, imageData);
-        ret->SetInternalField(0, ext);
+        AddWeakListener(isolate, ret, imageData);
         args.GetReturnValue().Set(ret);
     }
 }

@@ -31,7 +31,6 @@ v8::Local<v8::FunctionTemplate> WebGLUniformLocation::GetCtor(v8::Isolate *isola
 
     ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLUniformLocation"));
 
-
     cache->WebGLUniformLocationTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }

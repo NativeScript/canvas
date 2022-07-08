@@ -48,9 +48,7 @@ void MatrixImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         Helpers::SetInstanceType(isolate, ret, ObjectType::Matrix);
 
         MatrixImpl *matrix = new MatrixImpl(std::move(canvas_native_matrix_create()));
-
-        auto ext = v8::External::New(isolate, matrix);
-        ret->SetInternalField(0, ext);
+        AddWeakListener(isolate, ret, matrix);
         args.GetReturnValue().Set(ret);
     }
 }

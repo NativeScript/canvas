@@ -137,6 +137,45 @@ pub fn canvas_native_webgl_buffer_data(
     }
 }
 
+
+pub fn canvas_native_webgl_buffer_data_u16(
+    target: u32,
+    src_data: &[u16],
+    usage: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    let len = src_data.len() * std::mem::size_of::<u16>();
+    unsafe {
+        gl_bindings::glBufferData(
+            target,
+            len.try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
+    }
+}
+
+
+pub fn canvas_native_webgl_buffer_data_f32(
+    target: u32,
+    src_data: &[f32],
+    usage: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    let len = src_data.len() * std::mem::size_of::<f32>();
+    unsafe {
+        gl_bindings::glBufferData(
+            target,
+            len.try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
+    }
+}
+
+
 pub fn canvas_native_webgl_buffer_data_none(
     target: u32,
     size: isize,
@@ -183,6 +222,7 @@ pub fn canvas_native_webgl_check_frame_buffer_status(target: u32, state: &mut We
 }
 
 fn reset(state: &mut WebGLState) {
+    state.make_current();
     unsafe {
         gl_bindings::glDisable(3089 /* GL_SCISSOR_TEST */);
         gl_bindings::glClearColor(0., 0., 0., 0.);
@@ -1737,6 +1777,82 @@ pub fn canvas_native_webgl_tex_image2d_asset(
             );
         }
     }
+}
+
+pub fn canvas_native_webgl_read_webgl_pixels(
+    source: &mut WebGLState,
+    context: &mut WebGLState
+) -> (i32, i32, Vec<u8>)  {
+    context.remove_if_current();
+
+    source.make_current();
+    let mut width = source.get_drawing_buffer_width();
+    let mut height = source.get_drawing_buffer_height();
+
+    let mut buf = vec![0u8; (width * height * 4) as usize];
+
+    unsafe {
+        gl_bindings::glFinish();
+        gl_bindings::glReadPixels(
+            0,
+            0,
+            width,
+            height,
+            gl_bindings::GL_RGBA,
+            gl_bindings::GL_UNSIGNED_BYTE,
+            buf.as_mut_ptr() as *mut c_void,
+        );
+    }
+
+    source.remove_if_current();
+
+    context.make_current();
+
+    (width as i32, height as i32, buf)
+}
+
+pub fn canvas_native_webgl_read_canvas2d_pixels(
+    source: &mut crate::bridges::context::CanvasRenderingContext2D,
+    context: &mut WebGLState,
+) -> (i32, i32, Vec<u8>)  {
+    context.remove_if_current();
+    let mut width = 0f32;
+    let mut height = 0f32;
+    let mut source_non_gpu = false;
+    {
+        let ctx = source.get_context();
+        let device = ctx.device();
+        width = device.width;
+        height = device.height;
+        source_non_gpu = device.non_gpu;
+    }
+
+    let mut source_ctx = source.get_context_mut();
+    let mut buf;
+    if !source_non_gpu {
+        source.gl_context.make_current();
+        buf = vec![0u8; (width as i32 * height as i32 * 4) as usize];
+        unsafe {
+            gl_bindings::glFinish();
+            gl_bindings::glReadPixels(
+                0,
+                0,
+                width as i32,
+                height as i32,
+                gl_bindings::GL_RGBA,
+                gl_bindings::GL_UNSIGNED_BYTE,
+                buf.as_mut_ptr() as *mut c_void,
+            );
+        }
+        source.gl_context.remove_if_current();
+    } else {
+        buf = source_ctx.read_pixels();
+    }
+
+    context.make_current();
+
+    (width as i32, height as i32, buf)
+
 }
 
 //    texImage2D(target, level, internalformat, width, height, border, format, type)

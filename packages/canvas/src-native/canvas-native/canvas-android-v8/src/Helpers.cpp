@@ -62,6 +62,11 @@ void Helpers::LogToConsole(const std::string &message) {
     sendToADBLogcat(message, android_LogPriority::ANDROID_LOG_INFO);
 }
 
+
+void Helpers::LogWarningToConsole(const std::string &message) {
+    sendToADBLogcat(message, android_LogPriority::ANDROID_LOG_WARN);
+}
+
 void Helpers::ThrowIllegalConstructor(v8::Isolate *isolate) {
     auto msg = ConvertToV8String(isolate, "Illegal constructor");
     auto err = v8::Exception::TypeError(msg);
@@ -71,6 +76,11 @@ void Helpers::ThrowIllegalConstructor(v8::Isolate *isolate) {
 v8::Local<v8::String> Helpers::ConvertToV8String(v8::Isolate *isolate, const std::string &string) {
     return v8::String::NewFromUtf8(isolate, string.c_str(), v8::NewStringType::kNormal,
                                    string.length()).ToLocalChecked();
+}
+
+
+v8::Local<v8::String> Helpers::ConvertToV8String(v8::Isolate *isolate, const char *string) {
+    return v8::String::NewFromUtf8(isolate, string).ToLocalChecked();
 }
 
 std::string Helpers::ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
@@ -137,15 +147,9 @@ bool Helpers::IsInstanceOf(v8::Isolate *isolate, const v8::Local<v8::Value> &val
         return false;
     }
 
-    Helpers::LogToConsole("IsInstanceOf inner");
-
     if (context->Global()
             ->GetRealNamedProperty(context, Helpers::ConvertToV8String(isolate, clazz))
             .ToLocal(&object)) {
-
-        Helpers::LogToConsole(Helpers::ConvertFromV8String(isolate, value.As<v8::Object>()->GetConstructorName()));
-
-        Helpers::LogToConsole(Helpers::ConvertFromV8String(isolate, object.As<v8::Object>()->GetConstructorName()));
 
         if (object->IsObject() && value->InstanceOf(context, object.As<v8::Object>())
                 .FromMaybe(false)) {
@@ -325,14 +329,18 @@ ObjectType Helpers::GetInstanceType(v8::Isolate *isolate, const v8::Local<v8::Va
     if (object.IsEmpty()) {
         return ObjectType::Unknown;
     }
+
     auto ret = Helpers::GetPrivate(isolate, object.As<v8::Object>(), "__instanceType");
+
     if (!ret->IsNumber()) {
         return ObjectType::Unknown;
     }
 
     auto res = ret->Uint32Value(context);
+
     if (res.IsNothing()) {
         return ObjectType::Unknown;
     }
+
     return (ObjectType) res.ToChecked();
 }

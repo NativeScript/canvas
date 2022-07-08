@@ -19,6 +19,7 @@
 #include <GLES2/gl2ext.h>
 #include <GLES3/gl3.h>
 #include <android/log.h>
+#include "ObjectCacheEntry.h"
 
 enum class ObjectType : uint8_t {
     Unknown,
@@ -72,7 +73,10 @@ enum class ObjectType : uint8_t {
     WebGLSampler,
     WebGLVertexArrayObject,
     WebGLTransformFeedback,
-    WebGLSync
+    WebGLSync,
+    HTMLCanvas,
+    HTMLImage,
+    HTMLVideo
 };
 
 class Helpers {
@@ -81,17 +85,21 @@ public:
 
     static int m_maxLogcatObjectSize;
 
-    static std::string RGBAToHex(uint8_t r,uint8_t g, uint8_t b, uint8_t a);
+    static std::string RGBAToHex(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     static void sendToADBLogcat(const std::string &message, android_LogPriority logPriority);
 
     static void LogToConsole(const std::string &message);
+
+    static void LogWarningToConsole(const std::string &message);
 
     static void ThrowIllegalConstructor(v8::Isolate *isolate);
 
     static v8::Local<v8::String> ConvertToV8String(v8::Isolate *isolate, const std::string &string);
 
     static std::string ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value);
+
+    static v8::Local<v8::String> ConvertToV8String(v8::Isolate *isolate, const char *string);
 
     static rust::Str ConvertFromV8StringToRust(v8::Isolate *isolate, const v8::Local<v8::Value> &value);
 
@@ -146,6 +154,13 @@ public:
         auto store = buffer->GetBackingStore();
         auto data = static_cast<uint8_t *>(store->Data()) + array->ByteOffset();
         rust::Slice<T> slice(reinterpret_cast<T *>(data), (array->ByteLength() / sizeof(T)));
+        return std::move(slice);
+    }
+
+    static rust::Slice<uint8_t> GetArrayBufferData(const v8::Local<v8::ArrayBuffer> &array) {
+        auto store = array->GetBackingStore();
+        auto data = static_cast<uint8_t *>(store->Data());
+        rust::Slice<uint8_t> slice(reinterpret_cast<uint8_t *>(data), array->ByteLength());
         return std::move(slice);
     }
 

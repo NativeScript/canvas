@@ -28,8 +28,7 @@ WEBGL_draw_buffersImpl::NewInstance(v8::Isolate *isolate, rust::Box<WEBGL_draw_b
     WEBGL_draw_buffersImpl *buffersImpl = new WEBGL_draw_buffersImpl(std::move(buffers));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_draw_buffers);
-    auto ext = v8::External::New(isolate, buffersImpl);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, buffersImpl);
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT0_WEBGL"),
                 v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT0_EXT));
@@ -137,12 +136,12 @@ void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(const v8::FunctionCallbackInfo<v8:
         auto len = buffersVal->Length();
         std::vector <uint32_t> buf;
         for (int j = 0; j < len; ++j) {
-            auto item = buffersVal->Get(context, j);
+            auto item = Helpers::ObjectGet(context,buffersVal, j);
             if (item.IsEmpty()) {
                 // todo verify
                 buf.push_back(0);
             } else {
-                buf.push_back(item.ToLocalChecked()->Uint32Value(context).ToChecked());
+                buf.push_back(item->Uint32Value(context).ToChecked());
             }
 
         }

@@ -2,7 +2,7 @@ let LAF = 0;
 
 export function interactiveCube(canvas) {
   /*============= Creating a canvas ======================*/
-  var gl = canvas.getContext('webgl') as WebGLRenderingContext;
+  var gl = canvas.getContext('webgl2') as WebGLRenderingContext;
 
   const width = gl.drawingBufferWidth;
   const height = gl.drawingBufferHeight;

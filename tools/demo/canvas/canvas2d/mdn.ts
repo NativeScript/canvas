@@ -494,13 +494,24 @@ export function scale(canvas) {
 export function pattern(canvas) {
 	const ctx = canvas.getContext('2d');
 	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
-		ctx.fillStyle = ctx.createPattern(img, 'repeat');
+		
+		try{
+			const bytes = (org as any).nativescript.canvas.Utils.nativeLockBitmap(img.android);
+		console.log(bytes);
+		const style =  ctx.__createPatternWithBitmap(img, 'repeat');;
+	
+		console.log(style);
+		ctx.fillStyle = style;
 		ctx.fillRect(0, 0, 300, 300);
+		}catch(e){
+			console.log(e);
+		}
 	});
 }
 
 export function patternWithCanvas(canvas) {
 	const patternCanvas = Canvas.createCustomView();
+
 	const patternContext = patternCanvas.getContext('2d') as any;
 
 	// Give the pattern a width and height of 50
@@ -514,10 +525,10 @@ export function patternWithCanvas(canvas) {
 	patternContext.stroke();
 
 	const ctx = canvas.getContext('2d');
-
 	// Create our primary canvas and fill it with the pattern
-	ctx.fillStyle = ctx.createPattern(patternCanvas, 'repeat');
-	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	const pattern = ctx.createPattern(patternContext, 'repeat');
+	ctx.fillStyle = pattern;
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 export function clip(canvas) {

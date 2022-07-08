@@ -3,20 +3,21 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile } from '@nativescript/core';
+import { Application, View, profile, Device, Screen } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(org.nativescript.canvas.TNSCanvas.createSVGMatrix());
 }
 
 export * from './common';
 
-
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContextJni: CanvasRenderingContext2D;
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
+	private _webGLContextJni;
 	private _webgl2Context: WebGL2RenderingContext;
+	private _webGL2ContextJni;
 	private _canvas;
 	private _didPause: boolean = false;
 
@@ -188,7 +189,18 @@ export class Canvas extends CanvasBase {
 
 			const size = this._realSize;
 			org.nativescript.canvas.TNSCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
+
+			if (this._2dContext) {
+				(this._2dContext as any).__resize(size.width, size.height);
+			}
 		}
+	}
+
+
+	get __native__context(){
+		console.log('__native__context', this._2dContext && this._webglContext && this._webgl2Context);
+
+		return this._2dContext && this._webglContext && this._webgl2Context;
 	}
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null {
@@ -205,13 +217,22 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._2dContext) {
-					this._2dContextJni = new CanvasRenderingContext2D(this._canvas.getContext(type, getNativeOptions(options)));
+					this._2dContextJni = this._canvas.getContext(type, getNativeOptions(options));
+					//const ptr = String(this._canvas.getNativeContext());
 
-					this._2dContext = global.__getCanvasRenderingContext2DImpl(String(this._canvas.getNativeContext()))
+					let direction = 0;
+					if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
+						direction = 1;
+					}
+
+					this._2dContext = global.__getCanvasRenderingContext2DImpl(this.width, this.height, Screen.mainScreen.scale, this.parent?.style?.color?.android || -16777216, Screen.mainScreen.scale * 160, direction, true, this._isCustom ? true : false);
+
+					//this._2dContext = global.__getCanvasRenderingContext2DImpl(ptr);
+
 					// @ts-ignore
-					this._2dContext._canvas = this;
+					this._2dContext.canvas = this;
 				} else {
-					this._canvas.getContext(type, getNativeOptions(options));
+					//this._canvas.getContext(type, getNativeOptions(options));
 				}
 				// @ts-ignore
 				this._2dContext._type = '2d';
@@ -222,15 +243,15 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					// setup env;
-					this._canvas.getContext('webgl', getNativeOptions(options));
+					this._webGLContextJni = this._canvas.getContext('webgl', getNativeOptions(options));
 
-					const ctxOpts = Object.assign({version: 'v1'},this._handleContextOptions(type, options));
+					const ctxOpts = Object.assign({ version: 'v1' }, this._handleContextOptions(type, options));
 					const ctx = global.__getWebGLRenderingContext(ctxOpts);
 					this._webglContext = ctx;
 					//this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl', getNativeOptions(options)));
 					(this._webglContext as any).canvas = this;
 				} else {
-					this._canvas.getContext('webgl', getNativeOptions(options));
+					//this._canvas.getContext('webgl', getNativeOptions(options));
 				}
 				this._webglContext._type = 'webgl';
 				return this._webglContext;
@@ -239,16 +260,16 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webgl2Context) {
-					// setup env 
-					this.android.getContext('webgl2', getNativeOptions(options));
+					// setup env
+					this._webGL2ContextJni = this._canvas.getContext('webgl2', getNativeOptions(options));
 
-					const ctxOpts = Object.assign({version: 'v2'},this._handleContextOptions(type, options));
+					const ctxOpts = Object.assign({ version: 'v2' }, this._handleContextOptions(type, options));
 					const ctx = global.__getWebGL2RenderingContext(ctxOpts);
 					this._webgl2Context = ctx;
 					//this._webgl2Context = new WebGL2RenderingContext(this.android.getContext('webgl2', getNativeOptions(options)));
 					(this._webgl2Context as any).canvas = this;
 				} else {
-					this.android.getContext('webgl2', getNativeOptions(options));
+					//this._canvas.getContext('webgl2', getNativeOptions(options));
 				}
 				(this._webgl2Context as any)._type = 'webgl2';
 				return this._webgl2Context;
@@ -283,9 +304,7 @@ export class Canvas extends CanvasBase {
 		};
 	}
 
+	setPointerCapture() {}
 
-	setPointerCapture() { }
-
-	releasePointerCapture() { }
-
+	releasePointerCapture() {}
 }

@@ -1,5 +1,5 @@
-// pub(crate) mod bitmap;
-// pub mod image;
+pub(crate) mod bitmap;
+pub mod image;
 
 
 use std::ffi::{CStr, CString};

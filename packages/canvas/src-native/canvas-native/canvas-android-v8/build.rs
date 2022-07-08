@@ -52,6 +52,7 @@ const FLAGS_DEBUG: &str = "-g";
 
 const CPP_SOURCE: [&str; 10] = [
     "src/Caches.cpp",
+    "src/ObjectCacheEntry.cpp",
     "src/Helpers.cpp",
     "src/OnImageAssetLoadCallbackHolder.cpp",
     "src/ImageAssetImpl.cpp",
@@ -59,12 +60,12 @@ const CPP_SOURCE: [&str; 10] = [
     "src/TextDecoderImpl.cpp",
     "src/OnRafCallback.cpp",
     "src/RafImpl.cpp",
-    "src/ObjectCacheEntry.cpp",
     "src/ImageBitmapImpl.cpp"
 ];
 
 const CPP_SOURCE_HEADERS: [&str; 10] = [
     "src/Caches.h",
+    "src/ImageBitmapImpl.h",
     "src/Helpers.h",
     "src/OnImageAssetLoadCallbackHolder.h",
     "src/ImageAssetImpl.h",
@@ -73,7 +74,6 @@ const CPP_SOURCE_HEADERS: [&str; 10] = [
     "src/OnRafCallback.h",
     "src/RafImpl.h",
     "src/ObjectCacheEntry.h",
-    "src/ImageBitmapImpl.h"
 ];
 
 const CPP_2D_SOURCE: [&str; 8] = [

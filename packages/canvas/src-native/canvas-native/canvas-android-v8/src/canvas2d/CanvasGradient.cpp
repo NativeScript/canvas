@@ -32,8 +32,7 @@ v8::Local<v8::Object> CanvasGradient::NewInstance(v8::Isolate *isolate, rust::Bo
     CanvasGradient *gradient = new CanvasGradient(std::move(style));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::CanvasGradient);
-    auto ext = v8::External::New(isolate, gradient);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, gradient);
     return handle_scope.Escape(result);
 }
 

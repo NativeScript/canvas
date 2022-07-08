@@ -1,16 +1,14 @@
 use std::os::raw::c_void;
 
 use jni::objects::{GlobalRef, JClass, JObject, JValue};
-use jni::sys::{jbyteArray, jobject};
+use jni::sys::{jbyteArray, jlong, jobject};
 use jni::JNIEnv;
 
 use canvas_core::ffi::u8_array::U8Array;
 use canvas_core::image_bitmap::ImageBitmapPremultiplyAlpha::Default;
-use log::debug;
 
-use crate::prelude::find_class;
 use crate::utils::bitmap::AndroidBitmapInfo;
-use crate::TNSGCUTILS_CLASS;
+use crate::{jint};
 
 pub(crate) struct BitmapBytes {
     pub(crate) bitmap: GlobalRef,
@@ -75,6 +73,13 @@ impl BitmapBytes {
         unsafe { Some(std::slice::from_raw_parts_mut(self.data_ptr, self.data_len)) }
     }
 
+    pub fn data(&mut self) -> Option<&[u8]> {
+        if self.data_ptr.is_null() {
+            return None;
+        }
+        unsafe { Some(std::slice::from_raw_parts(self.data_ptr, self.data_len)) }
+    }
+
     pub fn info(&self) -> &AndroidBitmapInfo {
         &self.info
     }
@@ -91,7 +96,7 @@ impl Drop for BitmapBytes {
                 self.bitmap.as_obj().into_inner(),
             ) < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
             {
-                debug!("Unlock Bitmap Failed");
+
             }
         }
     }
@@ -108,8 +113,7 @@ pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> (Vec<u8>, AndroidB
             bitmap,
             bitmap_info.as_mut_ptr(),
         ) < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-        {
-            debug!("Get Bitmap Info Failed");
+        { ;
             let info = AndroidBitmapInfo::default();
             let data = Vec::new();
             return (data, info);
@@ -122,7 +126,6 @@ pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> (Vec<u8>, AndroidB
         if super::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
             < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
         {
-            debug!("Get Bitmap Lock Failed");
             return (Vec::default(), bitmap_info);
         }
     }
@@ -134,7 +137,7 @@ pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> (Vec<u8>, AndroidB
         if super::bitmap::AndroidBitmap_unlockPixels(native_interface as _, bitmap)
             < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
         {
-            debug!("Unlock Bitmap Failed");
+
         }
     }
     return (slice, bitmap_info);
@@ -156,7 +159,6 @@ pub fn bitmap_handler(
             bitmap_info.as_mut_ptr(),
         ) != super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
         {
-            debug!("Get Bitmap Info Failed");
             let info = AndroidBitmapInfo::default();
             handler(empty_vec.as_mut_slice(), &info)
         }
@@ -168,7 +170,6 @@ pub fn bitmap_handler(
         if super::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
             != super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
         {
-            debug!("Get Bitmap Lock Failed");
             handler(empty_vec.as_mut_slice(), &bitmap_info);
             return;
         }
@@ -181,42 +182,29 @@ pub fn bitmap_handler(
         if super::bitmap::AndroidBitmap_unlockPixels(native_interface as _, bitmap)
             != super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
         {
-            debug!("Unlock Bitmap Failed");
+
         }
     }
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetBytesFromBitmap(
+pub extern "system" fn Java_org_nativescript_canvas_Bitmap_nativeLockBitmap(
     env: JNIEnv,
     _: JClass,
     bitmap: JObject,
-) -> jbyteArray {
-    let bytes = get_bytes_from_bitmap(env, bitmap);
-    env.byte_array_from_slice(bytes.0.as_slice())
-        .unwrap_or(env.new_byte_array(0).unwrap())
+) -> jlong {
+    let bb = BitmapBytes::new(env, bitmap);
+    Box::into_raw(Box::new(bb)) as jlong
 }
 
-#[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetByteBufferFromBitmap(
-    env: JNIEnv,
-    _: JClass,
-    bitmap: JObject,
-) -> jobject {
-    let (mut buf, _) = get_bytes_from_bitmap(env, bitmap);
+// #[no_mangle]
+// pub extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetBytesFromBitmap(
+//     env: JNIEnv,
+//     _: JClass,
+//     bitmap: JObject,
+// ) -> jbyteArray {
+//     let bytes = get_bytes_from_bitmap(env, bitmap);
+//     env.byte_array_from_slice(bytes.0.as_slice())
+//         .unwrap_or(env.new_byte_array(0).unwrap())
+// }
 
-    let db = env.new_direct_byte_buffer(buf.as_mut_slice()).unwrap();
-    let u8 = U8Array::from(buf);
-    let ptr = Box::into_raw(Box::new(u8));
-    let clazz = find_class(TNSGCUTILS_CLASS).unwrap();
-    let db: JValue = db.into();
-    env.call_static_method(
-        clazz,
-        "watchItem",
-        "(JLjava/nio/ByteBuffer;)V",
-        &[(ptr as i64).into(), db],
-    )
-    .unwrap();
-
-    db.l().unwrap().into_inner()
-}

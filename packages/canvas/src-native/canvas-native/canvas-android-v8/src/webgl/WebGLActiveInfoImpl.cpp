@@ -40,8 +40,7 @@ v8::Local<v8::Object> WebGLActiveInfoImpl::NewInstance(v8::Isolate *isolate, rus
     WebGLActiveInfoImpl *activeInfo = new WebGLActiveInfoImpl(std::move(info));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::WebGLActiveInfo);
-    auto ext = v8::External::New(isolate, activeInfo);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, activeInfo);
     return handle_scope.Escape(result);
 }
 

@@ -4,7 +4,7 @@ use crate::context::filter_quality::FilterQuality;
 use crate::context::matrix::Matrix;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Repetition {
     Repeat = 0,
     RepeatX = 1,

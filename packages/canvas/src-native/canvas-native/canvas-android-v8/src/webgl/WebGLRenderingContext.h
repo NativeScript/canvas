@@ -65,6 +65,11 @@ public:
 
     static void GetDrawingBufferHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
+    static void GetSuppressLogs(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void SetSuppressLogs(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+                                 const v8::PropertyCallbackInfo<void> &info);
+
     static void GetFlipY(v8::Local<v8::String> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
@@ -355,9 +360,34 @@ public:
 
     static void SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl);
 
+    template<typename T>
+    static void AddWeakListener(v8::Isolate *isolate, const v8::Local<v8::Object> &object, T *data){
+        auto ext = v8::External::New(isolate, data);
+        object->SetInternalField(0, ext);
+        auto persistent = new v8::Persistent<v8::Object>(isolate, object);
+        auto entry = new ObjectCacheEntry(static_cast<void *>(data), persistent);
+        auto callback = [](const v8::WeakCallbackInfo<ObjectCacheEntry> &cacheEntry) {
+            auto value = cacheEntry.GetParameter();
+            auto ptr = static_cast<T *>(value->data);
+            if (ptr != nullptr) {
+                delete ptr;
+            }
+            auto persistent_ptr = value->object;
+            if (persistent_ptr != nullptr) {
+                if (!persistent_ptr->IsEmpty()) {
+                    persistent_ptr->Reset();
+                }
+            }
+            delete value;
+        };
+        persistent->SetWeak(entry, callback, v8::WeakCallbackType::kFinalizer);
+    }
+
 private:
     static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    bool supressLogs_ = true;
 
 };

@@ -42,7 +42,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		// ctx.drawImage(canvas2, 0, 0);
 
 
-		this.text(canvas);
+		//this.text(canvas);
 		//this.drawPatternWithCanvas(canvas);
 		//this.simple(canvas);
 		//this.simplePlane(canvas);
@@ -64,7 +64,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.transparent(canvas);
 		//this.textureRotate(canvas);
 		//this.simplePlane(canvas);
-		//this.animatedJet(canvas);
+		this.animatedJet(canvas);
 	}
 
 	textureRotate(canvas) {

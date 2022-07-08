@@ -80,6 +80,7 @@ export class HTMLImageElement extends Element {
 		super('img');
 		this._asset = new global.ImageAsset();
 		this.__id = getUUID();
+		this.__instanceType = 53;
 		this._onload = () => { };
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;

@@ -7,6 +7,7 @@ export class Element extends Node {
 	nativeElement: any;
 	private _width: number;
 	private _height: number;
+	__instanceType: number;
 	constructor(tagName) {
 		super(tagName.toUpperCase());
 

@@ -29,8 +29,7 @@ ANGLE_instanced_arraysImpl::NewInstance(v8::Isolate *isolate, rust::Box<ANGLE_in
     ANGLE_instanced_arraysImpl *arraysImpl = new ANGLE_instanced_arraysImpl(std::move(arrays));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::ANGLE_instanced_arrays);
-    auto ext = v8::External::New(isolate, arraysImpl);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, arraysImpl);
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE"),
                 v8::Uint32::New(isolate, GL_VERTEX_ATTRIB_ARRAY_DIVISOR_EXT));

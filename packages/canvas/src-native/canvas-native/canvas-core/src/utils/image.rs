@@ -25,6 +25,10 @@ pub fn to_image_encoded(image_array: *const u8, image_size: usize) -> Option<Ima
     Image::from_encoded(Data::new_copy(image_slice))
 }
 
+pub fn to_image_encoded_from_data(data: Data) -> Option<Image> {
+    Image::from_encoded(data)
+}
+
 pub fn from_image_slice_no_copy(image_slice: &[u8], width: c_int, height: c_int) -> Option<Image> {
     let info = ImageInfo::new(
         ISize::new(width, height),

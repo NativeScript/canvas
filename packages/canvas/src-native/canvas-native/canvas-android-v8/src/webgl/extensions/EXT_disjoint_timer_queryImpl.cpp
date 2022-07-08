@@ -28,8 +28,7 @@ EXT_disjoint_timer_queryImpl::NewInstance(v8::Isolate *isolate, rust::Box<EXT_di
     EXT_disjoint_timer_queryImpl *queryImpl = new EXT_disjoint_timer_queryImpl(std::move(query));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::EXT_disjoint_timer_query);
-    auto ext = v8::External::New(isolate, queryImpl);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, queryImpl);
 
     result->Set(context, Helpers::ConvertToV8String(isolate, "QUERY_COUNTER_BITS_EXT"),
                 v8::Uint32::New(isolate, GL_QUERY_COUNTER_BITS_EXT));
@@ -74,7 +73,7 @@ v8::Local<v8::FunctionTemplate> EXT_disjoint_timer_queryImpl::GetCtor(v8::Isolat
     tmpl->Set(Helpers::ConvertToV8String(isolate, "queryCounterExt"),
               v8::FunctionTemplate::New(isolate, &QueryCounterExt));
     tmpl->Set(Helpers::ConvertToV8String(isolate, "getQueryExt"), v8::FunctionTemplate::New(isolate, &GetQueryExt));
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "qetQueryObjectExt"),
+    tmpl->Set(Helpers::ConvertToV8String(isolate, "getQueryObjectExt"),
               v8::FunctionTemplate::New(isolate, &GetQueryObjectExt));
 
     cache->EXT_disjoint_timer_queryImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -85,7 +84,10 @@ void EXT_disjoint_timer_queryImpl::CreateQueryExt(const v8::FunctionCallbackInfo
     auto isolate = args.GetIsolate();
     auto ptr = GetPointer(args.Holder());
     auto ret = canvas_native_webgl_ext_disjoint_timer_query_create_query_ext(*ptr->query_);
-    args.GetReturnValue().Set(ret);
+
+    args.GetReturnValue().Set(
+            WebGLQuery::NewInstance(isolate, ret)
+    );
 
 }
 
@@ -94,8 +96,12 @@ void EXT_disjoint_timer_queryImpl::DeleteQueryExt(const v8::FunctionCallbackInfo
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     auto query = args[0];
-    canvas_native_webgl_ext_disjoint_timer_query_delete_query_ext(query->Uint32Value(context).ToChecked(),
-                                                                  *ptr->query_);
+    if (Helpers::GetInstanceType(isolate, query) == ObjectType::WebGLQuery) {
+        auto queryValue = Helpers::GetPrivate(isolate, query.As<v8::Object>(), "instance")->ToUint32(context);
+        canvas_native_webgl_ext_disjoint_timer_query_delete_query_ext(
+                queryValue.ToLocalChecked()->Uint32Value(context).ToChecked(),
+                *ptr->query_);
+    }
 }
 
 void EXT_disjoint_timer_queryImpl::IsQueryExt(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -103,10 +109,14 @@ void EXT_disjoint_timer_queryImpl::IsQueryExt(const v8::FunctionCallbackInfo<v8:
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     auto query = args[0];
-    args.GetReturnValue().Set(
-            canvas_native_webgl_ext_disjoint_timer_query_is_query_ext(query->Uint32Value(context).ToChecked(),
-                                                                      *ptr->query_)
-    );
+    if (Helpers::GetInstanceType(isolate, query) == ObjectType::WebGLQuery) {
+        auto queryValue = Helpers::GetPrivate(isolate, query.As<v8::Object>(), "instance")->ToUint32(context);
+        args.GetReturnValue().Set(
+                canvas_native_webgl_ext_disjoint_timer_query_is_query_ext(
+                        queryValue.ToLocalChecked()->Uint32Value(context).ToChecked(),
+                        *ptr->query_)
+        );
+    }
 }
 
 void EXT_disjoint_timer_queryImpl::BeginQueryExt(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -115,11 +125,14 @@ void EXT_disjoint_timer_queryImpl::BeginQueryExt(const v8::FunctionCallbackInfo<
     auto ptr = GetPointer(args.Holder());
     auto target = args[0];
     auto query = args[1];
-    canvas_native_webgl_ext_disjoint_timer_query_begin_query_ext(
-            target->Uint32Value(context).ToChecked(),
-            query->Uint32Value(context).ToChecked(),
-            *ptr->query_
-    );
+    if (target->IsNumber() && Helpers::GetInstanceType(isolate, query) == ObjectType::WebGLQuery) {
+        auto queryValue = Helpers::GetPrivate(isolate, query.As<v8::Object>(), "instance")->ToUint32(context);
+        canvas_native_webgl_ext_disjoint_timer_query_begin_query_ext(
+                target->Uint32Value(context).ToChecked(),
+                queryValue.ToLocalChecked()->Uint32Value(context).ToChecked(),
+                *ptr->query_
+        );
+    }
 }
 
 void EXT_disjoint_timer_queryImpl::EndQueryExt(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -127,10 +140,12 @@ void EXT_disjoint_timer_queryImpl::EndQueryExt(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
     auto target = args[0];
-    canvas_native_webgl_ext_disjoint_timer_query_end_query_ext(
-            target->Uint32Value(context).ToChecked(),
-            *ptr->query_
-    );
+    if (Helpers::IsNumber(target)) {
+        canvas_native_webgl_ext_disjoint_timer_query_end_query_ext(
+                target->Uint32Value(context).ToChecked(),
+                *ptr->query_
+        );
+    }
 }
 
 void EXT_disjoint_timer_queryImpl::QueryCounterExt(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -139,9 +154,14 @@ void EXT_disjoint_timer_queryImpl::QueryCounterExt(const v8::FunctionCallbackInf
     auto ptr = GetPointer(args.Holder());
     auto query = args[0];
     auto target = args[1];
-    canvas_native_webgl_ext_disjoint_timer_query_query_counter_ext(query->Uint32Value(context).ToChecked(),
-                                                                   target->Uint32Value(context).ToChecked(),
-                                                                   *ptr->query_);
+
+    if (target->IsNumber() && Helpers::GetInstanceType(isolate, query) == ObjectType::WebGLQuery) {
+        auto queryValue = Helpers::GetPrivate(isolate, query.As<v8::Object>(), "instance")->ToUint32(context);
+        canvas_native_webgl_ext_disjoint_timer_query_query_counter_ext(
+                queryValue.ToLocalChecked()->Uint32Value(context).ToChecked(),
+                target->Uint32Value(context).ToChecked(),
+                *ptr->query_);
+    }
 }
 
 void EXT_disjoint_timer_queryImpl::GetQueryExt(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -162,22 +182,27 @@ void EXT_disjoint_timer_queryImpl::GetQueryObjectExt(const v8::FunctionCallbackI
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(args.Holder());
-    auto target = args[0];
+    auto query = args[0];
     auto pname = args[1];
-    auto pnameValue = pname->Uint32Value(context).ToChecked();
-    auto ret = canvas_native_webgl_ext_disjoint_timer_query_get_query_object_ext(
-            target->Uint32Value(context).ToChecked(),
-            pnameValue,
-            *ptr->query_
-    );
-    if (pnameValue == GL_QUERY_RESULT_AVAILABLE_EXT) {
-        args.GetReturnValue().Set(
-                canvas_native_webgl_result_get_bool(*ret)
-        );
-        return;
-    }
 
-    args.GetReturnValue().Set(
-            canvas_native_webgl_result_get_i32(*ret)
-    );
+    if (Helpers::GetInstanceType(isolate, query) == ObjectType::WebGLQuery) {
+        auto queryValue = Helpers::GetPrivate(isolate, query.As<v8::Object>(), "instance")->ToUint32(context);
+
+        auto pnameValue = pname->Uint32Value(context).ToChecked();
+        auto ret = canvas_native_webgl_ext_disjoint_timer_query_get_query_object_ext(
+                queryValue.ToLocalChecked()->Uint32Value(context).ToChecked(),
+                pnameValue,
+                *ptr->query_
+        );
+        if (pnameValue == GL_QUERY_RESULT_AVAILABLE_EXT) {
+            args.GetReturnValue().Set(
+                    canvas_native_webgl_result_get_bool(*ret)
+            );
+            return;
+        }
+
+        args.GetReturnValue().Set(
+                canvas_native_webgl_result_get_i32(*ret)
+        );
+    }
 }

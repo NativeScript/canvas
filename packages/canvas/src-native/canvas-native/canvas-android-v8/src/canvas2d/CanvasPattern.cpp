@@ -32,8 +32,7 @@ v8::Local<v8::Object> CanvasPattern::NewInstance(v8::Isolate *isolate, rust::Box
     CanvasPattern *gradient = new CanvasPattern(std::move(style));
     auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Helpers::SetInstanceType(isolate, result, ObjectType::CanvasPattern);
-    auto ext = v8::External::New(isolate, gradient);
-    result->SetInternalField(0, ext);
+    AddWeakListener(isolate, result, gradient);
     return handle_scope.Escape(result);
 }
 
@@ -65,7 +64,7 @@ v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtorFunc(v8::Isolate *isolate)
     auto patternTpl = v8::FunctionTemplate::New(isolate, &CreateCallback);
     patternTpl->SetClassName(Helpers::ConvertToV8String(isolate, "CanvasPattern"));
 
-    patternTpl->PrototypeTemplate()->SetInternalFieldCount(1);
+    patternTpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     patternTpl->PrototypeTemplate()->Set(
             Helpers::ConvertToV8String(isolate, "setTransform"),

@@ -270,8 +270,7 @@ v8::Local<v8::Object> ImageBitmapImpl::NewInstance(v8::Isolate *isolate, rust::B
     auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInstanceType(isolate, ret, ObjectType::ImageBitmap);
     ImageBitmapImpl *value = new ImageBitmapImpl(std::move(bitmap));
-    auto ext = v8::External::New(isolate, value);
-    ret->SetInternalField(0, ext);
+    AddWeakListener(isolate, ret, value);
     return handle_scope.Escape(ret);
 }
 

@@ -5,13 +5,13 @@
     </Page.actionBar>
   <GridLayout loaded="{{ gridLoaded }}" rows="*,*" columns="*,*" iosOverflowSafeArea="false" width="100%" height="100%">
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
-		 <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"
-									 layoutChanged="{{ onLayout }}"/> 
+		 <!-- <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"
+									 layoutChanged="{{ onLayout }}"/>  -->
                                      <!-- <canvas:Svg  id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/>
                                      <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/>
                                       <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/>
                                      <canvas:Svg id="4" row="1" col="1" width="100%" height="100%" src="{{src4}}" loaded="{{svgViewLoaded}}"/> -->
-    <Button height="40" text="Draw" tap="{{ draw }}"/>
+    <!-- <Button height="40" text="Draw" tap="{{ draw }}"/> -->
 
     <!-- <ScrollView  rowSpan="4" visibility="{{ show ? 'visible': 'collapse' }}" orientation="vertical">
         <Repeater items="{{ items }}">
@@ -28,10 +28,10 @@
 
     <!-- Multi Canvas -->
 
-    <!-- <canvas:Canvas row="0" col="0" id="canvas1" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
+    <canvas:Canvas row="0" col="0" id="canvas1" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
     <canvas:Canvas row="0" col="1"  id="canvas2" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
     <canvas:Canvas row="1" col="0"  id="canvas3" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
-    <canvas:Canvas row="1" col="1"  id="canvas4" width="100%" height="100%" ready="{{ canvasLoaded }}"/>-->
+    <canvas:Canvas row="1" col="1"  id="canvas4" width="100%" height="100%" ready="{{ canvasLoaded }}"/>
 
     <!-- Multi Canvas -->
 

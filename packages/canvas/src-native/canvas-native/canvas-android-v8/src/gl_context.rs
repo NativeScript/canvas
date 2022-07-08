@@ -11,7 +11,7 @@ use egl::{
     EGL_VG_ALPHA_FORMAT_PRE_BIT, EGL_WIDTH, EGL_WINDOW_BIT,
 };
 
-use crate::bridges::context::console_log;
+use crate::bridges::context::{__log, console_log, LogPriority};
 use crate::gl::prelude::ContextAttributes;
 
 const EGL_CONTEXT_MINOR_VERSION: i32 = 0x000030fb;
@@ -455,13 +455,14 @@ impl GLContext {
     pub fn remove_if_current(&self) {
         if self.context.is_some() && (egl::get_current_context() == self.context) {
             egl::make_current(
-                egl::EGL_NO_DISPLAY,
+                self.display.unwrap_or(egl::EGL_NO_DISPLAY),
                 egl::EGL_NO_SURFACE,
                 egl::EGL_NO_SURFACE,
-                egl::EGL_NO_CONTEXT,
+                EGL_NO_CONTEXT,
             );
         }
-    }
+
+     }
 
     pub fn swap_buffers(&self) -> bool {
         egl::swap_buffers(
@@ -473,6 +474,7 @@ impl GLContext {
     pub fn get_surface_width(&self) -> i32 {
         if let (Some(display), Some(surface)) = (self.display(), self.surface()) {
             let mut width = 0;
+            self.make_current();
             egl::query_surface(*display, *surface, EGL_WIDTH, &mut width);
             return width;
         }
@@ -482,6 +484,7 @@ impl GLContext {
     pub fn get_surface_height(&self) -> i32 {
         if let (Some(display), Some(surface)) = (self.display(), self.surface()) {
             let mut height = 0;
+            self.make_current();
             egl::query_surface(*display, *surface, EGL_HEIGHT, &mut height);
             return height;
         }

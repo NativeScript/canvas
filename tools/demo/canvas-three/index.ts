@@ -44,9 +44,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
-		//this.threeDepth(this.canvas);
+		this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
-		this.skinningAndMorphing(this.canvas);
+		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
 		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
@@ -3154,7 +3154,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			requestAnimationFrame(animate);
 			cube.rotation.x += 0.01;
 			cube.rotation.y += 0.01;
-			//renderer.render(scene, camera);
+			renderer.render(scene, camera);
 		};
 
 		animate();

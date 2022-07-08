@@ -5,7 +5,8 @@
 #include "WebGLRenderingContextBase.h"
 #include "canvas-android-v8/src/bridges/context.rs.h"
 
-WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state) : state_(std::move(state)) {}
+WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version)
+        : state_(std::move(state)), version_(version) {}
 
 void WebGLRenderingContextBase::UpdateInvalidateState() {
     auto raf = this->GetRaf();
@@ -52,6 +53,10 @@ void WebGLRenderingContextBase::SetInvalidateState(InvalidateState state) {
 
 InvalidateState WebGLRenderingContextBase::GetInvalidateState() const {
     return this->invalidateState_;
+}
+
+WebGLRenderingVersion WebGLRenderingContextBase::GetVersion() const {
+    return this->version_;
 }
 
 WebGLRenderingContextBase::~WebGLRenderingContextBase() {

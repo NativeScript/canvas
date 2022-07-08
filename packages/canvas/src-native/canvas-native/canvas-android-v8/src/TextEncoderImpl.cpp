@@ -61,8 +61,7 @@ void TextEncoderImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
         Helpers::SetInstanceType(isolate, ret, ObjectType::TextEncoder);
         auto encoder = canvas_native_text_encoder_create(rust::Str(encoding.c_str(), encoding.size()));
         TextEncoderImpl *impl = new TextEncoderImpl(std::move(encoder));
-        auto ext = v8::External::New(isolate, impl);
-        ret->SetInternalField(0, ext);
+        AddWeakListener(isolate, ret, impl);
         args.GetReturnValue().Set(ret);
     }
 }

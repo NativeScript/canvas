@@ -157,7 +157,6 @@ internal class GLContext {
 					if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
-					// Do not completely unset flags as there might be a pending flag at this point
 					canvasView.invalidateState = canvasView.invalidateState and TNSCanvas.INVALIDATE_STATE_INVALIDATING.inv()
 				} else {
 					// WebGL

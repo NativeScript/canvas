@@ -46,7 +46,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		}
 
 	@JvmField
-	internal var invalidateState = InvalidateState.NONE
+	internal var invalidateState = TNSCanvas.INVALIDATE_STATE_NONE // bitwise flag
 	internal var contextType = ContextType.NONE
 	internal var actualContextType = ""
 	internal var useCpu = false
@@ -122,14 +122,11 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 	private val mainHandler = Handler(Looper.getMainLooper())
 
-	enum class InvalidateState {
-		NONE, PENDING, INVALIDATING
-	}
-
 	override fun doFrame(frameTimeNanos: Long) {
 		if (!isHandleInvalidationManually) {
-			if (invalidateState == InvalidateState.PENDING) {
-				invalidateState = InvalidateState.INVALIDATING
+			// Only pending state flag is accepted
+			if (invalidateState == INVALIDATE_STATE_PENDING) {
+				invalidateState = INVALIDATE_STATE_INVALIDATING
 				flush()
 			}
 		}
@@ -599,6 +596,11 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 	companion object {
 		var views: ConcurrentHashMap<*, *> = ConcurrentHashMap<Any?, Any?>()
+
+		// Invalidate state bitwise flags
+		internal const val INVALIDATE_STATE_NONE = 0
+		internal const val INVALIDATE_STATE_PENDING = 1
+		internal const val INVALIDATE_STATE_INVALIDATING = 2
 
 		@JvmStatic
 		fun layoutView(width: Int, height: Int, tnsCanvas: TNSCanvas) {

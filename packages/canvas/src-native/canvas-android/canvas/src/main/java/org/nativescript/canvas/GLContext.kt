@@ -149,19 +149,23 @@ internal class GLContext {
 		queueEvent {
 			if (reference != null) {
 				val canvasView = reference!!.get()
-				if (canvasView != null && canvasView.nativeContext != 0L && canvasView.invalidateState == TNSCanvas.InvalidateState.INVALIDATING) {
+				if (canvasView != null && canvasView.nativeContext != 0L && (canvasView.invalidateState and TNSCanvas.INVALIDATE_STATE_INVALIDATING) == TNSCanvas.INVALIDATE_STATE_INVALIDATING) {
+					// We don't want pending flags that were set up to this point
+					canvasView.invalidateState = canvasView.invalidateState and TNSCanvas.INVALIDATE_STATE_PENDING.inv()
+
 					TNSCanvas.nativeFlush(canvasView.nativeContext)
 					if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
-					canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
+					canvasView.invalidateState = canvasView.invalidateState and TNSCanvas.INVALIDATE_STATE_INVALIDATING.inv()
 				} else {
 					// WebGL
 					if (!mGLThread!!.getPaused() && !swapBuffers(mEGLSurface)) {
 						Log.e("JS", "GLContext: Cannot swap buffers!")
 					}
 					if (canvasView != null) {
-						canvasView.invalidateState = TNSCanvas.InvalidateState.NONE
+						// If this point is reached, it means something went wrong so set flag to none
+						canvasView.invalidateState = TNSCanvas.INVALIDATE_STATE_NONE
 					}
 				}
 			}

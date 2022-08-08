@@ -523,7 +523,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	private fun updateCanvas() {
 		// synchronized (canvasView.lock) {
-		canvas.invalidateState = TNSCanvas.InvalidateState.PENDING
+		canvas.invalidateState = canvas.invalidateState or TNSCanvas.INVALIDATE_STATE_PENDING
 		//}
 	}
 

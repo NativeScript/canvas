@@ -69,9 +69,11 @@ class CPUView @JvmOverloads constructor(
 				canvasView?.get()?.let { canvas ->
 					if (canvas.nativeContext != 0L) {
 						canvas.queueEvent {
+							// We don't want pending flags that were set up to this point
+							canvas.invalidateState = canvas.invalidateState and TNSCanvas.INVALIDATE_STATE_PENDING.inv()
 							TNSCanvas.nativeCustomWithBitmapFlush(canvas.nativeContext, it)
 							handler!!.post {
-								canvas.invalidateState = TNSCanvas.InvalidateState.NONE
+								canvas.invalidateState = canvas.invalidateState and TNSCanvas.INVALIDATE_STATE_INVALIDATING.inv()
 								invalidate()
 							}
 						}

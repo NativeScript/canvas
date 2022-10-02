@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use encoding_rs::UTF_8;
 
 pub struct TextEncoder {
@@ -15,6 +16,11 @@ impl TextEncoder {
     pub fn encode(&mut self, text: &str) -> Vec<u8> {
         let result = self.encoder.encode(text);
         Vec::from(result.0)
+    }
+
+    pub fn encode_to_cow<'a>(&mut self, text: &'a str) -> Cow<'a ,[u8]> {
+        let result = self.encoder.encode(text);
+        result.0
     }
 
     pub fn encoding(&self) -> &str {

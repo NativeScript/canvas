@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{Point, Rect};
+use skia_safe::{Point, Rect, RRect};
 
 use crate::common::context::matrix::Matrix;
 use crate::common::utils::geometry::{almost_equal, to_degrees};
@@ -156,7 +156,7 @@ impl Path {
 
     pub fn begin_path(&mut self) {
         if !self.path.is_empty() {
-            self.path.reset();
+            self.path = skia_safe::Path::default();
         }
     }
 
@@ -220,6 +220,15 @@ impl Path {
 
     pub fn rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
         let rect = Rect::from_xywh(x, y, width, height);
-        self.path.add_rect(&rect, None);
+        let direction = if width.signum() == height.signum() { skia_safe::PathDirection::CW } else { skia_safe::PathDirection::CCW };
+        self.path.add_rect(&rect, Some((direction, 0)));
+    }
+
+    pub fn round_rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float, radii: [c_float; 8]) {
+        let rect = Rect::from_xywh(x, y, width, height);
+        let radii: Vec<Point> = radii.chunks(2).map(|xy| Point::new(xy[0], xy[1])).collect();
+        let rrect = RRect::new_rect_radii(rect, &[radii[0], radii[1], radii[2], radii[3]]);
+        let direction = if width.signum() == height.signum() { skia_safe::PathDirection::CW } else { skia_safe::PathDirection::CCW };
+        self.path.add_rrect(rrect, Some((direction, 0)));
     }
 }

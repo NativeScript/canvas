@@ -137,6 +137,12 @@ typedef struct U8Array {
   uintptr_t data_len;
 } U8Array;
 
+#if defined(TARGET_OS_ANDROID)
+typedef struct ASurfaceTexture {
+  uint8_t _unused[0];
+} ASurfaceTexture;
+#endif
+
 typedef struct PaintStyleValue {
   long long value;
   enum PaintStyleValueType value_type;
@@ -237,6 +243,36 @@ void destroy_u32_array(struct U32Array *array);
 
 void destroy_u8_array(struct U8Array *array);
 
+#if defined(TARGET_OS_ANDROID)
+/**
+ * Returns the API level of the device we're actually running on, or -1 on failure.
+ * The returned values correspond to the named constants in `<android/api-level.h>`,
+ * and is equivalent to the Java `Build.VERSION.SDK_INT` API.
+ *
+ * See also android_get_application_target_sdk_version().
+ */
+extern int android_get_device_api_level(void);
+#endif
+
+#if defined(TARGET_OS_ANDROID)
+/**
+ * Get a reference to the native ASurfaceTexture from the corresponding java object.
+ *
+ * The caller must keep a reference to the Java SurfaceTexture during the lifetime of the returned
+ * ASurfaceTexture. Failing to do so could result in the ASurfaceTexture to stop functioning
+ * properly once the Java object gets finalized.
+ * However, this will not result in program termination.
+ *
+ * \param env JNI environment
+ * \param surfacetexture Instance of Java SurfaceTexture object
+ * \return native ASurfaceTexture reference or nullptr if the java object is not a SurfaceTexture.
+ *         The returned reference MUST BE released when it's no longer needed using
+ *         ASurfaceTexture_release().
+ */
+extern struct ASurfaceTexture *ASurfaceTexture_fromSurfaceTexture(JNIEnv *env,
+                                                                  jobject surfacetexture);
+#endif
+
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 void destroy_string(const char *string);
 #endif
@@ -301,6 +337,10 @@ const char *context_data_url(long long context, const char *format, float qualit
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 struct U8Array *context_snapshot_canvas(long long context);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+struct U8Array *context_snapshot_canvas_encoded(long long context);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
@@ -565,6 +605,10 @@ long long context_create_radial_gradient(long long context,
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+long long context_create_conic_gradient(long long context, float start_angle, float x, float y);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 void context_draw_image_dx_dy(long long context,
                               const uint8_t *image_data,
                               uintptr_t image_len,
@@ -740,6 +784,18 @@ void context_rect(long long context, float x, float y, float width, float height
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+void context_round_rect(long long context,
+                        float x,
+                        float y,
+                        float width,
+                        float height,
+                        float top_left,
+                        float top_right,
+                        float bottom_right,
+                        float bottom_left);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 void context_reset_transform(long long context);
 #endif
 
@@ -876,14 +932,6 @@ struct U8Array *image_asset_get_bytes(long long asset);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-struct U8Array *image_asset_get_rgba_bytes(long long asset);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-struct U8Array *image_asset_get_rgb_bytes(long long asset);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 unsigned int image_asset_width(long long asset);
 #endif
 
@@ -901,30 +949,6 @@ bool image_asset_has_error(long long asset);
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 bool image_asset_scale(long long asset, unsigned int x, unsigned int y);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-bool image_asset_flip_x(long long asset);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-bool image_asset_flip_x_in_place(long long asset);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-bool image_asset_flip_y(long long asset);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-void image_asset_flip_y_in_place_owned(uint8_t *buf, uintptr_t length);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-void image_asset_flip_x_in_place_owned(uint8_t *buf, uintptr_t length);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-bool image_asset_flip_y_in_place(long long asset);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))

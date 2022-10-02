@@ -13,6 +13,11 @@ import MetalKit
 @objcMembers
 @objc(TNSCanvas)
 public class TNSCanvas: UIView, RenderListener {
+    
+    internal static let INVALIDATE_STATE_NONE = 0
+    internal static let INVALIDATE_STATE_PENDING = 1
+    internal static let INVALIDATE_STATE_INVALIDATING = 2
+    
     private static var views: NSMapTable<NSString,TNSCanvas> = NSMapTable(keyOptions: .copyIn, valueOptions: .weakMemory)
     
     public static func getViews() -> NSMapTable<NSString,TNSCanvas> {
@@ -142,6 +147,43 @@ public class TNSCanvas: UIView, RenderListener {
             return data
         }else if(renderer.contextType == ContextType.webGL){
             let pixels = (renderer.view as! CanvasGLKView).snapshot
+            
+            var cgImage: CGImage?
+            
+            if let image = pixels.cgImage {
+                cgImage = image
+            } else if let image = pixels.ciImage {
+                let ctx = CIContext()
+                cgImage = ctx.createCGImage(image, from: image.extent)
+            }
+            
+            if let image = cgImage {
+                let width = Int(pixels.size.width)
+                let height = Int(pixels.size.height)
+                var buffer: [UInt8] = Array(repeating: 0, count: width * height * 4)
+                let colorSpace = CGColorSpaceCreateDeviceRGB()
+                let imageCtx = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+                imageCtx!.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+                return []
+            }
+        }
+        return []
+    }
+    
+    
+    public func snapshotEncoded() -> [UInt8]{
+        renderer.ensureIsContextIsCurrent()
+        if(renderer.contextType == ContextType.twoD){
+            let result = context_snapshot_canvas_encoded(self.context)
+            if(result == nil){
+                return []
+            }
+            let pointer = result!.pointee
+            let data = [UInt8](Data(bytes: pointer.data, count: Int(pointer.data_len)))
+            destroy_u8_array(result)
+            return data
+        }else if(renderer.contextType == ContextType.webGL){
+            let pixels = (renderer.view as! CanvasGLKView).snapshot
             let data = pixels.pngData() ?? Data()
             EAGLContext.setCurrent(nil)
             return [UInt8](data)
@@ -150,7 +192,7 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     var _isGL: Bool = false
-    var isDirty: Bool = false
+    var invalidateState = TNSCanvas.INVALIDATE_STATE_NONE  // bitwise flag
     public var isGL: Bool {
         get {
             return _isGL
@@ -194,7 +236,7 @@ public class TNSCanvas: UIView, RenderListener {
     var renderingContextWebGL2: TNSCanvasRenderingContext?
     public func doDraw() {
         if(handleInvalidationManually){return}
-        renderer.isDirty = true
+        renderer.invalidateState = renderer.invalidateState | TNSCanvas.INVALIDATE_STATE_INVALIDATING
     }
     
     public func flush(){
@@ -259,9 +301,10 @@ public class TNSCanvas: UIView, RenderListener {
     
     @objc func handleAnimation(displayLink: CADisplayLink){
         self._fps = Float(1 / (displayLink.targetTimestamp - displayLink.timestamp))
-        if(renderer.isDirty){
+        
+        if((renderer.invalidateState & TNSCanvas.INVALIDATE_STATE_INVALIDATING) == TNSCanvas.INVALIDATE_STATE_INVALIDATING){
+            renderer.invalidateState = renderer.invalidateState & TNSCanvas.INVALIDATE_STATE_PENDING
             renderer.render()
-            renderer.isDirty = false;
         }
     }
     
@@ -304,7 +347,6 @@ public class TNSCanvas: UIView, RenderListener {
     
     deinit {
         if(context > 0){
-            renderer.resume()
             destroy_context(context)
             context = 0
         }

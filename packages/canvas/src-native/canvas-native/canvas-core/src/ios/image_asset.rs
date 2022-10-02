@@ -16,7 +16,7 @@ pub extern "C" fn image_asset_load_from_path(asset: c_longlong, path: *const c_c
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let mut asset = &mut *asset;
-        asset.load_from_path(path)
+        asset.load_from_path_raw(path)
     }
 }
 
@@ -44,31 +44,10 @@ pub extern "C" fn image_asset_get_bytes(asset: c_longlong) -> *mut U8Array {
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        asset.bytes()
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn image_asset_get_rgba_bytes(asset: c_longlong) -> *mut U8Array {
-    if asset == 0 {
-        return std::ptr::null_mut();
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        asset.rgba_bytes()
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn image_asset_get_rgb_bytes(asset: c_longlong) -> *mut U8Array {
-    if asset == 0 {
-        return std::ptr::null_mut();
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        asset.rgb_bytes()
+        match asset.get_bytes() {
+            None => 0 as _,
+            Some(bytes) => U8Array::from(bytes.to_vec()).into_raw()
+        }
     }
 }
 
@@ -104,7 +83,7 @@ pub extern "C" fn image_asset_get_error(asset: c_longlong) -> *const c_char {
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        asset.error()
+        asset.error_cstr()
     }
 }
 
@@ -116,7 +95,7 @@ pub extern "C" fn image_asset_has_error(asset: c_longlong) -> bool {
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        if asset.error.is_empty() {
+        if asset.error().is_empty() {
             return false;
         }
         true
@@ -136,72 +115,6 @@ pub extern "C" fn image_asset_scale(asset: c_longlong, x: c_uint, y: c_uint) -> 
 }
 
 #[no_mangle]
-pub extern "C" fn image_asset_flip_x(asset: c_longlong) -> bool {
-    if asset == 0 {
-        return false;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        asset.flip_x()
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn image_asset_flip_x_in_place(asset: c_longlong) -> bool {
-    if asset == 0 {
-        return false;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        asset.flip_x_in_place()
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn image_asset_flip_y(asset: c_longlong) -> bool {
-    if asset == 0 {
-        return false;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        asset.flip_y()
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn image_asset_flip_y_in_place_owned(buf: *mut u8, length: usize) {
-    if let Ok(mut image) =
-    image::load_from_memory(unsafe { std::slice::from_raw_parts_mut(buf, length) })
-    {
-        image::imageops::flip_vertical_in_place(&mut image);
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn image_asset_flip_x_in_place_owned(buf: *mut u8, length: usize) {
-    if let Ok(mut image) =
-    image::load_from_memory(unsafe { std::slice::from_raw_parts_mut(buf, length) })
-    {
-        image::imageops::flip_horizontal_in_place(&mut image);
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn image_asset_flip_y_in_place(asset: c_longlong) -> bool {
-    if asset == 0 {
-        return false;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        asset.flip_y_in_place()
-    }
-}
-
-#[no_mangle]
 pub extern "C" fn image_asset_save_path(
     asset: c_longlong,
     path: *const c_char,
@@ -213,7 +126,7 @@ pub extern "C" fn image_asset_save_path(
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        asset.save_path(path, OutputFormat::from(format))
+        asset.save_path_raw(path, OutputFormat::from(format))
     }
 }
 

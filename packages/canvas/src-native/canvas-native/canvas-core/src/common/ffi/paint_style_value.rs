@@ -52,6 +52,6 @@ pub extern "C" fn destroy_paint_style_value(value: c_longlong) {
     }
     unsafe {
         let value: *mut PaintStyleValue = value as _;
-        Box::from_raw(value);
+        let _ = Box::from_raw(value);
     }
 }

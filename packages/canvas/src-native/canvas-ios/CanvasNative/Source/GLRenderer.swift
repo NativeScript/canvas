@@ -12,7 +12,7 @@ import UIKit
 @objcMembers
 @objc(CanvasGLKView)
 public class CanvasGLKView: GLKView {
-    var isDirty: Bool = false
+    var invalidateState = TNSCanvas.INVALIDATE_STATE_NONE  // bitwise flag
     public init() {
         super.init(frame: .zero)
     }
@@ -38,7 +38,7 @@ public class CanvasGLKView: GLKView {
 @objcMembers
 @objc(CanvasCPUView)
 public class CanvasCPUView: UIView {
-    var isDirty: Bool = false
+    var invalidateState = TNSCanvas.INVALIDATE_STATE_NONE  // bitwise flag
     weak var renderer: GLRenderer?
     public var ignorePixelScaling = false
     public init() {
@@ -82,7 +82,7 @@ public class CanvasCPUView: UIView {
                 buffer.deallocate()
             }
         }
-        isDirty = false
+        invalidateState = TNSCanvas.INVALIDATE_STATE_NONE  // bitwise flag
     }
 }
 
@@ -107,20 +107,20 @@ public class GLRenderer: NSObject, GLKViewDelegate {
     public func updateDirection(_ direction: String) {
         cachedDirection = direction
     }
-    
-    public var isDirty: Bool {
+
+    public var invalidateState: Int {
         set{
             if(useCpu){
-                cpuView.isDirty = newValue
+                cpuView.invalidateState = newValue
             }else {
-                glkView.isDirty = newValue
+                glkView.invalidateState = newValue
             }
         }
         get {
             if(useCpu){
-                return cpuView.isDirty
+                return cpuView.invalidateState
             }
-            return glkView.isDirty
+            return glkView.invalidateState
         }
     }
     
@@ -363,7 +363,6 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         glClearStencil(0)
                         glClearDepthf(1)
                         glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
-                        print("buffer dim", drawingBufferWidth, drawingBufferHeight)
                         glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
                         context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),deviceScale(), binding, 4,canvasView?.contextAlpha ?? true, 100.0)
                     }
@@ -482,8 +481,9 @@ public class GLRenderer: NSObject, GLKViewDelegate {
             }
         }
         if(contextType == .twoD){
+            guard let listener = self.listener else {return}
             DispatchQueue.main.async {
-                self.listener?.didDraw()
+                listener.didDraw()
             }
         }
     }
@@ -491,20 +491,27 @@ public class GLRenderer: NSObject, GLKViewDelegate {
     public func flush(){
         if(didExit){return}
         ensureIsContextIsCurrent()
+        if((invalidateState & TNSCanvas.INVALIDATE_STATE_PENDING) == TNSCanvas.INVALIDATE_STATE_PENDING){
+            return
+        }
         if(useCpu){
-            cpuView.isDirty = true
+            cpuView.invalidateState = cpuView.invalidateState & TNSCanvas.INVALIDATE_STATE_INVALIDATING
         }else {
-            glkView.isDirty = true
+            glkView.invalidateState = cpuView.invalidateState & TNSCanvas.INVALIDATE_STATE_INVALIDATING
         }
-        if(contextType == .twoD){
-            DispatchQueue.main.async {
-                self.listener?.didDraw()
-            }
-        }
+//        if(contextType == .twoD){
+//            guard let listener = self.listener else {return}
+//            DispatchQueue.main.async {
+//                listener.didDraw()
+//            }
+//        }
     }
     
     public func ensureIsReady(){
-        glkView.isDirty = true
+        if((invalidateState & TNSCanvas.INVALIDATE_STATE_PENDING) == TNSCanvas.INVALIDATE_STATE_PENDING){
+            return
+        }
+        glkView.invalidateState = cpuView.invalidateState & TNSCanvas.INVALIDATE_STATE_INVALIDATING
     }
     
     
@@ -524,5 +531,6 @@ public class GLRenderer: NSObject, GLKViewDelegate {
     
     public func glkView(_ view: GLKView, drawIn rect: CGRect){
         internalFlush()
+        invalidateState = TNSCanvas.INVALIDATE_STATE_INVALIDATING
     }
 }

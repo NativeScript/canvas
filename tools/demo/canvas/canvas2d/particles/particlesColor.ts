@@ -1,35 +1,37 @@
-import {Screen} from '@nativescript/core';
+import { Screen } from '@nativescript/core';
 
 let LAF = 0;
 
 export function particlesColor(canvas, width?, height?, nativeCanvas?) {
-  var ctx = canvas.getContext ? canvas.getContext('2d') : canvas,
-    particles = [],
-    patriclesNum = 100,
-    w = Screen.mainScreen.widthPixels,
-    h = Screen.mainScreen.heightPixels,
-    colors = ['#f35d4f', '#f36849', '#c0d988', '#6ddaf1', '#f1e85b'];
-  // const w = width || canvas.getMeasuredWidth(),
-  //     h = height || canvas.getMeasuredHeight();
+	var ctx = canvas.getContext ? canvas.getContext('2d') : canvas,
+		particles = [],
+		patriclesNum = 100,
+		w = Screen.mainScreen.widthPixels,
+		h = Screen.mainScreen.heightPixels,
+		colors = ['#f35d4f', '#f36849', '#c0d988', '#6ddaf1', '#f1e85b'];
+	// const w = width || canvas.getMeasuredWidth(),
+	//     h = height || canvas.getMeasuredHeight();
 
-  // canvas.style.left = (canvas.measuredWidth() - 500)/2+'px';
+	// canvas.style.left = (canvas.measuredWidth() - 500)/2+'px';
 
-  //if(window.innerHeight>500)
-  //   canvas.style.top = (window.innerHeight - 500)/2+'px';
+	//if(window.innerHeight>500)
+	//   canvas.style.top = (window.innerHeight - 500)/2+'px';
 
-  function Factory() {
-    this.x = Math.round(Math.random() * w);
-    this.y = Math.round(Math.random() * h);
-    this.rad = Math.round(Math.random()) + 1;
-    this.rgba = colors[Math.round(Math.random() * 3)];
-    this.vx = Math.round(Math.random() * 3) - 1.5;
-    this.vy = Math.round(Math.random() * 3) - 1.5;
-  }
+	function Factory() {
+		this.x = Math.round(Math.random() * w);
+		this.y = Math.round(Math.random() * h);
+		this.rad = Math.round(Math.random()) + 1;
+		this.rgba = colors[Math.round(Math.random() * 3)];
+		this.vx = Math.round(Math.random() * 3) - 1.5;
+		this.vy = Math.round(Math.random() * 3) - 1.5;
+	}
 
-  function draw() {
-    ctx.clearRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'lighter';
-    for (var i = 0; i < patriclesNum; i++) {
+	function draw() {
+		ctx.clearRect(0, 0, w, h);
+		ctx.globalCompositeOperation = 'lighter';
+
+		 for (var i = 0; i < patriclesNum; i++) {
+      
       var temp = particles[i];
       var factor = 1;
 
@@ -71,28 +73,27 @@ export function particlesColor(canvas, width?, height?, nativeCanvas?) {
       if (temp.y > h) temp.y = 0;
       if (temp.y < 0) temp.y = h;
     }
-  }
+	}
 
-  function findDistance(p1, p2) {
-    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-  }
+	function findDistance(p1, p2) {
+		return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+	}
 
-  var requestAnimFrame = requestAnimationFrame;
+	var requestAnimFrame = requestAnimationFrame;
 
-  (function init() {
-    for (var i = 0; i < patriclesNum; i++) {
-      particles.push(new Factory);
-    }
-  })();
+	(function init() {
+		for (var i = 0; i < patriclesNum; i++) {
+			particles.push(new Factory());
+		}
+	})();
 
-  (function loop() {
-    LAF = requestAnimFrame(loop);
-    draw();
-  })();
-
+	(function loop() {
+		LAF = requestAnimFrame(loop);
+		draw();
+	})();
 }
 
 export function cancelParticlesColor() {
-  cancelAnimationFrame(LAF);
-  LAF = 0;
+	cancelAnimationFrame(LAF);
+	LAF = 0;
 }

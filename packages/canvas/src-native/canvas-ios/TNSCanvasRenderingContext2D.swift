@@ -197,6 +197,10 @@
             }
         }
         
+        public func setFillStyleWithString(_ color: String) {
+                paint_style_set_fill_color_with_string(canvas.context, color)
+        }
+        
         public var fillStyle: ICanvasColorStyle {
             get {
                 let ptr = context_get_fill_style(canvas.context)!
@@ -233,7 +237,9 @@
         }
         
         
-        
+        public func setStrokeStyleWithString(_ color: String) {
+                paint_style_set_stroke_color_with_string(canvas.context, color)
+        }
         
         public var strokeStyle: ICanvasColorStyle {
             get {
@@ -305,6 +311,92 @@
             ensureIsContextIsCurrent()
             context_rect(canvas.context, x, y, width, height)
         }
+        
+        
+        public func roundRect(
+                x: Float, y: Float, width: Float, height: Float,
+                topLeft: Float,
+                topRight: Float,
+                bottomRight: Float,
+                bottomLeft: Float
+            ) {
+                ensureIsContextIsCurrent()
+                context_round_rect(canvas.context, x, y, width, height, topLeft,
+                                   topRight,
+                                   bottomRight,
+                                   bottomLeft)
+            }
+
+            public func roundRect(
+                x: Float, y: Float, width: Float, height: Float, radii: Float
+            ) {
+                ensureIsContextIsCurrent()
+                context_round_rect(canvas.context, x, y, width, height, radii, radii, radii, radii)
+            }
+
+
+        public func roundRect(
+                _ x: Float, _ y: Float, _ width: Float, _ height: Float,_ radii: [Float]
+            ) {
+                let size = radii.count
+                if (size == 0) {
+                    return
+                }
+                ensureIsContextIsCurrent()
+                
+                /*
+                [all-corners]
+                [top-left-and-bottom-right, top-right-and-bottom-left]
+                [top-left, top-right-and-bottom-left, bottom-right]
+                [top-left, top-right, bottom-right, bottom-left]
+                 */
+                var topLeft: Float = 0
+                var topRight: Float = 0
+                var bottomRight: Float = 0
+                var bottomLeft: Float = 0
+
+                switch(size) {
+                case 1:
+                        topLeft = radii[0]
+                        topRight = topLeft
+                        bottomRight = topLeft
+                        bottomLeft = topLeft
+                    break
+                case 2:
+                        topLeft = radii[0]
+                        topRight = radii[1]
+                        bottomRight = topLeft
+                        bottomLeft = topRight
+                    break
+                case 3:
+                        topLeft = radii[0]
+                        topRight = radii[1]
+                        bottomRight = radii[2]
+                        bottomLeft = topRight
+                case 4:
+                        topLeft = radii[0]
+                        topRight = radii[1]
+                        bottomRight = radii[2]
+                        bottomLeft = radii[3]
+                    break
+                default:
+                    break
+                }
+
+                context_round_rect(
+                    canvas.context,
+                    x,
+                    y,
+                    width,
+                    height,
+                    topLeft,
+                    topRight,
+                    bottomRight,
+                    bottomLeft
+                )
+            }
+
+        
         
         public func fill() {
             ensureIsContextIsCurrent()
@@ -455,6 +547,17 @@
             return TNSColorStyle.TNSRadialGradient(context_create_radial_gradient(canvas.context,x0,y0,r0,x1,y1, r1))
         }
         
+        
+        public func createConicGradient(_ startAngle: Float, _ x: Float, _ y: Float) -> TNSColorStyle.TNSConicGradient {
+            return TNSColorStyle.TNSConicGradient(
+                    context_create_conic_gradient(
+                        canvas.context,
+                        startAngle,
+                        x,
+                        y
+                    )
+                )
+            }
         
         public func createPattern(_ value: Any,_  repetition: TNSPatternRepetition) -> Any? {
             if let canvas = value as? TNSCanvas {

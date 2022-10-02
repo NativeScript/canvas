@@ -134,6 +134,12 @@ class TextureRender {
 
 	companion object {
 		@JvmStatic
+		fun updateTexImageAndGetTransformMatrix(surfaceTexture: SurfaceTexture, matrix: FloatArray) {
+			surfaceTexture.updateTexImage()
+			surfaceTexture.getTransformMatrix(matrix)
+		}
+
+		@JvmStatic
 		private external fun nativeDrawFrame(
 			surfaceTexture: SurfaceTexture,
 			flipYWebGL: Boolean,
@@ -166,8 +172,6 @@ class TextureRender {
 			0f, 0f
 		)
 		* */
-
-
 
 
 		val vextexCoords = floatArrayOf(

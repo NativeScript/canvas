@@ -1,7 +1,9 @@
 use std::os::raw::c_float;
 
 use skia_safe::{Color, Point, Shader, TileMode};
-use skia_safe::gradient_shader::GradientShaderColors;
+use skia_safe::{
+    gradient_shader::GradientShaderColors,
+};
 
 use crate::common::context::matrix::Matrix;
 
@@ -25,6 +27,14 @@ pub enum Gradient {
         matrix: Option<Matrix>,
         tile_mode: TileMode,
     },
+    Conic {
+        center: Point,
+        angle: f32,
+        stops: Vec<f32>,
+        colors: Vec<Color>,
+        matrix: Option<Matrix>,
+        tile_mode: TileMode,
+    },
 }
 
 impl Gradient {
@@ -32,6 +42,7 @@ impl Gradient {
         match &self {
             Gradient::Linear { .. } => {}
             Gradient::Radial { .. } => {}
+            Gradient::Conic { .. } => {}
         }
     }
 
@@ -41,6 +52,9 @@ impl Gradient {
                 ref mut tile_mode, ..
             } => *tile_mode = mode,
             Gradient::Radial {
+                ref mut tile_mode, ..
+            } => *tile_mode = mode,
+            Gradient::Conic {
                 ref mut tile_mode, ..
             } => *tile_mode = mode,
         }
@@ -114,6 +128,36 @@ impl Gradient {
                     )
                 }
             }
+            Gradient::Conic {
+                center,
+                angle,
+                stops,
+                colors,
+                matrix,
+                tile_mode,
+                ..
+            } => {
+                if let Some(matrix) = matrix {
+                    let matrix = matrix.matrix.to_m33();
+                    Gradient::to_conic_gradient_shader(
+                        *center,
+                        *angle,
+                        stops.as_slice(),
+                        colors.as_slice(),
+                        Some(&matrix),
+                        *tile_mode,
+                    )
+                } else {
+                    Gradient::to_conic_gradient_shader(
+                        *center,
+                        *angle,
+                        stops.as_slice(),
+                        colors.as_slice(),
+                        None,
+                        *tile_mode,
+                    )
+                }
+            }
         }
     }
 
@@ -161,10 +205,40 @@ impl Gradient {
         )
     }
 
+    fn to_conic_gradient_shader(
+        center: Point,
+        angle: f32,
+        stops: &[f32],
+        colors: &[Color],
+        matrix: Option<&skia_safe::Matrix>,
+        tile_mode: TileMode,
+    ) -> Option<Shader> {
+        let color_array = GradientShaderColors::Colors(colors);
+
+        let mut rotated = matrix.map(|v| v.clone()).unwrap_or(
+            skia_safe::Matrix::new_identity()
+        );
+        rotated
+            .pre_translate((center.x, center.y))
+            .pre_rotate(angle, None)
+            .pre_translate((-center.x, -center.y));
+
+        Shader::sweep_gradient(
+            center,
+            color_array,
+            Some(stops),
+            tile_mode,
+            None,
+            None,
+            matrix,
+        )
+    }
+
     pub fn add_color_stop(&mut self, offset: c_float, color: Color) {
         let stops = match self {
             Gradient::Linear { stops, .. } => stops,
             Gradient::Radial { stops, .. } => stops,
+            Gradient::Conic { stops, .. } => stops,
         };
 
         // insert the new entries at the right index to keep the vectors sorted
@@ -177,6 +251,10 @@ impl Gradient {
                 stops.insert(idx, offset);
             }
             Gradient::Radial { colors, stops, .. } => {
+                colors.insert(idx, color);
+                stops.insert(idx, offset);
+            }
+            Gradient::Conic { colors, stops, .. } => {
                 colors.insert(idx, color);
                 stops.insert(idx, offset);
             }

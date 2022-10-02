@@ -45,7 +45,7 @@ export const Game = (options) => {
 		width,
 		height,
 		//canvas,
-		 context,
+		context,
 		title,
 		type,
 		scene,

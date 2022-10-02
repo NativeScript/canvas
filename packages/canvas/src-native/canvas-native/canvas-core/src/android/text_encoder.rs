@@ -3,10 +3,11 @@
 #![allow(non_snake_case)]
 
 use jni::JNIEnv;
-use jni::objects::{JClass, JString};
-use jni::sys::{jbyteArray, jlong, jstring};
+use jni::objects::{JClass, JObject, JString, JValue};
+use jni::sys::{jbyteArray, jlong, jobject, jstring};
 
 use crate::common::context::text_encoder::TextEncoder;
+use crate::common::prelude::ByteBufMut;
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeInit(
@@ -73,3 +74,33 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeEncode(
     }
     env.new_byte_array(0).unwrap()
 }
+
+
+#[inline(always)]
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeEncodeToBuffer(
+    env: JNIEnv,
+    _: JClass,
+    encoder: jlong,
+    text: JString,
+) -> jobject {
+    if encoder == 0 {
+        return JObject::null().into_inner();
+    }
+    unsafe {
+        if let Ok(text) = env.get_string(text) {
+            let text = text.to_string_lossy();
+            let encoder: *mut TextEncoder = encoder as _;
+            let encoder = &mut *encoder;
+            let array = encoder.encode(text.as_ref());
+            let buffer = ByteBufMut::from(array);
+            let db = env.new_direct_byte_buffer(buffer.as_mut_slice()).unwrap();
+            let buf = Box::into_raw(Box::new(buffer));
+            let db: JValue = db.into();
+            crate::android::watch_item(&env, buf as jlong, db);
+            return db.l().unwrap().into_inner();
+        }
+    }
+    JObject::null().into_inner()
+}
+

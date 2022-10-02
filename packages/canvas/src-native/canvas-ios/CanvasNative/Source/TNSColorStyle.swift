@@ -158,6 +158,15 @@ public class TNSColorStyle: NSObject {
         }
     }
     
+    
+    @objcMembers
+    @objc(TNSConicGradient)
+    public class TNSConicGradient: TNSGradient {
+        override init(_ style: Int64) {
+            super.init(style)
+        }
+    }
+    
     @objcMembers
     @objc(TNSPattern)
     public class TNSPattern: NSObject, ICanvasColorStyle {
@@ -205,6 +214,8 @@ public class TNSColorStyle: NSObject {
             if glContext != nil {
                 EAGLContext.setCurrent(glContext)
             }
+            let scale = Float(UIScreen.main.scale)
+//            let result = context_create_pattern(context, &ss, UInt(ss.count),Int32(canvas.width * scale), Int32(canvas.height * scale) , Repetition(rawValue: pattern.rawValue))
             let result = context_create_pattern_encoded(context, &ss, UInt(ss.count), Repetition(rawValue: pattern.rawValue))
             if result == 0 {
                 return nil
@@ -224,6 +235,20 @@ public class TNSColorStyle: NSObject {
                 self.style = result
             }
         }
+        
+        
+        init?(context: Int64, width: Int, height: Int, src: [UInt8], pattern: TNSPatternRepetition){
+            super.init()
+            
+            let result = context_create_pattern(context,src,UInt(src.count), Int32(width), Int32(height), Repetition(rawValue: pattern.rawValue))
+            if result ==  0 {
+                return nil
+            }else {
+                self.style = result
+            }
+            
+        }
+        
         
         
         public func setTransform(matrix: TNSDOMMatrix) {

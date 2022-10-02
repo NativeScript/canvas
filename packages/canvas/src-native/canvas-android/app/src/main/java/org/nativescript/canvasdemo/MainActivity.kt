@@ -5,13 +5,17 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.opengl.GLES20
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import org.nativescript.canvas.TNSImageAsset.Callback
 import kotlinx.coroutines.Dispatchers
@@ -20,8 +24,11 @@ import kotlinx.coroutines.withContext
 import org.nativescript.canvas.*
 import java.io.*
 import java.net.URL
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.*
@@ -35,7 +42,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		svg = findViewById(R.id.svgView)
+		//	svg = findViewById(R.id.svgView)
 		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
@@ -50,7 +57,7 @@ class MainActivity : AppCompatActivity() {
 			}
 		}
 
-		drawTransformPathSvg()
+		//	drawTransformPathSvg()
 //		svg?.setSrc(
 //			"""
 //				<svg width="100" height="100" xmlns="svg">
@@ -1444,14 +1451,14 @@ class MainActivity : AppCompatActivity() {
 
 			val asset = TNSImageAsset()
 
-			if(img.exists() && img.length() == 0L){
+			if (img.exists() && img.length() == 0L) {
 				img.delete()
 			}
 
 			if (img.exists()) {
 				asset.loadImageFromPath(img.absolutePath)
 			} else {
-				val url = URL("https://mdn.mozillademos.org/files/222/Canvas_createpattern.png")
+				val url = URL("https://source.unsplash.com/random")
 				val fs = FileOutputStream(img)
 				url.openStream().use { input ->
 					fs.use { output ->
@@ -1462,13 +1469,15 @@ class MainActivity : AppCompatActivity() {
 			}
 
 
+			val start = System.nanoTime()
 			val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 			val pattern = ctx.createPattern(asset, TNSPatternRepetition.Repeat)
 			pattern?.let {
 				ctx.fillStyle = it
 			}
+			ctx.fillRect(0f, 0f, 300f, 300f)
 
-			ctx.fillRect(0f, 0f, 300f, 300f);
+			Log.d("TIME", "complete ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)}")
 
 		}
 	}
@@ -1517,6 +1526,8 @@ class MainActivity : AppCompatActivity() {
 			240.toByte(),
 			33.toByte()
 		)
+
+
 		Log.d(
 			"com.triniwiz.github",
 			"windows-decoded-value: ${win1251decoder.decode(bytes)}"
@@ -1530,14 +1541,22 @@ class MainActivity : AppCompatActivity() {
 		//addPath(canvas!!)
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
-		//	ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+		ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+
+		//createConicGradient(canvas!!)
+		//drawTriangle(ctx!!)
+
 		//drawText(ctx!!)
-		// ballExample(ctx!!)
-		drawPattern(canvas!!)
-		//drawFace(ctx!!)
+		//ballExample(ctx!!)
 		//drawPattern(canvas!!)
-		// drawElements(canvas!!)
-		// drawPatterWithCanvas(canvas!!)
+		//	drawFace(ctx!!)
+		//drawPattern(canvas!!)
+		//drawElements(canvas!!)
+	//	drawPatterWithCanvas(canvas!!)
+	//	drawPatterWithCanvasWebGL(canvas!!)
+
+		//testClip(canvas!!)
+		//roundRect(canvas!!)
 		//	executor.submit {
 		// drawPatterWithCanvas(canvas!!)
 		//  drawPatterWithCanvas(canvas!!)
@@ -1639,6 +1658,58 @@ class MainActivity : AppCompatActivity() {
 	}
 
 
+	fun testClip(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		// Create circular clipping region
+		ctx.beginPath()
+		ctx.arc(100F, 75F, 50F, 0F, (Math.PI * 2).toFloat())
+		ctx.clip();
+
+		// Draw stuff that gets clipped
+		ctx.setFillStyleWithString("blue")
+		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+		ctx.setFillStyleWithString("orange")
+		ctx.fillRect(0f, 0f, 100f, 100f)
+	}
+
+	fun roundRect(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+		// Rounded rectangle with zero radius (specified as a number)
+		ctx.setStrokeStyleWithString("red")
+		ctx.beginPath();
+		ctx.roundRect(10f, 20f, 150f, 100f, 0f)
+		ctx.stroke();
+
+// Rounded rectangle with 40px radius (single element list)
+		ctx.setStrokeStyleWithString("blue")
+		ctx.beginPath();
+		ctx.roundRect(10f, 20f, 150f, 100f, floatArrayOf(40f));
+		ctx.stroke();
+
+
+		// Rounded rectangle with 2 different radii
+		ctx.setStrokeStyleWithString("orange")
+		ctx.beginPath();
+		ctx.roundRect(10f, 150f, 150f, 100f, floatArrayOf(10f, 40f))
+		ctx.stroke();
+
+
+		// Rounded rectangle with four different radii
+		ctx.setStrokeStyleWithString("green")
+		ctx.beginPath();
+		ctx.roundRect(400f, 20f, 200f, 100f, floatArrayOf(0f, 30f, 50f, 60f));
+		ctx.stroke();
+
+// Same rectangle drawn backwards
+		ctx.setStrokeStyleWithString("magenta")
+		ctx.beginPath();
+		ctx.roundRect(400f, 150f, -200f, 100f, floatArrayOf(0f, 30f, 50f, 60f));
+		ctx.stroke();
+
+	}
+
+
 	fun drawImageWithCanvasIngl(canvas: TNSCanvas) {
 		val patternCanvas = TNSCanvas(this)
 		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
@@ -1659,9 +1730,11 @@ class MainActivity : AppCompatActivity() {
 		val ctx = canvas.getContext("webgl") as TNSWebGLRenderingContext
 	}
 
-	fun drawPatterWithCanvas(canvas: TNSCanvas) {
+
+	fun drawPatterWithCanvasWebGL(canvas: TNSCanvas) {
 		val patternCanvas = TNSCanvas(this)
-		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+
 // Give the pattern a width and height of 50
 		val scale = resources.displayMetrics.density
 		val width = (50 * scale).toInt()
@@ -1673,24 +1746,148 @@ class MainActivity : AppCompatActivity() {
 		patternCanvas.layout(0, 0, width, height)
 
 
-// Give the pattern a background color and draw an arc
-		patternContext.fillStyle = TNSColor("#fec")
-		val style = patternContext.fillStyle as TNSColor
-		patternContext.fillRect(
-			0f, 0f, 50f, 50f
-		);
-		patternContext.arc(0f, 0f, 50f, 0f, (0.5 * Math.PI).toFloat());
-		patternContext.stroke()
+		val patternContext = patternCanvas.getContext("webgl") as TNSWebGLRenderingContext
 
+		drawTriangle(patternCanvas)
 
-// Create our primary canvas and fill it with the pattern
+		//Create our primary canvas and fill it with the pattern
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		val pattern = ctx.createPattern(patternCanvas, TNSPatternRepetition.Repeat)
+
 		pattern?.let {
 			ctx.fillStyle = it
 		}
-		val density = resources.displayMetrics.density
+
 		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+	}
+
+	fun drawTriangle(canvas: TNSCanvas) {
+		val gl = canvas.getContext("webgl") as? TNSWebGLRenderingContext
+		canvas.queueEvent {
+			val vertex = floatArrayOf(
+				-1f, 1f, 0f,
+				-1f, -1f, 0f,
+				1f, -1f, 0f
+
+			)
+
+
+			val vertexBuf = ByteBuffer.allocate(vertex.size * 4).order(ByteOrder.nativeOrder())
+			vertexBuf.asFloatBuffer().put(vertex)
+			vertexBuf.rewind()
+			val vs_source = """
+				#version 300 es
+				in vec3 aPos;
+				void main(){
+				gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0f);
+				}
+			""".trimIndent()
+
+			val fs_source = """
+				#version 300 es
+				precision mediump float;
+				out vec4 FragColor;
+				void main(){
+				FragColor = vec4(1.0f,0.0f,0.0f,1.0f);
+				}
+			""".trimIndent()
+
+
+			val program = GLES20.glCreateProgram()
+			val vs = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
+			GLES20.glShaderSource(vs, vs_source)
+
+
+			val fs = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER)
+			GLES20.glShaderSource(fs, fs_source)
+
+			GLES20.glCompileShader(vs)
+			GLES20.glCompileShader(fs)
+
+			GLES20.glAttachShader(program, vs)
+			GLES20.glAttachShader(program, fs)
+
+			GLES20.glLinkProgram(program)
+
+			val attr = GLES20.glGetAttribLocation(program, "aPos")
+			val vbo = intArrayOf(0)
+			GLES20.glGenBuffers(1, vbo, 0)
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0])
+			GLES20.glBufferData(
+				GLES20.GL_ARRAY_BUFFER,
+				vertexBuf.capacity(),
+				vertexBuf,
+				GLES20.GL_STATIC_DRAW
+			)
+
+			GLES20.glVertexAttribPointer(attr, 3, GLES20.GL_FLOAT, false, 3 * 4, 0)
+			GLES20.glEnableVertexAttribArray(0)
+			GLES20.glUseProgram(program)
+
+				GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
+			//	gl?.updateCanvas()
+
+		//	gl?.drawArrays(GLES20.GL_TRIANGLES, 0, 3)
+
+		}
+	}
+
+
+	fun drawPatterWithCanvas(canvas: TNSCanvas) {
+		val patternCanvas = TNSCanvas(this)
+
+
+// Give the pattern a width and height of 50
+		val scale = resources.displayMetrics.density
+		val width = (50 * scale).toInt()
+		val height = (50 * scale).toInt()
+		patternCanvas.layoutParams = FrameLayout.LayoutParams(width, height)
+		val w = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
+		val h = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+		patternCanvas.measure(w, h)
+		patternCanvas.layout(0, 0, width, height)
+
+
+		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+// Give the pattern a background color and draw an arc
+		patternContext.fillStyle = TNSColor("#fec")
+		patternContext.fillRect(
+			0f, 0f, width.toFloat(), height.toFloat()
+		);
+		patternContext.arc(0f, 0f, width.toFloat(), 0f, (0.5 * Math.PI).toFloat());
+		patternContext.stroke()
+
+
+		//Create our primary canvas and fill it with the pattern
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val pattern = ctx.createPattern(patternCanvas, TNSPatternRepetition.Repeat)
+
+		pattern?.let {
+			ctx.fillStyle = it
+		}
+
+		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+	}
+
+	fun createConicGradient(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+// Create a conic gradient
+// The start angle is 0
+// The center position is 100, 100
+		val gradient = ctx.createConicGradient(0f, 100f, 100f)
+
+// Add five color stops
+		gradient.addColorStop(0f, "red");
+		gradient.addColorStop(0.25f, "orange");
+		gradient.addColorStop(0.5f, "yellow");
+		gradient.addColorStop(0.75f, "green");
+		gradient.addColorStop(1f, "blue");
+
+// Set the fill style and draw a rectangle
+		ctx.fillStyle = gradient;
+		ctx.fillRect(20f, 20f, 200f, 200f);
 	}
 
 
@@ -2494,12 +2691,15 @@ class MainActivity : AppCompatActivity() {
 
 
 	fun drawTriangle(ctx: TNSCanvasRenderingContext2D) {
+		val start = System.nanoTime()
 		ctx.beginPath();
-		ctx.moveTo(20f, 140f);   // Move pen to bottom-left corner
-		ctx.lineTo(120f, 10f);   // Line to top corner
-		ctx.lineTo(220f, 140f);  // Line to bottom-right corner
-		ctx.closePath();       // Line to bottom-left corner
-		ctx.stroke();
+		ctx.moveTo(20f, 140f)   // Move pen to bottom-left corner
+		ctx.lineTo(120f, 10f)  // Line to top corner
+		ctx.lineTo(220f, 140f)  // Line to bottom-right corner
+		ctx.closePath()      // Line to bottom-left corner
+		ctx.stroke()
+		Log.d("TIME", "complete ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)}")
+
 	}
 
 	fun drawArcMDN(ctx: TNSCanvasRenderingContext2D) {

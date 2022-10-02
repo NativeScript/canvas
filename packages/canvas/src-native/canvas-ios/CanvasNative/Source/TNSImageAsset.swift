@@ -166,13 +166,7 @@ public class TNSImageAsset: NSObject {
         return Int32(image_asset_height(asset))
     }
     
-    public func flipX(){
-        if(asset == 0){
-            return
-        }
-        image_asset_flip_x(asset)
-        free_data()
-    }
+    public func flipX(){}
     
     private func free_data(){
         if(self.raw_data != nil){
@@ -181,13 +175,7 @@ public class TNSImageAsset: NSObject {
         }
     }
     
-    public func flipY(){
-        if(asset == 0){
-            return
-        }
-        image_asset_flip_y(asset)
-        free_data()
-    }
+    public func flipY(){}
     
     public func scale(x: UInt32, y: UInt32){
         if(asset == 0){

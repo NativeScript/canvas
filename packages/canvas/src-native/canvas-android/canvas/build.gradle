@@ -10,6 +10,7 @@ buildscript {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'org.mozilla.rust-android-gradle.rust-android'
 
 project.ext {
 	RELEASE_REPOSITORY_URL = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
@@ -17,10 +18,10 @@ project.ext {
 }
 
 android {
-	compileSdkVersion 32
+	compileSdkVersion 33
 	defaultConfig {
 		minSdkVersion 17
-		targetSdkVersion 32
+		targetSdkVersion 33
 		versionCode 1
 		versionName "1.0"
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -65,3 +66,31 @@ repositories {
 }
 
 apply from: 'publish.gradle'
+
+cargo {
+	module  = "../../canvas-native"
+	libname = "canvasnative"
+	targets = ["arm", "arm64", "x86","x86_64"]
+	//targets = ["arm64"]
+	apiLevels = [
+		"arm": 17,
+		"arm64": 21,
+		"x86": 17,
+		"x86_64": 21
+	]
+	profile = 'release'
+
+	extraCargoBuildArguments = ['-Z', "build-std=std,panic_abort", '-Z', 'build-std-features=panic_immediate_abort']
+	rustupChannel = "nightly"
+
+	exec { spec, toolchain ->
+		spec.environment("RUSTFLAGS", '-C link-arg=-s')
+	}
+}
+
+
+tasks.whenTaskAdded { task ->
+	if ((task.name == 'javaPreCompileDebug' || task.name == 'javaPreCompileRelease')) {
+		task.dependsOn 'cargoBuild'
+	}
+}

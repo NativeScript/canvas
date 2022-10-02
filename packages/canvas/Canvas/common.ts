@@ -6,19 +6,18 @@ export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
 }
 
-
 export class TouchEvent {
 	readonly type: string;
 	constructor(name, init?: { [key: string]: any }) {
 		this.type = name;
 		if (init && typeof init === 'object') {
-			Object.keys(init).forEach(key => {
+			Object.keys(init).forEach((key) => {
 				this[key] = init[key];
 			});
 		}
 	}
-	preventDefault() { }
-	stopPropagation() { }
+	preventDefault() {}
+	stopPropagation() {}
 }
 
 export class PointerEvent {
@@ -26,22 +25,21 @@ export class PointerEvent {
 	constructor(name, init?: { [key: string]: any }) {
 		this.type = name;
 		if (init && typeof init === 'object') {
-			Object.keys(init).forEach(key => {
+			Object.keys(init).forEach((key) => {
 				this[key] = init[key];
 			});
 		}
 	}
-	preventDefault() { }
-	stopPropagation() { }
+	preventDefault() {}
+	stopPropagation() {}
 }
 
-const WEB_GESTURE_EVENTS = ['touchmove', 'touchstart', 'touchcancel', 'touchend', 'change', 'pointerup', 'pointerdown', 'pointermove', 'pointercancel'];
-
+const WEB_GESTURE_EVENTS = ['touchmove', 'touchstart', 'touchcancel', 'touchend', 'change', 'pointerup', 'pointerdown', 'pointermove', 'pointercancel', 'mousedown', 'mousemove'];
 
 export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
 	name: 'ignorePixelScaling',
 	defaultValue: false,
-	valueConverter: booleanConverter
+	valueConverter: booleanConverter,
 });
 
 let pointerId = 0;
@@ -62,13 +60,12 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	private _previousPinchDistance = 0;
 	private _previousPointerCount = 0;
 
-	private _pointers: { id: number, coords: { x: number, y: number } }[] = [];
+	private _pointers: { id: number; coords: { x: number; y: number } }[] = [];
 
 	protected constructor() {
 		super();
 		this._classList = new Set();
 	}
-
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
 		super.addEventListener(arg, callback, thisArg);
@@ -81,7 +78,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		super.removeEventListener(arg, callback, thisArg);
 		if (WEB_GESTURE_EVENTS.indexOf(arg) !== -1) {
 			// if we dont have any other web gestures we can unregister gestures
-			if (!WEB_GESTURE_EVENTS.some(e => this.hasListeners(e))) {
+			if (!WEB_GESTURE_EVENTS.some((e) => this.hasListeners(e))) {
 				this.__unregisterGestures();
 			}
 		}
@@ -227,10 +224,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
+	setPointerCapture() {}
 
-	setPointerCapture() { }
-
-	releasePointerCapture() { }
+	releasePointerCapture() {}
 
 	__ensureGestures() {
 		if (!this._gesturesRegistered) {
@@ -266,11 +262,11 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				for (let i = 0; i < set.count; i++) {
 					const touch = objects.objectAtIndex(i);
 					const point = touch.locationInView(touch.view);
-					positions.push(point.x, point.y)
+					positions.push(point.x, point.y);
 				}
 			} else {
 				const count = event.ios.numberOfTouches;
-				const rec = (<UIGestureRecognizer>event.ios);
+				const rec = <UIGestureRecognizer>event.ios;
 				for (let i = 0; i < count; i++) {
 					const point = rec.locationOfTouchInView(i, rec.view);
 					positions.push(point.x, point.y);
@@ -296,12 +292,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 		let hasPointerDown = false;
 		let hasTouchStart = false;
+		let hasMouseDown = false;
 
 		let hasPointerMove = false;
 		let hasTouchMove = false;
+		let hasMouseMove = false;
 
 		let hasPointerUp = false;
 		let hasTouchEnd = false;
+		let hasMouseUp = false;
 
 		let hasPointerCancel = false;
 		let hasTouchCancel = false;
@@ -311,7 +310,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				case 'down':
 					hasPointerDown = this.hasListeners('pointerdown');
 					hasTouchStart = this.hasListeners('touchstart');
-					if (hasPointerDown || hasTouchStart) {
+					hasMouseDown = this.hasListeners('mousedown');
+					if (hasPointerDown || hasTouchStart || hasMouseDown) {
 						const numberOfPointers = (<TouchGestureEventData>event).getPointerCount();
 						const positions = this._positionsFromEvent(event);
 						const x = (<TouchGestureEventData>event).getX();
@@ -320,11 +320,11 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							numberOfPointers,
 							positions,
 							x,
-							y
-						}
+							y,
+						};
 					}
 
-					if (hasPointerDown && this._previousPointerCount !== extraData.numberOfPointers) {
+					if ((hasPointerDown || hasMouseDown) && this._previousPointerCount !== extraData.numberOfPointers) {
 						this._previousPointerCount = extraData.numberOfPointers;
 						pointerId++;
 
@@ -332,28 +332,36 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							id: pointerId,
 							coords: {
 								x: extraData.x,
-								y: extraData.y
-							}
+								y: extraData.y,
+							},
+						};
+
+						if (hasPointerDown) {
+							this.notify({
+								...this._createPointerEvent('pointerdown', extraData),
+								pointerId: pointerId,
+							});
 						}
 
-						this.notify({
-							...this._createPointerEvent('pointerdown', extraData),
-							pointerId: pointerId
-						});
+						if (hasMouseDown) {
+							this.notify({
+								...this._createPointerEvent('mousedown', extraData),
+								pointerId: pointerId,
+							});
+						}
 					}
 
 					if (hasTouchStart) {
-						this.notify(
-							this._createTouchEvent('touchstart', extraData)
-						);
+						this.notify(this._createTouchEvent('touchstart', extraData));
 					}
 
 					break;
 				case 'up':
 					hasPointerUp = this.hasListeners('pointerup');
 					hasTouchEnd = this.hasListeners('touchend');
+					hasMouseUp = this.hasListeners('mouseup');
 
-					if (hasPointerUp || hasTouchEnd) {
+					if (hasPointerUp || hasTouchEnd || hasMouseUp) {
 						const numberOfPointers = (<TouchGestureEventData>event).getPointerCount();
 						const positions = this._positionsFromEvent(event);
 						const x = (<TouchGestureEventData>event).getX();
@@ -362,26 +370,34 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							numberOfPointers,
 							positions,
 							x,
-							y
-						}
+							y,
+						};
 					}
 
-					if (hasPointerUp) {
+					if (hasPointerUp || hasMouseUp) {
 						this._previousPointerCount -= extraData.numberOfPointers;
 						for (let i = 0; i < extraData.numberOfPointers; i++) {
 							const x = extraData.positions[i];
 							const y = extraData.positions[i + 1];
-							this.notify({
-								...this._createPointerEvent('pointerup', { ...extraData, x, y }),
-								pointerId: this._pointers[i].id
-							});
+
+							if (hasPointerUp) {
+								this.notify({
+									...this._createPointerEvent('pointerup', { ...extraData, x, y }),
+									pointerId: this._pointers[i].id,
+								});
+							}
+
+							if (hasMouseUp) {
+								this.notify({
+									...this._createPointerEvent('mouseup', { ...extraData, x, y }),
+									pointerId: this._pointers[i].id,
+								});
+							}
 						}
 					}
 
 					if (hasTouchEnd) {
-						this.notify(
-							this._createTouchEvent('touchend', extraData)
-						);
+						this.notify(this._createTouchEvent('touchend', extraData));
 					}
 					break;
 				case 'cancel':
@@ -396,8 +412,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							numberOfPointers,
 							positions,
 							x,
-							y
-						}
+							y,
+						};
 					}
 					if (hasPointerCancel) {
 						if (global.isAndroid) {
@@ -410,15 +426,13 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							const y = extraData.positions[i + 1];
 							this.notify({
 								...this._createPointerEvent('pointercancel', { ...extraData, x, y }),
-								pointerId: this._pointers[i].id
+								pointerId: this._pointers[i].id,
 							});
 						}
 					}
 
 					if (hasTouchCancel) {
-						this.notify(
-							this._createTouchEvent('touchcancel', extraData)
-						);
+						this.notify(this._createTouchEvent('touchcancel', extraData));
 					}
 					break;
 				case 'move':
@@ -426,16 +440,17 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						const numberOfPointers = this._pointerCountFromEvent(event);
 						hasPointerMove = this.hasListeners('pointermove');
 						hasTouchMove = this.hasListeners('touchmove');
+						hasMouseMove = this.hasListeners('mousemove');
 						let data = {};
 
-						if (hasPointerMove || hasTouchMove) {
+						if (hasPointerMove || hasTouchMove || hasMouseMove) {
 							const positions = this._positionsFromEvent(event);
 							extraData = {
 								numberOfPointers,
 								positions,
 								x: positions[0],
-								y: positions[1]
-							}
+								y: positions[1],
+							};
 
 							const dx = extraData.positions[2] - extraData.positions[0];
 							const dy = extraData.positions[3] - extraData.positions[1];
@@ -447,8 +462,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							}
 							this._previousPinchDistance = distance;
 
-							const x = dx //event.getFocusX();
-							const y = dy //event.getFocusY();
+							const x = dx; //event.getFocusX();
+							const y = dy; //event.getFocusY();
 							const scale = event.scale;
 
 							data = {
@@ -463,23 +478,30 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							};
 						}
 
-						if (hasPointerMove) {
+						if (hasPointerMove || hasMouseMove) {
 							const count = extraData.numberOfPointers;
 							const positions = extraData.positions;
 							for (let i = 0; i < count; i++) {
 								let x = positions[i] - extraData.x;
 								let y = positions[i + 1] - extraData.y;
-								this.notify({
-									...this._createPointerEvent('pointermove', { ...extraData, x, y }),
-									pointerId: this._pointers[i].id
-								});
+								if (hasPointerMove) {
+									this.notify({
+										...this._createPointerEvent('pointermove', { ...extraData, x, y }),
+										pointerId: this._pointers[i].id,
+									});
+								}
+
+								if (hasMouseMove) {
+									this.notify({
+										...this._createPointerEvent('mousemove', { ...extraData, x, y }),
+										pointerId: this._pointers[i].id,
+									});
+								}
 							}
 						}
 
 						if (hasTouchMove) {
-							this.notify(
-								this._createTouchEvent('touchmove', { ...extraData, data })
-							);
+							this.notify(this._createTouchEvent('touchmove', { ...extraData, data }));
 						}
 					}
 					break;
@@ -488,7 +510,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		} else if (event.eventName === 'pinch') {
 			if (global.isAndroid) {
-				if ((event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed)) {
+				if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
 					this._isPinching = true;
 					this._previousPinchDistance = 0;
 				}
@@ -508,16 +530,17 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					if (global.isIOS) {
 						hasPointerMove = this.hasListeners('pointermove');
 						hasTouchMove = this.hasListeners('touchmove');
+						hasMouseMove = this.hasListeners('mousemove');
 						let data = {};
 						let delta = 0;
-						if (hasPointerMove || hasTouchMove) {
+						if (hasPointerMove || hasTouchMove || hasMouseMove) {
 							const positions = this._positionsFromEvent(event);
 							extraData = {
 								numberOfPointers,
 								positions,
 								x: positions[0],
-								y: positions[1]
-							}
+								y: positions[1],
+							};
 
 							const dx = extraData.positions[2] - extraData.positions[0];
 							const dy = extraData.positions[3] - extraData.positions[1];
@@ -544,36 +567,43 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							};
 						}
 
-						if (hasPointerMove) {
+						if (hasPointerMove || hasMouseMove) {
 							const count = extraData.numberOfPointers;
 							const positions = extraData.positions;
 							for (let i = 0; i < count; i++) {
 								let x = positions[i] - extraData.x;
 								let y = positions[i + 1] - extraData.y;
-								this.notify({
-									...this._createPointerEvent('pointermove', { ...extraData, x, y }),
-									pointerId: this._pointers[i].id
-								});
+								if (hasPointerMove) {
+									this.notify({
+										...this._createPointerEvent('pointermove', { ...extraData, x, y }),
+										pointerId: this._pointers[i].id,
+									});
+								}
+
+								if (hasMouseMove) {
+									this.notify({
+										...this._createPointerEvent('mousemove', { ...extraData, x, y }),
+										pointerId: this._pointers[i].id,
+									});
+								}
 							}
 						}
 
 						if (hasTouchMove) {
-							this.notify(
-								this._createTouchEvent('touchmove', { ...extraData, data })
-							);
+							this.notify(this._createTouchEvent('touchmove', { ...extraData, data }));
 						}
 					}
 				}
 			}
-		}
-		else if (event.eventName === 'pan') {
+		} else if (event.eventName === 'pan') {
 			if (this._isPinching) {
 				return;
 			}
 			if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
 				hasPointerMove = this.hasListeners('pointermove');
 				hasTouchMove = this.hasListeners('touchmove');
-				if (hasPointerMove || hasTouchMove) {
+				hasMouseMove = this.hasListeners('mousemove');
+				if (hasPointerMove || hasTouchMove || hasMouseMove) {
 					const numberOfPointers = this._pointerCountFromEvent(event);
 					const positions = this._positionsFromEvent(event);
 					const x = positions[0];
@@ -582,26 +612,34 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						numberOfPointers,
 						positions,
 						x,
-						y
-					}
+						y,
+					};
 				}
 
-				if (hasPointerMove) {
+				if (hasPointerMove || hasMouseMove) {
 					const positions = extraData.positions;
 					for (let i = 0; i < extraData.numberOfPointers; i++) {
 						const x = positions[i];
 						const y = positions[i + 1];
-						this.notify({
-							...this._createPointerEvent('pointermove', { numberOfPointers: extraData.numberOfPointers, positions, x, y }),
-							pointerId: this._pointers[i].id
-						});
+						if (hasPointerMove) {
+							this.notify({
+								...this._createPointerEvent('pointermove', { numberOfPointers: extraData.numberOfPointers, positions, x, y }),
+								pointerId: this._pointers[i].id,
+							});
+						}
+
+						if (hasMouseMove) {
+							this.notify({
+								...this._createPointerEvent('mousemove', { numberOfPointers: extraData.numberOfPointers, positions, x, y }),
+								pointerId: this._pointers[i].id,
+							});
+						}
 					}
 				}
 
 				if (hasTouchMove) {
 					this.notify(this._createTouchEvent('touchmove', extraData));
 				}
-
 			}
 		}
 	}
@@ -648,7 +686,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			});
 		}
 
-
 		return Object.assign(new TouchEvent(name), {
 			eventName: name,
 			defaultPrevented: false,
@@ -661,7 +698,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			changedTouches: pointers,
 			targetTouches: pointers,
 			touches: pointers,
-			...activePointer
+			...activePointer,
 		});
 	}
 
@@ -686,7 +723,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			y,
 			width: 23.4375,
 			height: 23.4375,
-			isPrimary: true
+			isPrimary: true,
 		};
 
 		return Object.assign(new PointerEvent(name), {
@@ -698,9 +735,12 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			metaKey: false,
 			shiftKey: false,
 			target: this,
-			...activePointer
+			...activePointer,
+			preventDefault: () => {},
 		});
 	}
+
+	preventDefault() {}
 }
 
 ignorePixelScalingProperty.register(CanvasBase);

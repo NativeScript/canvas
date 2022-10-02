@@ -3,12 +3,16 @@ package org.nativescript.canvas
 /**
  * Created by triniwiz on 2019-07-13
  */
+
 enum class TNSCompositeOperationType(private var type: String, private var value: Int) {
-	SourceOver("source-over", 0), SourceIn("source-in", 1), SourceOut(
+	SourceOver("source-over", 0),
+	SourceIn("source-in", 1),
+	SourceOut(
 		"source-out",
 		2
 	),
-	SourceAtop("source-atop", 3), DestinationOver(
+	SourceAtop("source-atop", 3),
+	DestinationOver(
 		"destination-over", 4
 	),
 	DestinationIn("destination-in", 5), DestinationOut(
@@ -61,8 +65,8 @@ enum class TNSCompositeOperationType(private var type: String, private var value
 				7 -> DestinationAtop
 				8 -> Lighter
 				9 -> Copy
-				10 -> Multiply
-				11 -> Xor
+				10 -> Xor
+				11 -> Multiply
 				12 -> Screen
 				13 -> Overlay
 				14 -> Darken
@@ -75,7 +79,8 @@ enum class TNSCompositeOperationType(private var type: String, private var value
 				21 -> Exclusion
 				22 -> Hue
 				23 -> Saturation
-				24 -> Luminosity
+				24 -> Color
+				25 -> Luminosity
 				else -> SourceOver.apply { isError = true }
 			}
 		}

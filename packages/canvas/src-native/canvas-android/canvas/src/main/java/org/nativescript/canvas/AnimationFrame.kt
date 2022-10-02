@@ -10,6 +10,7 @@ import java.util.concurrent.Executors
 /**
  * Created by triniwiz on 2019-08-13
  */
+
 class AnimationFrame : FrameCallback {
 	companion object {
 		private var callbacks: HashMap<Long, (Long) -> Unit>? = null

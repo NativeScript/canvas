@@ -31,6 +31,9 @@ export function colorRain(canvas) {
   function anim() {
     LAF = requestAnimationFrame(anim);
 
+
+    console.time('start');
+
     ctx.fillStyle = repaintColor;
     ctx.fillRect(0, 0, w, h);
 
@@ -45,6 +48,8 @@ export function colorRain(canvas) {
         dots[i] = dotsVel[i] = 0;
       }
     }
+
+    console.timeEnd('start');
   }
 
   anim();

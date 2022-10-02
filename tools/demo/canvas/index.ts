@@ -4,7 +4,7 @@ import Chart from 'chart.js';
 
 let Matter;
 import { Canvas, ImageAsset } from '@nativescript/canvas';
-import { flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles } from './canvas2d';
+import { flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, roundRect, createConicGradient, globalCompositeOperation, shadowOffsetX, shadowOffsetY, strokeStyle, arcToAnimation } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
@@ -25,7 +25,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		this.draw();
+		//this.draw();
 	}
 
 	svgViewLoaded(args) {
@@ -484,6 +484,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//	fillRule(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//clip(this.canvas);
+		//roundRect(this.canvas);
+		//createConicGradient(this.canvas);
 		//fillStyle(this.canvas);
 		// font(this.canvas);
 		// globalAlpha(this.canvas);
@@ -501,12 +503,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowOffsetY(this.canvas);
 		// strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
-		textAlign(this.canvas)
+		//textAlign(this.canvas)
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
-		// arcToAnimation(this.canvas);
-		// ellipse(this.canvas);
+		 //arcToAnimation(this.canvas);
+		 //ellipse(this.canvas);
 		//fillPath(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
@@ -578,7 +580,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		//this.zen3dGeometryLoaderGltf(this.canvas);
+		this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
@@ -916,7 +918,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	coloredParticles(canvas) {
 		var ctx = canvas.getContext('2d'),
 			particles = [],
-			patriclesNum = 100,
+			patriclesNum = 10,
 			w = canvas.width,
 			h = canvas.height,
 			colors = ['#f35d4f', '#f36849', '#c0d988', '#6ddaf1', '#f1e85b'];

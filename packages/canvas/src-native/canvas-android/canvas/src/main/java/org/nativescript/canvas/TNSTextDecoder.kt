@@ -60,7 +60,6 @@ class TNSTextDecoder {
 		return String(result, Charset.defaultCharset())
 	}
 
-
 	fun decodeByteBuffer(buffer: ByteBuffer): String {
 		val result = nativeDecodeBufferToBytes(nativeDecoder, buffer)
 		return String(result, Charset.defaultCharset())

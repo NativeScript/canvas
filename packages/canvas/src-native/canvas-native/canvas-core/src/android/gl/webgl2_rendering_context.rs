@@ -13,9 +13,6 @@ use jni::sys::{
 
 use crate::common::context::image_asset::ImageAsset;
 
-const RGBA: u32 = 0x1908;
-const RGBA_INTEGER: u32 = 0x8D99;
-
 #[no_mangle]
 pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeFlipInPlace3D(
     env: JNIEnv,
@@ -396,34 +393,46 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
 ) {
     let asset: *mut ImageAsset = asset as _;
     let asset = &mut *asset;
-    let mut data;
-    match format as u32 {
-        RGBA | RGBA_INTEGER => data = asset.rgba_internal_bytes(),
-        _ => data = asset.rgb_internal_bytes(),
+    if let Some(bytes) = asset.get_bytes() {
+        if flipY == JNI_TRUE {
+            //  flip source image ?
+            let mut bytes = bytes.to_vec();
+            crate::common::utils::gl::flip_in_place_3d(
+                bytes.as_mut_ptr(),
+                bytes.len(),
+                crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
+                    * asset.width() as usize,
+                asset.height() as usize,
+                depth as usize,
+            );
+
+            gl_bindings::glTexImage3D(
+                target as u32,
+                level,
+                internalformat,
+                width,
+                height,
+                depth,
+                border,
+                format as u32,
+                image_type as u32,
+                bytes.as_ptr() as *const c_void,
+            );
+        } else {
+            gl_bindings::glTexImage3D(
+                target as u32,
+                level,
+                internalformat,
+                width,
+                height,
+                depth,
+                border,
+                format as u32,
+                image_type as u32,
+                bytes.as_ptr() as *const c_void,
+            );
+        }
     }
-    let data_array = data.as_mut_slice();
-    if flipY == JNI_TRUE {
-        crate::common::utils::gl::flip_in_place_3d(
-            data_array.as_mut_ptr(),
-            data_array.len(),
-            crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
-                * asset.width() as usize,
-            asset.height() as usize,
-            depth as usize,
-        );
-    }
-    gl_bindings::glTexImage3D(
-        target as u32,
-        level,
-        internalformat,
-        width,
-        height,
-        depth,
-        border,
-        format as u32,
-        image_type as u32,
-        data_array.as_ptr() as *const c_void,
-    );
 }
 
 #[no_mangle]
@@ -850,35 +859,48 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
 ) {
     let asset: *mut ImageAsset = asset as _;
     let asset = &mut *asset;
-    let mut data;
-    match format as u32 {
-        RGBA | RGBA_INTEGER => data = asset.rgba_internal_bytes(),
-        _ => data = asset.rgb_internal_bytes(),
+
+    if let Some(bytes) = asset.get_bytes() {
+        if flipY == JNI_TRUE {
+            let mut bytes = bytes.to_vec();
+            crate::common::utils::gl::flip_in_place_3d(
+                bytes.as_mut_ptr(),
+                bytes.len(),
+                crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
+                    * asset.width() as usize,
+                asset.height() as usize,
+                depth as usize,
+            );
+
+            gl_bindings::glTexSubImage3D(
+                target as u32,
+                level,
+                xoffset,
+                yoffset,
+                zoffset,
+                width,
+                height,
+                depth,
+                format as u32,
+                image_type as u32,
+                bytes.as_ptr() as *const c_void,
+            );
+        }else {
+            gl_bindings::glTexSubImage3D(
+                target as u32,
+                level,
+                xoffset,
+                yoffset,
+                zoffset,
+                width,
+                height,
+                depth,
+                format as u32,
+                image_type as u32,
+                bytes.as_ptr() as *const c_void,
+            );
+        }
     }
-    let data_array = data.as_mut_slice();
-    if flipY == JNI_TRUE {
-        crate::common::utils::gl::flip_in_place_3d(
-            data_array.as_mut_ptr(),
-            data_array.len(),
-            crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
-                * asset.width() as usize,
-            asset.height() as usize,
-            depth as usize,
-        );
-    }
-    gl_bindings::glTexSubImage3D(
-        target as u32,
-        level,
-        xoffset,
-        yoffset,
-        zoffset,
-        width,
-        height,
-        depth,
-        format as u32,
-        image_type as u32,
-        data_array.as_ptr() as *const c_void,
-    );
 }
 
 #[no_mangle]

@@ -28,6 +28,10 @@ class TNSTextEncoder {
 	val encoding: String
 		get() = nativeGetEncoding(nativeEncoder)
 
+	fun encodeToBuffer(text: String): ByteBuffer {
+		return nativeEncodeToBuffer(nativeEncoder, text)
+	}
+
 	fun encode(text: String): ByteBuffer {
 		val buf = nativeEncode(nativeEncoder, text)
 		return ByteBuffer.wrap(buf)
@@ -45,5 +49,9 @@ class TNSTextEncoder {
 
 		@JvmStatic
 		private external fun nativeEncode(encoder: Long, text: String): ByteArray
+
+		@JvmStatic
+		private external fun nativeEncodeToBuffer(encoder: Long, text: String): ByteBuffer
 	}
 }
+

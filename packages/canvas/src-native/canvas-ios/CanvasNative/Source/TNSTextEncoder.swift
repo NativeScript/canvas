@@ -43,8 +43,10 @@ public class TNSTextEncoder: NSObject {
             return NSData()
         }
         let pointer = result!.pointee
-        let bytes = NSData(bytes: pointer.data, length: Int(pointer.data_len))
-        destroy_u8_array(result)
+        let bytes = NSMutableData(bytesNoCopy: pointer.data, length: Int(pointer.data_len), deallocator: { ptr, count in
+            destroy_u8_array(result)
+        })
+        
         return bytes
     }
     
@@ -54,8 +56,10 @@ public class TNSTextEncoder: NSObject {
             return NSData()
         }
         let pointer = result!.pointee
-        let bytes = NSData(bytes: pointer.data, length: Int(pointer.data_len))
-        destroy_u8_array(result)
+        let bytes = NSMutableData(bytesNoCopy: pointer.data, length: Int(pointer.data_len), deallocator: { ptr, count in
+            destroy_u8_array(result)
+        })
+        
         return bytes
     }
     

@@ -28,11 +28,15 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetBytes
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.bytes_internal();
-        if let Ok(array) = env.byte_array_from_slice(bytes.as_slice()) {
-            array
-        } else {
-            env.new_byte_array(0).unwrap()
+        match asset.get_bytes() {
+            Some(bytes) =>{
+                if let Ok(array) = env.byte_array_from_slice(bytes) {
+                    array
+                } else {
+                    env.new_byte_array(0).unwrap()
+                }
+            }
+            _ => env.new_byte_array(0).unwrap()
         }
     }
 }
@@ -94,38 +98,20 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeScale(
 pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeFlipX(
     _env: JNIEnv,
     _: JClass,
-    asset: jlong,
+    _asset: jlong,
 ) -> jboolean {
-    if asset == 0 {
-        return JNI_FALSE;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        if asset.flip_x() {
-            return JNI_TRUE;
-        }
-        JNI_FALSE
-    }
+    // noop
+    JNI_FALSE
 }
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeFlipY(
     _env: JNIEnv,
     _: JClass,
-    asset: jlong,
+    _asset: jlong,
 ) -> jboolean {
-    if asset == 0 {
-        return JNI_FALSE;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        if asset.flip_y() {
-            return JNI_TRUE;
-        }
-        JNI_FALSE
-    }
+    // noop
+    JNI_FALSE
 }
 
 #[no_mangle]
@@ -143,7 +129,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeSave(
         unsafe {
             let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
-            if asset.save_path(path.as_ptr(), OutputFormat::from(format)) {
+            if asset.save_path(&path.to_string_lossy(), OutputFormat::from(format)) {
                 return JNI_TRUE;
             }
             return JNI_FALSE;
@@ -164,7 +150,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetError
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        if let Ok(error) = env.new_string(&asset.error) {
+        if let Ok(error) = env.new_string(&asset.error()) {
             return error.into_inner();
         }
         env.new_string("").unwrap().into_inner()
@@ -183,7 +169,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeHasError
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        if asset.error.is_empty() {
+        if asset.error().is_empty() {
             return JNI_FALSE;
         }
         JNI_TRUE
@@ -219,7 +205,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAsse
         unsafe {
             let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
-            if asset.load_from_path(path.as_ptr()) {
+            if asset.load_from_path(&path.to_string_lossy()) {
                 return JNI_TRUE;
             }
             return JNI_FALSE;

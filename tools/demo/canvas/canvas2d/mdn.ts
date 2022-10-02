@@ -15,13 +15,65 @@ export function fillStyle(canvas) {
 	}
 }
 
+export function createConicGradient(canvas) {
+	const ctx = canvas.getContext('2d');
+
+	// Create a conic gradient
+	// The start angle is 0
+	// The center position is 100, 100
+	const gradient = ctx.createConicGradient(0, 100, 100);
+
+	// Add five color stops
+	gradient.addColorStop(0, 'red');
+	gradient.addColorStop(0.25, 'orange');
+	gradient.addColorStop(0.5, 'yellow');
+	gradient.addColorStop(0.75, 'green');
+	gradient.addColorStop(1, 'blue');
+
+	// Set the fill style and draw a rectangle
+	ctx.fillStyle = gradient;
+	ctx.fillRect(20, 20, 200, 200);
+}
+
+export function roundRect(canvas) {
+	const ctx = canvas.getContext('2d');
+
+	// Rounded rectangle with zero radius (specified as a number)
+	ctx.strokeStyle = 'red';
+	ctx.beginPath();
+	ctx.roundRect(10, 20, 150, 100, 0);
+	ctx.stroke();
+
+	// Rounded rectangle with 40px radius (single element list)
+	ctx.strokeStyle = 'blue';
+	ctx.beginPath();
+	ctx.roundRect(10, 20, 150, 100, [40]);
+	ctx.stroke();
+
+	// Rounded rectangle with 2 different radii
+	ctx.strokeStyle = 'orange';
+	ctx.beginPath();
+	ctx.roundRect(10, 150, 150, 100, [10, 40]);
+	ctx.stroke();
+
+	// Rounded rectangle with four different radii
+	ctx.strokeStyle = 'green';
+	ctx.beginPath();
+	ctx.roundRect(400, 20, 200, 100, [0, 30, 50, 60]);
+	ctx.stroke();
+
+	// Same rectangle drawn backwards
+	ctx.strokeStyle = 'magenta';
+	ctx.beginPath();
+	ctx.roundRect(400, 150, -200, 100, [0, 30, 50, 60]);
+	ctx.stroke();
+}
 
 export function font(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.font = 'bold 48px serif';
 	ctx.strokeText('Hello world', 50, 100);
 }
-
 
 export function globalAlpha(canvas) {
 	const ctx = canvas.getContext('2d');
@@ -50,11 +102,11 @@ export function imageSmoothingEnabled(canvas) {
 	ctx.font = '16px sans-serif';
 	ctx.textAlign = 'center';
 	const src = ImageSource.fromUrl('https://interactive-examples.mdn.mozilla.net/media/examples/star.png');
-	src.then(img => {
+	src.then((img) => {
 		const w = img.width,
 			h = img.height;
 
-		ctx.fillText('Source', w * .5, 20);
+		ctx.fillText('Source', w * 0.5, 20);
 		ctx.drawImage(img, 0, 24, w, h);
 
 		ctx.fillText('Smoothing = TRUE', w * 2.5, 20);
@@ -69,25 +121,23 @@ export function imageSmoothingEnabled(canvas) {
 
 export function imageSmoothingQuality(canvas) {
 	const ctx = canvas.getContext('2d');
-	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png')
-		.then(function (img) {
-			ctx.imageSmoothingQuality = 'low';
-			ctx.drawImage(img.ios, 0, 0, 300, 150);
-		});
+	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
+		ctx.imageSmoothingQuality = 'low';
+		ctx.drawImage(img.ios, 0, 0, 300, 150);
+	});
 }
 
 export function imageBlock(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.save();
 	const asset = new ImageAsset();
-	asset.loadFromUrlAsync('https://mdn.mozillademos.org/files/5397/rhino.jpg')
-		.then(done => {
-			for (var i = 0; i < 4; i++) {
-				for (var j = 0; j < 3; j++) {
-					ctx.drawImage(asset, (j * 50) * Screen.mainScreen.scale, (i * 38) * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
-				}
+	asset.loadFromUrlAsync('https://source.unsplash.com/random').then((done) => {
+		for (var i = 0; i < 4; i++) {
+			for (var j = 0; j < 3; j++) {
+				ctx.drawImage(asset, j * 50 * Screen.mainScreen.scale, i * 38 * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
 			}
-		});
+		}
+	});
 }
 
 export function lineCap(canvas) {
@@ -99,7 +149,6 @@ export function lineCap(canvas) {
 	ctx.lineTo(100, 100);
 	ctx.stroke();
 }
-
 
 export function lineDashOffset(canvas) {
 	const ctx = canvas.getContext('2d');
@@ -118,9 +167,7 @@ export function lineDashOffset(canvas) {
 	ctx.moveTo(0, 100);
 	ctx.lineTo(300, 100);
 	ctx.stroke();
-
 }
-
 
 export function lineJoin(canvas) {
 	const ctx = canvas.getContext('2d');
@@ -185,14 +232,13 @@ export function miterLimit(canvas) {
 	ctx.stroke();
 }
 
-export function filterBlur(canvas){
-const ctx = canvas.getContext('2d');
+export function filterBlur(canvas) {
+	const ctx = canvas.getContext('2d');
 
-ctx.filter = 'blur(4px)';
-ctx.font = '48px serif';
-ctx.fillText('Hello world', 50, 100);
+	ctx.filter = 'blur(4px)';
+	ctx.font = '48px serif';
+	ctx.fillText('Hello world', 50, 100);
 }
-
 
 export function shadowColor(canvas) {
 	const ctx = canvas.getContext('2d');
@@ -223,7 +269,6 @@ export function shadowOffsetX(canvas) {
 	ctx.fillStyle = 'blue';
 	ctx.fillRect(20, 20, 150, 100);
 }
-
 
 export function shadowOffsetY(canvas) {
 	const ctx = canvas.getContext('2d');
@@ -293,12 +338,12 @@ export function arcMultiple(canvas) {
 	for (let i = 0; i <= 3; i++) {
 		for (let j = 0; j <= 2; j++) {
 			ctx.beginPath();
-			let x = 25 + j * 50;                 // x coordinate
-			let y = 25 + i * 50;                 // y coordinate
-			let radius = 20;                          // Arc radius
-			let startAngle = 0;                           // Starting point on circle
+			let x = 25 + j * 50; // x coordinate
+			let y = 25 + i * 50; // y coordinate
+			let radius = 20; // Arc radius
+			let startAngle = 0; // Starting point on circle
 			let endAngle = Math.PI + (Math.PI * j) / 2; // End point on circle
-			let anticlockwise = i % 2 == 1;                  // Draw anticlockwise
+			let anticlockwise = i % 2 == 1; // Draw anticlockwise
 
 			ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise);
 
@@ -339,7 +384,7 @@ export function arcTo(canvas) {
 	ctx.beginPath();
 	ctx.fillStyle = 'red';
 	ctx.arc(200, 130, 5, 0, 2 * Math.PI); // Control point one
-	ctx.arc(50, 20, 5, 0, 2 * Math.PI);   // Control point two
+	ctx.arc(50, 20, 5, 0, 2 * Math.PI); // Control point two
 	ctx.fill();
 }
 
@@ -379,7 +424,6 @@ export function arcToAnimation(canvas) {
 		ctx.stroke();
 	};
 
-
 	let t0 = 0;
 	let rr = 0; // the radius that changes over time
 	let a = 0; // angle
@@ -399,7 +443,6 @@ export function arcToAnimation(canvas) {
 	loop(0);
 }
 
-
 export function ellipse(canvas) {
 	const ctx = canvas.getContext('2d');
 	// Draw the ellipse
@@ -415,9 +458,7 @@ export function ellipse(canvas) {
 	ctx.stroke();
 }
 
-export function fill(ctx) {
-
-}
+export function fill(ctx) {}
 
 export function fillPath(canvas) {
 	const ctx = canvas.getContext('2d');
@@ -445,7 +486,7 @@ export function createLinearGradient(canvas) {
 
 	// Add three color stops
 	gradient.addColorStop(0, 'green');
-	gradient.addColorStop(.5, 'cyan');
+	gradient.addColorStop(0.5, 'cyan');
 	gradient.addColorStop(1, 'green');
 
 	// Set the fill style and draw a rectangle
@@ -462,7 +503,7 @@ export function createRadialGradient(canvas) {
 
 	// Add three color stops
 	gradient.addColorStop(0, 'pink');
-	gradient.addColorStop(.9, 'white');
+	gradient.addColorStop(0.9, 'white');
 	gradient.addColorStop(1, 'green');
 
 	// Set the fill style and draw a rectangle
@@ -505,11 +546,10 @@ export function scale(canvas) {
 
 export function pattern(canvas) {
 	const ctx = canvas.getContext('2d');
-	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png')
-		.then(function (img) {
-			ctx.fillStyle = ctx.createPattern(img, 'repeat');
-			ctx.fillRect(0, 0, 300, 300);
-		});
+	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
+		ctx.fillStyle = ctx.createPattern(img, 'repeat');
+		ctx.fillRect(0, 0, 300, 300);
+	});
 }
 
 export function patternWithCanvas(canvas) {
@@ -523,7 +563,7 @@ export function patternWithCanvas(canvas) {
 	// Give the pattern a background color and draw an arc
 	patternContext.fillStyle = '#fec';
 	patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-	patternContext.arc(0, 0, 50, 0, .5 * Math.PI);
+	patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
 	patternContext.stroke();
 
 	const ctx = canvas.getContext('2d');
@@ -543,7 +583,6 @@ export function clip(canvas) {
 	// Draw stuff that gets clipped
 	ctx.fillStyle = 'blue';
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillStyle = 'orange';
 	ctx.fillRect(0, 0, 100, 100);
 }
@@ -552,12 +591,11 @@ export function isPointInStrokeTouch(canvas) {
 	const ctx = canvas.getContext('2d');
 	// Create ellipse
 	const ellipse = new Path2D();
-	ellipse.ellipse(150, 75, 40, 60, Math.PI * .25, 0, 2 * Math.PI);
+	ellipse.ellipse(150, 75, 40, 60, Math.PI * 0.25, 0, 2 * Math.PI);
 	ctx.lineWidth = 25;
 	ctx.strokeStyle = 'red';
 	ctx.fill(ellipse);
 	ctx.stroke(ellipse);
-
 
 	// Listen for mouse moves
 	canvas.addEventListener('touchmove', function (args) {

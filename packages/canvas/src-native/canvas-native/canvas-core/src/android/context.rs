@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 
 use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JString, JValue, ReleaseMode};
+use jni::objects::{JClass, JObject, JString, ReleaseMode};
 use jni::sys::{
     jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring,
 };
@@ -26,9 +26,6 @@ use crate::common::context::text_styles::text_direction::TextDirection;
 use crate::common::ffi::paint_style_value::{PaintStyleValueType};
 use crate::common::utils::color::to_parsed_color;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
-
-const JSON_CLASS: &str = "org/json/JSONObject";
-const SIG_OBJECT_CTOR: &str = "()V";
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetDirection(
@@ -80,10 +77,8 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
-    let json_class = env.find_class(JSON_CLASS).unwrap();
-    let json = env.new_object(json_class, SIG_OBJECT_CTOR, &[]).unwrap();
     if context == 0 {
-        return json.into_inner();
+        return super::new_style_ref(&env, 0, -1).into_inner();
     }
     unsafe {
         let context: *mut Context = context as _;
@@ -94,42 +89,16 @@ fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
         } else {
             style = context.stroke_style().clone();
         }
-        let mut value_args = vec![env.new_string("value").unwrap().into()];
-        let mut value_type_args = vec![env.new_string("value_type").unwrap().into()];
-        match style {
-            PaintStyle::Color(_) => {
-                value_type_args.push(JValue::Int(
-                    PaintStyleValueType::PaintStyleValueTypeColor.into(),
-                ));
-            }
-            PaintStyle::Gradient(_) => {
-                value_type_args.push(JValue::Int(
-                    PaintStyleValueType::PaintStyleValueTypeGradient.into(),
-                ));
-            }
-            PaintStyle::Pattern(_) => {
-                value_type_args.push(JValue::Int(
-                    PaintStyleValueType::PaintStyleValueTypePattern.into(),
-                ));
-            }
+
+        let type_ = match style {
+            PaintStyle::Color(_) => PaintStyleValueType::PaintStyleValueTypeColor,
+            PaintStyle::Gradient(_) => PaintStyleValueType::PaintStyleValueTypeGradient,
+            PaintStyle::Pattern(_) => PaintStyleValueType::PaintStyleValueTypePattern
         };
+
         let style = Box::into_raw(Box::new(style)) as jlong;
-        value_args.push(JValue::Long(style));
-        env.call_method(
-            json,
-            "put",
-            "(Ljava/lang/String;J)Lorg/json/JSONObject;",
-            value_args.as_slice(),
-        )
-            .unwrap();
-        env.call_method(
-            json,
-            "put",
-            "(Ljava/lang/String;I)Lorg/json/JSONObject;",
-            value_type_args.as_slice(),
-        )
-            .unwrap();
-        json.into_inner()
+
+        super::new_style_ref(&env, style, type_.into()).into_inner()
     }
 }
 
@@ -913,6 +882,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     }
 }
 
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternFromContext(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    repetition: jint,
+) -> jlong {
+    if context == 0 {
+        return 0;
+    }
+    unsafe {
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        let ss = context.surface.image_snapshot();
+        match ss.to_raster_image(None) {
+            None => 0,
+            Some(image) => {
+                return Box::into_raw(Box::new(PaintStyle::Pattern(
+                    context.create_pattern(image, Repetition::from(repetition)),
+                ))) as jlong;
+            }
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternEncoded(
     env: JNIEnv,
@@ -921,7 +916,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     image_data: jbyteArray,
     repetition: jint,
 ) -> jlong {
-    
     unsafe {
         if context == 0 {
             return 0;
@@ -954,7 +948,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     height: jint,
     repetition: jint,
 ) -> jlong {
-    
     unsafe {
         if context == 0 {
             return 0;
@@ -997,9 +990,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         let context = &mut *context;
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
+        let bytes = asset.get_bytes().unwrap_or_default();
         if let Some(image) = from_image_slice(
-            bytes.as_slice(),
+            bytes,
             asset.width() as i32,
             asset.height() as i32,
         ) {
@@ -1031,6 +1024,27 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         let context = &mut *context;
         Box::into_raw(Box::new(PaintStyle::Gradient(
             context.create_radial_gradient(x0, y0, r0, x1, y1, r1),
+        ))) as jlong
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreateConicGradient(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    start_angle: jfloat,
+    x: jfloat,
+    y: jfloat,
+) -> jlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        Box::into_raw(Box::new(PaintStyle::Gradient(
+            context.create_conic_gradient(start_angle, x, y),
         ))) as jlong
     }
 }
@@ -1133,12 +1147,12 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
+        let bytes = asset.get_bytes().unwrap_or_default();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
             context,
-            bytes.as_slice(),
+            bytes,
             width,
             height,
             0.0,
@@ -1227,12 +1241,12 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
+        let bytes = asset.get_bytes().unwrap_or_default();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
             context,
-            bytes.as_slice(),
+            bytes,
             width,
             height,
             0.0,
@@ -1302,12 +1316,12 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
+        let bytes = asset.get_bytes().unwrap_or_default();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         draw_image(
             context,
-            bytes.as_slice(),
+            bytes,
             width,
             height,
             sx,
@@ -1681,6 +1695,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         context.rect(x, y, width, height)
     }
 }
+
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeRoundRect(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+    y: jfloat,
+    width: jfloat,
+    height: jfloat,
+    top_left: jfloat,
+    top_right: jfloat,
+    bottom_right: jfloat,
+    bottom_left: jfloat,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        context.round_rect(x, y, width, height, [top_left, top_left, top_right, top_right, bottom_right, bottom_right, bottom_left, bottom_left])
+    }
+}
+
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeResetTransform(

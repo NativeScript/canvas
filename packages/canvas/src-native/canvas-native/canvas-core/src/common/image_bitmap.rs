@@ -190,7 +190,7 @@ pub(crate) fn create_image_bitmap(
 
     let image_info = skia_safe::ImageInfo::new(
         (source_rect.width() as i32, source_rect.height() as i32),
-        skia_safe::ColorType::n32(),
+        skia_safe::ColorType::N32,
         ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into(),
         ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
     );
@@ -296,11 +296,11 @@ pub(crate) fn create_from_image_asset_src_rect(
     unsafe {
         let asset: *mut ImageAsset = image_asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
+        let bytes = asset.get_bytes().unwrap_or_default();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
         create_image_asset(
-            bytes.as_slice(),
+            bytes,
             width,
             height,
             rect,

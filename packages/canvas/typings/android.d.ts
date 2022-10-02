@@ -547,6 +547,7 @@ declare module org {
 				public drawImage(param0: org.nativescript.canvas.TNSImageAsset, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number): void;
 				public createPattern(param0: org.nativescript.canvas.TNSImageBitmap, param1: org.nativescript.canvas.TNSPatternRepetition): org.nativescript.canvas.TNSPattern;
 				public setFillStyle(param0: org.nativescript.canvas.TNSColorStyle): void;
+				public setFillStyleWithString(param0: string): void;
 				public getGlobalCompositeOperation(): org.nativescript.canvas.TNSCompositeOperationType;
 				public getCurrentTransform(): org.nativescript.canvas.TNSDOMMatrix;
 				public drawImage(param0: org.nativescript.canvas.TNSCanvas, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number): void;
@@ -566,6 +567,9 @@ declare module org {
 				public getFont(): string;
 				public constructor(param0: org.nativescript.canvas.TNSCanvas);
 				public rect(param0: number, param1: number, param2: number, param3: number): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: number[]): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: number): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number): void;
 				public createImageData(param0: org.nativescript.canvas.TNSImageData): org.nativescript.canvas.TNSImageData;
 				public getDirection(): org.nativescript.canvas.TNSTextDirection;
 				public getLineDash(): androidNative.Array<number>;
@@ -591,6 +595,7 @@ declare module org {
 				public setImageSmoothingEnabled(param0: boolean): void;
 				public restore(): void;
 				public createRadialGradient(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): org.nativescript.canvas.TNSCanvasGradient;
+				public createConicGradient(param0: number, param1: number, param2: number): org.nativescript.canvas.TNSCanvasGradient;
 				public getImageSmoothingEnabled(): boolean;
 				public drawImage(param0: globalAndroid.graphics.Bitmap, param1: number, param2: number): void;
 				public quadraticCurveTo(param0: number, param1: number, param2: number, param3: number): void;
@@ -617,6 +622,7 @@ declare module org {
 				public isPointInStroke(param0: org.nativescript.canvas.TNSPath2D, param1: number, param2: number): boolean;
 				public ellipse(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number): void;
 				public setStrokeStyle(param0: org.nativescript.canvas.TNSColorStyle): void;
+				public setStrokeStyleWithString(param0: string): void;
 				public stroke(): void;
 				public strokeRect(param0: number, param1: number, param2: number, param3: number): void;
 				public setShadowOffsetX(param0: number): void;

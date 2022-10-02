@@ -38,6 +38,105 @@ class TNSPath2D {
 		nativeRect(path, x, y, width, height)
 	}
 
+	fun roundRect(
+		x: Float, y: Float, width: Float, height: Float,
+		topLeft: Float,
+		topRight: Float,
+		bottomRight: Float,
+		bottomLeft: Float
+	) {
+		nativeRoundRect(
+			path,
+			x,
+			y,
+			width,
+			height,
+			topLeft,
+			topRight,
+			bottomRight,
+			bottomLeft
+		)
+	}
+
+
+	fun roundRect(
+		x: Float, y: Float, width: Float, height: Float, radii: Float
+	) {
+		nativeRoundRect(
+			path,
+			x,
+			y,
+			width,
+			height,
+			radii,
+			radii,
+			radii,
+			radii
+		)
+	}
+
+
+
+	fun roundRect(
+		x: Float, y: Float, width: Float, height: Float, radii: FloatArray
+	) {
+		val size = radii.size
+		if (size == 0) {
+			return
+		}
+		/*
+		[all-corners]
+		[top-left-and-bottom-right, top-right-and-bottom-left]
+		[top-left, top-right-and-bottom-left, bottom-right]
+		[top-left, top-right, bottom-right, bottom-left]
+		 */
+		var topLeft = 0f
+		var topRight = 0f
+		var bottomRight = 0f
+		var bottomLeft = 0f
+
+		when (size) {
+			1 -> {
+				topLeft = radii[0]
+				topRight = topLeft
+				bottomRight = topLeft
+				bottomLeft = topLeft
+			}
+
+			2 -> {
+				topLeft = radii[0]
+				topRight = radii[1]
+				bottomRight = topLeft
+				bottomLeft = topRight
+			}
+			3 -> {
+				topLeft = radii[0]
+				topRight = radii[1]
+				bottomRight = radii[2]
+				bottomLeft = topRight
+			}
+			4 -> {
+				topLeft = radii[0]
+				topRight = radii[1]
+				bottomRight = radii[2]
+				bottomLeft = radii[3]
+			}
+		}
+
+		nativeRoundRect(
+			path,
+			x,
+			y,
+			width,
+			height,
+			topLeft,
+			topRight,
+			bottomRight,
+			bottomLeft
+		)
+	}
+
+
 	fun lineTo(x: Float, y: Float) {
 		nativeLineTo(path, x, y)
 	}
@@ -110,6 +209,19 @@ class TNSPath2D {
 			y: Float,
 			width: Float,
 			height: Float
+		)
+
+		@JvmStatic
+		private external fun nativeRoundRect(
+			path: Long,
+			x: Float,
+			y: Float,
+			width: Float,
+			height: Float,
+			topLeft: Float,
+			topRight: Float,
+			bottomRight: Float,
+			bottomLeft: Float
 		)
 
 		@JvmStatic

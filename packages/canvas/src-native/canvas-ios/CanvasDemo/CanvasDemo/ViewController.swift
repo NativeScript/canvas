@@ -24,10 +24,10 @@ class ViewController: UIViewController, TNSCanvasListener {
        // canvas1.isHidden = true
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
-        svg = TNSSVG(frame: view.bounds)
-        canvas1.addSubview(svg!)
-        svg?.bringSubviewToFront(canvas1)
-        svg?.ignorePixelScaling = false
+        //svg = TNSSVG(frame: view.bounds)
+       // canvas1.addSubview(svg!)
+        //svg?.bringSubviewToFront(canvas1)
+        //svg?.ignorePixelScaling = false
         
         
         svg?.src = """
@@ -368,7 +368,7 @@ class ViewController: UIViewController, TNSCanvasListener {
 //                    """
         
         
-          let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
+        //  let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGL2RenderingContext
         //canvas1?.handleInvalidationManually = true
         
         //        let q = DispatchQueue(label: "bg", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
@@ -385,7 +385,7 @@ class ViewController: UIViewController, TNSCanvasListener {
        // drawRotatingCube(gl: gl)
         
         //drawRotatingCube(gl: gl)
-         drawTextures(canvas: canvas1)
+        // drawTextures(canvas: canvas1)
         
         
         // self.drawGL(canvas: self.canvas1!) // sun
@@ -409,7 +409,7 @@ class ViewController: UIViewController, TNSCanvasListener {
          */
         //canvas1?.useDeviceScale = true
         _ = Float(UIScreen.main.scale)
-       // let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
+        //let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
         
         
 //
@@ -493,14 +493,14 @@ class ViewController: UIViewController, TNSCanvasListener {
         //  saveRestoreExample(ctx: ctx)
         //ballExample(ctx: ctx)
         
-        //ctx.fillRect(x: 200, y: 10, width: 200, height: 200);
+        //ctx.fillRect(200, 10, 200, 200);
         // scaleTransformation(ctx: ctx)
-        // particleAnimation(ctx: ctx)
+      //   particleAnimation(ctx: ctx)
         //        canvas1!.toDataURLAsync { (data) in
         //           print("data: ", data)
         //        }
         
-        // drawPatterWithCanvas(canvas: canvas1!)
+         drawPatterWithCanvas(canvas: canvas1!)
         // ellipseExample(ctx: ctx)
         
     }
@@ -535,30 +535,33 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     
     func drawPatterWithCanvas(canvas: TNSCanvas){
-        let patternCanvas = TNSCanvas(frame: .zero, useCpu: true)
+        let patternCanvas = TNSCanvas(frame: .zero, useCpu: false)
         let patternContext = patternCanvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let scale = UIScreen.main.scale
         let width = 50
         let height = 50
         var frame = CGRect()
-        frame.size.width = CGFloat(width)
-        frame.size.height = CGFloat(height)
+        frame.size.width = 50
+        frame.size.height = 50
         patternCanvas.frame = frame
         patternCanvas.setNeedsLayout()
         patternCanvas.layoutIfNeeded()
+    
         
         
         // Give the pattern a background color and draw an arc
         patternContext.fillStyle = TNSColorStyle.TNSColor("#fec")
-        patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height)
+        patternContext.fillRect(0, 0, patternCanvas.width * Float(scale), patternCanvas.height * Float(scale))
         patternContext.arc(0, 0, Float(50 * scale), 0, (0.5 * PI))
         patternContext.stroke()
+        
+        
         // Create our primary canvas and fill it with the pattern
         
         let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let pattern = ctx.createPattern(patternCanvas, .Repeat)
         ctx.fillStyle = pattern as! ICanvasColorStyle
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.fillRect(0, 0, canvas.width * Float(scale), canvas.height * Float(scale))
     }
     
     var vertCode2 = """

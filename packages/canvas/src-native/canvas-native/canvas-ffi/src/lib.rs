@@ -1,9 +1,9 @@
 use std::ffi::CString;
 use std::os::raw::{c_char, c_longlong};
 
+use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::context::drawing_text::text_metrics::TextMetrics;
 use canvas_core::context::fill_and_stroke_styles::paint::PaintStyle;
-use canvas_core::context::{Context, ContextWrapper};
 
 pub mod arrays;
 pub mod context;

@@ -1,8 +1,8 @@
 pub use text_direction::*;
 
 use crate::{
-    context::text_styles::text_align::TextAlign, context::text_styles::text_baseline::TextBaseLine,
-    context::text_styles::text_direction::TextDirection, context::Context,
+    context::Context, context::text_styles::text_align::TextAlign,
+    context::text_styles::text_baseline::TextBaseLine, context::text_styles::text_direction::TextDirection,
 };
 
 pub mod text_align;

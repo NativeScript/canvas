@@ -5,8 +5,6 @@ use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::{null, null_mut};
 use std::sync::Arc;
 
-use image::imageops::FilterType;
-use image::{load_from_memory, DynamicImage, GenericImageView, ImageFormat, ImageResult};
 use parking_lot::lock_api::MutexGuard;
 use parking_lot::RawMutex;
 use stb::image::{Channels, Data, Info};
@@ -101,7 +99,7 @@ impl ImageAsset {
                     };
                     return Some(Self(Arc::new(parking_lot::Mutex::new(inner))));
                 }
-            }
+            };
         }
         None
     }
@@ -161,6 +159,18 @@ impl ImageAsset {
             .info
             .as_ref()
             .map(|v| v.height.try_into().unwrap_or_default())
+            .unwrap_or_default()
+    }
+
+    pub fn size(&self) -> usize {
+        self.get_lock()
+            .info
+            .as_ref()
+            .map(|v| {
+                (v.height * v.width * v.components)
+                    .try_into()
+                    .unwrap_or_default()
+            })
             .unwrap_or_default()
     }
 
@@ -264,6 +274,13 @@ impl ImageAsset {
         self.get_lock().image.as_ref().map(|d| {
             let slice = d.as_slice();
             unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
+        })
+    }
+
+    pub fn get_bytes_mut(&self) -> Option<&mut [u8]> {
+        self.get_lock().image.as_mut().map(|d| {
+            let slice = d.as_mut_slice();
+            unsafe { std::slice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len()) }
         })
     }
 

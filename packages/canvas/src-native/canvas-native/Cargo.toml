@@ -5,8 +5,7 @@ members = [
     "canvas-core",
     "canvas-android",
     "canvas-ios",
-    "canvas-ffi",
-    "canvas-android-v8"
+    "canvas-ffi"
 ]
 
 [profile.release]

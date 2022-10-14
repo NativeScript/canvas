@@ -2,8 +2,8 @@ use std::os::raw::{c_float, c_int, c_longlong};
 
 use canvas_core::context::image_asset::ImageAsset;
 use canvas_core::image_bitmap::{
-    create_from_image_asset_src_rect_raw, create_from_image_data_raw, create_image_asset_raw,
-    create_image_asset_encoded,
+    create_from_image_asset_src_rect_raw, create_from_image_data_raw, create_image_asset_encoded,
+    create_image_asset_raw,
 };
 
 #[no_mangle]

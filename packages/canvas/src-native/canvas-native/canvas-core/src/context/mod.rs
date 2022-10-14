@@ -1,8 +1,8 @@
 use std::os::raw::c_float;
 use std::sync::{Arc, RwLock};
 
-use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::{Mutex, RawMutex, RawRwLock};
+use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use skia_safe::{Color, Image, Point, Surface};
 use stb::image::{Data, Info};
 

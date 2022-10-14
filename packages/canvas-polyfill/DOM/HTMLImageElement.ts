@@ -81,7 +81,7 @@ export class HTMLImageElement extends Element {
 		this._asset = new global.ImageAsset();
 		this.__id = getUUID();
 		this.__instanceType = 53;
-		this._onload = () => { };
+		this._onload = () => {};
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;
 			this.width = props.width;
@@ -90,9 +90,9 @@ export class HTMLImageElement extends Element {
 		}
 	}
 
-
 	_load() {
 		if (this.src) {
+			console.log('_load', this.src);
 			if (typeof this.src === 'string' && this.src.startsWith && this.src.startsWith('data:')) {
 				// is base64 - convert and try again;
 				this._base64 = this.src;
@@ -173,13 +173,16 @@ export class HTMLImageElement extends Element {
 							this.emitter.emit('error', { target: this });
 						}
 					} else {
-						this._asset.loadUrlAsync(this.src).then(() => {
-							this.width = this._asset.width;
-							this.height = this._asset.height;
-							this.complete = true;
-						}).catch(e => {
-							this.emitter.emit('error', { target: this });
-						})
+						this._asset
+							.loadUrlAsync(this.src)
+							.then(() => {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+							})
+							.catch((e) => {
+								this.emitter.emit('error', { target: this });
+							});
 					}
 				} else {
 					if (!this.width || !this.height) {
@@ -196,7 +199,7 @@ export class HTMLImageElement extends Element {
 						} else {
 							this._asset
 								.loadFileAsync(this.src)
-								.then(() => {
+								.then((done) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
 									this.complete = true;

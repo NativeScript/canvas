@@ -671,7 +671,7 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/gl-bindings-fe7c321cd0762816/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ring-e5023e64a429322e/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/skia-bindings-a015a217b1c61741/out" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/canvas-android-v8/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/canvas-android/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/canvas-android/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/canvas-ffi/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/canvas-ios/src" isTestSource="false" />

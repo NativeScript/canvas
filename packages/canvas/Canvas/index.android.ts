@@ -3,12 +3,14 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen } from '@nativescript/core';
+import { Application, View, profile, Device, Screen, knownFolders } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(org.nativescript.canvas.TNSCanvas.createSVGMatrix());
 }
 
 export * from './common';
+
+declare const __non_webpack_require__, __initAppConfiguration
 
 export class Canvas extends CanvasBase {
 	_ready = false;
@@ -23,6 +25,13 @@ export class Canvas extends CanvasBase {
 
 	constructor(useCpu = false) {
 		super();
+
+		__non_webpack_require__('system_lib://libcanvasnativev8.so');
+
+		__initAppConfiguration({ appBase: knownFolders.currentApp().path });
+
+		console.log('adas');
+
 		if (arguments.length === 1) {
 			if (typeof arguments[0] === 'boolean') {
 				useCpu = arguments[0];
@@ -198,8 +207,6 @@ export class Canvas extends CanvasBase {
 
 
 	get __native__context(){
-		console.log('__native__context', this._2dContext && this._webglContext && this._webgl2Context);
-
 		return this._2dContext && this._webglContext && this._webgl2Context;
 	}
 

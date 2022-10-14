@@ -1,15 +1,15 @@
 use std::os::raw::c_float;
 
-use skia_safe::paint::{Cap, Style};
 use skia_safe::{BlendMode, Color, Point};
+use skia_safe::paint::{Cap, Style};
 
+use crate::context::Context;
 use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::Pattern;
 use crate::context::filter_quality::FilterQuality;
 use crate::context::image_smoothing::ImageSmoothingQuality;
-use crate::context::Context;
-use crate::utils::color::to_parsed_color;
 use crate::ContextWrapper;
+use crate::utils::color::to_parsed_color;
 
 #[derive(Clone)]
 pub enum PaintStyle {
@@ -60,6 +60,7 @@ impl Paint {
         }
         match style {
             PaintStyle::Color(color) => {
+                self.fill_paint.set_shader(None);
                 if is_fill {
                     self.fill_paint.set_color(*color);
                 } else {
@@ -144,19 +145,16 @@ impl Paint {
         color: Color,
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
-        if color != Color::TRANSPARENT && blur > 0.0 {
-            let sigma = blur / 2.0;
-            let filter = skia_safe::image_filters::drop_shadow_only(
-                offset,
-                (sigma, sigma),
-                color,
-                None,
-                None,
-            );
-            paint.set_image_filter(filter);
-            return Some(paint);
-        }
-        None
+        let sigma = blur / 2.0;
+        let filter = skia_safe::image_filters::drop_shadow_only(
+            offset,
+            (sigma, sigma),
+            color,
+            None,
+            None,
+        );
+        paint.set_image_filter(filter);
+        return Some(paint);
     }
 
     pub fn fill_shadow_paint(
@@ -165,6 +163,9 @@ impl Paint {
         color: Color,
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
+        if !(color != Color::TRANSPARENT && blur > 0.0) {
+            return None;
+        }
         let mut paint = self.fill_paint().clone();
         paint.set_color(color);
         Self::shadow_paint(paint, offset, color, blur)
@@ -176,6 +177,9 @@ impl Paint {
         color: Color,
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
+        if !(color != Color::TRANSPARENT && blur > 0.0) {
+            return None;
+        }
         let mut paint = self.stroke_paint().clone();
         paint.set_color(color);
         Self::shadow_paint(paint, offset, color, blur)

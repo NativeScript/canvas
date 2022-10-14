@@ -1,8 +1,9 @@
 use std::ffi::{c_void, CString};
 use std::os::raw::c_int;
 
+use skia_safe::{AlphaType, Bitmap, ColorSpace, ColorType, Data, Image, ImageInfo, ISize, Pixmap};
+
 use crate::context::image_asset::ImageAsset;
-use skia_safe::{AlphaType, Bitmap, ColorSpace, ColorType, Data, ISize, Image, ImageInfo, Pixmap};
 
 pub fn to_image(
     image_array: *const u8,

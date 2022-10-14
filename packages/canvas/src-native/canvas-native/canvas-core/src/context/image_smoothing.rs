@@ -1,7 +1,7 @@
 use skia_safe::SamplingOptions;
 
-use crate::context::filter_quality::FilterQuality;
 use crate::context::Context;
+use crate::context::filter_quality::FilterQuality;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]

@@ -467,6 +467,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	draw() {
+		console.log('draw',global.CanvasRenderingContext2D)
 		//this.urlTests();
 		//const str = new java.lang.String()
 		// ctx.font = '50px serif';
@@ -563,7 +564,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		//this.solar(this.canvas);
+		this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -616,13 +617,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.pointStyle(this.canvas);
 		//this.matterJSExample(this.canvas);
 		//this.matterJSCar(this.canvas);
-		this.multiCanvas(this.canvas);
+		//this.multiCanvas(this.canvas);
 		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
+		//this.decoder()
 	}
 
 	drawRandomFullscreenImage(canvas) {
@@ -936,11 +938,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		let i16arr = new Int16Array([-24336, -18514]);
 		let i32arr = new Int32Array([-1213292304]);
 
-		console.log(utf8decoder.decode(u8arr));
-		console.log(utf8decoder.decode(i8arr));
-		console.log(utf8decoder.decode(u16arr));
-		console.log(utf8decoder.decode(i16arr));
-		console.log(utf8decoder.decode(i32arr));
+		console.log(utf8decoder.decode(u8arr)); // 𠮷
+		console.log(utf8decoder.decode(i8arr)); // 𠮷
+		console.log(utf8decoder.decode(u16arr)); // 𠮷
+		console.log(utf8decoder.decode(i16arr)); // 𠮷
+		console.log(utf8decoder.decode(i32arr)); // 𠮷
 
 		let win1251decoder = new TextDecoder('windows-1251');
 		let bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
@@ -1695,9 +1697,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-		sun.loadUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+		console.log('sun', sun.loadUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png'));
+
 		moon.loadUrlSync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
 		earth.loadUrlSync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
+		console.log(sun.width);
+
 
 		// sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png')
 		// .then(done =>{

@@ -31,7 +31,7 @@ class CPUView @JvmOverloads constructor(
 						true,
 						Color.BLACK,
 						metrics.densityDpi * 160F,
-						TNSCanvas.direction.toNative()
+						TNSCanvas.direction
 					)
 
 					if (Looper.myLooper() != Looper.getMainLooper()) {

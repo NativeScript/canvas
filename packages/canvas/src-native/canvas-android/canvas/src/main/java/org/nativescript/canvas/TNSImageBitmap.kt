@@ -6,51 +6,20 @@ import android.os.Looper
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 
-class TNSImageBitmap internal constructor(asset: Long) {
-
-	var nativeImageAsset: Long = asset
-
-	val width: Int
-		get() = if (nativeImageAsset == 0L) {
-			0
-		} else TNSImageAsset.nativeGetWidthImpl(nativeImageAsset)
-	val height: Int
-		get() = if (nativeImageAsset == 0L) {
-			0
-		} else TNSImageAsset.nativeGetHeightImpl(nativeImageAsset)
-
-	fun close() {
-		TNSImageAsset.nativeDestroyImpl(nativeImageAsset)
-		nativeImageAsset = 0
-	}
-
-
-	@Throws(Throwable::class)
-	protected fun finalize() {
-		if (nativeImageAsset != 0L) {
-			TNSImageAsset.nativeDestroyImpl(nativeImageAsset)
-			nativeImageAsset = 0
-		}
-	}
+class TNSImageBitmap {
 
 	interface Callback {
-		fun onSuccess(result: TNSImageBitmap)
+		fun onSuccess(asset: Long)
 		fun onError(message: String)
 	}
 
-	class Options {
-		var flipY = false
-		var premultiplyAlpha = TNSImageBitmapPremultiplyAlpha.Default
-		var colorSpaceConversion = TNSImageBitmapColorSpaceConversion.Default
-		var resizeQuality = TNSImageBitmapResizeQuality.Low
-		var resizeWidth = 0f
-		var resizeHeight = 0f
-	}
 
 	companion object {
-		val FAILED_TO_LOAD: String = "Failed to load image"
+		init {
+			TNSCanvas.loadLib()
+		}
 
-		private val handler = Handler(Looper.getMainLooper())
+		val FAILED_TO_LOAD: String = "Failed to load image"
 
 		@JvmStatic
 		private val executor = Executors.newCachedThreadPool()
@@ -65,7 +34,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -79,12 +53,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						sy,
 						sWidth,
 						sHeight,
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				} else {
 					asset = nativeCreateFromBytesSrcRect(
@@ -95,21 +69,19 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						sy,
 						sWidth,
 						sHeight,
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				}
 
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -120,7 +92,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			buffer: ByteBuffer,
 			imageWidth: Float,
 			imageHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -130,32 +107,31 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						buffer,
 						imageWidth,
 						imageHeight,
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				} else {
 					asset = nativeCreateFromBytes(
 						buffer.array(),
 						imageWidth,
 						imageHeight,
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				}
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -168,7 +144,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -180,12 +161,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						sy,
 						sWidth,
 						sHeight,
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				} else {
 					asset = nativeCreateFromBytesEncodedSrcRect(
@@ -194,20 +175,18 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						sy,
 						sWidth,
 						sHeight,
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				}
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -216,7 +195,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		@JvmStatic
 		fun createFromBufferEncoded(
 			buffer: ByteBuffer,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -224,30 +208,28 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				if (buffer.isDirect) {
 					asset = nativeCreateFromBufferEncoded(
 						buffer,
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				} else {
 					asset = nativeCreateFromBytesEncoded(
 						buffer.array(),
-						options.flipY,
-						options.premultiplyAlpha.toNative(),
-						options.colorSpaceConversion.toNative(),
-						options.resizeQuality.toNative(),
-						options.resizeWidth,
-						options.resizeHeight
+						flipY,
+						premultiplyAlpha,
+						colorSpaceConversion,
+						resizeQuality,
+						resizeWidth,
+						resizeHeight
 					)
 				}
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -255,59 +237,65 @@ class TNSImageBitmap internal constructor(asset: Long) {
 
 		@JvmStatic
 		fun createFromImageData(
-			imageData: TNSImageData,
-			options: Options,
+			imageData: Long,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromAsset(
-					imageData.nativeImageData,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					imageData,
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
 
 		@JvmStatic
 		fun createFromImageData(
-			imageData: TNSImageData,
+			imageData: Long,
 			sx: Float,
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromAssetSrcRect(
-					imageData.nativeImageData,
+					imageData,
 					sx, sy, sWidth, sHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -316,12 +304,26 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		@JvmStatic
 		fun createFromCanvas(
 			canvas: TNSCanvas,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			val bytes = canvas.snapshot()
 			createFromBuffer(
-				bytes, canvas.width.toFloat(), canvas.height.toFloat(), options, callback
+				bytes,
+				canvas.width.toFloat(),
+				canvas.height.toFloat(),
+				flipY,
+				premultiplyAlpha,
+				colorSpaceConversion,
+				resizeQuality,
+				resizeWidth,
+				resizeHeight,
+				callback
 			)
 		}
 
@@ -332,7 +334,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			val bytes = canvas.snapshot()
@@ -340,7 +347,14 @@ class TNSImageBitmap internal constructor(asset: Long) {
 				bytes, sx,
 				sy,
 				sWidth,
-				sHeight, canvas.width.toFloat(), canvas.height.toFloat(), options, callback
+				sHeight, canvas.width.toFloat(), canvas.height.toFloat(),
+				flipY,
+				premultiplyAlpha,
+				colorSpaceConversion,
+				resizeQuality,
+				resizeWidth,
+				resizeHeight,
+				callback
 			)
 		}
 
@@ -350,7 +364,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			bytes: ByteArray,
 			imageWidth: Float,
 			imageHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -358,19 +377,17 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					bytes,
 					imageWidth,
 					imageHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -382,7 +399,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -392,19 +414,17 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					sy,
 					sWidth,
 					sHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -417,7 +437,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -427,19 +452,17 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					sy,
 					sWidth,
 					sHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -448,25 +471,28 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		@JvmStatic
 		fun createFromBytesEncoded(
 			bytes: ByteArray,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val asset = nativeCreateFromBytesEncoded(
 					bytes,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -480,7 +506,12 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			sHeight: Float,
 			imageWidth: Float,
 			imageHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
@@ -492,19 +523,17 @@ class TNSImageBitmap internal constructor(asset: Long) {
 					sy,
 					sWidth,
 					sHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
-				handler.post {
-					if (asset != 0L) {
-						callback.onSuccess(TNSImageBitmap(asset))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (asset != 0L) {
+					callback.onSuccess(asset)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -512,59 +541,65 @@ class TNSImageBitmap internal constructor(asset: Long) {
 
 		@JvmStatic
 		fun createFromImageBitmap(
-			bitmap: TNSImageBitmap,
-			options: Options,
+			bitmap: Long,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromAsset(
-					bitmap.nativeImageAsset,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					bitmap,
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
 
 		@JvmStatic
 		fun createFromImageBitmap(
-			bitmap: TNSImageBitmap,
+			bitmap: Long,
 			sx: Float,
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromAssetSrcRect(
-					bitmap.nativeImageAsset,
+					bitmap,
 					sx, sy, sWidth, sHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -572,59 +607,65 @@ class TNSImageBitmap internal constructor(asset: Long) {
 
 		@JvmStatic
 		fun createFromImageAsset(
-			asset: TNSImageAsset,
-			options: Options,
+			asset: Long,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromAsset(
-					asset.nativeImageAsset,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					asset,
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
 
 		@JvmStatic
 		fun createFromImageAsset(
-			asset: TNSImageAsset,
+			asset: Long,
 			sx: Float,
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromAssetSrcRect(
-					asset.nativeImageAsset,
+					asset,
 					sx, sy, sWidth, sHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -633,26 +674,29 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		@JvmStatic
 		fun createFromBitmap(
 			bitmap: Bitmap,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromBitmap(
 					bitmap,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}
@@ -664,27 +708,30 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			sy: Float,
 			sWidth: Float,
 			sHeight: Float,
-			options: Options,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 			callback: Callback
 		) {
 			executor.execute {
 				val result = nativeCreateFromBitmapSrcRect(
 					bitmap,
 					sx, sy, sWidth, sHeight,
-					options.flipY,
-					options.premultiplyAlpha.toNative(),
-					options.colorSpaceConversion.toNative(),
-					options.resizeQuality.toNative(),
-					options.resizeWidth,
-					options.resizeHeight
+					flipY,
+					premultiplyAlpha,
+					colorSpaceConversion,
+					resizeQuality,
+					resizeWidth,
+					resizeHeight
 				)
 
-				handler.post {
-					if (result != 0L) {
-						callback.onSuccess(TNSImageBitmap(result))
-					} else {
-						callback.onError(FAILED_TO_LOAD)
-					}
+				if (result != 0L) {
+					callback.onSuccess(result)
+				} else {
+					callback.onError(FAILED_TO_LOAD)
 				}
 			}
 		}

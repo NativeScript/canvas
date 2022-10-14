@@ -6,6 +6,7 @@ export default {
 	android: {
 		v8Flags: '--expose_gc',
 		markingMode: 'none',
+		enableMultithreadedJavascript: true
 	},
 	appPath: 'src',
 	ios: {

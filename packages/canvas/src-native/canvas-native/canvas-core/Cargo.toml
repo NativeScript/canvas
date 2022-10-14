@@ -1,6 +1,6 @@
 [package]
 name = "canvas-core"
-version = "1.0.0"
+version = "2.0.0"
 authors = ["Osei Fortune <fortune.osei@yahoo.com>"]
 edition = "2021"
 
@@ -12,19 +12,18 @@ gl = ["skia-safe/gl"]
 parking_lot = "0.12.0"
 regex = "1.5.4"
 base64 = "0.13.0"
-image = "0.23.7"
 encoding_rs = "0.8.24"
 gl-bindings = { version = "0.1.0", path = "../gl-bindings" }
 lazy_static = "1.4.0"
 csscolorparser = { git = "https://github.com/triniwiz/csscolorparser-rs.git", rev = "c8c7e86"}
-phf = { version = "0.10.1", features = ["macros"] }
+phf = { version = "0.11.1", features = ["macros"] }
 rgb = { version = "0.8.32", features = ["argb"] }
 log = "0.4.8"
 stringreader = "0.1.1"
 rand = "0.8.4"
 once_cell = "1.8.0"
-skia-bindings = { path = "../../rust-skia/skia-bindings", features = ["gl"] }
-skia-safe = { path = "../../rust-skia/skia-safe", features = ["gl"] }
-stb = { git = "https://github.com/triniwiz/stb.git", rev = "396d74e", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
-stb-sys = { git = "https://github.com/triniwiz/stb.git", rev = "396d74e", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
+skia-bindings = { version ="0.54.0",  features = ["gl", "svg"] }
+skia-safe = { version ="0.54.0", features = ["gl", "svg"] }
+stb = { git = "https://github.com/triniwiz/stb.git", rev = "1d6892b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
+stb-sys = { git = "https://github.com/triniwiz/stb.git", rev = "1d6892b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
 

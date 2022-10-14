@@ -2,13 +2,13 @@ extern crate core;
 
 use std::os::raw::c_int;
 
-use skia_safe::image::CachingHint;
 use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface,
+    AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, Point, Surface,
 };
+use skia_safe::image::CachingHint;
 
-use context::filter_quality::FilterQuality;
 use context::{Context, ContextWrapper};
+use context::filter_quality::FilterQuality;
 
 pub mod context;
 pub mod ffi;

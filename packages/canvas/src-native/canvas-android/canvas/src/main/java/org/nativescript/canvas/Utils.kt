@@ -21,6 +21,11 @@ object Utils {
 	@JvmStatic
 	private external fun nativeGetByteBufferFromBitmap(bitmap: Bitmap?): ByteBuffer
 
+	@JvmStatic
+	private external fun nativeMakeStateContextCurrent(state: Long): Boolean
+
+	@JvmStatic
+	private external fun nativeGetFlipYWebGL(state: Long): Boolean
 
 	private var rating = -1
 	val isEmulator: Boolean
@@ -132,8 +137,8 @@ object Utils {
 
 
 	@JvmStatic
-	fun createSurfaceTexture(context: TNSWebGLRenderingContext): Array<Any> {
-		context.ensureContextIsCurrent()
+	fun createSurfaceTexture(state: Long): Array<Any> {
+		nativeMakeStateContextCurrent(state)
 		val render = TextureRender()
 		render.surfaceCreated()
 
@@ -144,10 +149,10 @@ object Utils {
 
 	@JvmStatic
 	fun createRenderAndAttachToGLContext(
-		context: TNSWebGLRenderingContext,
+		state: Long,
 		texture: SurfaceTexture,
 	): TextureRender {
-		context.ensureContextIsCurrent()
+		nativeMakeStateContextCurrent(state)
 		val render = TextureRender()
 		render.surfaceCreated()
 		texture.attachToGLContext(render.textureId)
@@ -157,33 +162,33 @@ object Utils {
 
 	@JvmStatic
 	fun attachToGLContext(
-		context: TNSWebGLRenderingContext,
+		state: Long,
 		texture: SurfaceTexture,
 		render: TextureRender
 	) {
-		context.ensureContextIsCurrent()
+		nativeMakeStateContextCurrent(state)
 		texture.attachToGLContext(render.textureId)
 	}
 
 	@JvmStatic
-	fun detachFromGLContext(context: TNSWebGLRenderingContext, texture: SurfaceTexture) {
-		context.ensureContextIsCurrent()
+	fun detachFromGLContext(state: Long, texture: SurfaceTexture) {
+		nativeMakeStateContextCurrent(state)
 		texture.detachFromGLContext()
 	}
 
 	@JvmStatic
 	fun updateTexImage(
-		context: TNSWebGLRenderingContext,
+		state: Long,
 		texture: SurfaceTexture,
 		render: TextureRender,
 		width: Int,
 		height: Int,
 		internalFormat: Int,
-		format: Int,
+		format: Int
 	) {
-		context.ensureContextIsCurrent()
-
-		render.drawFrame(texture, width, height, internalFormat, format, context.flipYWebGL)
+		nativeMakeStateContextCurrent(state)
+		val flipYWebGL = nativeGetFlipYWebGL(state);
+		render.drawFrame(texture, width, height, internalFormat, format, flipYWebGL)
 
 		if (render.width != width || render.height != width) {
 			render.width = width

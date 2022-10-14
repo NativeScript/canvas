@@ -15,7 +15,7 @@ import { Points } from 'three';
 import { Water } from 'three/examples/jsm/objects/Water';
 import { Sky } from 'three/examples/jsm/objects/Sky';
 //import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment";
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 // import {ThreeMFLoader} from "three/examples/jsm/loaders/3MFLoader";
 class IconMesh extends THREE.Mesh {
@@ -24,7 +24,7 @@ class IconMesh extends THREE.Mesh {
 	}
 }
 
-global.console.warn = () => { }
+global.console.warn = () => {};
 
 export class DemoSharedCanvasThree extends DemoSharedBase {
 	canvas: any;
@@ -44,7 +44,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
-		this.threeDepth(this.canvas);
+		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
@@ -58,7 +58,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
-		//this.gtlfTonemapping(this.canvas);
+		this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
 		//this.renderVideo();
@@ -71,7 +71,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		const video = document.createElement('video');
 		video.loop = true;
 		video.autoplay = true;
-		video.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
+		video.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4';
 		function update() {
 			//@ts-ignore
 			video.requestVideoFrameCallback(update);
@@ -80,13 +80,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 		//@ts-ignore
 		video.requestVideoFrameCallback(update);
-
 	}
 
 	gtlfLoader(canvas) {
 		var container, controls, context, width, height;
 		var camera, scene, renderer;
-		var mouseX = 0, mouseY = 0, windowHalfX = 0, windowHalfY = 0;
+		var mouseX = 0,
+			mouseY = 0,
+			windowHalfX = 0,
+			windowHalfY = 0;
 
 		const init = () => {
 			context = canvas.getContext('webgl2');
@@ -157,7 +159,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			window.addEventListener('resize', onWindowResize, false);
 		};
 
-
 		function onWindowResize() {
 			const width = context.drawingBufferWidth;
 			const height = context.drawingBufferHeight;
@@ -176,12 +177,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		function animate() {
-
 			requestAnimationFrame(animate);
 
 			render();
 			//stats.update();
-
 		}
 
 		init();
@@ -1302,106 +1301,87 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 	}
 
-	panorama_cube(canvas){
-
-
+	panorama_cube(canvas) {
 		let camera, controls;
-			let renderer;
-			let scene;
+		let renderer;
+		let scene;
 
-			init(this.root);
-			animate();
+		init(this.root);
+		animate();
 
-			function init(root) {
+		function init(root) {
+			const context = canvas.getContext('webgl2');
+			const width = context.drawingBufferWidth;
+			const height = context.drawingBufferHeight;
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(width, height);
 
-				const context = canvas.getContext('webgl2');
-				const width = context.drawingBufferWidth;
-				const height = context.drawingBufferHeight;
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( width, height );
-		
-				scene = new THREE.Scene();
+			scene = new THREE.Scene();
 
-				camera = new THREE.PerspectiveCamera( 90, width / height, 0.1, 100 );
-				camera.position.z = 0.01;
+			camera = new THREE.PerspectiveCamera(90, width / height, 0.1, 100);
+			camera.position.z = 0.01;
 
-				controls = new OrbitControls( camera, canvas );
-				controls.enableZoom = false;
-				controls.enablePan = false;
-				controls.enableDamping = true;
-				controls.rotateSpeed = - 0.25;
+			controls = new OrbitControls(camera, canvas);
+			controls.enableZoom = false;
+			controls.enablePan = false;
+			controls.enableDamping = true;
+			controls.rotateSpeed = -0.25;
 
-				const textures = getTexturesFromAtlasFile( root + '/textures/cube/sun_temple_stripe.jpg', 6 );
+			const textures = getTexturesFromAtlasFile(root + '/textures/cube/sun_temple_stripe.jpg', 6);
 
-				const materials = [];
+			const materials = [];
 
-				for ( let i = 0; i < 6; i ++ ) {
+			for (let i = 0; i < 6; i++) {
+				materials.push(new THREE.MeshBasicMaterial({ map: textures[i] }));
+			}
 
-					materials.push( new THREE.MeshBasicMaterial( { map: textures[ i ] } ) );
+			const skyBox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materials);
+			skyBox.geometry.scale(1, 1, -1);
+			scene.add(skyBox);
 
+			window.addEventListener('resize', onWindowResize);
+		}
+
+		function getTexturesFromAtlasFile(atlasImgUrl, tilesNum) {
+			const textures = [];
+
+			for (let i = 0; i < tilesNum; i++) {
+				textures[i] = new THREE.Texture();
+			}
+
+			new THREE.ImageLoader().load(atlasImgUrl, (image) => {
+				let canvas, context;
+				const tileWidth = image.height;
+
+				for (let i = 0; i < textures.length; i++) {
+					canvas = document.createElement('canvas');
+					context = canvas.getContext('2d');
+					canvas.height = tileWidth;
+					canvas.width = tileWidth;
+					context.drawImage(image, tileWidth * i, 0, tileWidth, tileWidth, 0, 0, tileWidth, tileWidth);
+					textures[i].image = canvas;
+					textures[i].needsUpdate = true;
 				}
+			});
 
-				const skyBox = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 1 ), materials );
-				skyBox.geometry.scale( 1, 1, - 1 );
-				scene.add( skyBox );
+			return textures;
+		}
 
-				window.addEventListener( 'resize', onWindowResize );
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
 
-			}
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
 
-			function getTexturesFromAtlasFile( atlasImgUrl, tilesNum ) {
+		function animate() {
+			requestAnimationFrame(animate);
 
-				const textures = [];
+			controls.update(); // required when damping is enabled
 
-				for ( let i = 0; i < tilesNum; i ++ ) {
-
-					textures[ i ] = new THREE.Texture();
-
-				}
-
-				new THREE.ImageLoader()
-					.load( atlasImgUrl, ( image ) => {
-
-						let canvas, context;
-						const tileWidth = image.height;
-
-						for ( let i = 0; i < textures.length; i ++ ) {
-
-							canvas = document.createElement( 'canvas' );
-							context = canvas.getContext( '2d' );
-							canvas.height = tileWidth;
-							canvas.width = tileWidth;
-							context.drawImage( image, tileWidth * i, 0, tileWidth, tileWidth, 0, 0, tileWidth, tileWidth );
-							textures[ i ].image = canvas;
-							textures[ i ].needsUpdate = true;
-
-						}
-
-					} );
-
-				return textures;
-
-			}
-
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			function animate() {
-
-				requestAnimationFrame( animate );
-
-				controls.update(); // required when damping is enabled
-
-				renderer.render( scene, camera );
-
-			}
+			renderer.render(scene, camera);
+		}
 	}
 
 	// https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
@@ -1410,7 +1390,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var camera, scene, renderer;
 		var geometry, material, mesh;
 		var texture;
-		const src = 'https://github.com/mdn/webgl-examples/blob/gh-pages/tutorial/sample8/Firefox.mp4?raw=true' //this.root + '/textures/Firefox.mp4'
+		const src = 'https://github.com/mdn/webgl-examples/blob/gh-pages/tutorial/sample8/Firefox.mp4?raw=true'; //this.root + '/textures/Firefox.mp4'
 		init();
 		animate();
 
@@ -1426,14 +1406,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			scene = new THREE.Scene();
 
-
 			geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
 			material = new THREE.MeshBasicMaterial();
 			material.map = new THREE.VideoTexture(texture);
 
 			mesh = new THREE.Mesh(geometry, material);
 			scene.add(mesh);
-
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
@@ -1467,7 +1445,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let detailsColor = '#ffffff';
 		let glassColor = '#ffffff';
 		function init(root) {
-
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1498,22 +1475,32 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
 
 			const light = new THREE.SpotLight('white', 1);
-			light.position.set(4.25, 10, -10)
+			light.position.set(4.25, 10, -10);
 			scene.add(light);
 			scene.add(grid);
 
 			// materials
 
 			const bodyMaterial = new THREE.MeshPhysicalMaterial({
-				color: 0xff0000, metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
+				color: 0xff0000,
+				metalness: 0.6,
+				roughness: 0.4,
+				clearcoat: 0.05,
+				clearcoatRoughness: 0.05,
 			});
 
 			const detailsMaterial = new THREE.MeshStandardMaterial({
-				color: 0xffffff, metalness: 1.0, roughness: 0.5
+				color: 0xffffff,
+				metalness: 1.0,
+				roughness: 0.5,
 			});
 
 			const glassMaterial = new THREE.MeshPhysicalMaterial({
-				color: 0xffffff, metalness: 0, roughness: 0.1, transmission: 0.9, transparent: true
+				color: 0xffffff,
+				metalness: 0,
+				roughness: 0.1,
+				transmission: 0.9,
+				transparent: true,
 			});
 
 			bodyMaterial.color.set(bodyColor);
@@ -1554,7 +1541,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			loader.setDRACOLoader(dracoLoader);
 
 			loader.load(root + '/models/gltf/ferrari.glb', function (gltf) {
-				console.log('ferrari.glb');
 				const carModel: any = gltf.scene.children[0];
 
 				carModel.getObjectByName('body').material = bodyMaterial;
@@ -1567,18 +1553,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				carModel.getObjectByName('glass').material = glassMaterial;
 
-				wheels.push(
-					carModel.getObjectByName('wheel_fl'),
-					carModel.getObjectByName('wheel_fr'),
-					carModel.getObjectByName('wheel_rl'),
-					carModel.getObjectByName('wheel_rr')
-				);
+				wheels.push(carModel.getObjectByName('wheel_fl'), carModel.getObjectByName('wheel_fr'), carModel.getObjectByName('wheel_rl'), carModel.getObjectByName('wheel_rr'));
 
 				// shadow
 				const mesh = new THREE.Mesh(
 					new THREE.PlaneBufferGeometry(0.655 * 4, 1.3 * 4),
 					new THREE.MeshBasicMaterial({
-						map: shadow, toneMapped: false, transparent: true
+						map: shadow,
+						toneMapped: false,
+						transparent: true,
 					})
 				);
 				mesh.rotation.x = -Math.PI / 2;
@@ -1586,13 +1569,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				carModel.add(mesh);
 
 				scene.add(carModel);
-
 			});
 
 			renderer.setAnimationLoop(render);
 
 			controls.update();
-
 		}
 
 		function onWindowResize() {
@@ -1600,25 +1581,20 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			camera.updateProjectionMatrix();
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
-
 		}
 
 		function render() {
-
 			const time = -performance.now() / 1000;
 
 			for (let i = 0; i < wheels.length; i++) {
-
 				wheels[i].rotation.x = time * Math.PI;
-
 			}
 
-			grid.position.z = -(time) % 5;
+			grid.position.z = -time % 5;
 
 			renderer.render(scene, camera);
 
 			//	stats.update();
-
 		}
 
 		init(this.root);
@@ -1637,17 +1613,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		const scene = new THREE.Scene();
 
-
 		const light = new THREE.SpotLight();
 		light.position.set(-1.8, 0.6, 2.7 * 1.2);
 		scene.add(light);
-
 
 		scene.background = new THREE.Color(0xbfe3dd);
 
 		scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-		const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, .1, 1000);
+		const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
 		camera.position.set(5, 2, 8);
 
 		const controls = new OrbitControls(camera, canvas);
@@ -1656,42 +1630,39 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		controls.enablePan = false;
 		controls.enableDamping = true;
 
-
 		const dracoLoader = new DRACOLoader();
 		dracoLoader.setDecoderPath(this.root + '/js/libs/draco/gltf/');
 		dracoLoader.setDecoderConfig({ type: 'js' });
 
 		const loader = new GLTFLoader();
 		loader.setDRACOLoader(dracoLoader);
-		loader.load(this.root + '/models/gltf/LittlestTokyo.glb', function (gltf) {
-			const model = gltf.scene;
-			model.position.set(1, 1, 0);
-			model.scale.set(0.01, 0.01, 0.01);
-			scene.add(model);
+		loader.load(
+			this.root + '/models/gltf/LittlestTokyo.glb',
+			function (gltf) {
+				const model = gltf.scene;
+				model.position.set(1, 1, 0);
+				model.scale.set(0.01, 0.01, 0.01);
+				scene.add(model);
 
-			mixer = new THREE.AnimationMixer(model);
-			mixer.clipAction(gltf.animations[0]).play();
+				mixer = new THREE.AnimationMixer(model);
+				mixer.clipAction(gltf.animations[0]).play();
 
-			animate();
-
-		}, undefined, function (e) {
-			console.error(e);
-
-		});
-
+				animate();
+			},
+			undefined,
+			function (e) {
+				console.error(e);
+			}
+		);
 
 		window.onresize = function () {
-
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
-
 		};
 
-
 		function animate() {
-
 			requestAnimationFrame(animate);
 
 			const delta = clock.getDelta();
@@ -1701,12 +1672,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			controls.update();
 
 			renderer.render(scene, camera);
-
 		}
 	}
 	birds(canvas) {
 		const context = canvas.getContext('webgl2') as any;
-
 
 		/* TEXTURE WIDTH FOR SIMULATION */
 		const WIDTH = 20;
@@ -1717,126 +1686,113 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let textureAnimation, durationAnimation, birdMesh, materialShader, vertexPerBird;
 
 		function nextPowerOf2(n) {
-
 			return Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
-
 		}
 
 		// @ts-ignore
 		Math.lerp = function (value1, value2, amount) {
-
 			amount = Math.max(Math.min(amount, 1), 0);
 			return value1 + (value2 - value1) * amount;
-
 		};
 
 		const gltfs = ['/models/gltf/Parrot.glb', '/models/gltf/Flamingo.glb'];
-		const colors = [0xccFFFF, 0xffdeff];
+		const colors = [0xccffff, 0xffdeff];
 		const sizes = [0.2, 0.1];
 		const selectModel = Math.floor(Math.random() * gltfs.length);
-		new GLTFLoader()
-			.setPath(this.root)
-			.load(gltfs[selectModel], function (gltf: any) {
-				const animations = gltf.animations;
-				durationAnimation = Math.round(animations[0].duration * 60);
-				const birdGeo = gltf.scene.children[0].geometry;
-				const morphAttributes = birdGeo.morphAttributes.position;
-				const tHeight = nextPowerOf2(durationAnimation);
-				const tWidth = nextPowerOf2(birdGeo.getAttribute('position').count);
-				vertexPerBird = birdGeo.getAttribute('position').count;
-				const tData = new Float32Array(3 * tWidth * tHeight);
+		new GLTFLoader().setPath(this.root).load(gltfs[selectModel], function (gltf: any) {
+			const animations = gltf.animations;
+			durationAnimation = Math.round(animations[0].duration * 60);
+			const birdGeo = gltf.scene.children[0].geometry;
+			const morphAttributes = birdGeo.morphAttributes.position;
+			const tHeight = nextPowerOf2(durationAnimation);
+			const tWidth = nextPowerOf2(birdGeo.getAttribute('position').count);
+			vertexPerBird = birdGeo.getAttribute('position').count;
+			const tData = new Float32Array(3 * tWidth * tHeight);
 
-				for (let i = 0; i < tWidth; i++) {
+			for (let i = 0; i < tWidth; i++) {
+				for (let j = 0; j < tHeight; j++) {
+					const offset = j * tWidth * 3;
 
-					for (let j = 0; j < tHeight; j++) {
+					const curMorph = Math.floor((j / durationAnimation) * morphAttributes.length);
+					const nextMorph = (Math.floor((j / durationAnimation) * morphAttributes.length) + 1) % morphAttributes.length;
+					const lerpAmount = ((j / durationAnimation) * morphAttributes.length) % 1;
 
-						const offset = j * tWidth * 3;
+					if (j < durationAnimation) {
+						let d0, d1;
 
-						const curMorph = Math.floor(j / durationAnimation * morphAttributes.length);
-						const nextMorph = (Math.floor(j / durationAnimation * morphAttributes.length) + 1) % morphAttributes.length;
-						const lerpAmount = j / durationAnimation * morphAttributes.length % 1;
+						d0 = morphAttributes[curMorph].array[i * 3];
+						d1 = morphAttributes[nextMorph].array[i * 3];
+						//@ts-ignore
+						if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3] = Math.lerp(d0, d1, lerpAmount);
 
-						if (j < durationAnimation) {
+						d0 = morphAttributes[curMorph].array[i * 3 + 1];
+						d1 = morphAttributes[nextMorph].array[i * 3 + 1];
 
-							let d0, d1;
+						//@ts-ignore
+						if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3 + 1] = Math.lerp(d0, d1, lerpAmount);
 
-							d0 = morphAttributes[curMorph].array[i * 3];
-							d1 = morphAttributes[nextMorph].array[i * 3];
-							//@ts-ignore
-							if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3] = Math.lerp(d0, d1, lerpAmount);
-
-							d0 = morphAttributes[curMorph].array[i * 3 + 1];
-							d1 = morphAttributes[nextMorph].array[i * 3 + 1];
-
-							//@ts-ignore
-							if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3 + 1] = Math.lerp(d0, d1, lerpAmount);
-
-							d0 = morphAttributes[curMorph].array[i * 3 + 2];
-							d1 = morphAttributes[nextMorph].array[i * 3 + 2];
-							//@ts-ignore
-							if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3 + 2] = Math.lerp(d0, d1, lerpAmount);
-
-						}
-
+						d0 = morphAttributes[curMorph].array[i * 3 + 2];
+						d1 = morphAttributes[nextMorph].array[i * 3 + 2];
+						//@ts-ignore
+						if (d0 !== undefined && d1 !== undefined) tData[offset + i * 3 + 2] = Math.lerp(d0, d1, lerpAmount);
 					}
-
 				}
+			}
 
-				textureAnimation = new THREE.DataTexture(tData, tWidth, tHeight, THREE.RGBFormat, THREE.FloatType);
-				textureAnimation.needsUpdate = true;
+			textureAnimation = new THREE.DataTexture(tData, tWidth, tHeight, THREE.RGBFormat, THREE.FloatType);
+			textureAnimation.needsUpdate = true;
 
-				const vertices = [], color = [], reference = [], seeds = [], indices = [];
-				const totalVertices = birdGeo.getAttribute('position').count * 3 * BIRDS;
-				for (let i = 0; i < totalVertices; i++) {
+			const vertices = [],
+				color = [],
+				reference = [],
+				seeds = [],
+				indices = [];
+			const totalVertices = birdGeo.getAttribute('position').count * 3 * BIRDS;
+			for (let i = 0; i < totalVertices; i++) {
+				const bIndex = i % (birdGeo.getAttribute('position').count * 3);
+				vertices.push(birdGeo.getAttribute('position').array[bIndex]);
+				color.push(birdGeo.getAttribute('color').array[bIndex]);
+			}
 
-					const bIndex = i % (birdGeo.getAttribute('position').count * 3);
-					vertices.push(birdGeo.getAttribute('position').array[bIndex]);
-					color.push(birdGeo.getAttribute('color').array[bIndex]);
+			let r = Math.random();
+			for (let i = 0; i < birdGeo.getAttribute('position').count * BIRDS; i++) {
+				const bIndex = i % birdGeo.getAttribute('position').count;
+				const bird = Math.floor(i / birdGeo.getAttribute('position').count);
+				if (bIndex == 0) r = Math.random();
+				const j = ~~bird;
+				const x = (j % WIDTH) / WIDTH;
+				const y = ~~(j / WIDTH) / WIDTH;
+				reference.push(x, y, bIndex / tWidth, durationAnimation / tHeight);
+				seeds.push(bird, r, Math.random(), Math.random());
+			}
 
-				}
+			for (let i = 0; i < birdGeo.index.array.length * BIRDS; i++) {
+				const offset = Math.floor(i / birdGeo.index.array.length) * birdGeo.getAttribute('position').count;
+				indices.push(birdGeo.index.array[i % birdGeo.index.array.length] + offset);
+			}
 
-				let r = Math.random();
-				for (let i = 0; i < birdGeo.getAttribute('position').count * BIRDS; i++) {
+			BirdGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
+			BirdGeometry.setAttribute('birdColor', new THREE.BufferAttribute(new Float32Array(color), 3));
+			BirdGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(color), 3));
+			BirdGeometry.setAttribute('reference', new THREE.BufferAttribute(new Float32Array(reference), 4));
+			BirdGeometry.setAttribute('seeds', new THREE.BufferAttribute(new Float32Array(seeds), 4));
 
-					const bIndex = i % (birdGeo.getAttribute('position').count);
-					const bird = Math.floor(i / birdGeo.getAttribute('position').count);
-					if (bIndex == 0) r = Math.random();
-					const j = ~ ~bird;
-					const x = (j % WIDTH) / WIDTH;
-					const y = ~ ~(j / WIDTH) / WIDTH;
-					reference.push(x, y, bIndex / tWidth, durationAnimation / tHeight);
-					seeds.push(bird, r, Math.random(), Math.random());
+			BirdGeometry.setIndex(indices);
 
-				}
-
-				for (let i = 0; i < birdGeo.index.array.length * BIRDS; i++) {
-
-					const offset = Math.floor(i / birdGeo.index.array.length) * (birdGeo.getAttribute('position').count);
-					indices.push(birdGeo.index.array[i % birdGeo.index.array.length] + offset);
-
-				}
-
-				BirdGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
-				BirdGeometry.setAttribute('birdColor', new THREE.BufferAttribute(new Float32Array(color), 3));
-				BirdGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(color), 3));
-				BirdGeometry.setAttribute('reference', new THREE.BufferAttribute(new Float32Array(reference), 4));
-				BirdGeometry.setAttribute('seeds', new THREE.BufferAttribute(new Float32Array(seeds), 4));
-
-				BirdGeometry.setIndex(indices);
-
-				init();
-				animate();
-
-			});
+			init();
+			animate();
+		});
 
 		let container, stats;
 		let camera, scene, renderer;
-		let mouseX = 0, mouseY = 0;
+		let mouseX = 0,
+			mouseY = 0;
 
 		let windowHalfX = window.innerWidth / 2;
 		let windowHalfY = window.innerHeight / 2;
 
-		const BOUNDS = 800, BOUNDS_HALF = BOUNDS / 2;
+		const BOUNDS = 800,
+			BOUNDS_HALF = BOUNDS / 2;
 
 		let last = performance.now();
 
@@ -1847,7 +1803,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let velocityUniforms;
 
 		function init() {
-
 			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
 			camera.position.z = 350;
 
@@ -1863,9 +1818,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			hemiLight.position.set(0, 50, 0);
 			scene.add(hemiLight);
 
-			const dirLight = new THREE.DirectionalLight(0x00CED1, 0.6);
+			const dirLight = new THREE.DirectionalLight(0x00ced1, 0.6);
 			dirLight.color.setHSL(0.1, 1, 0.95);
-			dirLight.position.set(- 1, 1.75, 1);
+			dirLight.position.set(-1, 1.75, 1);
 			dirLight.position.multiplyScalar(30);
 			scene.add(dirLight);
 
@@ -1877,44 +1832,34 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			window.addEventListener('resize', onWindowResize, false);
 
-
 			const effectController = {
-
 				separation: 20.0,
 				alignment: 20.0,
 				cohesion: 20.0,
 				freedom: 0.75,
 				size: sizes[selectModel],
-				count: BIRDS
-
+				count: BIRDS,
 			};
 
 			const valuesChanger = function () {
-
-				velocityUniforms["separationDistance"].value = effectController.separation;
-				velocityUniforms["alignmentDistance"].value = effectController.alignment;
-				velocityUniforms["cohesionDistance"].value = effectController.cohesion;
-				velocityUniforms["freedomFactor"].value = effectController.freedom;
-				if (materialShader) materialShader.uniforms["size"].value = effectController.size;
+				velocityUniforms['separationDistance'].value = effectController.separation;
+				velocityUniforms['alignmentDistance'].value = effectController.alignment;
+				velocityUniforms['cohesionDistance'].value = effectController.cohesion;
+				velocityUniforms['freedomFactor'].value = effectController.freedom;
+				if (materialShader) materialShader.uniforms['size'].value = effectController.size;
 				BirdGeometry.setDrawRange(0, vertexPerBird * effectController.count);
-
 			};
 
 			valuesChanger();
 
-
 			initBirds(effectController);
-
 		}
 
 		function initComputeRenderer() {
-
 			gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, renderer);
 
 			if (isSafari()) {
-
 				gpuCompute.setDataType(THREE.HalfFloatType);
-
 			}
 
 			const dtPosition = gpuCompute.createTexture();
@@ -2097,8 +2042,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			}
 				`;
-			velocityVariable = gpuCompute.addVariable("textureVelocity", fragmentShaderVelocity, dtVelocity);
-			positionVariable = gpuCompute.addVariable("texturePosition", fragmentShaderPosition, dtPosition);
+			velocityVariable = gpuCompute.addVariable('textureVelocity', fragmentShaderVelocity, dtVelocity);
+			positionVariable = gpuCompute.addVariable('texturePosition', fragmentShaderPosition, dtPosition);
 
 			gpuCompute.setVariableDependencies(velocityVariable, [positionVariable, velocityVariable]);
 			gpuCompute.setVariableDependencies(positionVariable, [positionVariable, velocityVariable]);
@@ -2106,16 +2051,16 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			positionUniforms = positionVariable.material.uniforms;
 			velocityUniforms = velocityVariable.material.uniforms;
 
-			positionUniforms["time"] = { value: 0.0 };
-			positionUniforms["delta"] = { value: 0.0 };
-			velocityUniforms["time"] = { value: 1.0 };
-			velocityUniforms["delta"] = { value: 0.0 };
-			velocityUniforms["testing"] = { value: 1.0 };
-			velocityUniforms["separationDistance"] = { value: 1.0 };
-			velocityUniforms["alignmentDistance"] = { value: 1.0 };
-			velocityUniforms["cohesionDistance"] = { value: 1.0 };
-			velocityUniforms["freedomFactor"] = { value: 1.0 };
-			velocityUniforms["predator"] = { value: new THREE.Vector3() };
+			positionUniforms['time'] = { value: 0.0 };
+			positionUniforms['delta'] = { value: 0.0 };
+			velocityUniforms['time'] = { value: 1.0 };
+			velocityUniforms['delta'] = { value: 0.0 };
+			velocityUniforms['testing'] = { value: 1.0 };
+			velocityUniforms['separationDistance'] = { value: 1.0 };
+			velocityUniforms['alignmentDistance'] = { value: 1.0 };
+			velocityUniforms['cohesionDistance'] = { value: 1.0 };
+			velocityUniforms['freedomFactor'] = { value: 1.0 };
+			velocityUniforms['predator'] = { value: new THREE.Vector3() };
 			velocityVariable.material.defines.BOUNDS = BOUNDS.toFixed(2);
 
 			velocityVariable.wrapS = THREE.RepeatWrapping;
@@ -2126,32 +2071,25 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const error = gpuCompute.init();
 
 			if (error !== null) {
-
 				console.error(error);
-
 			}
-
 		}
 
 		function isSafari() {
-
 			return !!navigator.userAgent.match(/Safari/i) && !navigator.userAgent.match(/Chrome/i);
-
 		}
 
 		function initBirds(effectController) {
-
 			const geometry = BirdGeometry;
 
 			const m = new THREE.MeshStandardMaterial({
 				vertexColors: true,
 				flatShading: true,
 				roughness: 1,
-				metalness: 0
+				metalness: 0,
 			});
 
 			m.onBeforeCompile = (shader) => {
-
 				shader.uniforms.texturePosition = { value: null };
 				shader.uniforms.textureVelocity = { value: null };
 				shader.uniforms.textureAnimation = { value: textureAnimation };
@@ -2161,7 +2099,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				let token = '#define STANDARD';
 
-				let insert = /* glsl */`
+				let insert = /* glsl */ `
 						attribute vec4 reference;
 						attribute vec4 seeds;
 						attribute vec3 birdColor;
@@ -2176,7 +2114,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				token = '#include <begin_vertex>';
 
-				insert = /* glsl */`
+				insert = /* glsl */ `
 						vec4 tmpPos = texture2D( texturePosition, reference.xy );
 						vec3 pos = tmpPos.xyz;
 						vec3 velocity = normalize(texture2D( textureVelocity, reference.xy ).xyz);
@@ -2202,7 +2140,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				shader.vertexShader = shader.vertexShader.replace(token, insert);
 
 				materialShader = shader;
-
 			};
 
 			birdMesh = new THREE.Mesh(geometry, m);
@@ -2212,15 +2149,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			birdMesh.receiveShadow = true;
 
 			scene.add(birdMesh);
-
 		}
 
 		function fillPositionTexture(texture) {
-
 			const theArray = texture.image.data;
 
 			for (let k = 0, kl = theArray.length; k < kl; k += 4) {
-
 				const x = Math.random() * BOUNDS - BOUNDS_HALF;
 				const y = Math.random() * BOUNDS - BOUNDS_HALF;
 				const z = Math.random() * BOUNDS - BOUNDS_HALF;
@@ -2229,17 +2163,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				theArray[k + 1] = y;
 				theArray[k + 2] = z;
 				theArray[k + 3] = 1;
-
 			}
-
 		}
 
 		function fillVelocityTexture(texture) {
-
 			const theArray = texture.image.data;
 
 			for (let k = 0, kl = theArray.length; k < kl; k += 4) {
-
 				const x = Math.random() - 0.5;
 				const y = Math.random() - 0.5;
 				const z = Math.random() - 0.5;
@@ -2248,13 +2178,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				theArray[k + 1] = y * 10;
 				theArray[k + 2] = z * 10;
 				theArray[k + 3] = 1;
-
 			}
-
 		}
 
 		function onWindowResize() {
-
 			windowHalfX = window.innerWidth / 2;
 			windowHalfY = window.innerHeight / 2;
 
@@ -2262,62 +2189,53 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			camera.updateProjectionMatrix();
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
-
 		}
 
 		function onPointerMove(event) {
-
 			if (event.isPrimary === false) return;
 
 			mouseX = event.clientX - windowHalfX;
 			mouseY = event.clientY - windowHalfY;
-
 		}
 
 		//
 
 		function animate() {
-
 			requestAnimationFrame(animate);
 
 			render();
-
 		}
 
 		function render() {
-
 			const now = performance.now();
 			let delta = (now - last) / 1000;
 
 			if (delta > 1) delta = 1; // safety cap on large deltas
 			last = now;
 
-			positionUniforms["time"].value = now;
-			positionUniforms["delta"].value = delta;
-			velocityUniforms["time"].value = now;
-			velocityUniforms["delta"].value = delta;
-			if (materialShader) materialShader.uniforms["time"].value = now / 1000;
-			if (materialShader) materialShader.uniforms["delta"].value = delta;
+			positionUniforms['time'].value = now;
+			positionUniforms['delta'].value = delta;
+			velocityUniforms['time'].value = now;
+			velocityUniforms['delta'].value = delta;
+			if (materialShader) materialShader.uniforms['time'].value = now / 1000;
+			if (materialShader) materialShader.uniforms['delta'].value = delta;
 
-			velocityUniforms["predator"].value.set(0.5 * mouseX / windowHalfX, - 0.5 * mouseY / windowHalfY, 0);
+			velocityUniforms['predator'].value.set((0.5 * mouseX) / windowHalfX, (-0.5 * mouseY) / windowHalfY, 0);
 
 			mouseX = 10000;
 			mouseY = 10000;
 
 			gpuCompute.compute();
 
-			if (materialShader) materialShader.uniforms["texturePosition"].value = gpuCompute.getCurrentRenderTarget(positionVariable).texture;
-			if (materialShader) materialShader.uniforms["textureVelocity"].value = gpuCompute.getCurrentRenderTarget(velocityVariable).texture;
+			if (materialShader) materialShader.uniforms['texturePosition'].value = gpuCompute.getCurrentRenderTarget(positionVariable).texture;
+			if (materialShader) materialShader.uniforms['textureVelocity'].value = gpuCompute.getCurrentRenderTarget(velocityVariable).texture;
 
 			renderer.render(scene, camera);
-
 		}
 	}
 
 	bufferGeo(canvas) {
-
 		const context = canvas.getContext('webgl2', { antialias: false }) as any;
-
 
 		let container, stats;
 
@@ -2332,11 +2250,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		animate();
 
 		function init() {
-
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
-
 
 			//
 
@@ -2357,10 +2273,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			const color = new THREE.Color();
 
-			const n = 1000, n2 = n / 2; // particles spread in the cube
+			const n = 1000,
+				n2 = n / 2; // particles spread in the cube
 
 			for (let i = 0; i < particles; i++) {
-
 				// positions
 
 				const x = Math.random() * n - n2;
@@ -2372,14 +2288,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				// colors
 
-				const vx = (x / n) + 0.5;
-				const vy = (y / n) + 0.5;
-				const vz = (z / n) + 0.5;
+				const vx = x / n + 0.5;
+				const vy = y / n + 0.5;
+				const vz = z / n + 0.5;
 
 				color.setRGB(vx, vy, vz);
 
 				colors.push(color.r, color.g, color.b);
-
 			}
 
 			const gl = renderer.getContext();
@@ -2403,11 +2318,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			geometry.setAttribute('position', posAttr1);
 
 			setInterval(function () {
-
 				const attr = geometry.getAttribute('position');
 
-				geometry.setAttribute('position', (attr === posAttr1) ? posAttr2 : posAttr1);
-
+				geometry.setAttribute('position', attr === posAttr1 ? posAttr2 : posAttr1);
 			}, 2000);
 
 			// @ts-ignore
@@ -2427,34 +2340,27 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-
 			//
 
 			window.addEventListener('resize', onWindowResize, false);
-
 		}
 
 		function onWindowResize() {
-
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
-
 		}
 
 		//
 
 		function animate() {
-
 			requestAnimationFrame(animate);
 
 			render();
-
 		}
 
 		function render() {
-
 			drawCount = (Math.max(5000, drawCount) + Math.floor(500 * Math.random())) % particles;
 			points.geometry.setDrawRange(0, drawCount);
 
@@ -2464,7 +2370,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			points.rotation.y = time * 0.2;
 
 			renderer.render(scene, camera);
-
 		}
 	}
 
@@ -2711,7 +2616,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//container.appendChild( renderer.domElement );
 
 			window.addEventListener('resize', onWindowResize, false);
-			
+
 			const controls = new OrbitControls(camera, canvas);
 			controls.update();
 
@@ -2846,7 +2751,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			requestAnimationFrame(animate);
 
-			//renderer.render(scene, camera);
+			renderer.render(scene, camera);
 
 			//stats.update();
 
@@ -2868,7 +2773,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		scene = new THREE.Scene();
 		camera = new THREE.PerspectiveCamera(55, context.drawingBufferWidth / context.drawingBufferHeight, 1, 20000);
 		camera.position.set(30, 30, 100);
-
 
 		//
 		sun = new THREE.Vector3();
@@ -2902,7 +2806,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var sky = new Sky();
 		sky.scale.setScalar(10000);
 		scene.add(sky);
-
 
 		var uniforms = sky.material.uniforms;
 
@@ -2943,11 +2846,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				texture.play();
 				*/
 
-
 		var geometry = new THREE.BoxBufferGeometry(30, 30, 30);
 		var material = new THREE.MeshStandardMaterial({
 			transparent: true,
-			roughness: 0
+			roughness: 0,
 		});
 
 		//material.map = new THREE.VideoTexture(texture);
@@ -2955,11 +2857,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//material.depthTest = true;
 		//material.depthWrite = true;
 
-
 		mesh = new THREE.Mesh(geometry, material);
 
 		scene.add(mesh);
-
 
 		//
 
@@ -3159,7 +3059,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		animate();
 		renderer.render(scene, camera);
-
 	}
 
 	webgl_buffergeometry_drawrange(canvas) {
@@ -3184,14 +3083,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			minDistance: 150,
 			limitConnections: false,
 			maxConnections: 20,
-			particleCount: 500
+			particleCount: 500,
 		};
 
 		init();
 		animate();
 
 		function initGUI() {
-
 			/*const gui = new GUI();
 
 			gui.add( effectController, "showDots" ).onChange( function ( value ) {
@@ -3214,14 +3112,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			} );
 			*/
-
 		}
 
 		function init() {
-
 			initGUI();
 
-			container = canvas
+			container = canvas;
 
 			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 4000);
 			camera.position.z = 1750;
@@ -3231,7 +3127,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			controls.maxDistance = 3000;
 
 			scene = new THREE.Scene();
-
 
 			group = new THREE.Group();
 			scene.add(group);
@@ -3248,18 +3143,17 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			colors = new Float32Array(segments * 3);
 
 			const pMaterial = new THREE.PointsMaterial({
-				color: 0xFFFFFF,
+				color: 0xffffff,
 				size: 3,
 				blending: THREE.AdditiveBlending,
 				transparent: true,
-				sizeAttenuation: false
+				sizeAttenuation: false,
 			});
 
 			particles = new THREE.BufferGeometry();
 			particlePositions = new Float32Array(maxParticleCount * 3);
 
 			for (let i = 0; i < maxParticleCount; i++) {
-
 				const x = Math.random() * r - r / 2;
 				const y = Math.random() * r - r / 2;
 				const z = Math.random() * r - r / 2;
@@ -3270,10 +3164,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				// add it to the geometry
 				particlesData.push({
-					velocity: new THREE.Vector3(- 1 + Math.random() * 2, - 1 + Math.random() * 2, - 1 + Math.random() * 2),
-					numConnections: 0
+					velocity: new THREE.Vector3(-1 + Math.random() * 2, -1 + Math.random() * 2, -1 + Math.random() * 2),
+					numConnections: 0,
 				});
-
 			}
 
 			particles.setDrawRange(0, particleCount);
@@ -3295,7 +3188,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const material = new THREE.LineBasicMaterial({
 				vertexColors: true,
 				blending: THREE.AdditiveBlending,
-				transparent: true
+				transparent: true,
 			});
 
 			linesMesh = new THREE.LineSegments(geometry, material);
@@ -3315,29 +3208,23 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//container.appendChild( stats.dom );
 
 			window.addEventListener('resize', onWindowResize);
-
 		}
 
 		function onWindowResize() {
-
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
-
 		}
 
 		function animate() {
-
 			let vertexpos = 0;
 			let colorpos = 0;
 			let numConnected = 0;
 
-			for (let i = 0; i < particleCount; i++)
-				particlesData[i].numConnections = 0;
+			for (let i = 0; i < particleCount; i++) particlesData[i].numConnections = 0;
 
 			for (let i = 0; i < particleCount; i++) {
-
 				// get the particle
 				const particleData = particlesData[i];
 
@@ -3345,24 +3232,18 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				particlePositions[i * 3 + 1] += particleData.velocity.y;
 				particlePositions[i * 3 + 2] += particleData.velocity.z;
 
-				if (particlePositions[i * 3 + 1] < - rHalf || particlePositions[i * 3 + 1] > rHalf)
-					particleData.velocity.y = - particleData.velocity.y;
+				if (particlePositions[i * 3 + 1] < -rHalf || particlePositions[i * 3 + 1] > rHalf) particleData.velocity.y = -particleData.velocity.y;
 
-				if (particlePositions[i * 3] < - rHalf || particlePositions[i * 3] > rHalf)
-					particleData.velocity.x = - particleData.velocity.x;
+				if (particlePositions[i * 3] < -rHalf || particlePositions[i * 3] > rHalf) particleData.velocity.x = -particleData.velocity.x;
 
-				if (particlePositions[i * 3 + 2] < - rHalf || particlePositions[i * 3 + 2] > rHalf)
-					particleData.velocity.z = - particleData.velocity.z;
+				if (particlePositions[i * 3 + 2] < -rHalf || particlePositions[i * 3 + 2] > rHalf) particleData.velocity.z = -particleData.velocity.z;
 
-				if (effectController.limitConnections && particleData.numConnections >= effectController.maxConnections)
-					continue;
+				if (effectController.limitConnections && particleData.numConnections >= effectController.maxConnections) continue;
 
 				// Check collision
 				for (let j = i + 1; j < particleCount; j++) {
-
 					const particleDataB = particlesData[j];
-					if (effectController.limitConnections && particleDataB.numConnections >= effectController.maxConnections)
-						continue;
+					if (effectController.limitConnections && particleDataB.numConnections >= effectController.maxConnections) continue;
 
 					const dx = particlePositions[i * 3] - particlePositions[j * 3];
 					const dy = particlePositions[i * 3 + 1] - particlePositions[j * 3 + 1];
@@ -3370,7 +3251,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
 					if (dist < effectController.minDistance) {
-
 						particleData.numConnections++;
 						particleDataB.numConnections++;
 
@@ -3393,13 +3273,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 						colors[colorpos++] = alpha;
 
 						numConnected++;
-
 					}
-
 				}
-
 			}
-
 
 			linesMesh.geometry.setDrawRange(0, numConnected * 2);
 			linesMesh.geometry.attributes.position.needsUpdate = true;
@@ -3411,16 +3287,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//stats.update();
 			render();
-
 		}
 
 		function render() {
-
 			const time = Date.now() * 0.001;
 
 			group.rotation.y = time * 0.1;
 			renderer.render(scene, camera);
-
 		}
 	}
 }

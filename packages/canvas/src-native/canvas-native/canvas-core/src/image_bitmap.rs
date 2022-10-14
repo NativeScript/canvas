@@ -188,7 +188,8 @@ pub(crate) fn create_image_bitmap_raw(
     ))) as i64
 }
 
-pub(crate) fn create_image_bitmap(
+
+pub(crate) fn create_image_bitmap_internal(
     image: skia_safe::Image,
     rect: Option<(f32, f32, f32, f32)>,
     flip_y: bool,
@@ -197,8 +198,8 @@ pub(crate) fn create_image_bitmap(
     resize_quality: i32,
     resize_width: f32,
     resize_height: f32,
-) -> ImageAsset {
-    let mut output = ImageAsset::new();
+    output: &mut ImageAsset
+) {
     let mut out_width = image.width() as f32;
     let mut out_height = image.height() as f32;
 
@@ -233,7 +234,7 @@ pub(crate) fn create_image_bitmap(
 
     let image_info = skia_safe::ImageInfo::new(
         (source_rect.width() as i32, source_rect.height() as i32),
-        skia_safe::ColorType::n32(),
+        skia_safe::ColorType::N32,
         ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into(),
         ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
     );
@@ -284,6 +285,30 @@ pub(crate) fn create_image_bitmap(
             };
         }
     }
+}
+
+pub(crate) fn create_image_bitmap(
+    image: skia_safe::Image,
+    rect: Option<(f32, f32, f32, f32)>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+) -> ImageAsset {
+    let mut output = ImageAsset::new();
+    create_image_bitmap_internal(
+        image,
+        rect,
+        flip_y,
+        premultiply_alpha,
+        color_space_conversion,
+        resize_quality,
+        resize_width,
+        resize_height,
+        &mut output
+    );
     output
 }
 
@@ -337,6 +362,33 @@ pub fn create_image_asset(
             resize_width,
             resize_height,
         ),
+    }
+}
+
+pub fn create_image_asset_with_output(
+    buf: &[u8],
+    rect: Option<(f32, f32, f32, f32)>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+    output: &mut ImageAsset,
+) {
+
+    if let Some(image) = from_image_slice_encoded(buf) {
+        create_image_bitmap_internal(
+            image,
+            rect,
+            flip_y,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+            output
+        );
     }
 }
 
@@ -406,10 +458,10 @@ pub fn create_image_asset_encoded(
     resize_quality: i32,
     resize_width: f32,
     resize_height: f32,
-) -> i64 {
+) -> ImageAsset {
     match from_image_slice_encoded(buf) {
-        None => Box::into_raw(Box::new(ImageAsset::new())) as i64,
-        Some(image) => create_image_bitmap_raw(
+        None => ImageAsset::new(),
+        Some(image) => create_image_bitmap(
             image,
             rect,
             flip_y,
@@ -420,4 +472,22 @@ pub fn create_image_asset_encoded(
             resize_height,
         ),
     }
+}
+
+
+pub fn create_image_asset_encoded_raw(
+    buf: &[u8],
+    rect: Option<(f32, f32, f32, f32)>,
+    flip_y: bool,
+    premultiply_alpha: i32,
+    color_space_conversion: i32,
+    resize_quality: i32,
+    resize_width: f32,
+    resize_height: f32,
+) -> i64 {
+    Box::into_raw(
+        Box::new(
+            create_image_asset_encoded(buf, rect, flip_y, premultiply_alpha, color_space_conversion, resize_quality, resize_height, resize_width)
+        )
+    ) as i64
 }

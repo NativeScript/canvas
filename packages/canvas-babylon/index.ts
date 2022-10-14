@@ -1,1 +1,1 @@
-require('@nativescript/canvas-polyfill');
+//require('@nativescript/canvas-polyfill');

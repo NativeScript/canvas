@@ -2,9 +2,9 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
+#![allow(unused_attributes)]
 
 #[cfg(target_os = "android")]
-#[allow(non_snake_case)]
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 // #[cfg(target_os = "ios")]

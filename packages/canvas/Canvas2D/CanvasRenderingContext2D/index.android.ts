@@ -93,9 +93,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	_fillRuleFromString(string: string) {
 		if (string === 'evenodd') {
-			return 1;
+			return FillRule.EvenOdd();
 		} else if (string === 'nonzero') {
-			return 0;
+			return FillRule.NonZero();
 		}
 		return null;
 	}
@@ -736,9 +736,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('fillText value:', text, x, y, maxWidth);
 		this._ensureLayoutBeforeDraw();
 		if (typeof maxWidth === 'number') {
-			this.context.fillText(text, x, y, maxWidth);
+			this.context.fillText(text + '', x, y, maxWidth);
 		} else {
-			this.context.fillText(text, x, y);
+			this.context.fillText(text + '', x, y);
 		}
 	}
 
@@ -908,9 +908,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.log('strokeText value:', text, x, y, maxWidth);
 		this._ensureLayoutBeforeDraw();
 		if (typeof maxWidth === 'number') {
-			this.context.strokeText(text, x, y, maxWidth);
+			this.context.strokeText(text + '', x, y, maxWidth);
 		} else {
-			this.context.strokeText(text, x, y);
+			this.context.strokeText(text + '', x, y);
 		}
 	}
 

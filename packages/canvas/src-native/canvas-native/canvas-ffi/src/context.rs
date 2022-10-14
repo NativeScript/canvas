@@ -2,14 +2,16 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_float, c_int, c_longlong, c_uchar, c_uint};
 use std::str::FromStr;
 
+use skia_safe::{
+    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, M44, PixelGeometry,
+    Rect, Surface,
+};
 use skia_safe::gpu::gl::Interface;
 use skia_safe::image::CachingHint;
-use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, PixelGeometry, Rect,
-    Surface, M44,
-};
 
+use canvas_core::context::{Context, Device, State};
 use canvas_core::context::compositing::composite_operation_type::CompositeOperationType;
+use canvas_core::context::ContextWrapper;
 use canvas_core::context::drawing_paths::fill_rule::FillRule;
 use canvas_core::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_core::context::fill_and_stroke_styles::pattern::Repetition;
@@ -23,8 +25,6 @@ use canvas_core::context::pixel_manipulation::image_data::ImageData;
 use canvas_core::context::text_styles::text_align::TextAlign;
 use canvas_core::context::text_styles::text_baseline::TextBaseLine;
 use canvas_core::context::text_styles::text_direction::TextDirection;
-use canvas_core::context::ContextWrapper;
-use canvas_core::context::{Context, Device, State};
 use canvas_core::ffi::f32_array::F32Array;
 use canvas_core::ffi::paint_style_value::PaintStyleValue;
 use canvas_core::ffi::paint_style_value::PaintStyleValueType;

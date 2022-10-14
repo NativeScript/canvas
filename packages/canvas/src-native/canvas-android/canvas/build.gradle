@@ -16,14 +16,50 @@ project.ext {
 	SNAPSHOT_REPOSITORY_URL = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 }
 
+
+
+def NDK_PATH = ""
+def hasNdkDirectory = project.hasProperty("ndkDirectory")
+if(!hasNdkDirectory){
+	println "No ndkDirectory set, checking environment \$ANDROID_NDK..."
+
+	NDK_PATH = "$System.env.ANDROID_NDK"
+	if (NDK_PATH == null || NDK_PATH == "null"){
+		println "No ndkDirectory set, checking environment \$ANDROID_NDK_ROOT..."
+		NDK_PATH = "$System.env.ANDROID_NDK_ROOT"
+	}
+
+	if (NDK_PATH == null || NDK_PATH == "null"){
+		println "No ndkDirectory set, checking environment \$ANDROID_NDK_HOME..."
+		NDK_PATH = "$System.env.ANDROID_NDK_HOME"
+	}
+} else {
+	NDK_PATH = ndkDirectory
+}
+println "Runtime using NDK_PATH: " + NDK_PATH
+
+
+
 android {
-	compileSdkVersion 32
+	compileSdkVersion 33
+	ndkVersion "20.0.5594570"
 	defaultConfig {
-		minSdkVersion 17
-		targetSdkVersion 32
+		minSdkVersion 21
+		targetSdkVersion 33
 		versionCode 1
 		versionName "1.0"
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+		externalNativeBuild {
+			cmake {
+				arguments "-DANDROID_TOOLCHAIN=clang",
+					"-DANDROID_STL=c++_static",
+					"-DANDROID_NDK_ROOT=${System.getenv("ANDROID_NDK_ROOT")}"
+			}
+		}
+		ndk {
+			abiFilters 'x86','x86_64', 'armeabi-v7a', 'arm64-v8a'
+		}
 	}
 
 	buildTypes {
@@ -41,15 +77,22 @@ android {
 	kotlinOptions {
 		jvmTarget = "1.8"
 	}
+
+	externalNativeBuild {
+		cmake {
+			path "CMakeLists.txt"
+		}
+	}
 }
 
 dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
-	implementation 'androidx.appcompat:appcompat:1.3.1'
+	implementation 'androidx.appcompat:appcompat:1.5.1'
 	testImplementation 'junit:junit:4.13.2'
 	androidTestImplementation 'androidx.test:runner:1.4.0'
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-	implementation "androidx.core:core:1.6.0"
+	//noinspection KtxExtensionAvailable
+	implementation "androidx.core:core:1.9.0"
 	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 

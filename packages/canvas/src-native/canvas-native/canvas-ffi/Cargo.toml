@@ -14,15 +14,14 @@ gl = ["canvas-core/gl"]
 rustc-wrapper = "sccache"
 
 [build-dependencies]
-bindgen = "0.57.0"
+bindgen = "0.59.2"
 cmake = "0.1.44"
 cc = "1.0.73"
-cbindgen = "0.20.0"
+cbindgen = "0.24.3"
 
 [dependencies]
 gl-bindings = { path = "../gl-bindings" }
 canvas-core = { path = "../canvas-core" }
-skia-bindings = { path = "../../rust-skia/skia-bindings", features = ["gl"] }
-skia-safe = { path = "../../rust-skia/skia-safe", features = ["gl"] }
-image = "0.23.7"
+skia-bindings = { version ="0.54.0",  features = ["gl"] }
+skia-safe = { version ="0.54.0", features = ["gl"] }
 css-color-parser = "0.1.2"

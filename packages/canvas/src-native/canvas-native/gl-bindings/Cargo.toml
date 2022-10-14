@@ -2,8 +2,7 @@
 name = "gl-bindings"
 version = "0.1.0"
 authors = ["triniwiz <fortune.osei@yahoo.com>"]
-edition = "2018"
-build="build.rs"
+edition = "2021"
 
 [build]
 rustc-wrapper = "sccache"

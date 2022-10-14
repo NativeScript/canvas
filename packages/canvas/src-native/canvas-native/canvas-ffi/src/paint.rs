@@ -4,8 +4,8 @@ use std::str::FromStr;
 
 use css_color_parser::{Color, ColorParseError};
 
-use canvas_core::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_core::context::{Context, ContextWrapper};
+use canvas_core::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_core::ffi::paint_style_value::PaintStyleValue;
 use canvas_core::utils::color::to_parsed_color;
 

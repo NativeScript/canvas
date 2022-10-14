@@ -23,6 +23,8 @@ class TNSSVG : View {
 	private var srcPath: String = ""
 	private var mMatrix = Matrix()
 
+
+
 	constructor(context: Context) : super(context, null) {
 		init(context)
 	}
@@ -111,7 +113,7 @@ class TNSSVG : View {
 							true,
 							Color.BLACK,
 							metrics.densityDpi.toFloat(),
-							TNSCanvas.direction.toNative()
+							TNSCanvas.direction
 						)
 
 						if (srcPath.isNotEmpty() || src.isNotEmpty()) {
@@ -210,6 +212,11 @@ class TNSSVG : View {
 	}
 
 	companion object {
+
+		init {
+			TNSCanvas.loadLib()
+		}
+
 		@JvmStatic
 		private external fun nativeDrawSVG(svgCanvas: Long, svg: String)
 

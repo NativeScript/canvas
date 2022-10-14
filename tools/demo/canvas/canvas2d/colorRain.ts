@@ -1,3 +1,5 @@
+import { func } from 'canvas-phaser-ce/games/utils';
+
 let LAF;
 
 export function colorRain(canvas) {
@@ -6,15 +8,16 @@ export function colorRain(canvas) {
 		h = canvas.getMeasuredHeight(),
 		ctx = canvas.getContext('2d'),
 		//parameters
-		total = (w / 2),
+		total = w / 2,
 		accelleration = 0.05,
 		//afterinitial calculations
 		size = w / total,
 		occupation = w / total,
 		repaintColor = 'black';
-	var colors = [],
+	var colors: number[] = [],
 		dots = [],
-		dotsVel = [];
+		dotsVel = [],
+		parsedColors = [];
 
 	//setting the colors' hue
 	//and y level for all dots
@@ -26,6 +29,7 @@ export function colorRain(canvas) {
 		dotsVel[i] = 10;
 	}
 
+	var buf = {};
 	function anim() {
 		LAF = requestAnimationFrame(anim);
 
@@ -36,12 +40,18 @@ export function colorRain(canvas) {
 			var currentY = dots[i] - 1;
 			dots[i] += dotsVel[i] += accelleration;
 			//const randomColor = Math.floor(Math.random()*16777215).toString(16);
-			ctx.fillStyle = `hsl(${colors[i]}, 80%, 50%)`;
+			// let parsedColor = parsedColors[i];
+			// if(!parsedColor){
+			// 	parsedColor = `hsl(${colors[i]}, 80%, 50%)`;
+			// }
+			ctx.fillStyle = `hsl(${colors[i]}, 80%, 50%)`; //`hsl(${color}, 80%, 50%, 1)`;
 			ctx.fillRect(occupation * i, currentY, size, dotsVel[i] + 1);
-			
+
 			if (dots[i] > h && Math.random() < 0.01) {
 				dots[i] = dotsVel[i] = 0;
 			}
+
+			//	parsedColors[i] = parsedColor;
 		}
 	}
 

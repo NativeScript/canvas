@@ -168,8 +168,6 @@ class TextureRender {
 		* */
 
 
-
-
 		val vextexCoords = floatArrayOf(
 			0f, 0f,
 			1f, 0f,

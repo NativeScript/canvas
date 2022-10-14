@@ -1,5 +1,5 @@
 #[cfg(any(target_os = "ios", target_os = "macos"))]
-pub use canvas_ffi::*;
+pub use canvasffi::*;
 
 /*
 pub(crate) struct AutoreleasePool(*mut objc::runtime::Object);

@@ -41,7 +41,7 @@ class TNSCanvas : FrameLayout {
 			return renderer.nativeContext
 		}
 
-	internal var invalidateState: GLRenderer.InvalidateState
+	internal var invalidateState: Int
 	get() {
 		return renderer.invalidateState
 	}
@@ -121,32 +121,28 @@ class TNSCanvas : FrameLayout {
 		return renderer.toDataURL(type, quality)
 	}
 
-
 	enum class ContextType {
 		NONE, CANVAS, WEBGL
 	}
 
-	fun getContext(type: String): TNSCanvasRenderingContext? {
-		val attributes = JSONObject()
-		if (type == "2d") {
-			attributes.put("alpha", true)
-			attributes.put("desynchronized", false)
-		} else if (type.contains("webgl")) {
-			attributes.put("alpha", true)
-			attributes.put("depth", true)
-			attributes.put("antialias", true)
-			attributes.put("failIfMajorPerformanceCaveat", false)
-			attributes.put("powerPreference", "default")
-			attributes.put("premultipliedAlpha", true)
-			attributes.put("preserveDrawingBuffer", false)
-			attributes.put("stencil", false)
-			attributes.put("xrCompatible", false)
-			attributes.put("desynchronized", false)
-		}
-		return getContext(type, attributes.toString())
+	fun getContext(type: String) {
+		getContext(type, GLRenderer.ContextAttributes.default)
 	}
 
-	fun getContext(type: String, contextAttributes: String?): TNSCanvasRenderingContext? {
+	fun getContext(type: String, contextAttributes: String?){
+
+		val attrs = contextAttributes?.let {
+			try {
+				val attrsJSON = JSONObject(contextAttributes)
+				GLRenderer.ContextAttributes.fromJSON(attrsJSON)
+			}catch (e: Exception) {
+				GLRenderer.ContextAttributes.default
+			}
+		} ?: GLRenderer.ContextAttributes.default
+		return renderer.getContext(type, attrs)
+	}
+
+	internal fun getContext(type: String, contextAttributes: GLRenderer.ContextAttributes) {
 		return renderer.getContext(type, contextAttributes)
 	}
 
@@ -193,8 +189,13 @@ class TNSCanvas : FrameLayout {
 		const val TAG = "CanvasView"
 
 		init {
+			loadLib()
+		}
+
+		@JvmStatic
+		fun loadLib(){
 			if (!isLibraryLoaded) {
-				System.loadLibrary("canvasnative")
+				System.loadLibrary("canvasnativeV8")
 				isLibraryLoaded = true
 			}
 		}
@@ -231,18 +232,6 @@ class TNSCanvas : FrameLayout {
 			}
 		}
 
-		@JvmStatic
-		external fun nativeInitContext(
-			width: Float,
-			height: Float,
-			density: Float,
-			bufferId: Int,
-			samples: Int,
-			alpha: Boolean,
-			fontColor: Int,
-			ppi: Float,
-			direction: Int
-		): Long
 
 		@JvmStatic
 		external fun nativeInitContextWithCustomSurface(
@@ -311,17 +300,13 @@ class TNSCanvas : FrameLayout {
 		@JvmStatic
 		private external fun nativeSnapshotCanvas(context: Long): ByteBuffer
 
-		@JvmStatic
-		fun createSVGMatrix(): TNSDOMMatrix {
-			return TNSDOMMatrix()
-		}
 
 		@JvmStatic
-		internal val direction: TNSTextDirection
+		internal val direction: Int
 			get() {
-				var direction = TNSTextDirection.Ltr
+				var direction = 0
 				if (TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault()) == ViewCompat.LAYOUT_DIRECTION_RTL) {
-					direction = TNSTextDirection.Rtl
+					direction = 1
 				}
 				return direction
 			}

@@ -9,29 +9,14 @@ pub enum FilterQuality {
 }
 
 impl Into<SamplingOptions> for FilterQuality {
-    fn into(self) -> SamplingOptions {
-        match self {
-            FilterQuality::None => SamplingOptions::default(),
-            FilterQuality::Low => SamplingOptions {
-                use_cubic: false,
-                cubic: CubicResampler { b: 0.0, c: 0.0 },
-                filter: FilterMode::Linear,
-                mipmap: MipmapMode::Nearest,
-            },
-            FilterQuality::Medium => SamplingOptions {
-                use_cubic: true,
-                cubic: CubicResampler::mitchell(),
-                filter: FilterMode::Nearest,
-                mipmap: MipmapMode::Nearest,
-            },
-            FilterQuality::High => SamplingOptions {
-                use_cubic: true,
-                cubic: CubicResampler::catmull_rom(),
-                filter: FilterMode::Nearest,
-                mipmap: MipmapMode::Linear,
-            },
+        fn into(self) -> SamplingOptions {
+            match self {
+                FilterQuality::None => SamplingOptions::new(FilterMode::Nearest, MipmapMode::None),
+                FilterQuality::Low => SamplingOptions::new(FilterMode::Linear, MipmapMode::Nearest),
+                FilterQuality::Medium => SamplingOptions::new(FilterMode::Linear, MipmapMode::Linear),
+                FilterQuality::High => SamplingOptions::new(FilterMode::Linear, MipmapMode::Linear)
+            }
         }
-    }
 }
 
 impl TryFrom<&str> for FilterQuality {

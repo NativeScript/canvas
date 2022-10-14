@@ -2,8 +2,7 @@
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
 import { Canvas } from '@nativescript/canvas';
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource } from '@nativescript/core';
-import { Color } from 'phaser';
-declare var __non_webpack_require__;
+declare var __non_webpack_require__, __initAppConfiguration, _createImageBitmap;
 
 let direction = 0;
 
@@ -14,7 +13,11 @@ if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Lo
 const ppi = (Utils.ad.getApplicationContext() as android.content.Context).getResources().getDisplayMetrics().density * 160;
 // try {
 
-__non_webpack_require__('~/libcanvasnativev8.so');
+// __non_webpack_require__('system_lib://libcanvasnativev8.so');
+
+__non_webpack_require__('system_lib://libcanvasnativev8.so');
+
+// __initAppConfiguration({ appBase: knownFolders.currentApp().path });
 
 const handlePath = function (path) {
 	if (typeof path === 'string' && path.startsWith('~/')) {
@@ -23,59 +26,94 @@ const handlePath = function (path) {
 	return path;
 };
 
-java.lang.System.load(handlePath('~/libcanvasnativev8.so'));
+//java.lang.System.load(handlePath('~/libcanvasnativev8.so'));
 
 (global as any).__debug_browser_polyfill_image = false;
 
-class ImageAssetImpl extends (global as any).ImageAsset {
-	save(path, format, done) {
-		super.save(handlePath(path), format, done);
-	}
+// (global as any).createImageBitmap = (...args) => {
+// 	return new Promise((resolve, reject) => {
+// 		_createImageBitmap(...(args as any), (error, bitmap) => {
+// 			if (error) {
+// 				reject(error);
+// 			} else {
+// 				resolve(bitmap);
+// 			}
+// 		});
+// 	});
+// };
+// global.ImageBitmap = undefined;
 
-	saveSync(path, format) {
-		return super.saveSync(handlePath(path), format);
-	}
+//  const image = new global.ImageAsset();
 
-	saveAsync(path, format) {
-		return new Promise((resolve, reject) => {
-			this.save(path, format, (done) => {
-				resolve(done);
-			});
-		});
-	}
+// image.loadUrl('https://static.wikia.nocookie.net/blackclover/images/9/9a/Asta_after_Heart_Kingdom_training.png/revision/latest/scale-to-width-down/490?cb=20191118173358', (done, a) => {
+// 	console.log('done', done, a);
+// 	console.log(image.width, image.height);
+// });
 
-	loadBytesAsync(bytes) {
-		return new Promise((resolve, reject) => {
-			this.loadBytes(bytes, function (done) {
-				resolve(done);
-			});
-		});
-	}
+// (global as any)
+// 	.createImageBitmap(undefined)
+// 	.then((bm) => {
+// 		console.log(bm);
+// 	})
+// 	.catch((e) => {
+// 		console.log(e);
+// 	});
 
-	loadFile(file, done) {
-		super.loadFile(handlePath(file), done);
-	}
+// class ImageAssetImpl extends (global as any).ImageAsset {
+// 	save(path, format, done) {
+// 		super.save(handlePath(path), format, done);
+// 	}
 
-	loadFileSync(file) {
-		return super.loadFileSync(handlePath(file));
-	}
+// 	saveSync(path, format) {
+// 		return super.saveSync(handlePath(path), format);
+// 	}
 
-	loadFileAsync(file) {
-		return new Promise((resolve, reject) => {
-			this.loadFile(file, (done) => {
-				resolve(done);
-			});
-		});
-	}
+// 	saveAsync(path, format) {
+// 		return new Promise((resolve, reject) => {
+// 			this.save(path, format, (done) => {
+// 				resolve(done);
+// 			});
+// 		});
+// 	}
 
-	loadUrlAsync(url) {
-		return new Promise((resolve, reject) => {
-			this.loadUrl(url, (done) => {
-				resolve(done);
-			});
-		});
-	}
-}
+// 	loadBytesAsync(bytes) {
+// 		return new Promise((resolve, reject) => {
+// 			this.loadBytes(bytes, function (done) {
+// 				resolve(done);
+// 			});
+// 		});
+// 	}
+
+// 	loadFile(file, done) {
+// 		console.log('loadFile', file, handlePath(file));
+// 		super.loadFile(handlePath(file), (fin) => {
+// 			console.log('finished');
+// 			done(fin);
+// 		});
+// 	}
+
+
+// 	loadFileAsync(file) {
+// 		return new Promise((resolve, reject) => {
+// 			console.log()
+// 			const done = this.loadFileSync(file);
+// 			console.log(this.width, this.height, done);
+// 			resolve(done);
+// 			// this.loadFile(file, (done) => {
+// 			// 	resolve(done);
+// 			// });
+// 		});
+// 	}
+
+// 	loadUrlAsync(url) {
+// 		return new Promise((resolve, reject) => {
+// 			this.loadUrl(url, (done) => {
+// 				resolve(done);
+// 			});
+// 		});
+// 	}
+// }
+/*
 
 class WebGLRenderingContextImpl extends (global as any).WebGLRenderingContext {
 	texImage2D(...args) {
@@ -107,7 +145,7 @@ class WebGL2RenderingContextImpl extends (global as any).WebGL2RenderingContext 
 		super.texImage2D(...args);
 	}
 }
-
+const chroma = require('./chroma.min.js');
 class CanvasRenderingContext2DImpl extends (global as any).CanvasRenderingContext2D {
 	drawImage(...args) {
 		if (arguments.length === 3) {
@@ -137,10 +175,39 @@ class CanvasRenderingContext2DImpl extends (global as any).CanvasRenderingContex
 	}
 }
 
+
 global.WebGLRenderingContext = WebGLRenderingContextImpl as any;
 global.WebGL2RenderingContext = WebGL2RenderingContextImpl as any;
 global.CanvasRenderingContext2D = CanvasRenderingContext2DImpl as any;
-global.ImageAsset = ImageAssetImpl;
+
+*/
+// global.ImageAsset = ImageAssetImpl;
+
+
+/*
+let images = {};
+const count = 10;
+for(let i =0;i < count;i++){
+	images[`image${i+1}`] = new Image();
+}
+*/
+// let image = new global.ImageAsset();
+
+// image.loadUrlAsync('https://www.looper.com/img/gallery/astas-anti-magic-in-black-clover-explained/anti-magic-is-just-like-its-name-implies-1645475836.jpg').then(done =>{
+// 	console.log('done', done, image.width, image.height);
+// }).catch(e =>{
+// 	console.log('e', e);
+// })
+
+// for (let i = 0; i < count;i++){
+// 	const image: HTMLImageElement = images[`image${i+1}`];
+// 	image.onload = event => {
+// 		console.log('done');
+// 		console.log(image.width, image.height);
+// 	};
+// 	image.src = '~/assets/three/models/gltf/DamagedHelmet/glTF/Default_albedo.jpg';
+// }
+
 
 // } catch (e) {
 // 	console.log('__non_webpack_require__', e);
@@ -154,12 +221,10 @@ global.ImageAsset = ImageAssetImpl;
 declare const jp;
 
 Application.on('launch', (args) => {
+	//require('@nativescript/canvas-polyfill');
 	if (global.isAndroid) {
-		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext())
-		.seat(jp.wasabeef.takt.Seat.TOP_CENTER)
-		.color(-65536)
+		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
 	}
 });
-
 
 Application.run({ moduleName: 'app-root' });

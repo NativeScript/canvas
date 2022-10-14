@@ -1,22 +1,17 @@
 use std::os::raw::c_void;
 
-use jni::objects::{GlobalRef, JClass, JObject, JValue};
-use jni::sys::{jbyteArray, jobject};
+use jni::objects::{GlobalRef, JClass, JObject};
+use jni::sys::jlong;
 use jni::JNIEnv;
+use ndk::bitmap::{AndroidBitmap, AndroidBitmapInfo, BitmapResult};
 
-use canvas_core::ffi::u8_array::U8Array;
 use canvas_core::image_bitmap::ImageBitmapPremultiplyAlpha::Default;
-use log::debug;
-
-use crate::prelude::find_class;
-use crate::utils::bitmap::AndroidBitmapInfo;
-use crate::TNSGCUTILS_CLASS;
 
 pub(crate) struct BitmapBytes {
     pub(crate) bitmap: GlobalRef,
-    info: AndroidBitmapInfo,
-    data_ptr: *mut u8,
-    data_len: usize,
+    native_bitmap: AndroidBitmap,
+    is_locked: bool,
+    pixels: *const c_void,
 }
 
 impl BitmapBytes {
@@ -24,199 +19,128 @@ impl BitmapBytes {
         let bitmap_ref = env.new_global_ref(bitmap).unwrap();
         let native_interface = env.get_native_interface();
         let bitmap = bitmap_ref.as_obj().into_inner();
-        let mut bitmap_info = std::mem::MaybeUninit::uninit();
-        unsafe {
-            if super::bitmap::AndroidBitmap_getInfo(
-                native_interface as _,
-                bitmap,
-                bitmap_info.as_mut_ptr(),
-            ) < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-            {
-                return Self {
-                    bitmap: bitmap_ref,
-                    info: AndroidBitmapInfo::default(),
-                    data_ptr: 0 as *mut u8,
-                    data_len: 0,
-                };
-            }
-        }
-
-        let bitmap_info = unsafe { bitmap_info.assume_init() };
-
-        let mut pixels = std::ptr::null_mut() as *mut c_void;
-        let pixels_ptr: *mut *mut c_void = &mut pixels;
-        unsafe {
-            if super::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
-                < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-            {
-                return Self {
-                    bitmap: bitmap_ref,
-                    info: bitmap_info,
-                    data_ptr: 0 as *mut u8,
-                    data_len: 0,
-                };
-            }
-        }
-
-        let length = (bitmap_info.height * bitmap_info.stride as u32) as usize;
+        let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
 
         Self {
             bitmap: bitmap_ref,
-            info: bitmap_info,
-            data_ptr: pixels as *mut u8,
-            data_len: length,
+            native_bitmap,
+            is_locked: false,
+            pixels: std::ptr::null(),
         }
     }
 
     pub fn data_mut(&mut self) -> Option<&mut [u8]> {
-        if self.data_ptr.is_null() {
+        if self.pixels.is_null() {
+            match self.native_bitmap.lock_pixels() {
+                Ok(pixels) => self.pixels = pixels,
+                _ => {
+                    self.pixels = std::ptr::null();
+                }
+            }
             return None;
         }
-        unsafe { Some(std::slice::from_raw_parts_mut(self.data_ptr, self.data_len)) }
+
+        match self.native_bitmap.get_info() {
+            Ok(info) => unsafe {
+                Some(std::slice::from_raw_parts_mut(
+                    self.pixels as _,
+                    (info.width() * info.height() * 4) as usize,
+                ))
+            },
+            _ => None,
+        }
     }
 
-    pub fn info(&self) -> &AndroidBitmapInfo {
-        &self.info
+    pub fn data(&mut self) -> Option<&[u8]> {
+        if self.pixels.is_null() {
+            match self.native_bitmap.lock_pixels() {
+                Ok(pixels) => self.pixels = pixels,
+                _ => {
+                    self.pixels = std::ptr::null();
+                }
+            }
+            return None;
+        }
+
+        match self.native_bitmap.get_info() {
+            Ok(info) => unsafe {
+                Some(std::slice::from_raw_parts(
+                    self.pixels as _,
+                    (info.width() * info.height() * 4) as usize,
+                ))
+            },
+            _ => None,
+        }
+    }
+
+    pub fn info(&self) -> Option<AndroidBitmapInfo> {
+        match self.native_bitmap.get_info() {
+            Ok(info) => Some(info),
+            _ => None,
+        }
     }
 }
 
 impl Drop for BitmapBytes {
     fn drop(&mut self) {
         let jvm = crate::JVM.get().unwrap();
-        let env = jvm.attach_current_thread().unwrap();
-        let native_interface = env.get_native_interface();
-        unsafe {
-            if super::bitmap::AndroidBitmap_unlockPixels(
-                native_interface as _,
-                self.bitmap.as_obj().into_inner(),
-            ) < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-            {
-                debug!("Unlock Bitmap Failed");
-            }
+        let _ = jvm.attach_current_thread().unwrap();
+        if self.is_locked || !self.pixels.is_null() {
+            let _ = self.native_bitmap.unlock_pixels();
         }
     }
 }
 
-pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> (Vec<u8>, AndroidBitmapInfo) {
+pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> Option<(Vec<u8>, AndroidBitmapInfo)> {
     let native_interface = env.get_native_interface();
     let bitmap = bitmap.into_inner();
-    let mut bitmap_info = std::mem::MaybeUninit::uninit();
+    let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
 
-    unsafe {
-        if super::bitmap::AndroidBitmap_getInfo(
-            native_interface as _,
-            bitmap,
-            bitmap_info.as_mut_ptr(),
-        ) < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-        {
-            debug!("Get Bitmap Info Failed");
-            let info = AndroidBitmapInfo::default();
-            let data = Vec::new();
-            return (data, info);
+    match (native_bitmap.lock_pixels(), native_bitmap.get_info()) {
+        (Ok(pixels), Ok(info)) => {
+            let buf = unsafe {
+                std::slice::from_raw_parts(
+                    pixels as *const u8,
+                    (info.width() * info.height() * 4) as usize,
+                )
+            };
+            Some((buf.to_vec(), info))
         }
+        _ => None,
     }
-    let bitmap_info = unsafe { bitmap_info.assume_init() };
-    let mut pixels = std::ptr::null_mut() as *mut c_void;
-    let pixels_ptr: *mut *mut c_void = &mut pixels;
-    unsafe {
-        if super::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
-            < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-        {
-            debug!("Get Bitmap Lock Failed");
-            return (Vec::default(), bitmap_info);
-        }
-    }
-    let length = (bitmap_info.height * bitmap_info.stride as u32) as usize;
-    let slice: &mut [u8] =
-        unsafe { std::slice::from_raw_parts_mut(pixels as *mut u8, length as usize) };
-    let slice = slice.to_vec();
-    unsafe {
-        if super::bitmap::AndroidBitmap_unlockPixels(native_interface as _, bitmap)
-            < super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-        {
-            debug!("Unlock Bitmap Failed");
-        }
-    }
-    return (slice, bitmap_info);
 }
 
 pub fn bitmap_handler(
     env: JNIEnv,
     bitmap: JObject,
-    handler: Box<dyn Fn(&mut [u8], &AndroidBitmapInfo)>,
+    handler: Box<dyn Fn(Option<(&mut [u8], &AndroidBitmapInfo)>)>,
 ) {
     let native_interface = env.get_native_interface();
     let bitmap = bitmap.into_inner();
-    let mut bitmap_info = std::mem::MaybeUninit::uninit();
-    let mut empty_vec = [0_u8; 0];
-    unsafe {
-        if super::bitmap::AndroidBitmap_getInfo(
-            native_interface as _,
-            bitmap,
-            bitmap_info.as_mut_ptr(),
-        ) != super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-        {
-            debug!("Get Bitmap Info Failed");
-            let info = AndroidBitmapInfo::default();
-            handler(empty_vec.as_mut_slice(), &info)
+    let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
+    match (native_bitmap.lock_pixels(), native_bitmap.get_info()) {
+        (Ok(pixels), Ok(info)) => {
+            let buf = unsafe {
+                std::slice::from_raw_parts_mut(
+                    pixels as *mut u8,
+                    (info.width() * info.height() * 4) as usize,
+                )
+            };
+            handler(Some((buf, &info)));
+        }
+        _ => {
+            handler(None);
         }
     }
-    let bitmap_info = unsafe { bitmap_info.assume_init() };
-    let mut pixels = std::ptr::null_mut() as *mut c_void;
-    let pixels_ptr: *mut *mut c_void = &mut pixels;
-    unsafe {
-        if super::bitmap::AndroidBitmap_lockPixels(native_interface as _, bitmap, pixels_ptr)
-            != super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-        {
-            debug!("Get Bitmap Lock Failed");
-            handler(empty_vec.as_mut_slice(), &bitmap_info);
-            return;
-        }
-    }
-    let length = (bitmap_info.height * bitmap_info.stride as u32) as usize;
-    let slice: &mut [u8] =
-        unsafe { std::slice::from_raw_parts_mut(pixels as *mut u8, length as usize) };
-    handler(slice, &bitmap_info);
-    unsafe {
-        if super::bitmap::AndroidBitmap_unlockPixels(native_interface as _, bitmap)
-            != super::bitmap::ANDROID_BITMAP_RESULT_SUCCESS
-        {
-            debug!("Unlock Bitmap Failed");
-        }
-    }
+    let _ = native_bitmap.unlock_pixels();
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetBytesFromBitmap(
+pub extern "system" fn Java_org_nativescript_canvas_Bitmap_nativeLockBitmap(
     env: JNIEnv,
     _: JClass,
     bitmap: JObject,
-) -> jbyteArray {
-    let bytes = get_bytes_from_bitmap(env, bitmap);
-    env.byte_array_from_slice(bytes.0.as_slice())
-        .unwrap_or(env.new_byte_array(0).unwrap())
-}
-
-#[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetByteBufferFromBitmap(
-    env: JNIEnv,
-    _: JClass,
-    bitmap: JObject,
-) -> jobject {
-    let (mut buf, _) = get_bytes_from_bitmap(env, bitmap);
-
-    let db = env.new_direct_byte_buffer(buf.as_mut_slice()).unwrap();
-    let u8 = U8Array::from(buf);
-    let ptr = Box::into_raw(Box::new(u8));
-    let clazz = find_class(TNSGCUTILS_CLASS).unwrap();
-    let db: JValue = db.into();
-    env.call_static_method(
-        clazz,
-        "watchItem",
-        "(JLjava/nio/ByteBuffer;)V",
-        &[(ptr as i64).into(), db],
-    )
-    .unwrap();
-
-    db.l().unwrap().into_inner()
+) -> jlong {
+    let bb = BitmapBytes::new(env, bitmap);
+    Box::into_raw(Box::new(bb)) as jlong
 }

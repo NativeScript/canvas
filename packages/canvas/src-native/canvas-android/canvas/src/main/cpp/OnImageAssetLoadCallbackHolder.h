@@ -10,25 +10,34 @@
 
 class OnImageAssetLoadCallbackHolder {
 public:
-    OnImageAssetLoadCallbackHolder(v8::Isolate *isolate, v8::Local<v8::Context> context,
-                                   v8::Local<v8::Function> callback);
+    OnImageAssetLoadCallbackHolder(v8::Isolate *isolate, const v8::Local<v8::Context> &context,
+                                   const v8::Local<v8::Function> &callback);
 
     ~OnImageAssetLoadCallbackHolder();
 
-    void complete(bool done, intptr_t callback) const;
+    void complete() const;
 
-    v8::Isolate * GetIsolate();
+    v8::Isolate *GetIsolate();
+
     struct Data {
         intptr_t callback;
         bool done;
         v8::Isolate *isolate_;
     };
 
+    bool done_ = false;
+
+    v8::Local<v8::Context> GetContext() {
+        return this->context_.Get(this->isolate_);
+    }
+
+    v8::Local<v8::Function> GetCallback() {
+        return this->callback_.Get(this->isolate_);
+    }
+
+
 private:
-    v8::Global<v8::Function> callback_;
+    v8::Persistent<v8::Function> callback_;
     v8::Isolate *isolate_;
-    v8::Global<v8::Context> context_;
+    v8::Persistent<v8::Context> context_;
 };
-
-
-void OnImageAssetLoadCallbackHolderComplete(bool  done, intptr_t callback);

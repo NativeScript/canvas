@@ -467,7 +467,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	draw() {
-		console.log('draw',global.CanvasRenderingContext2D)
 		//this.urlTests();
 		//const str = new java.lang.String()
 		// ctx.font = '50px serif';
@@ -539,7 +538,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowColor(this.canvas);
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
-		 //strokeStyle(this.canvas);
+		//strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
 		//textAlign(this.canvas)
 		//arc(this.canvas);
@@ -564,7 +563,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		this.solar(this.canvas);
+		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -578,7 +577,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.chartJS(this.canvas);
 		//clear(null)
 		//points(this.canvas)
-		//textures(this.canvas);
+		textures(this.canvas);
 		//scaleTriangle(this.canvas);
 		//setTimeout(()=>{
 		//colorRain(this.canvas);
@@ -1466,7 +1465,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		patternContext.fillRect(0, 0, patternCanvas.width * scale, patternCanvas.height * scale);
 		patternContext.arc(0, 0, 50 * scale, 0, 0.5 * Math.PI);
 		patternContext.stroke();
-		
+
 		// Create our primary canvas and fill it with the pattern
 		const ctx = canvas.getContext('2d');
 		ctx.fillStyle = ctx.createPattern(patternContext, 'repeat');
@@ -1697,12 +1696,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-		console.log('sun', sun.loadUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png'));
-
-		moon.loadUrlSync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
-		earth.loadUrlSync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
-		console.log(sun.width);
-
+		await Promise.all([sun.loadUrlAsync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.loadUrlAsync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.loadUrlAsync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
 
 		// sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png')
 		// .then(done =>{

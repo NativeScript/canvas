@@ -116,6 +116,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 	var pos2 = -1
 	var texPos2 = -1
 
+	/*
 
 	fun createProgram(gl: TNSWebGLRenderingContext, vs: String, fs: String): Int {
 		val program = gl.createProgram()
@@ -151,6 +152,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 		gl.linkProgram(program)
 		return program
 	}
+	*/
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -161,11 +163,11 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 			this.width = it.videoWidth
 			this.height = it.videoHeight
 			player.start()
-			setup()
+		//	setup()
 		}
 		canvas = findViewById(R.id.canvasView)
 
-		canvas?.listener = object : TNSCanvas.Listener {
+/*		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
 				val ctx = canvas?.getContext("webgl") as? TNSWebGLRenderingContext
@@ -261,7 +263,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 					gl.bindTexture(GLES20.GL_TEXTURE_2D, 0)
 
 
-					/*
+					*//*
 					GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, ab2)
 					GLES20.glBufferData(
 						GLES20.GL_ARRAY_BUFFER,
@@ -342,7 +344,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 
 					GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
 
-					 */
+					 *//*
 
 					// draw bg
 
@@ -378,7 +380,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 					gl.drawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
 
 
-					/*
+					*//*
 					GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture2)
 
 					GLES20.glUseProgram(program2)
@@ -410,7 +412,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 					GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_INT, 0)
 
 
-					 */
+					 *//*
 
 					gl.updateCanvas()
 
@@ -419,10 +421,11 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 				}
 				//	setup()
 			}
-		}
+		}*/
 		initPlayer()
 	}
 
+/*
 
 	fun setup() {
 		if (width == -1 && height == -1 || didInit) {
@@ -514,6 +517,8 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 		//	render?.drawFrame(surfaceTexture!!)
 
 	}
+
+	*/
 
 	override fun onDestroy() {
 		super.onDestroy()

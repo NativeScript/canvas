@@ -645,7 +645,6 @@ CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> name, v8::Loc
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointer(info.This());
     if (Helpers::IsString(value)) {
-        auto val = Helpers::ConvertFromV8String(isolate, value);
         uint8_t r;
         uint8_t g;
         uint8_t b;
@@ -659,14 +658,15 @@ CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> name, v8::Loc
                 canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), r, g, b, a);
             }
         } else {
-//            auto val = Helpers::ConvertFromV8String(isolate, string);
-//            if (canvas_native_parse_css_color_rgba(rust::Str(val.data(), val.size()), r, g, b, a)) {
-//                canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), r, g, b, a);
-//            }
+            auto val = Helpers::ConvertFromV8String(isolate, value);
+          //  auto val = Helpers::ConvertFromV8String(isolate, string);
+            if (canvas_native_parse_css_color_rgba(rust::Str(val.data(), val.size()), r, g, b, a)) {
+                canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), r, g, b, a);
+            }
 
-            v8::String::Value stringValue(isolate, value);
-            auto str = rust::Slice<const uint16_t>(*stringValue, stringValue.length());
-            canvas_native_paint_style_set_stroke_color_with_utf16(ptr->GetContext(), str);
+//            v8::String::Value stringValue(isolate, value);
+//            auto str = rust::Slice<const uint16_t>(*stringValue, stringValue.length());
+//            canvas_native_paint_style_set_stroke_color_with_utf16(ptr->GetContext(), str);
         }
 
 //        auto color = CSSColorParser::parse(val);
@@ -849,7 +849,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
 
         if (Helpers::GetInstanceType(isolate, object) == ObjectType::ImageData) {
             ImageDataImpl *data = ImageDataImpl::GetPointer(object);
-            ImageDataImpl *cptr = new ImageDataImpl(
+            auto *cptr = new ImageDataImpl(
                     canvas_native_image_data_get_shared_instance(data->GetImageData()));
             auto ret = ImageDataImpl::NewInstance(isolate, cptr);
             args.GetReturnValue().Set(ret);
@@ -858,7 +858,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
 
     } else if (args.Length() > 1) {
 
-        ImageDataImpl *imageData = new ImageDataImpl(std::move(canvas_native_image_data_create(
+        auto *imageData = new ImageDataImpl(std::move(canvas_native_image_data_create(
                 args[0]->Int32Value(context).ToChecked(),
                 args[1]->Int32Value(context).ToChecked()
         )));
@@ -1185,7 +1185,7 @@ void CanvasRenderingContext2DImpl::GetImageData(const v8::FunctionCallbackInfo<v
         auto sw = static_cast<float>(args[2]->NumberValue(context).ToChecked());
         auto sh = static_cast<float>(args[3]->NumberValue(context).ToChecked());
         auto data = canvas_native_context_get_image_data(ptr->GetContext(), sx, sy, sw, sh);
-        ImageDataImpl *imageData = new ImageDataImpl(std::move(data));
+        auto *imageData = new ImageDataImpl(std::move(data));
         auto ret = ImageDataImpl::NewInstance(isolate, imageData);
 
         args.GetReturnValue().Set(ret);
@@ -1205,6 +1205,17 @@ void CanvasRenderingContext2DImpl::GetLineDash(const v8::FunctionCallbackInfo<v8
     for (int i = 0; i < size; ++i) {
         array->Set(context, i, v8::Number::New(isolate, (double) dash[i]));
     }
+    args.GetReturnValue().Set(array);
+}
+
+void CanvasRenderingContext2DImpl::GetLineDashBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto ptr = GetPointer(args.This());
+    auto dash = canvas_native_context_get_line_dash(ptr->GetContext());
+    auto size = dash.size();
+    auto store = v8::ArrayBuffer::New(isolate,dash.data(), size * 4, v8::ArrayBufferCreationMode::kInternalized);
+    auto array = v8::Float32Array::New(store, 0, size);
     args.GetReturnValue().Set(array);
 }
 
@@ -1432,12 +1443,29 @@ void CanvasRenderingContext2DImpl::SetLineDash(const v8::FunctionCallbackInfo<v8
             auto len = segments->Length();
             std::vector<float> data;
             auto context = isolate->GetCurrentContext();
+            Helpers::LogToConsole("SetLineDash");
             for (int i = 0; i < len; ++i) {
                 auto item = segments->Get(context, i);
+                Helpers::LogToConsole("Get");
                 data.push_back(static_cast<float>(item.ToLocalChecked()->NumberValue(context).ToChecked()));
             }
+            Helpers::LogToConsole("Get Loop");
             rust::Slice<const float> slice{data.data(), data.size()};
+            Helpers::LogToConsole("slice");
             canvas_native_context_set_line_dash(ptr->GetContext(), slice);
+            Helpers::LogToConsole("canvas_native_context_set_line_dash");
+        }
+    }
+}
+
+void CanvasRenderingContext2DImpl::SetLineDashBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto ptr = GetPointer(args.This());
+    if (args.Length() == 1) {
+        auto vec = args[0];
+        if (vec->IsFloat32Array()) {
+            auto segments = Helpers::GetTypedArrayData<const float>(vec.As<v8::Float32Array>());
+            canvas_native_context_set_line_dash(ptr->GetContext(), segments);
         }
     }
 }
@@ -1806,6 +1834,11 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     );
 
     canvasRenderingContextTpl->Set(
+            Helpers::ConvertToV8String(isolate, "__getLineDashBuffer"),
+            v8::FunctionTemplate::New(isolate, &GetLineDashBuffer)
+    );
+
+    canvasRenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "isPointInPath"),
             v8::FunctionTemplate::New(isolate, &IsPointInPath)
     );
@@ -1885,6 +1918,11 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     canvasRenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "setLineDash"),
             v8::FunctionTemplate::New(isolate, &SetLineDash)
+    );
+
+    canvasRenderingContextTpl->Set(
+            Helpers::ConvertToV8String(isolate, "__setLineDashBuffer"),
+            v8::FunctionTemplate::New(isolate, &SetLineDashBuffer)
     );
 
 

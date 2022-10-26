@@ -128,7 +128,10 @@ export function lineJoin(canvas) {
 }
 
 export function lineWidth(canvas) {
-	const ctx = canvas.getContext('2d');
+	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+	console.log(ctx.getContextAttributes())
+
 	ctx.lineWidth = 15;
 
 	ctx.beginPath();

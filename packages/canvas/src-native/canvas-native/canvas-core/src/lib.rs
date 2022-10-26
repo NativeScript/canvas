@@ -2,13 +2,13 @@ extern crate core;
 
 use std::os::raw::c_int;
 
-use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, Point, Surface,
-};
 use skia_safe::image::CachingHint;
+use skia_safe::{
+    AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface,
+};
 
-use context::{Context, ContextWrapper};
 use context::filter_quality::FilterQuality;
+use context::{Context, ContextWrapper};
 
 pub mod context;
 pub mod ffi;
@@ -58,6 +58,65 @@ pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -
             encoded
         }
     }
+}
+
+pub fn bytes_to_data_url(
+    width: i32,
+    height: i32,
+    bytes: &[u8],
+    format: &str,
+    quality: c_int,
+) -> String {
+    let data = unsafe { skia_safe::Data::new_bytes(bytes) };
+    let mut encoded_prefix = String::new();
+    encoded_prefix.push_str("data:");
+    encoded_prefix.push_str(format);
+    encoded_prefix.push_str(";base64,");
+    let image_info = ImageInfo::new(
+        (width, height),
+        ColorType::N32,
+        skia_bindings::SkAlphaType::Unpremul,
+        None,
+    );
+    if let Some(image) = skia_safe::Image::from_raster_data(&image_info, data, (width * 4) as usize)
+    {
+        let mut quality = quality;
+        if quality > 100 || quality < 0 {
+            quality = 92;
+        }
+        let data = image.encode_to_data_with_quality(
+            match format {
+                "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
+                "image/webp" => EncodedImageFormat::WEBP,
+                "image/gif" => EncodedImageFormat::GIF,
+                "image/heif" | "image/heic" | "image/heif-sequence" | "image/heic-sequence" => {
+                    EncodedImageFormat::HEIF
+                }
+                _ => EncodedImageFormat::PNG,
+            },
+            quality,
+        );
+        return match data {
+            Some(data) => {
+                let encoded_data = base64::encode_config(data.as_bytes(), base64::STANDARD);
+                let mut encoded = String::new();
+                encoded.push_str(&encoded_prefix);
+                encoded.push_str(&encoded_data);
+                encoded
+            }
+            _ => {
+                let mut encoded = String::new();
+                encoded.push_str(&encoded_prefix);
+                encoded.push_str("\"\"");
+                encoded
+            }
+        };
+    }
+
+    let mut encoded = String::new();
+    encoded.push_str(&encoded_prefix);
+    encoded.push_str("\"\"");
+    encoded
 }
 
 pub(crate) fn to_data(context: &mut ContextWrapper) -> Vec<u8> {

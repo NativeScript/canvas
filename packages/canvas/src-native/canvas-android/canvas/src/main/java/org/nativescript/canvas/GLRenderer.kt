@@ -46,8 +46,6 @@ internal class GLRenderer(
 	var mEGLConfig: EGLConfig? = null
 	var mOffScreenEGLConfig: EGLConfig? = null
 
-	@JvmField
-	var glView: WeakReference<GLView>? = null
 
 	var mSurface: Any? = null
 
@@ -127,6 +125,21 @@ internal class GLRenderer(
 		var desynchronized = false
 
 		var xrCompatible = false
+
+		fun toJSON(): String {
+			val obj = JSONObject()
+			obj.put("alpha", alpha)
+			obj.put("antialias", antialias)
+			obj.put("depth", depth)
+			obj.put("failIfMajorPerformanceCaveat", failIfMajorPerformanceCaveat)
+			obj.put("premultipliedAlpha", premultipliedAlpha)
+			obj.put("preserveDrawingBuffer", preserveDrawingBuffer)
+			obj.put("stencil", stencil)
+			obj.put("xrCompatible", xrCompatible)
+			obj.put("desynchronized", desynchronized)
+			obj.put("powerPreference", powerPreference)
+			return obj.toString()
+		}
 
 		companion object {
 			@JvmStatic
@@ -273,7 +286,7 @@ internal class GLRenderer(
 			cpuView?.resize(width, height)
 		} else {
 			if (surface?.isCreated == false && (drawingBufferWidth != width && drawingBufferHeight != height)) {
-				resizeSurface()
+				resizeSurface(width, height)
 			}
 			surface?.resize(width, height)
 		}
@@ -745,7 +758,7 @@ internal class GLRenderer(
 		EGL14.eglTerminate(mEGLDisplay)
 	}
 
-	private fun resizeSurface() {
+	private fun resizeSurface(width: Int, height: Int) {
 		if (contextType == TNSCanvas.ContextType.NONE) {
 			return
 		}
@@ -777,32 +790,11 @@ internal class GLRenderer(
 		GLES20.glClearColor(0f, 0f, 0f, 0f)
 		GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
-		if (nativeContext != 0L) {
-			GLES20.glViewport(0, 0, canvas.width, canvas.height)
-			val frameBuffers = IntArray(1)
-			GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)
-			var samples = 0
-			if (contextAttributes.antialias) {
-				samples = 4
-			}
-			val metrics = canvas.resources.displayMetrics
+		canvas.listener?.surfaceResize(width, height)
 
-			TNSCanvas.nativeResizeSurface(
-				nativeContext,
-				drawingBufferWidth.toFloat(),
-				drawingBufferHeight.toFloat(),
-				scale,
-				frameBuffers[0],
-				samples,
-				true,
-				metrics.density,
-			)
-			swapBuffers(mEGLSurface)
-		} else {
-			if (swapBuffers(mEGLSurface)) {
-				if (TNSCanvas.enableDebug) {
-					Log.e(TAG, "GLContext: Cannot swap buffers!")
-				}
+		if (swapBuffers(mEGLSurface)) {
+			if (TNSCanvas.enableDebug) {
+				Log.e(TAG, "GLContext: Cannot swap buffers!")
 			}
 		}
 
@@ -823,6 +815,7 @@ internal class GLRenderer(
 	}
 
 	fun flush() {
+		/*
 		if ((invalidateState and INVALIDATE_STATE_INVALIDATING) == INVALIDATE_STATE_INVALIDATING) {
 			if (nativeContext != 0L) {
 				if (softwareRenderer) {
@@ -858,6 +851,7 @@ internal class GLRenderer(
 				}
 			}
 		}
+		*/
 
 		/*
 		if (nativeContext != 0L && invalidateState == InvalidateState.INVALIDATING) {
@@ -950,8 +944,8 @@ internal class GLRenderer(
 			EGL14.EGL_NONE
 		)
 
-		surfaceWidth = glView?.get()?.width ?: 0
-		surfaceHeight = glView?.get()?.height ?: 0
+		surfaceWidth = this.surface?.width ?: this.cpuView?.width ?: 0
+		surfaceHeight = this.surface?.height ?: this.cpuView?.height ?: 0
 
 		return EGL14.eglCreateWindowSurface(mEGLDisplay, config, surface, surfaceAttribs, 0)
 	}
@@ -973,10 +967,13 @@ internal class GLRenderer(
 		return Looper.myLooper() == Looper.getMainLooper()
 	}
 
+
 	fun getContext(type: String, contextAttributes: ContextAttributes) {
-		if (contextType == TNSCanvas.ContextType.NONE) {
+		if (actualContextType.isNotEmpty() && contextType == TNSCanvas.ContextType.NONE) {
 			return
 		}
+
+		contextType = TNSCanvas.ContextType.fromString(type)
 		this.contextAttributes = contextAttributes
 		if (type == "2d" || type == "experimental-webgl" || type == "webgl" || type == "webgl2" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
 
@@ -1016,14 +1013,22 @@ internal class GLRenderer(
 				} else {
 					isWebGL = false
 					contextType = TNSCanvas.ContextType.NONE
+					actualContextType = "none"
 				}
 			}
+			else -> actualContextType = "none"
 		}
 
+		if (mEGLSurface == null || mEGLSurface === EGL14.EGL_NO_SURFACE) {
+			initEGL()
+		}
 	}
 
 
 	fun toDataURL(type: String = "image/png", quality: Float = 0.92f): String? {
+		if (contextType == TNSCanvas.ContextType.NONE) {
+			return null
+		}
 		if (contextType == TNSCanvas.ContextType.WEBGL) {
 			val bm = surface!!.getBitmap(canvas.width, canvas.height)
 			val os = ByteArrayOutputStream()

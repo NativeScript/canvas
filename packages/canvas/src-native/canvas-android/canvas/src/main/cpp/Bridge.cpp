@@ -75,14 +75,15 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
         isolate->ThrowException(err);
         return;
     }
+
     auto ctx = isolate->GetCurrentContext();
 
     auto exports = args[1].As<v8::Object>();
 
     auto propName = v8::String::NewFromUtf8(isolate, "dummy").ToLocalChecked();
 
-    auto result = exports->Set(ctx, propName, v8::Null(isolate));
-
+    auto cache = Caches::Get(isolate);
+    cache->SetContext(ctx);
     ImageAssetImpl::Init(isolate);
     ImageBitmapImpl::Init(isolate);
     TextDecoderImpl::Init(isolate);
@@ -91,6 +92,7 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     WebGL::Init(isolate);
     WebGL2::Init(isolate);
 
+    auto result = exports->Set(ctx, propName, v8::Null(isolate));
 
     auto global = ctx->Global();
     auto func = v8::FunctionTemplate::New(isolate, &OneByteStringResourceInstance);
@@ -100,7 +102,6 @@ void Init(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto configFunc = v8::FunctionTemplate::New(isolate, &SetConfiguration);
     global->Set(ctx, Helpers::ConvertToV8String(isolate, "__initAppConfiguration"),
                 configFunc->GetFunction(ctx).ToLocalChecked());
-
 
 }
 

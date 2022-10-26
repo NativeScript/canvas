@@ -6,11 +6,56 @@
 #include "canvas-android/src/lib.rs.h"
 #include "../canvas2d/CanvasRenderingContext2DImpl.h"
 
-WebGLRenderingContext::WebGLRenderingContext(rust::Box <WebGLState> state)
+WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state)
         : WebGLRenderingContextBase(
         std::move(state), WebGLRenderingVersion::V1) {}
 
 WebGLRenderingContext::~WebGLRenderingContext() {}
+
+void WebGLRenderingContext::ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto ptr = GetPointer(args.This());
+    std::string type("image/png");
+    int quality = 92;
+    auto typeVal = args[0];
+    auto qualityVal = args[1];
+
+    if (typeVal->IsStringObject()) {
+        type = Helpers::ConvertFromV8String(isolate, typeVal.As<v8::StringObject>()->ValueOf());
+    }
+
+    if (typeVal->IsString()) {
+        type = Helpers::ConvertFromV8String(isolate, typeVal);
+    }
+
+    if (qualityVal->IsNumberObject()) {
+        quality = static_cast<int32_t>(qualityVal.As<v8::NumberObject>()->ValueOf());
+    }
+
+    if (qualityVal->IsNumber()) {
+        quality = qualityVal->Int32Value(context).FromMaybe(quality);
+    }
+
+    auto data = canvas_native_webgl_to_data_url(ptr->GetState(), rust::Str(type.c_str(), type.size()),
+                                          quality);
+    args.GetReturnValue().Set(
+            Helpers::ConvertToV8String(isolate, std::string(data.c_str(), data.size())));
+}
+
+void WebGLRenderingContext::Resized(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto ptr = GetPointer(args.This());
+    // auto width = args[0];
+    // auto height = args[1];
+    // width->NumberValue(context).FromMaybe(1)
+    // width->NumberValue(context).FromMaybe(1))
+    canvas_native_webgl_resized(ptr->GetState());
+}
+
+
+
 
 WebGLRenderingContext *WebGLRenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = GetPointerBase(object);
@@ -1501,7 +1546,7 @@ void WebGLRenderingContext::GetAttachedShaders(const v8::FunctionCallbackInfo<v8
                 for (int i = 0; i < len; ++i) {
                     auto shader = info[i];
                     array->Set(context, i,
-                                       WebGLShader::NewInstance(isolate, shader));
+                               WebGLShader::NewInstance(isolate, shader));
                 }
                 args.GetReturnValue().Set(array);
                 return;
@@ -1772,7 +1817,7 @@ void WebGLRenderingContext::GetFramebufferAttachmentParameter(
 
 void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<v8::Value> &args,
                                                  uint32_t pnameValue,
-                                                 rust::Box <WebGLResult> result) {
+                                                 rust::Box<WebGLResult> result) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = GetPointerBase(args.This());
@@ -1861,10 +1906,10 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
             auto len = ret.size();
             auto byte_len = len * sizeof(float);
             auto buffer = v8::ArrayBuffer::New(isolate, byte_len);
-            auto view = v8::Float32Array::New(buffer, 0, byte_len);
+            auto view = v8::Float32Array::New(buffer, 0, len);
             for (int j = 0; j < len; ++j) {
                 view->Set(context, j,
-                                   v8::Number::New(isolate, static_cast<double>(ret[j])));
+                          v8::Number::New(isolate, static_cast<double>(ret[j])));
             }
             args.GetReturnValue().Set(view);
         }
@@ -1875,10 +1920,10 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
             auto len = ret.size();
             auto byte_len = len * sizeof(float);
             auto buffer = v8::ArrayBuffer::New(isolate, byte_len);
-            auto view = v8::Float32Array::New(buffer, 0, byte_len);
+            auto view = v8::Float32Array::New(buffer, 0, len);
             for (int j = 0; j < len; ++j) {
                 view->Set(context, j,
-                                   v8::Number::New(isolate, static_cast<double>(ret[j])));
+                          v8::Number::New(isolate, static_cast<double>(ret[j])));
             }
             args.GetReturnValue().Set(view);
         }
@@ -1919,9 +1964,14 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
             auto ret = canvas_native_webgl_result_get_i32_array(*result);
             auto len = ret.size();
             auto byte_len = len * sizeof(int32_t);
+            Helpers::LogToConsole("GL_VIEWPORT");
+            Helpers::LogToConsole("len: " + std::to_string(len));
+            Helpers::LogToConsole("byte_len: " + std::to_string(byte_len));
+
             auto buffer = v8::ArrayBuffer::New(isolate, byte_len);
-            auto view = v8::Int32Array::New(buffer, 0, byte_len);
+            auto view = v8::Int32Array::New(buffer, 0, len);
             for (int j = 0; j < len; ++j) {
+                Helpers::LogToConsole("Set: index " + std::to_string(j) + " value: " + std::to_string(ret[j]));
                 view->Set(context, j, v8::Int32::New(isolate, ret[j]));
             }
             args.GetReturnValue().Set(view);
@@ -1962,8 +2012,9 @@ void WebGLRenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Valu
     if (args.Length() > 0) {
         auto pname = args[0];
         auto pnameValue = pname->Uint32Value(context).ToChecked();
-        auto result = canvas_native_webgl_get_parameter(pname->Uint32Value(context).ToChecked(),
+        auto result = canvas_native_webgl_get_parameter(pnameValue,
                                                         ptr->GetState());
+        Helpers::LogToConsole("GetParameter: " + std::to_string(pnameValue));
 
         GetParameterInternal(args, pnameValue, std::move(result));
         return;
@@ -2188,6 +2239,20 @@ WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8:
     args.GetReturnValue().Set(array);
 }
 
+
+void
+WebGLRenderingContext::GetSupportedExtensionsString(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto ptr = GetPointerBase(args.This());
+    auto exts = canvas_native_webgl_get_supported_extensions_to_string(ptr->GetState());
+    args.GetReturnValue().Set(
+            Helpers::ConvertToV8String(isolate, std::string(
+                    exts.data(), exts.size()
+            ))
+    );
+}
+
 void WebGLRenderingContext::GetTexParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
@@ -2280,7 +2345,7 @@ void WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value>
                         for (int i = 0; i < len; ++i) {
                             auto item = ret[i];
                             array->Set(context, i,
-                                               v8::Boolean::New(isolate, item == 1));
+                                       v8::Boolean::New(isolate, item == 1));
                         }
                         args.GetReturnValue().Set(array);
                     }
@@ -2294,7 +2359,7 @@ void WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value>
                         for (int i = 0; i < len; ++i) {
                             auto item = ret[i];
                             view->Set(context, i,
-                                               v8::Number::New(isolate, static_cast<double>(item)));
+                                      v8::Number::New(isolate, static_cast<double>(item)));
                         }
                         args.GetReturnValue().Set(view);
                     }
@@ -2390,7 +2455,7 @@ void WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::V
             for (int i = 0; i < len; ++i) {
                 auto item = val[i];
                 view->Set(context, i,
-                                   v8::Number::New(isolate, static_cast<double>(item)));
+                          v8::Number::New(isolate, static_cast<double>(item)));
             }
             args.GetReturnValue().Set(view);
         } else if (pnameValue == GL_VERTEX_ATTRIB_ARRAY_ENABLED ||
@@ -3042,7 +3107,7 @@ void WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value>
             auto array = pixels.As<v8::ArrayBuffer>();
             auto store = array->GetBackingStore();
             auto data = static_cast<uint8_t *>(store->Data());
-            rust::Slice <uint8_t> buf(data, store->ByteLength());
+            rust::Slice<uint8_t> buf(data, store->ByteLength());
             canvas_native_webgl_tex_image2d(
                     target->Int32Value(context).ToChecked(),
                     level->Int32Value(context).ToChecked(),
@@ -3358,7 +3423,7 @@ void WebGLRenderingContext::Uniform1iv(const v8::FunctionCallbackInfo<v8::Value>
                     auto array = v0.As<v8::Array>();
                     auto len = array->Length();
 
-                    std::vector <int32_t> buf;
+                    std::vector<int32_t> buf;
                     for (int i = 0; i < len; ++i) {
                         auto item = array->Get(context, (uint32_t) i).ToLocalChecked();
                         buf.push_back(static_cast<float>(item->Int32Value(context).ToChecked()));
@@ -3471,7 +3536,7 @@ void WebGLRenderingContext::Uniform2iv(const v8::FunctionCallbackInfo<v8::Value>
                     auto array = v0.As<v8::Array>();
                     auto len = array->Length();
 
-                    std::vector <int32_t> buf;
+                    std::vector<int32_t> buf;
                     for (int i = 0; i < len; ++i) {
                         auto item = array->Get(context, (uint32_t) i).ToLocalChecked();
                         buf.push_back(static_cast<float>(item->Int32Value(context).ToChecked()));
@@ -3588,7 +3653,7 @@ void WebGLRenderingContext::Uniform3iv(const v8::FunctionCallbackInfo<v8::Value>
                     auto array = v0.As<v8::Array>();
                     auto len = array->Length();
 
-                    std::vector <int32_t> buf;
+                    std::vector<int32_t> buf;
                     for (int i = 0; i < len; ++i) {
                         auto item = array->Get(context, (uint32_t) i).ToLocalChecked();
                         buf.push_back(static_cast<float>(item->Int32Value(context).ToChecked()));
@@ -3709,7 +3774,7 @@ void WebGLRenderingContext::Uniform4iv(const v8::FunctionCallbackInfo<v8::Value>
                     auto array = v0.As<v8::Array>();
                     auto len = array->Length();
 
-                    std::vector <int32_t> buf;
+                    std::vector<int32_t> buf;
                     for (int i = 0; i < len; ++i) {
                         auto item = array->Get(context, (uint32_t) i).ToLocalChecked();
                         buf.push_back(static_cast<float>(item->Int32Value(context).ToChecked()));
@@ -4496,6 +4561,16 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate,
                                   const v8::Local<v8::ObjectTemplate> &webglRenderingContextTpl) {
 
     webglRenderingContextTpl->Set(
+            Helpers::ConvertToV8String(isolate, "__resized"),
+            v8::FunctionTemplate::New(isolate, &Resized)
+    );
+
+    webglRenderingContextTpl->Set(
+            Helpers::ConvertToV8String(isolate, "__toDataURL"),
+            v8::FunctionTemplate::New(isolate, &ToDataURL)
+    );
+
+    webglRenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "activeTexture"),
             v8::FunctionTemplate::New(isolate, &ActiveTexture)
     );
@@ -4863,6 +4938,11 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate,
     webglRenderingContextTpl->Set(
             Helpers::ConvertToV8String(isolate, "getSupportedExtensions"),
             v8::FunctionTemplate::New(isolate, &GetSupportedExtensions)
+    );
+
+    webglRenderingContextTpl->Set(
+            Helpers::ConvertToV8String(isolate, "__getSupportedExtensions"),
+            v8::FunctionTemplate::New(isolate, &GetSupportedExtensionsString)
     );
 
     webglRenderingContextTpl->Set(

@@ -73,8 +73,6 @@ internal class GLContext {
 				}
 			}
 		}
-
-		Log.d("com.test", "state ${mGLThread.state}")
 	}
 
 	fun flush() {

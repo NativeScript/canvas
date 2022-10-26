@@ -45,8 +45,7 @@ set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs)
 set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc)
 
-set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -nostdinc++ -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -D_LIBCPP_ENABLE_NODISCARD -D_LIBCPP_ABI_UNSTABLE  -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH -DV8_ENABLE_REGEXP_INTERPRETER_THREADED_DISPATCH -DV8_EMBEDDED_BUILTINS")
-
+set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -nostdinc++ -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RUST_BUILD_TYPE)
@@ -64,6 +63,20 @@ if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
   # Enable pointer compression on 64 bit platforms
   set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -DV8_COMPRESS_POINTERS")
 endif()
+
+
+include_directories(
+        canvasnativev8
+        PUBLIC
+        ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
+        ${PROJECT_SOURCE_DIR}/src/main/cpp/include
+        ${PROJECT_SOURCE_DIR}/src/main/cpp
+)
+include_directories(
+        canvasnativev8
+        PUBLIC
+        ${CARGO_TARGET_DIR}/cxxbridge
+)
 
 
 set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
@@ -159,13 +172,6 @@ add_library(
 )
 
 
-target_include_directories(
-        canvasnativev8
-        PUBLIC
-        ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
-        ${PROJECT_SOURCE_DIR}/src/main/cpp/include
-        ${PROJECT_SOURCE_DIR}/src/main/cpp
-)
 
 message("CARGO_TARGET_DIR " ${CARGO_TARGET_DIR})
 
@@ -194,7 +200,6 @@ find_library(gl2 GLESv2)
 find_library(gl3 GLESv3)
 
 add_custom_command(TARGET canvasnativev8 POST_BUILD COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:canvasnativev8>)
-
 
 if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND NOT "${ANDROID_ABI}" MATCHES "x86_64")
   # On API Level 19 and lower we need to link with android_support
@@ -226,11 +231,6 @@ else()
           )
 endif ()
 
-target_include_directories(
-        canvasnativev8
-        PUBLIC
-        ${CARGO_TARGET_DIR}/cxxbridge
-)
 
 
 

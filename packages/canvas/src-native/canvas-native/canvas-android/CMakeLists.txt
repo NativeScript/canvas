@@ -1,9 +1,8 @@
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
-    set(CARGO_CMD cargo build --verbose --target ${RUST_BUILD_TARGET} --package canvas-android)
+    set(CARGO_CMD cargo build --target ${RUST_BUILD_TARGET} --package canvas-android)
     set(TARGET_DIR ${RUST_BUILD_TARGET}/debug)
 else ()
-    set(CARGO_CMD cargo build --release --verbose --target ${RUST_BUILD_TARGET} --package canvas-android)
+    set(CARGO_CMD cargo build --release --target ${RUST_BUILD_TARGET} --package canvas-android)
     set(TARGET_DIR ${RUST_BUILD_TARGET}/release)
 endif ()
 
@@ -13,8 +12,6 @@ if(ENABLE_LTO)
 endif()
 
 set(CANVAS_CORE_LIB ${PROJECT_NATIVE_ROOT_DIR}/target/${TARGET_DIR}/libcanvasandroid.a)
-
-message("CANVAS_CORE_LIB " ${CANVAS_CORE_LIB})
 
 set(CANVAS_CXX ${CMAKE_CURRENT_BINARY_DIR}/canvas_core.cpp)
 set(CANVAS_CXX_HEADER ${CMAKE_CURRENT_BINARY_DIR}/canvas_core.h)
@@ -41,9 +38,9 @@ add_custom_command(
         USES_TERMINAL
 )
 
-add_library(canvas_core STATIC ${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-android/lib.rs.cc)
-
-target_link_libraries(canvas_core pthread ${CANVAS_CORE_LIB})
+#add_library(canvas_core STATIC ${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-android/lib.rs.cc)
+#
+#target_link_libraries(canvas_core ${CANVAS_CORE_LIB})
 
 #add_test(NAME canvas_core_test
 #        COMMAND cargo test

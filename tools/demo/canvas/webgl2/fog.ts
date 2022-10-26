@@ -215,6 +215,7 @@ void main() {
 
 			// Compute the projection matrix
 			var aspect = gl.drawingBufferWidth / gl.drawingBufferHeight;
+
 			var projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 40);
 
 			var cameraPosition = [0, 0, 2];

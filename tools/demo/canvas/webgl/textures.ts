@@ -21,7 +21,7 @@ void main() {
 }`;
 
 
-var gl, program;
+var gl: WebGLRenderingContext, program;
 
 export function textures(canvas) {
   function setupWebGL() {
@@ -36,6 +36,7 @@ export function textures(canvas) {
     gl.shaderSource(fragmentShader, source);
     gl.compileShader(fragmentShader);
     program = gl.createProgram();
+
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
@@ -54,6 +55,13 @@ export function textures(canvas) {
     initializeAttributes();
     gl.useProgram(program);
     gl.drawArrays(gl.POINTS, 0, 1);
+
+
+    console.log('getParameter', gl.getParameter(gl.VIEWPORT));
+
+    android.util.Log.d('JS',canvas.toDataURL());
+
+
     cleanup();
   }
 
@@ -77,8 +85,7 @@ export function textures(canvas) {
 
 
   function getRenderingContext() {
-    console.log('aaa')
-    var gl = canvas.getContext('webgl')
+    var gl = canvas.getContext('webgl2')
       || canvas.getContext('experimental-webgl');
     if (!gl) {
       console.log('Failed to get WebGL context.'
@@ -87,7 +94,7 @@ export function textures(canvas) {
     }
     gl.viewport(0, 0,
       gl.drawingBufferWidth, gl.drawingBufferHeight);
-    gl.clearColor(0, 0.0, 0.0, 1.0);
+    gl.clearColor(0, 0, 0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     return gl;
   }

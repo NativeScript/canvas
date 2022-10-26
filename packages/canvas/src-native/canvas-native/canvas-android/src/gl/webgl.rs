@@ -4,7 +4,14 @@ use std::os::raw::{c_char, c_uchar, c_void};
 use libc::size_t;
 
 use crate::gl::prelude::*;
-use crate::{__log, console_log, ImageAsset, LogPriority};
+use crate::{__log, console_log, console_log_rust, ImageAsset, LogPriority};
+
+
+pub fn canvas_native_webgl_resized(state: &mut WebGLState) {
+    state.resized();
+}
+
+
 
 pub fn canvas_native_webgl_active_texture(texture: u32, state: &mut WebGLState) {
     state.make_current();
@@ -980,6 +987,7 @@ pub fn canvas_native_webgl_get_framebuffer_attachment_parameter(
 
 pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> WebGLResult {
     state.make_current();
+    console_log_rust(&format!("canvas_native_webgl_get_parameter: {pname} {:?} {:?}",gl_bindings::GL_SCISSOR_BOX, gl_bindings::GL_VIEWPORT));
     match pname {
         gl_bindings::GL_ACTIVE_TEXTURE
         | gl_bindings::GL_ALPHA_BITS
@@ -1121,7 +1129,7 @@ pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> 
             return WebGLResult::I32Array(params);
         }
         gl_bindings::GL_SCISSOR_BOX | gl_bindings::GL_VIEWPORT => {
-            let mut params: Vec<i32> = Vec::with_capacity(2);
+            let mut params: Vec<i32> = Vec::with_capacity(4);
             unsafe { gl_bindings::glGetIntegerv(pname, params.as_mut_ptr()) }
             return WebGLResult::I32Array(params);
         }
@@ -1271,10 +1279,15 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
 
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
-    let ext = unsafe { gl_bindings::glGetString(gl_bindings::GL_EXTENSIONS) };
-    let extensions = unsafe { CStr::from_ptr(std::mem::transmute(ext)) };
-    let extensions = extensions.to_string_lossy();
-    extensions.split(" ").map(|f| f.into()).collect()
+    let ext = unsafe { gl_bindings::glGetString(gl_bindings::GL_EXTENSIONS) as *const c_char};
+    if ext.is_null() {
+        return Vec::with_capacity(0);
+    }
+    let version = unsafe { String::from_utf8(CStr::from_ptr(ext).to_bytes().to_vec()).unwrap()};
+
+   // let extensions = unsafe { CStr::from_ptr(std::mem::transmute(ext)) };
+   // let extensions = extensions.to_string_lossy();
+    version.split(" ").map(|f| f.into()).collect()
 }
 
 pub fn canvas_native_webgl_get_tex_parameter(

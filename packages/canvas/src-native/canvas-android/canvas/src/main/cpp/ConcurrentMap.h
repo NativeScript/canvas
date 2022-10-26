@@ -20,7 +20,6 @@ public:
     }
 
     TValue Get(TKey &key, bool &found) {
-//      std::shared_lock<std::shared_timed_mutex> readerLock(this->containerMutex_);
         std::lock_guard <std::mutex> writerLock(this->containerMutex_);
         auto it = this->container_.find(key);
         found = it != this->container_.end();
@@ -31,7 +30,6 @@ public:
     }
 
     bool ContainsKey(TKey &key) {
-//        std::shared_lock<std::shared_timed_mutex> readerLock(this->containerMutex_);
         std::lock_guard <std::mutex> writerLock(this->containerMutex_);
         auto it = this->container_.find(key);
         return it != this->container_.end();

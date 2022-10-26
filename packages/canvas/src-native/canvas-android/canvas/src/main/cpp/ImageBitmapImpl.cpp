@@ -7,7 +7,7 @@
 #include "OnImageBitmapLoadCallbackHolder.h"
 #include "rust/cxx.h"
 
-ImageBitmapImpl::ImageBitmapImpl(rust::Box <ImageAsset> asset)
+ImageBitmapImpl::ImageBitmapImpl(rust::Box<ImageAsset> asset)
         : bitmap_(std::move(asset)) {}
 
 void ImageBitmapImpl::Init(v8::Isolate *isolate) {
@@ -303,11 +303,11 @@ void ImageBitmapImpl::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
             auto ret = canvas_native_image_bitmap_create_from_asset_src_rect(
                     isImageBitmap ? ibi->GetImageAsset() : iai->GetImageAsset(),
-                    sx_or_options->NumberValue(
+                    (float) sx_or_options->NumberValue(
                             context).ToChecked(),
-                    sy->NumberValue(context).ToChecked(),
-                    sw->NumberValue(context).ToChecked(),
-                    sh->NumberValue(context).ToChecked(),
+                    (float) sy->NumberValue(context).ToChecked(),
+                    (float) sw->NumberValue(context).ToChecked(),
+                    (float) sh->NumberValue(context).ToChecked(),
                     options.flipY,
                     options.premultiplyAlpha,
                     options.colorSpaceConversion,
@@ -384,20 +384,39 @@ void ImageBitmapImpl::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
             auto callback = std::make_shared<OnImageBitmapLoadCallbackHolder>(isolate, context,
                                                                               func,
                                                                               asset_ptr);
-            auto cache = Caches::Get(isolate);
-            auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
-            cache->OnImageBitmapLoadCallbackHolder_->Insert(key, callback);
-            Helpers::LogToConsole(
-                    "canvas_native_image_bitmap_create_from_encoded_bytes_async: before");
 
-            canvas_native_image_bitmap_create_from_encoded_bytes_async(
-                    data,
-                    options.flipY,
-                    options.premultiplyAlpha,
-                    options.colorSpaceConversion,
-                    options.resizeQuality,
-                    options.resizeWidth,
-                    options.resizeHeight, *asset_ptr, key);
+
+            std::thread thread([](rust::Box<ImageAsset> asset,
+                                  rust::Slice<const uint8_t> data,
+                                  bool flipY,
+                                  ImageBitmapPremultiplyAlpha premultiplyAlpha,
+                                  ImageBitmapColorSpaceConversion colorSpaceConversion,
+                                  ImageBitmapResizeQuality resizeQuality,
+                                  float resizeWidth,
+                                  float resizeHeight,
+                                  const std::shared_ptr<OnImageBitmapLoadCallbackHolder> &callback) {
+
+                                   auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(data,
+                                                                                                                flipY,
+                                                                                                                premultiplyAlpha,
+                                                                                                                colorSpaceConversion,
+                                                                                                                resizeQuality,
+                                                                                                                resizeWidth,
+                                                                                                                resizeHeight,
+                                                                                                                *asset);
+
+
+                                   if (callback != nullptr) {
+                                       callback->complete(done);
+                                   }
+                               }, std::move(asset), data,
+                               options.flipY,
+                               options.premultiplyAlpha,
+                               options.colorSpaceConversion,
+                               options.resizeQuality,
+                               options.resizeWidth,
+                               options.resizeHeight, std::move(callback));
+
             return;
         } else if (len == 5 || len == 6) {
 
@@ -410,18 +429,12 @@ void ImageBitmapImpl::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
             auto func = v8::Function::New(context,
                                           [](const v8::FunctionCallbackInfo<v8::Value> &info) {
                                               auto isolate = info.GetIsolate();
-                                              v8::Locker locker(isolate);
-                                              v8::Isolate::Scope isolate_scope(isolate);
-                                              v8::HandleScope handle_scope(isolate);
-                                              Helpers::LogToConsole("func");
                                               auto context = isolate->GetCurrentContext();
                                               auto cb = info.Data();
                                               v8::Local<v8::Value> argv[2] = {info[0], info[1]};
-                                              Helpers::LogToConsole("argv");
                                               cb.As<v8::Function>()->Call(context,
                                                                           context->Global(), 2,
                                                                           argv);
-                                              Helpers::LogToConsole("FunctionCall");
                                           }, cb).ToLocalChecked();
 
 
@@ -431,26 +444,54 @@ void ImageBitmapImpl::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                                                               call.As<v8::Function>(),
                                                                               canvas_native_image_asset_shared_clone(
                                                                                       *asset).into_raw());
-            auto cache = Caches::Get(isolate);
-            auto key = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(callback.get()));
-            cache->OnImageBitmapLoadCallbackHolder_->Insert(key, callback);
 
-            canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_async(data,
-                                                                                sx_or_options->NumberValue(
-                                                                                        context).ToChecked(),
-                                                                                sy->NumberValue(
-                                                                                        context).ToChecked(),
-                                                                                sw->NumberValue(
-                                                                                        context).ToChecked(),
-                                                                                sh->NumberValue(
-                                                                                        context).ToChecked(),
-                                                                                options.flipY,
-                                                                                options.premultiplyAlpha,
-                                                                                options.colorSpaceConversion,
-                                                                                options.resizeQuality,
-                                                                                options.resizeWidth,
-                                                                                options.resizeHeight,
-                                                                                *asset, key);
+
+            std::thread thread([](rust::Box<ImageAsset> asset,
+                                  rust::Slice<const uint8_t> data,
+                                  float sx_or_options,
+                                  float sy,
+                                  float sw,
+                                  float sh,
+                                  bool flipY,
+                                  ImageBitmapPremultiplyAlpha premultiplyAlpha,
+                                  ImageBitmapColorSpaceConversion colorSpaceConversion,
+                                  ImageBitmapResizeQuality resizeQuality,
+                                  float resizeWidth,
+                                  float resizeHeight,
+                                  const std::shared_ptr<OnImageBitmapLoadCallbackHolder> &callback) {
+
+                                   auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+                                           data,
+                                           sx_or_options,
+                                           sy,
+                                           sw,
+                                           sh,
+                                           flipY,
+                                           premultiplyAlpha,
+                                           colorSpaceConversion,
+                                           resizeQuality,
+                                           resizeWidth,
+                                           resizeHeight, *asset);
+
+
+                                   if (callback != nullptr) {
+                                       callback->complete(done);
+                                   }
+                               }, std::move(asset), data,
+                               sx_or_options->NumberValue(
+                                       context).ToChecked(),
+                               sy->NumberValue(
+                                       context).ToChecked(),
+                               sw->NumberValue(
+                                       context).ToChecked(),
+                               sh->NumberValue(
+                                       context).ToChecked(),
+                               options.flipY,
+                               options.premultiplyAlpha,
+                               options.colorSpaceConversion,
+                               options.resizeQuality,
+                               options.resizeWidth,
+                               options.resizeHeight, std::move(callback));
 
             return;
         }
@@ -462,14 +503,14 @@ void ImageBitmapImpl::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 }
 
 v8::Local<v8::Object>
-ImageBitmapImpl::NewInstance(v8::Isolate *isolate, rust::Box <ImageAsset> bitmap) {
+ImageBitmapImpl::NewInstance(v8::Isolate *isolate, rust::Box<ImageAsset> bitmap) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::EscapableHandleScope handle_scope(isolate);
     auto context = isolate->GetCurrentContext();
     auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
     Helpers::SetInstanceType(isolate, ret, ObjectType::ImageBitmap);
-    ImageBitmapImpl *value = new ImageBitmapImpl(std::move(bitmap));
+    auto *value = new ImageBitmapImpl(std::move(bitmap));
     AddWeakListener(isolate, ret, value);
     return handle_scope.Escape(ret);
 }

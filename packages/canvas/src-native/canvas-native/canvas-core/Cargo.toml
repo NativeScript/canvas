@@ -15,7 +15,7 @@ base64 = "0.13.0"
 encoding_rs = "0.8.24"
 gl-bindings = { version = "0.1.0", path = "../gl-bindings" }
 lazy_static = "1.4.0"
-csscolorparser = { git = "https://github.com/triniwiz/csscolorparser-rs.git", rev = "c8c7e86"}
+csscolorparser = { git = "https://github.com/triniwiz/csscolorparser-rs.git", rev = "c8c7e86", features = ["named-colors"]}
 phf = { version = "0.11.1", features = ["macros"] }
 rgb = { version = "0.8.32", features = ["argb"] }
 log = "0.4.8"

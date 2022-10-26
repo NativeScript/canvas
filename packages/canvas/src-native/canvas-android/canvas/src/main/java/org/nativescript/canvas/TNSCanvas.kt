@@ -122,7 +122,22 @@ class TNSCanvas : FrameLayout {
 	}
 
 	enum class ContextType {
-		NONE, CANVAS, WEBGL
+		NONE, CANVAS, WEBGL;
+		companion object {
+			@JvmStatic
+			fun fromString(value: String): ContextType {
+				return when(value){
+					"2d" -> CANVAS
+					"experimental-webgl", "webgl",  "webgl2" -> WEBGL
+					else -> NONE
+				}
+			}
+		}
+	}
+
+
+	fun getContextAttributesJson(): String {
+		return renderer.contextAttributes.toJSON()
 	}
 
 	fun getContext(type: String) {
@@ -156,18 +171,17 @@ class TNSCanvas : FrameLayout {
 		super.onDetachedFromWindow()
 		isPaused = true
 		isAttachedToWindow = false
-		Choreographer.getInstance().removeFrameCallback(renderer)
 	}
 
 	override fun onAttachedToWindow() {
 		super.onAttachedToWindow()
 		isPaused = false
 		isAttachedToWindow = true
-		Choreographer.getInstance().postFrameCallback(renderer)
 	}
 
 	interface Listener {
 		fun contextReady()
+		fun surfaceResize(width: Int, height: Int)
 	}
 
 	var listener: Listener?
@@ -195,7 +209,7 @@ class TNSCanvas : FrameLayout {
 		@JvmStatic
 		fun loadLib(){
 			if (!isLibraryLoaded) {
-				System.loadLibrary("canvasnativeV8")
+				System.loadLibrary("canvasnativev8")
 				isLibraryLoaded = true
 			}
 		}
@@ -232,7 +246,6 @@ class TNSCanvas : FrameLayout {
 			}
 		}
 
-
 		@JvmStatic
 		external fun nativeInitContextWithCustomSurface(
 			width: Float,
@@ -243,6 +256,7 @@ class TNSCanvas : FrameLayout {
 			ppi: Float,
 			direction: Int
 		): Long
+
 
 		@JvmStatic
 		external fun nativeResizeCustomSurface(
@@ -255,23 +269,7 @@ class TNSCanvas : FrameLayout {
 		)
 
 		@JvmStatic
-		external fun nativeResizeSurface(
-			context: Long,
-			width: Float,
-			height: Float,
-			density: Float,
-			bufferId: Int,
-			samples: Int,
-			alpha: Boolean,
-			ppi: Float,
-		)
-
-
-		@JvmStatic
 		external fun nativeDestroyContext(context: Long)
-
-		@JvmStatic
-		external fun nativeFlush(context: Long)
 
 		@JvmStatic
 		external fun nativeCustomWithBitmapFlush(context: Long, view: Bitmap)

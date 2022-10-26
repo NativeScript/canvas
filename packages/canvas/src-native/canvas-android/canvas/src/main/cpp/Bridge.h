@@ -15,7 +15,6 @@
 
 using V8FunctionCallbackInfo = v8::FunctionCallbackInfo<v8::Value>;
 
-class Bridge {
-};
+class Bridge {};
 
 void Init(const v8::FunctionCallbackInfo<v8::Value> &args);

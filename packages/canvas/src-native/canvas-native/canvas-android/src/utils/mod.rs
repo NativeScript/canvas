@@ -1,11 +1,12 @@
 use std::ffi::{CStr, CString};
 
+use jni::objects::{JClass, JObject, JString};
+use jni::sys::{jboolean, jfloat, jint, jlong, jstring};
 use jni::JNIEnv;
-use jni::objects::{JClass, JObject};
-use jni::sys::jlong;
 use libc::{c_char, size_t};
 
-use canvas_core::context::{Context, ContextWrapper};
+use canvas_core::context::paths::path::Path;
+use canvas_core::context::{Context, ContextWrapper, State};
 
 use crate::console_log;
 
@@ -34,6 +35,64 @@ pub fn get_sdk_version() -> i32 {
     ret
 }
 
+pub(crate) fn init_with_custom_surface(
+    width: jfloat,
+    height: jfloat,
+    density: jfloat,
+    alpha: jboolean,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    Box::into_raw(Box::new(Context::new(
+        width,
+        height,
+        density,
+        alpha == jni::sys::JNI_TRUE,
+        font_color,
+        ppi,
+        canvas_core::context::text_styles::text_direction::TextDirection::from(direction as u32),
+    ))) as jlong
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContextWithCustomSurface(
+    _: JNIEnv,
+    _: JClass,
+    width: jfloat,
+    height: jfloat,
+    density: jfloat,
+    alpha: jboolean,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    init_with_custom_surface(width, height, density, alpha, font_color, ppi, direction)
+}
+
+
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeCustomSurface(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    width: jfloat,
+    height: jfloat,
+    _density: jfloat,
+    _alpha: jboolean,
+    _ppi: jfloat,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut ContextWrapper = context as _;
+        let context = &mut *context;
+        context.resize(width, height);
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBitmapFlush(
     env: JNIEnv,
@@ -49,7 +108,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBi
             env,
             bitmap,
             Box::new(move |image_data| {
-                if let Some((image_data,image_info)) = image_data{
+                if let Some((image_data, image_info)) = image_data {
                     let context: *mut ContextWrapper = context as _;
                     let context = &mut *context;
                     let mut context = context.get_context_mut();
@@ -65,12 +124,57 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBi
     }
 }
 
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDestroyContext(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+
+        let context: *mut ContextWrapper = context as _;
+        let _ = Box::from_raw(context);
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    format: JString,
+    quality: jfloat,
+) -> jstring {
+    unsafe {
+        if context == 0 {
+            return env.new_string("").unwrap().into_inner();
+        }
+        let context: *mut ContextWrapper = context as _;
+        let context = &mut *context;
+        if let Ok(format) = env.get_string(format) {
+            let format = format.to_string_lossy();
+
+            return env
+                .new_string(canvas_core::to_data_url(
+                    context,
+                    format.as_ref(),
+                    (quality * 100 as f32) as i32,
+                ))
+                .unwrap()
+                .into_inner();
+        }
+        return env.new_string("").unwrap().into_inner();
+    }
+}
+
 #[repr(transparent)]
 #[derive(Copy, Clone, Default)]
 pub struct ByteBufInner {
     needs_to_clean: bool,
 }
-
 
 #[repr(C)]
 pub struct ByteBuf {

@@ -1,5 +1,9 @@
 //require('@nativescript/canvas-polyfill');
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
+
+const orginalEncoder = global.TextEncoder;
+const orginalDecoder = global.TextDecoder;
+
 import { Canvas } from '@nativescript/canvas';
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource } from '@nativescript/core';
 declare var __non_webpack_require__, __initAppConfiguration, _createImageBitmap;
@@ -17,7 +21,7 @@ const ppi = (Utils.ad.getApplicationContext() as android.content.Context).getRes
 
 __non_webpack_require__('system_lib://libcanvasnativev8.so');
 
-// __initAppConfiguration({ appBase: knownFolders.currentApp().path });
+__initAppConfiguration({ appBase: knownFolders.currentApp().path });
 
 const handlePath = function (path) {
 	if (typeof path === 'string' && path.startsWith('~/')) {
@@ -26,95 +30,162 @@ const handlePath = function (path) {
 	return path;
 };
 
-//java.lang.System.load(handlePath('~/libcanvasnativev8.so'));
+//java.lang.System.loadLibrary('canvasnativev8');
+
+global.WebGLRenderingContext.prototype.getSupportedExtensions = function () {
+	const string = this.__getSupportedExtensions();
+	if (!string) {
+		return null;
+	}
+	return string.split(',');
+};
+
+const parent = global.WebGL2RenderingContext.prototype.uniformMatrix4fv;
+global.WebGL2RenderingContext.prototype.uniformMatrix4fv = function (a, b, c) {
+	if (Array.isArray(c)) {
+		parent.call(this, a, b, Float32Array.from(c));
+		return;
+	}
+	parent.call(this, a, b, c);
+};
+
+const parentUniform4fv = global.WebGL2RenderingContext.prototype.uniform4fv;
+global.WebGL2RenderingContext.prototype.uniform4fv = function (a, b) {
+	if (Array.isArray(b)) {
+		parentUniform4fv.call(this, a, Float32Array.from(b));
+		return;
+	}
+	parentUniform4fv.call(this, a, b);
+};
+
+global.WebGL2RenderingContext.prototype.getSupportedExtensions = function () {
+	const string = this.__getSupportedExtensions() as string;
+	if (!string) {
+		return null;
+	}
+
+	return string.split(',');
+};
+
+
+global.CanvasRenderingContext2D.prototype.getContextAttributes = function () {
+	const attrs = this.__contextAttributes;
+	if (typeof attrs === 'string') {
+		try {
+			return JSON.parse(attrs);
+		} catch (error) {}
+	}
+	return attrs;
+};
+
+global.CanvasRenderingContext2D.prototype.setLineDash = function (dash) {
+	this.__setLineDashBuffer(Float32Array.from(dash));
+};
+
+global.CanvasRenderingContext2D.prototype.getLineDash = function () {
+	return Array.from(this.__getLineDashBuffer());
+};
+
+global.ImageAsset.prototype.loadUrl = function (url, callback) {
+	const that = this;
+	const cb = new (org as any).nativescript.canvas.NSCImageAsset.Callback({
+		onComplete: function (done) {
+			callback(done);
+			that.__isLoading = false;
+			that.__dispose();
+		},
+	});
+
+	this.__isLoading = true;
+	(org as any).nativescript.canvas.NSCImageAsset.loadImageFromUrlAsync(long(this.__addr), url, cb);
+};
+
+global.ImageAsset.prototype.loadUrlAsync = function (path) {
+	return new Promise((resolve, reject) => {
+		this.loadUrl(path, (done) => {
+			resolve(done);
+		});
+	});
+};
+
+global.ImageAsset.prototype.loadFile = function (path, callback) {
+	const that = this;
+	if (typeof path === 'string') {
+		if (path.startsWith('~/')) {
+			path = filePath.join(knownFolders.currentApp().path, path.replace('~/', ''));
+		}
+	}
+
+	const cb = new (org as any).nativescript.canvas.NSCImageAsset.Callback({
+		onComplete: function (done) {
+			callback(done);
+			that.__isLoading = false;
+			that.__dispose();
+		},
+	});
+
+	(org as any).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(long(this.__addr), path, cb);
+};
+
+global.ImageAsset.prototype.loadFileAsync = function (path) {
+	return new Promise((resolve, reject) => {
+		this.loadFile(path, (done) => {
+			resolve(done);
+		});
+	});
+};
+
+global.ImageAsset.prototype.loadBytes = function (bytes, callback) {
+	const that = this;
+	const cb = new (org as any).nativescript.canvas.NSCImageAsset.Callback({
+		onComplete: function (done) {
+			callback(done);
+			that.__isLoading = false;
+			that.__dispose();
+		},
+	});
+
+	(org as any).nativescript.canvas.NSCImageAsset.loadImageFromBytesAsync(long(this.__addr), bytes, cb);
+};
+
+global.ImageAsset.prototype.loadBytesAsync = function (path) {
+	return new Promise((resolve, reject) => {
+		this.loadBytes(path, (done) => {
+			resolve(done);
+		});
+	});
+};
+
+global.ImageAsset.prototype.save = function (path, format, callback) {
+	const that = this;
+	const cb = new (org as any).nativescript.canvas.NSCImageAsset.Callback({
+		onComplete: function (done) {
+			callback(done);
+			that.__isLoading = false;
+			that.__dispose();
+		},
+	});
+
+	(org as any).nativescript.canvas.NSCImageAsset.saveAsync(long(this.__addr), path, format, cb);
+};
+
+global.ImageAsset.prototype.saveAsync = function (path) {
+	return new Promise((resolve, reject) => {
+		this.save(path, (done) => {
+			resolve(done);
+		});
+	});
+};
 
 (global as any).__debug_browser_polyfill_image = false;
 
-// (global as any).createImageBitmap = (...args) => {
-// 	return new Promise((resolve, reject) => {
-// 		_createImageBitmap(...(args as any), (error, bitmap) => {
-// 			if (error) {
-// 				reject(error);
-// 			} else {
-// 				resolve(bitmap);
-// 			}
-// 		});
-// 	});
-// };
-// global.ImageBitmap = undefined;
+require('@nativescript/canvas-polyfill');
 
-//  const image = new global.ImageAsset();
+// console.log('loadUrlAsync');
 
-// image.loadUrl('https://static.wikia.nocookie.net/blackclover/images/9/9a/Asta_after_Heart_Kingdom_training.png/revision/latest/scale-to-width-down/490?cb=20191118173358', (done, a) => {
-// 	console.log('done', done, a);
-// 	console.log(image.width, image.height);
-// });
+//console.log(img.width, img.height);
 
-// (global as any)
-// 	.createImageBitmap(undefined)
-// 	.then((bm) => {
-// 		console.log(bm);
-// 	})
-// 	.catch((e) => {
-// 		console.log(e);
-// 	});
-
-// class ImageAssetImpl extends (global as any).ImageAsset {
-// 	save(path, format, done) {
-// 		super.save(handlePath(path), format, done);
-// 	}
-
-// 	saveSync(path, format) {
-// 		return super.saveSync(handlePath(path), format);
-// 	}
-
-// 	saveAsync(path, format) {
-// 		return new Promise((resolve, reject) => {
-// 			this.save(path, format, (done) => {
-// 				resolve(done);
-// 			});
-// 		});
-// 	}
-
-// 	loadBytesAsync(bytes) {
-// 		return new Promise((resolve, reject) => {
-// 			this.loadBytes(bytes, function (done) {
-// 				resolve(done);
-// 			});
-// 		});
-// 	}
-
-// 	loadFile(file, done) {
-// 		console.log('loadFile', file, handlePath(file));
-// 		super.loadFile(handlePath(file), (fin) => {
-// 			console.log('finished');
-// 			done(fin);
-// 		});
-// 	}
-
-
-// 	loadFileAsync(file) {
-// 		return new Promise((resolve, reject) => {
-// 			console.log()
-// 			const done = this.loadFileSync(file);
-// 			console.log(this.width, this.height, done);
-// 			resolve(done);
-// 			// this.loadFile(file, (done) => {
-// 			// 	resolve(done);
-// 			// });
-// 		});
-// 	}
-
-// 	loadUrlAsync(url) {
-// 		return new Promise((resolve, reject) => {
-// 			this.loadUrl(url, (done) => {
-// 				resolve(done);
-// 			});
-// 		});
-// 	}
-// }
 /*
-
 class WebGLRenderingContextImpl extends (global as any).WebGLRenderingContext {
 	texImage2D(...args) {
 		if (arguments.length === 6) {
@@ -130,7 +201,7 @@ class WebGLRenderingContextImpl extends (global as any).WebGLRenderingContext {
 	}
 }
 
-class WebGL2RenderingContextImpl extends (global as any).WebGL2RenderingContext {
+class WebGL2RenderingContextImpl exte//nds (global as any).WebGL2RenderingContext {
 	texImage2D(...args) {
 		console.log('WebGL2RenderingContextImpl');
 		if (arguments.length === 6) {
@@ -145,69 +216,38 @@ class WebGL2RenderingContextImpl extends (global as any).WebGL2RenderingContext 
 		super.texImage2D(...args);
 	}
 }
-const chroma = require('./chroma.min.js');
-class CanvasRenderingContext2DImpl extends (global as any).CanvasRenderingContext2D {
-	drawImage(...args) {
-		if (arguments.length === 3) {
-			const image = arguments[0];
-			if (image && image.android instanceof android.graphics.Bitmap) {
-				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
-				return;
-			}
-		}
-
-		if (arguments.length === 5) {
-			const image = arguments[0];
-			if (image && image.android instanceof android.graphics.Bitmap) {
-				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
-				return;
-			}
-		}
-
-		if (arguments.length === 9) {
-			const image = arguments[0];
-			if (image && image.android instanceof android.graphics.Bitmap) {
-				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.width, 0, arguments[3], arguments[4], image.android, this.__flipY);
-				return;
-			}
-		}
-		super.drawImage(...arguments);
-	}
-}
-
-
-global.WebGLRenderingContext = WebGLRenderingContextImpl as any;
-global.WebGL2RenderingContext = WebGL2RenderingContextImpl as any;
-global.CanvasRenderingContext2D = CanvasRenderingContext2DImpl as any;
-
 */
-// global.ImageAsset = ImageAssetImpl;
+//const chroma = require('./chroma.min.js');
+// class CanvasRenderingContext2DImpl extends (global as any).CanvasRenderingContext2D {
+// 	drawImage(...args) {
+// 		if (arguments.length === 3) {
+// 			const image = arguments[0];
+// 			if (image && image.android instanceof android.graphics.Bitmap) {
+// 				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
+// 				return;
+// 			}
+// 		}
 
+// 		if (arguments.length === 5) {
+// 			const image = arguments[0];
+// 			if (image && image.android instanceof android.graphics.Bitmap) {
+// 				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.height, 0, arguments[3], arguments[4], image.android, this.__flipY);
+// 				return;
+// 			}
+// 		}
 
-/*
-let images = {};
-const count = 10;
-for(let i =0;i < count;i++){
-	images[`image${i+1}`] = new Image();
-}
-*/
-// let image = new global.ImageAsset();
-
-// image.loadUrlAsync('https://www.looper.com/img/gallery/astas-anti-magic-in-black-clover-explained/anti-magic-is-just-like-its-name-implies-1645475836.jpg').then(done =>{
-// 	console.log('done', done, image.width, image.height);
-// }).catch(e =>{
-// 	console.log('e', e);
-// })
-
-// for (let i = 0; i < count;i++){
-// 	const image: HTMLImageElement = images[`image${i+1}`];
-// 	image.onload = event => {
-// 		console.log('done');
-// 		console.log(image.width, image.height);
-// 	};
-// 	image.src = '~/assets/three/models/gltf/DamagedHelmet/glTF/Default_albedo.jpg';
+// 		if (arguments.length === 9) {
+// 			const image = arguments[0];
+// 			if (image && image.android instanceof android.graphics.Bitmap) {
+// 				(org as any).nativescript.canvas.TNSWebGLRenderingContext.nativeTexImage2DBitmap(arguments[0], arguments[1], arguments[2], image.width, image.width, 0, arguments[3], arguments[4], image.android, this.__flipY);
+// 				return;
+// 			}
+// 		}
+// 		super.drawImage(...arguments);
+// 	}
 // }
 
+//global['images'] = images;
 
 // } catch (e) {
 // 	console.log('__non_webpack_require__', e);

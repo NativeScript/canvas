@@ -190,6 +190,8 @@ public:
 
     static void GetLineDash(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void GetLineDashBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void IsPointInPath(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void IsPointInStroke(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -221,6 +223,8 @@ public:
     static void ScrollPathIntoView(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void SetLineDash(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetLineDashBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args);
 

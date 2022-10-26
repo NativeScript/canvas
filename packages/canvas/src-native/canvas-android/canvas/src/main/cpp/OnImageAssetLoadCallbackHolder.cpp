@@ -7,8 +7,8 @@
 #include "canvas-android/src/lib.rs.h"
 
 OnImageAssetLoadCallbackHolder::OnImageAssetLoadCallbackHolder(v8::Isolate *isolate,
-                                                               v8::Local<v8::Context> context,
-                                                               v8::Local<v8::Function> callback)
+                                                               const v8::Local<v8::Context> &context,
+                                                               const v8::Local<v8::Function> &callback)
         : isolate_(
         isolate),
           context_(
@@ -21,26 +21,24 @@ OnImageAssetLoadCallbackHolder::OnImageAssetLoadCallbackHolder(v8::Isolate *isol
 }
 
 
-void OnImageAssetLoadCallbackHolder::complete(bool done, intptr_t callback) const {
+void OnImageAssetLoadCallbackHolder::complete() const {
     auto isolate = this->isolate_;
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
+
+
     auto context = this->context_.Get(isolate);
     v8::Context::Scope context_scope(context);
-    auto ptr = reinterpret_cast<OnImageAssetLoadCallbackHolder *>(reinterpret_cast<intptr_t *>(callback));
-    auto func = ptr->callback_.Get(isolate);
-    v8::Local<v8::Value> args[1] = {v8::Boolean::New(isolate, done)};
-    func->Call(context, context->Global(), 1, args);
-    auto cache = Caches::Get(isolate);
-    cache->OnImageAssetLoadCallbackHolder_->Remove(callback);
-}
 
-void OnImageAssetLoadCallbackHolderComplete(bool done, intptr_t callback) {
-    auto ptr = reinterpret_cast<OnImageAssetLoadCallbackHolder *>(reinterpret_cast<intptr_t *>(callback));
-    ptr->complete(done, callback);
-}
 
+    auto func = this->callback_.Get(isolate);
+
+    v8::Local<v8::Value> args[1] = {v8::Boolean::New(isolate, this->done_)};
+
+    func->Call(context, context->Global(), 0, nullptr);
+
+}
 
 OnImageAssetLoadCallbackHolder::~OnImageAssetLoadCallbackHolder() {
     this->callback_.Reset();

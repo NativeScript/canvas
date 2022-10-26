@@ -3,9 +3,12 @@
 //
 
 #include "WebGLRenderingContextBase.h"
+
+#include <utility>
 #include "canvas-android/src/lib.rs.h"
 
-WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version)
+WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state,
+                                                     WebGLRenderingVersion version)
         : state_(std::move(state)), version_(version) {}
 
 void WebGLRenderingContextBase::UpdateInvalidateState() {
@@ -15,16 +18,17 @@ void WebGLRenderingContextBase::UpdateInvalidateState() {
             canvas_native_raf_start(raf->GetRaf());
         }
     }
-
-    this->SetInvalidateState(InvalidateState::PENDING);
+    auto state = this->GetInvalidateState();
+    this->SetInvalidateState(state | (int) InvalidateState::PENDING);
 }
 
 void WebGLRenderingContextBase::Flush() {
-    if (this->GetInvalidateState() == InvalidateState::PENDING) {
-        this->SetInvalidateState(InvalidateState::INVALIDATING);
-        auto current = canvas_native_webgl_make_current(*this->state_);
-        auto swapped = canvas_native_webgl_swap_buffers(*this->state_);
-        this->SetInvalidateState(InvalidateState::NONE);
+    auto state = this->GetInvalidateState();
+    if (state == (int) InvalidateState::PENDING) {
+        this->SetInvalidateState((int) InvalidateState::INVALIDATING);
+        canvas_native_webgl_make_current(*this->state_);
+        canvas_native_webgl_swap_buffers(*this->state_);
+        this->SetInvalidateState((int) InvalidateState::NONE);
     }
 }
 
@@ -39,19 +43,19 @@ WebGLState &WebGLRenderingContextBase::GetState() {
     return *this->state_;
 }
 
-void WebGLRenderingContextBase::SetRaf(std::shared_ptr <RafImpl> raf) {
-    this->raf_ = raf;
+void WebGLRenderingContextBase::SetRaf(std::shared_ptr<RafImpl> raf) {
+    this->raf_ = std::move(raf);
 }
 
 RafImpl *WebGLRenderingContextBase::GetRaf() {
     return this->raf_.get();
 }
 
-void WebGLRenderingContextBase::SetInvalidateState(InvalidateState state) {
+void WebGLRenderingContextBase::SetInvalidateState(int state) {
     this->invalidateState_ = state;
 }
 
-InvalidateState WebGLRenderingContextBase::GetInvalidateState() const {
+int WebGLRenderingContextBase::GetInvalidateState() const {
     return this->invalidateState_;
 }
 

@@ -35,7 +35,6 @@ export class HTMLCanvasElement extends Element {
 	}
 
 	toDataURL(type, encoderOptions) {
-		console.log('toDataURL', type);
 		return this._canvas.toDataURL(type, encoderOptions);
 	}
 

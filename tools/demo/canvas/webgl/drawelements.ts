@@ -598,7 +598,7 @@ export function points(canvas) {
 export function drawModes(canvas, mode: 'line' | 'points' | 'line_strip' | 'triangle_strip' | 'triangle_fan' | 'triangles' | 'line_loop' = "line") {
   /*======= Creating a canvas =========*/
 
-  var gl = canvas.getContext("experimental-webgl") as WebGLRenderingContext;
+  var gl = canvas.getContext("webgl2") as WebGL2RenderingContext;
 
   /*======= Defining and storing the geometry ======*/
 
@@ -623,9 +623,10 @@ export function drawModes(canvas, mode: 'line' | 'points' | 'line_strip' | 'tria
     0,
   ];
 
+  console.log(gl.getSupportedExtensions()[0])
+
   // Create an empty buffer object
   var vertex_buffer = gl.createBuffer();
-
   // Bind appropriate array buffer to it
   gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
 

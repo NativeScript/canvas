@@ -1,30 +1,26 @@
 extern crate core;
 
-use ::jni::JavaVM;
 use ::jni::sys::jint;
-
-
+use ::jni::JavaVM;
 
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::error::Error;
 use std::ffi::{CStr, CString};
-use std::fmt::format;
-use std::io::{Read};
+use std::io::Read;
 use std::os::raw::{c_char, c_int, c_longlong, c_uint, c_ulong, c_void};
 use std::os::unix::io::FromRawFd;
 use std::os::unix::prelude::IntoRawFd;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
+use std::sync::Arc;
 
-use cxx::{CxxString, CxxVector, ExternType, let_cxx_string, SharedPtr, type_id, UniquePtr};
+use cxx::{let_cxx_string, type_id, CxxString, CxxVector, ExternType, SharedPtr, UniquePtr};
 use once_cell::sync::OnceCell;
-use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
 use parking_lot::lock_api::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
 
-use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_core::context::drawing_paths::fill_rule::FillRule;
 use canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -35,6 +31,7 @@ use canvas_core::context::line_styles::line_cap::LineCap;
 use canvas_core::context::line_styles::line_join::LineJoin;
 use canvas_core::context::text_styles::text_align::TextAlign;
 use canvas_core::context::text_styles::text_direction::TextDirection;
+use canvas_core::context::{Context, ContextWrapper};
 use canvas_core::utils::color::{parse_color, to_parsed_color};
 use canvas_core::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded,
@@ -42,21 +39,17 @@ use canvas_core::utils::image::{
     to_image_encoded_from_data,
 };
 
-
-use crate::ffi::{
-    ImageBitmapPremultiplyAlpha, WebGLExtensionType, WebGLResultType,
-};
+use crate::ffi::{ImageBitmapPremultiplyAlpha, WebGLExtensionType, WebGLResultType};
 use gl::prelude::WebGLVersion;
 use gl_context::GLContext;
 
 pub mod choregrapher;
 pub mod gl;
 pub mod gl_context;
+mod jni;
 pub mod looper;
 pub mod raf;
 pub mod utils;
-mod jni;
-
 
 pub static JVM: OnceCell<JavaVM> = OnceCell::new();
 
@@ -65,8 +58,6 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
     JVM.get_or_init(|| vm);
     ::jni::sys::JNI_VERSION_1_6
 }
-
-
 
 static THREAD_HANDLE_NEXT_ID: AtomicIsize = AtomicIsize::new(0);
 
@@ -137,6 +128,10 @@ pub fn __log(priority: LogPriority, tag: &str, text: &str) {
 pub fn console_log(text: &CxxString) {
     let text = text.to_string_lossy();
     __log(LogPriority::INFO, "JS", text.as_ref());
+}
+
+pub fn console_log_rust(text: &str) {
+    __log(LogPriority::INFO, "JS", text);
 }
 
 pub fn to_rust_string(value: &[c_char]) -> String {
@@ -358,16 +353,6 @@ pub(crate) mod ffi {
     }
 
     unsafe extern "C++" {
-        include!("OnImageAssetLoadCallbackHolder.h");
-        pub(crate) fn OnImageAssetLoadCallbackHolderComplete(complete: bool, callback: isize);
-    }
-
-    unsafe extern "C++" {
-        include!("OnImageBitmapLoadCallbackHolder.h");
-        pub(crate) fn OnImageBitmapLoadCallbackHolderComplete(complete: bool, callback: isize);
-    }
-
-    unsafe extern "C++" {
         include!("OnRafCallback.h");
         pub(crate) fn OnRafCallbackOnFrame(callback: isize, ts: i64);
     }
@@ -462,6 +447,17 @@ pub(crate) mod ffi {
             resize_height: f32,
         ) -> Box<ImageAsset>;
 
+        fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+            bytes: &[u8],
+            flip_y: bool,
+            premultiply_alpha: ImageBitmapPremultiplyAlpha,
+            color_space_conversion: ImageBitmapColorSpaceConversion,
+            resize_quality: ImageBitmapResizeQuality,
+            resize_width: f32,
+            resize_height: f32,
+            output: &mut ImageAsset,
+        ) -> bool;
+
         fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
             bytes: &[u8],
             sx: f32,
@@ -475,6 +471,21 @@ pub(crate) mod ffi {
             resize_width: f32,
             resize_height: f32,
         ) -> Box<ImageAsset>;
+
+        fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+            bytes: &[u8],
+            sx: f32,
+            sy: f32,
+            s_width: f32,
+            s_height: f32,
+            flip_y: bool,
+            premultiply_alpha: ImageBitmapPremultiplyAlpha,
+            color_space_conversion: ImageBitmapColorSpaceConversion,
+            resize_quality: ImageBitmapResizeQuality,
+            resize_width: f32,
+            resize_height: f32,
+            output: &mut ImageAsset,
+        ) -> bool;
 
         /* ImageBitmap */
 
@@ -654,29 +665,13 @@ pub(crate) mod ffi {
 
         fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &str) -> bool;
 
-        fn canvas_native_image_asset_load_from_path_async(
-            asset: &mut ImageAsset,
-            path: &str,
-            callback: isize,
-        );
-
         fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str) -> bool;
-
-        fn canvas_native_image_asset_load_from_url_async(
-            asset: &mut ImageAsset,
-            url: &str,
-            callback: isize,
-        );
 
         fn canvas_native_image_asset_load_from_raw(asset: &mut ImageAsset, array: &[u8]) -> bool;
 
-        fn canvas_native_image_asset_load_from_raw_async(
-            asset: &mut ImageAsset,
-            array: &[u8],
-            callback: isize,
-        );
-
         // fn canvas_native_image_asset_get_bytes(asset: &mut ImageAsset) -> &[u8];
+
+        fn canvas_native_image_asset_addr(asset: &mut ImageAsset) -> i64;
 
         fn canvas_native_image_asset_width(asset: &mut ImageAsset) -> u32;
 
@@ -694,41 +689,6 @@ pub(crate) mod ffi {
             format: u32,
         ) -> bool;
 
-        fn canvas_native_image_asset_save_path_async(
-            asset: &mut ImageAsset,
-            path: &str,
-            format: u32,
-            callback: isize,
-        );
-
-        pub fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_async(
-            bytes: &[u8],
-            sx: f32,
-            sy: f32,
-            s_width: f32,
-            s_height: f32,
-            flip_y: bool,
-            premultiply_alpha: ImageBitmapPremultiplyAlpha,
-            color_space_conversion: ImageBitmapColorSpaceConversion,
-            resize_quality: ImageBitmapResizeQuality,
-            resize_width: f32,
-            resize_height: f32,
-            output: &mut ImageAsset,
-            callback: isize,
-        );
-
-        pub fn canvas_native_image_bitmap_create_from_encoded_bytes_async(
-            bytes: &[u8],
-            flip_y: bool,
-            premultiply_alpha: ImageBitmapPremultiplyAlpha,
-            color_space_conversion: ImageBitmapColorSpaceConversion,
-            resize_quality: ImageBitmapResizeQuality,
-            resize_width: f32,
-            resize_height: f32,
-            output: &mut ImageAsset,
-            callback: isize,
-        );
-
         /* ImageAsset */
 
         /* TextMetrics */
@@ -741,7 +701,7 @@ pub(crate) mod ffi {
         fn canvas_native_text_metrics_get_actual_bounding_box_ascent(metrics: &TextMetrics) -> f32;
 
         fn canvas_native_text_metrics_get_actual_bounding_box_descent(metrics: &TextMetrics)
-                                                                      -> f32;
+            -> f32;
 
         fn canvas_native_text_metrics_get_font_bounding_box_ascent(metrics: &TextMetrics) -> f32;
 
@@ -791,11 +751,15 @@ pub(crate) mod ffi {
         fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D) -> bool;
         fn canvas_native_webgl_make_current(state: &WebGLState) -> bool;
         fn canvas_native_webgl_swap_buffers(state: &WebGLState) -> bool;
+
+        fn canvas_native_webgl_to_data_url(state: &WebGLState, format: &str, quality: i32) -> String;
+
+        fn canvas_native_webgl_resized(state: &mut WebGLState);
         /* GL */
 
         /* CanvasRenderingContext2D */
         fn canvas_native_context_create_with_wrapper(context: i64)
-                                                     -> Box<CanvasRenderingContext2D>;
+            -> Box<CanvasRenderingContext2D>;
 
         fn canvas_native_context_resize(
             context: &mut CanvasRenderingContext2D,
@@ -948,7 +912,7 @@ pub(crate) mod ffi {
         );
 
         fn canvas_native_context_get_global_composition(context: &CanvasRenderingContext2D)
-                                                        -> &str;
+            -> &str;
 
         fn canvas_native_context_set_global_composition(
             context: &CanvasRenderingContext2D,
@@ -2019,7 +1983,7 @@ pub(crate) mod ffi {
         ) -> i32;
 
         fn canvas_native_webgl_get_context_attributes(state: &WebGLState)
-                                                      -> Box<ContextAttributes>;
+            -> Box<ContextAttributes>;
 
         fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32;
 
@@ -2041,7 +2005,7 @@ pub(crate) mod ffi {
         ) -> Box<WebGLResult>;
 
         fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLState)
-                                                    -> String;
+            -> String;
 
         fn canvas_native_webgl_get_program_parameter(
             program: u32,
@@ -2072,6 +2036,9 @@ pub(crate) mod ffi {
         fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState) -> String;
 
         fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String>;
+
+        fn canvas_native_webgl_get_supported_extensions_to_string(state: &mut WebGLState)
+            -> String;
 
         fn canvas_native_webgl_get_tex_parameter(
             target: u32,
@@ -2467,7 +2434,7 @@ pub(crate) mod ffi {
 
         /* WebGLIndexedParameter */
         fn canvas_native_webgl2_indexed_parameter_get_value(param: &WebGLIndexedParameter)
-                                                            -> isize;
+            -> isize;
         fn canvas_native_webgl2_indexed_parameter_get_buffer_value(
             param: &WebGLIndexedParameter,
         ) -> isize;
@@ -3863,8 +3830,8 @@ pub fn canvas_native_context_arc_to(
     context.get_context_mut().arc_to(x1, y1, x2, y2, radius)
 }
 
+#[inline(always)]
 pub fn canvas_native_context_begin_path(context: &mut CanvasRenderingContext2D) {
-    context.make_current();
     context.get_context_mut().begin_path()
 }
 
@@ -3913,6 +3880,7 @@ pub fn canvas_native_context_clip_rule(context: &mut CanvasRenderingContext2D, r
     }
 }
 
+#[inline(always)]
 pub fn canvas_native_context_close_path(context: &mut CanvasRenderingContext2D) {
     context.get_context_mut().close_path()
 }
@@ -4004,11 +3972,10 @@ fn canvas_native_context_create_pattern_bytes(
             let mut width = 0;
             let mut height = 0;
             {
-              if let Some(info) = bm.0.info(){
-                  width = info.width();
-                  height = info.height();
-              }
-
+                if let Some(info) = bm.0.info() {
+                    width = info.width();
+                    height = info.height();
+                }
             }
             if let Some(bytes) = bm.0.data_mut() {
                 return from_image_slice(bytes, width as i32, height as i32).map(|image| {
@@ -4726,6 +4693,34 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes(
     ))
 }
 
+fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+    bytes: &[u8],
+    flip_y: bool,
+    premultiply_alpha: ImageBitmapPremultiplyAlpha,
+    color_space_conversion: ffi::ImageBitmapColorSpaceConversion,
+    resize_quality: ffi::ImageBitmapResizeQuality,
+    resize_width: f32,
+    resize_height: f32,
+    output: &mut ImageAsset,
+) -> bool {
+    canvas_core::image_bitmap::create_image_asset_with_output(
+        bytes,
+        None,
+        flip_y,
+        premultiply_alpha.into(),
+        color_space_conversion.into(),
+        resize_quality.into(),
+        resize_width,
+        resize_height,
+        &mut output.0,
+    );
+
+    if output.width() > 0 && output.height() > 0 {
+        return true;
+    }
+    false
+}
+
 fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
     bytes: &[u8],
     sx: f32,
@@ -4751,6 +4746,38 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
             resize_height,
         ),
     ))
+}
+
+fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+    bytes: &[u8],
+    sx: f32,
+    sy: f32,
+    s_width: f32,
+    s_height: f32,
+    flip_y: bool,
+    premultiply_alpha: ImageBitmapPremultiplyAlpha,
+    color_space_conversion: ffi::ImageBitmapColorSpaceConversion,
+    resize_quality: ffi::ImageBitmapResizeQuality,
+    resize_width: f32,
+    resize_height: f32,
+    output: &mut ImageAsset,
+) -> bool {
+    canvas_core::image_bitmap::create_image_asset_with_output(
+        bytes,
+        Some((sx, sy, s_width, s_height).into()),
+        flip_y,
+        premultiply_alpha.into(),
+        color_space_conversion.into(),
+        resize_quality.into(),
+        resize_width,
+        resize_height,
+        &mut output.0,
+    );
+
+    if output.width() > 0 && output.height() > 0 {
+        return true;
+    }
+    false
 }
 
 /* ImageBitmap */
@@ -4784,16 +4811,19 @@ pub fn canvas_native_path_create() -> Box<Path> {
     Box::new(Path::default())
 }
 
+#[inline(always)]
 pub fn canvas_native_path_create_with_path(path: &Path) -> Box<Path> {
     Box::new(path.clone())
 }
 
+#[inline(always)]
 pub fn canvas_native_path_create_with_string(string: String) -> Box<Path> {
     Box::new(Path(canvas_core::context::paths::path::Path::from_str(
         string.as_str(),
     )))
 }
 
+#[inline(always)]
 pub fn canvas_native_path_create_with_str(string: &str) -> Box<Path> {
     let path = Path(canvas_core::context::paths::path::Path::from_str(string));
     Box::new(path)
@@ -5157,8 +5187,8 @@ impl ImageAsset {
     }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
-        where
-            R: Read + std::io::Seek,
+    where
+        R: Read + std::io::Seek,
     {
         self.0.load_from_reader(reader)
     }
@@ -5210,28 +5240,8 @@ pub fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &s
     asset.load_from_path(path)
 }
 
-pub fn canvas_native_image_asset_load_from_path_async(
-    asset: &mut ImageAsset,
-    path: &str,
-    callback: isize,
-) {
-    let mut asset = asset.clone();
-    let path = path.to_string();
-    execute_in_thread(callback, move || asset.load_from_path(path.as_ref()));
-}
-
 pub fn canvas_native_image_asset_load_from_raw(asset: &mut ImageAsset, array: &[u8]) -> bool {
     asset.load_from_bytes(array)
-}
-
-pub fn canvas_native_image_asset_load_from_raw_async(
-    asset: &mut ImageAsset,
-    array: &[u8],
-    callback: isize,
-) {
-    let mut asset = asset.clone();
-    let array = array.to_vec();
-    execute_in_thread(callback, move || asset.load_from_bytes(array.as_slice()));
 }
 
 pub fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str) -> bool {
@@ -5263,7 +5273,7 @@ pub(crate) fn canvas_native_image_asset_load_from_url_internal(
         }
 
         let mut bytes: Vec<u8> = Vec::with_capacity(len);
-        if let Ok(_) = res.into_reader().take(10_000_000).read_to_end(&mut bytes) {
+        if let Ok(_) = res.into_reader().read_to_end(&mut bytes) {
             assert_eq!(bytes.len(), len);
         } else {
             return false;
@@ -5274,22 +5284,13 @@ pub(crate) fn canvas_native_image_asset_load_from_url_internal(
     false
 }
 
-pub fn canvas_native_image_asset_load_from_url_async(
-    asset: &mut ImageAsset,
-    url: &str,
-    callback: isize,
-) {
-    let mut asset = asset.clone();
-    let url = url.to_string();
-
-    execute_in_thread(callback, move || {
-        canvas_native_image_asset_load_from_url_internal(&mut asset.0, url.as_str())
-    });
-}
-
 // pub fn canvas_native_image_asset_get_bytes(asset: &mut ImageAsset) -> Option<&[u8]> {
 //     asset.get_bytes()
 // }
+
+pub fn canvas_native_image_asset_addr(asset: &mut ImageAsset) -> i64 {
+    asset as *mut ImageAsset as i64
+}
 
 pub fn canvas_native_image_asset_width(asset: &mut ImageAsset) -> u32 {
     asset.width()
@@ -5334,15 +5335,13 @@ unsafe impl Send for LooperData {}
 
 #[derive(Debug, Clone)]
 struct ThreadCallbackData {
-    id: isize,
+    id: i64,
     done: bool,
 }
 
 impl ThreadCallbackData {
-    pub fn new(id: isize, done: bool) -> Self {
-        Self {
-            id, done
-        }
+    pub fn new(id: i64, done: bool) -> Self {
+        Self { id, done }
     }
 }
 
@@ -5350,200 +5349,6 @@ impl Default for ThreadCallbackData {
     fn default() -> Self {
         Self { id: 0, done: false }
     }
-}
-
-fn execute_in_thread<F>(callback: isize, func: F)
-    where
-        F: FnOnce() -> bool + Send + 'static,
-{
-    let mut read = 0;
-    let mut write = 0;
-    let mut fd = [0_i32; 2];
-
-    unsafe {
-        libc::pipe(fd.as_mut_ptr());
-        read = fd[0];
-        write = fd[1];
-        let mut flags = libc::fcntl(write, libc::F_GETFL);
-        libc::fcntl(write, libc::F_SETFL, flags);
-    };
-
-
-    let mut looper = ndk::looper::ThreadLooper::prepare();
-
-    let foreign = looper.as_foreign();
-    foreign
-        .add_fd_with_callback(read, ndk::looper::FdEvent::INPUT, |fd| {
-            let mut buf = ThreadCallbackData::default();
-            let buffer = &mut buf as *mut ThreadCallbackData;
-            let nr = unsafe {libc::read(read, buffer as *mut libc::c_void, std::mem::size_of_val(&buf))};
-
-            unsafe {
-                ffi::OnImageAssetLoadCallbackHolderComplete(buf.done, buf.id);
-            }
-
-            unsafe{
-                libc::close(read);
-                libc::close(write);
-            }
-
-            false
-        })
-        .unwrap_or_default();
-
-    std::thread::spawn(move || {
-        let done = func();
-        let data = ThreadCallbackData::new(callback, done);
-        let data  = &data as *const ThreadCallbackData;
-        unsafe {
-            libc::write(write, data as *const c_void, std::mem::size_of_val(&data));
-        }
-    });
-}
-
-fn execute_in_thread_bitmap<F>(callback: isize, func: F)
-    where
-        F: FnOnce() -> bool + Send + 'static,
-{
-    let mut looper = ndk::looper::ThreadLooper::prepare();
-
-
-    let mut read = 0;
-    let mut write = 0;
-    let mut fd = [0_i32; 2];
-
-    unsafe {
-        libc::pipe(fd.as_mut_ptr());
-        read = fd[0];
-        write = fd[1];
-        let mut flags = libc::fcntl(write, libc::F_GETFL);
-        libc::fcntl(write, libc::F_SETFL, flags);
-    };
-
-    let foreign = looper.as_foreign();
-    foreign
-        .add_fd_with_callback(read, ndk::looper::FdEvent::INPUT, |fd| {
-            let mut buf = ThreadCallbackData::default();
-            let buffer = &mut buf as *mut ThreadCallbackData;
-
-            let nr = unsafe {libc::read(read, buffer as *mut libc::c_void, std::mem::size_of_val(&buf))};
-
-            unsafe {
-                ffi::OnImageBitmapLoadCallbackHolderComplete(buf.done, buf.id);
-            }
-
-            unsafe{
-                libc::close(read);
-                libc::close(write);
-            }
-
-            false
-        })
-        .unwrap_or_default();
-
-
-
-    std::thread::spawn(move || {
-        let done = func();
-        let data = ThreadCallbackData::new(callback, done);
-        let data  = &data as *const ThreadCallbackData;
-        unsafe {
-            libc::write(write, data as *const libc::c_void, std::mem::size_of_val(&data));
-        }
-    });
-}
-
-pub fn canvas_native_image_asset_save_path_async(
-    asset: &mut ImageAsset,
-    path: &str,
-    format: u32,
-    callback: isize,
-) {
-    let mut asset = asset.clone();
-    let path = path.to_string();
-
-    execute_in_thread(callback, move || {
-        asset.save_path(
-            path.as_ref(),
-            canvas_core::context::image_asset::OutputFormat::from(format),
-        )
-    });
-}
-
-pub fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_async(
-    bytes: &[u8],
-    sx: f32,
-    sy: f32,
-    s_width: f32,
-    s_height: f32,
-    flip_y: bool,
-    premultiply_alpha: ImageBitmapPremultiplyAlpha,
-    color_space_conversion: ffi::ImageBitmapColorSpaceConversion,
-    resize_quality: ffi::ImageBitmapResizeQuality,
-    resize_width: f32,
-    resize_height: f32,
-    output: &mut ImageAsset,
-    callback: isize,
-) {
-    // bytes are stored until callback is completed
-    let ptr = bytes.as_ptr();
-    let len = bytes.len();
-    let buf = utils::ByteBuf::new(ptr, len);
-    let mut output = output.clone();
-    execute_in_thread_bitmap(callback, move || {
-        canvas_core::image_bitmap::create_image_asset_with_output(
-            buf.as_slice(),
-            Some((sx, sy, s_width, s_height).into()),
-            flip_y,
-            premultiply_alpha.into(),
-            color_space_conversion.into(),
-            resize_quality.into(),
-            resize_width,
-            resize_height,
-            &mut output.0,
-        );
-
-        if output.width() > 0 && output.height() > 0 {
-            return true;
-        }
-        false
-    });
-}
-
-pub fn canvas_native_image_bitmap_create_from_encoded_bytes_async(
-    bytes: &[u8],
-    flip_y: bool,
-    premultiply_alpha: ImageBitmapPremultiplyAlpha,
-    color_space_conversion: ffi::ImageBitmapColorSpaceConversion,
-    resize_quality: ffi::ImageBitmapResizeQuality,
-    resize_width: f32,
-    resize_height: f32,
-    output: &mut ImageAsset,
-    callback: isize,
-) {
-    // bytes are stored until callback is completed
-    let ptr = bytes.as_ptr();
-    let len = bytes.len();
-    let buf = utils::ByteBuf::new(ptr, len);
-    let mut output = output.clone();
-    execute_in_thread_bitmap(callback, move || {
-        canvas_core::image_bitmap::create_image_asset_with_output(
-            buf.as_slice(),
-            None,
-            flip_y,
-            premultiply_alpha.into(),
-            color_space_conversion.into(),
-            resize_quality.into(),
-            resize_width,
-            resize_height,
-            &mut output.0,
-        );
-
-        if output.width() > 0 && output.height() > 0 {
-            return true;
-        }
-        false
-    });
 }
 
 /* ImageAsset */
@@ -5663,11 +5468,9 @@ pub fn canvas_native_text_encoder_get_encoding(encoder: &mut TextEncoder) -> Str
 
 /* Raf */
 pub fn canvas_native_raf_create(callback: isize) -> Box<Raf> {
-    Box::new(Raf(raf::Raf::new(Some(Box::new(
-        move |ts| unsafe {
-            ffi::OnRafCallbackOnFrame(callback, ts);
-        },
-    )))))
+    Box::new(Raf(raf::Raf::new(Some(Box::new(move |ts| unsafe {
+        ffi::OnRafCallbackOnFrame(callback, ts);
+    })))))
 }
 
 pub fn canvas_native_raf_start(raf: &mut Raf) {
@@ -5702,6 +5505,30 @@ pub fn canvas_native_webgl_swap_buffers(state: &WebGLState) -> bool {
 /* GL */
 
 /* WebGL */
+
+fn canvas_native_webgl_resized(state: &mut WebGLState){
+    state.get_inner_mut().resized();
+}
+
+fn canvas_native_webgl_to_data_url(state: &WebGLState, format: &str, quality: i32) -> String {
+    let info = state.get_inner();
+    let width = info.drawing_buffer_width();
+    let height = info.drawing_buffer_height();
+    info.make_current();
+    // gl_bindings::glPixelStorei(gl_bindings::GL_UNPACK_ALIGNMENT, 1);
+    let mut buffer = vec![0u8; (width * height * 4) as usize];
+    unsafe { gl_bindings::glReadPixels(
+        0,
+        0,
+        width as i32,
+        height as i32,
+        gl_bindings::GL_RGBA,
+        gl_bindings::GL_UNSIGNED_BYTE,
+        buffer.as_mut_ptr() as *mut c_void,
+    ); }
+
+    canvas_core::bytes_to_data_url(width, height, buffer.as_slice(), format, quality)
+}
 
 #[derive(Debug)]
 pub struct WebGLState(gl::prelude::WebGLState);
@@ -5802,9 +5629,7 @@ impl ContextAttributes {
     }
 }
 
-pub struct WebGLFramebufferAttachmentParameter(
-    gl::prelude::WebGLFramebufferAttachmentParameter,
-);
+pub struct WebGLFramebufferAttachmentParameter(gl::prelude::WebGLFramebufferAttachmentParameter);
 
 impl WebGLFramebufferAttachmentParameter {
     pub fn get_is_texture(&self) -> bool {
@@ -5852,8 +5677,7 @@ impl WebGLExtension {
 
     pub fn into_ext_disjoint_timer_query(self) -> Box<EXT_disjoint_timer_query> {
         let ext = Box::into_raw(self.0.unwrap());
-        let ext =
-            unsafe { Box::from_raw(ext as *mut gl::prelude::EXT_disjoint_timer_query) };
+        let ext = unsafe { Box::from_raw(ext as *mut gl::prelude::EXT_disjoint_timer_query) };
         Box::new(EXT_disjoint_timer_query(*ext))
     }
 
@@ -5934,9 +5758,7 @@ pub struct WEBGL_compressed_texture_etc1(gl::prelude::WEBGL_compressed_texture_e
 pub struct WEBGL_compressed_texture_s3tc(gl::prelude::WEBGL_compressed_texture_s3tc);
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_compressed_texture_s3tc_srgb(
-    gl::prelude::WEBGL_compressed_texture_s3tc_srgb,
-);
+pub struct WEBGL_compressed_texture_s3tc_srgb(gl::prelude::WEBGL_compressed_texture_s3tc_srgb);
 
 #[allow(non_camel_case_types)]
 pub struct WEBGL_compressed_texture_etc(gl::prelude::WEBGL_compressed_texture_etc);
@@ -6120,26 +5942,26 @@ fn canvas_native_webgl_result_get_bool(result: &WebGLResult) -> bool {
     }
 }
 fn canvas_native_webgl_result_get_i32_array(result: &WebGLResult) -> Vec<i32> {
-    match result.0 {
-        gl::prelude::WebGLResult::I32Array(ref value) => value.clone(),
+    match &result.0 {
+        gl::prelude::WebGLResult::I32Array(value) => value.clone(),
         _ => Vec::new(),
     }
 }
 fn canvas_native_webgl_result_get_u32_array(result: &WebGLResult) -> Vec<u32> {
-    match result.0 {
-        gl::prelude::WebGLResult::U32Array(ref value) => value.clone(),
+    match &result.0 {
+        gl::prelude::WebGLResult::U32Array(value) => value.clone(),
         _ => Vec::new(),
     }
 }
 fn canvas_native_webgl_result_get_f32_array(result: &WebGLResult) -> Vec<f32> {
-    match result.0 {
-        gl::prelude::WebGLResult::F32Array(ref value) => value.clone(),
+    match &result.0 {
+        gl::prelude::WebGLResult::F32Array(value) => value.clone(),
         _ => Vec::new(),
     }
 }
 fn canvas_native_webgl_result_get_bool_array(result: &WebGLResult) -> Vec<u8> {
-    match result.0 {
-        gl::prelude::WebGLResult::BooleanArray(ref value) => unsafe {
+    match &result.0 {
+        gl::prelude::WebGLResult::BooleanArray(value) => unsafe {
             std::slice::from_raw_parts(value.as_ptr() as *const u8, value.len()).to_vec()
         },
         _ => Vec::new(),
@@ -6508,12 +6330,7 @@ pub fn canvas_native_webgl_bind_attrib_location(
     name: &str,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_bind_attrib_location(
-        program,
-        index,
-        name,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_bind_attrib_location(program, index, name, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_bind_buffer(target: u32, buffer: u32, state: &mut WebGLState) {
@@ -6525,11 +6342,7 @@ pub fn canvas_native_webgl_bind_frame_buffer(
     framebuffer: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_bind_frame_buffer(
-        target,
-        framebuffer,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_bind_frame_buffer(target, framebuffer, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_bind_render_buffer(
@@ -6537,11 +6350,7 @@ pub fn canvas_native_webgl_bind_render_buffer(
     renderbuffer: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_bind_render_buffer(
-        target,
-        renderbuffer,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_bind_render_buffer(target, renderbuffer, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_bind_texture(target: u32, texture: u32, state: &mut WebGLState) {
@@ -6555,13 +6364,7 @@ pub fn canvas_native_webgl_blend_color(
     alpha: f32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_blend_color(
-        red,
-        green,
-        blue,
-        alpha,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_blend_color(red, green, blue, alpha, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_blend_equation_separate(
@@ -6606,12 +6409,7 @@ pub fn canvas_native_webgl_buffer_data(
     usage: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_buffer_data(
-        target,
-        src_data,
-        usage,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_buffer_data(target, src_data, usage, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_buffer_data_u16(
@@ -6620,12 +6418,7 @@ pub fn canvas_native_webgl_buffer_data_u16(
     usage: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_buffer_data_u16(
-        target,
-        src_data,
-        usage,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_buffer_data_u16(target, src_data, usage, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_buffer_data_f32(
@@ -6634,12 +6427,7 @@ pub fn canvas_native_webgl_buffer_data_f32(
     usage: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_buffer_data_f32(
-        target,
-        src_data,
-        usage,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_buffer_data_f32(target, src_data, usage, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_buffer_data_none(
@@ -6648,12 +6436,7 @@ pub fn canvas_native_webgl_buffer_data_none(
     usage: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_buffer_data_none(
-        target,
-        size,
-        usage,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_buffer_data_none(target, size, usage, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_buffer_sub_data(
@@ -6662,12 +6445,7 @@ pub fn canvas_native_webgl_buffer_sub_data(
     src_data: &[u8],
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_buffer_sub_data(
-        target,
-        offset,
-        src_data,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_buffer_sub_data(target, offset, src_data, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_buffer_sub_data_none(
@@ -6675,11 +6453,7 @@ pub fn canvas_native_webgl_buffer_sub_data_none(
     offset: isize,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_buffer_sub_data_none(
-        target,
-        offset,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_buffer_sub_data_none(target, offset, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_check_frame_buffer_status(target: u32, state: &mut WebGLState) -> u32 {
@@ -6697,13 +6471,7 @@ pub fn canvas_native_webgl_clear_color(
     alpha: f32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_clear_color(
-        red,
-        green,
-        blue,
-        alpha,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_clear_color(red, green, blue, alpha, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_clear_depth(depth: f32, state: &mut WebGLState) {
@@ -7007,11 +6775,8 @@ pub fn canvas_native_webgl_get_active_attrib(
     index: u32,
     state: &mut WebGLState,
 ) -> Box<WebGLActiveInfo> {
-    let info = gl::webgl::canvas_native_webgl_get_active_attrib(
-        program,
-        index,
-        state.get_inner_mut(),
-    );
+    let info =
+        gl::webgl::canvas_native_webgl_get_active_attrib(program, index, state.get_inner_mut());
 
     Box::new(WebGLActiveInfo(info))
 }
@@ -7021,11 +6786,8 @@ pub fn canvas_native_webgl_get_active_uniform(
     index: u32,
     state: &mut WebGLState,
 ) -> Box<WebGLActiveInfo> {
-    let info = gl::webgl::canvas_native_webgl_get_active_uniform(
-        program,
-        index,
-        state.get_inner_mut(),
-    );
+    let info =
+        gl::webgl::canvas_native_webgl_get_active_uniform(program, index, state.get_inner_mut());
 
     Box::new(WebGLActiveInfo(info))
 }
@@ -7104,9 +6866,10 @@ pub fn canvas_native_webgl_framebuffer_attachment_parameter_get_value(
 }
 
 pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> Box<WebGLResult> {
-    Box::new(WebGLResult(
-        gl::webgl::canvas_native_webgl_get_parameter(pname, state.get_inner_mut()),
-    ))
+    Box::new(WebGLResult(gl::webgl::canvas_native_webgl_get_parameter(
+        pname,
+        state.get_inner_mut(),
+    )))
 }
 
 pub fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLState) -> String {
@@ -7119,11 +6882,7 @@ pub fn canvas_native_webgl_get_program_parameter(
     state: &mut WebGLState,
 ) -> Box<WebGLResult> {
     Box::new(WebGLResult(
-        gl::webgl::canvas_native_webgl_get_program_parameter(
-            program,
-            pname,
-            state.get_inner_mut(),
-        ),
+        gl::webgl::canvas_native_webgl_get_program_parameter(program, pname, state.get_inner_mut()),
     ))
 }
 
@@ -7132,11 +6891,7 @@ pub fn canvas_native_webgl_get_renderbuffer_parameter(
     pname: u32,
     state: &mut WebGLState,
 ) -> i32 {
-    gl::webgl::canvas_native_webgl_get_renderbuffer_parameter(
-        target,
-        pname,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_get_renderbuffer_parameter(target, pname, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_get_shader_info_log(shader: u32, state: &mut WebGLState) -> String {
@@ -7149,11 +6904,7 @@ pub fn canvas_native_webgl_get_shader_parameter(
     state: &mut WebGLState,
 ) -> Box<WebGLResult> {
     Box::new(WebGLResult(
-        gl::webgl::canvas_native_webgl_get_shader_parameter(
-            shader,
-            pname,
-            state.get_inner_mut(),
-        ),
+        gl::webgl::canvas_native_webgl_get_shader_parameter(shader, pname, state.get_inner_mut()),
     ))
 }
 
@@ -7179,6 +6930,11 @@ pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> V
     gl::webgl::canvas_native_webgl_get_supported_extensions(state.get_inner_mut())
 }
 
+pub fn canvas_native_webgl_get_supported_extensions_to_string(state: &mut WebGLState) -> String {
+    let mut ret = gl::webgl::canvas_native_webgl_get_supported_extensions(state.get_inner_mut());
+    ret.join(",").to_string()
+}
+
 pub fn canvas_native_webgl_get_tex_parameter(
     target: u32,
     pname: u32,
@@ -7200,9 +6956,11 @@ pub fn canvas_native_webgl_get_uniform(
     location: i32,
     state: &mut WebGLState,
 ) -> Box<WebGLResult> {
-    Box::new(WebGLResult(
-        gl::webgl::canvas_native_webgl_get_uniform(program, location, state.get_inner_mut()),
-    ))
+    Box::new(WebGLResult(gl::webgl::canvas_native_webgl_get_uniform(
+        program,
+        location,
+        state.get_inner_mut(),
+    )))
 }
 
 pub fn canvas_native_webgl_get_vertex_attrib_offset(
@@ -7210,11 +6968,7 @@ pub fn canvas_native_webgl_get_vertex_attrib_offset(
     pname: u32,
     state: &mut WebGLState,
 ) -> usize {
-    gl::webgl::canvas_native_webgl_get_vertex_attrib_offset(
-        index,
-        pname,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_get_vertex_attrib_offset(index, pname, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_get_vertex_attrib(
@@ -7223,11 +6977,7 @@ pub fn canvas_native_webgl_get_vertex_attrib(
     state: &mut WebGLState,
 ) -> Box<WebGLResult> {
     Box::new(WebGLResult(
-        gl::webgl::canvas_native_webgl_get_vertex_attrib(
-            index,
-            pname,
-            state.get_inner_mut(),
-        ),
+        gl::webgl::canvas_native_webgl_get_vertex_attrib(index, pname, state.get_inner_mut()),
     ))
 }
 
@@ -7484,8 +7234,7 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas: &mut CanvasRenderingContext2D,
     state: &mut WebGLState,
 ) {
-    let mut pixels =
-        gl::webgl::canvas_native_webgl_read_canvas2d_pixels(canvas, &mut state.0);
+    let mut pixels = gl::webgl::canvas_native_webgl_read_canvas2d_pixels(canvas, &mut state.0);
     gl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
@@ -7509,8 +7258,7 @@ fn canvas_native_webgl_tex_image2d_webgl(
     webgl: &mut WebGLState,
     state: &mut WebGLState,
 ) {
-    let mut pixels =
-        gl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
+    let mut pixels = gl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
     gl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
@@ -7829,14 +7577,7 @@ pub fn canvas_native_webgl_vertex_attrib4f(
     v3: f32,
     state: &mut WebGLState,
 ) {
-    gl::webgl::canvas_native_webgl_vertex_attrib4f(
-        index,
-        v0,
-        v1,
-        v2,
-        v3,
-        state.get_inner_mut(),
-    )
+    gl::webgl::canvas_native_webgl_vertex_attrib4f(index, v0, v1, v2, v3, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl_vertex_attrib4fv(index: u32, value: &[f32], state: &mut WebGLState) {
@@ -7901,10 +7642,7 @@ pub fn canvas_native_webgl2_begin_query(target: u32, id: u32, state: &mut WebGLS
 }
 
 pub fn canvas_native_webgl2_begin_transform_feedback(primitive_mode: u32, state: &mut WebGLState) {
-    gl::webgl2::canvas_native_webgl2_begin_transform_feedback(
-        primitive_mode,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_begin_transform_feedback(primitive_mode, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_bind_buffer_base(
@@ -7913,12 +7651,7 @@ pub fn canvas_native_webgl2_bind_buffer_base(
     buffer: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl2::canvas_native_webgl2_bind_buffer_base(
-        target,
-        index,
-        buffer,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_bind_buffer_base(target, index, buffer, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_bind_buffer_range(
@@ -7948,11 +7681,7 @@ pub fn canvas_native_webgl2_bind_transform_feedback(
     transform_feedback: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl2::canvas_native_webgl2_bind_sampler(
-        target,
-        transform_feedback,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_bind_sampler(target, transform_feedback, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_bind_vertex_array(vertex_array: u32, state: &mut WebGLState) {
@@ -8186,10 +7915,7 @@ pub fn canvas_native_webgl2_delete_query_with_query(id: u32, state: &mut WebGLSt
 }
 
 pub fn canvas_native_webgl2_delete_sampler_with_sampler(sampler: u32, state: &mut WebGLState) {
-    gl::webgl2::canvas_native_webgl2_delete_sampler_with_sampler(
-        sampler,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_delete_sampler_with_sampler(sampler, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_delete_sync_with_sync(sync: &WebGLSync, state: &mut WebGLState) {
@@ -8287,9 +8013,11 @@ pub fn canvas_native_webgl2_fence_sync(
     flags: u32,
     state: &mut WebGLState,
 ) -> Box<WebGLSync> {
-    Box::new(WebGLSync(
-        gl::webgl2::canvas_native_webgl2_fence_sync(condition, flags, state.get_inner_mut()),
-    ))
+    Box::new(WebGLSync(gl::webgl2::canvas_native_webgl2_fence_sync(
+        condition,
+        flags,
+        state.get_inner_mut(),
+    )))
 }
 
 pub fn canvas_native_webgl2_framebuffer_texture_layer(
@@ -8377,11 +8105,7 @@ pub fn canvas_native_webgl2_get_frag_data_location(
     name: &str,
     state: &mut WebGLState,
 ) -> i32 {
-    gl::webgl2::canvas_native_webgl2_get_frag_data_location(
-        program,
-        name,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_get_frag_data_location(program, name, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_get_indexed_parameter(
@@ -8415,9 +8139,10 @@ pub fn canvas_native_webgl2_get_internalformat_parameter(
 }
 
 pub fn canvas_native_webgl2_get_parameter(pname: u32, state: &mut WebGLState) -> Box<WebGLResult> {
-    Box::new(WebGLResult(
-        gl::webgl2::canvas_native_webgl2_get_parameter(pname, state.get_inner_mut()),
-    ))
+    Box::new(WebGLResult(gl::webgl2::canvas_native_webgl2_get_parameter(
+        pname,
+        state.get_inner_mut(),
+    )))
 }
 
 pub fn canvas_native_webgl2_get_query_parameter(
@@ -8426,11 +8151,7 @@ pub fn canvas_native_webgl2_get_query_parameter(
     state: &mut WebGLState,
 ) -> Box<WebGLResult> {
     Box::new(WebGLResult(
-        gl::webgl2::canvas_native_webgl2_get_query_parameter(
-            query,
-            pname,
-            state.get_inner_mut(),
-        ),
+        gl::webgl2::canvas_native_webgl2_get_query_parameter(query, pname, state.get_inner_mut()),
     ))
 }
 
@@ -8439,9 +8160,11 @@ pub fn canvas_native_webgl2_get_query(
     pname: u32,
     state: &mut WebGLState,
 ) -> Box<WebGLResult> {
-    Box::new(WebGLResult(
-        gl::webgl2::canvas_native_webgl2_get_query(target, pname, state.get_inner_mut()),
-    ))
+    Box::new(WebGLResult(gl::webgl2::canvas_native_webgl2_get_query(
+        target,
+        pname,
+        state.get_inner_mut(),
+    )))
 }
 
 pub fn canvas_native_webgl2_get_sampler_parameter(
@@ -8464,11 +8187,7 @@ pub fn canvas_native_webgl2_get_sync_parameter(
     state: &mut WebGLState,
 ) -> Box<WebGLResult> {
     Box::new(WebGLResult(
-        gl::webgl2::canvas_native_webgl2_get_sync_parameter(
-            &sync.0,
-            pname,
-            state.get_inner_mut(),
-        ),
+        gl::webgl2::canvas_native_webgl2_get_sync_parameter(&sync.0, pname, state.get_inner_mut()),
     ))
 }
 
@@ -8954,14 +8673,7 @@ pub fn canvas_native_webgl2_uniform4ui(
     v3: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl2::canvas_native_webgl2_uniform4ui(
-        location,
-        v0,
-        v1,
-        v2,
-        v3,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_uniform4ui(location, v0, v1, v2, v3, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_uniform4uiv(location: i32, data: &[u32], state: &mut WebGLState) {
@@ -9071,11 +8783,7 @@ pub fn canvas_native_webgl2_vertex_attrib_divisor(
     divisor: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl2::canvas_native_webgl2_vertex_attrib_divisor(
-        index,
-        divisor,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_vertex_attrib_divisor(index, divisor, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_vertex_attrib_i4i(
@@ -9086,14 +8794,7 @@ pub fn canvas_native_webgl2_vertex_attrib_i4i(
     w: i32,
     state: &mut WebGLState,
 ) {
-    gl::webgl2::canvas_native_webgl2_vertex_attrib_i4i(
-        index,
-        x,
-        y,
-        z,
-        w,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_vertex_attrib_i4i(index, x, y, z, w, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_vertex_attrib_i4iv(index: u32, value: &[i32], state: &mut WebGLState) {
@@ -9108,14 +8809,7 @@ pub fn canvas_native_webgl2_vertex_attrib_i4ui(
     w: u32,
     state: &mut WebGLState,
 ) {
-    gl::webgl2::canvas_native_webgl2_vertex_attrib_i4ui(
-        index,
-        x,
-        y,
-        z,
-        w,
-        state.get_inner_mut(),
-    )
+    gl::webgl2::canvas_native_webgl2_vertex_attrib_i4ui(index, x, y, z, w, state.get_inner_mut())
 }
 
 pub fn canvas_native_webgl2_vertex_attrib_i4uiv(index: u32, value: &[u32], state: &mut WebGLState) {

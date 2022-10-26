@@ -1,8 +1,8 @@
 use std::ffi::CStr;
 
-use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass, JObject, JString, ReleaseMode};
 use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSave(
@@ -44,19 +44,48 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
     }
     if let Ok(url) = env.get_string(url) {
         unsafe {
-            let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
+            let asset: *mut crate::ImageAsset = asset as _;
             let asset = &mut *asset;
             let url = CStr::from_ptr(url.as_ptr());
-            if crate::canvas_native_image_asset_load_from_url_internal(
-                asset,
-                &url.to_string_lossy(),
-            ) {
+            if crate::canvas_native_image_asset_load_from_url(asset, &url.to_string_lossy()) {
                 return JNI_TRUE;
             }
             return JNI_FALSE;
         }
     }
     JNI_FALSE
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeCloneRef(
+    _: JNIEnv,
+    _: JClass,
+    asset: jlong,
+) -> jlong {
+    if asset == 0 {
+        return 0;
+    }
+
+    let asset: *mut crate::ImageAsset = asset as _;
+    let asset = unsafe { &mut *asset };
+    let clone = asset.clone();
+    Box::into_raw(Box::new(clone)) as jlong
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeDestroyRef(
+    _: JNIEnv,
+    _: JClass,
+    asset: jlong,
+) {
+    if asset == 0 {
+        return;
+    }
+
+    let asset: *mut crate::ImageAsset = asset as _;
+    unsafe {
+        let _ = Box::from_raw(asset);
+    }
 }
 
 #[no_mangle]
@@ -71,7 +100,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
     }
     if let Ok(path) = env.get_string(path) {
         unsafe {
-            let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
+            let asset: *mut crate::ImageAsset = asset as _;
             let asset = &mut *asset;
             let path = CStr::from_ptr(path.as_ptr());
             if asset.load_from_path(&path.to_string_lossy()) {
@@ -98,7 +127,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
         let size = array.size().unwrap_or(0) as usize;
         let bytes = unsafe { std::slice::from_raw_parts_mut(array.as_ptr() as *mut u8, size) };
 
-        let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
+        let asset: *mut crate::ImageAsset = asset as _;
         let asset = unsafe { &mut *asset };
         if asset.load_from_bytes(bytes) {
             return JNI_TRUE;
@@ -120,7 +149,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
     }
 
     if let Ok(buf) = env.get_direct_buffer_address(buffer) {
-        let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
+        let asset: *mut crate::ImageAsset = asset as _;
         let asset = unsafe { &mut *asset };
         if asset.load_from_bytes(buf) {
             return JNI_TRUE;
@@ -141,7 +170,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
         return JNI_FALSE;
     }
 
-    let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
+    let asset: *mut crate::ImageAsset = asset as _;
     let asset = unsafe { &mut *asset };
 
     let mut bm = crate::utils::image::BitmapBytes::new(env, bitmap);
@@ -167,7 +196,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSetError
     }
     if let Ok(error) = env.get_string(error) {
         unsafe {
-            let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
+            let asset: *mut crate::ImageAsset = asset as _;
             let asset = &mut *asset;
             let error = CStr::from_ptr(error.as_ptr());
             asset.set_error(&error.to_string_lossy());

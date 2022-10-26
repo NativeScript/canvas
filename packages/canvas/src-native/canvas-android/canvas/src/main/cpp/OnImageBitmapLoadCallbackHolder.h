@@ -10,12 +10,12 @@
 
 class OnImageBitmapLoadCallbackHolder {
 public:
-    OnImageBitmapLoadCallbackHolder(v8::Isolate *isolate, v8::Local<v8::Context> context,
-                                    v8::Local<v8::Function> callback, void *asset);
+    OnImageBitmapLoadCallbackHolder(v8::Isolate *isolate, const v8::Local<v8::Context>& context,
+                                    const v8::Local<v8::Function>& callback, void *asset);
 
     ~OnImageBitmapLoadCallbackHolder();
 
-    void complete(bool done, intptr_t callback) const;
+    void complete(bool done) const;
 
     v8::Isolate *GetIsolate();
 
@@ -31,6 +31,3 @@ private:
     v8::Global<v8::Context> context_;
     void *asset_;
 };
-
-
-void OnImageBitmapLoadCallbackHolderComplete(bool done, intptr_t callback);

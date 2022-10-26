@@ -39,9 +39,9 @@ public:
 
     void UpdateInvalidateState();
 
-    InvalidateState GetInvalidateState() const;
+    int GetInvalidateState() const;
 
-    void SetInvalidateState(InvalidateState state);
+    void SetInvalidateState(int state);
 
     void Flush();
 
@@ -61,7 +61,7 @@ private:
 
     WebGLRenderingVersion version_;
 
-    InvalidateState invalidateState_ = InvalidateState::NONE;
+    int invalidateState_ = static_cast<int>(InvalidateState::NONE);
 
     std::shared_ptr <RafImpl> raf_ = nullptr;
 };

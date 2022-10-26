@@ -92,7 +92,6 @@ export class HTMLImageElement extends Element {
 
 	_load() {
 		if (this.src) {
-			console.log('_load', this.src);
 			if (typeof this.src === 'string' && this.src.startsWith && this.src.startsWith('data:')) {
 				// is base64 - convert and try again;
 				this._base64 = this.src;

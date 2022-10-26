@@ -91,6 +91,12 @@ struct WebGLStateInner {
 pub struct WebGLState(Arc<parking_lot::RwLock<WebGLStateInner>>);
 
 impl WebGLState {
+
+    pub(crate) fn resized(&mut self) {
+        let mut state = self.0.write();
+        state.gl_context = GLContext::get_current();
+    }
+
     fn get(&self) -> RwLockReadGuard<'_, RawRwLock, WebGLStateInner> {
         self.0.read()
     }

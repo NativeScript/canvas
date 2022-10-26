@@ -474,9 +474,11 @@ declare module org {
 					 */
 					public constructor(implementation: {
 						contextReady(): void;
+						surfaceResize(width: number, height: number): void;
 					});
 					public constructor();
 					public contextReady(): void;
+					public surfaceResize(width: number, height: number): void;
 				}
 				export class Size {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.Size>;

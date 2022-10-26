@@ -41,10 +41,6 @@ class TNSSVG : View {
 		if (isInEditMode) {
 			return
 		}
-		if (!TNSCanvas.isLibraryLoaded) {
-			System.loadLibrary("canvasnative")
-			TNSCanvas.isLibraryLoaded = true
-		}
 	}
 
 
@@ -73,7 +69,7 @@ class TNSSVG : View {
 				h.toFloat(),
 				metrics.density,
 				true,
-				metrics.densityDpi,
+				metrics.densityDpi
 			)
 
 			if (srcPath.isNotEmpty() || src.isNotEmpty()) {

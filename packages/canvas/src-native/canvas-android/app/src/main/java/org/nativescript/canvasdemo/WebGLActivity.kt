@@ -30,11 +30,16 @@ class WebGLActivity : AppCompatActivity() {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
 				//drawTriangle()
-				drawImage()
+			//	drawImage()
+			}
+
+			override fun surfaceResize(width: Int, height: Int) {
+				TODO("Not yet implemented")
 			}
 		}
 	}
 
+	/*
 	fun drawTriangle() {
 		canvas?.let { canvas ->
 			val gl = canvas.getContext("webgl") as? TNSWebGLRenderingContext
@@ -356,4 +361,5 @@ class WebGLActivity : AppCompatActivity() {
 	}
 
 
+	*/
 }

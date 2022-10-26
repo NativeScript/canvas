@@ -61,6 +61,10 @@ public:
 
     ~WebGLRenderingContext();
 
+    static void ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Resized(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void GetDrawingBufferWidth(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetDrawingBufferHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
@@ -225,6 +229,8 @@ public:
     static void GetShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetSupportedExtensions(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void GetSupportedExtensionsString(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetTexParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 

@@ -982,11 +982,11 @@ class MainActivity : AppCompatActivity() {
 
 
 	fun solarAnimation(ctx: TNSCanvasRenderingContext2D) {
-		AnimationFrame.requestAnimationFrame { called ->
-			run {
-				animateSolarSystem(ctx, called.toFloat())
-			}
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			run {
+//				animateSolarSystem(ctx, called.toFloat())
+//			}
+//		}
 	}
 
 	companion object {
@@ -1213,11 +1213,11 @@ class MainActivity : AppCompatActivity() {
 
 			ctx.drawImage(sun, 0F, 0F, 300F, 300F)
 
-			AnimationFrame.requestAnimationFrame { called ->
-				run {
-					animateSolarSystem(ctx, called.toFloat())
-				}
-			}
+//			AnimationFrame.requestAnimationFrame { called ->
+//				run {
+//					animateSolarSystem(ctx, called.toFloat())
+//				}
+//			}
 
 		} catch (e: IOException) {
 			e.printStackTrace()
@@ -1226,9 +1226,9 @@ class MainActivity : AppCompatActivity() {
 
 
 	fun loop(ctx: TNSCanvasRenderingContext2D, t: Float) {
-		AnimationFrame.requestAnimationFrame { called ->
-			loop(ctx, called.toFloat())
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			loop(ctx, called.toFloat())
+//		}
 		t0 = t / 1000.0
 		a = t0 % PI2
 		rr = abs(cos(a) * r)
@@ -1347,9 +1347,9 @@ class MainActivity : AppCompatActivity() {
 		ctx.fillRect(0f, 0f, ctx.canvas.width.toFloat(), ctx.canvas.height.toFloat())
 		ctx.fillStyle = TNSColor("black")
 		drawFace(ctx)
-		AnimationFrame.requestAnimationFrame {
-			faceLoop(ctx)
-		}
+//		AnimationFrame.requestAnimationFrame {
+//			faceLoop(ctx)
+//		}
 	}
 
 
@@ -1542,6 +1542,8 @@ class MainActivity : AppCompatActivity() {
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
 		ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+
+		print(ctx?.measureText("Osei"))
 
 		//createConicGradient(canvas!!)
 		//drawTriangle(ctx!!)
@@ -2037,9 +2039,9 @@ class MainActivity : AppCompatActivity() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer)
 		gl.drawElements(gl.TRIANGLES, indices.size, gl.UNSIGNED_SHORT, 0)
 
-		AnimationFrame.requestAnimationFrame {
-			cubeRotationAnimation(gl, it.toFloat())
-		}
+//		AnimationFrame.requestAnimationFrame {
+//			cubeRotationAnimation(gl, it.toFloat())
+//		}
 
 	}
 
@@ -2534,11 +2536,11 @@ class MainActivity : AppCompatActivity() {
 			ball.vx = -ball.vx;
 		}
 
-		AnimationFrame.requestAnimationFrame { called ->
-			draw(ctx)
-			Log.d("com.test", "requestAnimationFrame")
-			// canvas?.flush()
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			draw(ctx)
+//			Log.d("com.test", "requestAnimationFrame")
+//			// canvas?.flush()
+//		}
 	}
 
 	var ball = Ball()
@@ -2546,9 +2548,9 @@ class MainActivity : AppCompatActivity() {
 
 	fun ballExample(ctx: TNSCanvasRenderingContext2D) {
 		//canvas?.isHandleInvalidationManually = true
-		AnimationFrame.requestAnimationFrame { called ->
-			draw(ctx)
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			draw(ctx)
+//		}
 	}
 
 

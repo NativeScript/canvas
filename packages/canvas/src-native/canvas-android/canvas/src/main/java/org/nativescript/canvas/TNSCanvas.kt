@@ -151,10 +151,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			return
 		}
 		this.useCpu = useCpu
-		if (!isLibraryLoaded) {
-			System.loadLibrary("canvasnative")
-			isLibraryLoaded = true
-		}
+		loadLib()
 		setBackgroundColor(Color.TRANSPARENT)
 		surface = GLView(context)
 		surface!!.gLContext!!.reference = WeakReference(this)
@@ -781,6 +778,14 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		internal var lastCall: Long = 0
 		internal var isLibraryLoaded = false
 		const val TAG = "CanvasView"
+
+		@JvmStatic
+		fun loadLib() {
+			if (!isLibraryLoaded) {
+				System.loadLibrary("canvasnative")
+				isLibraryLoaded = true
+			}
+		}
 
 		@JvmStatic
 		fun createSVGMatrix(): TNSDOMMatrix {

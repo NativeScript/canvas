@@ -34,7 +34,7 @@ fn create_from_bytes_src_rect(
             let size = buf.size().unwrap_or(0) as usize;
             if size > 0 {
                 let slice = unsafe { std::slice::from_raw_parts(buf.as_ptr() as *const u8, size) };
-                return image_bitmap::create_image_asset(
+                return create_image_asset(
                     slice,
                     image_width,
                     image_height,

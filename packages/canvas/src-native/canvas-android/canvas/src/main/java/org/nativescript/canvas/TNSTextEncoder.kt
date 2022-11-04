@@ -38,6 +38,11 @@ class TNSTextEncoder {
 	}
 
 	companion object {
+
+		init {
+			TNSCanvas.loadLib()
+		}
+
 		@JvmStatic
 		private external fun nativeInit(encoding: String): Long
 

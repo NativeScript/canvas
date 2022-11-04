@@ -85,7 +85,6 @@ class TNSTextDecoder {
 		return String(result, Charset.defaultCharset())
 	}
 
-
 	fun decodeByte(bytes: ByteArray): String {
 		return decode(bytes)
 	}
@@ -106,11 +105,15 @@ class TNSTextDecoder {
 		return decode(bytes)
 	}
 
-
 	val encoding: String
 		get() = nativeGetEncoding(nativeDecoder)
 
 	companion object {
+
+		init {
+			TNSCanvas.loadLib()
+		}
+
 		@JvmStatic
 		private external fun nativeInit(encoding: String): Long
 

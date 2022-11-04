@@ -9,7 +9,7 @@ name = "canvasnative"
 crate-type = ["staticlib", "cdylib"]
 
 [build-dependencies]
-bindgen = "0.59.2"
+bindgen = "0.61.0"
 cmake = "0.1.44"
 cc = "1.0.56"
 
@@ -26,9 +26,9 @@ rgb = "0.8.25"
 log = "0.4.8"
 stringreader = "0.1.1"
 rand = "0.8.4"
-skia-safe = { version = "0.54.0 ", features = ["gl", "svg"] }
-stb = { git = "https://github.com/triniwiz/stb.git", rev = "1d6892b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
-stb-sys = { git = "https://github.com/triniwiz/stb.git", rev = "1d6892b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
+skia-safe = { version = "0", features = ["gl", "svg"] }
+stb = { git = "https://github.com/triniwiz/stb.git", rev = "156f01b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
+stb-sys = { git = "https://github.com/triniwiz/stb.git", rev = "156f01b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
 parking_lot = "0.12.1"
 
 [target.'cfg(target_os="android")'.dependencies]

@@ -66,38 +66,35 @@ fn main() {
     };
     println!("cargo:rerun-if-changed=build.rs");
 
-    println!("system {:?}", &target.system);
-    println!("target {:?}", &target);
     match target.system.borrow() {
         "android" | "androideabi" => {
             // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
-            let build_target;
+            //let build_target;
             include_dir.push_str(&ndk());
             // after moving to newer ndk
-           // include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
-
+            include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
 
            include_dir.push_str("/sysroot/usr/include");
             println!("cargo:rustc-link-search=native={}", include_dir);
 
-            if target.architecture.eq("armv7") {
-                build_target = "armv7-linux-androideabi";
-            } else if target.architecture.eq("aarch64") {
-                build_target = "aarch64-linux-android";
-                println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
-            } else if target.architecture.eq("i686") {
-                build_target = "i686-linux-android";
-            } else if target.architecture.eq("x86_64") {
-                build_target = "x86_64-linux-android";
-                println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
-            } else {
-                return;
-            }
+            // if target.architecture.eq("armv7") {
+            //     build_target = "armv7-linux-androideabi";
+            // } else if target.architecture.eq("aarch64") {
+            //     build_target = "aarch64-linux-android";
+            //     println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
+            // } else if target.architecture.eq("i686") {
+            //     build_target = "i686-linux-android";
+            // } else if target.architecture.eq("x86_64") {
+            //     build_target = "x86_64-linux-android";
+            //     println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
+            // } else {
+            //     return;
+            // }
 
-            println!("target {:?}", build_target);
             println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
             println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
+            println!("cargo:rustc-link-lib=c++_shared");
             
                                                      // The bindgen::Builder is the main entry point
                                                      // to bindgen, and lets you build up options for

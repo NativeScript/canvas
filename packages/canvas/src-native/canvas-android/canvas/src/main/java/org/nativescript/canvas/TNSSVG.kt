@@ -218,6 +218,10 @@ class TNSSVG : View {
 	}
 
 	companion object {
+		init {
+			TNSCanvas.loadLib()
+		}
+
 		@JvmStatic
 		private external fun nativeDrawSVG(svgCanvas: Long, svg: String)
 

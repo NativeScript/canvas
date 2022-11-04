@@ -5,7 +5,7 @@ authors = ["triniwiz <fortune.osei@yahoo.com>"]
 edition = "2018"
 
 [build-dependencies]
-bindgen = "0.59.2"
+bindgen = "0.61.0"
 cmake = "0.1.45"
 cc = "1.0.68"
 

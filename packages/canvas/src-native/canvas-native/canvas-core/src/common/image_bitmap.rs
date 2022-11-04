@@ -219,7 +219,7 @@ pub(crate) fn create_image_bitmap(
             if image.width() != out_width as i32 && image.height() != out_height as i32 {
                 let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
 
-                let mut bytes = vec![0_u8; (out_width * out_height * 4.) as usize];
+                let mut bytes = vec![0_u8; (out_width as i32 * out_height as i32 * 4) as usize];
                 let pixel_map = skia_safe::Pixmap::new(
                     &resize_info,
                     bytes.as_mut_slice(),

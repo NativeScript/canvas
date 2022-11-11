@@ -114,7 +114,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	var strokeStyle: TNSColorStyle
 		get() {
-			var value: TNSColorStyle = TNSColor.black
+			var value: TNSColorStyle? = null
 			canvas.queueEvent {
 				val style = nativeGetStrokeStyle(
 					canvas.nativeContext
@@ -129,13 +129,12 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				}
 				lock.countDown()
 			}
-
 			try {
 				lock.await(2, TimeUnit.SECONDS)
 				lock.reset()
-			} catch (e: Exception) {
+			} catch (_: Exception) {
 			}
-			return value
+			return value ?: TNSColor.black
 		}
 		set(value) {
 			canvas.queueEvent {
@@ -251,7 +250,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	var lineDash: FloatArray
 		get() {
-			var value = FloatArray(0)
+			var value = Helpers.emptyFloat
 			canvas.queueEvent {
 				value = nativeGetLineDash(canvas.nativeContext)
 				lock.countDown()
@@ -350,7 +349,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	var shadowColor: String
 		get() {
-			var value = "rgba(0,0,0,0)"
+			var value: String? = null
 			canvas.queueEvent {
 				value = nativeGetShadowColor(canvas.nativeContext)
 				lock.countDown()
@@ -358,9 +357,9 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			try {
 				lock.await(2, TimeUnit.SECONDS)
 				lock.reset()
-			} catch (e: java.lang.Exception) {
+			} catch (_: java.lang.Exception) {
 			}
-			return value
+			return value ?: TNSColor.transparentRGBA
 		}
 		set(color) {
 			canvas.queueEvent { nativeSetShadowColorString(canvas.nativeContext, color) }
@@ -461,6 +460,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			}
 		}
 
+	private var lastTransform: TNSDOMMatrix? = null
 
 	var currentTransform: TNSDOMMatrix
 		get() {
@@ -469,7 +469,15 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 				val id = nativeGetCurrentTransform(canvas.nativeContext)
 				value = if (id == 0L) {
 					TNSDOMMatrix()
-				} else TNSDOMMatrix(id)
+				} else {
+					lastTransform?.let {
+						if (it.matrix != id){
+							lastTransform = TNSDOMMatrix(id)
+						}
+						lastTransform!!
+
+					} ?: TNSDOMMatrix(id)
+				}
 				lock.countDown()
 			}
 			try {
@@ -486,9 +494,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 
 	private fun updateCanvas() {
-		// synchronized (canvasView.lock) {
 		canvas.invalidateState = canvas.invalidateState or TNSCanvas.INVALIDATE_STATE_PENDING
-		//}
 	}
 
 	fun clearRect(x: Float, y: Float, width: Float, height: Float) {
@@ -512,11 +518,9 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 	}
 
-	fun fillText(text: String, x: Float, y: Float) {
-		fillText(text, x, y, 0f)
-	}
 
-	fun fillText(text: String, x: Float, y: Float, width: Float) {
+	@JvmOverloads
+	fun fillText(text: String, x: Float, y: Float, width: Float = 0f) {
 		canvas.queueEvent {
 			nativeFillText(canvas.nativeContext, text, x, y, width)
 			updateCanvas()
@@ -524,11 +528,8 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	}
 
 
-	fun strokeText(text: String, x: Float, y: Float) {
-		strokeText(text, x, y, 0f)
-	}
-
-	fun strokeText(text: String, x: Float, y: Float, width: Float) {
+	@JvmOverloads
+	fun strokeText(text: String, x: Float, y: Float, width: Float = 0f) {
 		canvas.queueEvent {
 			nativeStrokeText(canvas.nativeContext, text, x, y, width)
 			updateCanvas()
@@ -642,41 +643,24 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	}
 
 
-	fun fill() {
-		fill(TNSFillRule.NonZero)
-	}
-
 
 	fun fill(rule: TNSFillRule) {
-		fill(0, rule.toNative())
+		fill(null, rule)
 	}
 
-	fun fill(path: TNSPath2D) {
-		fill(path, TNSFillRule.NonZero)
-	}
-
-	fun fill(path: TNSPath2D, rule: TNSFillRule) {
-		fill(path.path, rule.toNative())
-	}
-
-	private fun fill(path: Long, rule: Int) {
+	@JvmOverloads
+	fun fill(path: TNSPath2D? = null, rule: TNSFillRule = TNSFillRule.NonZero) {
 		canvas.queueEvent {
-			nativeFill(canvas.nativeContext, path, rule)
+			nativeFill(canvas.nativeContext, path?.path ?: 0, rule.toNative())
 			updateCanvas()
 		}
 	}
 
-	fun stroke() {
-		stroke(0)
-	}
-
-	fun stroke(path: TNSPath2D) {
-		stroke(path.path)
-	}
-
-	private fun stroke(path: Long) {
+	@JvmOverloads
+	fun stroke(path: TNSPath2D? = null) {
+		val id = path?.path ?: 0
 		canvas.queueEvent {
-			nativeStroke(canvas.nativeContext, path)
+			nativeStroke(canvas.nativeContext, id)
 			updateCanvas()
 		}
 	}
@@ -697,18 +681,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		canvas.queueEvent { nativeClosePath(canvas.nativeContext) }
 	}
 
-
-	fun arc(
-		x: Float,
-		y: Float,
-		radius: Float,
-		startAngle: Float,
-		endAngle: Float
-	) {
-		arc(x, y, radius, startAngle, endAngle, false)
-	}
-
-
+	@JvmOverloads
 	fun arc(
 		x: Float,
 		y: Float,
@@ -749,19 +722,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	}
 
 
-	fun ellipse(
-		x: Float,
-		y: Float,
-		radiusX: Float,
-		radiusY: Float,
-		rotation: Float,
-		startAngle: Float,
-		endAngle: Float
-	) {
-		ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, false)
-	}
-
-
+	@JvmOverloads
 	fun ellipse(
 		x: Float,
 		y: Float,
@@ -770,7 +731,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		rotation: Float,
 		startAngle: Float,
 		endAngle: Float,
-		anticlockwise: Boolean
+		anticlockwise: Boolean = false
 	) {
 		canvas.queueEvent {
 			nativeEllipse(
@@ -787,24 +748,14 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 	}
 
-	fun clip() {
-		clip(TNSFillRule.NonZero)
-	}
-
 	fun clip(rule: TNSFillRule) {
-		canvas.queueEvent { nativeClipRule(canvas.nativeContext, rule.toNative()) }
+		clip(null, rule)
 	}
 
-	fun clip(path: TNSPath2D) {
-		clip(path, TNSFillRule.NonZero)
-	}
 
-	fun clip(path: TNSPath2D, rule: TNSFillRule) {
-		clip(path.path, rule.toNative())
-	}
-
-	private fun clip(path: Long, rule: Int) {
-		canvas.queueEvent { nativeClip(canvas.nativeContext, path, rule) }
+	@JvmOverloads
+	fun clip(path: TNSPath2D? = null, rule: TNSFillRule = TNSFillRule.NonZero) {
+		canvas.queueEvent { nativeClip(canvas.nativeContext, path?.path ?: 0, rule.toNative()) }
 	}
 
 	fun createLinearGradient(x0: Float, y0: Float, x1: Float, y1: Float): TNSCanvasGradient {
@@ -843,6 +794,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		)
 	}
 
+	@JvmOverloads
 	fun createPattern(
 		src: TNSCanvas?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
@@ -857,6 +809,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		)
 	}
 
+	@JvmOverloads
 	fun createPattern(
 		src: Bitmap?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
@@ -921,6 +874,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		return value
 	}
 
+	@JvmOverloads
 	fun createPattern(
 		src: TNSImageAsset?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
@@ -946,6 +900,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		return value
 	}
 
+	@JvmOverloads
 	fun createPattern(
 		src: TNSImageBitmap?,
 		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
@@ -1334,23 +1289,16 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		)
 	}
 
-	fun putImageData(
-		data: TNSImageData,
-		x: Float,
-		y: Float
-	) {
-		putImageData(data, x, y, 0f, 0f, 0f, 0f)
-	}
 
-
+	@JvmOverloads
 	fun putImageData(
 		data: TNSImageData,
 		x: Float,
 		y: Float,
-		dirtyX: Float,
-		dirtyY: Float,
-		dirtyWidth: Float,
-		dirtyHeight: Float
+		dirtyX: Float = 0f,
+		dirtyY: Float = 0f,
+		dirtyWidth: Float = 0f,
+		dirtyHeight: Float  = 0f
 	) {
 		canvas.queueEvent {
 			nativePutImageData(
@@ -1390,50 +1338,28 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		canvas.queueEvent { nativeResetTransform(canvas.nativeContext) }
 	}
 
-	fun isPointInPath(x: Float, y: Float): Boolean {
-		return isPointInPath(0, x, y, TNSFillRule.NonZero.toNative())
-	}
 
-	fun isPointInPath(x: Float, y: Float, fillRule: TNSFillRule): Boolean {
-		return isPointInPath(0, x, y, fillRule.toNative())
-	}
-
-
+	@JvmOverloads
 	fun isPointInPath(
-		path: TNSPath2D,
-		x: Float,
-		y: Float
-	): Boolean {
-		return isPointInPath(path.path, x, y, TNSFillRule.NonZero.toNative())
-	}
-
-	fun isPointInPath(
-		path: TNSPath2D,
+		path: TNSPath2D? = null,
 		x: Float,
 		y: Float,
-		fillRule: TNSFillRule
+		fillRule: TNSFillRule = TNSFillRule.NonZero
 	): Boolean {
-		return isPointInPath(path.path, x, y, fillRule.toNative())
-	}
-
-	private fun isPointInPath(path: Long, x: Float, y: Float, fillRule: Int): Boolean {
 		var value = false
 		canvas.queueEvent {
-			value = nativeIsPointInPath(canvas.nativeContext, path, x, y, fillRule)
+			value = nativeIsPointInPath(canvas.nativeContext, path?.path ?: 0, x, y, fillRule.toNative())
 			lock.countDown()
 		}
 		try {
 			lock.await(2, TimeUnit.SECONDS)
 			lock.reset()
-		} catch (e: java.lang.Exception) {
+		} catch (_: java.lang.Exception) {
 		}
 		return value
 	}
 
-	fun isPointInStroke(x: Float, y: Float): Boolean {
-		return isPointInStroke(null, x, y)
-	}
-
+	@JvmOverloads
 	fun isPointInStroke(path: TNSPath2D? = null, x: Float, y: Float): Boolean {
 		var value = false
 		canvas.queueEvent {

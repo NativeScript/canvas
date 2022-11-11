@@ -47,7 +47,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeGetEnco
     unsafe {
         let encoder: *mut TextEncoder = encoder as _;
         let encoder = &mut *encoder;
-        env.new_string(encoder.encoding()).unwrap().into_inner()
+        env.new_string(encoder.encoding()).unwrap().into_raw()
     }
 }
 
@@ -85,7 +85,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeEncodeT
     text: JString,
 ) -> jobject {
     if encoder == 0 {
-        return JObject::null().into_inner();
+        return JObject::null().into_raw();
     }
     unsafe {
         if let Ok(text) = env.get_string(text) {
@@ -94,13 +94,13 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextEncoder_nativeEncodeT
             let encoder = &mut *encoder;
             let array = encoder.encode(text.as_ref());
             let buffer = ByteBufMut::from(array);
-            let db = env.new_direct_byte_buffer(buffer.as_mut_slice()).unwrap();
+            let db = env.new_direct_byte_buffer(buffer.data, buffer.len).unwrap();
             let buf = Box::into_raw(Box::new(buffer));
             let db: JValue = db.into();
             crate::android::watch_item(&env, buf as jlong, db);
-            return db.l().unwrap().into_inner();
+            return db.l().unwrap().into_raw();
         }
     }
-    JObject::null().into_inner()
+    JObject::null().into_raw()
 }
 

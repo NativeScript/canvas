@@ -145,15 +145,15 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetError
     asset: jlong,
 ) -> jstring {
     if asset == 0 {
-        return env.new_string("").unwrap().into_inner();
+        return env.new_string("").unwrap().into_raw();
     }
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
         if let Ok(error) = env.new_string(&asset.error()) {
-            return error.into_inner();
+            return error.into_raw();
         }
-        env.new_string("").unwrap().into_inner()
+        env.new_string("").unwrap().into_raw()
     }
 }
 

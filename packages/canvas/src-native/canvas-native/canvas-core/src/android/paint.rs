@@ -83,7 +83,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSColor_nativeGetColorStrin
     color: jlong,
 ) -> jstring {
     if color == 0 {
-        return env.new_string("").unwrap().into_inner();
+        return env.new_string("").unwrap().into_raw();
     }
     unsafe {
         let color: *const PaintStyle = color as _;
@@ -91,9 +91,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSColor_nativeGetColorStrin
         match color {
             PaintStyle::Color(color) => {
                 let string = to_parsed_color(*color);
-                env.new_string(string).unwrap().into_inner()
+                env.new_string(string).unwrap().into_raw()
             }
-            _ => env.new_string("").unwrap().into_inner(),
+            _ => env.new_string("").unwrap().into_raw(),
         }
     }
 }

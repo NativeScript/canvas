@@ -1541,14 +1541,12 @@ class MainActivity : AppCompatActivity() {
 		//addPath(canvas!!)
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
-		ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+		//ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 
-		print(ctx?.measureText("Osei"))
-
-		//createConicGradient(canvas!!)
+		createConicGradient(canvas!!)
 		//drawTriangle(ctx!!)
 
-		//drawText(ctx!!)
+//		drawText(ctx!!)
 		//ballExample(ctx!!)
 		//drawPattern(canvas!!)
 		//	drawFace(ctx!!)

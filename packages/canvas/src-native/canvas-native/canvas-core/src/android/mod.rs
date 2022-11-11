@@ -215,7 +215,7 @@ impl MethodCacheItem {
     }
 
     pub fn clazz(&self) -> JClass {
-        JClass::from(self.clazz.as_obj().into_inner())
+        JClass::from(self.clazz.as_obj())
     }
 }
 
@@ -234,7 +234,7 @@ impl StaticMethodCacheItem {
     }
 
     pub fn clazz(&self) -> JClass {
-        JClass::from(self.clazz.as_obj().into_inner())
+        JClass::from(self.clazz.as_obj())
     }
 }
 
@@ -251,9 +251,11 @@ pub(crate) const COLOR_STYLE_REF_CTOR: &str = "org_nativescript_canvas_TNSColorS
 
 pub fn find_class(name: &str) -> Option<JClass> {
     JVM_CLASS_CACHE.get().map_or(None, |c| {
-        c.read()
-            .get(name)
-            .map(|c| JClass::from(c.as_obj().into_inner()))
+        unsafe {
+            c.read()
+                .get(name)
+                .map(|c| JClass::from_raw(c.as_obj().into_raw()))
+        }
     })
 }
 
@@ -345,7 +347,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
             map.insert(COLOR_STYLE_REF_CLASS, clazz);
             map.insert(GC_CLASS, gc_clazz);
             map.insert(TEXTURE_RENDER_CLASS, tr_clazz);
-            parking_lot::RwLock::new(map)
+            RwLock::new(map)
         });
 
 
@@ -353,14 +355,14 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
             let mut map = HashMap::new();
             map.insert(GC_STATIC_WATCH_OBJECT_METHOD, watch_item_method);
             map.insert(TEXTURE_RENDER_STATIC_UPDATE_TEX_IMAGE_AND_GET_TRANSFORM_MATRIX_METHOD, update_tex_image_and_get_transform_matrix_method);
-            parking_lot::RwLock::new(map)
+            RwLock::new(map)
         });
 
 
         JVM_METHOD_CACHE.get_or_init(|| {
             let mut map = HashMap::new();
             map.insert(COLOR_STYLE_REF_CTOR, color_style_ctor_id);
-            parking_lot::RwLock::new(map)
+            RwLock::new(map)
         });
     }
 
@@ -626,7 +628,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
 ) -> jstring {
     unsafe {
         if context == 0 {
-            return env.new_string("").unwrap().into_inner();
+            return env.new_string("").unwrap().into_raw();
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
@@ -639,9 +641,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
                     (quality * 100 as f32) as i32,
                 ))
                 .unwrap()
-                .into_inner();
+                .into_raw();
         }
-        return env.new_string("").unwrap().into_inner();
+        return env.new_string("").unwrap().into_raw();
     }
 }
 
@@ -743,32 +745,39 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBi
         utils::image::bitmap_handler(
             env,
             bitmap,
-            Box::new(move |image_data, image_info| {
-                let info = ImageInfo::new(
-                    ISize::new(image_info.width as i32, image_info.height as i32),
-                    ColorType::RGBA8888,
-                    AlphaType::Premul,
-                    None,
-                );
-                let context: *mut Context = context as _;
-                let context = &mut *context;
-                let mut surface =
-                    Surface::new_raster_direct(&info, image_data, None, None).unwrap();
-                let canvas = surface.canvas();
-                let mut paint = skia_safe::Paint::default();
-                paint.set_anti_alias(true);
-                paint.set_style(skia_safe::PaintStyle::Fill);
-                paint.set_blend_mode(skia_safe::BlendMode::Clear);
-                canvas.draw_rect(
-                    Rect::from_xywh(
-                        0f32,
-                        0f32,
-                        image_info.width as f32,
-                        image_info.height as f32,
-                    ),
-                    &paint,
-                );
-                context.draw_on_surface(&mut surface);
+            Box::new(move |cb| {
+                if let Some((image_data, image_info)) = cb {
+                    let mut ct = ColorType::RGBA8888;
+
+                    if image_info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+                        ct = ColorType::RGB565;
+                    }
+                    let info = ImageInfo::new(
+                        ISize::new(image_info.width() as i32, image_info.height() as i32),
+                        ct,
+                        AlphaType::Premul,
+                        None,
+                    );
+                    let context: *mut Context = context as _;
+                    let context = &mut *context;
+                    let mut surface =
+                        Surface::new_raster_direct(&info, image_data, None, None).unwrap();
+                    let canvas = surface.canvas();
+                    let mut paint = skia_safe::Paint::default();
+                    paint.set_anti_alias(true);
+                    paint.set_style(skia_safe::PaintStyle::Fill);
+                    paint.set_blend_mode(skia_safe::BlendMode::Clear);
+                    canvas.draw_rect(
+                        Rect::from_xywh(
+                            0f32,
+                            0f32,
+                            image_info.width() as f32,
+                            image_info.height() as f32,
+                        ),
+                        &paint,
+                    );
+                    context.draw_on_surface(&mut surface);
+                }
             }),
         )
     }

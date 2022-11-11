@@ -23,7 +23,7 @@ android {
 	namespace = 'org.nativescript.canvas'
 	compileSdkVersion 33
 	defaultConfig {
-		minSdkVersion 17
+		minSdkVersion 19
 		targetSdkVersion 33
 		versionCode 1
 		versionName "1.0"
@@ -45,6 +45,8 @@ android {
 	kotlinOptions {
 		jvmTarget = "1.8"
 	}
+	buildToolsVersion '33.0.0'
+	ndkVersion '25.1.8937393'
 }
 
 dependencies {
@@ -73,11 +75,11 @@ apply from: 'publish.gradle'
 cargo {
 	verbose = true
 	exec { spec, toolchain ->
-		if (toolchain.target == "aarch64-linux-android") {
-			spec.environment("RUSTFLAGS", '-C link-arg=-s -C target-feature=-outline-atomics -Ctarget-cpu=native')
-		}else {
-			spec.environment("RUSTFLAGS", '-C link-arg=-s')
-		}
+//		if(toolchain.target == "aarch64-linux-android"){
+//			spec.environment("RUSTFLAGS", '-C link-arg=-s -C target-feature=-outline-atomics')
+//		}else {
+//			spec.environment("RUSTFLAGS", '-C link-arg=-s')
+//		}
 	}
 
 	prebuiltToolchains = true
@@ -85,14 +87,14 @@ cargo {
 	libname = "canvasnative"
 	targets = ["arm", "arm64", "x86","x86_64"]
 	apiLevels = [
-		"arm": 17,
+		"arm": 19,
 		"arm64": 21,
-		"x86": 17,
+		"x86": 19,
 		"x86_64": 21
 	]
 	profile = 'release'
 
-	extraCargoBuildArguments = ['-Z', "build-std=std,panic_abort", '-Z', 'build-std-features=panic_immediate_abort']
+	extraCargoBuildArguments = ['-Z', "build-std=std,panic_abort", '-Z', 'build-std-features=panic_immediate_abort' ,'-vv']
 	rustupChannel = "nightly"
 }
 

@@ -101,9 +101,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
     resize_width: jfloat,
     resize_height: jfloat,
 ) -> jlong {
-    match env.get_direct_buffer_address(image_buffer) {
-        Ok(buf) => image_bitmap::create_image_asset(
-            buf,
+    match (env.get_direct_buffer_address(image_buffer), env.get_direct_buffer_capacity(image_buffer)) {
+        (Ok(buf), Ok(len)) => create_image_asset(
+            unsafe {std::slice::from_raw_parts_mut(buf, len)},
             image_width,
             image_height,
             None,
@@ -114,7 +114,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_width,
             resize_height,
         ),
-        Err(_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+        (_,_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
     }
 }
 
@@ -136,9 +136,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
     resize_width: jfloat,
     resize_height: jfloat,
 ) -> jlong {
-    match env.get_direct_buffer_address(image_buffer) {
-        Ok(buf) => image_bitmap::create_image_asset(
-            buf,
+    match (env.get_direct_buffer_address(image_buffer), env.get_direct_buffer_capacity(image_buffer)) {
+        (Ok(buf), Ok(len)) => create_image_asset(
+            unsafe { std::slice::from_raw_parts_mut(buf, len) },
             image_width,
             image_height,
             Some(skia_safe::Rect::from_xywh(sx, sy, s_width, s_height)),
@@ -149,7 +149,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_width,
             resize_height,
         ),
-        Err(_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+        (_,_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
     }
 }
 
@@ -165,9 +165,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
     resize_width: jfloat,
     resize_height: jfloat,
 ) -> jlong {
-    match env.get_direct_buffer_address(image_buffer) {
-        Ok(buf) => image_bitmap::create_image_asset_encoded(
-            buf,
+    match (env.get_direct_buffer_address(image_buffer), env.get_direct_buffer_capacity(image_buffer)) {
+        ( Ok(buf) ,  Ok(len) )=> image_bitmap::create_image_asset_encoded(
+            unsafe { std::slice::from_raw_parts_mut(buf, len) },
             None,
             flip_y == JNI_TRUE,
             premultiply_alpha,
@@ -176,7 +176,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_width,
             resize_height,
         ),
-        Err(_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+        (_,_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
     }
 }
 
@@ -196,9 +196,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
     resize_width: jfloat,
     resize_height: jfloat,
 ) -> jlong {
-    match env.get_direct_buffer_address(image_buffer) {
-        Ok(buf) => image_bitmap::create_image_asset_encoded(
-            buf,
+    match (env.get_direct_buffer_address(image_buffer), env.get_direct_buffer_capacity(image_buffer)) {
+        (Ok(buf), Ok(len)) => image_bitmap::create_image_asset_encoded(
+            unsafe { std::slice::from_raw_parts_mut(buf, len) },
             Some(skia_safe::Rect::from_xywh(sx, sy, s_width, s_height)),
             flip_y == JNI_TRUE,
             premultiply_alpha,
@@ -207,7 +207,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_width,
             resize_height,
         ),
-        Err(_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+        (_, _) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
     }
 }
 
@@ -391,19 +391,22 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
     resize_width: jfloat,
     resize_height: jfloat,
 ) -> jlong {
-    let result = super::utils::image::get_bytes_from_bitmap(env, bitmap);
-    create_image_asset(
-        result.0.as_slice(),
-        result.1.width as f32,
-        result.1.height as f32,
-        None,
-        flip_y == JNI_TRUE,
-        premultiply_alpha,
-        color_space_conversion,
-        resize_quality,
-        resize_width,
-        resize_height,
-    )
+    if let Some((result, info)) = super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        return create_image_asset(
+            result.as_slice(),
+            info.width() as f32,
+            info.height() as f32,
+            None,
+            flip_y == JNI_TRUE,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+        )
+    }
+
+    Box::into_raw(Box::new(ImageAsset::new())) as i64
 }
 
 #[no_mangle]
@@ -422,19 +425,22 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
     resize_width: jfloat,
     resize_height: jfloat,
 ) -> jlong {
-    let result = super::utils::image::get_bytes_from_bitmap(env, bitmap);
-    create_image_asset(
-        result.0.as_slice(),
-        result.1.width as f32,
-        result.1.height as f32,
-        Some(skia_safe::Rect::from_xywh(sx, sy, s_width, s_height)),
-        flip_y == JNI_TRUE,
-        premultiply_alpha,
-        color_space_conversion,
-        resize_quality,
-        resize_width,
-        resize_height,
-    )
+    if let Some((result, info)) = super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        return create_image_asset(
+            result.as_slice(),
+            info.width() as f32,
+            info.height() as f32,
+            Some(skia_safe::Rect::from_xywh(sx, sy, s_width, s_height)),
+            flip_y == JNI_TRUE,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+        )
+    }
+
+    Box::into_raw(Box::new(ImageAsset::new())) as i64
 }
 
 #[no_mangle]

@@ -26,10 +26,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 		this.canvas = canvas
 	}
 
-	constructor(canvas: TNSCanvas, attrs: Map<String?, Any?>?) {
-		this.canvas = canvas
-	}
-
 	val drawingBufferWidth: Int
 		get() = canvas.drawingBufferWidth
 	val drawingBufferHeight: Int
@@ -40,9 +36,7 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 	fun updateCanvas() {
-		// synchronized (canvasView.lock) {
 		canvas.invalidateState = canvas.invalidateState or TNSCanvas.INVALIDATE_STATE_PENDING
-		//}
 	}
 
 	internal val GL_UNSIGNED_BYTE = 0x1401

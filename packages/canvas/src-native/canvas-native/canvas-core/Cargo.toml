@@ -6,7 +6,7 @@ edition = "2021"
 
 [lib]
 name = "canvasnative"
-crate-type = ["staticlib", "cdylib"]
+crate-type = ["cdylib", "staticlib"]
 
 [build-dependencies]
 bindgen = "0.61.0"
@@ -15,28 +15,27 @@ cc = "1.0.56"
 
 [dependencies]
 regex = "1.5.4"
-base64 = "0.13.0"
-encoding_rs = "0.8.24"
+base64 = "0.13.1"
+encoding_rs = "0.8.31"
 gl-bindings = { version = "0.1.0", path = "../gl-bindings" }
 lazy_static = "1.4.0"
 css-color-parser = "0.1.2"
-reqwest = { version = "0.11.9", features = ["blocking"] }
-phf = { version = "0.11.1", features = ["macros"] }
-rgb = "0.8.25"
 log = "0.4.8"
-stringreader = "0.1.1"
 rand = "0.8.4"
-skia-safe = { version = "0", features = ["gl", "svg"] }
-stb = { git = "https://github.com/triniwiz/stb.git", rev = "156f01b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
-stb-sys = { git = "https://github.com/triniwiz/stb.git", rev = "156f01b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
+#skia-safe = { version = "0", features = ["gl", "svg"] }
+skia-safe = { git = "https://github.com/triniwiz/rust-skia.git", rev = "c4a9382",  features = ["gl", "svg"]}
+stb = { git = "https://github.com/triniwiz/stb.git", rev = "0a34e1d", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
+stb-sys = { git = "https://github.com/triniwiz/stb.git", rev = "0a34e1d", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
 parking_lot = "0.12.1"
 
 [target.'cfg(target_os="android")'.dependencies]
-openssl = { version = "0.10.38", features = ["vendored"] }
-jni = { git = "https://github.com/rib/jni-rs.git", default-features = false }
+#openssl = { version = "0.10.42", features = ["vendored"] }
 android_logger = "0.11.1"
 once_cell = "1.14.0"
 libloading = "0.7"
+ndk = {version = "0.7.0", features = ["bitmap"]}
+jni = "0.20.0"
+
 
 
 [target.'cfg(target_os="ios")'.dependencies]

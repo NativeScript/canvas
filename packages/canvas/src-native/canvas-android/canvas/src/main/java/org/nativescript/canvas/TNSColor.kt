@@ -20,5 +20,7 @@ class TNSColor(var color: String) : TNSColorStyle() {
 		@JvmStatic
 		val white = TNSColor("white")
 
+		val transparentRGBA = "rgba(0,0,0,0)"
+
 	}
 }

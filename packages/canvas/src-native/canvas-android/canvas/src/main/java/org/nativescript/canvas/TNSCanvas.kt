@@ -121,7 +121,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	@JvmField
 	internal var glVersion = 2
 
-	private val mainHandler = Handler(Looper.getMainLooper())
+	private lateinit var mainHandler: Handler
 
 	override fun doFrame(frameTimeNanos: Long) {
 		if (!isHandleInvalidationManually) {
@@ -150,6 +150,16 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		if (isInEditMode) {
 			return
 		}
+
+		var looper = Looper.myLooper()
+
+		if (looper == null){
+			Looper.prepare()
+			looper = Looper.myLooper()
+		}
+
+		mainHandler = Handler(looper!!)
+
 		this.useCpu = useCpu
 		loadLib()
 		setBackgroundColor(Color.TRANSPARENT)
@@ -225,9 +235,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		}
 
 		if (useCpu) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-				cpuHandlerThread?.quitSafely()
-			}
+			cpuHandlerThread?.quitSafely()
 		} else {
 			surface?.gLContext?.destroy()
 		}
@@ -420,7 +428,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	private var needRenderRequest = 0
 
 	fun resizeViewPort() {
-		queueEvent(Runnable { GLES20.glViewport(0, 0, width, height) })
+		queueEvent { GLES20.glViewport(0, 0, width, height) }
 	}
 
 	internal fun initCanvas() {
@@ -555,10 +563,6 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		}
 	}
 
-	fun getContext(type: String): TNSCanvasRenderingContext? {
-		return getContext(type, ContextAttributes.default)
-	}
-
 	private fun handleAttributes(contextAttributes: ContextAttributes) {
 		contextAlpha = contextAttributes.alpha
 		contextAntialias = contextAttributes.antialias
@@ -570,6 +574,10 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		contextXrCompatible = contextAttributes.xrCompatible
 		contextDesynchronized = contextAttributes.desynchronized
 		contextPowerPreference = contextAttributes.powerPreference
+	}
+
+	fun getContext(type: String): TNSCanvasRenderingContext? {
+		return getContext(type, ContextAttributes.default)
 	}
 
 	fun getContext(type: String, contextAttributes: Map<String, Any>?): TNSCanvasRenderingContext? {

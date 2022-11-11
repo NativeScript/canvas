@@ -46,10 +46,16 @@ pub fn ndk() -> String {
 
 fn main() {
     let target_str = std::env::var("TARGET").unwrap();
+    let host_str = std::env::var("HOST").unwrap();
     let mut include_dir = String::from("-I");
     let target: Vec<String> = target_str.split('-').map(|s| s.into()).collect();
+    let host: Vec<String> = host_str.split('-').map(|s| s.into()).collect();
     if target.len() < 3 {
         assert!(!(target.len() < 3), "Failed to parse TARGET {}", target_str);
+    }
+
+    if host.len() < 3 {
+        assert!(!(host.len() < 3), "Failed to parse HOST {}", target_str);
     }
 
     let abi = if target.len() > 3 {
@@ -58,24 +64,38 @@ fn main() {
         None
     };
 
+    let host_abi = if target.len() > 3 {
+        Some(host[3].clone())
+    } else {
+        None
+    };
+
+
     let target = Target {
         architecture: target[0].clone(),
         vendor: target[1].clone(),
         system: target[2].clone(),
         abi,
     };
+
+    let host = Target {
+        architecture: host[0].clone(),
+        vendor: host[1].clone(),
+        system: host[2].clone(),
+        abi: host_abi,
+    };
     println!("cargo:rerun-if-changed=build.rs");
 
     match target.system.borrow() {
         "android" | "androideabi" => {
+            let host = format!("{}-{}", host.system.as_str(), host.architecture.as_str());
+
             // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
             //let build_target;
-            include_dir.push_str(&ndk());
-            // after moving to newer ndk
-            include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
+            include_dir.push_str(&format!("{}/toolchains/llvm/prebuilt/{}/sysroot/usr/include", &ndk(), host));
 
-           include_dir.push_str("/sysroot/usr/include");
             println!("cargo:rustc-link-search=native={}", include_dir);
+
 
             // if target.architecture.eq("armv7") {
             //     build_target = "armv7-linux-androideabi";
@@ -91,10 +111,10 @@ fn main() {
             //     return;
             // }
 
-            println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
-            println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
-            println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
-            println!("cargo:rustc-link-lib=c++_shared");
+           // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
+           // println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
+          //  println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
+           // println!("cargo:rustc-link-lib=c++_shared");
             
                                                      // The bindgen::Builder is the main entry point
                                                      // to bindgen, and lets you build up options for

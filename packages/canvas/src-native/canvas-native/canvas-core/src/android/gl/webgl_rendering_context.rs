@@ -38,10 +38,10 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     bytesPerPixel: jint,
     height: jint,
 ) {
-    if let Ok(buf) = env.get_direct_buffer_address(pixels) {
+    if let (Ok(buf), Ok(len)) = (env.get_direct_buffer_address(pixels), env.get_direct_buffer_capacity(pixels)) {
         crate::common::utils::gl::flip_in_place(
-            buf.as_mut_ptr(),
-            buf.len(),
+            buf,
+            len,
             bytesPerPixel as usize,
             height as usize,
         );
@@ -57,7 +57,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     buffer: JByteBuffer,
 ) {
     if let Ok(buf) = env.get_direct_buffer_address(buffer) {
-        let mut ptr = buf.as_mut_ptr() as *mut c_void;
+        let mut ptr = buf as *mut c_void;
         let ptr_ptr: *mut *mut c_void = &mut ptr;
         gl_bindings::glGetVertexAttribPointerv(
             index as std::os::raw::c_uint,
@@ -314,8 +314,8 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     buffer: JByteBuffer,
     flipY: jboolean,
 ) {
-    match env.get_direct_buffer_address(buffer) {
-        Ok(buf) => {
+    match (env.get_direct_buffer_address(buffer), env.get_direct_buffer_capacity(buffer)) {
+        (Ok(buf), Ok(len)) => {
             texImage2D(
                 target,
                 level,
@@ -326,12 +326,13 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
                 format,
                 image_type,
                 flipY == JNI_TRUE,
-                buf,
+                unsafe {std::slice::from_raw_parts_mut(buf, len)},
             );
         }
-        Err(e) => {
+        (Err(e), _) => {
             log::debug!("get_direct_buffer_address error {:?}", e);
         }
+        (_,_) => {}
     }
 }
 
@@ -403,28 +404,29 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     bitmap: JObject,
     flipY: jboolean,
 ) {
-    let mut data = super::super::utils::image::get_bytes_from_bitmap(env, bitmap);
-    if !data.0.is_empty() {
-        if flipY == JNI_TRUE {
-            crate::common::utils::gl::flip_in_place(
-                data.0.as_mut_ptr(),
-                data.0.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
-                    * data.1.width as u32) as i32 as usize,
-                data.1.height as usize,
+    if let Some((mut data, info)) = super::super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        if !data.is_empty() {
+            if flipY == JNI_TRUE {
+                crate::common::utils::gl::flip_in_place(
+                    data.as_mut_ptr(),
+                    data.len(),
+                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                        * info.width() as u32) as i32 as usize,
+                    info.height() as usize,
+                );
+            }
+            gl_bindings::glTexImage2D(
+                target as u32,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format as u32,
+                image_type as u32,
+                data.as_ptr() as *const c_void,
             );
         }
-        gl_bindings::glTexImage2D(
-            target as u32,
-            level,
-            internalformat,
-            width,
-            height,
-            border,
-            format as u32,
-            image_type as u32,
-            data.0.as_ptr() as *const c_void,
-        );
     }
 }
 
@@ -652,7 +654,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     buffer: JByteBuffer,
     flip_y: jboolean,
 ) {
-    if let Ok(data_array) = env.get_direct_buffer_address(buffer) {
+    if let (Ok(data_array), Ok(len)) = (env.get_direct_buffer_address(buffer), env.get_direct_buffer_capacity(buffer)) {
         texSubImage2D(
             target,
             level,
@@ -663,7 +665,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
             format,
             image_type,
             flip_y == JNI_TRUE,
-            data_array,
+            unsafe {std::slice::from_raw_parts_mut(data_array, len)},
         );
     }
 }
@@ -738,28 +740,29 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     bitmap: JObject,
     flip_y: jboolean,
 ) {
-    let mut data = super::super::utils::image::get_bytes_from_bitmap(env, bitmap);
-    if !data.0.is_empty() {
-        if flip_y == JNI_TRUE {
-            crate::common::utils::gl::flip_in_place(
-                data.0.as_mut_ptr(),
-                data.0.len(),
-                (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
-                    * data.1.width as i32) as i32 as usize,
-                data.1.height as usize,
+    if let Some((mut data, info)) = super::super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        if !data.is_empty() {
+            if flip_y == JNI_TRUE {
+                crate::common::utils::gl::flip_in_place(
+                    data.as_mut_ptr(),
+                    data.len(),
+                    (crate::common::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
+                        * info.width() as i32) as i32 as usize,
+                    info.height() as usize,
+                );
+            }
+            gl_bindings::glTexSubImage2D(
+                target as u32,
+                level,
+                xoffset,
+                yoffset,
+                width,
+                height,
+                format as u32,
+                image_type as u32,
+                data.as_ptr() as *const c_void,
             );
         }
-        gl_bindings::glTexSubImage2D(
-            target as u32,
-            level,
-            xoffset,
-            yoffset,
-            width,
-            height,
-            format as u32,
-            image_type as u32,
-            data.0.as_ptr() as *const c_void,
-        );
     }
 }
 

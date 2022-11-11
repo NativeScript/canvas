@@ -165,7 +165,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
     if api >= 28 {
         let jni_st = crate::android::SURFACE_TEXTURE.get().unwrap();
 
-        let st = jni_st.from_surface_texture().unwrap()(env.get_native_interface() as _, surface_texture_object.into_inner());
+        let st = jni_st.from_surface_texture().unwrap()(env.get_native_interface() as _, surface_texture_object.into_raw());
 
         jni_st.update_tex_image().unwrap()(st);
 
@@ -200,7 +200,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
             method.clazz(), method.id, crate::android::JAVA_VOID_TYPE, &[
                 jni::objects::JValue::Object(surface_texture_object).to_jni(),
                 jni::objects::JValue::Object(
-                    jni::objects::JObject::from(matrix)
+                    JObject::from_raw(matrix)
                 ).to_jni()
             ]
         );

@@ -15,10 +15,8 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by triniwiz on 5/1/20
  */
-@RequiresApi(VERSION_CODES.JELLY_BEAN_MR2)
 class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 	constructor(canvas: TNSCanvas) : super(canvas)
-	constructor(canvas: TNSCanvas, attrs: Map<String?, Any?>?) : super(canvas, attrs)
 
 	fun beginQuery(target: Int, query: Int) {
 		runOnGLThread {

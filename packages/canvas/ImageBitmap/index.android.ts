@@ -18,7 +18,7 @@ const ImageBitmapResizeQuality = {
 	Medium: lazy(() => org.nativescript.canvas.TNSImageBitmapResizeQuality.Medium),
 	High: lazy(() => org.nativescript.canvas.TNSImageBitmapResizeQuality.High),
 	Pixelated: lazy(() => org.nativescript.canvas.TNSImageBitmapResizeQuality.Pixelated),
-}
+};
 export class ImageBitmap extends ImageBitmapBase {
 	private constructor(bitmap: any) {
 		super(bitmap);
@@ -169,19 +169,37 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof Blob) {
-				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
-				org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
-					Array.from(bytes),
-					opts,
-					new org.nativescript.canvas.TNSImageBitmap.Callback({
-						onError(error) {
-							reject(error);
-						},
-						onSuccess(bitmap) {
-							resolve(ImageBitmap.fromNative(bitmap));
-						},
-					})
-				);
+				const bytes = (Blob as any).InternalAccessor.getBuffer(source) as Uint8Array;
+
+				//@ts-ignore
+				if (bytes?.buffer?.nativeObject) {
+					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
+						//@ts-ignore
+						bytes.buffer.nativeObject,
+						opts,
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				} else {
+					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
+						bytes as any,
+						opts,
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				}
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source._asset.native,
@@ -195,9 +213,9 @@ export class ImageBitmap extends ImageBitmapBase {
 						},
 					})
 				);
-			}else if (source instanceof ArrayBuffer){
+			} else if (source instanceof ArrayBuffer) {
 				//@ts-ignore
-				if(source.nativeObject){
+				if (source.nativeObject) {
 					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
 						//@ts-ignore
 						source.nativeObject,
@@ -211,9 +229,9 @@ export class ImageBitmap extends ImageBitmapBase {
 							},
 						})
 					);
-				}else {
+				} else {
 					org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
-						Array.from(new Uint8Array(source as any) as any),
+						source as any,
 						opts,
 						new org.nativescript.canvas.TNSImageBitmap.Callback({
 							onError(error) {
@@ -316,24 +334,42 @@ export class ImageBitmap extends ImageBitmapBase {
 				);
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
-				org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
-					Array.from(bytes),
-					sx,
-					sy,
-					sWidth,
-					sHeight,
-					opts,
-					new org.nativescript.canvas.TNSImageBitmap.Callback({
-						onError(error) {
-							reject(error);
-						},
-						onSuccess(bitmap) {
-							resolve(ImageBitmap.fromNative(bitmap));
-						},
-					})
-				);
+				if (bytes?.buffer?.nativeObject) {
+					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
+						bytes.buffer.nativeObject,
+						sx,
+						sy,
+						sWidth,
+						sHeight,
+						opts,
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				} else {
+					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
+						bytes,
+						sx,
+						sy,
+						sWidth,
+						sHeight,
+						opts,
+						new org.nativescript.canvas.TNSImageBitmap.Callback({
+							onError(error) {
+								reject(error);
+							},
+							onSuccess(bitmap) {
+								resolve(ImageBitmap.fromNative(bitmap));
+							},
+						})
+					);
+				}
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
-				console.log(source._asset.native)
 				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
 					source._asset.native,
 					sx,
@@ -343,18 +379,16 @@ export class ImageBitmap extends ImageBitmapBase {
 					opts,
 					new org.nativescript.canvas.TNSImageBitmap.Callback({
 						onError(error) {
-							console.log('error',error);
 							reject(error);
 						},
 						onSuccess(bitmap) {
-							console.log('bitmap',bitmap);
 							resolve(ImageBitmap.fromNative(bitmap));
 						},
 					})
 				);
-			}else if (source instanceof ArrayBuffer){
+			} else if (source instanceof ArrayBuffer) {
 				//@ts-ignore
-				if(source.nativeObject){
+				if (source.nativeObject) {
 					org.nativescript.canvas.TNSImageBitmap.createFromBufferEncoded(
 						//@ts-ignore
 						source.nativeObject,
@@ -372,9 +406,9 @@ export class ImageBitmap extends ImageBitmapBase {
 							},
 						})
 					);
-				}else {
+				} else {
 					org.nativescript.canvas.TNSImageBitmap.createFromBytesEncoded(
-						Array.from(new Uint8Array(source as any) as any),
+						source as any,
 						sx,
 						sy,
 						sWidth,

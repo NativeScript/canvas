@@ -8,6 +8,7 @@ edition = "2018"
 bindgen = "0.61.0"
 cmake = "0.1.45"
 cc = "1.0.68"
+regex = "1.5.6"
 
 [dependencies]
 

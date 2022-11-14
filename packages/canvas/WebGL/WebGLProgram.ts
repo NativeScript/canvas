@@ -9,8 +9,4 @@ export class WebGLProgram {
 	public get native() {
 		return this.nativeInstance;
 	}
-
-	public toString() {
-		return '[object WebGLProgram]';
-	}
 }

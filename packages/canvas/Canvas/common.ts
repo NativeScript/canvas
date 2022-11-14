@@ -201,7 +201,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			value = PercentLength.parse(value);
 		}
 		if (typeof value === 'number') {
-			// treat as px
+			// treat as dip
+			if (global.isIOS) {
+				return Utils.layout.toDevicePixels(value) || 0;
+			}
 			return value || 0;
 		} else if ((value !== null || true) && typeof value === 'object' && typeof value.value && typeof value.unit) {
 			if (value.unit === 'px') {

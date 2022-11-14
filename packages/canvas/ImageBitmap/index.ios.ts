@@ -7,19 +7,19 @@ export class ImageBitmap extends ImageBitmapBase {
 	private constructor(bitmap: any) {
 		super(bitmap);
 	}
-	#width = -1;
-	#height = -1;
+	_width = -1;
+	_height = -1;
 	get width(): number {
-		if (this.#width === -1) {
-			this.#width = this.native.width;
+		if (this._width === -1) {
+			this._width = this.native.width;
 		}
-		return this.#width;
+		return this._width;
 	}
 	get height(): number {
-		if (this.#height === -1) {
-			this.#height = this.native.height;
+		if (this._height === -1) {
+			this._height = this.native.height;
 		}
-		return this.#height;
+		return this._height;
 	}
 
 	close() {
@@ -134,7 +134,8 @@ export class ImageBitmap extends ImageBitmapBase {
 				});
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
-				TNSImageBitmap.createFromBytesEncoded(Array.from(bytes), opts, (bitmap, error) => {
+				const data = NSData.dataWithData(bytes.buffer);
+				TNSImageBitmap.createFromDataEncoded(data, opts, (bitmap, error) => {
 					if (bitmap) {
 						resolve(ImageBitmap.fromNative(bitmap));
 					} else {
@@ -207,7 +208,8 @@ export class ImageBitmap extends ImageBitmapBase {
 				});
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
-				(TNSImageBitmap as any).createFromBytesEncoded(Array.from(bytes), sx, sy, sWidth, sHeight, opts, (bitmap, error) => {
+				const data = NSData.dataWithData(bytes.buffer);
+				(TNSImageBitmap as any).createFromDataEncoded(data, sx, sy, sWidth, sHeight, opts, (bitmap, error) => {
 					if (bitmap) {
 						resolve(ImageBitmap.fromNative(bitmap));
 					} else {
@@ -223,7 +225,7 @@ export class ImageBitmap extends ImageBitmapBase {
 					}
 				});
 			} else if (source instanceof ArrayBuffer) {
-				(TNSImageBitmap as any).createFromDataEncoded(NSData.dataWithData(source as any), sx, sy, sWidth, sHeight,  opts, (bitmap, error) => {
+				(TNSImageBitmap as any).createFromDataEncoded(NSData.dataWithData(source as any), sx, sy, sWidth, sHeight, opts, (bitmap, error) => {
 					if (bitmap) {
 						resolve(ImageBitmap.fromNative(bitmap));
 					} else {

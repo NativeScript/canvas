@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.opengl.GLES20
 import android.os.Bundle
 import android.os.Handler
@@ -13,9 +12,7 @@ import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import org.nativescript.canvas.TNSImageAsset.Callback
 import kotlinx.coroutines.Dispatchers
@@ -783,6 +780,7 @@ class MainActivity : AppCompatActivity() {
 		ctx.putImageData(imageData, 0F, 0F)
 	}
 
+
 	fun decodeFile() {
 		runBlocking {
 			withContext(Dispatchers.IO) {
@@ -844,7 +842,7 @@ class MainActivity : AppCompatActivity() {
 			Log.d("Canvas", "drawRemoteGLImage ${file.absolutePath}")
 			if (!file.exists()) {
 				val url =
-					URL("https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample6/cubetexture.png")
+					URL("https://m.media-amazon.com/images/M/MV5BYzE5MjY1ZDgtMTkyNC00MTMyLThhMjAtZGI5OTE1NzFlZGJjXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg")//	URL("https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample6/cubetexture.png")
 				val fs = FileOutputStream(file)
 				url.openStream().use { input ->
 					fs.use { output ->
@@ -1543,7 +1541,9 @@ class MainActivity : AppCompatActivity() {
 		//drawRemoteGLImage(canvas!!)
 		//ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 
-		createConicGradient(canvas!!)
+		//print(ctx?.measureText("Osei"))
+
+		//createConicGradient(canvas!!)
 		//drawTriangle(ctx!!)
 
 //		drawText(ctx!!)
@@ -1552,8 +1552,8 @@ class MainActivity : AppCompatActivity() {
 		//	drawFace(ctx!!)
 		//drawPattern(canvas!!)
 		//drawElements(canvas!!)
-	//	drawPatterWithCanvas(canvas!!)
-	//	drawPatterWithCanvasWebGL(canvas!!)
+		//	drawPatterWithCanvas(canvas!!)
+		//	drawPatterWithCanvasWebGL(canvas!!)
 
 		//testClip(canvas!!)
 		//roundRect(canvas!!)
@@ -1584,7 +1584,6 @@ class MainActivity : AppCompatActivity() {
 				 ctx?.fillStyle = CanvasColorStyle.Color(Color.BLACK)
 				 drawImageExample(ctx!!)
 		 },null,4000)*/
-		//drawHouse(ctx!!)
 		//drawSVG(svgView!!)
 		/* val cs = CanvasView(this)
 		 Log.d("com.test", "params " +  cs.layoutParams)
@@ -1655,6 +1654,53 @@ class MainActivity : AppCompatActivity() {
 		fos.close()
 		*/
 
+		//sourceIn(canvas!!)
+	//	drawImageBitmap(canvas!!)
+	}
+
+
+	fun drawImageBitmap(canvas: TNSCanvas) {
+		//	val file = File(filesDir, "random.png")
+		//	file.delete()
+		executor.execute {
+			val url = URL("https://source.unsplash.com/random")
+			val os = ByteArrayOutputStream2()
+			val fs = BufferedOutputStream(os)
+			url.openStream().use { input ->
+				fs.use { output ->
+					input.copyTo(output)
+				}
+			}
+
+			TNSImageBitmap.createFromBytesEncoded(
+				os.buf(),
+				TNSImageBitmap.Options(),
+				object : TNSImageBitmap.Callback {
+					override fun onSuccess(result: TNSImageBitmap) {
+						Log.d("Canvas", "imageBitmap w ${result.width} h ${result.height}")
+
+						val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+						ctx.drawImage(result, 0f, 0f)
+					}
+
+					override fun onError(message: String) {
+						Log.e("Canvas", " bitmap onError $message")
+					}
+				})
+		}
+	}
+
+
+	fun sourceIn(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		ctx.setFillStyleWithString("blue")
+		ctx.fillRect(10f, 10f, 50f, 50f)
+		ctx.globalCompositeOperation = TNSCompositeOperationType.SourceIn
+		ctx.beginPath()
+		ctx.setFillStyleWithString("red")
+		ctx.arc(50f, 50f, 30f, 0f, (2 * Math.PI).toFloat())
+		ctx.fill()
 	}
 
 
@@ -1824,10 +1870,10 @@ class MainActivity : AppCompatActivity() {
 			GLES20.glEnableVertexAttribArray(0)
 			GLES20.glUseProgram(program)
 
-				GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
+			GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
 			//	gl?.updateCanvas()
 
-		//	gl?.drawArrays(GLES20.GL_TRIANGLES, 0, 3)
+			//	gl?.drawArrays(GLES20.GL_TRIANGLES, 0, 3)
 
 		}
 	}
@@ -2472,7 +2518,7 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	fun drawHouse(ctx: TNSCanvasRenderingContext2D) {
-		ctx.shadowBlur = 10.0F
+		/*ctx.shadowBlur = 10.0F
 		ctx.shadowColor = "blue"
 		ctx.shadowOffsetX = 0F
 		ctx.shadowOffsetY = 0F
@@ -2489,6 +2535,29 @@ class MainActivity : AppCompatActivity() {
 		ctx.closePath();
 
 		ctx.stroke();
+
+
+		*/
+
+
+		// Set line width
+		ctx.lineWidth = 10F
+
+		// Wall
+		ctx.strokeRect(75F, 140F, 150F, 110F)
+
+		// Door
+		ctx.fillRect(130F, 190F, 40F, 60F)
+
+		// Roof
+		ctx.beginPath();
+		ctx.moveTo(50F, 140F)
+		ctx.lineTo(150F, 60F)
+		ctx.lineTo(250F, 140F)
+		ctx.closePath()
+		ctx.stroke()
+
+
 	}
 
 
@@ -2638,16 +2707,18 @@ class MainActivity : AppCompatActivity() {
 	fun drawImageFromUrl(canvas: TNSCanvas, src: String) {
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		val asset = TNSImageAsset()
-		asset.loadImageFromUrlAsync(src, object : Callback {
-			override fun onSuccess(value: Any?) {
-				ctx.clearRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
-				ctx.drawImage(asset, 0f, 0f)
-			}
+		asset.loadImageFromUrlAsync(
+			"https://m.media-amazon.com/images/M/MV5BYzE5MjY1ZDgtMTkyNC00MTMyLThhMjAtZGI5OTE1NzFlZGJjXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+			object : Callback {
+				override fun onSuccess(value: Any?) {
+					ctx.clearRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+					ctx.drawImage(asset, 0f, 0f)
+				}
 
-			override fun onError(error: String?) {
-				println(error)
-			}
-		})
+				override fun onError(error: String?) {
+					println(error)
+				}
+			})
 
 	}
 
@@ -2663,7 +2734,7 @@ class MainActivity : AppCompatActivity() {
 				val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
 				StrictMode.setThreadPolicy(policy)
 				val url =
-					URL("https://mdn.mozillademos.org/files/5397/rhino.jpg") // URL("https://mdn.mozillademos.org/files/5397/rhino.jpg")
+					URL("https://m.media-amazon.com/images/M/MV5BYzE5MjY1ZDgtMTkyNC00MTMyLThhMjAtZGI5OTE1NzFlZGJjXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg") // URL("https://mdn.mozillademos.org/files/5397/rhino.jpg")
 				val fs = FileOutputStream(file)
 				url.openStream().use { input ->
 					fs.use { output ->

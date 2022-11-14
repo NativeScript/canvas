@@ -196,7 +196,7 @@ declare var ICanvasColorStyle: {
 	prototype: ICanvasColorStyle;
 };
 
-//@ts-ignore
+// @ts-ignore
 declare const enum ImageSmoothingQuality {
 
 	Low = 0,
@@ -281,6 +281,8 @@ declare class TNSCanvas extends UIView {
 
 	static getViews(): NSMapTable<string, TNSCanvas>;
 
+	static layoutView(view: UIView, width: number, height: number): void;
+
 	static new(): TNSCanvas; // inherited from NSObject
 
 	context: number;
@@ -307,7 +309,11 @@ declare class TNSCanvas extends UIView {
 
 	getContext(type: string): TNSCanvasRenderingContext;
 
-	getContextContextAttributes(type: string, contextAttributes: NSDictionary<any, any>): TNSCanvasRenderingContext;
+	getContextContextAttributes(type: string, contextAttributes: NSDictionary<string, any>): TNSCanvasRenderingContext;
+
+	getContextWithTypeAttributes(type: string, attributes: string): TNSCanvasRenderingContext;
+
+	getContextWithTypeContextAttributes(type: string, contextAttributes: TNSContextAttributes): TNSCanvasRenderingContext;
 
 	getId(): number;
 
@@ -444,6 +450,9 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	getLineDash(): NSArray<number>;
 
+	// @ts-ignore
+	init(canvas: TNSCanvas): this;
+
 	isPointInPath(path: TNSPath2D, x: number, y: number, fillRule: TNSFillRule): boolean;
 
 	isPointInStroke(path: TNSPath2D, x: number, y: number): boolean;
@@ -507,6 +516,8 @@ declare class TNSColor extends NSObject implements ICanvasColorStyle {
 
 	getStyleType(): CanvasColorStyleType;
 
+	// @ts-ignore
+	init(color: string): this;
 }
 
 declare class TNSColorStyle extends NSObject {
@@ -576,6 +587,13 @@ declare class TNSConicGradient extends TNSGradient {
 	static alloc(): TNSConicGradient; // inherited from NSObject
 
 	static new(): TNSConicGradient; // inherited from NSObject
+}
+
+declare class TNSContextAttributes extends NSObject {
+
+	static alloc(): TNSContextAttributes; // inherited from NSObject
+
+	static new(): TNSContextAttributes; // inherited from NSObject
 }
 
 declare class TNSDOMMatrix extends NSObject {
@@ -685,6 +703,10 @@ declare class TNSImageAsset extends NSObject {
 	flipY(): void;
 
 	getRawBytes(): string;
+
+	loadImageFromBuffer(buffer: NSData): boolean;
+
+	loadImageFromBufferAsyncCallback(buffer: NSData, callback: (p1: string) => void): void;
 
 	loadImageFromBytesAsyncWithArrayCallback(array: NSArray<number> | number[], callback: (p1: string) => void): void;
 
@@ -890,6 +912,12 @@ declare class TNSPath2D extends NSObject {
 	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
 
 	rect(x: number, y: number, width: number, height: number): void;
+
+	roundRect(x: number, y: number, width: number, height: number, topLeft: number, topRight: number, bottomRight: number, bottomLeft: number): void;
+
+	roundRectWithRadii(x: number, y: number, width: number, height: number, radii: number): void;
+
+	roundRectWithXYWidthHeightRadii(x: number, y: number, width: number, height: number, radii: NSArray<number> | number[]): void;
 }
 
 declare class TNSPattern extends NSObject implements ICanvasColorStyle {
@@ -953,6 +981,10 @@ declare class TNSSVG extends UIView {
 	src: string;
 
 	srcPath: string;
+
+	toData(): NSData;
+
+	toImage(): UIImage;
 }
 
 declare const enum TNSTextAlignment {
@@ -2713,6 +2745,9 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	hint(target: number, mode: number): void;
 
+	// @ts-ignore
+	init(canvas: TNSCanvas): this;
+
 	isBuffer(buffer: number): boolean;
 
 	isContextLost(): boolean;
@@ -3802,6 +3837,8 @@ declare function path_move_to(path: number, x: number, y: number): void;
 declare function path_quadratic_curve_to(path: number, cpx: number, cpy: number, x: number, y: number): void;
 
 declare function path_rect(path: number, x: number, y: number, width: number, height: number): void;
+
+declare function path_round_rect(path: number, x: number, y: number, width: number, height: number, top_left: number, top_right: number, bottom_right: number, bottom_left: number): void;
 
 declare function pattern_set_transform(pattern: number, matrix: number): void;
 

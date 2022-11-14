@@ -8,4 +8,8 @@ export class CanvasPattern extends CanvasPatternBase {
 	public setTransform(matrix: DOMMatrix) {
 		this.native.setTransformWithMatrix(matrix.native);
 	}
+
+	get [Symbol.toStringTag](){
+		return 'CanvasPattern'
+	}
 }

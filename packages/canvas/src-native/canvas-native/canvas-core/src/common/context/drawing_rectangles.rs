@@ -18,28 +18,30 @@ impl Context {
     }
 
     pub fn fill_rect(&mut self, rect: &Rect) {
+        let path = skia_safe::Path::rect(rect, None);
         if let Some(paint) = self.state.paint.fill_shadow_paint(
             self.state.shadow_offset,
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {
-            self.surface.canvas().draw_rect(rect, &paint);
+            self.surface.canvas().draw_path(&path, &paint);
         }
         self.surface
             .canvas()
-            .draw_rect(rect, self.state.paint.fill_paint());
+            .draw_path(&path, self.state.paint.fill_paint());
     }
 
     pub fn stroke_rect(&mut self, rect: &Rect) {
+        let path = skia_safe::Path::rect(rect, None);
         if let Some(paint) = &mut self.state.paint.stroke_shadow_paint(
             self.state.shadow_offset,
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {
-            self.surface.canvas().draw_rect(rect, &paint);
+            self.surface.canvas().draw_path(&path, &paint);
         }
         self.surface
             .canvas()
-            .draw_rect(rect, self.state.paint.stroke_paint());
+            .draw_path(&path, self.state.paint.stroke_paint());
     }
 }

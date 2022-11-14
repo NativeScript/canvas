@@ -81,5 +81,111 @@ public class TNSPath2D: NSObject {
         path_rect(path, x, y, width, height)
     }
     
+    public func roundRect(
+            _ x: Float, _ y: Float, _ width: Float, _ height: Float,
+            _ topLeft: Float,
+            _ topRight: Float,
+            _ bottomRight: Float,
+            _ bottomLeft: Float
+        ) {
+            path_round_rect(
+                path,
+                x,
+                y,
+                width,
+                height,
+                topLeft,
+                topRight,
+                bottomRight,
+                bottomLeft
+            )
+        }
+
+
+    public func roundRectWithRadii(
+            _ x: Float, _ y: Float, _ width: Float, _ height: Float, _ radii: Float
+        ) {
+            path_round_rect(
+                path,
+                x,
+                y,
+                width,
+                height,
+                radii,
+                radii,
+                radii,
+                radii
+            )
+        }
+    
+    
+    
+    public func roundRect(
+            x: Float, y: Float, width: Float, height: Float, radii: [Float]
+        ) {
+            var size = radii.count
+            var radii = radii
+            if (size == 0) {
+                return
+            }
+            
+            if(size > 4){
+                radii = Array(radii[0...3])
+                size = 4
+            }
+            /*
+            [all-corners]
+            [top-left-and-bottom-right, top-right-and-bottom-left]
+            [top-left, top-right-and-bottom-left, bottom-right]
+            [top-left, top-right, bottom-right, bottom-left]
+             */
+            var topLeft = Float()
+            var topRight = Float()
+            var bottomRight = Float()
+            var bottomLeft = Float()
+
+            switch (size) {
+            case 1: do {
+                    topLeft = radii[0]
+                    topRight = topLeft
+                    bottomRight = topLeft
+                    bottomLeft = topLeft
+                }
+
+            case 2: do {
+                    topLeft = radii[0]
+                    topRight = radii[1]
+                    bottomRight = topLeft
+                    bottomLeft = topRight
+                }
+            case 3: do {
+                    topLeft = radii[0]
+                    topRight = radii[1]
+                    bottomRight = radii[2]
+                    bottomLeft = topRight
+                }
+            case 4: do {
+                    topLeft = radii[0]
+                    topRight = radii[1]
+                    bottomRight = radii[2]
+                    bottomLeft = radii[3]
+                }
+            default: break
+                // noop
+            }
+
+            path_round_rect(
+                path,
+                x,
+                y,
+                width,
+                height,
+                topLeft,
+                topRight,
+                bottomRight,
+                bottomLeft
+            )
+        }
+    
 }
 

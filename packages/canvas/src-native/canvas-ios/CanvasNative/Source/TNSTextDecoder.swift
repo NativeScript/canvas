@@ -40,16 +40,17 @@ public class TNSTextDecoder: NSObject {
         if(raw == nil){
             return ""
         }
-        let data = Data(bytes: raw!.pointee.data, count: Int(raw!.pointee.data_len))
+        let data = NSData(bytesNoCopy: raw!.pointee.data, length: Int(raw!.pointee.data_len), deallocator: { ptr, count in
+            destroy_u8_array(raw)
+        })
         let result = String(bytes: data, encoding: .utf8)
-        destroy_u8_array(raw)
         return (result ?? "") as String
     }
     
     
     
     
-    private func handleRaw(_ raw: UnsafePointer<CChar>?) -> String {
+    private func handleRaw(raw: UnsafePointer<CChar>?) -> String {
         if(raw == nil){
             return ""
         }

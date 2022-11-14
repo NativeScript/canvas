@@ -4,8 +4,9 @@ package org.nativescript.canvas
  * Created by triniwiz on 2019-07-10
  */
 
-@JvmInline
-value class TNSTextMetrics internal constructor(private val metrics: Long) {
+//@JvmInline
+//value
+class TNSTextMetrics internal constructor(private val metrics: Long) {
 	val width: Float
 		get() = nativeGetWidth(metrics)
 	val actualBoundingBoxLeft: Float

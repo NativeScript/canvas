@@ -13,6 +13,9 @@ export class ImageAssetBase {
 		if (obj?.native && obj.constructor.name === 'ImageAsset') return true;
 	}
 
+	get [Symbol.toStringTag]() {
+		return 'ImageAsset';
+	}
 }
 
 export enum ImageAssetSaveFormat {

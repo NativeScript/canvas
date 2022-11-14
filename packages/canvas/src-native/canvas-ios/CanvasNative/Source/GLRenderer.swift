@@ -102,7 +102,7 @@ public enum ContextType: Int, RawRepresentable {
 
 public class GLRenderer: NSObject, GLKViewDelegate {
     
-    public var attributes: NSDictionary = NSMutableDictionary()
+    public var attributes = TNSContextAttributes()
     
     public func updateDirection(_ direction: String) {
         cachedDirection = direction

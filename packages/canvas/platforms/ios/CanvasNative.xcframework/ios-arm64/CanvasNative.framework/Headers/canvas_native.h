@@ -1364,6 +1364,18 @@ void path_rect(long long path, float x, float y, float width, float height);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+void path_round_rect(long long path,
+                     float x,
+                     float y,
+                     float width,
+                     float height,
+                     float top_left,
+                     float top_right,
+                     float bottom_right,
+                     float bottom_left);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 void destroy_path(long long path);
 #endif
 

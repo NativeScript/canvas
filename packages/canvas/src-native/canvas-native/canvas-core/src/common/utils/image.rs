@@ -33,6 +33,23 @@ pub(crate) fn from_image_slice(image_slice: &[u8], width: c_int, height: c_int) 
     Image::from_raster_data(&info, Data::new_copy(image_slice), (width * 4) as usize)
 }
 
+
+pub(crate) fn from_image_slice_non_copy(image_slice: &[u8], width: c_int, height: c_int) -> Option<Image> {
+    let info = ImageInfo::new(
+        ISize::new(width, height),
+        ColorType::RGBA8888,
+        AlphaType::Unpremul,
+        None,
+    );
+    unsafe { Image::from_raster_data(&info, Data::new_bytes(image_slice), (width * 4) as usize) }
+}
+
+
 pub(crate) fn from_image_slice_encoded(image_slice: &[u8]) -> Option<Image> {
     Image::from_encoded(Data::new_copy(image_slice))
+}
+
+
+pub(crate) fn from_image_slice_encoded_non_copy(image_slice: &[u8]) -> Option<Image> {
+    unsafe { Image::from_encoded(Data::new_bytes(image_slice)) }
 }

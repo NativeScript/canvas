@@ -23,7 +23,6 @@ export class URL {
 				} catch (e) {
 					throw new TypeError(`Failed to construct 'URL': Invalid base URL`);
 				}
-
 			}
 			try {
 				if (baseUrl) {
@@ -35,7 +34,6 @@ export class URL {
 				throw new TypeError(`Failed to construct 'URL': Invalid URL`);
 			}
 		}
-
 	}
 
 	get native() {
@@ -44,15 +42,7 @@ export class URL {
 
 	private _updateURL() {
 		const currentURL = this.native;
-		this.#native = new java.net.URI(
-			this.#protocol || currentURL.getProtocol(),
-			`${this.#username}${this.password ? ':' : ''}${this.#password}` || currentURL.getUserInfo(),
-			this.#hostname || currentURL.getHost(),
-			this.#port || currentURL.getPort(),
-			this.#pathname || currentURL.getPath(),
-			this.#search || currentURL.getQuery(),
-			this.#hash || currentURL.getRef()
-		)
+		this.#native = new java.net.URI(this.#protocol || currentURL.getProtocol(), `${this.#username}${this.password ? ':' : ''}${this.#password}` || currentURL.getUserInfo(), this.#hostname || currentURL.getHost(), this.#port || currentURL.getPort(), this.#pathname || currentURL.getPath(), this.#search || currentURL.getQuery(), this.#hash || currentURL.getRef());
 	}
 
 	get hash() {
@@ -73,7 +63,7 @@ export class URL {
 		if (scheme === 'https' && port === 443) {
 			returnPort = false;
 		}
-		return `${this.#native.getHost()}${returnPort && port != -1 ? ':' : ''}${(returnPort && port != -1) ? port : ''}`;
+		return `${this.#native.getHost()}${returnPort && port != -1 ? ':' : ''}${returnPort && port != -1 ? port : ''}`;
 	}
 
 	set host(value: string) {
@@ -82,7 +72,6 @@ export class URL {
 		this.#hostname = url.getHost();
 		this._updateURL();
 	}
-
 
 	get hostname() {
 		return this.#native.getHost();
@@ -94,7 +83,6 @@ export class URL {
 		this._updateURL();
 	}
 
-
 	get href() {
 		return this.#native.toString();
 	}
@@ -103,14 +91,13 @@ export class URL {
 		this.#native = new java.net.URI(value);
 	}
 
-
 	get origin() {
 		let url = this.#native;
 		if (this.#isBlobURL) {
 			url = new java.net.URI(this.#native.toString().replace('blob:', ''));
 		}
 
-		return `${url.getScheme()}://${url.getHost()}`
+		return `${url.getScheme()}://${url.getHost()}`;
 	}
 
 	#password = '';
@@ -124,7 +111,6 @@ export class URL {
 		this._updateURL();
 	}
 
-
 	get pathname() {
 		return this.#native.getPath();
 	}
@@ -135,16 +121,15 @@ export class URL {
 		this._updateURL();
 	}
 
-
 	get port() {
 		const port = this.#native.getPort();
 		if (port === -1) {
-			return ''
+			return '';
 		}
-		return `${port}`
+		return `${port}`;
 	}
 
-	#port = -1
+	#port = -1;
 	set port(value: string) {
 		this.#port = +value;
 		this._updateURL();
@@ -160,24 +145,21 @@ export class URL {
 		this._updateURL();
 	}
 
-
 	get search() {
 		const query = this.#native.getQuery();
 		return query ? `?${query}` : '';
 	}
 
-	#search = ""
+	#search = '';
 	set search(value: string) {
 		this.#search = value;
 		this._updateURL();
 	}
 
-
 	get username() {
 		const user = this.#native.getUserInfo() || '';
 		return user.split(':')[0] || '';
 	}
-
 
 	#username = '';
 	set username(value: string) {
@@ -189,11 +171,9 @@ export class URL {
 		return this.#native.toString();
 	}
 
-
 	toString() {
 		return this.#native.toString();
 	}
-
 
 	public static createObjectURL(object: any, options = null): string {
 		const buf = (Blob as any).InternalAccessor.getBuffer(object);
@@ -211,19 +191,19 @@ export class URL {
 
 			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
 
-			if (isIOS) {
-				NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
-			} else {
-				try {
-					const file = new java.io.File(filePath);
-					const fos = new java.io.FileOutputStream(file);
-					fos.write(Array.from(buf) as any);
-					fos.flush();
-					fos.close();
-				} catch (e) {
-					return null;
-				}
+			try {
+				const file = new java.io.File(filePath);
+				// faster write
+				const channel = new java.io.FileOutputStream(file).getChannel();
+				channel.write(buf);
+				// fos.write(Array.from(buf) as any);
+				// fos.flush();
+				// fos.close();
+			} catch (e) {
+				return null;
 			}
+
+
 			URL.putItem(id, fileName);
 			return `${BLOB_PATH}${id}`;
 		}
@@ -247,7 +227,7 @@ export class URL {
 				const id = url.replace(BLOB_PATH, '');
 				return URL.getItem(id);
 			}
-			return ""
+			return '';
 		}
 	};
 
@@ -264,17 +244,13 @@ export class URL {
 				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
 			}
 
-			(<android.content.SharedPreferences>sharedPreferences).edit().putString(
-				key, value
-			).apply();
+			(<android.content.SharedPreferences>sharedPreferences).edit().putString(key, value).apply();
 		} else {
-
 			if (!sharedPreferences) {
 				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
 			}
 
 			(<NSUserDefaults>sharedPreferences).setObjectForKey(value, key);
-
 		}
 	}
 
@@ -286,11 +262,8 @@ export class URL {
 				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
 			}
 
-			fileName = (<android.content.SharedPreferences>sharedPreferences).getString(
-				key, null
-			);
+			fileName = (<android.content.SharedPreferences>sharedPreferences).getString(key, null);
 		} else {
-
 			if (!sharedPreferences) {
 				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
 			}
@@ -300,12 +273,10 @@ export class URL {
 			}
 
 			fileName = (<NSUserDefaults>sharedPreferences).stringForKey(key);
-
 		}
 
-
 		if (fileName) {
-			return path.join(fileDir.path, fileName)
+			return path.join(fileDir.path, fileName);
 		}
 		return null;
 	}

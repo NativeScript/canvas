@@ -160,11 +160,12 @@ public class TNSCanvas: UIView, RenderListener {
             if let image = cgImage {
                 let width = Int(pixels.size.width)
                 let height = Int(pixels.size.height)
-                var buffer: [UInt8] = Array(repeating: 0, count: width * height * 4)
+                let row = width * 4
+                var buffer: [UInt8] = Array(repeating: 0, count: height * row)
                 let colorSpace = CGColorSpaceCreateDeviceRGB()
-                let imageCtx = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+                let imageCtx = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: row, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
                 imageCtx!.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-                return []
+                return buffer
             }
         }
         return []
@@ -310,6 +311,20 @@ public class TNSCanvas: UIView, RenderListener {
     
     private var lastSize: CGRect = .null
     private var isLoaded: Bool = false
+    
+    public static func layoutView(_ view: UIView, _ width: CGFloat, _ height: CGFloat){
+        let frameSize = view.frame.size
+        
+        if (width == frameSize.width && height == frameSize.height) {
+            return
+        }
+        
+        let frame_origin = view.frame.origin
+        let frame = CGRectMake(frame_origin.x, frame_origin.y, width, height)
+        view.frame = frame
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+    }
   
     public override func layoutSubviews() {
         super.layoutSubviews()
@@ -324,8 +339,10 @@ public class TNSCanvas: UIView, RenderListener {
         if(useCpu){
             if(bounds != .zero || (bounds.size.width > 0 || bounds.size.height > 0)) {
                 if(!isLoaded){
-                    self.isLoaded = true
-                    self.readyListener?.contextReady()
+                    DispatchQueue.main.async {
+                        self.isLoaded = true
+                        self.readyListener?.contextReady()
+                    }
                 }else {
                     renderer.resize()
                 }
@@ -333,8 +350,10 @@ public class TNSCanvas: UIView, RenderListener {
         }else {
             if(renderer.drawingBufferHeight == 0 && renderer.drawingBufferWidth == 0){
                 if(!isLoaded){
-                    self.isLoaded = true
-                   self.readyListener?.contextReady()
+                    DispatchQueue.main.async {
+                        self.isLoaded = true
+                        self.readyListener?.contextReady()
+                    }
                 }
             }else {
                 renderer.resize()
@@ -390,46 +409,39 @@ public class TNSCanvas: UIView, RenderListener {
     
     private var emptyCanvas = TNSCanvasRenderingContext()
     public func getContext(_ type: String) -> TNSCanvasRenderingContext? {
-        let attributes = NSMutableDictionary()
-        if type.elementsEqual("2d"){
-            attributes.setValue(contextAlpha, forKey: "alpha")
-        }else if(type.contains("webgl")){
-            attributes["alpha"] = contextAlpha
-            attributes.setValuesForKeys([
-                "alpha": contextAlpha,
-                "depth": contextDepth,
-                "failIfMajorPerformanceCaveat": contextFailIfMajorPerformanceCaveat,
-                "powerPreference": "default",
-                "premultipliedAlpha": contextPremultipliedAlpha,
-                "preserveDrawingBuffer": contextPreserveDrawingBuffer,
-                "stencil": contextStencil,
-                "desynchronized": contextDesynchronized,
-                "xrCompatible": contextXrCompatible
-            ])
-        }
-        return getContext(type, contextAttributes: attributes)
+        return getContext(type: type, contextAttributes: TNSContextAttributes.defaultInstance)
     }
     
-    private func updateContextAttributes(attributes: [AnyHashable: Any]){
-        self.contextAlpha = attributes["alpha"] as? Bool ?? true
-        self.contextDepth = attributes["depth"] as? Bool ?? true
-        self.contextFailIfMajorPerformanceCaveat = attributes["failIfMajorPerformanceCaveat"] as? Bool ?? false
-        self.contextPowerPreference = attributes["powerPreference"] as? String ?? "default"
-        self.contextPremultipliedAlpha = attributes["premultipliedAlpha"] as? Bool ?? true
-        self.contextPreserveDrawingBuffer = attributes["preserveDrawingBuffer"] as? Bool ?? false
-        self.contextStencil = attributes["stencil"] as? Bool ?? false
-        self.contextDesynchronized = attributes["desynchronized"] as? Bool ?? false
-        self.contextXrCompatible = attributes["xrCompatible"] as? Bool ?? false
+    public func getContext(type: String, attributes: String) -> TNSCanvasRenderingContext? {
+        return getContext(type: type, contextAttributes: TNSContextAttributes.fromJSONString(attributes))
     }
     
-    public func getContext(_ type: String, contextAttributes: NSDictionary) -> TNSCanvasRenderingContext? {
+    
+    public func getContext(_ type: String, contextAttributes: Dictionary<String, Any>) -> TNSCanvasRenderingContext? {
+        return getContext(type: type, contextAttributes: TNSContextAttributes.fromMap(contextAttributes))
+    }
+    
+    
+    private func updateContextAttributes(attributes: TNSContextAttributes){
+        self.contextAlpha = attributes.alpha
+        self.contextDepth = attributes.depth
+        self.contextFailIfMajorPerformanceCaveat = attributes.failIfMajorPerformanceCaveat
+        self.contextPowerPreference = attributes.powerPreference
+        self.contextPremultipliedAlpha = attributes.premultipliedAlpha
+        self.contextPreserveDrawingBuffer = attributes.preserveDrawingBuffer
+        self.contextStencil = attributes.stencil
+        self.contextDesynchronized = attributes.desynchronized
+        self.contextXrCompatible = attributes.xrCompatible
+    }
+    
+    public func getContext(type: String, contextAttributes: TNSContextAttributes) -> TNSCanvasRenderingContext? {
         if useCpu && type != "2d" {
             return nil
         }
         if type.elementsEqual("2d"){
             if(renderingContext2d == nil){
                 renderer.contextType = .twoD
-                updateContextAttributes(attributes: contextAttributes as! [AnyHashable : Any])
+                updateContextAttributes(attributes: contextAttributes)
                 renderer.attributes = contextAttributes
                 renderingContext2d = TNSCanvasRenderingContext2D(self)
                 renderer.setupContext()
@@ -441,7 +453,7 @@ public class TNSCanvas: UIView, RenderListener {
         }else if(type.elementsEqual("webgl")){
             if(renderingContextWebGL == nil){
                 renderer.contextType = .webGL
-                updateContextAttributes(attributes: contextAttributes as! [AnyHashable : Any])
+                updateContextAttributes(attributes: contextAttributes)
                 renderer.attributes = contextAttributes
                 renderingContextWebGL = TNSWebGLRenderingContext(self)
                 renderer.setupContext()
@@ -458,7 +470,7 @@ public class TNSCanvas: UIView, RenderListener {
             
             if(renderingContextWebGL2 == nil){
                 renderer.contextType = .webGL
-                updateContextAttributes(attributes: contextAttributes as! [AnyHashable : Any])
+                updateContextAttributes(attributes: contextAttributes)
                 renderer.attributes = contextAttributes
                 renderingContextWebGL2 = TNSWebGL2RenderingContext(self)
                 renderer.setupContext()

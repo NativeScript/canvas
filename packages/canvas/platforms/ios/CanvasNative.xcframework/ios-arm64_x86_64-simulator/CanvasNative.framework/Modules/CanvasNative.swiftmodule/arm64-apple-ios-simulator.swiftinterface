@@ -273,6 +273,7 @@ import _StringProcessing
   @objc @_Concurrency.MainActor(unsafe) public var fps: Swift.Float {
     @objc get
   }
+  @objc @_Concurrency.MainActor(unsafe) public static func layoutView(_ view: UIKit.UIView, _ width: CoreFoundation.CGFloat, _ height: CoreFoundation.CGFloat)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
   @objc deinit
   @objc @_Concurrency.MainActor(unsafe) public func resume()
@@ -282,7 +283,15 @@ import _StringProcessing
   @objc @_Concurrency.MainActor(unsafe) public func handleMoveOffMain()
   @objc @_Concurrency.MainActor(unsafe) public func handleMoveToMain()
   @objc @_Concurrency.MainActor(unsafe) public func getContext(_ type: Swift.String) -> CanvasNative.TNSCanvasRenderingContext?
-  @objc @_Concurrency.MainActor(unsafe) public func getContext(_ type: Swift.String, contextAttributes: Foundation.NSDictionary) -> CanvasNative.TNSCanvasRenderingContext?
+  @objc @_Concurrency.MainActor(unsafe) public func getContext(type: Swift.String, attributes: Swift.String) -> CanvasNative.TNSCanvasRenderingContext?
+  @objc @_Concurrency.MainActor(unsafe) public func getContext(_ type: Swift.String, contextAttributes: Swift.Dictionary<Swift.String, Any>) -> CanvasNative.TNSCanvasRenderingContext?
+  @objc @_Concurrency.MainActor(unsafe) public func getContext(type: Swift.String, contextAttributes: CanvasNative.TNSContextAttributes) -> CanvasNative.TNSCanvasRenderingContext?
+}
+@_inheritsConvenienceInitializers @objc(TNSContextAttributes) @objcMembers public class TNSContextAttributes : ObjectiveC.NSObject, Swift.Codable {
+  @objc override dynamic public init()
+  @objc deinit
+  public func encode(to encoder: Swift.Encoder) throws
+  required public init(from decoder: Swift.Decoder) throws
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSTextEncoder) public class TNSTextEncoder : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -1366,6 +1375,9 @@ extension Swift.RangeReplaceableCollection {
   @objc public func ellipse(_ x: Swift.Float, _ y: Swift.Float, _ radiusX: Swift.Float, _ radiusY: Swift.Float, _ rotation: Swift.Float, _ startAngle: Swift.Float, _ endAngle: Swift.Float)
   @objc public func ellipse(_ x: Swift.Float, _ y: Swift.Float, _ radiusX: Swift.Float, _ radiusY: Swift.Float, _ rotation: Swift.Float, _ startAngle: Swift.Float, _ endAngle: Swift.Float, _ anticlockwise: Swift.Bool)
   @objc public func rect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float)
+  @objc public func roundRect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float, _ topLeft: Swift.Float, _ topRight: Swift.Float, _ bottomRight: Swift.Float, _ bottomLeft: Swift.Float)
+  @objc public func roundRectWithRadii(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float, _ radii: Swift.Float)
+  @objc public func roundRect(x: Swift.Float, y: Swift.Float, width: Swift.Float, height: Swift.Float, radii: [Swift.Float])
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_OES_texture_half_float) public class TNS_OES_texture_half_float : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -1438,6 +1450,7 @@ extension Swift.RangeReplaceableCollection {
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
   @objc @_Concurrency.MainActor(unsafe) public func toImage() -> UIKit.UIImage?
+  @objc @_Concurrency.MainActor(unsafe) public func toData() -> Foundation.NSData?
   @objc deinit
 }
 @objcMembers @objc(TNSWebGLRenderingContext) public class TNSWebGLRenderingContext : CanvasNative.TNSCanvasRenderingContext {
@@ -2870,7 +2883,7 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   }
 }
 @objc public class GLRenderer : ObjectiveC.NSObject, GLKit.GLKViewDelegate {
-  public var attributes: Foundation.NSDictionary
+  public var attributes: CanvasNative.TNSContextAttributes
   public func updateDirection(_ direction: Swift.String)
   public var invalidateState: Swift.Int {
     get
@@ -2982,6 +2995,8 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   @objc public func loadImageFromUrl(url: Swift.String) -> Swift.Bool
   @objc public func loadImageFromUrlAsync(url: Swift.String, callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromPathAsync(path: Swift.String, callback: @escaping (Swift.String?) -> ())
+  @objc public func loadImageFromBuffer(_ buffer: Foundation.NSData) -> Swift.Bool
+  @objc public func loadImageFromBufferAsync(_ buffer: Foundation.NSData, callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromBytes(array: [Swift.UInt8]) -> Swift.Bool
   @objc public func loadImageFromBytesAsync(array: [Swift.UInt8], callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromImage(image: UIKit.UIImage) -> Swift.Bool

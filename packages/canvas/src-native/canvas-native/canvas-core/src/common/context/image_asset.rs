@@ -10,11 +10,17 @@ use parking_lot::RawMutex;
 use stb::image::{Channels, Data, Info};
 use crate::common::ffi::u8_array::U8Array;
 
+enum ImageAssetInnerData {
+    Stb(Data<u8>),
+    Raw(Vec<u8>),
+}
+
 struct ImageAssetInner {
-    image: Option<Data<u8>>,
+    image: Option<ImageAssetInnerData>,
     info: Option<Info>,
     error: String,
     did_resize: bool,
+    skia_image: Option<skia_safe::Image>,
 }
 
 unsafe impl Send for ImageAssetInner {}
@@ -84,30 +90,59 @@ enum ByteType {
 }
 
 impl ImageAsset {
+    pub(crate) fn skia_image(&self) -> Option<skia_safe::Image> {
+        self.get_lock().skia_image.as_ref().map(|v| {
+            skia_safe::Image::from(v)
+        })
+    }
+
     pub fn copy(asset: &ImageAsset) -> Option<ImageAsset> {
         let asset = asset.0.lock();
         if let Some(data) = &asset.image {
-            return match stb::image::stbi_load_from_memory(data.as_slice(), Channels::RgbAlpha) {
-                None => None,
-                Some((info, data)) => {
+            return match data {
+                ImageAssetInnerData::Stb(data) => {
+                    match stb::image::stbi_load_from_memory(data.as_slice(), Channels::RgbAlpha) {
+                        None => None,
+                        Some((info, data)) => {
+                            let inner = ImageAssetInner {
+                                info: Some(info),
+                                error: String::new(),
+                                did_resize: false,
+                                skia_image: crate::common::utils::image::from_image_slice_non_copy(data.as_slice(), info.width, info.height),
+                                image: Some(ImageAssetInnerData::Stb(data)),
+                            };
+                            return Some(Self(Arc::new(parking_lot::Mutex::new(inner))));
+                        }
+                    }
+                }
+                ImageAssetInnerData::Raw(data) => {
+                    let info = asset.info.clone();
+                    let mut skia_image = None;
+                    if let Some(info) = info.as_ref() {
+                        skia_image = crate::common::utils::image::from_image_slice_non_copy(data.as_slice(), info.width, info.height)
+                    }
+
                     let inner = ImageAssetInner {
-                        image: Some(data),
-                        info: Some(info),
+                        info,
                         error: String::new(),
                         did_resize: false,
+                        skia_image,
+                        image: Some(ImageAssetInnerData::Raw(data.clone())),
                     };
-                    return Some(Self(Arc::new(parking_lot::Mutex::new(inner))));
+                    Some(Self(Arc::new(parking_lot::Mutex::new(inner))))
                 }
-            }
+            };
         }
         None
     }
+
     pub fn new() -> Self {
         Self(Arc::new(parking_lot::Mutex::new(ImageAssetInner {
             image: None,
             info: None,
             error: String::new(),
             did_resize: false,
+            skia_image: None,
         })))
     }
 
@@ -202,8 +237,9 @@ impl ImageAsset {
                 false
             }
             Some((info, data)) => {
+                lock.skia_image = crate::common::utils::image::from_image_slice_non_copy(data.as_slice(), info.width, info.height);
                 lock.info = Some(info);
-                lock.image = Some(data);
+                lock.image = Some(ImageAssetInnerData::Stb(data));
                 return true;
             }
         }
@@ -218,21 +254,40 @@ impl ImageAsset {
         self.load_from_bytes(std::slice::from_raw_parts(buffer, size))
     }
 
-    pub fn load_from_bytes(&mut self, buf: &[u8]) -> bool {
+    pub fn load_from_bytes_graphics(&mut self, buf: Vec<u8>, width: i32, height: i32, components: i32) -> bool {
         let mut lock = self.get_lock();
         if !lock.error.is_empty() {
             lock.error.clear()
         }
         lock.image = None;
 
+        let mut info = Info::default();
+        info.width = width;
+        info.height = height;
+        info.components = components;
+
+        lock.skia_image = crate::common::utils::image::from_image_slice_non_copy(buf.as_slice(), info.width, info.height);
+        lock.info = Some(info);
+        lock.image = Some(ImageAssetInnerData::Raw(buf));
+
+        true
+    }
+
+    pub fn load_from_bytes(&mut self, buf: &[u8]) -> bool {
+        let mut lock = self.get_lock();
+        if !lock.error.is_empty() {
+            lock.error.clear()
+        }
+        lock.image = None;
         match stb::image::stbi_load_from_memory(buf, Channels::RgbAlpha) {
             None => {
                 lock.error.push_str("Failed to decode image");
                 false
             }
             Some((info, data)) => {
+                lock.skia_image = crate::common::utils::image::from_image_slice_non_copy(data.as_slice(), info.width, info.height);
                 lock.info = Some(info);
-                lock.image = Some(data);
+                lock.image = Some(ImageAssetInnerData::Stb(data));
                 return true;
             }
         }
@@ -247,13 +302,24 @@ impl ImageAsset {
         if !lock.error.is_empty() {
             lock.error.clear()
         }
+        let info = lock.info;
         match &mut lock.image {
             Some(image) => {
-                let info = image.info();
-                let done = image.resize(x as i32, y as i32, Channels::RgbAlpha, info);
-                if !done {
-                    lock.error.push_str("Failed to scale Image");
+                let info = info.unwrap_or_default();
+                let done = false;
+
+                match image {
+                    ImageAssetInnerData::Stb(image) => {
+                        image.resize(x as i32, y as i32, Channels::RgbAlpha, info);
+                        if !done {
+                            lock.error.push_str("Failed to scale Image");
+                        }
+                    }
+                    ImageAssetInnerData::Raw(_) => {
+                        // todo
+                    }
                 }
+
                 return done;
             }
             _ => {
@@ -265,15 +331,31 @@ impl ImageAsset {
 
     pub fn get_bytes(&self) -> Option<&[u8]> {
         self.get_lock().image.as_ref().map(|d| {
-            let slice = d.as_slice();
-            unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
+            match d {
+                ImageAssetInnerData::Stb(d) => {
+                    let slice = d.as_slice();
+                    unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
+                }
+                ImageAssetInnerData::Raw(d) => {
+                    let slice = d.as_slice();
+                    unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
+                }
+            }
         })
     }
 
     pub fn get_bytes_mut(&self) -> Option<&mut [u8]> {
         self.get_lock().image.as_mut().map(|d| {
-            let slice = d.as_mut_slice();
-            unsafe { std::slice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len()) }
+            match d {
+                ImageAssetInnerData::Stb(d) => {
+                    let slice = d.as_mut_slice();
+                    unsafe { std::slice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len()) }
+                }
+                ImageAssetInnerData::Raw(d) => {
+                    let slice = d.as_mut_slice();
+                    unsafe { std::slice::from_raw_parts_mut(slice.as_mut_ptr(), slice.len()) }
+                }
+            }
         })
     }
 
@@ -289,6 +371,16 @@ impl ImageAsset {
         }
         match lock.image.as_ref() {
             Some(image) => {
+                let image = match image {
+                    ImageAssetInnerData::Stb(d) => {
+                        let slice = d.as_slice();
+                        unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
+                    }
+                    ImageAssetInnerData::Raw(d) => {
+                        let slice = d.as_slice();
+                        unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
+                    }
+                };
                 let width = self.width() as i32;
                 let height = self.height() as i32;
                 let comp = self.get_info().unwrap_or_default();
@@ -299,7 +391,7 @@ impl ImageAsset {
                         width,
                         height,
                         comp.components,
-                        image.as_slice(),
+                        image,
                         width * comp.components,
                     )
                         .is_some(),
@@ -309,7 +401,7 @@ impl ImageAsset {
                         width,
                         height,
                         comp.components,
-                        image.as_slice(),
+                        image,
                     )
                         .is_some(),
                     OutputFormat::TIFF => false, // todo
@@ -318,7 +410,7 @@ impl ImageAsset {
                         width,
                         height,
                         comp.components,
-                        image.as_slice(),
+                        image,
                         100,
                     )
                         .is_some(),

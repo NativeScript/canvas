@@ -1,6 +1,7 @@
 use std::os::raw::c_float;
 
 use crate::common::context::Context;
+use crate::common::context::paths::path::Path;
 
 pub mod path;
 
@@ -53,8 +54,19 @@ impl Context {
         end_angle: c_float,
         anticlockwise: bool,
     ) {
-        self.path
-            .arc(x, y, radius, start_angle, end_angle, anticlockwise);
+        let mut path = Path::new();
+        path.add_ellipse(
+            (x, y),
+            (radius, radius),
+            0.0,
+            start_angle,
+            end_angle,
+            anticlockwise,
+        );
+        let transform = self.get_transform();
+        self.path.path.add_path(&path.path().with_transform(&transform), (0, 0), skia_safe::path::AddPathMode::Extend);
+        // self.path
+        //     .arc(x, y, radius, start_angle, end_angle, anticlockwise);
     }
 
     #[inline(always)]
@@ -74,21 +86,43 @@ impl Context {
         end_angle: c_float,
         anticlockwise: bool,
     ) {
-        self.path.ellipse(
-            x,
-            y,
-            radius_x,
-            radius_y,
+        let mut path = Path::new();
+        path.add_ellipse(
+            skia_safe::Point::new(x, y),
+            skia_safe::Point::new(radius_x, radius_y),
             rotation,
             start_angle,
             end_angle,
             anticlockwise,
         );
+
+        let transform = self.get_transform();
+        self.path.path.add_path(&path.path().with_transform(&transform), (0, 0), skia_safe::path::AddPathMode::Extend);
+        // self.path.ellipse(
+        //     x,
+        //     y,
+        //     radius_x,
+        //     radius_y,
+        //     rotation,
+        //     start_angle,
+        //     end_angle,
+        //     anticlockwise,
+        // );
     }
 
     #[inline(always)]
     pub fn rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
-        self.path.rect(x, y, width, height);
+
+        let rect = skia_safe::Rect::from_xywh(x, y, width, height);
+        let quad = self.get_transform().map_rect_to_quad(rect);
+        self.path.path.move_to(quad[0]);
+        self.path.path.line_to(quad[1]);
+        self.path.path.line_to(quad[2]);
+        self.path.path.line_to(quad[3]);
+        self.path.path.close();
+
+
+       // self.path.rect(x, y, width, height);
     }
 
     #[inline(always)]

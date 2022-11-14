@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 
 use jni::JNIEnv;
-use jni::objects::{JClass, JString};
+use jni::objects::{JClass, JString, JByteBuffer};
 use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
 
 use crate::common::context::image_asset::{ImageAsset, OutputFormat};
@@ -29,7 +29,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetBytes
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
         match asset.get_bytes() {
-            Some(bytes) =>{
+            Some(bytes) => {
                 if let Ok(array) = env.byte_array_from_slice(bytes) {
                     array
                 } else {
@@ -213,6 +213,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAsse
     }
     JNI_FALSE
 }
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetBuffer(
+    env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    buffer: JByteBuffer,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    match (env.get_direct_buffer_address(buffer), env.get_direct_buffer_capacity(buffer)) {
+        (Ok(buf), Ok(len)) => {
+            let bytes = unsafe { std::slice::from_raw_parts_mut(buf, len) };
+            let asset: *mut ImageAsset = asset as _;
+            let asset = unsafe { &mut *asset };
+            if asset.load_from_bytes(bytes) {
+                return JNI_TRUE;
+            }
+        }
+        _ => {}
+    }
+    JNI_FALSE
+}
+
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetBytes(

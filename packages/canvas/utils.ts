@@ -1,7 +1,7 @@
 export class Utils {
-	static #SUPPORTED_TYPED_ARRAYS_VERSION = '8.2.0';
-	static #IS_SUPPORTED_VERSION = false;
-	static #CHECKED_FOR_SUPPORT = false;
+	static _SUPPORTED_TYPED_ARRAYS_VERSION = '8.2.0';
+	static _IS_SUPPORTED_VERSION = false;
+	static _CHECKED_FOR_SUPPORT = false;
 	public static toJSArray(array) {
 		if (global.isIOS) {
 			if (array instanceof NSArray) {
@@ -40,12 +40,12 @@ export class Utils {
 	}
 
 	public static get IS_SUPPORTED_TYPED_ARRAYS_VERSION() {
-		if (!this.#CHECKED_FOR_SUPPORT) {
+		if (!this._CHECKED_FOR_SUPPORT) {
 			const version = (<any>global).__runtimeVersion;
-			this.#IS_SUPPORTED_VERSION = version.substring(0, version.indexOf('-')) >= this.#SUPPORTED_TYPED_ARRAYS_VERSION;
-			this.#CHECKED_FOR_SUPPORT = true;
+			this._IS_SUPPORTED_VERSION = version.substring(0, version.indexOf('-')) >= this._SUPPORTED_TYPED_ARRAYS_VERSION;
+			this._CHECKED_FOR_SUPPORT = true;
 		}
-		return this.#IS_SUPPORTED_VERSION;
+		return this._IS_SUPPORTED_VERSION;
 	}
 
 	static isTypedArray(value){

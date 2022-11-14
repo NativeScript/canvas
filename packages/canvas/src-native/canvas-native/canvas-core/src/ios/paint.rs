@@ -20,7 +20,7 @@ pub(crate) fn paint_style_set_color_with_string(
         let context: *mut Context = context as _;
         let context = &mut *context;
         let color = CStr::from_ptr(color).to_string_lossy();
-        if let Ok(color) = css_color_parser::Color::from_str(color.as_ref()) {
+        if let Ok(color) = Color::from_str(color.as_ref()) {
             let style = PaintStyle::Color(skia_safe::Color::from_argb(
                 (color.a * 255.0) as u8,
                 color.r,

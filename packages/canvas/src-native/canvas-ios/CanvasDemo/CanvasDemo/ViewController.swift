@@ -4,6 +4,7 @@ import CanvasNative
 class ViewController: UIViewController, TNSCanvasListener {
     func contextReady() {
         print("ready")
+        drawAll()
     }
     
     @IBOutlet weak var canvas1: TNSCanvas!
@@ -500,8 +501,16 @@ class ViewController: UIViewController, TNSCanvasListener {
         //           print("data: ", data)
         //        }
         
-         drawPatterWithCanvas(canvas: canvas1!)
+         //drawPatterWithCanvas(canvas: canvas1!)
         // ellipseExample(ctx: ctx)
+        
+        
+        var ctx = canvas1!.getContext("2d") as! TNSCanvasRenderingContext2D
+        
+        
+    
+                ctx.font = "40px 'Helvetica'"
+                ctx.fillText("Hello World", 10, 60)
         
     }
     

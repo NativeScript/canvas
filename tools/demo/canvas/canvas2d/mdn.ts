@@ -1,4 +1,4 @@
-import { ImageSource } from '@nativescript/core';
+import { Device, ImageSource } from '@nativescript/core';
 import { Canvas, ImageAsset, Path2D } from '@nativescript/canvas';
 import { Screen } from '@nativescript/core';
 import { doesNotReject } from 'assert';
@@ -562,14 +562,18 @@ export function patternWithCanvas(canvas) {
 
 	// Give the pattern a background color and draw an arc
 	patternContext.fillStyle = '#fec';
+
 	patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-	patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+	patternContext.arc(0, 0, 50 * Screen.mainScreen.scale, 0, 0.5 * Math.PI);
 	patternContext.stroke();
 
 	const ctx = canvas.getContext('2d');
 
+	const pattern = ctx.createPattern(patternCanvas, 'repeat');
+
 	// Create our primary canvas and fill it with the pattern
-	ctx.fillStyle = ctx.createPattern(patternCanvas, 'repeat');
+	ctx.fillStyle = pattern;
+
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
 

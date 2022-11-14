@@ -1,4 +1,3 @@
-
 use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass, JObject, ReleaseMode};
 use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_TRUE};
@@ -103,7 +102,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
 ) -> jlong {
     match (env.get_direct_buffer_address(image_buffer), env.get_direct_buffer_capacity(image_buffer)) {
         (Ok(buf), Ok(len)) => create_image_asset(
-            unsafe {std::slice::from_raw_parts_mut(buf, len)},
+            unsafe { std::slice::from_raw_parts_mut(buf, len) },
             image_width,
             image_height,
             None,
@@ -114,7 +113,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_width,
             resize_height,
         ),
-        (_,_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+        (_, _) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
     }
 }
 
@@ -149,7 +148,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_width,
             resize_height,
         ),
-        (_,_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+        (_, _) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
     }
 }
 
@@ -166,7 +165,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
     resize_height: jfloat,
 ) -> jlong {
     match (env.get_direct_buffer_address(image_buffer), env.get_direct_buffer_capacity(image_buffer)) {
-        ( Ok(buf) ,  Ok(len) )=> image_bitmap::create_image_asset_encoded(
+        (Ok(buf), Ok(len)) => image_bitmap::create_image_asset_encoded(
             unsafe { std::slice::from_raw_parts_mut(buf, len) },
             None,
             flip_y == JNI_TRUE,
@@ -176,7 +175,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_width,
             resize_height,
         ),
-        (_,_) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
+        (_, _) => Box::into_raw(Box::new(ImageAsset::new())) as jlong,
     }
 }
 
@@ -403,7 +402,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_quality,
             resize_width,
             resize_height,
-        )
+        );
     }
 
     Box::into_raw(Box::new(ImageAsset::new())) as i64
@@ -437,7 +436,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageBitmap_nativeCreateF
             resize_quality,
             resize_width,
             resize_height,
-        )
+        );
     }
 
     Box::into_raw(Box::new(ImageAsset::new())) as i64

@@ -8,8 +8,8 @@ const background_queue = dispatch_get_global_queue(21, 0);
 
 export class ImageAsset extends ImageAssetBase {
 	//@ts-ignore
-	native: TNSImageAsset
-    constructor(native?: TNSImageAsset) {
+	native: TNSImageAsset;
+	constructor(native?: TNSImageAsset) {
 		super(native || TNSImageAsset.alloc().init());
 	}
 
@@ -45,10 +45,7 @@ export class ImageAsset extends ImageAssetBase {
 		let realPath = path;
 		if (typeof realPath === 'string') {
 			if (realPath.startsWith('~/')) {
-				realPath = filePath.join(
-					knownFolders.currentApp().path,
-					realPath.replace('~/', '')
-				);
+				realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
 			}
 		}
 		return this.native.loadImageFromPathWithPath(realPath);
@@ -59,10 +56,7 @@ export class ImageAsset extends ImageAssetBase {
 			let realPath = path;
 			if (typeof realPath === 'string') {
 				if (realPath.startsWith('~/')) {
-					realPath = filePath.join(
-						knownFolders.currentApp().path,
-						realPath.replace('~/', '')
-					);
+					realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
 				}
 			}
 			this.native.loadImageFromPathAsyncWithPathCallback(realPath, (error) => {
@@ -81,29 +75,29 @@ export class ImageAsset extends ImageAssetBase {
 
 	loadFromNativeAsync(image: any) {
 		return new Promise((resolve, reject) => {
-			this.native.loadImageFromImageAsyncWithImageCallback(image, error => {
+			this.native.loadImageFromImageAsyncWithImageCallback(image, (error) => {
 				if (error) {
 					reject(error);
 					return;
 				}
 				resolve(true);
-			})
+			});
 		});
 	}
 
 	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray): boolean {
-		return this.native.loadImageFromBytesWithArray(Array.from(bytes as any));
+		return this.native.loadImageFromBuffer(NSData.dataWithData(bytes as any));
 	}
 
 	loadFromBytesAsync(bytes: Uint8Array | Uint8ClampedArray) {
 		return new Promise((resolve, reject) => {
-			this.native.loadImageFromBytesAsyncWithArrayCallback(Array.from(bytes as any), (error) => {
+			this.native.loadImageFromBufferAsyncCallback(NSData.dataWithData(bytes as any), (error) => {
 				if (error) {
 					reject(error);
 					return;
 				}
 				resolve(true);
-			})
+			});
 		});
 	}
 

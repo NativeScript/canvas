@@ -3,7 +3,7 @@ import { CanvasGradient } from '../CanvasGradient';
 import { Path2D } from '../Path2D';
 import { ImageData } from '../ImageData';
 import { TextMetrics } from '../TextMetrics';
-import { ImageSource } from '@nativescript/core';
+import { ImageSource, knownFolders } from '@nativescript/core';
 import { ImageAsset } from '../../ImageAsset';
 import { CanvasPattern } from '../CanvasPattern';
 import { Canvas } from '../../Canvas';
@@ -361,7 +361,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 					this.context.globalCompositeOperation = TNSCompositeOperationType.SourceOver;
 					break;
 				case 'source-in':
+					console.log('source-in',this.context.globalCompositeOperation);
 					this.context.globalCompositeOperation = TNSCompositeOperationType.SourceIn;
+					console.log(this.context.globalCompositeOperation);
 					break;
 				case 'source-out':
 					this.context.globalCompositeOperation = TNSCompositeOperationType.SourceOut;
@@ -640,7 +642,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (!img) {
 			return null;
 		}
-
+		
 		let rep;
 		switch (repetition) {
 			case 'no-repeat':

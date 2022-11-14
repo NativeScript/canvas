@@ -18,6 +18,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 // import {ThreeMFLoader} from "three/examples/jsm/loaders/3MFLoader";
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 class IconMesh extends THREE.Mesh {
 	constructor() {
 		super(new THREE.BoxBufferGeometry(5.0, 5.0, 5.0), new THREE.MeshNormalMaterial());
@@ -51,14 +52,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
-		this.threeKeyframes(this.canvas);
-		//this.webGLHelpers(this.canvas);
+		//this.threeKeyframes(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
-		//this.gtlfTonemapping(this.canvas);
+		this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
 		//this.renderVideo();
@@ -90,7 +90,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			windowHalfY = 0;
 
 		const init = () => {
-			context = canvas.getContext('webgl');
+			context = canvas.getContext('webgl2');
 			width = context.drawingBufferWidth;
 			height = context.drawingBufferHeight;
 			camera = new THREE.PerspectiveCamera(75, width / height, 0.25, 20);
@@ -119,7 +119,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					var roughnessMipmapper = new RoughnessMipmapper(renderer);
 
 					var loader = new GLTFLoader().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
+					console.time('GLTFLoader');
 					loader.load('DamagedHelmet.gltf', function (gltf) {
+						console.timeEnd('GLTFLoader');
+						/*
 						gltf.scene.traverse(function (child) {
 							// @ts-ignore
 							if (child.isMesh) {
@@ -127,12 +130,17 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 								// roughnessMipmapper.generateMipmaps( child.material );
 							}
 						});
+						*/
 
+						console.time('GLTFLoader:add');
 						scene.add(gltf.scene);
+						console.timeEnd('GLTFLoader:add');
 
 						roughnessMipmapper.dispose();
 
+						console.time('render');
 						render();
+						console.timeEnd('render');
 					});
 				});
 
@@ -1038,7 +1046,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene = new THREE.Scene();
 			scene.background = new THREE.Color(0xf0f0f0);
 
-			var loader = new THREE.FontLoader();
+			var loader = new FontLoader();
 			loader.load(this.root + '/fonts/helvetiker_regular.typeface.json', function (font) {
 				var xMid, text;
 

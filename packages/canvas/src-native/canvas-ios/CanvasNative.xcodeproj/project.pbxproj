@@ -13,6 +13,7 @@
 		F11C5D142524403700538D04 /* CanvasNative.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F11C5D0A2524403700538D04 /* CanvasNative.framework */; };
 		F11C5D192524403700538D04 /* CanvasNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11C5D182524403700538D04 /* CanvasNativeTests.swift */; };
 		F11C5D1B2524403700538D04 /* CanvasNative.h in Headers */ = {isa = PBXBuildFile; fileRef = F11C5D0D2524403700538D04 /* CanvasNative.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F11D0E6B29206C9E0008A9F4 /* TNSContextAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11D0E6A29206C9E0008A9F4 /* TNSContextAttributes.swift */; };
 		F18165C72621CECC0051F06B /* TNSRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18165C62621CECC0051F06B /* TNSRender.swift */; };
 		F181661D26228CBA0051F06B /* TNSImageBitmap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181661C26228CBA0051F06B /* TNSImageBitmap.swift */; };
 		F181662926230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181662826230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift */; };
@@ -99,6 +100,7 @@
 		F11C5D132524403700538D04 /* CanvasNativeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CanvasNativeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F11C5D182524403700538D04 /* CanvasNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNativeTests.swift; sourceTree = "<group>"; };
 		F11C5D1A2524403700538D04 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F11D0E6A29206C9E0008A9F4 /* TNSContextAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSContextAttributes.swift; sourceTree = "<group>"; };
 		F18165C62621CECC0051F06B /* TNSRender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSRender.swift; sourceTree = "<group>"; };
 		F181661C26228CBA0051F06B /* TNSImageBitmap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmap.swift; sourceTree = "<group>"; };
 		F181662826230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapColorSpaceConversion.swift; sourceTree = "<group>"; };
@@ -219,6 +221,7 @@
 		F11C5D002524403700538D04 = {
 			isa = PBXGroup;
 			children = (
+				F11D0E6A29206C9E0008A9F4 /* TNSContextAttributes.swift */,
 				F181663426230E500051F06B /* TNSImageBitmapOptions.swift */,
 				F181663026230D8C0051F06B /* TNSImageBitmapResizeQuality.swift */,
 				F181662C26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift */,
@@ -462,6 +465,7 @@
 				F1FF6A7525248CFF001DAE0D /* TNS_ANGLE_instanced_arrays.swift in Sources */,
 				F1FF6A7725248CFF001DAE0D /* TNS_EXT_blend_minmax.swift in Sources */,
 				F1FF6A7825248CFF001DAE0D /* TNSCanvas.swift in Sources */,
+				F11D0E6B29206C9E0008A9F4 /* TNSContextAttributes.swift in Sources */,
 				F1FF6A7A25248CFF001DAE0D /* TNSTextEncoder.swift in Sources */,
 				F181662D26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift in Sources */,
 				F1FF6A7B25248CFF001DAE0D /* TNS_WEBGL_compressed_texture_etc1.swift in Sources */,

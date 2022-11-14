@@ -1,10 +1,52 @@
 import { DemoSharedBase } from '../utils';
-import { ImageSource, ObservableArray, Screen, Color, Application } from '@nativescript/core';
+import { ImageSource, ObservableArray, Screen, Color, Application, Utils } from '@nativescript/core';
 import Chart from 'chart.js';
 
 let Matter;
 import { Canvas, ImageAsset } from '@nativescript/canvas';
-import { flappyBird, arc, arcTo, cancelParticlesColor, cancelParticlesLarge, cancelRain, cancelRainbowOctopus, cancelSwarm, clip, cloth, colorRain, createLinearGradient, createRadialGradient, ellipse, fillPath, fillRule, filterBlur, imageBlock, imageSmoothingEnabled, imageSmoothingQuality, isPointInStrokeTouch, lineWidth, march, multiStrokeStyle, particlesColor, particlesLarge, patternWithCanvas, rainbowOctopus, scale, shadowBlur, shadowColor, swarm, textAlign, touchParticles, roundRect, createConicGradient, globalCompositeOperation, shadowOffsetX, shadowOffsetY, strokeStyle, arcToAnimation } from './canvas2d';
+import {
+	flappyBird,
+	arc,
+	arcTo,
+	cancelParticlesColor,
+	cancelParticlesLarge,
+	cancelRain,
+	cancelRainbowOctopus,
+	cancelSwarm,
+	clip,
+	cloth,
+	colorRain,
+	createLinearGradient,
+	createRadialGradient,
+	ellipse,
+	fillPath,
+	fillRule,
+	filterBlur,
+	imageBlock,
+	imageSmoothingEnabled,
+	imageSmoothingQuality,
+	isPointInStrokeTouch,
+	lineWidth,
+	march,
+	multiStrokeStyle,
+	particlesColor,
+	particlesLarge,
+	patternWithCanvas,
+	rainbowOctopus,
+	scale,
+	shadowBlur,
+	shadowColor,
+	swarm,
+	textAlign,
+	touchParticles,
+	roundRect,
+	createConicGradient,
+	globalCompositeOperation,
+	shadowOffsetX,
+	shadowOffsetY,
+	strokeStyle,
+	arcToAnimation,
+} from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
@@ -25,7 +67,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		//this.draw();
+		this.draw();
+		console.log('done');
 	}
 
 	svgViewLoaded(args) {
@@ -330,36 +373,34 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		this.urlUsername();
 	}
 
-
-
 	urlConstructor() {
 		let m = 'https://developer.mozilla.org';
-		let a = new URL("/", m);                                // => 'https://developer.mozilla.org/'
-		let b = new URL(m);                                     // => 'https://developer.mozilla.org/'
+		let a = new URL('/', m); // => 'https://developer.mozilla.org/'
+		let b = new URL(m); // => 'https://developer.mozilla.org/'
 
-		new URL('en-US/docs', b);                      // => 'https://developer.mozilla.org/en-US/docs'
-		let d = new URL('/en-US/docs', b);                     // => 'https://developer.mozilla.org/en-US/docs'
-		new URL('/en-US/docs', d);                     // => 'https://developer.mozilla.org/en-US/docs'
-		new URL('/en-US/docs', a);                     // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('en-US/docs', b); // => 'https://developer.mozilla.org/en-US/docs'
+		let d = new URL('/en-US/docs', b); // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('/en-US/docs', d); // => 'https://developer.mozilla.org/en-US/docs'
+		new URL('/en-US/docs', a); // => 'https://developer.mozilla.org/en-US/docs'
 
-		new URL('/en-US/docs', "https://developer.mozilla.org/fr-FR/toto");
+		new URL('/en-US/docs', 'https://developer.mozilla.org/fr-FR/toto');
 		// => 'https://developer.mozilla.org/en-US/docs'
 
 		try {
-			new URL('/en-US/docs', '');                    // Raises a TypeError exception as '' is not a valid URL
+			new URL('/en-US/docs', ''); // Raises a TypeError exception as '' is not a valid URL
 		} catch (e) {
 			console.log(e);
 		}
 
 		try {
-			new URL('/en-US/docs');                        // Raises a TypeError exception as '/en-US/docs' is not a valid URL
+			new URL('/en-US/docs'); // Raises a TypeError exception as '/en-US/docs' is not a valid URL
 		} catch (e) {
 			console.log(e);
 		}
-		new URL('http://www.example.com',);           // => 'http://www.example.com/'
-		new URL('http://www.example.com', b);          // => 'http://www.example.com/'
+		new URL('http://www.example.com'); // => 'http://www.example.com/'
+		new URL('http://www.example.com', b); // => 'http://www.example.com/'
 
-		new URL("//foo.com", "https://example.com")    // => 'https://foo.com' (see relative URLs)
+		new URL('//foo.com', 'https://example.com'); // => 'https://foo.com' (see relative URLs)
 	}
 	urlHash() {
 		const url = new URL('https://developer.mozilla.org/en-US/docs/Web/API/URL/href#Examples');
@@ -389,13 +430,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	urlOrigin() {
-		const url = new URL("blob:https://mozilla.org:443/")
+		const url = new URL('blob:https://mozilla.org:443/');
 		console.log(url.origin); // Logs 'https://mozilla.org'
 	}
 
 	urlPassword() {
 		const url = new URL('https://anonymous:flabada@developer.mozilla.org/en-US/docs/Web/API/URL/password');
-		console.log(url.password) // Logs "flabada"
+		console.log(url.password); // Logs "flabada"
 	}
 
 	urlPathname() {
@@ -420,18 +461,16 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	urlUsername() {
 		const url = new URL('https://anonymous:flabada@developer.mozilla.org/en-US/docs/Web/API/URL/username');
-		console.log(url.username) // Logs "anonymous"
+		console.log(url.username); // Logs "anonymous"
 	}
 
 	draw() {
 		//this.urlTests();
 		//const str = new java.lang.String()
 
-
 		// const ctx = this.canvas.getContext('2d');
 		// ctx.font = '50px serif';
 		// ctx.fillText('Hello world', 50, 90);
-
 
 		/*	const ctx = this.canvas.getContext('2d');
 	
@@ -446,7 +485,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	// Unmoved square
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
-
 
 		//filterBlur(this.canvas);
 		//handleVideo(this.canvas);
@@ -507,8 +545,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
-		 //arcToAnimation(this.canvas);
-		 //ellipse(this.canvas);
+		//arcToAnimation(this.canvas);
+		//ellipse(this.canvas);
 		//fillPath(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
@@ -580,19 +618,124 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		// triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		this.zen3dGeometryLoaderGltf(this.canvas);
+		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
-		//this.drawRandomFullscreenImage(this.canvas);
+		this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
+		//this.drawHouse(this.canvas);
+		//this.bitmapExample(this.canvas);
+		//this.sourceIn(this.canvas);
+	}
+
+	sourceIn(canvas) {
+		var ctx = canvas.getContext('2d');
+		ctx.fillStyle = 'blue';
+		ctx.fillRect(10, 10, 50, 50);
+		ctx.globalCompositeOperation = 'source-in';
+		ctx.beginPath();
+		ctx.fillStyle = 'red';
+		ctx.arc(50, 50, 30, 0, 2 * Math.PI);
+		ctx.fill();
+	}
+
+	drawHouse(canvas) {
+		const ctx = canvas.getContext('2d');
+		// Set line width
+		ctx.lineWidth = 10;
+
+		// Wall
+		ctx.strokeRect(75, 140, 150, 110);
+
+		// Door
+		ctx.fillRect(130, 190, 40, 60);
+
+		// Roof
+		ctx.beginPath();
+		ctx.moveTo(50, 140);
+		ctx.lineTo(150, 60);
+		ctx.lineTo(250, 140);
+		ctx.closePath();
+		ctx.stroke();
+	}
+
+	bitmapExample(canvas) {
+		const text = 'hello osei fortune, please fix the bitmap issue, you are the one, you will fix it';
+		const fontWidth = 54;
+		const fontHeight = 71;
+		const letters = 40;
+		let x = [];
+		let char = [];
+		let position = letters;
+		let bitmap = new Image();
+		let context;
+		let wiggle, counter;
+
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+
+		context = canvas.getContext('2d');
+
+		bitmap.onload = () => {
+			initScroll();
+		};
+
+		bitmap.src = '~/assets/file-assets/2d/fontinlined.png';
+
+		x = [];
+		char = [];
+		wiggle = 30;
+		counter = 0;
+
+		function initScroll() {
+			for (let n = 0; n < letters; n++) {
+				char[n] = text.charCodeAt(n) - 97;
+				x[n] = n * fontWidth;
+			}
+
+			scroll();
+		}
+		const width = canvas.width;
+		const height = canvas.height;
+		function scroll() {
+			context.clearRect(0, 0, width, height);
+			for (let n = 0; n < letters; n++) {
+				for (let xC = 0; xC < fontWidth; xC++) {
+					let y = 200 + wiggle * Math.sin((x[n] + xC) / (width / 10) + counter / 4.0 / 6.28) * 2;
+					context.drawImage(bitmap, char[n] * fontWidth + xC, 0, 1, fontHeight, x[n] + xC, y, 1, fontHeight);
+				}
+				x[n] -= 4;
+				if (x[n] < -fontWidth) {
+					x[n] = (letters - 1) * fontWidth;
+					char[n] = text.charCodeAt(position) - 97;
+					position++;
+					if (position > text.length) position = 0;
+				}
+			}
+			counter += 2.5;
+			requestAnimationFrame(scroll);
+		}
 	}
 
 	drawRandomFullscreenImage(canvas) {
 		const width = Screen.mainScreen.widthPixels;
 		const height = Screen.mainScreen.heightPixels;
 		const ctx = canvas.getContext('2d');
+		/*
+			 
+			*/
+
+		// ImageSource.fromUrl(`https://source.unsplash.com/random/${width}x${height}`)
+		// .then(source =>{
+		// 	console.time('drawImage');
+		// 	ctx.drawImage(source, 0, 0);
+		// 	console.timeEnd('drawImage');
+		// })
+
 		const image = new Image();
 		image.onload = () => {
+			console.time('drawImage');
 			ctx.drawImage(image, 0, 0);
+			console.timeEnd('drawImage');
 		};
 		image.src = `https://source.unsplash.com/random/${width}x${height}`;
 	}

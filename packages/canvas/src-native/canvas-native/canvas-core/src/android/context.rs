@@ -1079,6 +1079,34 @@ fn draw_image(
     }
 }
 
+fn draw_image_with_image(
+    context: jlong,
+    image: Option<&skia_safe::image::Image>,
+    sx: jfloat,
+    sy: jfloat,
+    s_width: jfloat,
+    s_height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+    d_width: jfloat,
+    d_height: jfloat,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        if let Some(image) = image {
+            context.draw_image(
+                image,
+                Rect::from_xywh(sx, sy, s_width, s_height),
+                Rect::from_xywh(dx, dy, d_width, d_height),
+            )
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithBitmap(
     env: JNIEnv,
@@ -1148,23 +1176,38 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.get_bytes().unwrap_or_default();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
-        draw_image(
-            context,
-            bytes,
-            width,
-            height,
-            0.0,
-            0.0,
-            width,
-            height,
-            dx,
-            dy,
-            width,
-            height,
-        );
+        if let Some(image) = asset.skia_image() {
+            draw_image_with_image(
+                context,
+                Some(&image),
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                width,
+                height,
+            );
+        } else {
+            let bytes = asset.get_bytes().unwrap_or_default();
+            draw_image(
+                context,
+                bytes,
+                width,
+                height,
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                width,
+                height,
+            );
+        }
     }
 }
 
@@ -1243,23 +1286,39 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.get_bytes().unwrap_or_default();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
-        draw_image(
-            context,
-            bytes,
-            width,
-            height,
-            0.0,
-            0.0,
-            width,
-            height,
-            dx,
-            dy,
-            d_width,
-            d_height,
-        );
+
+        if let Some(image) = asset.skia_image() {
+            draw_image_with_image(
+                context,
+                Some(&image),
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        } else {
+            let bytes = asset.get_bytes().unwrap_or_default();
+            draw_image(
+                context,
+                bytes,
+                width,
+                height,
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        }
     }
 }
 
@@ -1280,20 +1339,20 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     d_width: jfloat,
     d_height: jfloat,
 ) {
-    if let Some((bytes, _)) = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap){
+    if let Some((bytes, _)) = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap) {
         draw_image(
-        context,
-        bytes.as_slice(),
-        width,
-        height,
-        sx,
-        sy,
-        s_width,
-        s_height,
-        dx,
-        dy,
-        d_width,
-        d_height,
+            context,
+            bytes.as_slice(),
+            width,
+            height,
+            sx,
+            sy,
+            s_width,
+            s_height,
+            dx,
+            dy,
+            d_width,
+            d_height,
         )
     }
 }
@@ -1319,23 +1378,38 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.get_bytes().unwrap_or_default();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
-        draw_image(
-            context,
-            bytes,
-            width,
-            height,
-            sx,
-            sy,
-            s_width,
-            s_height,
-            dx,
-            dy,
-            d_width,
-            d_height,
-        );
+       if let Some(image) = asset.skia_image() {
+           draw_image_with_image(
+               context,
+               Some(&image),
+               sx,
+               sy,
+               s_width,
+               s_height,
+               dx,
+               dy,
+               d_width,
+               d_height,
+           );
+       }else {
+           let bytes = asset.get_bytes().unwrap_or_default();
+           draw_image(
+               context,
+               bytes,
+               width,
+               height,
+               sx,
+               sy,
+               s_width,
+               s_height,
+               dx,
+               dy,
+               d_width,
+               d_height,
+           );
+       }
     }
 }
 

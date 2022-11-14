@@ -2,6 +2,7 @@ import {DemoSharedBase} from '../utils';
 
 let TNSPIXIApplication;
 import {Screen} from '@nativescript/core';
+import { Canvas } from '@nativescript/canvas';
 
 let PIXI;
 
@@ -18,7 +19,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 
 	canvasLoaded(args) {
-		const canvas = args.object;
+		const canvas = args.object as Canvas;
 		TNSPIXIApplication = require('@nativescript/canvas-pixi').TNSPIXIApplication;
 		PIXI = require('pixi.js');
 		//  ctx.font = 'normal normal normal 150px times'
@@ -31,7 +32,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
-		// bitmapFont(canvas);
+		//this.bitmapFont(canvas);
 		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);

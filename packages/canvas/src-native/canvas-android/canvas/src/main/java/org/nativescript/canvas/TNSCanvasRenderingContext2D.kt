@@ -1,7 +1,6 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
-import android.util.Log
 import java.util.concurrent.TimeUnit
 
 /**
@@ -1023,6 +1022,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	fun drawImage(asset: TNSImageAsset, dx: Float, dy: Float) {
 		canvas.queueEvent {
+			val time = System.currentTimeMillis()
 			nativeDrawImageDxDyWithAsset(
 				canvas.nativeContext,
 				asset.nativeImageAsset,
@@ -1273,19 +1273,20 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	}
 
 
-	fun measureText(text: String?): TNSTextMetrics {
+	@JvmOverloads
+	fun measureText(text: String? = ""): TNSTextMetrics {
 		return TNSTextMetrics(nativeMeasureText(canvas.nativeContext, text ?: ""))
 	}
 
 	fun createImageData(width: Int, height: Int): TNSImageData {
-		return TNSImageData(width, height, nativeCreateImageData(canvas.nativeContext, width, height))
+		return TNSImageData(width, height, nativeCreateImageData(width, height))
 	}
 
 	fun createImageData(imageData: TNSImageData): TNSImageData {
 		val width = imageData.width
 		val height = imageData.height
 		return TNSImageData(
-			width, height, nativeCreateImageData(canvas.nativeContext, width, height)
+			width, height, nativeCreateImageData(width, height)
 		)
 	}
 
@@ -1868,7 +1869,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		private external fun nativeMeasureText(context: Long, text: String): Long
 
 		@JvmStatic
-		private external fun nativeCreateImageData(context: Long, width: Int, height: Int): Long
+		private external fun nativeCreateImageData(width: Int, height: Int): Long
 
 		@JvmStatic
 		private external fun nativePutImageData(

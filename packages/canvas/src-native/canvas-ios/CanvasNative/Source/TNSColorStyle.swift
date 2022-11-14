@@ -216,7 +216,7 @@ public class TNSColorStyle: NSObject {
             }
             let scale = Float(UIScreen.main.scale)
 //            let result = context_create_pattern(context, &ss, UInt(ss.count),Int32(canvas.width * scale), Int32(canvas.height * scale) , Repetition(rawValue: pattern.rawValue))
-            let result = context_create_pattern_encoded(context, &ss, UInt(ss.count), Repetition(rawValue: pattern.rawValue))
+            let result = context_create_pattern(context, &ss, UInt(ss.count),Int32(canvas.width * scale), Int32(canvas.height * scale), Repetition(rawValue: pattern.rawValue))
             if result == 0 {
                 return nil
             }else {

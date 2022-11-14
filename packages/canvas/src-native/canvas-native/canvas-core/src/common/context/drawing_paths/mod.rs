@@ -23,7 +23,7 @@ impl Context {
         }
 
         if let Some(rule) = fill_rule {
-            let path = path.unwrap_or(self.path.borrow_mut());
+            let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
             path.path.set_fill_type(rule.to_fill_type());
 
             if let Some(paint) = self.state.paint.fill_shadow_paint(
@@ -36,7 +36,7 @@ impl Context {
 
             self.surface.canvas().draw_path(&path.path, &paint);
         } else {
-            let path = path.unwrap_or(self.path.borrow_mut());
+            let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
             if let Some(paint) = self.state.paint.stroke_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,

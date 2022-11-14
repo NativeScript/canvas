@@ -313,7 +313,7 @@ SWIFT_CLASS_NAMED("TNSAnimationFrame")
 @class TNSDOMMatrix;
 @protocol TNSCanvasListener;
 @class TNSCanvasRenderingContext;
-@class NSDictionary;
+@class TNSContextAttributes;
 
 SWIFT_CLASS_NAMED("TNSCanvas")
 @interface TNSCanvas : UIView
@@ -343,6 +343,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (nonnull instancetype)initWithFrame:(CGRect)frame useCpu:(BOOL)useCpu OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <TNSCanvasListener> _Nullable)listener;
 @property (nonatomic, readonly) float fps;
++ (void)layoutView:(UIView * _Nonnull)view :(CGFloat)width :(CGFloat)height;
 - (void)layoutSubviews;
 - (void)resume;
 - (void)pause;
@@ -351,7 +352,9 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (void)handleMoveOffMain;
 - (void)handleMoveToMain;
 - (TNSCanvasRenderingContext * _Nullable)getContext:(NSString * _Nonnull)type SWIFT_WARN_UNUSED_RESULT;
-- (TNSCanvasRenderingContext * _Nullable)getContext:(NSString * _Nonnull)type contextAttributes:(NSDictionary * _Nonnull)contextAttributes SWIFT_WARN_UNUSED_RESULT;
+- (TNSCanvasRenderingContext * _Nullable)getContextWithType:(NSString * _Nonnull)type attributes:(NSString * _Nonnull)attributes SWIFT_WARN_UNUSED_RESULT;
+- (TNSCanvasRenderingContext * _Nullable)getContext:(NSString * _Nonnull)type contextAttributes:(NSDictionary<NSString *, id> * _Nonnull)contextAttributes SWIFT_WARN_UNUSED_RESULT;
+- (TNSCanvasRenderingContext * _Nullable)getContextWithType:(NSString * _Nonnull)type contextAttributes:(TNSContextAttributes * _Nonnull)contextAttributes SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)initWithFrame:(CGRect)frame SWIFT_UNAVAILABLE;
 @end
 
@@ -548,6 +551,12 @@ typedef SWIFT_ENUM_NAMED(NSInteger, TNSCompositeOperationType, "TNSCompositeOper
 };
 
 
+SWIFT_CLASS_NAMED("TNSContextAttributes")
+@interface TNSContextAttributes : NSObject
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+
 SWIFT_CLASS_NAMED("TNSDOMMatrix")
 @interface TNSDOMMatrix : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
@@ -590,6 +599,7 @@ SWIFT_CLASS_NAMED("TNSFramebufferAttachmentParameter")
 - (nonnull instancetype)initWithIsTexture:(BOOL)isTexture isRenderbuffer:(BOOL)isRenderbuffer value:(int32_t)value OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@class NSData;
 @class UIImage;
 enum TNSImageAssetFormat : NSInteger;
 
@@ -603,6 +613,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, strong) dispatch_queue_t _Null
 - (BOOL)loadImageFromUrlWithUrl:(NSString * _Nonnull)url SWIFT_WARN_UNUSED_RESULT;
 - (void)loadImageFromUrlAsyncWithUrl:(NSString * _Nonnull)url callback:(void (^ _Nonnull)(NSString * _Nullable))callback;
 - (void)loadImageFromPathAsyncWithPath:(NSString * _Nonnull)path callback:(void (^ _Nonnull)(NSString * _Nullable))callback;
+- (BOOL)loadImageFromBuffer:(NSData * _Nonnull)buffer SWIFT_WARN_UNUSED_RESULT;
+- (void)loadImageFromBufferAsync:(NSData * _Nonnull)buffer callback:(void (^ _Nonnull)(NSString * _Nullable))callback;
 - (BOOL)loadImageFromBytesWithArray:(NSArray<NSNumber *> * _Nonnull)array SWIFT_WARN_UNUSED_RESULT;
 - (void)loadImageFromBytesAsyncWithArray:(NSArray<NSNumber *> * _Nonnull)array callback:(void (^ _Nonnull)(NSString * _Nullable))callback;
 - (BOOL)loadImageFromImageWithImage:(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
@@ -627,7 +639,6 @@ typedef SWIFT_ENUM_NAMED(NSInteger, TNSImageAssetFormat, "TNSImageAssetFormat", 
 };
 
 @class TNSImageBitmapOptions;
-@class NSData;
 
 SWIFT_CLASS_NAMED("TNSImageBitmap")
 @interface TNSImageBitmap : NSObject
@@ -745,6 +756,9 @@ SWIFT_CLASS_NAMED("TNSPath2D")
 - (void)ellipse:(float)x :(float)y :(float)radiusX :(float)radiusY :(float)rotation :(float)startAngle :(float)endAngle;
 - (void)ellipse:(float)x :(float)y :(float)radiusX :(float)radiusY :(float)rotation :(float)startAngle :(float)endAngle :(BOOL)anticlockwise;
 - (void)rect:(float)x :(float)y :(float)width :(float)height;
+- (void)roundRect:(float)x :(float)y :(float)width :(float)height :(float)topLeft :(float)topRight :(float)bottomRight :(float)bottomLeft;
+- (void)roundRectWithRadii:(float)x :(float)y :(float)width :(float)height :(float)radii;
+- (void)roundRectWithX:(float)x y:(float)y width:(float)width height:(float)height radii:(NSArray<NSNumber *> * _Nonnull)radii;
 @end
 
 typedef SWIFT_ENUM(NSInteger, TNSPatternRepetition, open) {
@@ -772,6 +786,7 @@ SWIFT_CLASS_NAMED("TNSSVG")
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (void)drawRect:(CGRect)rect;
 - (UIImage * _Nullable)toImage SWIFT_WARN_UNUSED_RESULT;
+- (NSData * _Nullable)toData SWIFT_WARN_UNUSED_RESULT;
 @end
 
 typedef SWIFT_ENUM_NAMED(NSInteger, TNSTextAlignment, "TNSTextAlignment", open) {

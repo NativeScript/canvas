@@ -37,7 +37,7 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 
 		engine.inputElement = this.canvas;
 
-		 sceneToRender = this.createChart(engine);
+		sceneToRender = this.createChart(engine);
 		//sceneToRender = this.createWaterScene(engine);
 		//sceneToRender = this.createScene(engine);
 		//sceneToRender = this.createSkullScene(engine);

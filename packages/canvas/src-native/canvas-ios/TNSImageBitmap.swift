@@ -17,7 +17,7 @@ public class TNSImageBitmap: NSObject {
     private static var _queue: DispatchQueue?
     public static var queue: DispatchQueue {
         if(_queue == nil){
-            _queue = DispatchQueue(label: "TNSImageBitmapQueue", qos: .background, attributes:.concurrent, autoreleaseFrequency: .never, target: nil)
+            _queue = DispatchQueue(label: "TNSImageBitmapQueue", qos: .default, attributes:.concurrent, autoreleaseFrequency: .never, target: nil)
         }
         return _queue!
     }
@@ -254,6 +254,7 @@ public class TNSImageBitmap: NSObject {
         _ callback:@escaping (TNSImageBitmap?, String?) -> Void
     ) {
         TNSImageBitmap.queue.async {
+            let data = data
             var bytes = [UInt8](data)
             let result = image_bitmap_create_from_bytes(&bytes, UInt(bytes.count), imageWidth, imageHeight, options.flipY,
                                                         options.premultiplyAlpha.rawValue,
@@ -283,6 +284,7 @@ public class TNSImageBitmap: NSObject {
         _ callback:@escaping (TNSImageBitmap?, String?) -> Void
     ) {
         TNSImageBitmap.queue.async {
+            let data = data
             var bytes = [UInt8](data)
             let result = image_bitmap_create_from_bytes_src_rect(&bytes, UInt(bytes.count), imageWidth, imageHeight,
                                                                  sx,
@@ -315,6 +317,7 @@ public class TNSImageBitmap: NSObject {
         _ callback:@escaping (TNSImageBitmap?, String?) -> Void
     ) {
         TNSImageBitmap.queue.async {
+            let data = data
             var bytes = [UInt8](data)
             let result = image_bitmap_create_from_bytes_encoded(&bytes, UInt(bytes.count),options.flipY,
                                                         options.premultiplyAlpha.rawValue,
@@ -342,6 +345,7 @@ public class TNSImageBitmap: NSObject {
         _ callback:@escaping (TNSImageBitmap?, String?) -> Void
     ) {
         TNSImageBitmap.queue.async {
+            let data = data
             var bytes = [UInt8](data)
             let result = image_bitmap_create_from_bytes_encoded_src_rect(&bytes, UInt(bytes.count),
                                                                  sx,

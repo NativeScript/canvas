@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import java.io.ByteArrayOutputStream
 import java.net.URL
+import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -195,6 +196,22 @@ class TNSImageAsset {
 		} else nativeLoadAssetBytes(nativeImageAsset, buffer)
 	}
 
+	fun loadImageFromBufferAsync(buffer: ByteBuffer, callback: Callback) {
+		executorService.submit {
+			if (nativeLoadAssetBuffer(nativeImageAsset, buffer)) {
+				callback.onSuccess(true)
+			} else {
+				callback.onError(error)
+			}
+		}
+	}
+
+	fun loadImageFromBuffer(buffer: ByteBuffer): Boolean {
+		return if (nativeImageAsset == 0L) {
+			false
+		} else nativeLoadAssetBuffer(nativeImageAsset, buffer)
+	}
+
 	fun loadImageFromBytesAsync(buffer: ByteArray, callback: Callback) {
 		executorService.submit {
 			if (nativeLoadAssetBytes(nativeImageAsset, buffer)) {
@@ -292,6 +309,9 @@ class TNSImageAsset {
 
 		@JvmStatic
 		private external fun nativeLoadAssetBytes(asset: Long, buffer: ByteArray): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadAssetBuffer(asset: Long, buffer: ByteBuffer): Boolean
 
 		@JvmStatic
 		private external fun nativeDestroy(asset: Long)

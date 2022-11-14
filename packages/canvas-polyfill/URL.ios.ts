@@ -153,20 +153,10 @@ export class URL {
 
 			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
 
-			if (isIOS) {
-				NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
-			} else {
-				try {
-					const file = new java.io.File(filePath);
-					const fos = new java.io.FileOutputStream(file);
-					fos.write(Array.from(buf) as any);
-					fos.flush();
-					fos.close();
-				} catch (e) {
-					return null;
-				}
-			}
+			NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
+			
 			URL.putItem(id, fileName);
+			console.timeEnd('createObjectURL');
 			return `${BLOB_PATH}${id}`;
 		}
 		return null;

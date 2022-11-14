@@ -83,7 +83,6 @@ const PatternRepetition = {
 
 export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	public static isDebug = false;
-	static colorCache = {};
 	private context: org.nativescript.canvas.TNSCanvasRenderingContext2D;
 
 	constructor(context: any) {
@@ -583,9 +582,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	createImageData(width: number | ImageData, height?: number): ImageData {
 		this.log('createImageData value:', arguments);
 		if (width instanceof ImageData) {
-			return ImageData.from(width);
+			return ImageData.fromNative(this.context.createImageData(width.native));
 		} else {
-			return ImageData.fromNative(this.context.createImageData(width as any, height));
+			return ImageData.fromNative(this.context.createImageData(width, height));
 		}
 	}
 

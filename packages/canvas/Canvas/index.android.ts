@@ -10,7 +10,6 @@ export function createSVGMatrix(): DOMMatrix {
 
 export * from './common';
 
-
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContext: CanvasRenderingContext2D;
@@ -195,17 +194,7 @@ export class Canvas extends CanvasBase {
 			return null;
 		}
 		const getNativeOptions = (options) => {
-			const jsOptions = this._handleContextOptions(type, options);
-			const opts = new java.util.HashMap();
-			Object.keys(jsOptions).forEach((key) => {
-				let val = jsOptions[key];
-				if (typeof val === 'boolean') {
-					opts.put(key, java.lang.Boolean.valueOf(String(val)));
-				} else {
-					opts.put(key, val);
-				}
-			});
-			return opts;
+			return JSON.stringify(this._handleContextOptions(type, options));
 		};
 
 		if (typeof type === 'string') {
@@ -278,9 +267,7 @@ export class Canvas extends CanvasBase {
 		};
 	}
 
+	setPointerCapture() {}
 
-	setPointerCapture() { }
-
-	releasePointerCapture() { }
-
+	releasePointerCapture() {}
 }

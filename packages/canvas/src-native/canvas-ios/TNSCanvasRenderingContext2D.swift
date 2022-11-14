@@ -308,7 +308,6 @@
         }
         
         public func rect(_ x: Float,_ y: Float,_ width: Float,_ height: Float) {
-            ensureIsContextIsCurrent()
             context_rect(canvas.context, x, y, width, height)
         }
         
@@ -320,7 +319,6 @@
                 bottomRight: Float,
                 bottomLeft: Float
             ) {
-                ensureIsContextIsCurrent()
                 context_round_rect(canvas.context, x, y, width, height, topLeft,
                                    topRight,
                                    bottomRight,
@@ -330,7 +328,6 @@
             public func roundRect(
                 x: Float, y: Float, width: Float, height: Float, radii: Float
             ) {
-                ensureIsContextIsCurrent()
                 context_round_rect(canvas.context, x, y, width, height, radii, radii, radii, radii)
             }
 
@@ -342,8 +339,6 @@
                 if (size == 0) {
                     return
                 }
-                ensureIsContextIsCurrent()
-                
                 /*
                 [all-corners]
                 [top-left-and-bottom-right, top-right-and-bottom-left]
@@ -445,22 +440,18 @@
         }
         
         public func beginPath() {
-            ensureIsContextIsCurrent()
             context_begin_path(canvas.context)
         }
         
         public func moveTo(_ x: Float,_ y: Float) {
-            ensureIsContextIsCurrent()
             context_move_to(canvas.context, x, y)
         }
         
         public func lineTo(_ x: Float,_ y: Float) {
-            ensureIsContextIsCurrent()
             context_line_to(canvas.context, x, y)
         }
         
         public func closePath() {
-            ensureIsContextIsCurrent()
             context_close_path(canvas.context)
         }
         
@@ -469,17 +460,14 @@
         }
         
         public func arc(_ x: Float,_ y: Float,_ radius: Float,_ startAngle: Float,_ endAngle: Float,_ anticlockwise: Bool) {
-            ensureIsContextIsCurrent()
             context_arc(canvas.context, x, y, radius, startAngle, endAngle, anticlockwise)
         }
         
         public func arcTo(_ x1: Float,_  y1: Float,_ x2: Float,_ y2: Float,_ radius: Float) {
-            ensureIsContextIsCurrent()
             context_arc_to(canvas.context, x1, y1, x2, y2, radius)
         }
         
         public func bezierCurveTo(_ cp1x: Float,_ cp1y: Float,_ cp2x: Float,_ cp2y: Float,_ x: Float,_ y: Float) {
-            ensureIsContextIsCurrent()
             context_bezier_curve_to(canvas.context, cp1x, cp1y, cp2x, cp2y, x, y)
         }
         
@@ -488,12 +476,10 @@
         }
         
         public func ellipse(_ x: Float,_  y: Float,_ radiusX: Float,_ radiusY: Float,_ rotation: Float,_ startAngle: Float,_ endAngle: Float,_ anticlockwise: Bool) {
-            ensureIsContextIsCurrent()
             context_ellipse(canvas.context, x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise)
         }
         
         public func clip(){
-            ensureIsContextIsCurrent()
             context_clip_rule(canvas.context, FillRule(rawValue: TNSFillRule.NonZero.rawValue))
         }
         
@@ -505,18 +491,15 @@
             }
         }
         @nonobjc func clip(rule: TNSFillRule) {
-            ensureIsContextIsCurrent()
             context_clip_rule(canvas.context, FillRule(rawValue: rule.rawValue))
         }
         
         @nonobjc func clip(path: TNSPath2D) {
-            ensureIsContextIsCurrent()
             context_clip(canvas.context,path.path,FillRule(rawValue: TNSFillRule.NonZero.rawValue))
         }
         
         
         public func clip(_ path:TNSPath2D ,_  rule: TNSFillRule ) {
-            ensureIsContextIsCurrent()
             context_clip(canvas.context,path.path,FillRule(rawValue: rule.rawValue))
         }
         
@@ -529,9 +512,7 @@
         }
         
         public func setLineDash(_ segments: [Float32]){
-            var array: [Float32] = []
-            array.append(contentsOf: segments)
-            context_set_line_dash(canvas.context, &array, UInt(segments.count))
+            context_set_line_dash(canvas.context, segments, UInt(segments.count))
         }
         
         public func getCanvas() -> TNSCanvas {
@@ -587,28 +568,23 @@
         
         
         public func setTransform(_ a: Float,_ b: Float,_ c: Float,_ d: Float, _ e: Float,_ f: Float){
-            ensureIsContextIsCurrent()
             context_set_transform(canvas.context, a, b, c, d, e, f)
             
         }
         
         public func scale(_ x: Float,_ y: Float){
-            ensureIsContextIsCurrent()
             context_scale(canvas.context, x, y)
         }
         
         public func rotate(_ angle: Float){
-            ensureIsContextIsCurrent()
             context_rotate(canvas.context, angle)
         }
         
         public func translate(_ x: Float,_ y: Float){
-            ensureIsContextIsCurrent()
             context_translate(canvas.context, x, y)
         }
         
         public func quadraticCurveTo(_ cpx: Float,_ cpy: Float,_ x: Float,_ y: Float){
-            ensureIsContextIsCurrent()
             context_quadratic_curve_to(canvas.context, cpx, cpy, x, y)
         }
         
@@ -784,26 +760,21 @@
         }
         
         public func save() {
-            ensureIsContextIsCurrent()
             context_save(canvas.context)
         }
         
         public func restore() {
-            ensureIsContextIsCurrent()
             context_restore(canvas.context)
         }
         
         public func measureText(_ text: String) -> TNSTextMetrics {
-            ensureIsContextIsCurrent()
             return TNSTextMetrics(metrics: context_measure_text(canvas.context, text))
         }
         public func resetTransform(){
-            ensureIsContextIsCurrent()
             context_reset_transform(canvas.context)
         }
         
         public func transform(_ a: Float,_ b: Float,_ c: Float,_ d: Float,_ e: Float,_ f: Float){
-            ensureIsContextIsCurrent()
             context_transform(canvas.context, a, b, c, d, e, f)
         }
         

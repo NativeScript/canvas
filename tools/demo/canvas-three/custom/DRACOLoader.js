@@ -37,7 +37,7 @@ class DRACOLoader extends Loader {
 	this.decoderBinary = null;
 	this.decoderPending = null;
 
-	this.workerLimit = 1;
+	this.workerLimit = 10;
 	this.workerPool = [];
 	this.workerNextTaskID = 1;
 	this.workerSourceURL = '';
@@ -387,6 +387,13 @@ class DRACOLoader extends Loader {
 DRACOLoader.DRACOWorker = function () {
 	var decoderConfig;
 	var decoderPending;
+	
+	if(global.isAndroid){
+		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DEFAULT);
+	}else if (global.isIOS){
+		NSThread.currentThread.threadPriority = .8;
+		NSThread.currentThread.qualityOfService = NSQualityOfServiceUserInitiated;
+	}
 
 	onmessage = function (e) {
 		var message = e.data;

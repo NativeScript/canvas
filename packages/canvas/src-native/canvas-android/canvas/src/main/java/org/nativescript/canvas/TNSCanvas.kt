@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.ViewCompat
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
@@ -235,7 +236,9 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		}
 
 		if (useCpu) {
-			cpuHandlerThread?.quitSafely()
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+				cpuHandlerThread?.quitSafely()
+			}
 		} else {
 			surface?.gLContext?.destroy()
 		}
@@ -559,6 +562,48 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				return attr
 			}
 
+			@JvmStatic
+			fun fromString(contextAttributes: String): ContextAttributes {
+				val attr = ContextAttributes()
+				try {
+					val json = JSONObject(contextAttributes)
+					for (key in json.keys()) {
+						val value = json[key]
+						when (key) {
+							"alpha" -> {
+								attr.alpha = value as Boolean
+							}
+							"antialias" -> {
+								attr.antialias = value as Boolean
+							}
+							"depth" -> {
+								attr.depth = value as Boolean
+							}
+							"failIfMajorPerformanceCaveat" -> {
+								attr.failIfMajorPerformanceCaveat = value as Boolean
+							}
+							"premultipliedAlpha" -> {
+								attr.premultipliedAlpha = value as Boolean
+							}
+							"preserveDrawingBuffer" -> {
+								attr.preserveDrawingBuffer = value as Boolean
+							}
+							"stencil" -> {
+								attr.stencil = value as Boolean
+							}
+							"xrCompatible" -> {
+								attr.xrCompatible = value as Boolean
+							}
+							"desynchronized" -> attr.desynchronized = value as Boolean
+							"powerPreference" -> attr.powerPreference = value as String?
+							else -> {
+							}
+						}
+					}
+				}catch (_: Exception){}
+				return attr
+			}
+
 			val default = ContextAttributes()
 		}
 	}
@@ -578,6 +623,15 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 	fun getContext(type: String): TNSCanvasRenderingContext? {
 		return getContext(type, ContextAttributes.default)
+	}
+
+	fun getContext(type: String, contextAttributes: String?): TNSCanvasRenderingContext? {
+		val attr = if (contextAttributes != null) {
+			ContextAttributes.fromString(contextAttributes)
+		} else {
+			ContextAttributes.default
+		}
+		return getContext(type, attr)
 	}
 
 	fun getContext(type: String, contextAttributes: Map<String, Any>?): TNSCanvasRenderingContext? {

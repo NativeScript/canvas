@@ -6084,6 +6084,48 @@
           },
           {
             "kind": "Function",
+            "name": "layoutView",
+            "printedName": "layoutView(_:_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "UIView",
+                "printedName": "UIKit.UIView",
+                "usr": "c:objc(cs)UIView"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CGFloat",
+                "printedName": "CoreGraphics.CGFloat",
+                "usr": "s:14CoreFoundation7CGFloatV"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "CGFloat",
+                "printedName": "CoreGraphics.CGFloat",
+                "usr": "s:14CoreFoundation7CGFloatV"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSCanvas(cm)layoutView:::",
+            "mangledName": "$s12CanvasNative9TNSCanvasC10layoutViewyySo6UIViewC_12CoreGraphics7CGFloatVAItFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "Custom",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
             "name": "layoutSubviews",
             "printedName": "layoutSubviews()",
             "children": [
@@ -6280,6 +6322,49 @@
           {
             "kind": "Function",
             "name": "getContext",
+            "printedName": "getContext(type:attributes:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "CanvasNative.TNSCanvasRenderingContext?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "TNSCanvasRenderingContext",
+                    "printedName": "CanvasNative.TNSCanvasRenderingContext",
+                    "usr": "c:@M@CanvasNative@objc(cs)TNSCanvasRenderingContext"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSCanvas(im)getContextWithType:attributes:",
+            "mangledName": "$s12CanvasNative9TNSCanvasC10getContext4type10attributesAA0c9RenderingE0CSgSS_SStF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "Custom",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "getContext",
             "printedName": "getContext(_:contextAttributes:)",
             "children": [
               {
@@ -6304,14 +6389,70 @@
               },
               {
                 "kind": "TypeNominal",
-                "name": "NSDictionary",
-                "printedName": "Foundation.NSDictionary",
-                "usr": "c:objc(cs)NSDictionary"
+                "name": "Dictionary",
+                "printedName": "[Swift.String : Any]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "String",
+                    "printedName": "Swift.String",
+                    "usr": "s:SS"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "ProtocolComposition",
+                    "printedName": "Any"
+                  }
+                ],
+                "usr": "s:SD"
               }
             ],
             "declKind": "Func",
             "usr": "c:@M@CanvasNative@objc(cs)TNSCanvas(im)getContext:contextAttributes:",
-            "mangledName": "$s12CanvasNative9TNSCanvasC10getContext_17contextAttributesAA0c9RenderingE0CSgSS_So12NSDictionaryCtF",
+            "mangledName": "$s12CanvasNative9TNSCanvasC10getContext_17contextAttributesAA0c9RenderingE0CSgSS_SDySSypGtF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "Custom",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "getContext",
+            "printedName": "getContext(type:contextAttributes:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "CanvasNative.TNSCanvasRenderingContext?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "TNSCanvasRenderingContext",
+                    "printedName": "CanvasNative.TNSCanvasRenderingContext",
+                    "usr": "c:@M@CanvasNative@objc(cs)TNSCanvasRenderingContext"
+                  }
+                ],
+                "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "TNSContextAttributes",
+                "printedName": "CanvasNative.TNSContextAttributes",
+                "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSCanvas(im)getContextWithType:contextAttributes:",
+            "mangledName": "$s12CanvasNative9TNSCanvasC10getContext4type17contextAttributesAA0c9RenderingE0CSgSS_AA010TNSContextH0CtF",
             "moduleName": "CanvasNative",
             "declAttributes": [
               "Custom",
@@ -6435,6 +6576,183 @@
             "printedName": "__DefaultCustomPlaygroundQuickLookable",
             "usr": "s:s38__DefaultCustomPlaygroundQuickLookableP",
             "mangledName": "$ss38__DefaultCustomPlaygroundQuickLookableP"
+          }
+        ]
+      },
+      {
+        "kind": "Import",
+        "name": "Foundation",
+        "printedName": "Foundation",
+        "declKind": "Import",
+        "moduleName": "CanvasNative",
+        "declAttributes": [
+          "RawDocComment"
+        ]
+      },
+      {
+        "kind": "TypeDecl",
+        "name": "TNSContextAttributes",
+        "printedName": "TNSContextAttributes",
+        "children": [
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "TNSContextAttributes",
+                "printedName": "CanvasNative.TNSContextAttributes",
+                "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes(im)init",
+            "mangledName": "$s12CanvasNative20TNSContextAttributesCACycfc",
+            "moduleName": "CanvasNative",
+            "overriding": true,
+            "implicit": true,
+            "objc_name": "init",
+            "declAttributes": [
+              "Dynamic",
+              "ObjC",
+              "Override"
+            ],
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Constructor",
+            "name": "init",
+            "printedName": "init(from:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "TNSContextAttributes",
+                "printedName": "CanvasNative.TNSContextAttributes",
+                "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Decoder",
+                "printedName": "Swift.Decoder",
+                "usr": "s:s7DecoderP"
+              }
+            ],
+            "declKind": "Constructor",
+            "usr": "s:12CanvasNative20TNSContextAttributesC4fromACs7Decoder_p_tKcfc",
+            "mangledName": "$s12CanvasNative20TNSContextAttributesC4fromACs7Decoder_p_tKcfc",
+            "moduleName": "CanvasNative",
+            "implicit": true,
+            "declAttributes": [
+              "Required"
+            ],
+            "throwing": true,
+            "init_kind": "Designated"
+          },
+          {
+            "kind": "Function",
+            "name": "encode",
+            "printedName": "encode(to:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Encoder",
+                "printedName": "Swift.Encoder",
+                "usr": "s:s7EncoderP"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:12CanvasNative20TNSContextAttributesC6encode2toys7Encoder_p_tKF",
+            "mangledName": "$s12CanvasNative20TNSContextAttributesC6encode2toys7Encoder_p_tKF",
+            "moduleName": "CanvasNative",
+            "implicit": true,
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          }
+        ],
+        "declKind": "Class",
+        "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes",
+        "mangledName": "$s12CanvasNative20TNSContextAttributesC",
+        "moduleName": "CanvasNative",
+        "objc_name": "TNSContextAttributes",
+        "declAttributes": [
+          "AccessControl",
+          "ObjCMembers",
+          "ObjC"
+        ],
+        "superclassUsr": "c:objc(cs)NSObject",
+        "inheritsConvenienceInitializers": true,
+        "superclassNames": [
+          "ObjectiveC.NSObject"
+        ],
+        "conformances": [
+          {
+            "kind": "Conformance",
+            "name": "Decodable",
+            "printedName": "Decodable",
+            "usr": "s:Se",
+            "mangledName": "$sSe"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Encodable",
+            "printedName": "Encodable",
+            "usr": "s:SE",
+            "mangledName": "$sSE"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Equatable",
+            "printedName": "Equatable",
+            "usr": "s:SQ",
+            "mangledName": "$sSQ"
+          },
+          {
+            "kind": "Conformance",
+            "name": "Hashable",
+            "printedName": "Hashable",
+            "usr": "s:SH",
+            "mangledName": "$sSH"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CVarArg",
+            "printedName": "CVarArg",
+            "usr": "s:s7CVarArgP",
+            "mangledName": "$ss7CVarArgP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObservingPublishing",
+            "printedName": "_KeyValueCodingAndObservingPublishing",
+            "usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+            "mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "_KeyValueCodingAndObserving",
+            "printedName": "_KeyValueCodingAndObserving",
+            "usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+            "mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomStringConvertible",
+            "printedName": "CustomStringConvertible",
+            "usr": "s:s23CustomStringConvertibleP",
+            "mangledName": "$ss23CustomStringConvertibleP"
+          },
+          {
+            "kind": "Conformance",
+            "name": "CustomDebugStringConvertible",
+            "printedName": "CustomDebugStringConvertible",
+            "usr": "s:s28CustomDebugStringConvertibleP",
+            "mangledName": "$ss28CustomDebugStringConvertibleP"
           }
         ]
       },
@@ -31012,6 +31330,185 @@
               "ObjC"
             ],
             "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "roundRect",
+            "printedName": "roundRect(_:_:_:_:_:_:_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSPath2D(im)roundRect::::::::",
+            "mangledName": "$s12CanvasNative9TNSPath2DC9roundRectyySf_S7ftF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "roundRectWithRadii",
+            "printedName": "roundRectWithRadii(_:_:_:_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSPath2D(im)roundRectWithRadii:::::",
+            "mangledName": "$s12CanvasNative9TNSPath2DC18roundRectWithRadiiyySf_S4ftF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "roundRect",
+            "printedName": "roundRect(x:y:width:height:radii:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Float",
+                "printedName": "Swift.Float",
+                "usr": "s:Sf"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Array",
+                "printedName": "[Swift.Float]",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Float",
+                    "printedName": "Swift.Float",
+                    "usr": "s:Sf"
+                  }
+                ],
+                "usr": "s:Sa"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSPath2D(im)roundRectWithX:y:width:height:radii:",
+            "mangledName": "$s12CanvasNative9TNSPath2DC9roundRect1x1y5width6height5radiiySf_S3fSaySfGtF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
           }
         ],
         "declKind": "Class",
@@ -33074,6 +33571,37 @@
             "declKind": "Func",
             "usr": "c:@M@CanvasNative@objc(cs)TNSSVG(im)toImage",
             "mangledName": "$s12CanvasNative6TNSSVGC7toImageSo7UIImageCSgyF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "Custom",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "toData",
+            "printedName": "toData()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Foundation.NSData?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSData",
+                    "printedName": "Foundation.NSData",
+                    "usr": "c:objc(cs)NSData"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSSVG(im)toData",
+            "mangledName": "$s12CanvasNative6TNSSVGC6toDataSo6NSDataCSgyF",
             "moduleName": "CanvasNative",
             "declAttributes": [
               "Custom",
@@ -65170,14 +65698,14 @@
             "children": [
               {
                 "kind": "TypeNominal",
-                "name": "NSDictionary",
-                "printedName": "Foundation.NSDictionary",
-                "usr": "c:objc(cs)NSDictionary"
+                "name": "TNSContextAttributes",
+                "printedName": "CanvasNative.TNSContextAttributes",
+                "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes"
               }
             ],
             "declKind": "Var",
-            "usr": "s:12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvp",
-            "mangledName": "$s12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvp",
+            "usr": "s:12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvp",
+            "mangledName": "$s12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvp",
             "moduleName": "CanvasNative",
             "declAttributes": [
               "HasInitialValue",
@@ -65193,14 +65721,14 @@
                 "children": [
                   {
                     "kind": "TypeNominal",
-                    "name": "NSDictionary",
-                    "printedName": "Foundation.NSDictionary",
-                    "usr": "c:objc(cs)NSDictionary"
+                    "name": "TNSContextAttributes",
+                    "printedName": "CanvasNative.TNSContextAttributes",
+                    "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvg",
-                "mangledName": "$s12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvg",
+                "usr": "s:12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvg",
+                "mangledName": "$s12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvg",
                 "moduleName": "CanvasNative",
                 "implicit": true,
                 "accessorKind": "get"
@@ -65217,14 +65745,14 @@
                   },
                   {
                     "kind": "TypeNominal",
-                    "name": "NSDictionary",
-                    "printedName": "Foundation.NSDictionary",
-                    "usr": "c:objc(cs)NSDictionary"
+                    "name": "TNSContextAttributes",
+                    "printedName": "CanvasNative.TNSContextAttributes",
+                    "usr": "c:@M@CanvasNative@objc(cs)TNSContextAttributes"
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvs",
-                "mangledName": "$s12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvs",
+                "usr": "s:12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvs",
+                "mangledName": "$s12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvs",
                 "moduleName": "CanvasNative",
                 "implicit": true,
                 "accessorKind": "set"
@@ -65241,8 +65769,8 @@
                   }
                 ],
                 "declKind": "Accessor",
-                "usr": "s:12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvM",
-                "mangledName": "$s12CanvasNative10GLRendererC10attributesSo12NSDictionaryCvM",
+                "usr": "s:12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvM",
+                "mangledName": "$s12CanvasNative10GLRendererC10attributesAA20TNSContextAttributesCvM",
                 "moduleName": "CanvasNative",
                 "implicit": true,
                 "accessorKind": "_modify"
@@ -68340,6 +68868,87 @@
             "declKind": "Func",
             "usr": "c:@M@CanvasNative@objc(cs)TNSImageAsset(im)loadImageFromPathAsyncWithPath:callback:",
             "mangledName": "$s12CanvasNative13TNSImageAssetC22loadImageFromPathAsync4path8callbackySS_ySSSgctF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "loadImageFromBuffer",
+            "printedName": "loadImageFromBuffer(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "NSData",
+                "printedName": "Foundation.NSData",
+                "usr": "c:objc(cs)NSData"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSImageAsset(im)loadImageFromBuffer:",
+            "mangledName": "$s12CanvasNative13TNSImageAssetC19loadImageFromBufferySbSo6NSDataCF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "loadImageFromBufferAsync",
+            "printedName": "loadImageFromBufferAsync(_:callback:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "NSData",
+                "printedName": "Foundation.NSData",
+                "usr": "c:objc(cs)NSData"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Swift.String?) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Optional",
+                    "printedName": "Swift.String?",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "String",
+                        "printedName": "Swift.String",
+                        "usr": "s:SS"
+                      }
+                    ],
+                    "usr": "s:Sq"
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSImageAsset(im)loadImageFromBufferAsync:callback:",
+            "mangledName": "$s12CanvasNative13TNSImageAssetC24loadImageFromBufferAsync_8callbackySo6NSDataC_ySSSgctF",
             "moduleName": "CanvasNative",
             "declAttributes": [
               "AccessControl",
@@ -73929,42 +74538,42 @@
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 6667,
+      "offset": 6695,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7256,
+      "offset": 7284,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7286,
+      "offset": 7314,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7927,
+      "offset": 7955,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 9418,
+      "offset": 9446,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 10154,
+      "offset": 10182,
       "length": 5,
       "value": "false"
     },
@@ -73974,6 +74583,76 @@
       "offset": 219,
       "length": 9,
       "value": "\"CanvasNative.TNSCanvas\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 298,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 328,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 354,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 403,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "StringLiteral",
+      "offset": 448,
+      "length": 9,
+      "value": "\"default\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 492,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 534,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 563,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 599,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/TNSContextAttributes.swift",
+      "kind": "BooleanLiteral",
+      "offset": 633,
+      "length": 5,
+      "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSTextEncoder.swift",
@@ -74503,35 +75182,35 @@
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "IntegerLiteral",
-      "offset": 3800,
+      "offset": 3787,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "BooleanLiteral",
-      "offset": 4073,
+      "offset": 4060,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "BooleanLiteral",
-      "offset": 4558,
+      "offset": 4545,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "StringLiteral",
-      "offset": 4677,
+      "offset": 4664,
       "length": 5,
       "value": "\"ltr\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "BooleanLiteral",
-      "offset": 6973,
+      "offset": 6960,
       "length": 5,
       "value": "false"
     },

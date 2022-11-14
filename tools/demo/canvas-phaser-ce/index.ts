@@ -1,7 +1,7 @@
 import {DemoSharedBase} from '../utils';
 import {Screen, Utils} from "@nativescript/core";
 import {func, images} from "./games/utils";
-import { canvasLoaded } from './games/monster-wants-candy/mwc';
+//import { canvasLoaded } from './games/monster-wants-candy/mwc';
 declare let Phaser: any, UIDevice;
 
 interface AccelerometerData {
@@ -183,8 +183,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		//this.setupGame(this.canvas);
-		canvasLoaded(args);
+		this.setupGame(this.canvas);
 	}
 
 	gamePause: boolean = false;

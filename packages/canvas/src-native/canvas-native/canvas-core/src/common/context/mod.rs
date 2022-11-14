@@ -139,6 +139,22 @@ pub struct Context {
 }
 
 impl Context {
+    pub(crate) fn new(surface: Surface,
+                      path: Path,
+                      state: State,
+                      state_stack: Vec<State>,
+                      device: Device,
+                      font_color: Color) -> Self {
+        Self {
+            surface,
+            path,
+            state,
+            state_stack,
+            device,
+            font_color,
+        }
+    }
+
     pub fn device(&self) -> &Device {
         &self.device
     }

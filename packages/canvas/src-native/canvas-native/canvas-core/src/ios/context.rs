@@ -320,7 +320,7 @@ pub(crate) fn context_to_data(context: *mut Context) -> Vec<u8> {
                     &mut info,
                     pixels.as_mut_slice(),
                     row_bytes as usize,
-                    skia_safe::IPoint::new(0, 0),
+                    IPoint::new(0, 0),
                     CachingHint::Allow,
                 );
                 pixels
@@ -780,7 +780,7 @@ pub extern "C" fn context_set_shadow_color(context: c_longlong, r: u8, g: u8, b:
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        context.set_shadow_color(skia_safe::Color::from_argb(a, r, g, b))
+        context.set_shadow_color(Color::from_argb(a, r, g, b))
     }
 }
 
@@ -794,7 +794,7 @@ pub extern "C" fn context_set_shadow_color_string(context: c_longlong, color: *c
         let context = &mut *context;
         let color = CStr::from_ptr(color).to_string_lossy();
         if let Ok(color) = css_color_parser::Color::from_str(color.as_ref()) {
-            context.set_shadow_color(skia_safe::Color::from_argb(
+            context.set_shadow_color(Color::from_argb(
                 (color.a * 255.0) as u8,
                 color.r,
                 color.g,
@@ -1423,18 +1423,26 @@ pub extern "C" fn context_draw_image_asset(
         let context = &mut *context;
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.get_bytes();
-        if let Some(bytes) = bytes {
-            if let Some(image) = from_image_slice(
-                bytes,
-                asset.width() as i32,
-                asset.height() as i32,
-            ) {
-                context.draw_image(
-                    &image,
-                    Rect::from_xywh(sx, sy, s_width, s_height),
-                    Rect::from_xywh(dx, dy, d_width, d_height),
-                )
+        if let Some(image) = asset.skia_image() {
+            context.draw_image(
+                &image,
+                Rect::from_xywh(sx, sy, s_width, s_height),
+                Rect::from_xywh(dx, dy, d_width, d_height),
+            )
+        } else {
+            let bytes = asset.get_bytes();
+            if let Some(bytes) = bytes {
+                if let Some(image) = from_image_slice(
+                    bytes,
+                    asset.width() as i32,
+                    asset.height() as i32,
+                ) {
+                    context.draw_image(
+                        &image,
+                        Rect::from_xywh(sx, sy, s_width, s_height),
+                        Rect::from_xywh(dx, dy, d_width, d_height),
+                    )
+                }
             }
         }
     }

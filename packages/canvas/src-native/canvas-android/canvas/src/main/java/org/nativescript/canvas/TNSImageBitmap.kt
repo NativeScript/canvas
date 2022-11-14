@@ -264,7 +264,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			callback: Callback
 		) {
 			executor.execute {
-				val result = nativeCreateFromAsset(
+				val result = nativeCreateFromImageData(
 					imageData.nativeImageData,
 					options.flipY,
 					options.premultiplyAlpha.toNative(),
@@ -295,7 +295,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			callback: Callback
 		) {
 			executor.execute {
-				val result = nativeCreateFromAssetSrcRect(
+				val result = nativeCreateFromImageDataSrcRect(
 					imageData.nativeImageData,
 					sx, sy, sWidth, sHeight,
 					options.flipY,
@@ -719,6 +719,32 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			resizeQuality: Int,
 			resizeWidth: Float,
 			resizeHeight: Float
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromImageData(
+			imageData: Long,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromImageDataSrcRect(
+			imageData: Long,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 		): Long
 
 		@JvmStatic

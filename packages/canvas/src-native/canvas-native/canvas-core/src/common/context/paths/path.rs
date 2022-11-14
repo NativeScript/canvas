@@ -50,7 +50,7 @@ impl Path {
         }
     }
 
-    fn add_ellipse(
+    pub(crate) fn add_ellipse(
         &mut self,
         origin: impl Into<Point>,
         radii: impl Into<Point>,
@@ -120,11 +120,11 @@ impl Path {
     pub fn add_path(&mut self, path: &Path, matrix: Option<&Matrix>) {
         match matrix {
             None => {
-                self.path.add_path(path.path(), Point::new(0.0, 0.0), None);
+                self.path.add_path(path.path(), Point::new(0.0, 0.0), skia_safe::path::AddPathMode::Append);
             }
             Some(matrix) => {
                 let matrix_2d = matrix.matrix.to_m33();
-                self.path.add_path_matrix(path.path(), &matrix_2d, None);
+                self.path.add_path_matrix(path.path(), &matrix_2d, skia_safe::path::AddPathMode::Append);
             }
         }
     }

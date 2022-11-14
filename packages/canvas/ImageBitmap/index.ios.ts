@@ -125,7 +125,7 @@ export class ImageBitmap extends ImageBitmapBase {
 					}
 				});
 			} else if (source instanceof ImageData) {
-				TNSImageBitmap.createFromImageAsset(source.native, opts, (bitmap, error) => {
+				TNSImageBitmap.createFromImageData(source.native, opts, (bitmap, error) => {
 					if (bitmap) {
 						resolve(ImageBitmap.fromNative(bitmap));
 					} else {
@@ -199,7 +199,7 @@ export class ImageBitmap extends ImageBitmapBase {
 					}
 				});
 			} else if (source instanceof ImageData) {
-				(TNSImageBitmap as any).createFromImageAsset(source.native, sx, sy, sWidth, sHeight, opts, (bitmap, error) => {
+				(TNSImageBitmap as any).createFromImageData(source.native, sx, sy, sWidth, sHeight, opts, (bitmap, error) => {
 					if (bitmap) {
 						resolve(ImageBitmap.fromNative(bitmap));
 					} else {

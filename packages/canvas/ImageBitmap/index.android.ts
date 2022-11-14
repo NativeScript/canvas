@@ -156,7 +156,7 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageData) {
-				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageData(
 					source.native,
 					opts,
 					new org.nativescript.canvas.TNSImageBitmap.Callback({
@@ -316,7 +316,7 @@ export class ImageBitmap extends ImageBitmapBase {
 					})
 				);
 			} else if (source instanceof ImageData) {
-				org.nativescript.canvas.TNSImageBitmap.createFromImageAsset(
+				org.nativescript.canvas.TNSImageBitmap.createFromImageData(
 					source.native,
 					sx,
 					sy,

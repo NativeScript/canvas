@@ -1245,7 +1245,8 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	@SuppressLint("NewApi")
-	fun drawShadowAlpha(ctx: TNSCanvasRenderingContext2D) {
+	fun drawShadowAlpha(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		// Shadow
 
 		ctx.shadowColor = "rgba(255,0,0, 0.8)"
@@ -1254,12 +1255,12 @@ class MainActivity : AppCompatActivity() {
 		ctx.shadowOffsetY = 20F
 
 // Filled rectangle
-		ctx.fillStyle = TNSColor("rgba(0,255,0,0.2)")
+		ctx.fillStyle = TNSColor("rgba(0,0,255,0.2)")
 		ctx.fillRect(10F, 10F, 150F, 100F)
 
 // Stroked rectangle
 		ctx.lineWidth = 10F
-		ctx.strokeStyle = TNSColor("0,0,255,0.6")
+		ctx.strokeStyle = TNSColor("rgba(0,0,255,0.6)")
 		ctx.strokeRect(10F, 10F, 150F, 100F);
 	}
 
@@ -1655,9 +1656,40 @@ class MainActivity : AppCompatActivity() {
 		*/
 
 		//sourceIn(canvas!!)
-	//	drawImageBitmap(canvas!!)
+		//drawImageBitmap(canvas!!)
+		//clipTest(canvas!!)
+		//evenOddTest(canvas!!)
+		drawShadowAlpha(canvas!!)
 	}
 
+	fun evenOddTest(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+		// Create path
+		val region = TNSPath2D()
+		region.moveTo(30f, 90f)
+		region.lineTo(110f, 20f)
+		region.lineTo(240f, 130f)
+		region.lineTo(60f, 130f)
+		region.lineTo(190f, 20f)
+		region.lineTo(270f, 90f)
+		region.closePath()
+
+		// Fill path
+		ctx.fillStyle = TNSColor("green")
+		ctx.fill(region, TNSFillRule.EvenOdd)
+	}
+
+	fun clipTest(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		// Clip a rectangular area
+		ctx.rect(50F, 20F, 200F, 120F);
+		ctx.stroke()
+		ctx.clip()
+		// Draw red rectangle after clip()
+		ctx.fillStyle = TNSColor("red")
+		ctx.fillRect(0F, 0F, 150F, 100F);
+	}
 
 	fun drawImageBitmap(canvas: TNSCanvas) {
 		//	val file = File(filesDir, "random.png")

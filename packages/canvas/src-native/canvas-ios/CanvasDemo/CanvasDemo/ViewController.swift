@@ -505,13 +505,45 @@ class ViewController: UIViewController, TNSCanvasListener {
         // ellipseExample(ctx: ctx)
         
         
-        var ctx = canvas1!.getContext("2d") as! TNSCanvasRenderingContext2D
+//        var ctx = canvas1!.getContext("2d") as! TNSCanvasRenderingContext2D
+//
+//
+//
+//                ctx.font = "40px 'Helvetica'"
+//                ctx.fillText("Hello World", 10, 60)
         
-        
+       // clipTest(canvas1!)
+        evenOddTest(canvas1)
+    }
     
-                ctx.font = "40px 'Helvetica'"
-                ctx.fillText("Hello World", 10, 60)
-        
+    
+    func evenOddTest(_ canvas: TNSCanvas){
+        let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
+
+        // Create path
+        let region = TNSPath2D()
+        region.moveTo(30, 90)
+        region.lineTo(110, 20)
+        region.lineTo(240, 130)
+        region.lineTo(60, 130)
+        region.lineTo(190, 20)
+        region.lineTo(270, 90)
+        region.closePath()
+
+        // Fill path
+        ctx.fillStyle = TNSColorStyle.TNSColor("green")
+        ctx.fill(region, TNSFillRule.EvenOdd)
+    }
+    
+    func clipTest(_ canvas: TNSCanvas){
+        let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
+            // Clip a rectangular area
+            ctx.rect(50, 20, 200, 120)
+            ctx.stroke()
+            ctx.clip()
+            // Draw red rectangle after clip()
+            ctx.fillStyle = TNSColorStyle.TNSColor("red")
+            ctx.fillRect(0, 0, 150, 100);
     }
     
     func decoder() {

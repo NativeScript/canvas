@@ -59,7 +59,7 @@ export class Path2D extends Path2DBase {
 		x: number,
 		y: number
 	): void {
-		this.nativeInstance.arcTo(
+		this.nativeInstance.bezierCurveTo(
 			cp1x,
 			cp1y,
 			cp2x,

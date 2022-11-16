@@ -139,7 +139,7 @@ pub struct Context {
 }
 
 impl Context {
-    pub(crate) fn new(surface: Surface,
+    pub(crate) fn new(mut surface: Surface,
                       path: Path,
                       state: State,
                       state_stack: Vec<State>,

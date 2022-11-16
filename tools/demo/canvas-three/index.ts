@@ -119,9 +119,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					var roughnessMipmapper = new RoughnessMipmapper(renderer);
 
 					var loader = new GLTFLoader().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
-					console.time('GLTFLoader');
 					loader.load('DamagedHelmet.gltf', function (gltf) {
-						console.timeEnd('GLTFLoader');
 						/*
 						gltf.scene.traverse(function (child) {
 							// @ts-ignore
@@ -131,16 +129,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 							}
 						});
 						*/
-
-						console.time('GLTFLoader:add');
 						scene.add(gltf.scene);
-						console.timeEnd('GLTFLoader:add');
 
 						roughnessMipmapper.dispose();
-
-						console.time('render');
 						render();
-						console.timeEnd('render');
 					});
 				});
 

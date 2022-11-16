@@ -22,10 +22,10 @@ impl Context {
             paint = self.state.paint.stroke_paint();
         }
 
-        if let Some(rule) = fill_rule {
-            let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
-            path.path.set_fill_type(rule.to_fill_type());
+        let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
 
+        if let Some(rule) = fill_rule {
+            path.path.set_fill_type(rule.to_fill_type());
             if let Some(paint) = self.state.paint.fill_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
@@ -36,7 +36,6 @@ impl Context {
 
             self.surface.canvas().draw_path(&path.path, &paint);
         } else {
-            let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
             if let Some(paint) = self.state.paint.stroke_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
@@ -57,20 +56,18 @@ impl Context {
     }
 
     pub fn clip(&mut self, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
+        let rule = fill_rule.unwrap_or(FillRule::NonZero).to_fill_type();
         match path {
             None => {
-                self.path
-                    .path
-                    .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
-                let path = self.path.path.clone();
+                let mut path = self.path.path.clone();
+                path.set_fill_type(rule);
                 self.surface
                     .canvas()
                     .clip_path(&path, Some(ClipOp::Intersect), Some(true));
             }
             Some(path) => {
-                path.path
-                    .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
-                let path = path.path.clone();
+                let mut path = path.path.clone();
+                path.set_fill_type(rule);
                 self.surface
                     .canvas()
                     .clip_path(&path, Some(ClipOp::Intersect), Some(true));

@@ -620,11 +620,23 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
-		this.drawRandomFullscreenImage(this.canvas);
+		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
 		//this.drawHouse(this.canvas);
 		//this.bitmapExample(this.canvas);
 		//this.sourceIn(this.canvas);
+		//this.clipTest(this.canvas);
+	}
+
+	clipTest(canvas){
+		var ctx = canvas.getContext("2d");
+		// Clip a rectangular area
+		ctx.rect(50, 20, 200, 120);
+		ctx.stroke();
+		ctx.clip();
+		// Draw red rectangle after clip()
+		ctx.fillStyle = "red";
+		ctx.fillRect(0, 0, 150, 100);
 	}
 
 	sourceIn(canvas) {

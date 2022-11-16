@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import android.util.Log
 import java.util.concurrent.TimeUnit
 
 /**
@@ -470,7 +471,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 					TNSDOMMatrix()
 				} else {
 					lastTransform?.let {
-						if (it.matrix != id){
+						if (it.matrix != id) {
 							lastTransform = TNSDOMMatrix(id)
 						}
 						lastTransform!!
@@ -642,7 +643,6 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	}
 
 
-
 	fun fill(rule: TNSFillRule) {
 		fill(null, rule)
 	}
@@ -754,7 +754,13 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 
 	@JvmOverloads
 	fun clip(path: TNSPath2D? = null, rule: TNSFillRule = TNSFillRule.NonZero) {
-		canvas.queueEvent { nativeClip(canvas.nativeContext, path?.path ?: 0, rule.toNative()) }
+		canvas.queueEvent {
+			if (path == null) {
+				nativeClipRule(canvas.nativeContext, rule.toNative())
+			} else {
+				nativeClip(canvas.nativeContext, path.path, rule.toNative())
+			}
+		}
 	}
 
 	fun createLinearGradient(x0: Float, y0: Float, x1: Float, y1: Float): TNSCanvasGradient {
@@ -1299,7 +1305,7 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		dirtyX: Float = 0f,
 		dirtyY: Float = 0f,
 		dirtyWidth: Float = 0f,
-		dirtyHeight: Float  = 0f
+		dirtyHeight: Float = 0f
 	) {
 		canvas.queueEvent {
 			nativePutImageData(

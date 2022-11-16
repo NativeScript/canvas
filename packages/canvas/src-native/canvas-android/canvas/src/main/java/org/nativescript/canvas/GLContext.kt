@@ -395,7 +395,7 @@ internal class GLContext {
 
 		var defaultChosen = mEGL!!.eglChooseConfig(mEGLDisplay, configSpec, configs, 1, configsCount)
 
-		if(defaultChosen && configs.first() == null){
+		if (defaultChosen && configs.first() == null) {
 
 			configSpec = intArrayOf(
 				EGL10.EGL_RENDERABLE_TYPE, type,
@@ -443,7 +443,7 @@ internal class GLContext {
 					)
 				)
 			}
-		}  else {
+		} else {
 			// try using the closest config
 
 			var bestConfig: EGLConfig? = null
@@ -478,7 +478,7 @@ internal class GLContext {
 			configsCount
 		)
 
-		if(offScreenChosen && configs.first() == null){
+		if (offScreenChosen && configs.first() == null) {
 
 			offScreenConfigSpec = intArrayOf(
 				EGL10.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,
@@ -492,7 +492,8 @@ internal class GLContext {
 				EGL10.EGL_NONE
 			)
 
-			offScreenChosen = mEGL!!.eglChooseConfig(mEGLDisplay, offScreenConfigSpec, offScreenConfigs, 1, configsCount)
+			offScreenChosen =
+				mEGL!!.eglChooseConfig(mEGLDisplay, offScreenConfigSpec, offScreenConfigs, 1, configsCount)
 
 			if (antialias) {
 				if (view != null) {
@@ -698,13 +699,16 @@ internal class GLContext {
 			minorVersion: Int,
 			eglConfig: EGLConfig
 		): EGLContext {
+			if(!sharedContextInit){
+				createSharedContext()
+			}
 			return createGLContext(
 				contextVersion,
 				minorVersion,
 				mEGL!!,
 				mEGLDisplay,
 				eglConfig,
-				EGL10.EGL_NO_CONTEXT
+				shared_context
 			)
 		}
 
@@ -800,6 +804,37 @@ internal class GLContext {
 		private const val EGL_OPENGL_ES3_BIT_KHR = 0x0040
 		private var highestEsVersion = 0
 
+		private lateinit var shared_context: EGLContext
+
+		private var sharedContextInit = false
+
+		private fun createSharedContext(){
+			val egl = EGLContext.getEGL() as EGL10
+
+			val configs = arrayOfNulls<EGLConfig>(1)
+			val configsCount = IntArray(1)
+			val configSpec = intArrayOf(
+				EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+				EGL10.EGL_RED_SIZE, 8,
+				EGL10.EGL_GREEN_SIZE, 8,
+				EGL10.EGL_BLUE_SIZE, 8,
+				EGL10.EGL_NONE
+			)
+
+			val eglDisplay = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY)
+
+			egl.eglChooseConfig(eglDisplay, configSpec, configs, 1, configsCount)
+
+			val attribs = intArrayOf(
+				EGL_CONTEXT_CLIENT_VERSION,
+				2,
+				EGL_CONTEXT_CLIENT_MINOR_VERSION,
+				0,
+				EGL10.EGL_NONE
+			)
+			shared_context = egl.eglCreateContext(eglDisplay, configs[0], EGL10.EGL_NO_CONTEXT, attribs)
+		}
+
 		private fun hasExtension(extensions: String, name: String): Boolean {
 			var start = extensions.indexOf(name)
 			while (start >= 0) {
@@ -821,6 +856,9 @@ internal class GLContext {
 			eglConfig: EGLConfig,
 			eglContext: EGLContext
 		): EGLContext {
+			if(!sharedContextInit){
+				createSharedContext()
+			}
 			val attribs = intArrayOf(
 				EGL_CONTEXT_CLIENT_VERSION,
 				contextVersion,

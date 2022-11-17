@@ -311,6 +311,7 @@ SWIFT_CLASS_NAMED("TNSAnimationFrame")
 @end
 
 @class TNSDOMMatrix;
+@class UIImage;
 @protocol TNSCanvasListener;
 @class TNSCanvasRenderingContext;
 @class TNSContextAttributes;
@@ -330,6 +331,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (void)toDataURLAsync:(NSString * _Nonnull)type :(void (^ _Nonnull)(NSString * _Nonnull))callback;
 - (void)toDataURLAsync:(NSString * _Nonnull)type :(float)format :(void (^ _Nonnull)(NSString * _Nonnull))callback;
 - (NSArray<NSNumber *> * _Nonnull)snapshot SWIFT_WARN_UNUSED_RESULT;
+- (UIImage * _Nullable)getImage SWIFT_WARN_UNUSED_RESULT;
 - (NSArray<NSNumber *> * _Nonnull)snapshotEncoded SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic, readonly) BOOL isGL;
 - (GLint)getId SWIFT_WARN_UNUSED_RESULT;
@@ -600,7 +602,6 @@ SWIFT_CLASS_NAMED("TNSFramebufferAttachmentParameter")
 @end
 
 @class NSData;
-@class UIImage;
 enum TNSImageAssetFormat : NSInteger;
 
 SWIFT_CLASS_NAMED("TNSImageAsset")

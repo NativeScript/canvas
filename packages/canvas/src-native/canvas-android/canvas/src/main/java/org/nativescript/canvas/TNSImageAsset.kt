@@ -154,7 +154,6 @@ class TNSImageAsset {
 		return result
 	}
 
-
 	fun loadImageFromUrlAsync(url: String, callback: Callback) {
 		resourceError = null
 		executorService.execute {

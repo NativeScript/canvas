@@ -62,7 +62,7 @@ public class TNSCanvas: UIView, RenderListener {
     var mStencilFuncMask: UInt32 = 0xFFFFFFFF;
     var mStencilFuncMaskBack: UInt32 = 0xFFFFFFFF;
     var mDepthMask: Bool = true
-
+    
     
     
     public static func createSVGMatrix() -> TNSDOMMatrix {
@@ -172,6 +172,36 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     
+    public func getImage() -> UIImage?{
+        renderer.ensureIsContextIsCurrent()
+        if(renderer.contextType == ContextType.twoD){
+            let result = context_snapshot_canvas(self.context)
+            if(result == nil){
+                return nil
+            }
+            let pointer = result!.pointee
+            var data = [UInt8](NSMutableData(bytesNoCopy: pointer.data, length: Int(pointer.data_len), deallocator: { ptr, count in
+                destroy_u8_array(result)
+            }))
+            let scale = Float(UIScreen.main.scale)
+            let width = Int(width * scale)
+            let height = Int(height * scale)
+            let row = width * 4
+            
+            
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let imageCtx = CGContext(data: &data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: row, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+            guard let cgImage = imageCtx?.makeImage() else {
+                return nil
+            }
+            return UIImage(cgImage: cgImage)
+        }else if(renderer.contextType == ContextType.webGL){
+            return (renderer.view as! CanvasGLKView).snapshot
+        }
+        return nil
+    }
+    
+    
     public func snapshotEncoded() -> [UInt8]{
         renderer.ensureIsContextIsCurrent()
         if(renderer.contextType == ContextType.twoD){
@@ -231,7 +261,7 @@ public class TNSCanvas: UIView, RenderListener {
             renderer.context = newValue
         }
     }
-
+    
     var renderingContext2d: TNSCanvasRenderingContext?
     var renderingContextWebGL: TNSCanvasRenderingContext?
     var renderingContextWebGL2: TNSCanvasRenderingContext?
@@ -325,17 +355,17 @@ public class TNSCanvas: UIView, RenderListener {
         view.setNeedsLayout()
         view.layoutIfNeeded()
     }
-  
+    
     public override func layoutSubviews() {
         super.layoutSubviews()
         if(bounds == .zero || (bounds.size.width < 0 || bounds.size.height < 0)){
             renderer.view.frame = CGRect(x: 0, y: 0, width: CGFloat(1/UIScreen.main.nativeScale), height: CGFloat(1/UIScreen.main.nativeScale))
         }else {
-                renderer.view.frame = bounds
-                renderer.view.setNeedsLayout()
-                renderer.view.layoutIfNeeded()
+            renderer.view.frame = bounds
+            renderer.view.setNeedsLayout()
+            renderer.view.layoutIfNeeded()
         }
-
+        
         if(useCpu){
             if(bounds != .zero || (bounds.size.width > 0 || bounds.size.height > 0)) {
                 if(!isLoaded){
@@ -446,8 +476,8 @@ public class TNSCanvas: UIView, RenderListener {
                 renderingContext2d = TNSCanvasRenderingContext2D(self)
                 renderer.setupContext()
             }else {
-                 renderer.contextType = .twoD
-                    renderer.ensureIsContextIsCurrent()
+                renderer.contextType = .twoD
+                renderer.ensureIsContextIsCurrent()
             }
             return renderingContext2d!
         }else if(type.elementsEqual("webgl")){

@@ -1,4 +1,4 @@
-import { CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application, Property, booleanConverter } from '@nativescript/core';
+import { CSSType, PercentLength, View, Screen, GestureStateTypes, Utils, Application, Property, booleanConverter, ImageSource } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
 import { Pointer, TouchGestureEventData, GestureTypes } from '@nativescript/core/ui/gestures';
 
@@ -166,6 +166,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 		return this[attrib];
 	}
+	
 
 	setAttribute(attrib) {
 		if (attrib === 'width') {
@@ -182,6 +183,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			this['tabindex'] = arguments[1];
 		}
 	}
+
+	public abstract snapshot(): ImageSource | null;
 
 	public abstract getContext(type: string, options?: any): CanvasRenderingContext | null;
 

@@ -1,5 +1,5 @@
 import { DemoSharedBase } from '../utils';
-import { ImageSource, ObservableArray, Screen, Color, Application, Utils } from '@nativescript/core';
+import { ImageSource, ObservableArray, Screen, Color, Application, Utils, Image as NSImage, GridLayout } from '@nativescript/core';
 import Chart from 'chart.js';
 
 let Matter;
@@ -467,11 +467,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	draw() {
 		//this.urlTests();
 		//const str = new java.lang.String()
-
 		// const ctx = this.canvas.getContext('2d');
 		// ctx.font = '50px serif';
 		// ctx.fillText('Hello world', 50, 90);
-
 		/*	const ctx = this.canvas.getContext('2d');
 	
 	// Moved square
@@ -485,7 +483,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	// Unmoved square
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
-
 		//filterBlur(this.canvas);
 		//handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
@@ -626,16 +623,73 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.bitmapExample(this.canvas);
 		//this.sourceIn(this.canvas);
 		//this.clipTest(this.canvas);
+		//this.roundClipTest(this.canvas);
+
+		const canvas = Canvas.createCustomView();
+		if (!this._image.parent) {
+			this._image.width = { value: 1, unit: '%' };
+			this._image.height = { value: 1, unit: '%' };
+			this._grid.addChild(this._image);
+		}
+
+		const ctx = canvas.getContext('2d') as any;
+		ctx.fillStyle = 'red';
+		ctx.fillRect(0, 0, 300, 300);
+
+		this.drawRandomFullscreenImage(canvas).then(() => {
+			//imageBlock(canvas);
+
+			console.log(canvas.toDataURL());
+			//draw_image_space(canvas);
+
+			const ss = canvas.snapshot();
+
+			this._image.imageSource = ss;
+		});
 	}
 
-	clipTest(canvas){
-		var ctx = canvas.getContext("2d");
+	_image = new NSImage();
+
+	roundClipTest(canvas) {
+		var ctx = canvas.getContext('2d');
+		const HALF_PI = Math.PI / 2;
+		const x = 50;
+		const y = 20;
+		const w = 200;
+		const h = 120;
+		const radius = {
+			topLeft: 40,
+			bottomLeft: 40,
+			bottomRight: 40,
+			topRight: 40,
+		};
+
+		ctx.arc(x + radius.topLeft, y + radius.topLeft, radius.topLeft, -HALF_PI, Math.PI, true);
+		ctx.lineTo(x, y + h - radius.bottomLeft);
+		ctx.arc(x + radius.bottomLeft, y + h - radius.bottomLeft, radius.bottomLeft, Math.PI, HALF_PI, true);
+		ctx.lineTo(x + w - radius.bottomRight, y + h);
+		ctx.arc(x + w - radius.bottomRight, y + h - radius.bottomRight, radius.bottomRight, HALF_PI, 0, true);
+		ctx.lineTo(x + w, y + radius.topRight);
+		ctx.arc(x + w - radius.topRight, y + radius.topRight, radius.topRight, 0, -HALF_PI, true);
+		ctx.lineTo(x + radius.topLeft, y);
+		ctx.strokeStyle = 'red';
+		ctx.stroke();
+
+		ctx.clip();
+
+		// Draw red rectangle
+		ctx.fillStyle = 'red';
+		ctx.fillRect(0, 0, 150, 100);
+	}
+
+	clipTest(canvas) {
+		var ctx = canvas.getContext('2d');
 		// Clip a rectangular area
 		ctx.rect(50, 20, 200, 120);
 		ctx.stroke();
 		ctx.clip();
 		// Draw red rectangle after clip()
-		ctx.fillStyle = "red";
+		ctx.fillStyle = 'red';
 		ctx.fillRect(0, 0, 150, 100);
 	}
 
@@ -729,27 +783,33 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	drawRandomFullscreenImage(canvas) {
-		const width = Screen.mainScreen.widthPixels;
-		const height = Screen.mainScreen.heightPixels;
-		const ctx = canvas.getContext('2d');
-		/*
+		return new Promise<void>((resolve, reject) => {
+			const ctx = canvas.getContext('2d');
+			// const width = Screen.mainScreen.widthPixels;
+			// const height = Screen.mainScreen.heightPixels;
+
+			const width = canvas.width;
+			const height = canvas.height;
+			/*
 			 
 			*/
 
-		// ImageSource.fromUrl(`https://source.unsplash.com/random/${width}x${height}`)
-		// .then(source =>{
-		// 	console.time('drawImage');
-		// 	ctx.drawImage(source, 0, 0);
-		// 	console.timeEnd('drawImage');
-		// })
+			// ImageSource.fromUrl(`https://source.unsplash.com/random/${width}x${height}`)
+			// .then(source =>{
+			// 	console.time('drawImage');
+			// 	ctx.drawImage(source, 0, 0);
+			// 	console.timeEnd('drawImage');
+			// })
 
-		const image = new Image();
-		image.onload = () => {
-			console.time('drawImage');
-			ctx.drawImage(image, 0, 0);
-			console.timeEnd('drawImage');
-		};
-		image.src = `https://source.unsplash.com/random/${width}x${height}`;
+			const image = new Image();
+			image.onload = () => {
+				console.time('drawImage');
+				ctx.drawImage(image, 0, 0);
+				console.timeEnd('drawImage');
+				resolve();
+			};
+			image.src = `https://source.unsplash.com/random/${width}x${height}`;
+		});
 	}
 
 	playCanvas(canvas) {
@@ -791,9 +851,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		app.start();
 	}
 
+	_grid: GridLayout;
 	gridLoaded(args) {
-		const grid = args.object;
-		this.removeClipping(grid);
+		this._grid = args.object;
+		this.removeClipping(this._grid);
 
 		// d3 example
 		/*

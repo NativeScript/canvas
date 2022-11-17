@@ -6,11 +6,13 @@ import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
 import android.util.Base64
+import android.util.Log
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import android.view.ViewGroup
@@ -154,7 +156,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 		var looper = Looper.myLooper()
 
-		if (looper == null){
+		if (looper == null) {
 			Looper.prepare()
 			looper = Looper.myLooper()
 		}
@@ -371,6 +373,45 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		return emptyByteArray
 	}
 
+	fun getImage(): Bitmap? {
+		var bitmap: Bitmap? = null
+		if (contextType == ContextType.CANVAS) {
+			queueEvent {
+				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+				nativeCustomWithBitmapFlush(nativeContext, bitmap!!)
+				lock.countDown()
+			}
+			try {
+				lock.await(2, TimeUnit.SECONDS)
+				lock.reset()
+			} catch (ignore: InterruptedException) {
+				ssStore.isError = true
+			}
+			return if (ssStore.isError) {
+				null
+			} else {
+				bitmap
+			}
+		} else if (contextType == ContextType.WEBGL) {
+			val bm = surface!!.getBitmap(width, height)
+			if (bm != null) {
+				return bm
+			} else {
+				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+				queueEvent {
+					nativeWriteCurrentGLContextToBitmap(bitmap!!)
+					lock.countDown()
+				}
+				try {
+					lock.await(2, TimeUnit.SECONDS)
+					lock.reset()
+				} catch (ignore: InterruptedException) {
+				}
+			}
+		}
+		return bitmap
+	}
+
 	fun toDataURLAsync(listener: DataURLListener) {
 		toDataURLAsync("image/png", listener)
 	}
@@ -380,12 +421,26 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	}
 
 	fun toDataURLAsync(type: String?, quality: Float, listener: DataURLListener) {
-		queueEvent(Runnable { listener.onResult(nativeDataURL(nativeContext, type, quality)) })
+		queueEvent { listener.onResult(nativeDataURL(nativeContext, type, quality)) }
 	}
 
 	@JvmOverloads
 	fun toDataURL(type: String = "image/png", quality: Float = 0.92f): String? {
 		if (contextType == ContextType.WEBGL) {
+			var ret: String? = null
+			queueEvent {
+				ret = nativeDataURLFromGLSurface(width, height, type, quality)
+				lock.countDown()
+			}
+
+			try {
+				lock.await(2, TimeUnit.SECONDS)
+				lock.reset()
+			} catch (ignore: InterruptedException) {
+			}
+
+			return ret
+			/*
 			val bm = surface!!.getBitmap(width, height)
 			val os = ByteArrayOutputStream()
 			var dataType = "image/png"
@@ -401,12 +456,32 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				} else {
 					bm.compress(Bitmap.CompressFormat.PNG, (quality * 100).toInt(), os)
 				}
+			} else {
+				val fallback = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+				queueEvent {
+					nativeCurrentContextToBitmap(fallback)
+					lock.countDown()
+				}
+				try {
+					lock.await(2, TimeUnit.SECONDS)
+					lock.reset()
+				} catch (ignore: InterruptedException) {
+				}
+
+				if (type == "image/jpeg" || type == "image/jpg") {
+					fallback.compress(Bitmap.CompressFormat.JPEG, (quality * 100).toInt(), os)
+				} else {
+					fallback.compress(Bitmap.CompressFormat.PNG, (quality * 100).toInt(), os)
+				}
 			}
+
+
 			return String.format(
 				"data:%s;base64,%s",
 				dataType,
 				Base64.encodeToString(os.toByteArray(), Base64.NO_WRAP)
 			)
+			*/
 		}
 		val lock = CountDownLatch(1)
 		val data = arrayOfNulls<String>(1)
@@ -600,7 +675,8 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 							}
 						}
 					}
-				}catch (_: Exception){}
+				} catch (_: Exception) {
+				}
 				return attr
 			}
 
@@ -834,6 +910,12 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 
 		@JvmStatic
 		private external fun nativeSnapshotCanvasEncoded(context: Long): ByteArray
+
+		@JvmStatic
+		external fun nativeWriteCurrentGLContextToBitmap(view: Bitmap)
+
+		@JvmStatic
+		private external fun nativeDataURLFromGLSurface(width: Int, height: Int, type: String, quality: Float): String?
 
 		internal const val ONE_MILLISECOND_NS: Long = 1000000
 		internal const val ONE_S_IN_NS = 1000 * ONE_MILLISECOND_NS

@@ -5617,6 +5617,37 @@
           },
           {
             "kind": "Function",
+            "name": "getImage",
+            "printedName": "getImage()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "UIKit.UIImage?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UIImage",
+                    "printedName": "UIKit.UIImage",
+                    "usr": "c:objc(cs)UIImage"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSCanvas(im)getImage",
+            "mangledName": "$s12CanvasNative9TNSCanvasC8getImageSo7UIImageCSgyF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "Custom",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
             "name": "snapshotEncoded",
             "printedName": "snapshotEncoded()",
             "children": [
@@ -74517,63 +74548,63 @@
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 2059,
+      "offset": 2063,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 2109,
+      "offset": 2113,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "Array",
-      "offset": 4033,
+      "offset": 4037,
       "length": 2,
       "value": "[]"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 6695,
+      "offset": 8008,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7284,
+      "offset": 8597,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7314,
+      "offset": 8627,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7955,
+      "offset": 9272,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 9446,
+      "offset": 10763,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 10182,
+      "offset": 11499,
       "length": 5,
       "value": "false"
     },

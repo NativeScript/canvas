@@ -250,6 +250,7 @@ import _StringProcessing
   @objc @_Concurrency.MainActor(unsafe) public func toDataURLAsync(_ type: Swift.String, _ callback: @escaping (Swift.String) -> Swift.Void)
   @objc @_Concurrency.MainActor(unsafe) public func toDataURLAsync(_ type: Swift.String, _ format: Swift.Float, _ callback: @escaping (Swift.String) -> Swift.Void)
   @objc @_Concurrency.MainActor(unsafe) public func snapshot() -> [Swift.UInt8]
+  @objc @_Concurrency.MainActor(unsafe) public func getImage() -> UIKit.UIImage?
   @objc @_Concurrency.MainActor(unsafe) public func snapshotEncoded() -> [Swift.UInt8]
   @objc @_Concurrency.MainActor(unsafe) public var isGL: Swift.Bool {
     @objc get

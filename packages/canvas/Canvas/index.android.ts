@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile } from '@nativescript/core';
+import { Application, View, profile, ImageSource } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(org.nativescript.canvas.TNSCanvas.createSVGMatrix());
 }
@@ -173,6 +173,16 @@ export class Canvas extends CanvasBase {
 
 	toDataURL(type = 'png', encoderOptions = 0.92) {
 		return this.android.toDataURL(type, encoderOptions);
+	}
+
+	public snapshot(): ImageSource | null {
+		if (this._canvas) {
+			const bm = this._canvas.getImage?.();
+			if (bm) {
+				return new ImageSource(bm);
+			}
+		}
+		return null;
 	}
 
 	_layoutNative() {

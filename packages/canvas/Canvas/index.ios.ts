@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Utils, profile } from '@nativescript/core';
+import { Utils, profile, ImageSource } from '@nativescript/core';
 declare var TNSCanvas, TNSCanvasListener;
 
 export * from './common';
@@ -144,7 +144,7 @@ export class Canvas extends CanvasBase {
 
 	initNativeView() {
 		super.initNativeView();
-		if(this.ignorePixelScaling){
+		if (this.ignorePixelScaling) {
 			this._canvas.ignorePixelScaling = this.ignorePixelScaling;
 		}
 	}
@@ -254,6 +254,16 @@ export class Canvas extends CanvasBase {
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
 		return this._canvas.toDataURL(type, encoderOptions);
+	}
+
+	public snapshot(): ImageSource | null {
+		if (this._canvas) {
+			const bm = this._canvas.getImage?.();
+			if (bm) {
+				return new ImageSource(bm);
+			}
+		}
+		return null;
 	}
 
 	getBoundingClientRect(): {

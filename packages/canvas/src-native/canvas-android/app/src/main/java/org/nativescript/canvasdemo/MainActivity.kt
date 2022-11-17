@@ -13,6 +13,8 @@ import android.os.StrictMode
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import org.nativescript.canvas.TNSImageAsset.Callback
 import kotlinx.coroutines.Dispatchers
@@ -35,11 +37,13 @@ class MainActivity : AppCompatActivity() {
 	var canvas: TNSCanvas? = null
 	var svg: TNSSVG? = null
 	var ctx: TNSCanvasRenderingContext2D? = null
+	var ll: LinearLayout? = null
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
 		//	svg = findViewById(R.id.svgView)
+		//ll = findViewById(R.id.container)
 		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
@@ -53,6 +57,8 @@ class MainActivity : AppCompatActivity() {
 				drawFill(canvas!!)
 			}
 		}
+
+		screenshotBitmap()
 
 		//	drawTransformPathSvg()
 //		svg?.setSrc(
@@ -877,7 +883,7 @@ class MainActivity : AppCompatActivity() {
 
 	fun drawGLImage(canvas: TNSCanvas, image: Any) {
 		val cvs3d = canvas
-		val ctx3d = cvs3d.getContext("experimental-webgl")!! as TNSWebGLRenderingContext
+		val ctx3d = cvs3d.getContext("webgl")!! as TNSWebGLRenderingContext
 
 		// create shaders
 		val vertexShaderSrc =
@@ -888,7 +894,7 @@ class MainActivity : AppCompatActivity() {
 				"void main(void) {" +
 				"  gl_Position = vec4(aVertex + pos, 0.0, 1.0);" +
 				"  vTex = aUV;" +
-				"}";
+				"}"
 
 		val fragmentShaderSrc =
 			"precision highp float;" +
@@ -896,44 +902,44 @@ class MainActivity : AppCompatActivity() {
 				"uniform sampler2D sampler0;" +
 				"void main(void){" +
 				"  gl_FragColor = texture2D(sampler0, vTex);" +
-				"}";
+				"}"
 
-		val vertShaderObj = ctx3d.createShader(ctx3d.VERTEX_SHADER);
-		val fragShaderObj = ctx3d.createShader(ctx3d.FRAGMENT_SHADER);
-		ctx3d.shaderSource(vertShaderObj, vertexShaderSrc);
-		ctx3d.shaderSource(fragShaderObj, fragmentShaderSrc);
-		ctx3d.compileShader(vertShaderObj);
-		ctx3d.compileShader(fragShaderObj);
+		val vertShaderObj = ctx3d.createShader(ctx3d.VERTEX_SHADER)
+		val fragShaderObj = ctx3d.createShader(ctx3d.FRAGMENT_SHADER)
+		ctx3d.shaderSource(vertShaderObj, vertexShaderSrc)
+		ctx3d.shaderSource(fragShaderObj, fragmentShaderSrc)
+		ctx3d.compileShader(vertShaderObj)
+		ctx3d.compileShader(fragShaderObj)
 
-		val progObj = ctx3d.createProgram();
-		ctx3d.attachShader(progObj, vertShaderObj);
-		ctx3d.attachShader(progObj, fragShaderObj);
+		val progObj = ctx3d.createProgram()
+		ctx3d.attachShader(progObj, vertShaderObj)
+		ctx3d.attachShader(progObj, fragShaderObj)
 
-		ctx3d.linkProgram(progObj);
-		ctx3d.useProgram(progObj);
+		ctx3d.linkProgram(progObj)
+		ctx3d.useProgram(progObj)
 
-		ctx3d.viewport(0, 0, 1024, 768);
+		ctx3d.viewport(0, 0, canvas.width, canvas.height)
 
-		val vertexBuff = ctx3d.createBuffer();
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff);
+		val vertexBuff = ctx3d.createBuffer()
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff)
 		ctx3d.bufferData(
 			ctx3d.ARRAY_BUFFER,
 			arrayOf(-1f, 1f, -1f, -1f, 1f, -1f, 1f, 1f),
 			ctx3d.STATIC_DRAW
-		);
+		)
 
-		val texBuff = ctx3d.createBuffer();
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff);
-		ctx3d.bufferData(ctx3d.ARRAY_BUFFER, arrayOf(0, 1f, 0, 0, 1f, 0, 1f, 1f), ctx3d.STATIC_DRAW);
+		val texBuff = ctx3d.createBuffer()
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff)
+		ctx3d.bufferData(ctx3d.ARRAY_BUFFER, arrayOf(0, 1f, 0, 0, 1f, 0, 1f, 1f), ctx3d.STATIC_DRAW)
 
-		val vloc = ctx3d.getAttribLocation(progObj, "aVertex");
-		val tloc = ctx3d.getAttribLocation(progObj, "aUV");
-		val uLoc = ctx3d.getUniformLocation(progObj, "pos");
+		val vloc = ctx3d.getAttribLocation(progObj, "aVertex")
+		val tloc = ctx3d.getAttribLocation(progObj, "aUV")
+		val uLoc = ctx3d.getUniformLocation(progObj, "pos")
 
-		val tex = ctx3d.createTexture();
-		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex);
-		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MIN_FILTER, ctx3d.NEAREST);
-		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MAG_FILTER, ctx3d.NEAREST);
+		val tex = ctx3d.createTexture()
+		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex)
+		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MIN_FILTER, ctx3d.NEAREST)
+		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MAG_FILTER, ctx3d.NEAREST)
 		(image as? TNSImageAsset)?.let {
 			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it)
 		}
@@ -946,16 +952,16 @@ class MainActivity : AppCompatActivity() {
 			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it)
 		}
 
-		ctx3d.enableVertexAttribArray(vloc);
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff);
-		ctx3d.vertexAttribPointer(vloc, 2, ctx3d.FLOAT, false, 0, 0);
+		ctx3d.enableVertexAttribArray(vloc)
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff)
+		ctx3d.vertexAttribPointer(vloc, 2, ctx3d.FLOAT, false, 0, 0)
 
-		ctx3d.enableVertexAttribArray(tloc);
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff);
-		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex);
-		ctx3d.vertexAttribPointer(tloc, 2, ctx3d.FLOAT, false, 0, 0);
+		ctx3d.enableVertexAttribArray(tloc)
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff)
+		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex)
+		ctx3d.vertexAttribPointer(tloc, 2, ctx3d.FLOAT, false, 0, 0)
 
-		ctx3d.drawArrays(ctx3d.TRIANGLE_FAN, 0, 4);
+		ctx3d.drawArrays(ctx3d.TRIANGLE_FAN, 0, 4)
 
 	}
 
@@ -1539,7 +1545,7 @@ class MainActivity : AppCompatActivity() {
 		//issue54()
 		//addPath(canvas!!)
 		//decodeFile()
-		//drawRemoteGLImage(canvas!!)
+		drawRemoteGLImage(canvas!!)
 		//ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 
 		//print(ctx?.measureText("Osei"))
@@ -1659,7 +1665,91 @@ class MainActivity : AppCompatActivity() {
 		//drawImageBitmap(canvas!!)
 		//clipTest(canvas!!)
 		//evenOddTest(canvas!!)
-		drawShadowAlpha(canvas!!)
+		//drawShadowAlpha(canvas!!)
+		//roundClipTest(canvas!!)
+	}
+
+	fun screenshotBitmap() {
+		val glCanvas = TNSCanvas(this)
+
+		val scale = resources.displayMetrics.density
+		val width = (300 * scale).toInt()
+		val height = (300 * scale).toInt()
+		glCanvas.layoutParams = FrameLayout.LayoutParams(width, height)
+		val w = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
+		val h = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+		glCanvas.measure(w, h)
+		glCanvas.layout(0, 0, width, height)
+
+		val iv = ImageView(this)
+		ll?.addView(iv)
+		val asset = TNSImageAsset()
+		val activity = this
+		asset.loadImageFromUrlAsync("https://source.unsplash.com/random", object : Callback {
+			override fun onSuccess(value: Any?) {
+				Log.d("Canvas", "w ${asset.width} h ${asset.height}")
+				try {
+					drawGLImage(glCanvas, asset)
+					//drawImageBitmap(glCanvas)
+					Log.d("com.test", "data ${glCanvas.toDataURL()}")
+					val ss = glCanvas.getImage()
+					activity.runOnUiThread {
+						Log.d("com.test", "ss ${ss?.width}  ${ss?.height}")
+						iv.setImageBitmap(ss!!)
+					}
+
+				} catch (e: Exception) {
+					e.printStackTrace()
+				}
+
+//					TNSImageBitmap.createFromImageAsset(asset, TNSImageBitmap.Options(), object: TNSImageBitmap.Callback{
+//						override fun onSuccess(result: TNSImageBitmap) {
+//							Log.d("Canvas", "imageBitmap w ${result.width} h ${result.height}")
+//							drawGLImage(canvas, result)
+//						}
+//
+//						override fun onError(message: String) {
+//							Log.e("Canvas"," bitmap onError $message")
+//						}
+//					})
+			}
+
+			override fun onError(error: String?) {
+				Log.e("Canvas", "onError asset ${asset.error ?: ""}")
+			}
+		})
+	}
+
+	fun roundClipTest(canvas: TNSCanvas) {
+		var ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val HALF_PI = (Math.PI / 2).toFloat()
+		val x = 50f
+		val y = 20f
+		val w = 200f
+		val h = 120f
+
+		val topLeft = 40f
+		val bottomLeft = 40f
+		val bottomRight = 40f
+		val topRight = 40f
+
+		ctx.arc(x + topLeft, y + topLeft, topLeft, -HALF_PI, Math.PI.toFloat(), true);
+		ctx.lineTo(x, y + h - bottomLeft);
+		ctx.arc(x + bottomLeft, y + h - bottomLeft, bottomLeft, Math.PI.toFloat(), HALF_PI, true);
+		ctx.lineTo(x + w - bottomRight, y + h);
+		ctx.arc(x + w - bottomRight, y + h - bottomRight, bottomRight, HALF_PI, 0f, true);
+		ctx.lineTo(x + w, y + topRight);
+		ctx.arc(x + w - topRight, y + topRight, topRight, 0f, -HALF_PI, true);
+		ctx.lineTo(x + topLeft, y);
+		ctx.strokeStyle = TNSColor("red")
+		ctx.stroke();
+
+
+		ctx.clip();
+
+		// Draw red rectangle
+		ctx.fillStyle = TNSColor("red")
+		ctx.fillRect(0f, 0f, 150f, 100f);
 	}
 
 	fun evenOddTest(canvas: TNSCanvas) {
@@ -1722,7 +1812,6 @@ class MainActivity : AppCompatActivity() {
 				})
 		}
 	}
-
 
 	fun sourceIn(canvas: TNSCanvas) {
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D

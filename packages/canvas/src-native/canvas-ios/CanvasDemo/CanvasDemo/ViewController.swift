@@ -513,8 +513,41 @@ class ViewController: UIViewController, TNSCanvasListener {
 //                ctx.fillText("Hello World", 10, 60)
         
        // clipTest(canvas1!)
-        evenOddTest(canvas1)
+       // evenOddTest(canvas1)
+        roundClipTest(canvas1!)
     }
+    
+    func roundClipTest(_ canvas: TNSCanvas){
+            var ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
+        let HALF_PI = Float.pi / 2
+        let x = Float(50)
+        let y = Float(20)
+        let w = Float(200)
+        let h = Float(120)
+
+        let topLeft = Float(40)
+        let bottomLeft = Float(40)
+        let bottomRight = Float(40)
+        let topRight = Float(40)
+
+        ctx.arc(x + topLeft, y + topLeft, topLeft, -HALF_PI, .pi, true);
+            ctx.lineTo(x, y + h - bottomLeft);
+        ctx.arc(x + bottomLeft, y + h - bottomLeft, bottomLeft, .pi, HALF_PI, true);
+            ctx.lineTo(x + w - bottomRight, y + h);
+            ctx.arc(x + w - bottomRight, y + h - bottomRight, bottomRight, HALF_PI, 0, true);
+            ctx.lineTo(x + w, y + topRight);
+            ctx.arc(x + w - topRight, y + topRight, topRight, 0, -HALF_PI, true);
+            ctx.lineTo(x + topLeft, y);
+        ctx.strokeStyle = TNSColorStyle.TNSColor("red")
+            ctx.stroke();
+
+
+            ctx.clip();
+
+            // Draw red rectangle
+            ctx.fillStyle = TNSColorStyle.TNSColor("red")
+            ctx.fillRect(0, 0, 150, 100)
+        }
     
     
     func evenOddTest(_ canvas: TNSCanvas){

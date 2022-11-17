@@ -15,7 +15,7 @@ use jni::JavaVM;
 use crate::common::context::{Context, Device, State};
 use crate::common::context::paths::path::Path;
 use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::to_data_url;
+use crate::common::{image_to_data_url, to_data_url};
 
 use once_cell::sync::OnceCell;
 use parking_lot::RwLock;
@@ -782,6 +782,113 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBi
         )
     }
 }
+
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeWriteCurrentGLContextToBitmap(
+    env: JNIEnv,
+    _: JClass,
+    bitmap: JObject,
+) {
+    unsafe {
+        utils::image::bitmap_handler(
+            env,
+            bitmap,
+            Box::new(move |cb| {
+                if let Some((image_data, image_info)) = cb {
+                    let mut ct = ColorType::RGBA8888;
+
+                    if image_info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+                        ct = ColorType::RGB565;
+                    }
+                    let info = ImageInfo::new(
+                        ISize::new(image_info.width() as i32, image_info.height() as i32),
+                        ct,
+                        AlphaType::Premul,
+                        None,
+                    );
+
+                    let mut buf = vec![0u8; (info.width() * info.height() * 4) as usize];
+                    gl_bindings::glFlush();
+                    gl_bindings::glReadPixels(
+                        0,
+                        0,
+                        info.width(),
+                        info.height(),
+                        gl_bindings::GL_RGBA as std::os::raw::c_uint,
+                        gl_bindings::GL_UNSIGNED_BYTE as std::os::raw::c_uint,
+                        buf.as_mut_ptr() as *mut c_void,
+                    );
+                    if let Some(image) = skia_safe::Image::from_raster_data(&info, skia_safe::Data::new_bytes(buf.as_slice()), (info.width() * 4) as usize) {
+                        let mut surface =
+                            Surface::new_raster_direct(&info, image_data, None, None).unwrap();
+                        let canvas = surface.canvas();
+                        let mut paint = skia_safe::Paint::default();
+                        paint.set_anti_alias(true);
+                        paint.set_style(skia_safe::PaintStyle::Fill);
+                        paint.set_blend_mode(skia_safe::BlendMode::Clear);
+                        canvas.draw_rect(
+                            Rect::from_xywh(
+                                0f32,
+                                0f32,
+                                image_info.width() as f32,
+                                image_info.height() as f32,
+                            ),
+                            &paint,
+                        );
+                        canvas.draw_image(&image, (0, 0), None);
+                    }
+                }
+            }),
+        )
+    }
+}
+
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURLFromGLSurface(
+    env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    format: JString,
+    quality: jfloat,
+) -> jstring {
+
+    unsafe {
+        let info = ImageInfo::new(
+            ISize::new(width, height),
+            ColorType::RGBA8888,
+            AlphaType::Premul,
+            None,
+        );
+        let mut buf = vec![0u8; (info.width() * info.height() * 4) as usize];
+        gl_bindings::glReadPixels(
+            0,
+            0,
+            info.width(),
+            info.height(),
+            gl_bindings::GL_RGBA as std::os::raw::c_uint,
+            gl_bindings::GL_UNSIGNED_BYTE as std::os::raw::c_uint,
+            buf.as_mut_ptr() as *mut c_void,
+        );
+        let quality = (quality * 100 as f32) as i32;
+        let data = skia_safe::Data::new_bytes(buf.as_slice());
+        let ret = if let (Some(image), Ok(format)) = (skia_safe::Image::from_raster_data(&info, data, (info.width() * 4) as usize), env.get_string(format)) {
+            let format = format.to_string_lossy();
+            image_to_data_url(Some(&image), format.as_ref(), quality)
+        } else {
+            image_to_data_url(None, "", quality)
+        };
+
+
+        env
+            .new_string(ret)
+            .unwrap()
+            .into_raw()
+    }
+}
+
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_GC_disposeByteBufMut(

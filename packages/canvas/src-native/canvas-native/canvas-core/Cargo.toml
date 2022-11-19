@@ -23,7 +23,7 @@ lazy_static = "1.4.0"
 css-color-parser = "0.1.2"
 log = "0.4.8"
 rand = "0.8.4"
-skia-safe = { version = "0.55.0", features = ["gl", "svg"] }
+skia-safe = { version = "0.56.1", features = ["gl", "svg"] }
 stb = { git = "https://github.com/triniwiz/stb.git", rev = "3c7f87b", features = ["stb_image", "stb_image_write", "stb_image_resize"] }
 
 parking_lot = "0.12.1"

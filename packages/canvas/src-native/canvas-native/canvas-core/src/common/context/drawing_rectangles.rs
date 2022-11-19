@@ -28,7 +28,8 @@ impl Context {
         }
         self.surface
             .canvas()
-            .draw_path(&path, self.state.paint.fill_paint());
+           .draw_rect(rect, self.state.paint.fill_paint());
+           // .draw_path(&path, self.state.paint.fill_paint());
     }
 
     pub fn stroke_rect(&mut self, rect: &Rect) {
@@ -42,6 +43,7 @@ impl Context {
         }
         self.surface
             .canvas()
-            .draw_path(&path, self.state.paint.stroke_paint());
+            .draw_rect(rect, self.state.paint.fill_paint());
+            //.draw_path(&path, self.state.paint.stroke_paint());
     }
 }

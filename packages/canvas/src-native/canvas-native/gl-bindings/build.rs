@@ -280,7 +280,9 @@ fn build(sdk_path: Option<&str>, target: &str) {
             .objc_extern_crate(true)
             .block_extern_crate(true)
             .allowlist_function("gl.*")
-            .allowlist_type("GL_.*")
+            .allowlist_recursively(true)
+            .allowlist_var("GL_.*")
+            .allowlist_type("GL_.*");
     }
 
     let meta_header: Vec<_> = headers

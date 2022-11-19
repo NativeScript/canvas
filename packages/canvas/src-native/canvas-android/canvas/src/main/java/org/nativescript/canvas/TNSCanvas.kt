@@ -8,6 +8,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Matrix
 import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
@@ -373,6 +374,11 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		return emptyByteArray
 	}
 
+	private val defaultMatrix = Matrix()
+	init {
+		defaultMatrix.postScale(1f, -1f)
+	}
+
 	fun getImage(): Bitmap? {
 		var bitmap: Bitmap? = null
 		if (contextType == ContextType.CANVAS) {
@@ -393,10 +399,8 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				bitmap
 			}
 		} else if (contextType == ContextType.WEBGL) {
-			val bm = surface!!.getBitmap(width, height)
-			if (bm != null) {
-				return bm
-			} else {
+			bitmap = surface!!.getBitmap(width, height)
+			if (bitmap == null) {
 				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 				queueEvent {
 					nativeWriteCurrentGLContextToBitmap(bitmap!!)
@@ -407,6 +411,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 					lock.reset()
 				} catch (ignore: InterruptedException) {
 				}
+				bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, width, height, defaultMatrix, true)
 			}
 		}
 		return bitmap
@@ -546,8 +551,8 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			}
 			surface!!.queueEvent {
 				if (nativeContext == 0L && finalWidth > 0 && finalHeight > 0) {
-					// GLES20.glClearColor(1F, 1F, 1F, 1F);
-					// GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+					GLES20.glClearColor(1F, 1F, 1F, 1F);
+					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 					val frameBuffers = IntArray(1)
 					GLES20.glViewport(0, 0, finalWidth, finalHeight)
 					GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, frameBuffers, 0)
@@ -915,7 +920,12 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		external fun nativeWriteCurrentGLContextToBitmap(view: Bitmap)
 
 		@JvmStatic
-		private external fun nativeDataURLFromGLSurface(width: Int, height: Int, type: String, quality: Float): String?
+		private external fun nativeDataURLFromGLSurface(
+			width: Int,
+			height: Int,
+			type: String,
+			quality: Float
+		): String?
 
 		internal const val ONE_MILLISECOND_NS: Long = 1000000
 		internal const val ONE_S_IN_NS = 1000 * ONE_MILLISECOND_NS

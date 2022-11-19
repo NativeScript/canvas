@@ -49,7 +49,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
-		//this.threeOcean(this.canvas);
+		this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
@@ -58,7 +58,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
-		this.gtlfTonemapping(this.canvas);
+		//this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
 		//this.renderVideo();

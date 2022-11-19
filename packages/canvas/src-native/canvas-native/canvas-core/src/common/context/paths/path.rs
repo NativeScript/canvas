@@ -2,6 +2,7 @@ use std::f32::consts::PI;
 use std::os::raw::c_float;
 
 use skia_safe::{Point, Rect, RRect};
+use crate::common::context::drawing_paths::fill_rule::FillRule;
 
 use crate::common::context::matrix::Matrix;
 use crate::common::utils::geometry::{almost_equal, to_degrees};
@@ -48,6 +49,10 @@ impl Path {
         if self.path.is_empty() {
             //   self.path.move_to(Point::new(x, y));
         }
+    }
+
+    pub fn set_fill_type(&mut self, fill_type: FillRule) {
+        self.path.set_fill_type(fill_type.to_fill_type());
     }
 
     pub(crate) fn add_ellipse(

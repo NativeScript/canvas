@@ -92,10 +92,10 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		}
 	}
 
-	fun bindVertexArray(vertexArray: Int) {
-
+	@JvmOverloads
+	fun bindVertexArray(vertexArray: Int? = null) {
 		runOnGLThread {
-			GLES30.glBindVertexArray(vertexArray)
+			GLES30.glBindVertexArray(vertexArray ?: 0)
 			lock.countDown()
 		}
 		try {

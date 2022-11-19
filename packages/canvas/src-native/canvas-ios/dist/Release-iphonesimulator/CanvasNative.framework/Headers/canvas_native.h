@@ -290,6 +290,10 @@ void destroy_text_metrics(long long metrics);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+struct U8Array *gl_snapshot_current_gl_context(float width, float height, bool alpha);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 long long context_init_context(float width,
                                float height,
                                float density,

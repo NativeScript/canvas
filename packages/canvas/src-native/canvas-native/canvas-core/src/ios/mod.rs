@@ -1,9 +1,10 @@
-use std::ffi::CString;
-use std::os::raw::{c_char, c_longlong};
+use std::ffi::{c_float, CString};
+use std::os::raw::{c_char, c_longlong, c_void};
 
 use crate::common::context::Context;
 use crate::common::context::drawing_text::text_metrics::TextMetrics;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
+use crate::common::utils::gl::flip_in_place;
 
 pub mod context;
 pub mod gl;
@@ -61,5 +62,25 @@ pub extern "C" fn destroy_text_metrics(metrics: c_longlong) {
     unsafe {
         let metrics: *mut TextMetrics = metrics as _;
         let _ = Box::from_raw(metrics);
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn gl_snapshot_current_gl_context(width: c_float, height: c_float, alpha: bool) -> *mut crate::common::ffi::u8_array::U8Array {
+    let mut buf = vec![0u8; (width * height * 4.) as usize];
+
+    unsafe {
+        gl_bindings::glFlush();
+        gl_bindings::glReadPixels(
+            0,
+            0,
+            width as i32,
+            height as i32,
+            gl_bindings::GL_RGBA as std::os::raw::c_uint,
+            gl_bindings::GL_UNSIGNED_BYTE as std::os::raw::c_uint,
+            buf.as_mut_ptr() as *mut c_void,
+        );
+        crate::common::ffi::u8_array::U8Array::from(surface_buffer).into_raw()
     }
 }

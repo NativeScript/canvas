@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
 		//	svg = findViewById(R.id.svgView)
-		//ll = findViewById(R.id.container)
+//			ll = findViewById(R.id.container)
 		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
@@ -58,7 +58,8 @@ class MainActivity : AppCompatActivity() {
 			}
 		}
 
-		screenshotBitmap()
+		//screenshotBitmap()
+//		canvasToImage()
 
 		//	drawTransformPathSvg()
 //		svg?.setSrc(
@@ -1545,7 +1546,7 @@ class MainActivity : AppCompatActivity() {
 		//issue54()
 		//addPath(canvas!!)
 		//decodeFile()
-		drawRemoteGLImage(canvas!!)
+		//drawRemoteGLImage(canvas!!)
 		//ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 
 		//print(ctx?.measureText("Osei"))
@@ -1667,6 +1668,247 @@ class MainActivity : AppCompatActivity() {
 		//evenOddTest(canvas!!)
 		//drawShadowAlpha(canvas!!)
 		//roundClipTest(canvas!!)
+		//timeExample(canvas!!)
+
+		draw_image_space(canvas!!)
+	}
+
+	enum class ShaderSourceType {
+		vertex,
+		fragment
+	}
+
+	class ShaderSource(val type: ShaderSourceType, val source: String)
+
+	fun createProgramFromScripts(
+		gl: TNSWebGLRenderingContext,
+		shaderSources: Array<ShaderSource>?
+	): Int? {
+		// setup GLSL programs
+
+		val shaders = mutableListOf<Int>()
+
+		if (shaderSources == null) {
+			return null
+		}
+		shaderSources.forEach { element ->
+			if (element.type == ShaderSourceType.vertex) {
+				// Create the shader object
+				val vertexShader = gl.createShader(gl.VERTEX_SHADER)
+
+				// Load the shader source
+				gl.shaderSource(vertexShader, element.source)
+
+				// Compile the shader
+				gl.compileShader(vertexShader);
+
+				// Check the compile status
+				val compiled = gl.getShaderParameter(
+					vertexShader,
+					gl.COMPILE_STATUS
+				) as Boolean
+				if (!compiled) {
+					// Something went wrong during compilation; get the error
+					val lastError = gl.getShaderInfoLog(vertexShader);
+					Log.d(
+						"Canvas",
+						"*** Error compiling shader '" +
+							vertexShader +
+							"':" +
+							lastError
+					)
+					gl.deleteShader(vertexShader)
+					return null
+				}
+				shaders.add(vertexShader)
+			}
+
+			if (element.type == ShaderSourceType.fragment) {
+				// Create the shader object
+				val fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+				// Load the shader source
+				gl.shaderSource(fragmentShader, element.source);
+
+				// Compile the shader
+				gl.compileShader(fragmentShader);
+
+				// Check the compile status
+				val compiled = gl.getShaderParameter(
+					fragmentShader,
+					gl.COMPILE_STATUS
+				) as Boolean
+				if (!compiled) {
+					// Something went wrong during compilation; get the error
+					val lastError = gl.getShaderInfoLog(fragmentShader)
+					Log.d(
+						"Canvas",
+						"*** Error compiling shader '" +
+							fragmentShader +
+							"':" +
+							lastError
+					)
+					gl.deleteShader(fragmentShader)
+					return null
+				}
+				shaders.add(fragmentShader)
+			}
+		}
+
+		val program = gl.createProgram()
+
+		shaders.forEach { shader ->
+			gl.attachShader(program, shader)
+		}
+		gl.linkProgram(program);
+
+		// Check the link status
+		val linked = gl.getProgramParameter(program, gl.LINK_STATUS) as Boolean
+		if (!linked) {
+			// something went wrong with the link
+			val lastError = gl.getProgramInfoLog(program)
+			Log.d("Canvas", "Error in program linking:" + lastError);
+
+			gl.deleteProgram(program);
+			return null
+		}
+		return program
+	}
+
+
+	fun draw_image_space(canvas: TNSCanvas, callback: Callback? = null) {
+		val vs = """#version 300 es
+	precision highp float;
+	precision highp int;
+
+	void main()
+	{
+		gl_Position = vec4(2.f * float(uint(gl_VertexID) % 2u) - 1.f, 2.f * float(uint(gl_VertexID) / 2u) - 1.f, 0.0, 1.0);
+	}"""
+
+		val fs = """#version 300 es
+	precision highp float;
+	precision highp int;
+
+	uniform sampler2D diffuse;
+
+	uniform vec2 u_imageSize;
+
+	out vec4 color;
+
+	void main()
+	{
+		color = texture(diffuse, vec2(gl_FragCoord.x, u_imageSize.y - gl_FragCoord.y) / u_imageSize);
+	}
+	"""
+
+		val gl = canvas.getContext("webgl2") as? TNSWebGL2RenderingContext
+		val isWebGL2 = gl != null
+		if (!isWebGL2) {
+			Log.d("Canvas", "WebGL 2 is not available.");
+			return
+		}
+
+		// -- Init program
+		createProgramFromScripts(
+			gl!!, arrayOf(
+				ShaderSource(ShaderSourceType.vertex, vs),
+				ShaderSource(ShaderSourceType.fragment, fs)
+			)
+		)?.let { program ->
+			val diffuseLocation = gl.getUniformLocation(program, "diffuse")
+			val imageSizeLocation = gl.getUniformLocation(program, "u_imageSize")
+
+			// -- Init VertexArray
+			val vertexArray = gl.createVertexArray()
+			gl.bindVertexArray(vertexArray)
+			gl.bindVertexArray(null)
+			val asset = TNSImageAsset()
+			asset.loadImageFromResourceAsync(R.drawable.di_3d, this, object : Callback {
+				override fun onSuccess(value: Any?) {
+					val texture = gl.createTexture()
+					gl.activeTexture(gl.TEXTURE0)
+					gl.bindTexture(gl.TEXTURE_2D, texture)
+					gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset)
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+
+					// -- Render
+					gl.clearColor(0f, 0f, 0f, 1f)
+					gl.clear(gl.COLOR_BUFFER_BIT)
+
+					gl.useProgram(program)
+					gl.uniform1i(diffuseLocation, 0)
+					gl.uniform2f(
+						imageSizeLocation,
+						(gl.drawingBufferWidth / 2).toFloat(),
+						(gl.drawingBufferHeight / 2).toFloat()
+					)
+
+					gl.bindVertexArray(vertexArray)
+
+					gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+					// Delete WebGL resources
+					gl.deleteTexture(texture)
+					gl.deleteProgram(program)
+					gl.deleteVertexArray(vertexArray)
+					callback?.onSuccess(value)
+				}
+
+				override fun onError(error: String?) {
+					Log.d("Canvas", "$error")
+					callback?.onError(error)
+				}
+			})
+		}
+	}
+
+
+	fun timeExample(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		ctx.setFillStyleWithString("blue")
+		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+		ctx.setFillStyleWithString("black")
+
+		ctx.rect(50f, 20f, 200f, 120f)
+		ctx.strokeRect(50f, 20f, 200f, 120f)
+		ctx.fillStyle = TNSColor("red")
+		handler.postDelayed({
+			ctx.fillRect(0f, 0f, 150f, 100f)
+		}, 2000)
+	}
+
+	fun canvasToImage(){
+
+		val glCanvas = TNSCanvas(this)
+
+		val width = resources.displayMetrics.widthPixels
+		val height = resources.displayMetrics.heightPixels
+		glCanvas.layoutParams = FrameLayout.LayoutParams(width, height)
+		val w = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
+		val h = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+		glCanvas.measure(w, h)
+		glCanvas.layout(0, 0, width, height)
+
+
+		val iv = ImageView(this)
+		ll?.addView(iv)
+
+		val activity = this
+		draw_image_space(canvas!!, object : Callback {
+			override fun onSuccess(value: Any?) {
+				val ss = canvas!!.getImage()
+				activity.runOnUiThread {
+					iv.setImageBitmap(ss!!)
+				}
+			}
+
+			override fun onError(error: String?) {
+
+			}
+		})
 	}
 
 	fun screenshotBitmap() {
@@ -1721,7 +1963,7 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	fun roundClipTest(canvas: TNSCanvas) {
-		var ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		val HALF_PI = (Math.PI / 2).toFloat()
 		val x = 50f
 		val y = 20f

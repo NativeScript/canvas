@@ -804,7 +804,7 @@ internal class GLContext {
 		private const val EGL_OPENGL_ES3_BIT_KHR = 0x0040
 		private var highestEsVersion = 0
 
-		private lateinit var shared_context: EGLContext
+		private var shared_context = EGL10.EGL_NO_CONTEXT
 
 		private var sharedContextInit = false
 

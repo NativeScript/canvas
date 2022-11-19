@@ -118,6 +118,17 @@ class TNSImageAsset {
 		return !hasResourceError
 	}
 
+	fun loadImageFromResourceAsync(id: Int, context: Context, callback: Callback) {
+		executorService.submit {
+			val done = loadImageFromResource(id, context)
+			if (done) {
+				callback.onSuccess(true)
+			} else {
+				callback.onError(error)
+			}
+		}
+	}
+
 	fun loadImageFromPath(path: String): Boolean {
 		return if (nativeImageAsset == 0L) {
 			false

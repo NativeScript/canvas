@@ -1,6 +1,7 @@
 use std::os::raw::c_float;
 
 use skia_safe::{Color, Point, Surface};
+use skia_safe::gpu::DirectContext;
 
 use crate::common::context::filter_quality::FilterQuality;
 use crate::{
@@ -151,7 +152,7 @@ impl Context {
             state,
             state_stack,
             device,
-            font_color,
+            font_color
         }
     }
 
@@ -166,11 +167,11 @@ impl Context {
 
     pub fn clear_canvas(&mut self) {
         self.surface.canvas().clear(Color::TRANSPARENT);
-        self.surface.flush();
+        self.flush();
     }
 
     pub fn flush(&mut self) {
-        self.surface.flush();
+        self.surface.flush_and_submit();
     }
 
     pub fn draw_on_surface(&mut self, surface: &mut Surface) {

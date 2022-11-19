@@ -22,7 +22,7 @@ impl Context {
             paint = self.state.paint.stroke_paint();
         }
 
-        let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
+        let mut path = path.unwrap_or(self.path.borrow_mut());
 
         if let Some(rule) = fill_rule {
             path.path.set_fill_type(rule.to_fill_type());
@@ -36,6 +36,7 @@ impl Context {
 
             self.surface.canvas().draw_path(&path.path, &paint);
         } else {
+            path.path.set_fill_type(FillRule::NonZero.to_fill_type());
             if let Some(paint) = self.state.paint.stroke_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
@@ -56,21 +57,19 @@ impl Context {
     }
 
     pub fn clip(&mut self, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
-        let rule = fill_rule.unwrap_or(FillRule::NonZero).to_fill_type();
+        let rule = fill_rule.unwrap_or(FillRule::NonZero);
         match path {
             None => {
-                let mut path = self.path.path.clone();
-                path.set_fill_type(rule);
+                self.path.set_fill_type(rule);
                 self.surface
                     .canvas()
-                    .clip_path(&path, Some(ClipOp::Intersect), Some(true));
+                    .clip_path(&self.path.path, Some(ClipOp::Intersect), Some(true));
             }
             Some(path) => {
-                let mut path = path.path.clone();
                 path.set_fill_type(rule);
                 self.surface
                     .canvas()
-                    .clip_path(&path, Some(ClipOp::Intersect), Some(true));
+                    .clip_path(&path.path, Some(ClipOp::Intersect), Some(true));
             }
         }
     }

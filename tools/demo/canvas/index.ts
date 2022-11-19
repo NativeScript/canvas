@@ -624,28 +624,60 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.sourceIn(this.canvas);
 		//this.clipTest(this.canvas);
 		//this.roundClipTest(this.canvas);
+		//this.timeExample(this.canvas);
+		this.canvasToImage();
+	}
 
+	timeExample(canvas) {
+		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.rect(50, 20, 200, 120);
+		ctx.strokeRect(50, 20, 200, 120);
+		ctx.fillStyle = 'red';
+		setTimeout(() => {
+			ctx.fillRect(0, 0, 150, 100);
+		}, 2000);
+		console.log('timeExampleEnd');
+	}
+
+	canvasToImage() {
 		const canvas = Canvas.createCustomView();
+
+		canvas.width = Screen.mainScreen.widthDIPs;
+		canvas.height = Screen.mainScreen.heightDIPs;
+
+		this._image.colSpan = 2;
+		this._image.rowSpan = 2;
+		this._image.stretch = 'aspectFit';
 		if (!this._image.parent) {
 			this._image.width = { value: 1, unit: '%' };
 			this._image.height = { value: 1, unit: '%' };
 			this._grid.addChild(this._image);
 		}
 
-		const ctx = canvas.getContext('2d') as any;
-		ctx.fillStyle = 'red';
-		ctx.fillRect(0, 0, 300, 300);
+		//	const ctx = canvas.getContext('2d') as any;
+		//	ctx.fillStyle = 'red';
+		//	ctx.fillRect(0, 0, 300, 300);
 
-		this.drawRandomFullscreenImage(canvas).then(() => {
-			//imageBlock(canvas);
+		// const gl = canvas.getContext('webgl2');
 
-			console.log(canvas.toDataURL());
-			//draw_image_space(canvas);
+		// gl.clearColor(0, 1,0,1);
+		// gl.clear(gl.COLOR_BUFFER_BIT);
 
+		// const ss = canvas.snapshot();
+
+		// 	console.log('ss',ss);
+
+		// 	this._image.imageSource = ss;
+
+		draw_image_space(canvas).then(() => {
 			const ss = canvas.snapshot();
-
 			this._image.imageSource = ss;
 		});
+
+		// this.drawRandomFullscreenImage(canvas).then(() => {
+		// 	const ss = canvas.snapshot();
+		// 	this._image.imageSource = ss;
+		// });
 	}
 
 	_image = new NSImage();
@@ -782,14 +814,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 	}
 
-	drawRandomFullscreenImage(canvas) {
+	drawRandomFullscreenImage(canvas: Canvas) {
 		return new Promise<void>((resolve, reject) => {
-			const ctx = canvas.getContext('2d');
+			const ctx = canvas.getContext('2d', { alpha: false });
 			// const width = Screen.mainScreen.widthPixels;
 			// const height = Screen.mainScreen.heightPixels;
 
-			const width = canvas.width;
-			const height = canvas.height;
+			const width = canvas.width as any;
+			const height = canvas.height as any;
 			/*
 			 
 			*/
@@ -808,7 +840,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				console.timeEnd('drawImage');
 				resolve();
 			};
-			image.src = `https://source.unsplash.com/random/${width}x${height}`;
+			image.src = 'https://www.crunchyroll.com/imgsrv/display/thumbnail/1200x675/catalog/crunchyroll/0273e80242d80b0218f640e038269c18.jpeg'; //`https://source.unsplash.com/random/${width}x${height}`;
 		});
 	}
 

@@ -427,13 +427,19 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	}
 
 	private val defaultMatrix = Matrix()
+	private val invertMatrix = Matrix()
+	private val invertFlipMatrix = Matrix()
 
 	init {
-		defaultMatrix.postScale(1f, -1f)
+		defaultMatrix.postScale(-1f, 1f)
+		invertMatrix.postScale(1f, -1f)
+		invertFlipMatrix.postScale(-1f, -1f)
 	}
 
-	fun getImage(): Bitmap? {
+	@JvmOverloads
+	fun getImage(flip: Boolean = false): Bitmap? {
 		var bitmap: Bitmap? = null
+		var needsToFlip = false;
 		if (contextType == ContextType.CANVAS) {
 			queueEvent {
 				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -454,6 +460,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		} else if (contextType == ContextType.WEBGL) {
 			bitmap = surface!!.getBitmap(width, height)
 			if (bitmap == null) {
+				needsToFlip = true
 				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 				queueEvent {
 					nativeWriteCurrentGLContextToBitmap(bitmap!!)
@@ -464,9 +471,19 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 					lock.reset()
 				} catch (ignore: InterruptedException) {
 				}
-				bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, width, height, defaultMatrix, true)
 			}
 		}
+
+		if (needsToFlip) {
+			bitmap = if (flip) {
+				Bitmap.createBitmap(bitmap!!, 0, 0, width, height, invertFlipMatrix, true)
+			} else {
+				Bitmap.createBitmap(bitmap!!, 0, 0, width, height, invertMatrix, true)
+			}
+		} else if (flip) {
+			bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, width, height, defaultMatrix, true)
+		}
+
 		return bitmap
 	}
 

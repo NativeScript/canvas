@@ -514,7 +514,246 @@ class ViewController: UIViewController, TNSCanvasListener {
         
        // clipTest(canvas1!)
        // evenOddTest(canvas1)
-        roundClipTest(canvas1!)
+       // roundClipTest(canvas1!)
+        fromBitmapBytes()
+    }
+    
+    
+    enum ShaderSourceType {
+        case vertex
+        case fragment
+    }
+
+    struct ShaderSource{
+    let type: ShaderSourceType
+    let source: String
+    }
+    
+    
+    func createProgramFromScripts(
+        gl: TNSWebGLRenderingContext,
+        shaderSources: Array<ShaderSource>?
+    ) -> UInt32? {
+        // setup GLSL programs
+
+        var shaders: [UInt32] = []
+
+        guard let shaderSources = shaderSources else {
+            return nil
+        }
+        
+        shaderSources.forEach { element in
+            if (element.type == ShaderSourceType.vertex) {
+                // Create the shader object
+                let vertexShader = gl.createShader(gl.VERTEX_SHADER)
+
+                // Load the shader source
+                gl.shaderSource(vertexShader, element.source)
+
+                // Compile the shader
+                gl.compileShader(vertexShader)
+
+                // Check the compile status
+                let compiled = gl.getShaderParameter(
+                    vertexShader,
+                    gl.COMPILE_STATUS
+                ) as? Bool ?? false
+                if (!compiled) {
+                    // Something went wrong during compilation; get the error
+                    let lastError = gl.getShaderInfoLog(vertexShader)
+                    print(
+                        "Canvas",
+                        "*** Error compiling shader '" +
+                        String(vertexShader) +
+                            "':" +
+                            lastError
+                    )
+                    gl.deleteShader(vertexShader)
+                }
+                shaders.append(vertexShader)
+            }
+
+            if (element.type == ShaderSourceType.fragment) {
+                // Create the shader object
+                let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+
+                // Load the shader source
+                gl.shaderSource(fragmentShader, element.source)
+
+                // Compile the shader
+                gl.compileShader(fragmentShader)
+
+                // Check the compile status
+                let compiled = gl.getShaderParameter(
+                    fragmentShader,
+                    gl.COMPILE_STATUS
+                ) as? Bool ?? false
+                if (!compiled) {
+                    // Something went wrong during compilation; get the error
+                    let lastError = gl.getShaderInfoLog(fragmentShader)
+                    print(
+                        "Canvas",
+                        "*** Error compiling shader '" +
+                        String(fragmentShader) +
+                            "':" +
+                            lastError
+                    )
+                    gl.deleteShader(fragmentShader)
+                }
+                shaders.append(fragmentShader)
+            }
+        }
+     
+
+        let program = gl.createProgram()
+
+        
+        shaders.forEach { shader in
+            gl.attachShader(program, shader)
+        }
+        
+ 
+        gl.linkProgram(program)
+
+        // Check the link status
+        let linked = gl.getProgramParameter(program, gl.LINK_STATUS) as? Bool ?? false
+        if (!linked) {
+            // something went wrong with the link
+            let lastError = gl.getProgramInfoLog(program)
+            print("Canvas", "Error in program linking:" + lastError);
+
+            gl.deleteProgram(program);
+            return nil
+        }
+        return program
+    }
+    
+    
+    
+    func draw_image_space(canvas: TNSCanvas, callback: ((Any?) -> Void)? = nil, bitmap: TNSImageBitmap? = nil) {
+        let vs = """
+    #version 300 es
+    precision highp float;
+    precision highp int;
+
+    void main()
+    {
+        gl_Position = vec4(2.f * float(uint(gl_VertexID) % 2u) - 1.f, 2.f * float(uint(gl_VertexID) / 2u) - 1.f, 0.0, 1.0);
+    }
+"""
+
+        let fs = """
+    #version 300 es
+    precision highp float;
+    precision highp int;
+
+    uniform sampler2D diffuse;
+
+    uniform vec2 u_imageSize;
+
+    out vec4 color;
+
+    void main()
+    {
+        color = texture(diffuse, vec2(gl_FragCoord.x, u_imageSize.y - gl_FragCoord.y) / u_imageSize);
+    }
+    """
+
+        let gl = canvas.getContext("webgl2") as? TNSWebGL2RenderingContext
+        let isWebGL2 = gl != nil
+        if (!isWebGL2) {
+            print("Canvas", "WebGL 2 is not available.")
+            return
+        }
+
+        guard let gl = gl else {return}
+        // -- Init program
+        
+        let program = createProgramFromScripts(gl: gl, shaderSources: [
+        ShaderSource(type: ShaderSourceType.vertex, source: vs),
+        ShaderSource(type: ShaderSourceType.fragment, source: fs)
+        ])
+        
+        
+        guard let program = program else {return}
+        
+        
+        
+        let diffuseLocation = gl.getUniformLocation(program, "diffuse")
+            let imageSizeLocation = gl.getUniformLocation(program, "u_imageSize")
+
+            // -- Init VertexArray
+            let vertexArray = gl.createVertexArray()
+            gl.bindVertexArray(vertexArray)
+            gl.bindVertexArray(0)
+
+            if (bitmap != nil){
+                let texture = gl.createTexture()
+                gl.activeTexture(gl.TEXTURE0)
+                gl.bindTexture(gl.TEXTURE_2D, texture)
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0)
+                gl.texImage2D(gl.TEXTURE_2D, 0, Int32(gl.RGBA), gl.RGBA, gl.UNSIGNED_BYTE, bitmap: bitmap!)
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Int32(gl.LINEAR))
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Int32(gl.LINEAR))
+
+                // -- Render
+                gl.clearColor(0, 0, 0, 1)
+                gl.clear(gl.COLOR_BUFFER_BIT)
+
+                gl.useProgram(program)
+                gl.uniform1i(diffuseLocation, 0)
+                gl.uniform2f(
+                    imageSizeLocation,
+                    Float(gl.drawingBufferWidth / 2),
+                    Float(gl.drawingBufferHeight / 2)
+                )
+
+                gl.bindVertexArray(vertexArray)
+
+                gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+                // Delete WebGL resources
+                gl.deleteTexture(texture)
+                gl.deleteProgram(program)
+                gl.deleteVertexArray(vertexArray)
+                callback?(bitmap)
+
+                return
+            }
+       
+    }
+    
+    func fromBitmapBytes() {
+        DispatchQueue.global().async {
+            
+            let url = URL(string: "https://source.unsplash.com/random")!
+            let temp = NSData(contentsOf: url)!
+            
+            
+                let home = URL(fileURLWithPath:NSTemporaryDirectory())
+                let test = home.appendingPathComponent("test.jpg")
+            
+                
+    
+            do {
+                try temp.write(to: test)
+            }catch {
+                print(error)
+            }
+            
+            
+            let data = NSData(contentsOf: test)!
+
+            TNSImageBitmap.createFromDataEncoded(data, TNSImageBitmapOptions()) { [self] bitmap, error in
+                if(error != nil){
+                    print(error as Any)
+                }else {
+                    draw_image_space(canvas: canvas1!, callback: nil, bitmap: bitmap)
+                }
+            }
+            
+        }
+
     }
     
     func roundClipTest(_ canvas: TNSCanvas){

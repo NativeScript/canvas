@@ -1675,6 +1675,32 @@ class MainActivity : AppCompatActivity() {
 
 		//	draw_image_space(canvas!!)
 		//	drawImage(canvas!!)
+		fromBitmapBytes()
+	}
+
+	fun fromBitmapBytes() {
+			executor.execute {
+				val url = URL("https://source.unsplash.com/random")
+				val connection = url.openConnection()
+				val buffer = ByteBuffer.allocateDirect(connection.contentLength)
+				val channel = Channels.newChannel(connection.getInputStream())
+				while (channel.read(buffer) != 0) {
+				}
+
+				TNSImageBitmap.createFromBufferEncoded(
+					buffer,
+					TNSImageBitmap.Options(),
+					object : TNSImageBitmap.Callback {
+						override fun onSuccess(result: TNSImageBitmap) {
+							draw_image_space(canvas!!, null, result)
+						}
+
+						override fun onError(message: String) {
+							Log.e("Canvas", " bitmap onError $message")
+						}
+					})
+			}
+
 	}
 
 
@@ -1790,7 +1816,7 @@ class MainActivity : AppCompatActivity() {
 	}
 
 
-	fun draw_image_space(canvas: TNSCanvas, callback: Callback? = null) {
+	fun draw_image_space(canvas: TNSCanvas, callback: Callback? = null, bitmap: TNSImageBitmap? = null) {
 		val vs = """#version 300 es
 	precision highp float;
 	precision highp int;
@@ -1837,6 +1863,42 @@ class MainActivity : AppCompatActivity() {
 			val vertexArray = gl.createVertexArray()
 			gl.bindVertexArray(vertexArray)
 			gl.bindVertexArray(null)
+
+			if (bitmap != null){
+				val texture = gl.createTexture()
+				gl.activeTexture(gl.TEXTURE0)
+				gl.bindTexture(gl.TEXTURE_2D, texture)
+				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap)
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+
+				// -- Render
+				gl.clearColor(0f, 0f, 0f, 1f)
+				gl.clear(gl.COLOR_BUFFER_BIT)
+
+				gl.useProgram(program)
+				gl.uniform1i(diffuseLocation, 0)
+				gl.uniform2f(
+					imageSizeLocation,
+					(gl.drawingBufferWidth / 2).toFloat(),
+					(gl.drawingBufferHeight / 2).toFloat()
+				)
+
+				gl.bindVertexArray(vertexArray)
+
+				gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+				// Delete WebGL resources
+				gl.deleteTexture(texture)
+				gl.deleteProgram(program)
+				gl.deleteVertexArray(vertexArray)
+				callback?.onSuccess(bitmap)
+
+				return
+			}
+
+
 			val asset = TNSImageAsset()
 			asset.loadImageFromResourceAsync(R.drawable.ic_launcher_background, this, object : Callback {
 				override fun onSuccess(value: Any?) {

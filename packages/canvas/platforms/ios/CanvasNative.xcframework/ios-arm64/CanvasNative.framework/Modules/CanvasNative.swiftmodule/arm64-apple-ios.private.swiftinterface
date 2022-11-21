@@ -254,7 +254,7 @@ import _StringProcessing
   @objc @_Concurrency.MainActor(unsafe) public func toDataURLAsync(_ type: Swift.String, _ callback: @escaping (Swift.String) -> Swift.Void)
   @objc @_Concurrency.MainActor(unsafe) public func toDataURLAsync(_ type: Swift.String, _ format: Swift.Float, _ callback: @escaping (Swift.String) -> Swift.Void)
   @objc @_Concurrency.MainActor(unsafe) public func snapshot() -> [Swift.UInt8]
-  @objc @_Concurrency.MainActor(unsafe) public func getImage() -> UIKit.UIImage?
+  @objc @_Concurrency.MainActor(unsafe) public func getImage(_ flip: Swift.Bool) -> UIKit.UIImage?
   @objc @_Concurrency.MainActor(unsafe) public func snapshotEncoded() -> [Swift.UInt8]
   @objc @_Concurrency.MainActor(unsafe) public var isGL: Swift.Bool {
     @objc get
@@ -2609,6 +2609,7 @@ extension Swift.RangeReplaceableCollection {
   @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
   @objc public static func setupRender() -> CanvasNative.TNSRender
   @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ render: CanvasNative.TNSRender, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public static func writeToFile(_ data: Foundation.NSData, _ path: Swift.String) throws
   @objc override dynamic public init()
   @objc deinit
 }

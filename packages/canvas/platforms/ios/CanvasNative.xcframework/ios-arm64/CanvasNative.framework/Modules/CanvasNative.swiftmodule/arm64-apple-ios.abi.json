@@ -5712,7 +5712,7 @@
           {
             "kind": "Function",
             "name": "getImage",
-            "printedName": "getImage()",
+            "printedName": "getImage(_:)",
             "children": [
               {
                 "kind": "TypeNominal",
@@ -5727,11 +5727,17 @@
                   }
                 ],
                 "usr": "s:Sq"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Bool",
+                "printedName": "Swift.Bool",
+                "usr": "s:Sb"
               }
             ],
             "declKind": "Func",
-            "usr": "c:@M@CanvasNative@objc(cs)TNSCanvas(im)getImage",
-            "mangledName": "$s12CanvasNative9TNSCanvasC8getImageSo7UIImageCSgyF",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSCanvas(im)getImage:",
+            "mangledName": "$s12CanvasNative9TNSCanvasC8getImageySo7UIImageCSgSbF",
             "moduleName": "CanvasNative",
             "declAttributes": [
               "Custom",
@@ -58239,6 +58245,42 @@
             "funcSelfKind": "NonMutating"
           },
           {
+            "kind": "Function",
+            "name": "writeToFile",
+            "printedName": "writeToFile(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "NSData",
+                "printedName": "Foundation.NSData",
+                "usr": "c:objc(cs)NSData"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)Utils(cm)writeToFile::error:",
+            "mangledName": "$s12CanvasNative5UtilsC11writeToFileyySo6NSDataC_SStKFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "AccessControl",
+              "ObjC"
+            ],
+            "throwing": true,
+            "funcSelfKind": "NonMutating"
+          },
+          {
             "kind": "Constructor",
             "name": "init",
             "printedName": "init()",
@@ -74670,42 +74712,42 @@
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7044,
+      "offset": 7112,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7633,
+      "offset": 7701,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 7663,
+      "offset": 7731,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 8308,
+      "offset": 8376,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 9799,
+      "offset": 9867,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/TNSCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 10535,
+      "offset": 10603,
       "length": 5,
       "value": "false"
     },

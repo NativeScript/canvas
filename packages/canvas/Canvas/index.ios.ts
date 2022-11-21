@@ -260,9 +260,9 @@ export class Canvas extends CanvasBase {
 		return this._canvas.toDataURL(type, encoderOptions);
 	}
 
-	public snapshot(): ImageSource | null {
+	public snapshot(flip: boolean = false): ImageSource | null {
 		if (this._canvas) {
-			const bm = this._canvas.getImage?.();
+			const bm = this._canvas.getImage?.(flip ?? false);
 			if (bm) {
 				return new ImageSource(bm);
 			}

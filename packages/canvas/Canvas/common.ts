@@ -191,7 +191,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	public abstract snapshot(): ImageSource | null;
+	public abstract snapshot(flip?: boolean): ImageSource | null;
 
 	public abstract getContext(type: string, options?: any): CanvasRenderingContext | null;
 

@@ -332,7 +332,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (void)toDataURLAsync:(NSString * _Nonnull)type :(void (^ _Nonnull)(NSString * _Nonnull))callback;
 - (void)toDataURLAsync:(NSString * _Nonnull)type :(float)format :(void (^ _Nonnull)(NSString * _Nonnull))callback;
 - (NSArray<NSNumber *> * _Nonnull)snapshot SWIFT_WARN_UNUSED_RESULT;
-- (UIImage * _Nullable)getImage SWIFT_WARN_UNUSED_RESULT;
+- (UIImage * _Nullable)getImage:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
 - (NSArray<NSNumber *> * _Nonnull)snapshotEncoded SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic, readonly) BOOL isGL;
 - (GLint)getId SWIFT_WARN_UNUSED_RESULT;
@@ -2060,6 +2060,7 @@ SWIFT_CLASS_NAMED("Utils")
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
 + (TNSRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
 + (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(TNSRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -2405,7 +2406,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 - (void)toDataURLAsync:(NSString * _Nonnull)type :(void (^ _Nonnull)(NSString * _Nonnull))callback;
 - (void)toDataURLAsync:(NSString * _Nonnull)type :(float)format :(void (^ _Nonnull)(NSString * _Nonnull))callback;
 - (NSArray<NSNumber *> * _Nonnull)snapshot SWIFT_WARN_UNUSED_RESULT;
-- (UIImage * _Nullable)getImage SWIFT_WARN_UNUSED_RESULT;
+- (UIImage * _Nullable)getImage:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
 - (NSArray<NSNumber *> * _Nonnull)snapshotEncoded SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic, readonly) BOOL isGL;
 - (GLint)getId SWIFT_WARN_UNUSED_RESULT;
@@ -4133,6 +4134,7 @@ SWIFT_CLASS_NAMED("Utils")
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
 + (TNSRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
 + (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(TNSRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 

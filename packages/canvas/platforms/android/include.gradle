@@ -7,7 +7,7 @@ allprojects {
 }
 
 dependencies {
-  implementation 'org.nativescript:canvas:1.1.0-alpha.16'
+  implementation 'org.nativescript:canvas:1.1.0-alpha.17'
   implementation "androidx.multidex:multidex:2.0.1"
 }
 

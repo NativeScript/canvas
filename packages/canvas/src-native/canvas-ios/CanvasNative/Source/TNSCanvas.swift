@@ -180,10 +180,13 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     
-    public func getImage() -> UIImage?{
+    public func getImage(_ flip: Bool) -> UIImage?{
         renderer.ensureIsContextIsCurrent()
         let snapshot = (renderer.view as! CanvasGLKView).snapshot
-        return snapshot.withHorizontallyFlippedOrientation()
+        if(flip){
+            return snapshot.withHorizontallyFlippedOrientation()
+        }
+        return snapshot
     }
     
     

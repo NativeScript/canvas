@@ -1,4 +1,4 @@
-import { CanvasBase, ignorePixelScalingProperty } from './common';
+import { CanvasBase, ignorePixelScalingProperty, scalingProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -34,7 +34,7 @@ export class Canvas extends CanvasBase {
 		this._canvas?.setIgnorePixelScaling?.(value);
 	}
 
-	[ignorePixelScalingProperty.setNative](value: boolean) {
+	[scalingProperty.setNative](value: boolean) {
 		this._canvas?.setScaling?.(value);
 	}
 

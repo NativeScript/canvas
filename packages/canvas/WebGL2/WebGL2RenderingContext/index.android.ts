@@ -1,22 +1,22 @@
-import {WebGLQuery} from '../WebGLQuery';
-import {WebGLSampler} from '../WebGLSampler';
-import {WebGLSync} from '../WebGLSync';
-import {WebGLTransformFeedback} from '../WebGLTransformFeedback';
-import {WebGLVertexArrayObject} from '../WebGLVertexArrayObject';
-import {WebGLShader} from '../../WebGL/WebGLShader';
-import {WebGLFramebuffer} from '../../WebGL/WebGLFramebuffer';
-import {WebGLTexture} from '../../WebGL/WebGLTexture';
-import {WebGLProgram} from '../../WebGL/WebGLProgram';
-import {WebGLUniformLocation} from '../../WebGL/WebGLUniformLocation';
-import {WebGLActiveInfo} from '../../WebGL/WebGLActiveInfo';
-import {WebGLRenderbuffer} from '../../WebGL/WebGLRenderbuffer';
-import {WebGLShaderPrecisionFormat} from '../../WebGL/WebGLShaderPrecisionFormat';
-import {WebGLBuffer} from '../../WebGL/WebGLBuffer';
+import { WebGLQuery } from '../WebGLQuery';
+import { WebGLSampler } from '../WebGLSampler';
+import { WebGLSync } from '../WebGLSync';
+import { WebGLTransformFeedback } from '../WebGLTransformFeedback';
+import { WebGLVertexArrayObject } from '../WebGLVertexArrayObject';
+import { WebGLShader } from '../../WebGL/WebGLShader';
+import { WebGLFramebuffer } from '../../WebGL/WebGLFramebuffer';
+import { WebGLTexture } from '../../WebGL/WebGLTexture';
+import { WebGLProgram } from '../../WebGL/WebGLProgram';
+import { WebGLUniformLocation } from '../../WebGL/WebGLUniformLocation';
+import { WebGLActiveInfo } from '../../WebGL/WebGLActiveInfo';
+import { WebGLRenderbuffer } from '../../WebGL/WebGLRenderbuffer';
+import { WebGLShaderPrecisionFormat } from '../../WebGL/WebGLShaderPrecisionFormat';
+import { WebGLBuffer } from '../../WebGL/WebGLBuffer';
 
-import {ImageAsset} from '../../ImageAsset';
-import {ImageSource} from '@nativescript/core';
-import {WebGL2RenderingContextBase} from "./common";
-import {Canvas} from '../../Canvas';
+import { ImageAsset } from '../../ImageAsset';
+import { ImageSource } from '@nativescript/core';
+import { WebGL2RenderingContextBase } from './common';
+import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
 
 export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
@@ -24,7 +24,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		super(context);
 	}
 
-	 native: org.nativescript.canvas.TNSWebGL2RenderingContext;
+	native: org.nativescript.canvas.TNSWebGL2RenderingContext;
 	/* Transform feedback */
 
 	static toPrimitive(value): any {
@@ -65,13 +65,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.bindBufferBase(target, index, value);
 	}
 
-	bindBufferRange(
-		target: number,
-		index: number,
-		buffer: WebGLBuffer,
-		offset: number,
-		size: number
-	): void {
+	bindBufferRange(target: number, index: number, buffer: WebGLBuffer, offset: number, size: number): void {
 		this._glCheckError('bindBufferRange');
 		const value = buffer ? buffer.native : 0;
 		this.native.bindBufferRange(target, index, value, offset, size);
@@ -83,10 +77,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.bindSampler(unit, value);
 	}
 
-	bindTransformFeedback(
-		target: number,
-		transformFeedback: WebGLTransformFeedback
-	): void {
+	bindTransformFeedback(target: number, transformFeedback: WebGLTransformFeedback): void {
 		this._glCheckError('bindTransformFeedback');
 		const value = transformFeedback ? transformFeedback.native : 0;
 		this.native.bindTransformFeedback(target, value);
@@ -95,52 +86,25 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	bindVertexArray(vertexArray: WebGLVertexArrayObject): void {
 		this._glCheckError('bindVertexArray');
 		const value = vertexArray ? vertexArray.native : 0;
-		this.native.bindVertexArray(value);
+		if (value) {
+			this.native.bindVertexArray(value);
+		} else {
+			this.native.bindVertexArray();
+		}
 	}
 
-	blitFramebuffer(
-		srcX0: number,
-		srcY0: number,
-		srcX1: number,
-		srcY1: number,
-		dstX0: number,
-		dstY0: number,
-		dstX1: number,
-		dstY1: number,
-		mask: number,
-		filter: number
-	): void {
+	blitFramebuffer(srcX0: number, srcY0: number, srcX1: number, srcY1: number, dstX0: number, dstY0: number, dstX1: number, dstY1: number, mask: number, filter: number): void {
 		this._glCheckError('blitFramebuffer');
-		this.native.blitFramebuffer(
-			srcX0,
-			srcY0,
-			srcX1,
-			srcY1,
-			dstX0,
-			dstY0,
-			dstX1,
-			dstY1,
-			mask,
-			filter
-		);
+		this.native.blitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
 	}
 
-	clearBufferfi(
-		buffer: WebGLBuffer,
-		drawbuffer: number,
-		depth: number,
-		stencil: number
-	): void {
+	clearBufferfi(buffer: WebGLBuffer, drawbuffer: number, depth: number, stencil: number): void {
 		this._glCheckError('clearBufferfi');
 		const value = buffer ? buffer.native : 0;
 		this.native.clearBufferfi(value, drawbuffer, depth, stencil);
 	}
 
-	clearBufferfv(
-		buffer: WebGLBuffer,
-		drawbuffer: number,
-		values: number[] | Float32Array
-	): void {
+	clearBufferfv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Float32Array): void {
 		this._glCheckError('clearBufferfv');
 		const value = buffer ? buffer.native : 0;
 		if (values instanceof Float32Array) {
@@ -149,11 +113,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.clearBufferfv(value, drawbuffer, values as any);
 	}
 
-	clearBufferiv(
-		buffer: WebGLBuffer,
-		drawbuffer: number,
-		values: number[] | Int32Array
-	): void {
+	clearBufferiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Int32Array): void {
 		this._glCheckError('clearBufferiv');
 		const value = buffer ? buffer.native : 0;
 		if (values instanceof Int32Array) {
@@ -162,11 +122,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.clearBufferiv(value, drawbuffer, values as any);
 	}
 
-	clearBufferuiv(
-		buffer: WebGLBuffer,
-		drawbuffer: number,
-		values: number[] | Uint32Array
-	): void {
+	clearBufferuiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Uint32Array): void {
 		this._glCheckError('clearBufferuiv');
 		const value = buffer ? buffer.native : 0;
 		if (values instanceof Uint32Array) {
@@ -181,65 +137,15 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		return this.native.clientWaitSync(value, flags, timeout);
 	}
 
-	compressedTexSubImage3D(
-		target: number,
-		level: number,
-		xoffset: number,
-		yoffset: number,
-		zoffset: number,
-		width: number,
-		height: number,
-		depth: number,
-		format: number,
-		imageSize: number,
-		offset: any
-	);
+	compressedTexSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, imageSize: number, offset: any);
 
-	compressedTexSubImage3D(
-		target: number,
-		level: number,
-		xoffset: number,
-		yoffset: number,
-		zoffset: number,
-		width: number,
-		height: number,
-		depth: number,
-		format: number,
-		srcData: any,
-		srcOffset: number = 0,
-		srcLengthOverride: number = 0
-	): void {
+	compressedTexSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, srcData: any, srcOffset: number = 0, srcLengthOverride: number = 0): void {
 		this._glCheckError('compressedTexSubImage3D');
 		if (typeof srcOffset === 'number') {
-			this.native.compressedTexSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				srcData,
-				srcOffset
-			);
+			this.native.compressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, srcData, srcOffset);
 		} else if (srcData && srcData.buffer) {
 			if (srcData instanceof Uint8Array) {
-				this.native.compressedTexSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					this.toNativeArray(srcData as any, 'byte'),
-					srcOffset,
-					srcLengthOverride
-				);
+				this.native.compressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, this.toNativeArray(srcData as any, 'byte'), srcOffset, srcLengthOverride);
 			}
 		}
 	}
@@ -248,46 +154,14 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	/* Framebuffers and renderbuffers */
 
-	copyBufferSubData(
-		readTarget: number,
-		writeTarget: number,
-		readOffset: number,
-		writeOffset: number,
-		size: number
-	): void {
+	copyBufferSubData(readTarget: number, writeTarget: number, readOffset: number, writeOffset: number, size: number): void {
 		this._glCheckError('copyBufferSubData');
-		this.native.copyBufferSubData(
-			readTarget,
-			writeTarget,
-			readOffset,
-			writeOffset,
-			size
-		);
+		this.native.copyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
 	}
 
-	copyTexSubImage3D(
-		target: number,
-		level: number,
-		xoffset: number,
-		yoffset: number,
-		zoffset: number,
-		x: number,
-		y: number,
-		width: number,
-		height: number
-	): void {
+	copyTexSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, x: number, y: number, width: number, height: number): void {
 		this._glCheckError('copyTexSubImage3D');
-		this.native.copyTexSubImage3D(
-			target,
-			level,
-			xoffset,
-			yoffset,
-			zoffset,
-			x,
-			y,
-			width,
-			height
-		);
+		this.native.copyTexSubImage3D(target, level, xoffset, yoffset, zoffset, x, y, width, height);
 	}
 
 	createQuery(): WebGLQuery {
@@ -340,12 +214,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.deleteVertexArray(value);
 	}
 
-	drawArraysInstanced(
-		mode: number,
-		first: number,
-		count: number,
-		instanceCount: number
-	): void {
+	drawArraysInstanced(mode: number, first: number, count: number, instanceCount: number): void {
 		this._glCheckError('drawArraysInstanced');
 		this.native.drawArraysInstanced(mode, first, count, instanceCount);
 	}
@@ -355,25 +224,12 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.drawBuffers(buffers);
 	}
 
-	drawElementsInstanced(
-		mode: number,
-		count: number,
-		type: number,
-		offset: number,
-		instanceCount: number
-	): void {
+	drawElementsInstanced(mode: number, count: number, type: number, offset: number, instanceCount: number): void {
 		this._glCheckError('drawElementsInstanced');
 		this.native.drawElementsInstanced(mode, count, type, offset, instanceCount);
 	}
 
-	drawRangeElements(
-		mode: number,
-		start: number,
-		end: number,
-		count: number,
-		type: number,
-		offset: number
-	): void {
+	drawRangeElements(mode: number, start: number, end: number, count: number, type: number, offset: number): void {
 		this._glCheckError('drawRangeElements');
 		this.native.drawRangeElements(mode, start, end, count, type, offset);
 	}
@@ -393,86 +249,41 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.fenceSync(condition, flags);
 	}
 
-	framebufferTextureLayer(
-		target: number,
-		attachment: number,
-		texture: WebGLTexture,
-		level: number,
-		layer: number
-	): void {
+	framebufferTextureLayer(target: number, attachment: number, texture: WebGLTexture, level: number, layer: number): void {
 		this._glCheckError('framebufferTextureLayer');
 		const value = texture ? texture.native : 0;
-		this.native.framebufferTextureLayer(
-			target,
-			attachment,
-			value,
-			level,
-			layer
-		);
+		this.native.framebufferTextureLayer(target, attachment, value, level, layer);
 	}
 
 	/* Framebuffers and renderbuffers */
 
-
 	/* Uniforms */
 
-	getActiveUniformBlockName(
-		program: WebGLProgram,
-		uniformBlockIndex: number
-	): string {
+	getActiveUniformBlockName(program: WebGLProgram, uniformBlockIndex: number): string {
 		this._glCheckError('getActiveUniformBlockName');
 		const value = program ? program.native : 0;
-		return this.native.getActiveUniformBlockName(
-			value,
-			uniformBlockIndex
-		);
+		return this.native.getActiveUniformBlockName(value, uniformBlockIndex);
 	}
 
-	getActiveUniformBlockParameter(
-		program: WebGLProgram,
-		uniformBlockIndex: number,
-		pname: number
-	): any {
+	getActiveUniformBlockParameter(program: WebGLProgram, uniformBlockIndex: number, pname: number): any {
 		this._glCheckError('getActiveUniformBlockParameter');
 		const value = program ? program.native : 0;
-		const param = this.native.getActiveUniformBlockParameter(
-			value,
-			uniformBlockIndex,
-			pname
-		);
+		const param = this.native.getActiveUniformBlockParameter(value, uniformBlockIndex, pname);
 		if (pname === this.UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES) {
 			return new Uint32Array(this.getJSArray(param));
 		}
 		return WebGL2RenderingContext.toPrimitive(param);
 	}
 
-	getActiveUniforms(
-		program: WebGLProgram,
-		uniformIndices: number[],
-		pname: number
-	): any {
+	getActiveUniforms(program: WebGLProgram, uniformIndices: number[], pname: number): any {
 		this._glCheckError('getActiveUniforms');
 		const value = program ? program.native : 0;
-		return this.getJSArray(
-			this.native.getActiveUniforms(value, uniformIndices, pname)
-		);
+		return this.getJSArray(this.native.getActiveUniforms(value, uniformIndices, pname));
 	}
 
-	getBufferSubData(
-		target: number,
-		srcByteOffset: number,
-		dstData: ArrayBuffer,
-		dstOffset: number = 0,
-		length: number = 0
-	): void {
+	getBufferSubData(target: number, srcByteOffset: number, dstData: ArrayBuffer, dstOffset: number = 0, length: number = 0): void {
 		this._glCheckError('getBufferSubData');
-		this.native.getBufferSubData(
-			target,
-			srcByteOffset,
-			new Uint8Array(dstData.slice(0)) as any,
-			dstOffset,
-			length
-		);
+		this.native.getBufferSubData(target, srcByteOffset, new Uint8Array(dstData.slice(0)) as any, dstOffset, length);
 	}
 
 	getFragDataLocation(program: WebGLProgram, name: string): number {
@@ -485,26 +296,15 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	getIndexedParameter(target: number, index: number): any {
 		this._glCheckError('getIndexedParameter');
 		const param = this.native.getIndexedParameter(target, index);
-		if (
-			target === this.TRANSFORM_FEEDBACK_BUFFER_BINDING ||
-			target === this.UNIFORM_BUFFER_BINDING
-		) {
+		if (target === this.TRANSFORM_FEEDBACK_BUFFER_BINDING || target === this.UNIFORM_BUFFER_BINDING) {
 			return new WebGLBuffer(param);
 		}
 		return WebGL2RenderingContext.toPrimitive(param);
 	}
 
-	getInternalformatParameter(
-		target: number,
-		internalformat: number,
-		pname: number
-	): any {
+	getInternalformatParameter(target: number, internalformat: number, pname: number): any {
 		this._glCheckError('getInternalformatParameter');
-		const param = this.native.getInternalformatParameter(
-			target,
-			internalformat,
-			pname
-		);
+		const param = this.native.getInternalformatParameter(target, internalformat, pname);
 		if (pname === this.SAMPLES) {
 			return new Int32Array(this.getJSArray(param));
 		}
@@ -520,7 +320,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		}
 		return WebGL2RenderingContext.toPrimitive(result);
 	}
-
 
 	//@ts-ignore
 	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
@@ -575,10 +374,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		return null;
 	}
 
-	getUniformBlockIndex(
-		program: WebGLProgram,
-		uniformBlockName: string
-	): number {
+	getUniformBlockIndex(program: WebGLProgram, uniformBlockName: string): number {
 		this._glCheckError('getUniformBlockIndex');
 		const value = program ? program.native : 0;
 		return this.native.getUniformBlockIndex(value, uniformBlockName);
@@ -587,9 +383,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	getUniformIndices(program: WebGLProgram, uniformNames: string[]): number[] {
 		this._glCheckError('getUniformIndices');
 		const value = program ? program.native : 0;
-		return this.getJSArray(
-			this.native.getUniformIndices(value, uniformNames)
-		);
+		return this.getJSArray(this.native.getUniformIndices(value, uniformNames));
 	}
 
 	invalidateFramebuffer(target: number, attachments: number[]): void {
@@ -597,23 +391,9 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.invalidateFramebuffer(target, attachments);
 	}
 
-	invalidateSubFramebuffer(
-		target: number,
-		attachments: number[],
-		x: number,
-		y: number,
-		width: number,
-		height: number
-	): void {
+	invalidateSubFramebuffer(target: number, attachments: number[], x: number, y: number, width: number, height: number): void {
 		this._glCheckError('invalidateSubFramebuffer');
-		this.native.invalidateSubFramebuffer(
-			target,
-			attachments,
-			x,
-			y,
-			width,
-			height
-		);
+		this.native.invalidateSubFramebuffer(target, attachments, x, y, width, height);
 	}
 
 	isQuery(query: WebGLQuery): boolean {
@@ -656,21 +436,9 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.readBuffer(src);
 	}
 
-	renderbufferStorageMultisample(
-		target: number,
-		samples: number,
-		internalFormat: number,
-		width: number,
-		height: number
-	): void {
+	renderbufferStorageMultisample(target: number, samples: number, internalFormat: number, width: number, height: number): void {
 		this._glCheckError('renderbufferStorageMultisample');
-		this.native.renderbufferStorageMultisample(
-			target,
-			samples,
-			internalFormat,
-			width,
-			height
-		);
+		this.native.renderbufferStorageMultisample(target, samples, internalFormat, width, height);
 	}
 
 	resumeTransformFeedback(): void {
@@ -684,7 +452,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.samplerParameterf(value, pname, param);
 	}
 
-
 	/* Uniforms */
 
 	/* Sync objects */
@@ -695,116 +462,28 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.samplerParameteri(value, pname, param);
 	}
 
-	texImage3D(
-		target: number,
-		level: number,
-		internalformat: number,
-		width: number,
-		height: number,
-		depth: number,
-		border: number,
-		format: number,
-		type: number,
-		offset: any
-	);
+	texImage3D(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: any);
 
-	texImage3D(
-		target: number,
-		level: number,
-		internalformat: number,
-		width: number,
-		height: number,
-		depth: number,
-		border: number,
-		format: number,
-		type: number,
-		source: any
-	): void {
+	texImage3D(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: any): void {
 		this._glCheckError('texImage3D');
 		if (typeof source === 'number') {
-			this.native.texImage3D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				source
-			);
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source && source.buffer) {
 			if (source && source.buffer) {
 				if (source instanceof Uint8Array || source instanceof Uint8ClampedArray) {
-					this.native.texImage3DByte(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						Array.from(source)
-					);
+					this.native.texImage3DByte(target, level, internalformat, width, height, depth, border, format, type, Array.from(source));
 				} else if (source instanceof Uint16Array || source instanceof Int16Array) {
-					this.native.texImage3DShort(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						Array.from(source)
-					);
+					this.native.texImage3DShort(target, level, internalformat, width, height, depth, border, format, type, Array.from(source));
 				} else if (source instanceof Uint32Array || source instanceof Int32Array) {
-					this.native.texImage3DInt(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						Array.from(source)
-					);
+					this.native.texImage3DInt(target, level, internalformat, width, height, depth, border, format, type, Array.from(source));
 				} else if (source instanceof Float32Array) {
-					this.native.texImage3DFloat(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						Array.from(source)
-					);
+					this.native.texImage3DFloat(target, level, internalformat, width, height, depth, border, format, type, Array.from(source));
 				} else if (source instanceof Float64Array) {
-					this.native.texImage3DDouble(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						Array.from(source)
-					);
+					this.native.texImage3DDouble(target, level, internalformat, width, height, depth, border, format, type, Array.from(source));
 				}
 			} else if (source instanceof ArrayBuffer) {
 				// @ts-ignore
-				if(source.nativeObject){
+				if (source.nativeObject) {
 					// @ts-ignore
 					this.native.texImage3D(
 						target,
@@ -819,353 +498,76 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 						// @ts-ignore
 						source.nativeObject
 					);
-				}else {
-					this.native.texImage3DByte(
-						target,
-						level,
-						internalformat,
-						width,
-						height,
-						depth,
-						border,
-						format,
-						type,
-						Array.from(new Uint8Array(source))
-					);
+				} else {
+					this.native.texImage3DByte(target, level, internalformat, width, height, depth, border, format, type, Array.from(new Uint8Array(source)));
 				}
 			}
 		} else if (source instanceof android.graphics.Bitmap) {
-			this.native.texImage3D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				source
-			);
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source instanceof ImageSource) {
-			this.native.texImage3D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				source.android
-			);
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.android);
 		} else if (source instanceof ImageAsset) {
-			this.native.texImage3D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				source.native
-			);
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source instanceof ImageBitmap || source?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
-			this.native.texImage3D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				source.native
-			);
-		} else if (
-			source &&
-			typeof source.tagName === 'string' &&
-			(source.tagName === 'IMG' || source.tagName === 'IMAGE')
-		) {
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
+		} else if (source && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 			if (source._imageSource instanceof ImageSource) {
-				this.native.texImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					source._imageSource.android
-				);
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._imageSource.android);
 			} else if (source._image instanceof android.graphics.Bitmap) {
-				this.native.texImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					source._image
-				);
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._image);
 			} else if (source._asset instanceof ImageAsset) {
-				this.native.texImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					source._asset.native
-				);
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._asset.native);
 			} else if (typeof source.src === 'string') {
 				const result = ImageSource.fromFileSync(source.src);
-				this.native.texImage3D(
-					target,
-					level,
-					internalformat,
-					width,
-					height,
-					depth,
-					border,
-					format,
-					type,
-					result ? result.android : null
-				);
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, result ? result.android : null);
 			}
-		} else if (source &&
-			typeof source.tagName === 'string' &&
-			source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
-			this.native.texImage3D(
-				target,
-				level,
-				internalformat,
-				width,
-				height,
-				depth,
-				border,
-				format,
-				type,
-				source._canvas.android
-			);
+		} else if (source && typeof source.tagName === 'string' && source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._canvas.android);
 		}
 	}
 
-	texStorage2D(
-		target: number,
-		levels: number,
-		internalformat: number,
-		width: number,
-		height: number
-	): void {
+	texStorage2D(target: number, levels: number, internalformat: number, width: number, height: number): void {
 		this._glCheckError('texStorage2D');
 		this.native.texStorage2D(target, levels, internalformat, width, height);
 	}
 
-	texStorage3D(
-		target: number,
-		levels: number,
-		internalformat: number,
-		width: number,
-		height: number,
-		depth: number
-	): void {
+	texStorage3D(target: number, levels: number, internalformat: number, width: number, height: number, depth: number): void {
 		this._glCheckError('texStorage3D');
-		this.native.texStorage3D(
-			target,
-			levels,
-			internalformat,
-			width,
-			height,
-			depth
-		);
+		this.native.texStorage3D(target, levels, internalformat, width, height, depth);
 	}
 
-	texSubImage3D(
-		target: number,
-		level: number,
-		xoffset: number,
-		yoffset: number,
-		zoffset: number,
-		width: number,
-		height: number,
-		depth: number,
-		format: number,
-		type: number,
-		offset: any
-	);
+	texSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, offset: any);
 
-	texSubImage3D(
-		target: number,
-		level: number,
-		xoffset: number,
-		yoffset: number,
-		zoffset: number,
-		width: number,
-		height: number,
-		depth: number,
-		format: number,
-		type: number,
-		srcData: any
-	);
+	texSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: any);
 
-	texSubImage3D(
-		target: number,
-		level: number,
-		xoffset: number,
-		yoffset: number,
-		zoffset: number,
-		width: number,
-		height: number,
-		depth: number,
-		format: number,
-		type: number,
-		srcData: any,
-		srcOffset: number = 0
-	): void {
+	texSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: any, srcOffset: number = 0): void {
 		this._glCheckError('texSubImage3D');
 		if (typeof srcData === 'number') {
-			this.native.texSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				srcData
-			);
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData && srcData.buffer) {
 			if (srcData instanceof Uint8Array) {
 				if (srcOffset) {
-					this.native.texSubImage3D(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						this.toNativeArray(srcData as any, 'byte'),
-						srcOffset
-					);
+					this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, this.toNativeArray(srcData as any, 'byte'), srcOffset);
 				} else {
-					this.native.texSubImage3D(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						this.toNativeArray(srcData as any, 'byte')
-					);
+					this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, this.toNativeArray(srcData as any, 'byte'));
 				}
 			}
 
-
 			if (srcData && srcData.buffer) {
 				if (srcData instanceof Uint8Array || srcData instanceof Uint8ClampedArray) {
-					this.native.texSubImage3DByte(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						Array.from(srcData),
-						srcOffset
-					);
+					this.native.texSubImage3DByte(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, Array.from(srcData), srcOffset);
 				} else if (srcData instanceof Uint16Array || srcData instanceof Int16Array) {
-					this.native.texSubImage3DShort(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						Array.from(srcData),
-						srcOffset
-					);
+					this.native.texSubImage3DShort(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, Array.from(srcData), srcOffset);
 				} else if (srcData instanceof Uint32Array || srcData instanceof Int32Array) {
-					this.native.texSubImage3DInt(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						Array.from(srcData),
-						srcOffset
-					);
+					this.native.texSubImage3DInt(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, Array.from(srcData), srcOffset);
 				} else if (srcData instanceof Float32Array) {
-					this.native.texSubImage3DFloat(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						Array.from(srcData),
-						srcOffset
-					);
+					this.native.texSubImage3DFloat(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, Array.from(srcData), srcOffset);
 				} else if (srcData instanceof Float64Array) {
-					this.native.texSubImage3DDouble(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						Array.from(srcData),
-						srcOffset
-					);
+					this.native.texSubImage3DDouble(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, Array.from(srcData), srcOffset);
 				}
 			} else if (srcData instanceof ArrayBuffer) {
 				// @ts-ignore
-				if(source.nativeObject){
-					
+				if (source.nativeObject) {
 					this.native.texSubImage3DByte(
 						target,
 						level,
@@ -1181,169 +583,35 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 						source.nativeObject,
 						srcOffset
 					);
-				}else {
-					this.native.texSubImage3DDouble(
-						target,
-						level,
-						xoffset,
-						yoffset,
-						zoffset,
-						width,
-						height,
-						depth,
-						format,
-						type,
-						Array.from(new Uint8Array(srcData)),
-						srcOffset
-					);
+				} else {
+					this.native.texSubImage3DDouble(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, Array.from(new Uint8Array(srcData)), srcOffset);
 				}
 			}
-
-
-
 		} else if (srcData instanceof android.graphics.Bitmap) {
-			this.native.texSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				srcData
-			);
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData instanceof ImageSource) {
-			this.native.texSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				srcData.android
-			);
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.android);
 		} else if (srcData instanceof ImageAsset) {
-			this.native.texSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				srcData.native
-			);
-		} else if (srcData instanceof ImageBitmap  || srcData?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
-			this.native.texSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				srcData.native
-			);
-		} else if (
-			srcData &&
-			typeof srcData.tagName === 'string' &&
-			(srcData.tagName === 'IMG' || srcData.tagName === 'IMAGE')
-		) {
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
+		} else if (srcData instanceof ImageBitmap || srcData?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
+		} else if (srcData && typeof srcData.tagName === 'string' && (srcData.tagName === 'IMG' || srcData.tagName === 'IMAGE')) {
 			if (srcData._imageSource instanceof ImageSource) {
-				this.native.texSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					srcData._imageSource.android
-				);
+				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._imageSource.android);
 			} else if (srcData._image instanceof android.graphics.Bitmap) {
-				this.native.texSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					srcData._image
-				);
+				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._image);
 			} else if (srcData._asset instanceof ImageAsset) {
-				this.native.texSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					srcData._asset.native
-				);
+				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._asset.native);
 			} else if (typeof srcData.src === 'string') {
 				const result = ImageSource.fromFileSync(srcData.src);
-				this.native.texSubImage3D(
-					target,
-					level,
-					xoffset,
-					yoffset,
-					zoffset,
-					width,
-					height,
-					depth,
-					format,
-					type,
-					result ? result.android : null
-				);
+				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, result ? result.android : null);
 			}
-		} else if (srcData &&
-			typeof srcData.tagName === 'string' &&
-			srcData.tagName === 'CANVAS' && srcData._canvas instanceof TNSCanvas) {
-			this.native.texSubImage3D(
-				target,
-				level,
-				xoffset,
-				yoffset,
-				zoffset,
-				width,
-				height,
-				depth,
-				format,
-				type,
-				srcData._canvas.android
-			);
+		} else if (srcData && typeof srcData.tagName === 'string' && srcData.tagName === 'CANVAS' && srcData._canvas instanceof TNSCanvas) {
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._canvas.android);
 		}
 	}
 
-	transformFeedbackVaryings(
-		program: WebGLProgram,
-		varyings: string[],
-		bufferMode: number
-	): void {
+	transformFeedbackVaryings(program: WebGLProgram, varyings: string[], bufferMode: number): void {
 		this._glCheckError('transformFeedbackVaryings');
 		const value = program ? program.native : 0;
 		this.native.transformFeedbackVaryings(value, varyings, bufferMode);
@@ -1389,13 +657,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniform3uiv(value, Array.from(data as any));
 	}
 
-	uniform4ui(
-		location: WebGLUniformLocation,
-		v0: number,
-		v1: number,
-		v2: number,
-		v3: number
-	): void {
+	uniform4ui(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('uniform4ui');
 		const value = location ? location.native : 0;
 		this.native.uniform4ui(value, v0, v1, v2, v3);
@@ -1407,25 +669,13 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniform4uiv(value, Array.from(data as any));
 	}
 
-	uniformBlockBinding(
-		program: WebGLProgram,
-		uniformBlockIndex: number,
-		uniformBlockBinding: number
-	): void {
+	uniformBlockBinding(program: WebGLProgram, uniformBlockIndex: number, uniformBlockBinding: number): void {
 		this._glCheckError('uniformBlockBinding');
 		const value = program ? program.native : 0;
-		this.native.uniformBlockBinding(
-			value,
-			uniformBlockIndex,
-			uniformBlockBinding
-		);
+		this.native.uniformBlockBinding(value, uniformBlockIndex, uniformBlockBinding);
 	}
 
-	uniformMatrix2x3fv(
-		location: WebGLUniformLocation,
-		transpose: boolean,
-		data: Float32Array
-	): void {
+	uniformMatrix2x3fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		if (data instanceof Float32Array) {
 			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
@@ -1434,11 +684,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniformMatrix2x3fv(value, transpose, data as any);
 	}
 
-	uniformMatrix2x4fv(
-		location: WebGLUniformLocation,
-		transpose: boolean,
-		data: Float32Array
-	): void {
+	uniformMatrix2x4fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		if (data instanceof Float32Array) {
 			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
@@ -1447,11 +693,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniformMatrix2x4fv(value, transpose, data as any);
 	}
 
-	uniformMatrix3x2fv(
-		location: WebGLUniformLocation,
-		transpose: boolean,
-		data: Float32Array
-	): void {
+	uniformMatrix3x2fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		if (data instanceof Float32Array) {
 			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
@@ -1460,11 +702,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniformMatrix3x2fv(value, transpose, data as any);
 	}
 
-	uniformMatrix3x4fv(
-		location: WebGLUniformLocation,
-		transpose: boolean,
-		data: Float32Array
-	): void {
+	uniformMatrix3x4fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		if (data instanceof Float32Array) {
 			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
@@ -1473,11 +711,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniformMatrix3x4fv(value, transpose, data as any);
 	}
 
-	uniformMatrix4x2fv(
-		location: WebGLUniformLocation,
-		transpose: boolean,
-		data: Float32Array
-	): void {
+	uniformMatrix4x2fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		if (data instanceof Float32Array) {
 			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
@@ -1486,11 +720,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.uniformMatrix4x2fv(value, transpose, data as any);
 	}
 
-	uniformMatrix4x3fv(
-		location: WebGLUniformLocation,
-		transpose: boolean,
-		data: Float32Array
-	): void {
+	uniformMatrix4x3fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void {
 		if (data instanceof Float32Array) {
 			data = Array.from(data as any) as any; //this.toNativeArray(data as any, 'float');
 		}
@@ -1504,13 +734,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.vertexAttribDivisor(index, divisor);
 	}
 
-	vertexAttribI4i(
-		index: number,
-		v0: number,
-		v1: number,
-		v2: number,
-		v3: number
-	): void {
+	vertexAttribI4i(index: number, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('vertexAttribI4i');
 		this.native.vertexAttribI4i(index, v0, v1, v2, v3);
 	}
@@ -1523,13 +747,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this.native.vertexAttribI4uiv(index, value as any);
 	}
 
-	vertexAttribI4ui(
-		index: number,
-		v0: number,
-		v1: number,
-		v2: number,
-		v3: number
-	): void {
+	vertexAttribI4ui(index: number, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('vertexAttribI4ui');
 		this.native.vertexAttribI4ui(index, v0, v1, v2, v3);
 	}

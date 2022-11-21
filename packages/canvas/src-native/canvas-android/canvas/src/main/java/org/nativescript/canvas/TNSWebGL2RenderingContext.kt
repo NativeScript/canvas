@@ -93,8 +93,19 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		}
 	}
 
-	@JvmOverloads
-	fun bindVertexArray(vertexArray: Int? = null) {
+	fun bindVertexArray() {
+		runOnGLThread {
+			GLES30.glBindVertexArray(0)
+			lock.countDown()
+		}
+		try {
+			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun bindVertexArray(vertexArray: Int) {
 		runOnGLThread {
 			GLES30.glBindVertexArray(vertexArray ?: 0)
 			lock.countDown()
@@ -952,7 +963,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				}
 				try {
 					lock.await(2, TimeUnit.SECONDS)
-			lock.reset()
+					lock.reset()
 				} catch (ignored: InterruptedException) {
 				}
 				return parameter[0]

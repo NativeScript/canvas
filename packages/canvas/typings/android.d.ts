@@ -1801,6 +1801,7 @@ declare module org {
 				public uniformMatrix4x2fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public getTEXTURE_BINDING_3D(): number;
 				public bindVertexArray(param0: number): void;
+				public bindVertexArray(): void;
 				public getRG(): number;
 				public getMAX_SAMPLES(): number;
 				public endTransformFeedback(): void;

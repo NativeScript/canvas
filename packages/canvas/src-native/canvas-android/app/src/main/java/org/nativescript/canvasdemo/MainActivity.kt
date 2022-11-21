@@ -1665,7 +1665,7 @@ class MainActivity : AppCompatActivity() {
 		fos.close()
 		*/
 
-		sourceIn(canvas!!)
+		//sourceIn(canvas!!)
 		//drawImageBitmap(canvas!!)
 		//clipTest(canvas!!)
 		//evenOddTest(canvas!!)
@@ -1675,7 +1675,8 @@ class MainActivity : AppCompatActivity() {
 
 		//	draw_image_space(canvas!!)
 		//	drawImage(canvas!!)
-		fromBitmapBytes()
+		//fromBitmapBytes()
+		TNSDOMMatrix()
 	}
 
 	fun fromBitmapBytes() {
@@ -1862,7 +1863,7 @@ class MainActivity : AppCompatActivity() {
 			// -- Init VertexArray
 			val vertexArray = gl.createVertexArray()
 			gl.bindVertexArray(vertexArray)
-			gl.bindVertexArray(null)
+			gl.bindVertexArray()
 
 			if (bitmap != null){
 				val texture = gl.createTexture()

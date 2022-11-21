@@ -13,6 +13,9 @@ use jni::sys::{
 
 use crate::common::context::image_asset::ImageAsset;
 
+const RGB: u32 = 0x1907;
+const RGBA: u32 = 0x1908;
+
 #[no_mangle]
 pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeFlipInPlace3D(
     env: JNIEnv,
@@ -100,7 +103,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
             format,
             image_type,
             flipY == JNI_TRUE,
-            unsafe {std::slice::from_raw_parts_mut(data_array, len)},
+            unsafe { std::slice::from_raw_parts_mut(data_array, len) },
         );
     }
 }
@@ -394,6 +397,16 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     let asset: *mut ImageAsset = asset as _;
     let asset = &mut *asset;
     if let Some(bytes) = asset.get_bytes() {
+        let internalformat = match (internalformat as u32, asset.channels()) {
+            (RGB, 4) => RGBA as i32,
+            _ => internalformat
+        };
+
+        let format = match (format as u32, asset.channels()) {
+            (RGB, 4) => RGBA as i32,
+            _ => format
+        };
+
         if flipY == JNI_TRUE {
             //  flip source image ?
             let mut bytes = bytes.to_vec();
@@ -451,7 +464,24 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     bitmap: JObject,
     flipY: jboolean,
 ) {
-    if let Some((mut data,info)) = super::super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+    if let Some((mut data, info)) = super::super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+
+        let mut channels = 4;
+
+        if info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+            channels = 2;
+        }
+
+        let internalformat = match (internalformat as u32, channels) {
+            (RGB, 4) => RGBA as i32,
+            _ => internalformat
+        };
+
+        let format = match (format as u32, channels) {
+            (RGB, 4) => RGBA as i32,
+            _ => format
+        };
+
         if !data.is_empty() {
             if flipY == JNI_TRUE {
                 crate::common::utils::gl::flip_in_place_3d(
@@ -551,7 +581,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
             format,
             image_type,
             flipY == JNI_TRUE,
-            unsafe {std::slice::from_raw_parts_mut(data_array, len)},
+            unsafe { std::slice::from_raw_parts_mut(data_array, len) },
         );
     }
 }
@@ -862,6 +892,12 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     let asset = &mut *asset;
 
     if let Some(bytes) = asset.get_bytes() {
+        let format = match (format as u32, asset.channels()) {
+            (RGB, 4) => RGBA as i32,
+            _ => format
+        };
+
+
         if flipY == JNI_TRUE {
             let mut bytes = bytes.to_vec();
             crate::common::utils::gl::flip_in_place_3d(
@@ -886,7 +922,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 image_type as u32,
                 bytes.as_ptr() as *const c_void,
             );
-        }else {
+        } else {
             gl_bindings::glTexSubImage3D(
                 target as u32,
                 level,
@@ -921,7 +957,18 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     bitmap: JObject,
     flipY: jboolean,
 ) {
-    if let Some((mut data,info)) = super::super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+    if let Some((mut data, info)) = super::super::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        let mut channels = 4;
+
+        if info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+            channels = 2;
+        }
+
+        let format = match (format as u32, channels) {
+            (RGB, 4) => RGBA as i32,
+            _ => format
+        };
+
         if !data.is_empty() {
             if flipY == JNI_TRUE {
                 crate::common::utils::gl::flip_in_place_3d(

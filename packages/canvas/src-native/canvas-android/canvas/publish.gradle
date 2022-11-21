@@ -13,7 +13,7 @@ allprojects {
 	plugins.withId("com.vanniktech.maven.base") {
 		group = "org.nativescript"
 		archivesBaseName = "canvas"
-		version = "1.1.0-alpha.17"
+		version = "1.1.0-alpha.18"
 
 		mavenPublishing {
 			publishToMavenCentral("DEFAULT")

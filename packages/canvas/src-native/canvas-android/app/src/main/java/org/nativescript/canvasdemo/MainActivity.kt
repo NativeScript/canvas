@@ -1680,7 +1680,7 @@ class MainActivity : AppCompatActivity() {
 
 	fun fromBitmapBytes() {
 			executor.execute {
-				val url = URL("https://source.unsplash.com/random")
+				val url = URL("https://hips.hearstapps.com/digitalspyuk.cdnds.net/17/19/1494434353-deadpool.jpg")
 				val connection = url.openConnection()
 				val buffer = ByteBuffer.allocateDirect(connection.contentLength)
 				val channel = Channels.newChannel(connection.getInputStream())
@@ -1869,7 +1869,7 @@ class MainActivity : AppCompatActivity() {
 				gl.activeTexture(gl.TEXTURE0)
 				gl.bindTexture(gl.TEXTURE_2D, texture)
 				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap)
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, bitmap)
 				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 

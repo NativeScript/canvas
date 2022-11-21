@@ -2,7 +2,7 @@ apply plugin: 'maven-publish'
 
 def LIB_GROUP_ID = 'com.github.triniwiz'
 def LIB_ARTIFACT_ID = 'canvas'
-def LIB_VERSION = '1.1.0-alpha.17'
+def LIB_VERSION = '1.1.0-alpha.18'
 
 
 task sourceJar(type: Jar) {

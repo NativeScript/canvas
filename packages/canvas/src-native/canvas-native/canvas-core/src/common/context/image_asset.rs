@@ -103,7 +103,7 @@ impl ImageAsset {
         if let Some(data) = &asset.image {
             return match data {
                 ImageAssetInnerData::Stb(data) => {
-                    match stb::image::stbi_load_from_memory(data.as_slice(), Channels::RgbAlpha) {
+                    match stb::image::stbi_load_from_memory(data.as_slice(), Channels::Default) {
                         None => None,
                         Some((info, data)) => {
                             let inner = ImageAssetInner {
@@ -225,6 +225,15 @@ impl ImageAsset {
             .density
     }
 
+    pub fn channels(&self) -> usize {
+        self.get_lock()
+            .info
+            .as_ref()
+            .map(|v| (v.components).try_into().unwrap_or_default())
+            .unwrap_or_default()
+    }
+
+
     pub fn size(&self) -> usize {
         self.get_lock()
             .info
@@ -261,7 +270,7 @@ impl ImageAsset {
         }
         lock.image = None;
 
-        match stb::image::stbi_load_from_reader(reader, Channels::RgbAlpha) {
+        match stb::image::stbi_load_from_reader(reader, Channels::Default) {
             None => {
                 lock.error.push_str("Failed to decode image");
                 false
@@ -309,7 +318,7 @@ impl ImageAsset {
             lock.error.clear()
         }
         lock.image = None;
-        match stb::image::stbi_load_from_memory(buf, Channels::RgbAlpha) {
+        match stb::image::stbi_load_from_memory(buf, Channels::Default) {
             None => {
                 lock.error.push_str("Failed to decode image");
                 false
@@ -340,7 +349,7 @@ impl ImageAsset {
 
                 match image {
                     ImageAssetInnerData::Stb(image) => {
-                        image.resize(x as i32, y as i32, Channels::RgbAlpha, info);
+                        image.resize(x as i32, y as i32, Channels::Default, info);
                         if !done {
                             lock.error.push_str("Failed to scale Image");
                         }

@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.opengl.GLES20
 import android.os.Build
 import android.os.Build.VERSION_CODES
@@ -3982,6 +3983,39 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 				format,
 				type,
 				pixels,
+				flipYWebGL
+			)
+			lock.countDown()
+		}
+		try {
+			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+
+	fun texImage2D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		format: Int,
+		type: Int,
+		pixels: Drawable
+	) {
+
+		runOnGLThread {
+			val bitmap = Helpers.getBitmap(pixels)
+			nativeTexImage2DBitmap(
+				target,
+				level,
+				internalformat,
+				bitmap.width,
+				bitmap.width,
+				0,
+				format,
+				type,
+				bitmap,
 				flipYWebGL
 			)
 			lock.countDown()

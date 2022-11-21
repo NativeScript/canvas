@@ -72,7 +72,7 @@ pub extern "C" fn context_init_context(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
-    let mut device = Device {
+    let device = Device {
         width,
         height,
         density,
@@ -80,6 +80,7 @@ pub extern "C" fn context_init_context(
         samples,
         alpha,
         ppi,
+        matrix: skia_safe::Matrix::scale((density, density)),
     };
     let interface = Interface::new_native();
     let mut ctx = skia_safe::gpu::DirectContext::new_gl(interface, None).unwrap();
@@ -104,7 +105,7 @@ pub extern "C" fn context_init_context(
     if !alpha {
         color_type = ColorType::RGB565;
     }
-    let mut surface_holder = Surface::from_backend_render_target(
+    let surface_holder = Surface::from_backend_render_target(
         &mut ctx,
         &target,
         skia_safe::gpu::SurfaceOrigin::BottomLeft,
@@ -120,6 +121,7 @@ pub extern "C" fn context_init_context(
         state_stack: vec![],
         font_color: Color::new(font_color),
         device,
+        enable_scaling: false,
     })) as c_longlong
 }
 
@@ -133,7 +135,7 @@ pub extern "C" fn context_init_context_with_custom_surface(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
-    let mut device = Device {
+    let device = Device {
         width,
         height,
         density,
@@ -141,6 +143,7 @@ pub extern "C" fn context_init_context_with_custom_surface(
         samples: 0,
         alpha,
         ppi,
+        matrix: skia_safe::Matrix::scale((density, density)),
     };
     let info = ImageInfo::new(
         ISize::new(width as i32, height as i32),
@@ -156,7 +159,23 @@ pub extern "C" fn context_init_context_with_custom_surface(
         state_stack: vec![],
         font_color: Color::new(font_color as u32),
         device,
+        enable_scaling: false,
     })) as c_longlong
+}
+
+#[no_mangle]
+pub extern "C" fn context_set_scaling(
+    context: c_longlong,
+    scaling: bool,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        context.set_scaling(scaling);
+    }
 }
 
 #[no_mangle]
@@ -174,7 +193,7 @@ pub extern "C" fn context_resize_custom_surface(
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        let mut device = Device {
+        let device = Device {
             width,
             height,
             density,
@@ -182,6 +201,7 @@ pub extern "C" fn context_resize_custom_surface(
             samples: 0,
             alpha,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density)),
         };
 
         let info = ImageInfo::new(
@@ -224,7 +244,7 @@ pub extern "C" fn context_resize_surface(
         }
         let mut ctx = ctx.unwrap();
         ctx.reset(None);
-        let mut device = Device {
+        let device = Device {
             width,
             height,
             density,
@@ -232,6 +252,7 @@ pub extern "C" fn context_resize_surface(
             samples,
             alpha: false,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density)),
         };
         let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
@@ -301,7 +322,7 @@ pub(crate) fn context_to_data(context: *mut Context) -> Vec<u8> {
         let context: *mut Context = context as _;
         let context = &mut *context;
         let surface = &mut context.surface;
-        ;
+
         let image = surface.image_snapshot();
 
         match image.to_raster_image(
@@ -1063,7 +1084,7 @@ pub extern "C" fn context_close_path(context: c_longlong) {
 
 #[no_mangle]
 pub extern "C" fn context_create_image_data(width: c_int, height: c_int) -> c_longlong {
-    unsafe { Box::into_raw(Box::new(Context::create_image_data(width, height))) as c_longlong }
+    Box::into_raw(Box::new(Context::create_image_data(width, height))) as c_longlong
 }
 
 #[no_mangle]

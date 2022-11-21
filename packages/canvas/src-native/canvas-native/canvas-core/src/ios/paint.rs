@@ -2,7 +2,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_longlong};
 use std::str::FromStr;
 
-use css_color_parser::{Color, ColorParseError};
+use css_color_parser::{Color};
 
 use crate::common::context::Context;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;

@@ -228,15 +228,24 @@ public class GLRenderer: NSObject, GLKViewDelegate {
         }
     }
     
+    
+    func handleScaling(){
+        if(context != 0){
+            context_set_scaling(context, canvasView?.scaling ?? false)
+        }
+    }
+    
     var forceResize = false
     func handlePixelScale(){
-        forceResize = true
         if(!useCpu){
             glkView.contentScaleFactor = CGFloat(deviceScale())
         }else {
             cpuView.contentScaleFactor = CGFloat(deviceScale())
         }
-        resize()
+        if(context != 0 || drawingBufferWidth > 0){
+            forceResize = true
+            resize()
+        }
     }
     
     private var useCpu: Bool
@@ -364,7 +373,13 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         glClearDepthf(1)
                         glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
                         glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                        context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),deviceScale(), binding, 4,canvasView?.contextAlpha ?? true, 100.0)
+                        var scale = deviceScale()
+                        
+                        if (scale == 1 && canvasView?.scaling ?? false){
+                            scale =  Float32(UIScreen.main.nativeScale)
+                        }
+                        
+                        context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, binding, 4,canvasView?.contextAlpha ?? true, 100.0)
                     }
                     glkView.display()
                     
@@ -409,7 +424,16 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                     }
                     let width = Float(cpuView.frame.size.width) * deviceScale()
                     let height = Float(cpuView.frame.size.height) * deviceScale()
-                    context = context_init_context_with_custom_surface(width, height,deviceScale(), canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    var scale = deviceScale()
+                    
+                    if (scale == 1 && canvasView?.scaling ?? false){
+                        scale =  Float32(UIScreen.main.nativeScale)
+                    }
+                    
+                    context = context_init_context_with_custom_surface(width, height,scale, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    handleScaling()
                 }
                 
             }else {
@@ -450,7 +474,17 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         
                     }
                     glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                    context = context_init_context(Float32(drawingBufferWidth), Float32(drawingBufferHeight),deviceScale(), Int32(displayFramebuffer), 4, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    var scale = deviceScale()
+                    
+                    if (scale == 1 && canvasView?.scaling ?? false){
+                        scale =  Float32(UIScreen.main.nativeScale)
+                    }
+                    
+                    
+                    context = context_init_context(Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, Int32(displayFramebuffer), 4, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    handleScaling()
                     
                 }
                 

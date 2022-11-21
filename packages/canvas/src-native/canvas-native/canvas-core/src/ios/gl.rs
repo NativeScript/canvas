@@ -1,7 +1,6 @@
 use std::os::raw::{c_int, c_longlong, c_uint, c_void};
 
 use crate::common::context::image_asset::ImageAsset;
-use crate::common::ffi::u8_array::destroy_u8_array;
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;
@@ -20,7 +19,7 @@ pub extern "C" fn gl_tex_image_2D_asset(
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let mut data = asset.get_bytes();
+        let data = asset.get_bytes();
         if let Some(data) = data {
             let width = asset.width();
             let height = asset.height();

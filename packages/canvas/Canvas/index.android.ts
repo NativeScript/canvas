@@ -31,7 +31,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
-		this._canvas.setIgnorePixelScaling(value);
+		this._canvas?.setIgnorePixelScaling?.(value);
+	}
+
+	[ignorePixelScalingProperty.setNative](value: boolean) {
+		this._canvas?.setScaling?.(value);
 	}
 
 	// @ts-ignore
@@ -108,6 +112,11 @@ export class Canvas extends CanvasBase {
 		if (this.ignorePixelScaling) {
 			this._canvas.setIgnorePixelScaling(this.ignorePixelScaling);
 		}
+
+		if (this.scaling) {
+			this._canvas.setScaling(this.scaling);
+		}
+
 		const ref = new WeakRef(this);
 		this.on(View.layoutChangedEvent, (args) => {
 			const parent = this.parent as any;

@@ -1,6 +1,12 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Rect
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.VectorDrawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import java.nio.ByteBuffer
@@ -672,6 +678,69 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			callback: Callback
 		) {
 			executor.execute {
+				val result = nativeCreateFromBitmapSrcRect(
+					bitmap,
+					sx, sy, sWidth, sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result != 0L) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun createFromDrawable(
+			drawable: Drawable,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val bitmap = Helpers.getBitmap(drawable)
+				val result = nativeCreateFromBitmap(
+					bitmap,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result != 0L) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+		@JvmStatic
+		fun createFromDrawable(
+			drawable: Drawable,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+
+				val bitmap = Helpers.getBitmap(drawable)
 				val result = nativeCreateFromBitmapSrcRect(
 					bitmap,
 					sx, sy, sWidth, sHeight,

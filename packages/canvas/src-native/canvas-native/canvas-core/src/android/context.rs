@@ -27,6 +27,10 @@ use crate::common::ffi::paint_style_value::{PaintStyleValueType};
 use crate::common::utils::color::to_parsed_color;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
 
+use ndk::{
+    bitmap::AndroidBitmap
+};
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetDirection(
     _: JNIEnv,
@@ -972,6 +976,45 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithBitmap(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    bitmap: JObject,
+    repetition: jint,
+) -> jlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+
+
+        let bm = AndroidBitmap::from_jni(env.get_native_interface(), bitmap.into_raw());
+
+        return match (bm.get_info(), bm.lock_pixels()) {
+            (Ok(bitmap_info), Ok(pixels)) => {
+                let length = (bitmap_info.height() * bitmap_info.stride()) as usize;
+                let slice: &mut [u8] =
+                    std::slice::from_raw_parts_mut(pixels as *mut u8, length as usize);
+
+                let mut ret = 0;
+                if let Some(image) = from_image_slice(slice, bitmap_info.width() as i32, bitmap_info.height() as i32) {
+                    ret = Box::into_raw(Box::new(PaintStyle::Pattern(
+                        context.create_pattern(image, Repetition::from(repetition)),
+                    ))) as jlong;
+                }
+                let _ = bm.unlock_pixels();
+                return ret;
+            }
+            (_, _) => 0
+        };
+    }
+}
+
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithAsset(
     _: JNIEnv,
     _: JClass,
@@ -1380,36 +1423,36 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         let asset = &mut *asset;
         let width = asset.width() as f32;
         let height = asset.height() as f32;
-       if let Some(image) = asset.skia_image() {
-           draw_image_with_image(
-               context,
-               Some(&image),
-               sx,
-               sy,
-               s_width,
-               s_height,
-               dx,
-               dy,
-               d_width,
-               d_height,
-           );
-       }else {
-           let bytes = asset.get_bytes().unwrap_or_default();
-           draw_image(
-               context,
-               bytes,
-               width,
-               height,
-               sx,
-               sy,
-               s_width,
-               s_height,
-               dx,
-               dy,
-               d_width,
-               d_height,
-           );
-       }
+        if let Some(image) = asset.skia_image() {
+            draw_image_with_image(
+                context,
+                Some(&image),
+                sx,
+                sy,
+                s_width,
+                s_height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        } else {
+            let bytes = asset.get_bytes().unwrap_or_default();
+            draw_image(
+                context,
+                bytes,
+                width,
+                height,
+                sx,
+                sy,
+                s_width,
+                s_height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        }
     }
 }
 

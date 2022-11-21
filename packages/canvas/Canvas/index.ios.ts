@@ -1,4 +1,4 @@
-import { CanvasBase, ignorePixelScalingProperty } from './common';
+import { CanvasBase, ignorePixelScalingProperty, scalingProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -47,6 +47,10 @@ export class Canvas extends CanvasBase {
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
 		this._canvas.ignorePixelScaling = value;
+	}
+
+	[scalingProperty.setNative](value: boolean) {
+		this._canvas.scaling = value;
 	}
 
 	// @ts-ignore
@@ -144,8 +148,8 @@ export class Canvas extends CanvasBase {
 
 	initNativeView() {
 		super.initNativeView();
-		if (this.ignorePixelScaling) {
-			this._canvas.ignorePixelScaling = this.ignorePixelScaling;
+		if (this.scaling) {
+			this._canvas.scaling = this.scaling;
 		}
 	}
 

@@ -83,7 +83,7 @@ fn ndk_major_version(ndk_dir: &Path) -> u32 {
 
 fn main() {
     let target_str = std::env::var("TARGET").unwrap();
-    let mut include_dir = String::from("-I");
+    //let mut include_dir = String::from("-I");
     let target: Vec<String> = target_str.split('-').map(|s| s.into()).collect();
     if target.len() < 3 {
         assert!(!(target.len() < 3), "Failed to parse TARGET {}", target_str);
@@ -166,7 +166,7 @@ fn main() {
                 // The input header we would like to generate
                 // bindings for.
                 .header("wrapper.h")
-                .clang_arg(include_dir)
+              //  .clang_arg(include_dir)
                 // Finish the builder and generate the bindings.
                 .generate()
                 // Unwrap the Result and panic on failure.

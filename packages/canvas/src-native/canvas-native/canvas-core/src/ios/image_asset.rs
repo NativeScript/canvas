@@ -15,7 +15,7 @@ pub extern "C" fn image_asset_load_from_path(asset: c_longlong, path: *const c_c
     }
     unsafe {
         let asset: *mut ImageAsset = asset as _;
-        let mut asset = &mut *asset;
+        let asset = &mut *asset;
         asset.load_from_path_raw(path)
     }
 }

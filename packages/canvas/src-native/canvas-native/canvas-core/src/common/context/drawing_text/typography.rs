@@ -101,7 +101,7 @@ impl Font {
     }
 
     pub fn load_type_from_path(&mut self, path: &str) -> Option<Typeface> {
-        let mut mgr = FontMgr::default();
+        let mgr = FontMgr::default();
         match std::fs::read(std::path::Path::new(path)) {
             Ok(bytes) => {
                 mgr.new_from_data(bytes.as_slice(), None)

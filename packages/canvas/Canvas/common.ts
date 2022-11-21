@@ -42,11 +42,18 @@ export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
 	valueConverter: booleanConverter,
 });
 
+export const scalingProperty = new Property<CanvasBase, boolean>({
+	name: 'scaling',
+	defaultValue: false,
+	valueConverter: booleanConverter,
+});
+
 let pointerId = 0;
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
 	ignorePixelScaling: boolean;
+	scaling: boolean;
 	_isCustom: boolean = false;
 
 	_classList: Set<any>;
@@ -386,17 +393,18 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							const x = extraData.positions[i];
 							const y = extraData.positions[i + 1];
 
+							const id = this._pointers[i]?.id;
 							if (hasPointerUp) {
 								this.notify({
 									...this._createPointerEvent('pointerup', { ...extraData, x, y }),
-									pointerId: this._pointers[i].id,
+									pointerId: id,
 								});
 							}
 
 							if (hasMouseUp) {
 								this.notify({
 									...this._createPointerEvent('mouseup', { ...extraData, x, y }),
-									pointerId: this._pointers[i].id,
+									pointerId: id,
 								});
 							}
 						}
@@ -432,7 +440,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							const y = extraData.positions[i + 1];
 							this.notify({
 								...this._createPointerEvent('pointercancel', { ...extraData, x, y }),
-								pointerId: this._pointers[i].id,
+								pointerId: this._pointers[i]?.id,
 							});
 						}
 					}
@@ -490,17 +498,18 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							for (let i = 0; i < count; i++) {
 								let x = positions[i] - extraData.x;
 								let y = positions[i + 1] - extraData.y;
+								const id = this._pointers[i]?.id;
 								if (hasPointerMove) {
 									this.notify({
 										...this._createPointerEvent('pointermove', { ...extraData, x, y }),
-										pointerId: this._pointers[i].id,
+										pointerId: id,
 									});
 								}
 
 								if (hasMouseMove) {
 									this.notify({
 										...this._createPointerEvent('mousemove', { ...extraData, x, y }),
-										pointerId: this._pointers[i].id,
+										pointerId: id,
 									});
 								}
 							}
@@ -579,17 +588,18 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							for (let i = 0; i < count; i++) {
 								let x = positions[i] - extraData.x;
 								let y = positions[i + 1] - extraData.y;
+								const id = this._pointers[i]?.id;
 								if (hasPointerMove) {
 									this.notify({
 										...this._createPointerEvent('pointermove', { ...extraData, x, y }),
-										pointerId: this._pointers[i].id,
+										pointerId: id,
 									});
 								}
 
 								if (hasMouseMove) {
 									this.notify({
 										...this._createPointerEvent('mousemove', { ...extraData, x, y }),
-										pointerId: this._pointers[i].id,
+										pointerId: id,
 									});
 								}
 							}
@@ -627,17 +637,18 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					for (let i = 0; i < extraData.numberOfPointers; i++) {
 						const x = positions[i];
 						const y = positions[i + 1];
+						const id = this._pointers[i]?.id;
 						if (hasPointerMove) {
 							this.notify({
 								...this._createPointerEvent('pointermove', { numberOfPointers: extraData.numberOfPointers, positions, x, y }),
-								pointerId: this._pointers[i].id,
+								pointerId: id,
 							});
 						}
 
 						if (hasMouseMove) {
 							this.notify({
 								...this._createPointerEvent('mousemove', { numberOfPointers: extraData.numberOfPointers, positions, x, y }),
-								pointerId: this._pointers[i].id,
+								pointerId: id,
 							});
 						}
 					}
@@ -749,4 +760,4 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	preventDefault() {}
 }
 
-ignorePixelScalingProperty.register(CanvasBase);
+scalingProperty.register(CanvasBase);

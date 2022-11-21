@@ -236,7 +236,7 @@ pub(crate) fn create_image_bitmap(
     if out_width == source_rect.width() && out_height == source_rect.height() {
         let row_bytes = out_width * 4.;
         let mut pixels = vec![0u8; (row_bytes * out_height) as usize];
-        let mut surface = skia_safe::Surface::new_raster_direct(&image_info, pixels.as_mut_slice(), None, None);
+        let surface = skia_safe::Surface::new_raster_direct(&image_info, pixels.as_mut_slice(), None, None);
         if let Some(mut surface) = surface {
             resize(&mut surface);
             output.load_from_bytes_graphics(pixels, out_width as i32, out_height as i32, image_info.bytes_per_pixel() as i32);

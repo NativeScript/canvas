@@ -29,6 +29,12 @@ impl Path {
         }
     }
 
+    pub fn with_transform(&self, matrix: &skia_safe::Matrix) -> Path {
+        Self {
+            path: self.path.with_transform(matrix),
+        }
+    }
+
     pub fn new() -> Self {
         Self {
             path: skia_safe::Path::default(),

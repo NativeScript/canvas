@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 
 use jni::JNIEnv;
-use jni::objects::{JClass, JString, JByteBuffer};
+use jni::objects::{JClass, JString, JByteBuffer, JObject};
 use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
 
 use crate::common::context::image_asset::{ImageAsset, OutputFormat};
@@ -265,4 +265,37 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAsse
         }
     }
     JNI_FALSE
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetBitmap(
+    env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    bitmap: JObject,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    return match crate::android::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        Some((bytes, info)) => {
+            let asset: *mut ImageAsset = asset as _;
+            let asset = unsafe { &mut *asset };
+
+
+            let mut components = 4; // 32bits
+
+            if info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+                components = 2; // 16bits
+            }
+
+
+            if asset.load_from_bytes_graphics(bytes, info.width() as i32, info.height() as i32, components) {
+                return JNI_TRUE;
+            }
+
+            return JNI_FALSE;
+        }
+        _ => JNI_FALSE
+    };
 }

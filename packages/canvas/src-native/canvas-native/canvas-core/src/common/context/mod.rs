@@ -1,7 +1,6 @@
 use std::os::raw::c_float;
 
 use skia_safe::{Color, Point, Surface};
-use skia_safe::gpu::DirectContext;
 
 use crate::common::context::filter_quality::FilterQuality;
 use crate::{
@@ -51,6 +50,7 @@ pub struct Device {
     pub samples: usize,
     pub alpha: bool,
     pub ppi: c_float,
+    pub matrix: skia_safe::Matrix,
 }
 
 impl Device {
@@ -63,7 +63,12 @@ impl Device {
             samples: 0,
             alpha: false,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density)),
         }
+    }
+
+    pub(crate) fn matrix(&self) -> &skia_safe::Matrix {
+        &self.matrix
     }
 }
 
@@ -137,10 +142,11 @@ pub struct Context {
     pub(crate) state_stack: Vec<State>,
     pub(crate) device: Device,
     pub(crate) font_color: Color,
+    pub(crate) enable_scaling: bool,
 }
 
 impl Context {
-    pub(crate) fn new(mut surface: Surface,
+    pub(crate) fn new(surface: Surface,
                       path: Path,
                       state: State,
                       state_stack: Vec<State>,
@@ -152,7 +158,8 @@ impl Context {
             state,
             state_stack,
             device,
-            font_color
+            font_color,
+            enable_scaling: false,
         }
     }
 
@@ -182,5 +189,20 @@ impl Context {
             FilterQuality::High,
             None,
         )
+    }
+
+    pub fn set_scaling(&mut self, scaling: bool) {
+        self.enable_scaling = scaling;
+    }
+
+    pub(crate) fn set_scale_for_device(&mut self) {
+        if !self.enable_scaling { return; }
+        self.surface.canvas().save();
+        self.surface.canvas().concat(&self.device.matrix);
+    }
+
+    pub(crate) fn clear_scale_for_device(&mut self) {
+        if !self.enable_scaling { return; }
+        self.surface.canvas().restore();
     }
 }

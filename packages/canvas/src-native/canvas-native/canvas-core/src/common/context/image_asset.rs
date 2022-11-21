@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::ffi::{CStr, CString};
+use std::ffi::{c_float, CStr, CString};
 use std::io::{Read, Seek};
 use std::os::raw::{c_char, c_uint};
 use std::ptr::{null};
@@ -21,6 +21,7 @@ struct ImageAssetInner {
     error: String,
     did_resize: bool,
     skia_image: Option<skia_safe::Image>,
+    density: f32,
 }
 
 unsafe impl Send for ImageAssetInner {}
@@ -98,6 +99,7 @@ impl ImageAsset {
 
     pub fn copy(asset: &ImageAsset) -> Option<ImageAsset> {
         let asset = asset.0.lock();
+        let density = asset.density;
         if let Some(data) = &asset.image {
             return match data {
                 ImageAssetInnerData::Stb(data) => {
@@ -110,6 +112,7 @@ impl ImageAsset {
                                 did_resize: false,
                                 skia_image: crate::common::utils::image::from_image_slice_non_copy(data.as_slice(), info.width, info.height),
                                 image: Some(ImageAssetInnerData::Stb(data)),
+                                density,
                             };
                             return Some(Self(Arc::new(parking_lot::Mutex::new(inner))));
                         }
@@ -128,6 +131,7 @@ impl ImageAsset {
                         did_resize: false,
                         skia_image,
                         image: Some(ImageAssetInnerData::Raw(data.clone())),
+                        density,
                     };
                     Some(Self(Arc::new(parking_lot::Mutex::new(inner))))
                 }
@@ -143,6 +147,7 @@ impl ImageAsset {
             error: String::new(),
             did_resize: false,
             skia_image: None,
+            density: 1.,
         })))
     }
 
@@ -187,12 +192,37 @@ impl ImageAsset {
             .unwrap_or_default()
     }
 
+    pub fn width_dip(&self) -> c_uint {
+        let lock = self.get_lock();
+        let density = lock.density;
+
+        lock.info
+            .as_ref()
+            .map(|v| (v.width as f32 / density) as u32)
+            .unwrap_or_default()
+    }
+
     pub fn height(&self) -> c_uint {
         self.get_lock()
             .info
             .as_ref()
             .map(|v| v.height.try_into().unwrap_or_default())
             .unwrap_or_default()
+    }
+
+    pub fn height_dip(&self) -> c_uint {
+        let lock = self.get_lock();
+        let density = lock.density;
+
+        lock.info
+            .as_ref()
+            .map(|v| (v.height as f32 / density) as u32)
+            .unwrap_or_default()
+    }
+
+    pub fn density(&self) -> c_float {
+        self.get_lock()
+            .density
     }
 
     pub fn size(&self) -> usize {

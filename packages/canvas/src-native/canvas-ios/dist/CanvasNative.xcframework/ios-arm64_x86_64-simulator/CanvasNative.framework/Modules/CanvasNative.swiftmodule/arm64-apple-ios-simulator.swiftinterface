@@ -237,6 +237,10 @@ import _StringProcessing
     @objc get
     @objc set
   }
+  @objc @_Concurrency.MainActor(unsafe) public var scaling: Swift.Bool {
+    @objc get
+    @objc set
+  }
   @objc @_Concurrency.MainActor(unsafe) public static func createSVGMatrix() -> CanvasNative.TNSDOMMatrix
   @objc @_Concurrency.MainActor(unsafe) public var handleInvalidationManually: Swift.Bool {
     @objc get

@@ -50,6 +50,14 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			surface?.ignorePixelScaling = value
 		}
 
+	var scaling: Boolean = false
+		set(value) {
+			field = value
+			if (nativeContext != 0L) {
+				nativeSetScaling(nativeContext, scaling)
+			}
+		}
+
 	@JvmField
 	internal var invalidateState = INVALIDATE_STATE_NONE // bitwise flag
 	internal var contextType = ContextType.NONE
@@ -155,6 +163,8 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 			return
 		}
 
+		scale = context.resources.displayMetrics.density
+
 		var looper = Looper.myLooper()
 
 		if (looper == null) {
@@ -170,7 +180,6 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		surface = GLView(context)
 		surface!!.gLContext!!.reference = WeakReference(this)
 		ctx = context
-		// scale = context.resources.displayMetrics.density
 
 		if (!didDetectOpenGLES30) {
 			glVersion = if (detectOpenGLES30() && !Utils.isEmulator) {
@@ -213,6 +222,49 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 		get() = if (useCpu) {
 			cpuView!!.height
 		} else surface!!.drawingBufferHeight
+
+
+	val drawingBufferWidthDip: Int
+		get() = if (useCpu) {
+			(cpuView!!.width / scale).toInt()
+		} else (surface!!.drawingBufferWidth / scale).toInt()
+	val drawingBufferHeightDip: Int
+		get() = if (useCpu) {
+			(cpuView!!.height / scale).toInt()
+		} else (surface!!.drawingBufferHeight / scale).toInt()
+
+
+	val widthDip: Int
+		get() = if (useCpu) {
+			(cpuView!!.width / scale).toInt()
+		} else (surface!!.drawingBufferWidth / scale).toInt()
+	val heightDip: Int
+		get() = if (useCpu) {
+			(cpuView!!.height / scale).toInt()
+		} else (surface!!.drawingBufferHeight / scale).toInt()
+
+
+	enum class ScaleType {
+		None,
+		AspectFill,
+		AspectFit,
+		Fill
+	}
+
+//	var scaleType = ScaleType.None
+//	set(value) {
+//		field = value
+//		if (useCpu){
+//			when(value){
+//				ScaleType.None -> cpuView?.let {
+//					it.sca
+//				}
+//				ScaleType.AspectFill -> TODO()
+//				ScaleType.AspectFit -> TODO()
+//				ScaleType.Fill -> TODO()
+//			}
+//		}
+//	}
 
 	private fun detectOpenGLES30(): Boolean {
 		return detectOpenGLES30(context)
@@ -375,6 +427,7 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 	}
 
 	private val defaultMatrix = Matrix()
+
 	init {
 		defaultMatrix.postScale(1f, -1f)
 	}
@@ -848,6 +901,9 @@ class TNSCanvas : FrameLayout, FrameCallback, ActivityLifecycleCallbacks {
 				tnsCanvas.layout(0, 0, width, height)
 			}
 		}
+
+		@JvmStatic
+		external fun nativeSetScaling(context: Long, scaling: Boolean)
 
 		@JvmStatic
 		external fun nativeInitContext(

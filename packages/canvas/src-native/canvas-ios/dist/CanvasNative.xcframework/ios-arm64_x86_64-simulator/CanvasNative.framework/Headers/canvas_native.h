@@ -290,7 +290,7 @@ void destroy_text_metrics(long long metrics);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-struct U8Array *gl_snapshot_current_gl_context(float width, float height, bool alpha);
+struct U8Array *gl_snapshot_current_gl_context(float width, float height, bool _alpha);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
@@ -313,6 +313,10 @@ long long context_init_context_with_custom_surface(float width,
                                                    int font_color,
                                                    float ppi,
                                                    enum TextDirection direction);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+void context_set_scaling(long long context, bool scaling);
 #endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))

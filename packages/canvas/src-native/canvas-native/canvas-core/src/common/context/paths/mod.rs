@@ -63,10 +63,10 @@ impl Context {
             end_angle,
             anticlockwise,
         );
+
         let transform = self.get_transform();
-        self.path.path.add_path(&path.path().with_transform(&transform), (0, 0), skia_safe::path::AddPathMode::Extend);
-        // self.path
-        //     .arc(x, y, radius, start_angle, end_angle, anticlockwise);
+
+        self.path.path.add_path_matrix(path.path(), &transform, skia_safe::path::AddPathMode::Extend);
     }
 
     #[inline(always)]
@@ -97,32 +97,26 @@ impl Context {
         );
 
         let transform = self.get_transform();
-        self.path.path.add_path(&path.path().with_transform(&transform), (0, 0), skia_safe::path::AddPathMode::Extend);
-        // self.path.ellipse(
-        //     x,
-        //     y,
-        //     radius_x,
-        //     radius_y,
-        //     rotation,
-        //     start_angle,
-        //     end_angle,
-        //     anticlockwise,
-        // );
+
+        self.path.path.add_path_matrix(path.path(), &transform, skia_safe::path::AddPathMode::Extend);
     }
 
     #[inline(always)]
     pub fn rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
-
-        let rect = skia_safe::Rect::from_xywh(x, y, width, height);
+        /*let rect = skia_safe::Rect::from_xywh(x, y, width, height);
         let quad = self.get_transform().map_rect_to_quad(rect);
-        self.path.path.move_to(quad[0]);
-        self.path.path.line_to(quad[1]);
-        self.path.path.line_to(quad[2]);
-        self.path.path.line_to(quad[3]);
-        self.path.path.close();
+        let mut path = skia_safe::Path::new();
 
+        path.move_to(quad[0]);
+        path.line_to(quad[1]);
+        path.line_to(quad[2]);
+        path.line_to(quad[3]);
+        path.close();
 
-       // self.path.rect(x, y, width, height);
+        self.path.path.add_path(&path, (0, 0), skia_safe::path::AddPathMode::Extend);
+        */
+
+        self.path.rect(x, y, width, height);
     }
 
     #[inline(always)]

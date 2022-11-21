@@ -1,6 +1,8 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
+import android.os.Build
 import android.util.Log
 import java.util.concurrent.TimeUnit
 
@@ -821,12 +823,47 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	): TNSPattern? {
 		if (src == null) return null
 		return createPattern(
-			Utils.getBytesFromBitmap(src),
-			src.width,
-			src.height,
+			src,
 			repetition.toNative()
 		)
 	}
+
+	@JvmOverloads
+	fun createPattern(
+		src: Drawable?,
+		repetition: TNSPatternRepetition = TNSPatternRepetition.Repeat
+	): TNSPattern? {
+		if (src == null) return null
+		val bitmap = Helpers.getBitmap(src)
+		return createPattern(
+			bitmap,
+			repetition.toNative()
+		)
+	}
+
+	private fun createPattern(
+		bitmap: Bitmap,
+		repetition: Int
+	): TNSPattern? {
+		var value: TNSPattern? = null
+		canvas.queueEvent {
+			val id = nativeCreatePatternWithBitmap(
+				canvas.nativeContext, bitmap, repetition
+			)
+
+			if (id != 0L) {
+				value = TNSPattern(id)
+			}
+			lock.countDown()
+		}
+		try {
+			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
+		} catch (e: Exception) {
+		}
+		return value
+	}
+
 
 	private fun createPattern(
 		data: ByteArray,
@@ -1026,6 +1063,25 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 		}
 	}
 
+	fun drawImage(drawable: Drawable?, dx: Float, dy: Float) {
+		drawable?.let {
+			canvas.queueEvent {
+				val image = Helpers.getBitmap(it)
+				val width = image.width.toFloat()
+				val height = image.height.toFloat()
+				nativeDrawImageDxDyWithBitmap(
+					canvas.nativeContext,
+					image,
+					width,
+					height,
+					dx,
+					dy
+				)
+				updateCanvas()
+			}
+		}
+	}
+
 	fun drawImage(asset: TNSImageAsset, dx: Float, dy: Float) {
 		canvas.queueEvent {
 			val time = System.currentTimeMillis()
@@ -1093,6 +1149,25 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 	fun drawImage(image: Bitmap?, dx: Float, dy: Float, dWidth: Float, dHeight: Float) {
 		image?.let {
 			canvas.queueEvent {
+				nativeDrawImageDxDyDwDhWithBitmap(
+					canvas.nativeContext,
+					image,
+					image.width.toFloat(),
+					image.height.toFloat(),
+					dx,
+					dy,
+					dWidth,
+					dHeight
+				)
+				updateCanvas()
+			}
+		}
+	}
+
+	fun drawImage(drawable: Drawable?, dx: Float, dy: Float, dWidth: Float, dHeight: Float) {
+		drawable?.let {
+			canvas.queueEvent {
+				val image = Helpers.getBitmap(it)
 				nativeDrawImageDxDyDwDhWithBitmap(
 					canvas.nativeContext,
 					image,
@@ -1220,6 +1295,40 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			}
 		}
 	}
+
+	fun drawImage(
+		drawable: Drawable?,
+		sx: Float,
+		sy: Float,
+		sWidth: Float,
+		sHeight: Float,
+		dx: Float,
+		dy: Float,
+		dWidth: Float,
+		dHeight: Float
+	) {
+		drawable?.let {
+			canvas.queueEvent {
+				val image = Helpers.getBitmap(it)
+				nativeDrawImageWithBitmap(
+					canvas.nativeContext,
+					image,
+					image.width.toFloat(),
+					image.height.toFloat(),
+					sx,
+					sy,
+					sWidth,
+					sHeight,
+					dx,
+					dy,
+					dWidth,
+					dHeight
+				)
+				updateCanvas()
+			}
+		}
+	}
+
 
 	fun drawImage(
 		asset: TNSImageAsset,
@@ -1627,6 +1736,12 @@ class TNSCanvasRenderingContext2D internal constructor(val canvas: TNSCanvas) :
 			repetition: Int
 		): Long
 
+		@JvmStatic
+		private external fun nativeCreatePatternWithBitmap(
+			context: Long,
+			bitmap: Bitmap,
+			repetition: Int
+		): Long
 
 		@JvmStatic
 		private external fun nativeCreatePatternEncoded(

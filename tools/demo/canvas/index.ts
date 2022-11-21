@@ -46,6 +46,7 @@ import {
 	shadowOffsetY,
 	strokeStyle,
 	arcToAnimation,
+	font,
 } from './canvas2d';
 
 declare var NSData, interop, NSString, malloc, TNSCanvas;
@@ -522,7 +523,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//roundRect(this.canvas);
 		//createConicGradient(this.canvas);
 		//fillStyle(this.canvas);
-		// font(this.canvas);
+		//font(this.canvas);
 		// globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
@@ -622,10 +623,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.drawHouse(this.canvas);
 		//this.bitmapExample(this.canvas);
 		//this.sourceIn(this.canvas);
-		//this.clipTest(this.canvas);
+		this.clipTest(this.canvas);
 		//this.roundClipTest(this.canvas);
 		//this.timeExample(this.canvas);
-		this.canvasToImage();
+		//this.canvasToImage();
 	}
 
 	timeExample(canvas) {
@@ -1770,12 +1771,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	clock(canvas) {
-		let scale = false;
 		var ctx = canvas.getContext('2d');
-		ctx.scale(3, 3);
 
 		function clock() {
-			var now = new Date();
+			const now = new Date();
+			const ctx = canvas.getContext('2d');
 			ctx.save();
 			ctx.clearRect(0, 0, 150, 150);
 			ctx.translate(75, 75);
@@ -1788,7 +1788,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			// Hour marks
 			ctx.save();
-			for (var i = 0; i < 12; i++) {
+			for (let i = 0; i < 12; i++) {
 				ctx.beginPath();
 				ctx.rotate(Math.PI / 6);
 				ctx.moveTo(100, 0);
@@ -1800,8 +1800,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			// Minute marks
 			ctx.save();
 			ctx.lineWidth = 5;
-			for (i = 0; i < 60; i++) {
-				if (i % 5 != 0) {
+			for (let i = 0; i < 60; i++) {
+				if (i % 5 !== 0) {
 					ctx.beginPath();
 					ctx.moveTo(117, 0);
 					ctx.lineTo(120, 0);
@@ -1811,16 +1811,18 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			}
 			ctx.restore();
 
-			var sec = now.getSeconds();
-			var min = now.getMinutes();
-			var hr = now.getHours();
-			hr = hr >= 12 ? hr - 12 : hr;
+			const sec = now.getSeconds();
+			const min = now.getMinutes();
+			const hr = now.getHours() % 12;
 
 			ctx.fillStyle = 'black';
 
-			// write Hours
+			// Write image description
+			//canvas.innerText = `The time is: ${hr}:${min}`;
+
+			// Write Hours
 			ctx.save();
-			ctx.rotate(hr * (Math.PI / 6) + (Math.PI / 360) * min + (Math.PI / 21600) * sec);
+			ctx.rotate((Math.PI / 6) * hr + (Math.PI / 360) * min + (Math.PI / 21600) * sec);
 			ctx.lineWidth = 14;
 			ctx.beginPath();
 			ctx.moveTo(-20, 0);
@@ -1828,7 +1830,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.stroke();
 			ctx.restore();
 
-			// write Minutes
+			// Write Minutes
 			ctx.save();
 			ctx.rotate((Math.PI / 30) * min + (Math.PI / 1800) * sec);
 			ctx.lineWidth = 10;

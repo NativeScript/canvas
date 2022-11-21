@@ -1,7 +1,6 @@
 use std::os::raw::{c_int, c_longlong};
 
 use crate::common::context::pixel_manipulation::image_data::ImageData;
-use crate::common::ffi::u8_array::U8Array;
 
 #[no_mangle]
 pub extern "C" fn image_data_create(width: c_int, height: c_int) -> c_longlong {

@@ -4,8 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
+import android.widget.ImageView.ScaleType
 import java.lang.ref.WeakReference
 
 class CPUView @JvmOverloads constructor(
@@ -14,6 +17,9 @@ class CPUView @JvmOverloads constructor(
 	private var view: Bitmap? = null
 	internal var canvasView: WeakReference<TNSCanvas>? = null
 	internal val lock = Any()
+
+	var scaleType = TNSCanvas.ScaleType.None
+
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
 		if (w != 0 && h != 0) {
@@ -82,4 +88,17 @@ class CPUView @JvmOverloads constructor(
 			}
 		}
 	}
+
+//	private fun intoMatrix(): Matrix? {
+//		if (scaleType == TNSCanvas.ScaleType.None){return null}
+//		val matrix = Matrix()
+//		val rect = Rect(left, top, right, bottom)
+//
+//		return when(scaleType){
+//			TNSCanvas.ScaleType.AspectFill -> TODO()
+//			TNSCanvas.ScaleType.AspectFit -> TODO()
+//			TNSCanvas.ScaleType.Fill -> TODO()
+//			else -> null
+//		}
+//	}
 }

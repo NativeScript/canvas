@@ -10,8 +10,10 @@ impl Context {
         src_rect: impl Into<Rect>,
         dst_rect: impl Into<Rect>,
     ) {
+        self.set_scale_for_device();
         let src_rect = src_rect.into();
         let dst_rect = dst_rect.into();
+
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
@@ -23,9 +25,11 @@ impl Context {
             self.state.image_smoothing_quality,
             &paint,
         );
+        self.clear_scale_for_device();
     }
 
     pub fn draw_image_with_rect(&mut self, image: &Image, dst_rect: impl Into<Rect>) {
+        self.set_scale_for_device();
         let dst_rect = dst_rect.into();
         self.state
             .paint
@@ -38,6 +42,8 @@ impl Context {
             self.state.image_smoothing_quality,
             &paint,
         );
+
+        self.clear_scale_for_device();
     }
 
     pub(crate) fn draw_image_with_points(&mut self, image: &Image, x: f32, y: f32) {

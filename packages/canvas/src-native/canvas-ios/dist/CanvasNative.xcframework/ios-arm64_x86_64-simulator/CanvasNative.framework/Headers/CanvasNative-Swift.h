@@ -321,6 +321,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 + (NSMapTable<NSString *, TNSCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nullable)getViewPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL ignorePixelScaling;
+@property (nonatomic) BOOL scaling;
 + (TNSDOMMatrix * _Nonnull)createSVGMatrix SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL handleInvalidationManually;
 - (void)didDraw;
@@ -2393,6 +2394,7 @@ SWIFT_CLASS_NAMED("TNSCanvas")
 + (NSMapTable<NSString *, TNSCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nullable)getViewPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL ignorePixelScaling;
+@property (nonatomic) BOOL scaling;
 + (TNSDOMMatrix * _Nonnull)createSVGMatrix SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL handleInvalidationManually;
 - (void)didDraw;

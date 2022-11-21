@@ -16,6 +16,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
 import org.nativescript.canvas.TNSImageAsset.Callback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -25,6 +26,7 @@ import java.io.*
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.channels.Channels
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -50,6 +52,7 @@ class MainActivity : AppCompatActivity() {
 
 		System.loadLibrary("canvasnative")
 		canvas?.ignorePixelScaling = false
+		canvas?.scaling = true
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
 				print("Is Ready")
@@ -1298,7 +1301,8 @@ class MainActivity : AppCompatActivity() {
 		println(msg)
 	}
 
-	fun drawText(ctx: TNSCanvasRenderingContext2D) {
+	fun drawText(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		ctx.font = "48px serif";
 		ctx.fillText("Hi!", 150f, 50f);
 		ctx.direction = TNSTextDirection.Rtl;
@@ -1547,14 +1551,13 @@ class MainActivity : AppCompatActivity() {
 		//addPath(canvas!!)
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
-		//ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
+		//	ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
 
 		//print(ctx?.measureText("Osei"))
 
 		//createConicGradient(canvas!!)
 		//drawTriangle(ctx!!)
-
-//		drawText(ctx!!)
+		//drawText(canvas!!)
 		//ballExample(ctx!!)
 		//drawPattern(canvas!!)
 		//	drawFace(ctx!!)
@@ -1563,7 +1566,7 @@ class MainActivity : AppCompatActivity() {
 		//	drawPatterWithCanvas(canvas!!)
 		//	drawPatterWithCanvasWebGL(canvas!!)
 
-		//testClip(canvas!!)
+		//	testClip(canvas!!)
 		//roundRect(canvas!!)
 		//	executor.submit {
 		// drawPatterWithCanvas(canvas!!)
@@ -1662,7 +1665,7 @@ class MainActivity : AppCompatActivity() {
 		fos.close()
 		*/
 
-		//sourceIn(canvas!!)
+		sourceIn(canvas!!)
 		//drawImageBitmap(canvas!!)
 		//clipTest(canvas!!)
 		//evenOddTest(canvas!!)
@@ -1670,7 +1673,18 @@ class MainActivity : AppCompatActivity() {
 		//roundClipTest(canvas!!)
 		//timeExample(canvas!!)
 
-		draw_image_space(canvas!!)
+		//	draw_image_space(canvas!!)
+		//	drawImage(canvas!!)
+	}
+
+
+	fun drawImage(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val asset = TNSImageAsset()
+		ResourcesCompat.getDrawable(resources, R.drawable.ic_launcher_background, null)?.let {
+			asset.loadImageFromImage(it)
+		}
+		ctx.drawImage(asset, 0f, 0f)
 	}
 
 	enum class ShaderSourceType {
@@ -1824,7 +1838,7 @@ class MainActivity : AppCompatActivity() {
 			gl.bindVertexArray(vertexArray)
 			gl.bindVertexArray(null)
 			val asset = TNSImageAsset()
-			asset.loadImageFromResourceAsync(R.drawable.di_3d, this, object : Callback {
+			asset.loadImageFromResourceAsync(R.drawable.ic_launcher_background, this, object : Callback {
 				override fun onSuccess(value: Any?) {
 					val texture = gl.createTexture()
 					gl.activeTexture(gl.TEXTURE0)
@@ -1868,9 +1882,6 @@ class MainActivity : AppCompatActivity() {
 
 	fun timeExample(canvas: TNSCanvas) {
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
-		ctx.setFillStyleWithString("blue")
-		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
-		ctx.setFillStyleWithString("black")
 
 		ctx.rect(50f, 20f, 200f, 120f)
 		ctx.strokeRect(50f, 20f, 200f, 120f)
@@ -1880,7 +1891,7 @@ class MainActivity : AppCompatActivity() {
 		}, 2000)
 	}
 
-	fun canvasToImage(){
+	fun canvasToImage() {
 
 		val glCanvas = TNSCanvas(this)
 
@@ -1983,6 +1994,7 @@ class MainActivity : AppCompatActivity() {
 		ctx.lineTo(x + w, y + topRight);
 		ctx.arc(x + w - topRight, y + topRight, topRight, 0f, -HALF_PI, true);
 		ctx.lineTo(x + topLeft, y);
+		//ctx.roundRect(x, y, w, h, topLeft, topRight, bottomRight, bottomLeft)
 		ctx.strokeStyle = TNSColor("red")
 		ctx.stroke();
 
@@ -2028,24 +2040,20 @@ class MainActivity : AppCompatActivity() {
 		//	file.delete()
 		executor.execute {
 			val url = URL("https://source.unsplash.com/random")
-			val os = ByteArrayOutputStream2()
-			val fs = BufferedOutputStream(os)
-			url.openStream().use { input ->
-				fs.use { output ->
-					input.copyTo(output)
-				}
+			val connection = url.openConnection()
+			val buffer = ByteBuffer.allocateDirect(connection.contentLength)
+			val channel = Channels.newChannel(connection.getInputStream())
+			while (channel.read(buffer) != 0) {
 			}
 
-			TNSImageBitmap.createFromBytesEncoded(
-				os.buf(),
+			TNSImageBitmap.createFromBufferEncoded(
+				buffer,
 				TNSImageBitmap.Options(),
 				object : TNSImageBitmap.Callback {
 					override fun onSuccess(result: TNSImageBitmap) {
-						Log.d("Canvas", "imageBitmap w ${result.width} h ${result.height}")
-
 						val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 
-						ctx.drawImage(result, 0f, 0f)
+						ctx.drawImage(result, 0f, 0f, 100f, 100f)
 					}
 
 					override fun onError(message: String) {
@@ -2072,11 +2080,11 @@ class MainActivity : AppCompatActivity() {
 		// Create circular clipping region
 		ctx.beginPath()
 		ctx.arc(100F, 75F, 50F, 0F, (Math.PI * 2).toFloat())
-		ctx.clip();
+		ctx.clip()
 
 		// Draw stuff that gets clipped
 		ctx.setFillStyleWithString("blue")
-		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+		ctx.fillRect(0f, 0f, canvas.widthDip.toFloat(), canvas.heightDip.toFloat())
 		ctx.setFillStyleWithString("orange")
 		ctx.fillRect(0f, 0f, 100f, 100f)
 	}
@@ -2086,35 +2094,35 @@ class MainActivity : AppCompatActivity() {
 
 		// Rounded rectangle with zero radius (specified as a number)
 		ctx.setStrokeStyleWithString("red")
-		ctx.beginPath();
+		ctx.beginPath()
 		ctx.roundRect(10f, 20f, 150f, 100f, 0f)
-		ctx.stroke();
+		ctx.stroke()
 
 // Rounded rectangle with 40px radius (single element list)
 		ctx.setStrokeStyleWithString("blue")
-		ctx.beginPath();
+		ctx.beginPath()
 		ctx.roundRect(10f, 20f, 150f, 100f, floatArrayOf(40f));
-		ctx.stroke();
+		ctx.stroke()
 
 
 		// Rounded rectangle with 2 different radii
 		ctx.setStrokeStyleWithString("orange")
-		ctx.beginPath();
+		ctx.beginPath()
 		ctx.roundRect(10f, 150f, 150f, 100f, floatArrayOf(10f, 40f))
-		ctx.stroke();
+		ctx.stroke()
 
 
 		// Rounded rectangle with four different radii
 		ctx.setStrokeStyleWithString("green")
-		ctx.beginPath();
+		ctx.beginPath()
 		ctx.roundRect(400f, 20f, 200f, 100f, floatArrayOf(0f, 30f, 50f, 60f));
-		ctx.stroke();
+		ctx.stroke()
 
 // Same rectangle drawn backwards
 		ctx.setStrokeStyleWithString("magenta")
-		ctx.beginPath();
+		ctx.beginPath()
 		ctx.roundRect(400f, 150f, -200f, 100f, floatArrayOf(0f, 30f, 50f, 60f));
-		ctx.stroke();
+		ctx.stroke()
 
 	}
 

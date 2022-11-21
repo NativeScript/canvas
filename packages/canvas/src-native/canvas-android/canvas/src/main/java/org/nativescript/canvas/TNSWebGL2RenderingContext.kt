@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.opengl.GLES30
 import android.os.Build
 import android.os.Build.VERSION_CODES
@@ -2310,6 +2311,44 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 		}
 	}
 
+
+	fun texImage3D(
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		format: Int,
+		type: Int,
+		source: Drawable
+	) {
+
+		runOnGLThread {
+			val bitmap = Helpers.getBitmap(source)
+			nativeTexImage3DBitmap(
+				target,
+				level,
+				internalformat,
+				width,
+				height,
+				depth,
+				border,
+				format,
+				type,
+				bitmap,
+				flipYWebGL
+			)
+			lock.countDown()
+		}
+		try {
+			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
 	fun texImage3D(
 		target: Int,
 		level: Int,
@@ -2480,6 +2519,45 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 				format,
 				type,
 				srcData,
+				flipYWebGL
+			)
+			lock.countDown()
+		}
+		try {
+			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
+		} catch (ignored: InterruptedException) {
+		}
+	}
+
+	fun texSubImage3D(
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		format: Int,
+		type: Int,
+		srcData: Drawable
+	) {
+
+		runOnGLThread {
+			val bitmap = Helpers.getBitmap(srcData)
+			nativeTexSubImage3DBitmap(
+				target,
+				level,
+				xoffset,
+				yoffset,
+				zoffset,
+				width,
+				height,
+				depth,
+				format,
+				type,
+				bitmap,
 				flipYWebGL
 			)
 			lock.countDown()

@@ -699,7 +699,7 @@ internal class GLContext {
 			minorVersion: Int,
 			eglConfig: EGLConfig
 		): EGLContext {
-			if(!sharedContextInit){
+			if (!sharedContextInit) {
 				createSharedContext()
 			}
 			return createGLContext(
@@ -762,7 +762,7 @@ internal class GLContext {
 							samples = 4
 						}
 						val metrics = view.resources.displayMetrics
-						ref.nativeContext = TNSCanvas.nativeInitContext(
+						val nativeContext = TNSCanvas.nativeInitContext(
 							view.drawingBufferWidth.toFloat(),
 							view.drawingBufferHeight.toFloat(),
 							ref.scale,
@@ -773,6 +773,12 @@ internal class GLContext {
 							metrics.density * 160,
 							TNSCanvas.direction.toNative()
 						)
+
+						if (ref.scaling) {
+							TNSCanvas.nativeSetScaling(nativeContext, true)
+						}
+
+						ref.nativeContext = nativeContext
 
 						swapBuffers(mEGLSurface)
 					}
@@ -808,7 +814,7 @@ internal class GLContext {
 
 		private var sharedContextInit = false
 
-		private fun createSharedContext(){
+		private fun createSharedContext() {
 			val egl = EGLContext.getEGL() as EGL10
 
 			val configs = arrayOfNulls<EGLConfig>(1)
@@ -856,7 +862,7 @@ internal class GLContext {
 			eglConfig: EGLConfig,
 			eglContext: EGLContext
 		): EGLContext {
-			if(!sharedContextInit){
+			if (!sharedContextInit) {
 				createSharedContext()
 			}
 			val attribs = intArrayOf(

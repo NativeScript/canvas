@@ -21,7 +21,6 @@ use once_cell::sync::OnceCell;
 use parking_lot::RwLock;
 
 use std::collections::HashMap;
-use std::io::Write;
 use jni::signature::{Primitive, ReturnType};
 
 
@@ -393,6 +392,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContext(
         samples: samples as usize,
         alpha: alpha == JNI_TRUE,
         ppi,
+        matrix: skia_safe::Matrix::scale((density, density))
     };
     let interface = Interface::new_native();
     let mut ctx = skia_safe::gpu::DirectContext::new_gl(interface, None).unwrap();
@@ -432,7 +432,8 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContext(
         state: State::from_device(device, TextDirection::from(direction)),
         state_stack: vec![],
         font_color: Color::new(font_color as u32),
-        device
+        device,
+        enable_scaling: false
     })) as jlong
 }
 
@@ -445,7 +446,6 @@ pub(crate) fn init_with_custom_surface(
     ppi: jfloat,
     direction: jint,
 ) -> jlong {
-    // let density = 1.0;
     let device = Device {
         width,
         height,
@@ -454,6 +454,7 @@ pub(crate) fn init_with_custom_surface(
         samples: 0,
         alpha: alpha == JNI_TRUE,
         ppi,
+        matrix: skia_safe::Matrix::scale((density, density))
     };
     let info = ImageInfo::new(
         ISize::new(width as i32, height as i32),
@@ -469,6 +470,7 @@ pub(crate) fn init_with_custom_surface(
         state_stack: vec![],
         font_color: Color::new(font_color as u32),
         device,
+        enable_scaling: false
     })) as jlong
 }
 
@@ -499,6 +501,23 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDestroyConte
     unsafe {
         let context: *mut Context = context as _;
         let _ = Box::from_raw(context);
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeSetScaling(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    scaling: jboolean
+) {
+    if context == 0 {
+        return;
+    }
+    unsafe {
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        context.set_scaling(scaling == JNI_TRUE)
     }
 }
 
@@ -536,6 +555,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeSurfac
             samples: samples as usize,
             alpha: alpha == JNI_TRUE,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density))
         };
         let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
@@ -601,6 +621,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeCustom
             samples: 0,
             alpha: alpha == JNI_TRUE,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density))
         };
 
         let info = ImageInfo::new(
@@ -826,7 +847,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURLFromG
     format: JString,
     quality: jfloat,
 ) -> jstring {
-
     unsafe {
         let info = ImageInfo::new(
             ISize::new(width, height),

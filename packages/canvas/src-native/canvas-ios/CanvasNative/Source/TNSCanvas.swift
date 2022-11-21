@@ -39,6 +39,14 @@ public class TNSCanvas: UIView, RenderListener {
             renderer.handlePixelScale()
         }
     }
+    
+    
+    public var scaling = false {
+        didSet {
+            renderer.handleScaling()
+        }
+    }
+    
     var contextAlpha = true;
     var contextAntialias = true;
     var contextDepth = true;
@@ -174,81 +182,8 @@ public class TNSCanvas: UIView, RenderListener {
     
     public func getImage() -> UIImage?{
         renderer.ensureIsContextIsCurrent()
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        
-        var result: UnsafeMutablePointer<U8Array>? = nil
-        
-        var flip = false
-        if(renderer.contextType == ContextType.twoD){
-            result = context_snapshot_canvas(self.context)
-        }else if(renderer.contextType == ContextType.webGL){
-            flip = true
-            let scale = Float(UIScreen.main.scale)
-            let width = Float(width * scale)
-            let height = Float(height * scale)
-            result = gl_snapshot_current_gl_context(width, height, contextAlpha)
-        }
-        
-        if(result == nil){
-            return nil
-        }
-        
-        let pointer = result!.pointee
-        var data = [UInt8](NSMutableData(bytesNoCopy: pointer.data, length: Int(pointer.data_len), deallocator: { ptr, count in
-            destroy_u8_array(result)
-        }))
-        
-        let scale = Float(UIScreen.main.scale)
-        let width = Int(width * scale)
-        let height = Int(height * scale)
-        let row = width * 4
-        
-        var bmInfo = CGBitmapInfo.byteOrder32Big.rawValue
-        
-        if(contextAlpha){
-            bmInfo |= CGImageAlphaInfo.noneSkipLast.rawValue
-        }else {
-            bmInfo |= CGImageAlphaInfo.premultipliedLast.rawValue
-        }
-        
-        
-        let imageCtx = CGContext(data: &data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: row, space: colorSpace, bitmapInfo: bmInfo)
-        
-        
-        guard let cgImage = imageCtx?.makeImage() else {
-            return nil
-        }
-        
-        if !flip {
-            return UIImage(cgImage: cgImage)
-        }
-        
-        
-        let zero = CGFloat(0)
-              let imgWidth = cgImage.width
-              let imgHeight = cgImage.height
-              let rect = CGRect(x: zero, y: zero, width: CGFloat(imgWidth), height: CGFloat(imgHeight))
-        
-        
-        let ctx =  CGContext(data: nil,
-                                             width: imgWidth,
-                                             height: imgHeight,
-                                             bitsPerComponent: 8,
-                                             bytesPerRow: imgWidth * 4,
-                                             space: colorSpace,
-                                             bitmapInfo: bmInfo)
-        
-        
-        ctx?.concatenate(CGAffineTransformMake(1, 0, 0, -1, 0, CGFloat(imgHeight)))
-        ctx?.draw(cgImage, in: rect)
-        
-        guard let img = ctx?.makeImage() else {
-            return nil
-        }
-        
-
-        return UIImage(cgImage: img)
-        
+        let snapshot = (renderer.view as! CanvasGLKView).snapshot
+        return snapshot.withHorizontallyFlippedOrientation()
     }
     
     
@@ -405,6 +340,33 @@ public class TNSCanvas: UIView, RenderListener {
         view.setNeedsLayout()
         view.layoutIfNeeded()
     }
+    
+    var drawingBufferWidth: Int {
+        get {
+            return renderer.drawingBufferWidth
+        }
+    }
+    
+    
+    var drawingBufferHeight: Int {
+        get {
+            return renderer.drawingBufferHeight
+        }
+    }
+    
+    var drawingBufferWidthDip: Int {
+        get {
+            return Int(renderer.width)
+        }
+    }
+    
+    
+    var drawingBufferHeightDip: Int {
+        get {
+            return Int(renderer.width)
+        }
+    }
+    
     
     public override func layoutSubviews() {
         super.layoutSubviews()

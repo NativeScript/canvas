@@ -14,8 +14,8 @@ import java.io.*
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.charset.Charset
-import java.nio.charset.CharsetDecoder
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -104,8 +104,8 @@ public class Async2 {
 	}
 
 	internal class ByteArrayOutputStream2 : ByteArrayOutputStream {
-		constructor() : super() {}
-		constructor(size: Int) : super(size) {}
+		constructor() : super()
+		constructor(size: Int) : super(size)
 
 		/**
 		 * Returns the internal buffer of this ByteArrayOutputStream, without copying.
@@ -236,7 +236,7 @@ public class Async2 {
 									e.printStackTrace()
 								}
 								if (value is JSONObject) {
-									var formBody: FormBody.Builder? = null
+									var formBody: FormBody.Builder?
 									formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 										FormBody.Builder(StandardCharsets.UTF_8)
 									} else {
@@ -277,7 +277,7 @@ public class Async2 {
 						} else if (options.content is JSONObject || options.content is JSONArray) {
 							if (contentType == "application/x-www-form-urlencoded") {
 								if (options.content is JSONObject) {
-									var formBody: FormBody.Builder? = null
+									var formBody: FormBody.Builder?
 									formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 										FormBody.Builder(StandardCharsets.UTF_8)
 									} else {
@@ -385,7 +385,11 @@ public class Async2 {
 								returnType = quality[0]
 							}
 							val source = responseBody.source()
-							stream = ByteBuffer.allocateDirect(source.buffer.size.toInt())
+
+							stream = ByteBuffer
+								.allocateDirect(responseBody.contentLength().toInt())
+								.order(ByteOrder.nativeOrder())
+
 							val result = Result()
 							result.contentText = ""
 							result.url = response.request().url().toString()

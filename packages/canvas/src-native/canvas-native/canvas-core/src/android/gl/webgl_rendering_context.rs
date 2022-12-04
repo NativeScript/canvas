@@ -345,9 +345,9 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     _: JClass,
     target: jint,
     level: jint,
-    internalformat: jint,
+    _internalformat: jint,
     border: jint,
-    format: jint,
+    _format: jint,
     image_type: jint,
     asset: jlong,
     flipY: jboolean,
@@ -357,15 +357,10 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
 
     if let Some(bytes) = asset.get_bytes() {
 
-        let internalformat = match (internalformat as u32, asset.channels()) {
-            (RGB, 4) => RGBA as i32,
-            _ => internalformat
-        };
+        // force RGBA for assets
+        let internalformat = RGBA as i32;
 
-        let format = match (format as u32, asset.channels()) {
-            (RGB, 4) => RGBA as i32,
-            _ => format
-        };
+        let format = RGBA;
 
         if flipY == JNI_TRUE {
             let mut bytes = bytes.to_vec();

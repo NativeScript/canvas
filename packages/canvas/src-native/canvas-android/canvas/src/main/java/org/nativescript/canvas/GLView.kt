@@ -3,6 +3,8 @@ package org.nativescript.canvas
 import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.util.Log
 import android.view.TextureView
@@ -22,19 +24,21 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	var gLContext: GLContext? = null
 		private set
 	private var mListener: TNSCanvas.Listener? = null
+
 	@JvmField
-    var drawingBufferWidth = 0
+	var drawingBufferWidth = 0
+
 	@JvmField
-    var drawingBufferHeight = 0
+	var drawingBufferHeight = 0
 
 	constructor(context: Context?) : super(context!!) {
 		init()
 	}
 
-	private fun setScaling(){
+	private fun setScaling() {
 		val matrix = Matrix()
 		val density = resources.displayMetrics.density
-		if(ignorePixelScaling){
+		if (ignorePixelScaling) {
 			matrix.postScale(density, density)
 		}
 		setTransform(matrix)
@@ -111,15 +115,17 @@ internal class GLView : TextureView, SurfaceTextureListener {
 			}
 			if (!isCreatedWithZeroSized) {
 				gLContext?.let {
-					if(it.usingOffscreenTexture && it.didInit){
+					if (it.usingOffscreenTexture && it.didInit) {
 						it.usingOffscreenTexture = false
 						it.mGLThread!!.mSurface = surface
 						it.resize(width, height, true)
-					}else {
+					} else {
 						it.init(surface)
 					}
-					if (mListener != null) {
-						mListener!!.contextReady()
+					mListener?.let {
+						handler.post {
+							it.contextReady()
+						}
 					}
 				}
 			}
@@ -137,8 +143,10 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
 			gLContext!!.init(surface)
 			isCreatedWithZeroSized = false
-			if (mListener != null) {
-				mListener!!.contextReady()
+			mListener?.let {
+				handler.post {
+					it.contextReady()
+				}
 			}
 		}
 	}

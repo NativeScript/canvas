@@ -66,7 +66,6 @@ open class TNSWebGLRenderingContext : TNSCanvasRenderingContext {
 	}
 
 	fun attachShader(program: Int, shader: Int) {
-
 		runOnGLThread {
 			GLES20.glAttachShader(program, shader)
 			lock.countDown()

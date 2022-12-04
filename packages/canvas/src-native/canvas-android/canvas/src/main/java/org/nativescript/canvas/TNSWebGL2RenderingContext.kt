@@ -107,7 +107,7 @@ class TNSWebGL2RenderingContext : TNSWebGLRenderingContext {
 
 	fun bindVertexArray(vertexArray: Int) {
 		runOnGLThread {
-			GLES30.glBindVertexArray(vertexArray ?: 0)
+			GLES30.glBindVertexArray(vertexArray)
 			lock.countDown()
 		}
 		try {

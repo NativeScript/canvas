@@ -858,9 +858,9 @@ void context_translate(long long context, float x, float y);
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 void gl_tex_image_2D_asset(unsigned int target,
                            int level,
-                           int internalformat,
+                           int _internalformat,
                            int border,
-                           unsigned int format,
+                           unsigned int _format,
                            unsigned int image_type,
                            long long asset,
                            bool flip_y);
@@ -880,12 +880,12 @@ void gl_tex_sub_image_2D_asset(unsigned int target,
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 void gl_tex_image_3D_asset(unsigned int target,
                            int level,
-                           int internalformat,
+                           int _internalformat,
                            int width,
                            int height,
                            int depth,
                            int border,
-                           unsigned int format,
+                           unsigned int _format,
                            unsigned int image_type,
                            long long asset,
                            bool flip_y);

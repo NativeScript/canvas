@@ -9,9 +9,9 @@ const RGBA: u32 = 0x1908;
 pub extern "C" fn gl_tex_image_2D_asset(
     target: c_uint,
     level: c_int,
-    internalformat: c_int,
+    _internalformat: c_int,
     border: c_int,
-    format: c_uint,
+    _format: c_uint,
     image_type: c_uint,
     asset: c_longlong,
     flip_y: bool,
@@ -21,15 +21,9 @@ pub extern "C" fn gl_tex_image_2D_asset(
         let asset = &mut *asset;
         let data = asset.get_bytes();
         if let Some(data) = data {
-            let internalformat = match (internalformat as u32, asset.channels()) {
-                (RGB, 4) => RGBA as i32,
-                _ => internalformat
-            };
+            let internalformat = RGBA as i32;
 
-            let format = match (format, asset.channels()) {
-                (RGB, 4) => RGBA,
-                _ => format
-            };
+            let format = RGBA;
 
             let width = asset.width();
             let height = asset.height();
@@ -137,12 +131,12 @@ pub extern "C" fn gl_tex_sub_image_2D_asset(
 pub extern "C" fn gl_tex_image_3D_asset(
     target: c_uint,
     level: c_int,
-    internalformat: c_int,
+    _internalformat: c_int,
     width: c_int,
     height: c_int,
     depth: c_int,
     border: c_int,
-    format: c_uint,
+    _format: c_uint,
     image_type: c_uint,
     asset: c_longlong,
     flip_y: bool,
@@ -152,15 +146,9 @@ pub extern "C" fn gl_tex_image_3D_asset(
         let asset = &mut *asset;
         let data = asset.get_bytes();
         if let Some(data) = data {
-            let internalformat = match (internalformat as u32, asset.channels()) {
-                (RGB, 4) => RGBA as i32,
-                _ => internalformat
-            };
+            let internalformat = RGBA as i32;
 
-            let format = match (format, asset.channels()) {
-                (RGB, 4) => RGBA,
-                _ => format
-            };
+            let format = RGBA;
 
 
             if flip_y {

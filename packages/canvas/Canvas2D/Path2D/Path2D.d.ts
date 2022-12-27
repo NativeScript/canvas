@@ -23,4 +23,8 @@ export declare class Path2D extends Path2DBase {
 	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
 
 	rect(x: number, y: number, width: number, height: number): void;
+
+	roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+
+	roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
 }

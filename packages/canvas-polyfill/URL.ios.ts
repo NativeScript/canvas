@@ -4,9 +4,9 @@ const BLOB_DIR = 'ns_blobs';
 const BLOB_KEYS = 'org.nativescript.canvas.blob.keys';
 
 let sharedPreferences;
-
+declare const Utils;
 export class URL {
-	#native: NSURLComponents
+	#native: NSURLComponents;
 	constructor(url: string, base?: string | URL) {
 		let baseUrl: NSURL;
 		let nativeURL: NSURL;
@@ -17,19 +17,17 @@ export class URL {
 		}
 
 		if (baseUrl) {
-			nativeURL = NSURL.URLWithStringRelativeToURL(url, baseUrl)
+			nativeURL = NSURL.URLWithStringRelativeToURL(url, baseUrl);
 		} else {
 			nativeURL = NSURL.URLWithString(url);
 		}
 
 		this.#native = NSURLComponents.componentsWithString(nativeURL.absoluteString);
-
 	}
 
 	get native() {
 		return this.#native.URL;
 	}
-
 
 	get hash() {
 		const hash = this.native.fragment;
@@ -40,7 +38,6 @@ export class URL {
 		this.#native.fragment = value;
 	}
 
-
 	get host() {
 		return this.native.host;
 	}
@@ -48,7 +45,6 @@ export class URL {
 	set host(value: string) {
 		this.#native.host = value;
 	}
-
 
 	get hostname() {
 		return this.native.host;
@@ -58,7 +54,6 @@ export class URL {
 		this.#native.host = value;
 	}
 
-
 	get href() {
 		return this.#native.URL.absoluteString;
 	}
@@ -67,11 +62,9 @@ export class URL {
 		this.#native = NSURLComponents.componentsWithString(value);
 	}
 
-
 	get origin() {
-		return `${this.native.scheme}${this.native.host}`
+		return `${this.native.scheme}${this.native.host}`;
 	}
-
 
 	get password() {
 		return this.native.password;
@@ -81,7 +74,6 @@ export class URL {
 		this.#native.password = value;
 	}
 
-
 	get pathname() {
 		return this.native.path;
 	}
@@ -89,7 +81,6 @@ export class URL {
 	set pathname(value: string) {
 		this.#native.path = value;
 	}
-
 
 	get port() {
 		return String(this.native.port);
@@ -107,7 +98,6 @@ export class URL {
 		this.#native.scheme = value;
 	}
 
-
 	get search() {
 		const query = this.native.query;
 		return query ? `?${query}` : '';
@@ -117,7 +107,6 @@ export class URL {
 		this.#native.query = value;
 	}
 
-
 	get username() {
 		return this.native.user;
 	}
@@ -126,16 +115,13 @@ export class URL {
 		this.#native.user = value;
 	}
 
-
 	toJSON() {
 		return this.native.toString();
 	}
 
-
 	toString() {
 		return this.native.toString();
 	}
-
 
 	public static createObjectURL(object: any, options = null): string {
 		const buf = (Blob as any).InternalAccessor.getBuffer(object);
@@ -153,19 +139,10 @@ export class URL {
 
 			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
 
-			if (isIOS) {
-				NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
-			} else {
-				try {
-					const file = new java.io.File(filePath);
-					const fos = new java.io.FileOutputStream(file);
-					fos.write(Array.from(buf) as any);
-					fos.flush();
-					fos.close();
-				} catch (e) {
-					return null;
-				}
-			}
+			try {
+				Utils.writeToFileError(buf, filePath);
+			} catch (error) {}
+
 			URL.putItem(id, fileName);
 			return `${BLOB_PATH}${id}`;
 		}
@@ -189,7 +166,7 @@ export class URL {
 				const id = url.replace(BLOB_PATH, '');
 				return URL.getItem(id);
 			}
-			return ""
+			return '';
 		}
 	};
 
@@ -206,17 +183,13 @@ export class URL {
 				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
 			}
 
-			(<android.content.SharedPreferences>sharedPreferences).edit().putString(
-				key, value
-			).apply();
+			(<android.content.SharedPreferences>sharedPreferences).edit().putString(key, value).apply();
 		} else {
-
 			if (!sharedPreferences) {
 				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
 			}
 
 			(<NSUserDefaults>sharedPreferences).setObjectForKey(value, key);
-
 		}
 	}
 
@@ -228,11 +201,8 @@ export class URL {
 				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
 			}
 
-			fileName = (<android.content.SharedPreferences>sharedPreferences).getString(
-				key, null
-			);
+			fileName = (<android.content.SharedPreferences>sharedPreferences).getString(key, null);
 		} else {
-
 			if (!sharedPreferences) {
 				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
 			}
@@ -242,12 +212,10 @@ export class URL {
 			}
 
 			fileName = (<NSUserDefaults>sharedPreferences).stringForKey(key);
-
 		}
 
-
 		if (fileName) {
-			return path.join(fileDir.path, fileName)
+			return path.join(fileDir.path, fileName);
 		}
 		return null;
 	}

@@ -33,23 +33,23 @@ impl Context {
         let paint;
 
         if is_fill {
-            paint = self.state.paint.fill_paint();
+            paint = self.state.paint.fill_paint().clone();
             shadow_paint = self.state.paint.fill_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
                 self.state.shadow_blur,
-            );
+            ).map(|p| p.clone());
         } else {
-            paint = self.state.paint.stroke_paint();
+            paint = self.state.paint.stroke_paint().clone();
             shadow_paint = self.state.paint.stroke_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
                 self.state.shadow_blur,
-            );
+            ).map(|p| p.clone());
         }
         let font = &self.state.font;
 
-        let measurement = font.to_skia().measure_str(text, Some(paint));
+        let measurement = font.to_skia().measure_str(text, Some(&paint));
         let font_width = measurement.0;
         let max_width = width;
         let width: f32;
@@ -85,11 +85,13 @@ impl Context {
             (width + metrics.cap_height, line_spacing).into(),
         );
         if paint.style() == Style::Stroke {
-            inflate_stroke_rect(&mut rect, paint);
+            inflate_stroke_rect(&mut rect, &paint);
         }
 
+        let mut did_save = false;
         if use_max_width {
             self.surface.canvas().save();
+            did_save = true;
             self.surface
                 .canvas()
                 .translate(Point::new(location.x, location.y));
@@ -103,15 +105,26 @@ impl Context {
         }
 
         let font = font.to_skia();
+
+        self.set_scale_for_device();
+
         if let Some(shadow_paint) = shadow_paint {
             self.surface
                 .canvas()
                 .draw_str(text, (location.x, location.y), &font, &shadow_paint);
         }
 
-        self.surface
-            .canvas()
-            .draw_str(text, (location.x, location.y), &font, paint);
+        {
+            self.surface
+                .canvas()
+                .draw_str(text, (location.x, location.y), &font, &paint);
+        }
+
+        self.clear_scale_for_device();
+
+        if did_save {
+            self.surface.canvas().restore();
+        }
     }
 
     pub fn measure_text(&self, text: &str) -> TextMetrics {

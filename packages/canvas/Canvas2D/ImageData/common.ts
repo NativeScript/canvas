@@ -15,4 +15,8 @@ export abstract class ImageDataBase {
 	static [Symbol.hasInstance](obj) {
 		if (obj?.native && obj.constructor.name === 'ImageData') return true;
 	}
+
+	get [Symbol.toStringTag]() {
+		return 'ImageData';
+	}
 }

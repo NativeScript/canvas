@@ -1,11 +1,10 @@
-import { CanvasBase, ignorePixelScalingProperty } from './common';
+import { CanvasBase, ignorePixelScalingProperty, scalingProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Utils, profile } from '@nativescript/core';
+import { Utils, profile, ImageSource } from '@nativescript/core';
 declare var TNSCanvas, TNSCanvasListener;
-
 
 export * from './common';
 
@@ -48,6 +47,10 @@ export class Canvas extends CanvasBase {
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
 		this._canvas.ignorePixelScaling = value;
+	}
+
+	[scalingProperty.setNative](value: boolean) {
+		this._canvas.scaling = value;
 	}
 
 	// @ts-ignore
@@ -145,7 +148,9 @@ export class Canvas extends CanvasBase {
 
 	initNativeView() {
 		super.initNativeView();
-		this._canvas.ignorePixelScaling = this.ignorePixelScaling;
+		if (this.scaling) {
+			this._canvas.scaling = this.scaling;
+		}
 	}
 
 	flush() {
@@ -190,17 +195,8 @@ export class Canvas extends CanvasBase {
 			}
 			const width = Utils.layout.toDeviceIndependentPixels(size.width || 0);
 			const height = Utils.layout.toDeviceIndependentPixels(size.height || 0);
-			let frameSize = this._canvas.frame.size;
 
-			if (width === frameSize.width && height === frameSize.height) {
-				return;
-			}
-
-			const frame_origin = this._canvas.frame.origin;
-			const frame = CGRectMake(frame_origin.x, frame_origin.y, width, height);
-			this._canvas.frame = frame;
-			this._canvas.setNeedsLayout();
-			this._canvas.layoutIfNeeded();
+			TNSCanvas.layoutView(this._canvas, width, height);
 		}
 	}
 
@@ -213,10 +209,14 @@ export class Canvas extends CanvasBase {
 				return null;
 			}
 			if (!this._2dContext) {
-				this._2dContext = new CanvasRenderingContext2D(this._canvas.getContextContextAttributes(type, this._handleContextOptions(type, options)));
+				if (!options) {
+					this._2dContext = new CanvasRenderingContext2D(this._canvas.getContext(type));
+				} else {
+					this._2dContext = new CanvasRenderingContext2D(this._canvas.getContextWithTypeAttributes(type, JSON.stringify(this._handleContextOptions(type, options))));
+				}
 				this._2dContext._canvas = this;
 			} else {
-				this._canvas.getContextContextAttributes(type, this._handleContextOptions(type, options));
+				this._canvas.getContextContextAttributes(type, this._handleContextOptions(type, JSON.stringify(this._handleContextOptions(type, options))));
 			}
 			this._2dContext._type = '2d';
 			return this._2dContext;
@@ -225,7 +225,11 @@ export class Canvas extends CanvasBase {
 				return null;
 			}
 			if (!this._webglContext) {
-				this._webglContext = new WebGLRenderingContext(this._canvas.getContextContextAttributes('webgl', this._handleContextOptions(type, options)));
+				if (!options) {
+					this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl'));
+				} else {
+					this._webglContext = new WebGLRenderingContext(this._canvas.getContextContextAttributes('webgl', this._handleContextOptions(type, options)));
+				}
 				this._webglContext._canvas = this;
 			} else {
 				this._canvas.getContextContextAttributes('webgl', this._handleContextOptions(type, options));
@@ -237,7 +241,11 @@ export class Canvas extends CanvasBase {
 				return null;
 			}
 			if (!this._webgl2Context) {
-				this._webgl2Context = new WebGL2RenderingContext(this._canvas.getContextContextAttributes('webgl2', this._handleContextOptions(type, options)));
+				if (!options) {
+					this._webgl2Context = new WebGL2RenderingContext(this._canvas.getContext('webgl2'));
+				} else {
+					this._webgl2Context = new WebGL2RenderingContext(this._canvas.getContextContextAttributes('webgl2', this._handleContextOptions(type, options)));
+				}
 				(this._webgl2Context as any)._canvas = this;
 			} else {
 				this._canvas.getContextContextAttributes('webgl2', this._handleContextOptions(type, options));
@@ -250,6 +258,16 @@ export class Canvas extends CanvasBase {
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
 		return this._canvas.toDataURL(type, encoderOptions);
+	}
+
+	public snapshot(flip: boolean = false): ImageSource | null {
+		if (this._canvas) {
+			const bm = this._canvas.getImage?.(flip ?? false);
+			if (bm) {
+				return new ImageSource(bm);
+			}
+		}
+		return null;
 	}
 
 	getBoundingClientRect(): {
@@ -277,5 +295,4 @@ export class Canvas extends CanvasBase {
 			y: frame.origin.y,
 		};
 	}
-
 }

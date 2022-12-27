@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 
 use jni::JNIEnv;
-use jni::objects::{JClass, JString};
+use jni::objects::{JClass, JString, JByteBuffer, JObject};
 use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
 
 use crate::common::context::image_asset::{ImageAsset, OutputFormat};
@@ -28,11 +28,15 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetBytes
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.bytes_internal();
-        if let Ok(array) = env.byte_array_from_slice(bytes.as_slice()) {
-            array
-        } else {
-            env.new_byte_array(0).unwrap()
+        match asset.get_bytes() {
+            Some(bytes) => {
+                if let Ok(array) = env.byte_array_from_slice(bytes) {
+                    array
+                } else {
+                    env.new_byte_array(0).unwrap()
+                }
+            }
+            _ => env.new_byte_array(0).unwrap()
         }
     }
 }
@@ -94,38 +98,20 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeScale(
 pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeFlipX(
     _env: JNIEnv,
     _: JClass,
-    asset: jlong,
+    _asset: jlong,
 ) -> jboolean {
-    if asset == 0 {
-        return JNI_FALSE;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        if asset.flip_x() {
-            return JNI_TRUE;
-        }
-        JNI_FALSE
-    }
+    // noop
+    JNI_FALSE
 }
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeFlipY(
     _env: JNIEnv,
     _: JClass,
-    asset: jlong,
+    _asset: jlong,
 ) -> jboolean {
-    if asset == 0 {
-        return JNI_FALSE;
-    }
-    unsafe {
-        let asset: *mut ImageAsset = asset as _;
-        let asset = &mut *asset;
-        if asset.flip_y() {
-            return JNI_TRUE;
-        }
-        JNI_FALSE
-    }
+    // noop
+    JNI_FALSE
 }
 
 #[no_mangle]
@@ -143,7 +129,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeSave(
         unsafe {
             let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
-            if asset.save_path(path.as_ptr(), OutputFormat::from(format)) {
+            if asset.save_path(&path.to_string_lossy(), OutputFormat::from(format)) {
                 return JNI_TRUE;
             }
             return JNI_FALSE;
@@ -159,15 +145,15 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeGetError
     asset: jlong,
 ) -> jstring {
     if asset == 0 {
-        return env.new_string("").unwrap().into_inner();
+        return env.new_string("").unwrap().into_raw();
     }
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        if let Ok(error) = env.new_string(&asset.error) {
-            return error.into_inner();
+        if let Ok(error) = env.new_string(&asset.error()) {
+            return error.into_raw();
         }
-        env.new_string("").unwrap().into_inner()
+        env.new_string("").unwrap().into_raw()
     }
 }
 
@@ -183,7 +169,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeHasError
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        if asset.error.is_empty() {
+        if asset.error().is_empty() {
             return JNI_FALSE;
         }
         JNI_TRUE
@@ -219,7 +205,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAsse
         unsafe {
             let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
-            if asset.load_from_path(path.as_ptr()) {
+            if asset.load_from_path(&path.to_string_lossy()) {
                 return JNI_TRUE;
             }
             return JNI_FALSE;
@@ -227,6 +213,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAsse
     }
     JNI_FALSE
 }
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetBuffer(
+    env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    buffer: JByteBuffer,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    match (env.get_direct_buffer_address(buffer), env.get_direct_buffer_capacity(buffer)) {
+        (Ok(buf), Ok(len)) => {
+            let bytes = unsafe { std::slice::from_raw_parts_mut(buf, len) };
+            let asset: *mut ImageAsset = asset as _;
+            let asset = unsafe { &mut *asset };
+            if asset.load_from_bytes(bytes) {
+                return JNI_TRUE;
+            }
+        }
+        _ => {}
+    }
+    JNI_FALSE
+}
+
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetBytes(
@@ -253,4 +265,37 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAsse
         }
     }
     JNI_FALSE
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSImageAsset_nativeLoadAssetBitmap(
+    env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    bitmap: JObject,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+    return match crate::android::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        Some((bytes, info)) => {
+            let asset: *mut ImageAsset = asset as _;
+            let asset = unsafe { &mut *asset };
+
+
+            let mut components = 4; // 32bits
+
+            if info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+                components = 2; // 16bits
+            }
+
+
+            if asset.load_from_bytes_graphics(bytes, info.width() as i32, info.height() as i32, components) {
+                return JNI_TRUE;
+            }
+
+            return JNI_FALSE;
+        }
+        _ => JNI_FALSE
+    };
 }

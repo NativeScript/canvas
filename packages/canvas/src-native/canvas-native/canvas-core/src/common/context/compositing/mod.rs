@@ -24,15 +24,15 @@ impl Context {
         self.state
             .paint
             .fill_paint_mut()
-            .set_blend_mode(operation.get_blend_mode());
+            .set_blender(skia_safe::Blender::mode(operation.get_blend_mode()));
         self.state
             .paint
             .stroke_paint_mut()
-            .set_blend_mode(operation.get_blend_mode());
+            .set_blender(skia_safe::Blender::mode(operation.get_blend_mode()));
         self.state
             .paint
             .image_paint_mut()
-            .set_blend_mode(operation.get_blend_mode());
+            .set_blender(skia_safe::Blender::mode(operation.get_blend_mode()));
     }
 
     pub fn global_composite_operation(&self) -> CompositeOperationType {

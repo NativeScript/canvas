@@ -12,34 +12,50 @@ impl Context {
         paint.set_anti_alias(true);
         paint.set_style(Style::Fill);
         paint.set_blend_mode(BlendMode::Clear);
+        self.set_scale_for_device();
         self.surface
             .canvas()
             .draw_rect(Rect::from_xywh(x, y, width, height), &paint);
+        self.clear_scale_for_device();
     }
 
     pub fn fill_rect(&mut self, rect: &Rect) {
+        self.set_scale_for_device();
+        //let path = skia_safe::Path::rect(rect, None);
+
         if let Some(paint) = self.state.paint.fill_shadow_paint(
             self.state.shadow_offset,
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {
-            self.surface.canvas().draw_rect(rect, &paint);
+            self.surface.canvas()
+                .draw_rect(rect, &paint);
+            //.draw_path(&path, &paint);
         }
         self.surface
             .canvas()
             .draw_rect(rect, self.state.paint.fill_paint());
+        // .draw_path(&path, self.state.paint.fill_paint());
+
+        self.clear_scale_for_device();
     }
 
     pub fn stroke_rect(&mut self, rect: &Rect) {
+        self.set_scale_for_device();
+        // let path = skia_safe::Path::rect(rect, None);
         if let Some(paint) = &mut self.state.paint.stroke_shadow_paint(
             self.state.shadow_offset,
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {
-            self.surface.canvas().draw_rect(rect, &paint);
+            self.surface.canvas()
+                .draw_rect(rect, &paint);
+            //.draw_path(&path, &paint);
         }
         self.surface
             .canvas()
             .draw_rect(rect, self.state.paint.stroke_paint());
+        //.draw_path(&path, self.state.paint.stroke_paint());
+        self.clear_scale_for_device();
     }
 }

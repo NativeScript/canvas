@@ -3,6 +3,8 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+use jni::sys::jobject;
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ANativeWindow {
@@ -130,4 +132,24 @@ extern "system" {
     #[doc = ""]
     #[doc = " \\param st A ASurfaceTexture reference acquired with ASurfaceTexture_fromSurfaceTexture()"]
     pub fn ASurfaceTexture_getTimestamp(st: *mut ASurfaceTexture) -> i64;
+}
+
+
+extern "C" {
+    #[doc = " Get a reference to the native ASurfaceTexture from the corresponding java object."]
+    #[doc = ""]
+    #[doc = " The caller must keep a reference to the Java SurfaceTexture during the lifetime of the returned"]
+    #[doc = " ASurfaceTexture. Failing to do so could result in the ASurfaceTexture to stop functioning"]
+    #[doc = " properly once the Java object gets finalized."]
+    #[doc = " However, this will not result in program termination."]
+    #[doc = ""]
+    #[doc = " \\param env JNI environment"]
+    #[doc = " \\param surfacetexture Instance of Java SurfaceTexture object"]
+    #[doc = " \\return native ASurfaceTexture reference or nullptr if the java object is not a SurfaceTexture."]
+    #[doc = "         The returned reference MUST BE released when it's no longer needed using"]
+    #[doc = "         ASurfaceTexture_release()."]
+    pub fn ASurfaceTexture_fromSurfaceTexture(
+        env: *mut jni::JNIEnv,
+        surfacetexture: jobject,
+    ) -> *mut ASurfaceTexture;
 }

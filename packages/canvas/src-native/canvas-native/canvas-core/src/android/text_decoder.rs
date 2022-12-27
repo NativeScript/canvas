@@ -49,7 +49,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeGetEnco
     unsafe {
         let decoder: *mut TextDecoder = decoder as _;
         let decoder = &mut *decoder;
-        env.new_string(decoder.encoding()).unwrap().into_inner()
+        env.new_string(decoder.encoding()).unwrap().into_raw()
     }
 }
 
@@ -60,17 +60,17 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeB
     decoder: jlong,
     data: JByteBuffer,
 ) -> jstring {
-    return if let Ok(buf) = env.get_direct_buffer_address(data) {
+    return if let (Ok(buf), Ok(len)) = (env.get_direct_buffer_address(data) , env.get_direct_buffer_capacity(data) ){
         unsafe {
             let decoder: *mut TextDecoder = decoder as _;
             let decoder = &mut *decoder;
-            let decoded = decoder.decode(buf.as_ptr(), buf.len());
+            let decoded = decoder.decode(buf, len);
             env.new_string(decoded.to_string_lossy())
                 .unwrap_or(env.new_string("").unwrap())
-                .into_inner()
+                .into_raw()
         }
     } else {
-        env.new_string("").unwrap().into_inner()
+        env.new_string("").unwrap().into_raw()
     };
 }
 
@@ -81,11 +81,11 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecodeB
     decoder: jlong,
     data: JByteBuffer,
 ) -> jbyteArray {
-    return if let Ok(buf) = env.get_direct_buffer_address(data) {
+    return if let (Ok(buf),Ok(len)) = (env.get_direct_buffer_address(data), env.get_direct_buffer_capacity(data)) {
         unsafe {
             let decoder: *mut TextDecoder = decoder as _;
             let decoder = &mut *decoder;
-            let buf = decoder.decode_as_bytes(buf.as_ptr(), buf.len());
+            let buf = decoder.decode_as_bytes(buf, len);
             env.byte_array_from_slice(buf.as_slice())
                 .unwrap_or(env.new_byte_array(0).unwrap())
         }
@@ -115,10 +115,10 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSTextDecoder_nativeDecode(
             let decoded = decoder.decode(buf.as_ptr(), buf.len());
             env.new_string(decoded.to_string_lossy())
                 .unwrap_or(env.new_string("").unwrap())
-                .into_inner()
+                .into_raw()
         }
     } else {
-        env.new_string("").unwrap().into_inner()
+        env.new_string("").unwrap().into_raw()
     };
 }
 

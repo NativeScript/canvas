@@ -16,4 +16,8 @@ export abstract class ImageBitmapBase {
 	abstract readonly width: number;
 	abstract readonly height: number;
 	abstract close();
+
+	get [Symbol.toStringTag]() {
+		return 'ImageBitmap';
+	}
 }

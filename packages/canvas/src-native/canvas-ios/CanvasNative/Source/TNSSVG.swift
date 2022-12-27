@@ -141,4 +141,21 @@ public class TNSSVG: UIView {
             
         }
     }
+    
+    public func toImage() -> UIImage? {
+        if context > 0  && didInitDrawing {
+            let width = Int(self.data_size.width)
+            let height = Int(self.data_size.height)
+            let ctx = CGContext(data: self.data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: self.colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+            
+            guard let cgImage = ctx?.makeImage() else {return nil}
+            return UIImage(cgImage: cgImage)
+            
+        }
+        return nil
+    }
+    
+    public func toData() -> NSData? {
+        return NSMutableData(bytes: data, length: Int(buf_size))
+    }
 }

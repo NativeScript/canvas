@@ -40,6 +40,10 @@ export declare class Canvas extends CanvasBase {
 
 	toDataURL(type?: string, encoderOptions?: number): any;
 
+
+	getContext(type: '2d', options?: any): CanvasRenderingContext2D | null;
+	getContext(type: 'webgl' | 'experimental-webgl', options?: any): WebGLRenderingContext | null;
+	getContext(type: 'webgl2', options?: any): WebGL2RenderingContext | null;
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null;
 
 	getBoundingClientRect(): {

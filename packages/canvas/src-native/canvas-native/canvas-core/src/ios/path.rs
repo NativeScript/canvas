@@ -228,6 +228,29 @@ pub extern "C" fn path_rect(
     }
 }
 
+
+#[no_mangle]
+pub extern "C" fn path_round_rect(
+    path: c_longlong,
+    x: c_float,
+    y: c_float,
+    width: c_float,
+    height: c_float,
+    top_left: c_float,
+    top_right: c_float,
+    bottom_right: c_float,
+    bottom_left: c_float,
+) {
+    unsafe {
+        if path == 0 {
+            return;
+        }
+        let path: *mut Path = path as _;
+        let path = &mut *path;
+        path.round_rect(x, y, width, height, [top_left, top_left, top_right, top_right, bottom_right, bottom_right, bottom_left, bottom_left]);
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn destroy_path(path: c_longlong) {
     unsafe {

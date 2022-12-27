@@ -1,29 +1,6 @@
 declare module org {
 	export module nativescript {
 		export module canvas {
-			export class AnimationFrame {
-				public static class: java.lang.Class<org.nativescript.canvas.AnimationFrame>;
-				public static Companion: org.nativescript.canvas.AnimationFrame.Companion;
-				public reset(): void;
-				public raf(param0: number): void;
-				public fps(param0: number): void;
-				public doFrame(param0: number): void;
-				public constructor();
-			}
-			export module AnimationFrame {
-				export class Companion {
-					public static class: java.lang.Class<org.nativescript.canvas.AnimationFrame.Companion>;
-					public requestAnimationFrame(param0: kotlin.jvm.functions.Function1<any,kotlin.Unit>): number;
-					public cancelAnimationFrame(param0: number): void;
-				}
-			}
-		}
-	}
-}
-
-declare module org {
-	export module nativescript {
-		export module canvas {
 			export class BuildConfig {
 				public static class: java.lang.Class<org.nativescript.canvas.BuildConfig>;
 				public static DEBUG: boolean;
@@ -59,6 +36,7 @@ declare module org {
 		export module canvas {
 			export class Constants {
 				public static class: java.lang.Class<org.nativescript.canvas.Constants>;
+				public static INSTANCE: org.nativescript.canvas.Constants;
 				public static GL_RGBA16F_EXT: number;
 				public static GL_RGB16F_EXT: number;
 				public static GL_RG16F_EXT: number;
@@ -136,9 +114,49 @@ declare module org {
 				public static GL_COLOR_ATTACHMENT13_EXT: number;
 				public static GL_COLOR_ATTACHMENT14_EXT: number;
 				public static GL_COLOR_ATTACHMENT15_EXT: number;
-				public static INSTANCE: org.nativescript.canvas.Constants;
 				public setMAX_CLIENT_WAIT_TIMEOUT_WEBGL(param0: number): void;
 				public getMAX_CLIENT_WAIT_TIMEOUT_WEBGL(): number;
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module canvas {
+			export class GC {
+				public static class: java.lang.Class<org.nativescript.canvas.GC>;
+				public static getInstance(): org.nativescript.canvas.GC;
+				public restartWatch(): void;
+				public watchItem(param0: org.nativescript.canvas.GC.Object): void;
+				public static getBufferRefQue(): java.lang.ref.ReferenceQueue<org.nativescript.canvas.GC.Object>;
+				public static watchObject(param0: number, param1: java.nio.ByteBuffer): void;
+				public constructor();
+			}
+			export module GC {
+				export class BufferWrapper extends org.nativescript.canvas.GC.Object {
+					public static class: java.lang.Class<org.nativescript.canvas.GC.BufferWrapper>;
+					public getValue(): any;
+					public dispose(): void;
+					public constructor(param0: number, param1: any);
+				}
+				export class Companion {
+					public static class: java.lang.Class<org.nativescript.canvas.GC.Companion>;
+					public getInstance(): org.nativescript.canvas.GC;
+					public getBufferRefQue(): java.lang.ref.ReferenceQueue<org.nativescript.canvas.GC.Object>;
+					public watchObject(param0: number, param1: java.nio.ByteBuffer): void;
+				}
+				export class Object {
+					public static class: java.lang.Class<org.nativescript.canvas.GC.Object>;
+					/**
+					 * Constructs a new instance of the org.nativescript.canvas.GC$Object interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
+					 */
+					public constructor(implementation: {
+						dispose(): void;
+					});
+					public constructor();
+					public dispose(): void;
+				}
 			}
 		}
 	}
@@ -153,23 +171,29 @@ declare module org {
 				public mGLThread: org.nativescript.canvas.GLContext.GLThread;
 				public reference: java.lang.ref.WeakReference<org.nativescript.canvas.TNSCanvas>;
 				public static TAG: string;
-				public static Companion: org.nativescript.canvas.GLContext.Companion;
+				public getUsingOffscreenTexture$canvas_release(): boolean;
 				public getFailIfMajorPerformanceCaveat(): boolean;
+				public getOffScreenConfigs(): androidNative.Array<javax.microedition.khronos.egl.EGLConfig>;
 				public setAlpha(param0: boolean): void;
 				public getPowerPreference(): string;
 				public onPause(): void;
+				public getSingleIntArray(): androidNative.Array<number>;
 				public getStencil(): boolean;
 				public setMEGLSurface$canvas_release(param0: javax.microedition.khronos.egl.EGLSurface): void;
 				public getAntialias(): boolean;
+				public getConfigs(): androidNative.Array<javax.microedition.khronos.egl.EGLConfig>;
+				public getDidInit$canvas_release(): boolean;
 				public isGLThreadStarted(): boolean;
-				public flush(): void;
 				public constructor();
+				public flush(): void;
 				public isHeadless(): boolean;
 				public destroy(): void;
 				public resize(param0: number, param1: number): void;
+				public getConfigsCount(): androidNative.Array<number>;
 				public setDepth(param0: boolean): void;
 				public setPowerPreference(param0: string): void;
 				public setDesynchronized(param0: boolean): void;
+				public resize(param0: number, param1: number, param2: boolean): void;
 				public getDepth(): boolean;
 				public destroySurface(param0: javax.microedition.khronos.egl.EGLSurface): boolean;
 				public getPremultipliedAlpha(): boolean;
@@ -187,8 +211,10 @@ declare module org {
 				public getDesynchronized(): boolean;
 				public queueEvent(param0: java.lang.Runnable): void;
 				public startGLThread(): void;
+				public setUsingOffscreenTexture$canvas_release(param0: boolean): void;
 				public makeCurrent(param0: javax.microedition.khronos.egl.EGLSurface): boolean;
 				public getMEGLSurface$canvas_release(): javax.microedition.khronos.egl.EGLSurface;
+				public setDidInit$canvas_release(param0: boolean): void;
 				public setXrCompatible(param0: boolean): void;
 				public getPreserveDrawingBuffer(): boolean;
 				public setAntialias(param0: boolean): void;
@@ -198,22 +224,27 @@ declare module org {
 				export class Companion {
 					public static class: java.lang.Class<org.nativescript.canvas.GLContext.Companion>;
 					public setIS_WEBGL_2_SUPPORT(param0: boolean): void;
+					public getGL_VERSION$canvas_release(): number;
 					public getIS_WEBGL_2_SUPPORT(): boolean;
 					public setDID_CHECK_WEBGL_SUPPORT(param0: boolean): void;
+					public setGL_VERSION$canvas_release(param0: number): void;
 					public getDID_CHECK_WEBGL_SUPPORT(): boolean;
 				}
 				export class GLThread {
 					public static class: java.lang.Class<org.nativescript.canvas.GLContext.GLThread>;
 					public isStarted: boolean;
+					public getPaused(): boolean;
 					public interrupt(): void;
-					public run(): void;
 					public constructor(param0: org.nativescript.canvas.GLContext);
-					public getMSurface(): any;
+					public run(): void;
 					public constructor(param0: any);
 					public start(): void;
+					public setMSurface(param0: any): void;
+					public setPaused$canvas_release(param0: boolean): void;
+					public getMSurface(): any;
+					public isPaused$canvas_release(): boolean;
 					public getType(): org.nativescript.canvas.TNSCanvas.ContextType;
 					public setType(param0: org.nativescript.canvas.TNSCanvas.ContextType): void;
-					public setMSurface(param0: any): void;
 					public setPaused(param0: boolean): void;
 				}
 			}
@@ -275,6 +306,18 @@ declare module org {
 declare module org {
 	export module nativescript {
 		export module canvas {
+			export class Helpers {
+				public static class: java.lang.Class<org.nativescript.canvas.Helpers>;
+				public static INSTANCE: org.nativescript.canvas.Helpers;
+				public getEmptyFloat(): androidNative.Array<number>;
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module canvas {
 			export class HowToClear {
 				public static class: java.lang.Class<org.nativescript.canvas.HowToClear>;
 				public static Skipped: org.nativescript.canvas.HowToClear;
@@ -307,9 +350,42 @@ declare module org {
 declare module org {
 	export module nativescript {
 		export module canvas {
+			export class ResettableCountDownLatch {
+				public static class: java.lang.Class<org.nativescript.canvas.ResettableCountDownLatch>;
+				public reset(): void;
+				public countDown(): void;
+				public constructor(param0: number);
+				public getCount(): number;
+				public await(): void;
+				public toString(): string;
+				public await(param0: number, param1: java.util.concurrent.TimeUnit): boolean;
+			}
+			export module ResettableCountDownLatch {
+				export class Sync {
+					public static class: java.lang.Class<org.nativescript.canvas.ResettableCountDownLatch.Sync>;
+					public tryAcquireShared(param0: number): number;
+					public reset(): void;
+					public getCount(): number;
+					public tryReleaseShared(param0: number): boolean;
+					public getStartCount(): number;
+					public constructor(param0: number);
+				}
+				export module Sync {
+					export class Companion {
+						public static class: java.lang.Class<org.nativescript.canvas.ResettableCountDownLatch.Sync.Companion>;
+					}
+				}
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module canvas {
 			export class TNSCanvas {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas>;
-				public invalidateState: org.nativescript.canvas.TNSCanvas.InvalidateState;
+				public invalidateState: number;
 				public contextAlpha: boolean;
 				public contextAntialias: boolean;
 				public contextDepth: boolean;
@@ -333,10 +409,12 @@ declare module org {
 				public mStencilFuncMaskBack: number;
 				public mDepthMask: boolean;
 				public glVersion: number;
+				public static INVALIDATE_STATE_NONE: number;
+				public static INVALIDATE_STATE_PENDING: number;
+				public static INVALIDATE_STATE_INVALIDATING: number;
 				public static ONE_MILLISECOND_NS: number;
 				public static ONE_S_IN_NS: number;
 				public static TAG: string;
-				public static Companion: org.nativescript.canvas.TNSCanvas.Companion;
 				public setCpuHandler(param0: globalAndroid.os.Handler): void;
 				public getCpuHandlerThread(): globalAndroid.os.HandlerThread;
 				public setWebGL$canvas_release(param0: boolean): void;
@@ -362,10 +440,11 @@ declare module org {
 				public resizeViewPort(): void;
 				public setCpuView$canvas_release(param0: org.nativescript.canvas.CPUView): void;
 				public static nativeResizeCustomSurface(param0: number, param1: number, param2: number, param3: number, param4: boolean, param5: number): void;
+				public constructor(param0: globalAndroid.content.Context, param1: globalAndroid.util.AttributeSet);
 				public onResume(): void;
 				public isWebGL$canvas_release(): boolean;
-				public constructor(param0: globalAndroid.content.Context, param1: globalAndroid.util.AttributeSet);
 				public getRenderingContext2d$canvas_release(): org.nativescript.canvas.TNSCanvasRenderingContext;
+				public getContext(param0: string, param1: org.nativescript.canvas.TNSCanvas.ContextAttributes): org.nativescript.canvas.TNSCanvasRenderingContext;
 				public getCpuHandler(): globalAndroid.os.Handler;
 				public setContextType$canvas_release(param0: org.nativescript.canvas.TNSCanvas.ContextType): void;
 				public static createSVGMatrix(): org.nativescript.canvas.TNSDOMMatrix;
@@ -386,6 +465,7 @@ declare module org {
 				public onActivityStarted(param0: globalAndroid.app.Activity): void;
 				public toDataURLAsync(param0: string, param1: number, param2: org.nativescript.canvas.TNSCanvas.DataURLListener): void;
 				public setWebGL2RenderingContext$canvas_release(param0: org.nativescript.canvas.TNSWebGL2RenderingContext): void;
+				public destroy(): void;
 				public initCanvas$canvas_release(): void;
 				public setListener(param0: org.nativescript.canvas.TNSCanvas.Listener): void;
 				public setLastSize$canvas_release(param0: org.nativescript.canvas.TNSCanvas.Size): void;
@@ -401,16 +481,19 @@ declare module org {
 				public setNativeContext$canvas_release(param0: number): void;
 				public getWebGL2RenderingContext$canvas_release(): org.nativescript.canvas.TNSWebGL2RenderingContext;
 				public snapshot(): androidNative.Array<number>;
+				public getEmptyByteArray(): androidNative.Array<number>;
 				public onActivityDestroyed(param0: globalAndroid.app.Activity): void;
 				public setWebGLRenderingContext$canvas_release(param0: org.nativescript.canvas.TNSWebGLRenderingContext): void;
 				public onActivitySaveInstanceState(param0: globalAndroid.app.Activity, param1: globalAndroid.os.Bundle): void;
 				public getLastSize$canvas_release(): org.nativescript.canvas.TNSCanvas.Size;
+				public static loadLib(): void;
 				public isHandleInvalidationManually(): boolean;
 				public queueEvent(param0: java.lang.Runnable): void;
 				public toDataURL(param0: string): string;
 				public getCtx$canvas_release(): globalAndroid.content.Context;
 				public static getDirection$canvas_release(): org.nativescript.canvas.TNSTextDirection;
 				public onActivityPaused(param0: globalAndroid.app.Activity): void;
+				public getContext(param0: string, param1: string): org.nativescript.canvas.TNSCanvasRenderingContext;
 				public onSizeChanged(param0: number, param1: number, param2: number, param3: number): void;
 				public static nativeInitContext(param0: number, param1: number, param2: number, param3: number, param4: number, param5: boolean, param6: number, param7: number, param8: number): number;
 				public getContext(param0: string): org.nativescript.canvas.TNSCanvasRenderingContext;
@@ -422,9 +505,21 @@ declare module org {
 				public getNewSize$canvas_release(): org.nativescript.canvas.TNSCanvas.Size;
 			}
 			export module TNSCanvas {
+				export class ArrayStore {
+					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.ArrayStore>;
+					public setError(param0: boolean): void;
+					public constructor(param0: androidNative.Array<number>, param1: boolean);
+					public constructor();
+					public getByteArray(): androidNative.Array<number>;
+					public isError(): boolean;
+					public popArray(): androidNative.Array<number>;
+					public setByteArray(param0: androidNative.Array<number>): void;
+				}
 				export class Companion {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.Companion>;
+					public detectOpenGLES30$canvas_release(param0: globalAndroid.content.Context): boolean;
 					public getViews(): java.util.concurrent.ConcurrentHashMap<any,any>;
+					public loadLib(): void;
 					public getDirection$canvas_release(): org.nativescript.canvas.TNSTextDirection;
 					public nativeResizeCustomSurface(param0: number, param1: number, param2: number, param3: number, param4: boolean, param5: number): void;
 					public nativeResizeSurface(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: boolean, param7: number): void;
@@ -439,6 +534,40 @@ declare module org {
 					public setLibraryLoaded$canvas_release(param0: boolean): void;
 					public setViews(param0: java.util.concurrent.ConcurrentHashMap<any,any>): void;
 					public getLastCall$canvas_release(): number;
+				}
+				export class ContextAttributes {
+					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.ContextAttributes>;
+					public getXrCompatible(): boolean;
+					public getPremultipliedAlpha(): boolean;
+					public setPowerPreference(param0: string): void;
+					public static fromString(param0: string): org.nativescript.canvas.TNSCanvas.ContextAttributes;
+					public setAntialias(param0: boolean): void;
+					public getDepth(): boolean;
+					public setXrCompatible(param0: boolean): void;
+					public getAlpha(): boolean;
+					public static fromMap(param0: java.util.Map<string,any>): org.nativescript.canvas.TNSCanvas.ContextAttributes;
+					public setStencil(param0: boolean): void;
+					public setFailIfMajorPerformanceCaveat(param0: boolean): void;
+					public getPowerPreference(): string;
+					public setAlpha(param0: boolean): void;
+					public setDepth(param0: boolean): void;
+					public getStencil(): boolean;
+					public setPremultipliedAlpha(param0: boolean): void;
+					public constructor();
+					public getPreserveDrawingBuffer(): boolean;
+					public getFailIfMajorPerformanceCaveat(): boolean;
+					public setPreserveDrawingBuffer(param0: boolean): void;
+					public getAntialias(): boolean;
+					public setDesynchronized(param0: boolean): void;
+					public getDesynchronized(): boolean;
+				}
+				export module ContextAttributes {
+					export class Companion {
+						public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.ContextAttributes.Companion>;
+						public fromString(param0: string): org.nativescript.canvas.TNSCanvas.ContextAttributes;
+						public fromMap(param0: java.util.Map<string,any>): org.nativescript.canvas.TNSCanvas.ContextAttributes;
+						public getDefault(): org.nativescript.canvas.TNSCanvas.ContextAttributes;
+					}
 				}
 				export class ContextType {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.ContextType>;
@@ -458,14 +587,6 @@ declare module org {
 					});
 					public constructor();
 					public onResult(param0: string): void;
-				}
-				export class InvalidateState {
-					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.InvalidateState>;
-					public static NONE: org.nativescript.canvas.TNSCanvas.InvalidateState;
-					public static PENDING: org.nativescript.canvas.TNSCanvas.InvalidateState;
-					public static INVALIDATING: org.nativescript.canvas.TNSCanvas.InvalidateState;
-					public static valueOf(param0: string): org.nativescript.canvas.TNSCanvas.InvalidateState;
-					public static values(): androidNative.Array<org.nativescript.canvas.TNSCanvas.InvalidateState>;
 				}
 				export class Listener {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvas.Listener>;
@@ -496,12 +617,11 @@ declare module org {
 		export module canvas {
 			export class TNSCanvasGradient extends org.nativescript.canvas.TNSColorStyle {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSCanvasGradient>;
-				public static Companion: org.nativescript.canvas.TNSCanvasGradient.Companion;
 				public setStyle(param0: number): void;
 				public getStyleType(): org.nativescript.canvas.TNSColorStyleType;
 				public finalize(): void;
-				public getStyle(): number;
 				public constructor(param0: number);
+				public getStyle(): number;
 				public addColorStop(param0: number, param1: string): void;
 				public constructor();
 			}
@@ -536,7 +656,6 @@ declare module org {
 			export class TNSCanvasRenderingContext2D extends org.nativescript.canvas.TNSCanvasRenderingContext {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSCanvasRenderingContext2D>;
 				public static TAG: string;
-				public static Companion: org.nativescript.canvas.TNSCanvasRenderingContext2D.Companion;
 				public closePath(): void;
 				public arc(param0: number, param1: number, param2: number, param3: number, param4: number, param5: boolean): void;
 				public getStrokeStyle(): org.nativescript.canvas.TNSColorStyle;
@@ -553,28 +672,35 @@ declare module org {
 				public getImageData(param0: number, param1: number, param2: number, param3: number): org.nativescript.canvas.TNSImageData;
 				public measureText(param0: string): org.nativescript.canvas.TNSTextMetrics;
 				public createImageData(param0: number, param1: number): org.nativescript.canvas.TNSImageData;
-				public getImageSmoothingQuality(): org.nativescript.canvas.TNSImageSmoothingQuality;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number): void;
 				public getCanvas(): org.nativescript.canvas.TNSCanvas;
+				public getImageSmoothingQuality(): org.nativescript.canvas.TNSImageSmoothingQuality;
 				public isPointInStroke(param0: number, param1: number): boolean;
 				public clip(param0: org.nativescript.canvas.TNSFillRule): void;
 				public clip(): void;
 				public getLineJoin(): org.nativescript.canvas.TNSLineJoin;
 				public createLinearGradient(param0: number, param1: number, param2: number, param3: number): org.nativescript.canvas.TNSCanvasGradient;
 				public setFilter(param0: string): void;
+				public putImageData(param0: org.nativescript.canvas.TNSImageData, param1: number, param2: number, param3: number): void;
 				public getTextAlign(): org.nativescript.canvas.TNSTextAlignment;
 				public getShadowBlur(): number;
 				public getFont(): string;
 				public constructor(param0: org.nativescript.canvas.TNSCanvas);
 				public rect(param0: number, param1: number, param2: number, param3: number): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: androidNative.Array<number>): void;
 				public createImageData(param0: org.nativescript.canvas.TNSImageData): org.nativescript.canvas.TNSImageData;
+				public createPattern(param0: org.nativescript.canvas.TNSImageBitmap): org.nativescript.canvas.TNSPattern;
 				public getDirection(): org.nativescript.canvas.TNSTextDirection;
 				public getLineDash(): androidNative.Array<number>;
 				public strokeText(param0: string, param1: number, param2: number): void;
 				public arcTo(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public getShadowColor(): string;
+				public measureText(): org.nativescript.canvas.TNSTextMetrics;
+				public putImageData(param0: org.nativescript.canvas.TNSImageData, param1: number, param2: number, param3: number, param4: number): void;
 				public setLineDashOffset(param0: number): void;
 				public drawImage(param0: org.nativescript.canvas.TNSCanvas, param1: number, param2: number, param3: number, param4: number): void;
 				public isPointInPath(param0: org.nativescript.canvas.TNSPath2D, param1: number, param2: number, param3: org.nativescript.canvas.TNSFillRule): boolean;
+				public setFillStyleWithString(param0: string): void;
 				public createPattern(param0: org.nativescript.canvas.TNSCanvas, param1: org.nativescript.canvas.TNSPatternRepetition): org.nativescript.canvas.TNSPattern;
 				public resetTransform(): void;
 				public translate(param0: number, param1: number): void;
@@ -583,6 +709,7 @@ declare module org {
 				public fill(param0: org.nativescript.canvas.TNSPath2D, param1: org.nativescript.canvas.TNSFillRule): void;
 				public setDirection(param0: org.nativescript.canvas.TNSTextDirection): void;
 				public fill(param0: org.nativescript.canvas.TNSFillRule): void;
+				public createPattern(param0: globalAndroid.graphics.Bitmap): org.nativescript.canvas.TNSPattern;
 				public setGlobalAlpha(param0: number): void;
 				public getShadowOffsetY(): number;
 				public getFillStyle(): org.nativescript.canvas.TNSColorStyle;
@@ -594,6 +721,8 @@ declare module org {
 				public getImageSmoothingEnabled(): boolean;
 				public drawImage(param0: globalAndroid.graphics.Bitmap, param1: number, param2: number): void;
 				public quadraticCurveTo(param0: number, param1: number, param2: number, param3: number): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: number): void;
+				public createConicGradient(param0: number, param1: number, param2: number): org.nativescript.canvas.TNSCanvasGradient;
 				public fillText(param0: string, param1: number, param2: number, param3: number): void;
 				public clip(param0: org.nativescript.canvas.TNSPath2D): void;
 				public rotate(param0: number): void;
@@ -613,8 +742,8 @@ declare module org {
 				public arc(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public putImageData(param0: org.nativescript.canvas.TNSImageData, param1: number, param2: number): void;
 				public strokeText(param0: string, param1: number, param2: number, param3: number): void;
-				public isPointInPath(param0: number, param1: number): boolean;
 				public isPointInStroke(param0: org.nativescript.canvas.TNSPath2D, param1: number, param2: number): boolean;
+				public isPointInPath(param0: number, param1: number): boolean;
 				public ellipse(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number): void;
 				public setStrokeStyle(param0: org.nativescript.canvas.TNSColorStyle): void;
 				public stroke(): void;
@@ -636,25 +765,26 @@ declare module org {
 				public drawImage(param0: org.nativescript.canvas.TNSImageBitmap, param1: number, param2: number): void;
 				public setShadowOffsetY(param0: number): void;
 				public transform(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
+				public createPattern(param0: org.nativescript.canvas.TNSCanvas): org.nativescript.canvas.TNSPattern;
 				public moveTo(param0: number, param1: number): void;
 				public getMiterLimit(): number;
 				public drawImage(param0: org.nativescript.canvas.TNSImageBitmap, param1: number, param2: number, param3: number, param4: number): void;
 				public setTransform(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
+				public putImageData(param0: org.nativescript.canvas.TNSImageData, param1: number, param2: number, param3: number, param4: number, param5: number): void;
 				public setLineWidth(param0: number): void;
 				public createPattern(param0: globalAndroid.graphics.Bitmap, param1: org.nativescript.canvas.TNSPatternRepetition): org.nativescript.canvas.TNSPattern;
 				public drawImage(param0: globalAndroid.graphics.Bitmap, param1: number, param2: number, param3: number, param4: number): void;
 				public fillText(param0: string, param1: number, param2: number): void;
 				public setMiterLimit(param0: number): void;
-				public isPointInPath(param0: number, param1: number, param2: org.nativescript.canvas.TNSFillRule): boolean;
 				public getLineWidth(): number;
+				public createPattern(param0: org.nativescript.canvas.TNSImageAsset): org.nativescript.canvas.TNSPattern;
 				public ellipse(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: boolean): void;
+				public setStrokeStyleWithString(param0: string): void;
 				public setCurrentTransform(param0: org.nativescript.canvas.TNSDOMMatrix): void;
 			}
 			export module TNSCanvasRenderingContext2D {
 				export class Companion {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvasRenderingContext2D.Companion>;
-					public setDebug(param0: boolean): void;
-					public isDebug(): boolean;
 				}
 				export class WhenMappings {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSCanvasRenderingContext2D.WhenMappings>;
@@ -669,17 +799,21 @@ declare module org {
 		export module canvas {
 			export class TNSColor extends org.nativescript.canvas.TNSColorStyle {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSColor>;
-				public static Companion: org.nativescript.canvas.TNSColor.Companion;
 				public setColor(param0: string): void;
+				public static getWhite(): org.nativescript.canvas.TNSColor;
 				public getColor(): string;
 				public getStyleType(): org.nativescript.canvas.TNSColorStyleType;
 				public constructor(param0: number);
+				public static getBlack(): org.nativescript.canvas.TNSColor;
 				public constructor(param0: string);
 				public constructor();
 			}
 			export module TNSColor {
 				export class Companion {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSColor.Companion>;
+					public getWhite(): org.nativescript.canvas.TNSColor;
+					public getBlack(): org.nativescript.canvas.TNSColor;
+					public getTransparentRGBA(): string;
 				}
 			}
 		}
@@ -691,7 +825,6 @@ declare module org {
 		export module canvas {
 			export abstract class TNSColorStyle {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSColorStyle>;
-				public static Companion: org.nativescript.canvas.TNSColorStyle.Companion;
 				public getStyleType(): org.nativescript.canvas.TNSColorStyleType;
 				public static nativeDestroy(param0: number): void;
 				public constructor();
@@ -701,6 +834,19 @@ declare module org {
 					public static class: java.lang.Class<org.nativescript.canvas.TNSColorStyle.Companion>;
 					public nativeDestroy(param0: number): void;
 				}
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module canvas {
+			export class TNSColorStyleRef {
+				public static class: java.lang.Class<org.nativescript.canvas.TNSColorStyleRef>;
+				public constructor(param0: number, param1: number);
+				public getType(): number;
+				public getValue(): number;
 			}
 		}
 	}
@@ -753,7 +899,6 @@ declare module org {
 				public static Saturation: org.nativescript.canvas.TNSCompositeOperationType;
 				public static Color: org.nativescript.canvas.TNSCompositeOperationType;
 				public static Luminosity: org.nativescript.canvas.TNSCompositeOperationType;
-				public static Companion: org.nativescript.canvas.TNSCompositeOperationType.Companion;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSCompositeOperationType>;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
@@ -776,7 +921,6 @@ declare module org {
 		export module canvas {
 			export class TNSDOMMatrix {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSDOMMatrix>;
-				public static Companion: org.nativescript.canvas.TNSDOMMatrix.Companion;
 				public getD(): number;
 				public getM24(): number;
 				public getM44(): number;
@@ -785,8 +929,8 @@ declare module org {
 				public setB(param0: number): void;
 				public getM34(): number;
 				public getM41(): number;
-				public getM14(): number;
 				public constructor();
+				public getM14(): number;
 				public setM22(param0: number): void;
 				public setM43(param0: number): void;
 				public setE(param0: number): void;
@@ -856,14 +1000,13 @@ declare module org {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSFillRule>;
 				public static NonZero: org.nativescript.canvas.TNSFillRule;
 				public static EvenOdd: org.nativescript.canvas.TNSFillRule;
-				public static Companion: org.nativescript.canvas.TNSFillRule.Companion;
 				public setRule(param0: string): void;
 				public getRule(): string;
 				public setValue(param0: number): void;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSFillRule>;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSFillRule;
-				public toString(): string;
 				public getValue(): number;
+				public toString(): string;
 				public toNative(): number;
 			}
 			export module TNSFillRule {
@@ -899,7 +1042,6 @@ declare module org {
 		export module canvas {
 			export class TNSImageAsset {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSImageAsset>;
-				public static Companion: org.nativescript.canvas.TNSImageAsset.Companion;
 				public getHeight(): number;
 				public loadImageFromUrl(param0: string): boolean;
 				public scale(param0: number, param1: number): void;
@@ -908,8 +1050,8 @@ declare module org {
 				public loadImageFromResource(param0: number, param1: globalAndroid.content.Context): boolean;
 				public finalize(): void;
 				public getBytes(): androidNative.Array<number>;
-				public loadImageFromImageAsync(param0: globalAndroid.graphics.Bitmap, param1: org.nativescript.canvas.TNSImageAsset.Callback): void;
 				public constructor();
+				public loadImageFromImageAsync(param0: globalAndroid.graphics.Bitmap, param1: org.nativescript.canvas.TNSImageAsset.Callback): void;
 				public getNativeImageAsset$canvas_release(): number;
 				public loadImageFromUrlAsync(param0: string, param1: org.nativescript.canvas.TNSImageAsset.Callback): void;
 				public loadImageFromPath(param0: string): boolean;
@@ -981,7 +1123,6 @@ declare module org {
 		export module canvas {
 			export class TNSImageBitmap {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSImageBitmap>;
-				public static Companion: org.nativescript.canvas.TNSImageBitmap.Companion;
 				public getHeight(): number;
 				public finalize(): void;
 				public static createFromBuffer(param0: java.nio.ByteBuffer, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: org.nativescript.canvas.TNSImageBitmap.Options, param8: org.nativescript.canvas.TNSImageBitmap.Callback): void;
@@ -1074,13 +1215,12 @@ declare module org {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSImageBitmapColorSpaceConversion>;
 				public static Default: org.nativescript.canvas.TNSImageBitmapColorSpaceConversion;
 				public static None: org.nativescript.canvas.TNSImageBitmapColorSpaceConversion;
-				public static Companion: org.nativescript.canvas.TNSImageBitmapColorSpaceConversion.Companion;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageBitmapColorSpaceConversion>;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSImageBitmapColorSpaceConversion;
-				public toString(): string;
 				public getValue(): number;
-				public toNative(): number;
+				public toString(): string;
 				public getSpace(): string;
+				public toNative(): number;
 			}
 			export module TNSImageBitmapColorSpaceConversion {
 				export class Companion {
@@ -1100,12 +1240,11 @@ declare module org {
 				public static Default: org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha;
 				public static Premultiply: org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha;
 				public static None: org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha;
-				public static Companion: org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha.Companion;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha>;
-				public toString(): string;
 				public getValue(): number;
-				public toNative(): number;
+				public toString(): string;
 				public getAlpha(): string;
+				public toNative(): number;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSImageBitmapPremultiplyAlpha;
 			}
 			export module TNSImageBitmapPremultiplyAlpha {
@@ -1127,12 +1266,11 @@ declare module org {
 				public static Medium: org.nativescript.canvas.TNSImageBitmapResizeQuality;
 				public static High: org.nativescript.canvas.TNSImageBitmapResizeQuality;
 				public static Pixelated: org.nativescript.canvas.TNSImageBitmapResizeQuality;
-				public static Companion: org.nativescript.canvas.TNSImageBitmapResizeQuality.Companion;
 				public getQuality(): string;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSImageBitmapResizeQuality;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageBitmapResizeQuality>;
-				public toString(): string;
 				public getValue(): number;
+				public toString(): string;
 				public toNative(): number;
 			}
 			export module TNSImageBitmapResizeQuality {
@@ -1150,13 +1288,10 @@ declare module org {
 		export module canvas {
 			export class TNSImageData {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSImageData>;
-				public static Companion: org.nativescript.canvas.TNSImageData.Companion;
-				public getDataStore$canvas_release(): java.nio.ByteBuffer;
 				public constructor(param0: number, param1: number, param2: number);
 				public getWidth(): number;
 				public getHeight(): number;
 				public getData(): java.nio.ByteBuffer;
-				public setDataStore$canvas_release(param0: java.nio.ByteBuffer): void;
 				public getNativeImageData$canvas_release(): number;
 				public finalize(): void;
 				public setNativeImageData$canvas_release(param0: number): void;
@@ -1178,7 +1313,6 @@ declare module org {
 				public static Low: org.nativescript.canvas.TNSImageSmoothingQuality;
 				public static Medium: org.nativescript.canvas.TNSImageSmoothingQuality;
 				public static High: org.nativescript.canvas.TNSImageSmoothingQuality;
-				public static Companion: org.nativescript.canvas.TNSImageSmoothingQuality.Companion;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSImageSmoothingQuality>;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSImageSmoothingQuality;
 				public isError$canvas_release(): boolean;
@@ -1204,7 +1338,6 @@ declare module org {
 				public static Butt: org.nativescript.canvas.TNSLineCap;
 				public static Round: org.nativescript.canvas.TNSLineCap;
 				public static Square: org.nativescript.canvas.TNSLineCap;
-				public static Companion: org.nativescript.canvas.TNSLineCap.Companion;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSLineCap>;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
@@ -1230,7 +1363,6 @@ declare module org {
 				public static Bevel: org.nativescript.canvas.TNSLineJoin;
 				public static Round: org.nativescript.canvas.TNSLineJoin;
 				public static Miter: org.nativescript.canvas.TNSLineJoin;
-				public static Companion: org.nativescript.canvas.TNSLineJoin.Companion;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
 				public static valueOf(param0: string): org.nativescript.canvas.TNSLineJoin;
@@ -1253,7 +1385,6 @@ declare module org {
 		export module canvas {
 			export class TNSPath2D {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSPath2D>;
-				public static Companion: org.nativescript.canvas.TNSPath2D.Companion;
 				public closePath(): void;
 				public lineTo(param0: number, param1: number): void;
 				public setPath$canvas_release(param0: number): void;
@@ -1263,10 +1394,13 @@ declare module org {
 				public constructor(param0: string);
 				public constructor();
 				public quadraticCurveTo(param0: number, param1: number, param2: number, param3: number): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public rect(param0: number, param1: number, param2: number, param3: number): void;
 				public bezierCurveTo(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: androidNative.Array<number>): void;
 				public ellipse(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: boolean): void;
 				public addPath(param0: org.nativescript.canvas.TNSPath2D, param1: org.nativescript.canvas.TNSDOMMatrix): void;
+				public roundRect(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number): void;
 				public addPath(param0: org.nativescript.canvas.TNSPath2D): void;
 				public arcTo(param0: number, param1: number, param2: number, param3: number, param4: number): void;
 				public getPath$canvas_release(): number;
@@ -1286,12 +1420,11 @@ declare module org {
 		export module canvas {
 			export class TNSPattern extends org.nativescript.canvas.TNSColorStyle {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSPattern>;
-				public static Companion: org.nativescript.canvas.TNSPattern.Companion;
 				public setStyle(param0: number): void;
 				public finalize(): void;
 				public getStyleType(): org.nativescript.canvas.TNSColorStyleType;
-				public getStyle(): number;
 				public constructor(param0: number);
+				public getStyle(): number;
 				public setTransform(param0: org.nativescript.canvas.TNSDOMMatrix): void;
 				public constructor();
 			}
@@ -1328,7 +1461,7 @@ declare module org {
 		export module canvas {
 			export class TNSSVG {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSSVG>;
-				public static Companion: org.nativescript.canvas.TNSSVG.Companion;
+				public toData(): androidNative.Array<number>;
 				public getBitmap$canvas_release(): globalAndroid.graphics.Bitmap;
 				public constructor(param0: globalAndroid.content.Context, param1: globalAndroid.util.AttributeSet);
 				public setSrc(param0: string): void;
@@ -1342,6 +1475,7 @@ declare module org {
 				public constructor(param0: globalAndroid.content.Context);
 				public getIgnorePixelScaling(): boolean;
 				public constructor(param0: globalAndroid.content.Context, param1: boolean);
+				public toImage(): globalAndroid.graphics.Bitmap;
 			}
 			export module TNSSVG {
 				export class Companion {
@@ -1362,7 +1496,6 @@ declare module org {
 				public static Center: org.nativescript.canvas.TNSTextAlignment;
 				public static Right: org.nativescript.canvas.TNSTextAlignment;
 				public static End: org.nativescript.canvas.TNSTextAlignment;
-				public static Companion: org.nativescript.canvas.TNSTextAlignment.Companion;
 				public static values(): androidNative.Array<org.nativescript.canvas.TNSTextAlignment>;
 				public isError$canvas_release(): boolean;
 				public setError$canvas_release(param0: boolean): void;
@@ -1406,18 +1539,22 @@ declare module org {
 		export module canvas {
 			export class TNSTextDecoder {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSTextDecoder>;
-				public static Companion: org.nativescript.canvas.TNSTextDecoder.Companion;
 				public getEncoding(): string;
-				public decodeDoubleBuffer(param0: androidNative.Array<number>): string;
-				public decode(param0: java.nio.ByteBuffer): string;
+				public decodeShortBuffer(param0: java.nio.ShortBuffer): string;
+				public decodeFloatBuffer(param0: java.nio.FloatBuffer): string;
+				public decodeIntBuffer(param0: java.nio.IntBuffer): string;
+				public decodeByte(param0: androidNative.Array<number>): string;
+				public decodeFloat(param0: androidNative.Array<number>): string;
+				public decodeShort(param0: androidNative.Array<number>): string;
 				public finalize(): void;
-				public decodeIntBuffer(param0: androidNative.Array<number>): string;
-				public decode(param0: androidNative.Array<number>): string;
+				public decodeDoubleBuffer(param0: java.nio.DoubleBuffer): string;
 				public decodeByteBuffer(param0: java.nio.ByteBuffer): string;
-				public decodeFloatBuffer(param0: androidNative.Array<number>): string;
-				public decodeShortBuffer(param0: androidNative.Array<number>): string;
 				public constructor(param0: string);
 				public constructor();
+				public decodeInt(param0: androidNative.Array<number>): string;
+				public decodeDouble(param0: androidNative.Array<number>): string;
+				public decode(param0: java.nio.ByteBuffer): string;
+				public decode(param0: androidNative.Array<number>): string;
 			}
 			export module TNSTextDecoder {
 				export class Companion {
@@ -1449,11 +1586,11 @@ declare module org {
 		export module canvas {
 			export class TNSTextEncoder {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSTextEncoder>;
-				public static Companion: org.nativescript.canvas.TNSTextEncoder.Companion;
 				public getEncoding(): string;
 				public encode(param0: string): java.nio.ByteBuffer;
 				public finalize(): void;
 				public constructor(param0: string);
+				public encodeToBuffer(param0: string): java.nio.ByteBuffer;
 				public constructor();
 			}
 			export module TNSTextEncoder {
@@ -1470,7 +1607,6 @@ declare module org {
 		export module canvas {
 			export class TNSTextMetrics {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSTextMetrics>;
-				public static Companion: org.nativescript.canvas.TNSTextMetrics.Companion;
 				public getEmHeightDescent(): number;
 				public getIdeographicBaseline(): number;
 				public finalize(): void;
@@ -1500,7 +1636,6 @@ declare module org {
 		export module canvas {
 			export class TNSWebGL2RenderingContext extends org.nativescript.canvas.TNSWebGLRenderingContext {
 				public static class: java.lang.Class<org.nativescript.canvas.TNSWebGL2RenderingContext>;
-				public static Companion: org.nativescript.canvas.TNSWebGL2RenderingContext.Companion;
 				public compressedTexSubImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: java.nio.ByteBuffer, param10: number, param11: number): void;
 				public getRG32UI(): number;
 				public getSYNC_GPU_COMMANDS_COMPLETE(): number;
@@ -1513,7 +1648,6 @@ declare module org {
 				public getUNPACK_SKIP_PIXELS(): number;
 				public isVertexArray(param0: number): boolean;
 				public getFLOAT_MAT4x3(): number;
-				public constructor(param0: org.nativescript.canvas.TNSCanvas, param1: java.util.Map<string,any>);
 				public texStorage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number): void;
 				public getBufferSubData(param0: number, param1: number, param2: androidNative.Array<number>, param3: number, param4: number): void;
 				public getUNSIGNED_INT_24_8(): number;
@@ -1667,6 +1801,7 @@ declare module org {
 				public uniformMatrix4x2fv(param0: number, param1: boolean, param2: androidNative.Array<number>): void;
 				public getTEXTURE_BINDING_3D(): number;
 				public bindVertexArray(param0: number): void;
+				public bindVertexArray(): void;
 				public getRG(): number;
 				public getMAX_SAMPLES(): number;
 				public endTransformFeedback(): void;
@@ -1761,7 +1896,6 @@ declare module org {
 				public getMAX_3D_TEXTURE_SIZE(): number;
 				public getRG16I(): number;
 				public getSamplerParameter(param0: number, param1: number): any;
-				public drawBuffers(param0: java.nio.IntBuffer): void;
 				public texImage3D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: number, param8: number, param9: org.nativescript.canvas.TNSCanvas): void;
 				public getActiveUniforms(param0: number, param1: androidNative.Array<number>, param2: number): any;
 				public getRGB8_SNORM(): number;
@@ -1948,7 +2082,6 @@ declare module org {
 				public static SIZE_OF_FLOAT: number;
 				public static SIZE_OF_DOUBLE: number;
 				public static SIZE_OF_CHAR: number;
-				public static Companion: org.nativescript.canvas.TNSWebGLRenderingContext.Companion;
 				public getINT_VEC2(): number;
 				public getDEPTH_STENCIL(): number;
 				public getSAMPLE_COVERAGE(): number;
@@ -1966,7 +2099,6 @@ declare module org {
 				public getUNSIGNED_SHORT_5_6_5(): number;
 				public getUNPACK_PREMULTIPLY_ALPHA_WEBGL(): number;
 				public getNEAREST(): number;
-				public constructor(param0: org.nativescript.canvas.TNSCanvas, param1: java.util.Map<string,any>);
 				public compressedTexSubImage2DShortBuffer(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: number, param7: java.nio.ShortBuffer): void;
 				public getFUNC_SUBTRACT(): number;
 				public compressedTexImage2D(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: androidNative.Array<number>): void;
@@ -2386,6 +2518,7 @@ declare module org {
 				public bufferData(param0: number, param1: number, param2: number): void;
 				public uniform3f(param0: number, param1: number, param2: number, param3: number): void;
 				public readPixelsIntBuffer(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: java.nio.IntBuffer): void;
+				public getLock$canvas_release(): org.nativescript.canvas.ResettableCountDownLatch;
 				public getGL_UNSIGNED_BYTE$canvas_release(): number;
 				public isEnabled(param0: number): boolean;
 				public getUNSIGNED_SHORT_5_5_5_1(): number;
@@ -2405,8 +2538,8 @@ declare module org {
 				public compileShader(param0: number): void;
 				public commit(): void;
 				public getTEXTURE29(): number;
-				public readPixelsFloatBuffer(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: java.nio.FloatBuffer): void;
 				public constructor(param0: org.nativescript.canvas.TNSCanvas);
+				public readPixelsFloatBuffer(param0: number, param1: number, param2: number, param3: number, param4: number, param5: number, param6: java.nio.FloatBuffer): void;
 				public getSTENCIL_BACK_REF(): number;
 				public isProgram(param0: number): boolean;
 				public getDEPTH_CLEAR_VALUE(): number;
@@ -2535,16 +2668,15 @@ declare module org {
 		export module canvas {
 			export class TextureRender {
 				public static class: java.lang.Class<org.nativescript.canvas.TextureRender>;
-				public static Companion: org.nativescript.canvas.TextureRender.Companion;
 				public setHeight(param0: number): void;
 				public getHeight(): number;
 				public getTextureId(): number;
 				public setAb(param0: number): void;
 				public surfaceCreated(): void;
 				public drawFrame(param0: globalAndroid.graphics.SurfaceTexture, param1: number, param2: number, param3: number, param4: number, param5: boolean): void;
+				public constructor();
 				public setWidth(param0: number): void;
 				public getMatrix(): androidNative.Array<number>;
-				public constructor();
 				public getAb(): number;
 				public setRbo(param0: number): void;
 				public getWidth(): number;
@@ -2555,6 +2687,7 @@ declare module org {
 				public setMatrixPos(param0: number): void;
 				public setSamplerPos(param0: number): void;
 				public getRbo(): number;
+				public static updateTexImageAndGetTransformMatrix(param0: globalAndroid.graphics.SurfaceTexture, param1: androidNative.Array<number>): void;
 				public getFbo(): number;
 				public setTextureId(param0: number): void;
 				public setPos(param0: number): void;
@@ -2565,6 +2698,7 @@ declare module org {
 					public static class: java.lang.Class<org.nativescript.canvas.TextureRender.Companion>;
 					public getVextexCoords(): androidNative.Array<number>;
 					public getVextexBuf(): java.nio.FloatBuffer;
+					public updateTexImageAndGetTransformMatrix(param0: globalAndroid.graphics.SurfaceTexture, param1: androidNative.Array<number>): void;
 					public setVextexBuf(param0: java.nio.FloatBuffer): void;
 				}
 			}
@@ -2633,9 +2767,9 @@ declare module org {
 				export class ANGLE_instanced_arrays {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.ANGLE_instanced_arrays>;
 					public vertexAttribDivisorANGLE(param0: number, param1: number): void;
+					public constructor();
 					public getVERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE(): number;
 					public drawElementsInstancedANGLE(param0: number, param1: number, param2: number, param3: number, param4: number): void;
-					public constructor();
 					public drawArraysInstancedANGLE(param0: number, param1: number, param2: number, param3: number): void;
 				}
 			}
@@ -2673,8 +2807,8 @@ declare module org {
 					public getRGB16F(): number;
 					public getR16F(): number;
 					public getR11F_G11F_B10F(): number;
-					public getRG32F(): number;
 					public constructor();
+					public getRG32F(): number;
 					public setR16F(param0: number): void;
 					public getRGBA32F(): number;
 					public setRGBA32F(param0: number): void;
@@ -2712,7 +2846,6 @@ declare module org {
 			export module extensions {
 				export class EXT_disjoint_timer_query {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.EXT_disjoint_timer_query>;
-					public static Companion: org.nativescript.canvas.extensions.EXT_disjoint_timer_query.Companion;
 					public getQueryObjectEXT(param0: number, param1: number): any;
 					public beginQueryEXT(param0: number, param1: number): void;
 					public getQueryEXT(param0: number, param1: number): number;
@@ -2722,8 +2855,8 @@ declare module org {
 					public constructor(param0: org.nativescript.canvas.TNSCanvas);
 					public isQueryEXT(param0: number): boolean;
 					public queryCounterEXT(param0: number, param1: number): void;
-					public deleteQueryEXT(param0: number): void;
 					public getCanvas(): org.nativescript.canvas.TNSCanvas;
+					public deleteQueryEXT(param0: number): void;
 				}
 				export module EXT_disjoint_timer_query {
 					export class Companion {
@@ -2756,9 +2889,9 @@ declare module org {
 				export class EXT_sRGB {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.EXT_sRGB>;
 					public getSRGB_EXT(): number;
+					public constructor();
 					public getSRGB_ALPHA_EXT(): number;
 					public setSRGB_ALPHA_EXT(param0: number): void;
-					public constructor();
 					public getSRGB8_ALPHA8_EXT(): number;
 					public setSRGB8_ALPHA8_EXT(param0: number): void;
 					public setFRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT(param0: number): void;
@@ -2791,8 +2924,8 @@ declare module org {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.EXT_texture_filter_anisotropic>;
 					public setMAX_TEXTURE_MAX_ANISOTROPY_EXT(param0: number): void;
 					public getTEXTURE_MAX_ANISOTROPY_EXT(): number;
-					public getMAX_TEXTURE_MAX_ANISOTROPY_EXT(): number;
 					public constructor();
+					public getMAX_TEXTURE_MAX_ANISOTROPY_EXT(): number;
 					public setTEXTURE_MAX_ANISOTROPY_EXT(param0: number): void;
 				}
 			}
@@ -2910,8 +3043,8 @@ declare module org {
 					public constructor(param0: org.nativescript.canvas.TNSCanvas);
 					public getVERTEX_ARRAY_BINDING_OES(): number;
 					public isVertexArrayOES(param0: number): boolean;
-					public setVERTEX_ARRAY_BINDING_OES(param0: number): void;
 					public getCanvas(): org.nativescript.canvas.TNSCanvas;
+					public setVERTEX_ARRAY_BINDING_OES(param0: number): void;
 				}
 			}
 		}
@@ -2926,8 +3059,8 @@ declare module org {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.WEBGL_color_buffer_float>;
 					public getFRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT(): number;
 					public getUNSIGNED_NORMALIZED_EXT(): number;
-					public getRGB32F_EXT(): number;
 					public constructor();
+					public getRGB32F_EXT(): number;
 					public setRGBA32F_EXT(param0: number): void;
 					public setFRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT(param0: number): void;
 					public setUNSIGNED_NORMALIZED_EXT(param0: number): void;
@@ -2978,8 +3111,8 @@ declare module org {
 					public getCOMPRESSED_RG11_EAC(): number;
 					public getCOMPRESSED_RGB8_ETC2(): number;
 					public getCOMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2(): number;
-					public setCOMPRESSED_SIGNED_R11_EAC(param0: number): void;
 					public constructor();
+					public setCOMPRESSED_SIGNED_R11_EAC(param0: number): void;
 					public getCOMPRESSED_SRGB8_ALPHA8_ETC2_EAC(): number;
 					public getCOMPRESSED_R11_EAC(): number;
 					public getCOMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2(): number;
@@ -3014,9 +3147,9 @@ declare module org {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.WEBGL_compressed_texture_pvrtc>;
 					public setCOMPRESSED_RGBA_PVRTC_2BPPV1_IMG(param0: number): void;
 					public getCOMPRESSED_RGBA_PVRTC_2BPPV1_IMG(): number;
+					public constructor();
 					public getCOMPRESSED_RGB_PVRTC_4BPPV1_IMG(): number;
 					public getCOMPRESSED_RGB_PVRTC_2BPPV1_IMG(): number;
-					public constructor();
 					public getCOMPRESSED_RGBA_PVRTC_4BPPV1_IMG(): number;
 					public setCOMPRESSED_RGB_PVRTC_2BPPV1_IMG(param0: number): void;
 					public setCOMPRESSED_RGBA_PVRTC_4BPPV1_IMG(param0: number): void;
@@ -3034,8 +3167,8 @@ declare module org {
 				export class WEBGL_compressed_texture_s3tc {
 					public static class: java.lang.Class<org.nativescript.canvas.extensions.WEBGL_compressed_texture_s3tc>;
 					public getCOMPRESSED_RGBA_S3TC_DXT3_EXT(): number;
-					public setCOMPRESSED_RGB_S3TC_DXT1_EXT(param0: number): void;
 					public constructor();
+					public setCOMPRESSED_RGB_S3TC_DXT1_EXT(param0: number): void;
 					public getCOMPRESSED_RGB_S3TC_DXT1_EXT(): number;
 					public getCOMPRESSED_RGBA_S3TC_DXT1_EXT(): number;
 					public setCOMPRESSED_RGBA_S3TC_DXT1_EXT(param0: number): void;
@@ -3098,9 +3231,9 @@ declare module org {
 					public setDRAW_BUFFER7_WEBGL(param0: number): void;
 					public setDRAW_BUFFER11_WEBGL(param0: number): void;
 					public setCOLOR_ATTACHMENT1_WEBGL(param0: number): void;
+					public constructor();
 					public getDRAW_BUFFER7_WEBGL(): number;
 					public setDRAW_BUFFER8_WEBGL(param0: number): void;
-					public constructor();
 					public setDRAW_BUFFER9_WEBGL(param0: number): void;
 					public setCOLOR_ATTACHMENT11_WEBGL(param0: number): void;
 					public getCOLOR_ATTACHMENT2_WEBGL(): number;

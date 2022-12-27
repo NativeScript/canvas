@@ -1,8 +1,6 @@
 use std::os::raw::c_int;
 
-use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, Point, Surface,
-};
+use skia_safe::{AlphaType, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, Point, Surface};
 use skia_safe::image::CachingHint;
 
 use crate::common::context::Context;
@@ -15,18 +13,23 @@ pub mod prelude;
 pub(crate) mod svg;
 pub(crate) mod utils;
 
-pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -> String {
-    let surface = &mut context.surface;
-    let image = surface.image_snapshot();
-    let mut quality = quality;
-    if quality > 100 || quality < 0 {
-        quality = 92;
-    }
+pub(crate) fn image_to_data_url(image: Option<&Image>, format: &str, quality: c_int) -> String {
     let mut encoded_prefix = String::new();
     encoded_prefix.push_str("data:");
     encoded_prefix.push_str(format);
     encoded_prefix.push_str(";base64,");
-    let data = image.encode_to_data_with_quality(
+
+    if image.is_none() {
+        let mut encoded = String::new();
+        encoded.push_str(&encoded_prefix);
+        encoded.push_str("\"\"");
+        return encoded;
+    }
+    let mut quality = quality;
+    if quality > 100 || quality < 0 {
+        quality = 92;
+    }
+    let data = image.unwrap().encode_to_data_with_quality(
         match format {
             "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
             "image/webp" => EncodedImageFormat::WEBP,
@@ -53,6 +56,12 @@ pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -
             encoded
         }
     }
+}
+
+pub(crate) fn to_data_url(context: &mut Context, format: &str, quality: c_int) -> String {
+    let surface = &mut context.surface;
+    let image = surface.image_snapshot();
+    image_to_data_url(Some(&image), format, quality)
 }
 
 pub(crate) fn to_data(context: &mut Context) -> Vec<u8> {

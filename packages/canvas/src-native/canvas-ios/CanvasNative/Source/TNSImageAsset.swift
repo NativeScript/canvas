@@ -71,6 +71,31 @@ public class TNSImageAsset: NSObject {
         }
     }
     
+    
+    public func loadImageFromBuffer(_ buffer: NSData) -> Bool{
+        var ptr = buffer
+        _error = nil
+        free_data()
+        return image_asset_load_from_raw(asset, &ptr, UInt(buffer.count))
+    }
+    
+    public func loadImageFromBufferAsync(_ buffer: NSData, callback: @escaping (String?)-> ()){
+        TNSImageAsset.queue.async {
+            let success = self.loadImageFromBuffer(buffer)
+            if(success){
+                DispatchQueue.main.async {
+                    callback(nil)
+                }
+            }else {
+                DispatchQueue.main.async {
+                     callback(self.error!)
+                }
+            }
+        }
+    }
+    
+    
+    
     public func loadImageFromBytes(array: [UInt8]) -> Bool{
         var ptr = array
         _error = nil
@@ -166,13 +191,7 @@ public class TNSImageAsset: NSObject {
         return Int32(image_asset_height(asset))
     }
     
-    public func flipX(){
-        if(asset == 0){
-            return
-        }
-        image_asset_flip_x(asset)
-        free_data()
-    }
+    public func flipX(){}
     
     private func free_data(){
         if(self.raw_data != nil){
@@ -181,13 +200,7 @@ public class TNSImageAsset: NSObject {
         }
     }
     
-    public func flipY(){
-        if(asset == 0){
-            return
-        }
-        image_asset_flip_y(asset)
-        free_data()
-    }
+    public func flipY(){}
     
     public func scale(x: UInt32, y: UInt32){
         if(asset == 0){

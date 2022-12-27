@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.opengl.GLES20
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,7 +13,10 @@ import android.os.StrictMode
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
 import org.nativescript.canvas.TNSImageAsset.Callback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -20,8 +24,12 @@ import kotlinx.coroutines.withContext
 import org.nativescript.canvas.*
 import java.io.*
 import java.net.URL
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.channels.Channels
 import java.util.*
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.*
@@ -31,17 +39,20 @@ class MainActivity : AppCompatActivity() {
 	var canvas: TNSCanvas? = null
 	var svg: TNSSVG? = null
 	var ctx: TNSCanvasRenderingContext2D? = null
+	var ll: LinearLayout? = null
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		svg = findViewById(R.id.svgView)
+		//	svg = findViewById(R.id.svgView)
+//			ll = findViewById(R.id.container)
 		svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
 
 		System.loadLibrary("canvasnative")
 		canvas?.ignorePixelScaling = false
+		canvas?.scaling = true
 		canvas?.listener = object : TNSCanvas.Listener {
 			override fun contextReady() {
 				print("Is Ready")
@@ -50,7 +61,10 @@ class MainActivity : AppCompatActivity() {
 			}
 		}
 
-		drawTransformPathSvg()
+		//screenshotBitmap()
+//		canvasToImage()
+
+		//	drawTransformPathSvg()
 //		svg?.setSrc(
 //			"""
 //				<svg width="100" height="100" xmlns="svg">
@@ -776,6 +790,7 @@ class MainActivity : AppCompatActivity() {
 		ctx.putImageData(imageData, 0F, 0F)
 	}
 
+
 	fun decodeFile() {
 		runBlocking {
 			withContext(Dispatchers.IO) {
@@ -837,7 +852,7 @@ class MainActivity : AppCompatActivity() {
 			Log.d("Canvas", "drawRemoteGLImage ${file.absolutePath}")
 			if (!file.exists()) {
 				val url =
-					URL("https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample6/cubetexture.png")
+					URL("https://m.media-amazon.com/images/M/MV5BYzE5MjY1ZDgtMTkyNC00MTMyLThhMjAtZGI5OTE1NzFlZGJjXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg")//	URL("https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample6/cubetexture.png")
 				val fs = FileOutputStream(file)
 				url.openStream().use { input ->
 					fs.use { output ->
@@ -872,7 +887,7 @@ class MainActivity : AppCompatActivity() {
 
 	fun drawGLImage(canvas: TNSCanvas, image: Any) {
 		val cvs3d = canvas
-		val ctx3d = cvs3d.getContext("experimental-webgl")!! as TNSWebGLRenderingContext
+		val ctx3d = cvs3d.getContext("webgl")!! as TNSWebGLRenderingContext
 
 		// create shaders
 		val vertexShaderSrc =
@@ -883,7 +898,7 @@ class MainActivity : AppCompatActivity() {
 				"void main(void) {" +
 				"  gl_Position = vec4(aVertex + pos, 0.0, 1.0);" +
 				"  vTex = aUV;" +
-				"}";
+				"}"
 
 		val fragmentShaderSrc =
 			"precision highp float;" +
@@ -891,44 +906,44 @@ class MainActivity : AppCompatActivity() {
 				"uniform sampler2D sampler0;" +
 				"void main(void){" +
 				"  gl_FragColor = texture2D(sampler0, vTex);" +
-				"}";
+				"}"
 
-		val vertShaderObj = ctx3d.createShader(ctx3d.VERTEX_SHADER);
-		val fragShaderObj = ctx3d.createShader(ctx3d.FRAGMENT_SHADER);
-		ctx3d.shaderSource(vertShaderObj, vertexShaderSrc);
-		ctx3d.shaderSource(fragShaderObj, fragmentShaderSrc);
-		ctx3d.compileShader(vertShaderObj);
-		ctx3d.compileShader(fragShaderObj);
+		val vertShaderObj = ctx3d.createShader(ctx3d.VERTEX_SHADER)
+		val fragShaderObj = ctx3d.createShader(ctx3d.FRAGMENT_SHADER)
+		ctx3d.shaderSource(vertShaderObj, vertexShaderSrc)
+		ctx3d.shaderSource(fragShaderObj, fragmentShaderSrc)
+		ctx3d.compileShader(vertShaderObj)
+		ctx3d.compileShader(fragShaderObj)
 
-		val progObj = ctx3d.createProgram();
-		ctx3d.attachShader(progObj, vertShaderObj);
-		ctx3d.attachShader(progObj, fragShaderObj);
+		val progObj = ctx3d.createProgram()
+		ctx3d.attachShader(progObj, vertShaderObj)
+		ctx3d.attachShader(progObj, fragShaderObj)
 
-		ctx3d.linkProgram(progObj);
-		ctx3d.useProgram(progObj);
+		ctx3d.linkProgram(progObj)
+		ctx3d.useProgram(progObj)
 
-		ctx3d.viewport(0, 0, 1024, 768);
+		ctx3d.viewport(0, 0, canvas.width, canvas.height)
 
-		val vertexBuff = ctx3d.createBuffer();
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff);
+		val vertexBuff = ctx3d.createBuffer()
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff)
 		ctx3d.bufferData(
 			ctx3d.ARRAY_BUFFER,
 			arrayOf(-1f, 1f, -1f, -1f, 1f, -1f, 1f, 1f),
 			ctx3d.STATIC_DRAW
-		);
+		)
 
-		val texBuff = ctx3d.createBuffer();
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff);
-		ctx3d.bufferData(ctx3d.ARRAY_BUFFER, arrayOf(0, 1f, 0, 0, 1f, 0, 1f, 1f), ctx3d.STATIC_DRAW);
+		val texBuff = ctx3d.createBuffer()
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff)
+		ctx3d.bufferData(ctx3d.ARRAY_BUFFER, arrayOf(0, 1f, 0, 0, 1f, 0, 1f, 1f), ctx3d.STATIC_DRAW)
 
-		val vloc = ctx3d.getAttribLocation(progObj, "aVertex");
-		val tloc = ctx3d.getAttribLocation(progObj, "aUV");
-		val uLoc = ctx3d.getUniformLocation(progObj, "pos");
+		val vloc = ctx3d.getAttribLocation(progObj, "aVertex")
+		val tloc = ctx3d.getAttribLocation(progObj, "aUV")
+		val uLoc = ctx3d.getUniformLocation(progObj, "pos")
 
-		val tex = ctx3d.createTexture();
-		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex);
-		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MIN_FILTER, ctx3d.NEAREST);
-		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MAG_FILTER, ctx3d.NEAREST);
+		val tex = ctx3d.createTexture()
+		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex)
+		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MIN_FILTER, ctx3d.NEAREST)
+		ctx3d.texParameteri(ctx3d.TEXTURE_2D, ctx3d.TEXTURE_MAG_FILTER, ctx3d.NEAREST)
 		(image as? TNSImageAsset)?.let {
 			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it)
 		}
@@ -941,16 +956,16 @@ class MainActivity : AppCompatActivity() {
 			ctx3d.texImage2D(ctx3d.TEXTURE_2D, 0, ctx3d.RGBA, ctx3d.RGBA, ctx3d.UNSIGNED_BYTE, it)
 		}
 
-		ctx3d.enableVertexAttribArray(vloc);
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff);
-		ctx3d.vertexAttribPointer(vloc, 2, ctx3d.FLOAT, false, 0, 0);
+		ctx3d.enableVertexAttribArray(vloc)
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, vertexBuff)
+		ctx3d.vertexAttribPointer(vloc, 2, ctx3d.FLOAT, false, 0, 0)
 
-		ctx3d.enableVertexAttribArray(tloc);
-		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff);
-		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex);
-		ctx3d.vertexAttribPointer(tloc, 2, ctx3d.FLOAT, false, 0, 0);
+		ctx3d.enableVertexAttribArray(tloc)
+		ctx3d.bindBuffer(ctx3d.ARRAY_BUFFER, texBuff)
+		ctx3d.bindTexture(ctx3d.TEXTURE_2D, tex)
+		ctx3d.vertexAttribPointer(tloc, 2, ctx3d.FLOAT, false, 0, 0)
 
-		ctx3d.drawArrays(ctx3d.TRIANGLE_FAN, 0, 4);
+		ctx3d.drawArrays(ctx3d.TRIANGLE_FAN, 0, 4)
 
 	}
 
@@ -975,11 +990,11 @@ class MainActivity : AppCompatActivity() {
 
 
 	fun solarAnimation(ctx: TNSCanvasRenderingContext2D) {
-		AnimationFrame.requestAnimationFrame { called ->
-			run {
-				animateSolarSystem(ctx, called.toFloat())
-			}
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			run {
+//				animateSolarSystem(ctx, called.toFloat())
+//			}
+//		}
 	}
 
 	companion object {
@@ -1206,11 +1221,11 @@ class MainActivity : AppCompatActivity() {
 
 			ctx.drawImage(sun, 0F, 0F, 300F, 300F)
 
-			AnimationFrame.requestAnimationFrame { called ->
-				run {
-					animateSolarSystem(ctx, called.toFloat())
-				}
-			}
+//			AnimationFrame.requestAnimationFrame { called ->
+//				run {
+//					animateSolarSystem(ctx, called.toFloat())
+//				}
+//			}
 
 		} catch (e: IOException) {
 			e.printStackTrace()
@@ -1219,9 +1234,9 @@ class MainActivity : AppCompatActivity() {
 
 
 	fun loop(ctx: TNSCanvasRenderingContext2D, t: Float) {
-		AnimationFrame.requestAnimationFrame { called ->
-			loop(ctx, called.toFloat())
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			loop(ctx, called.toFloat())
+//		}
 		t0 = t / 1000.0
 		a = t0 % PI2
 		rr = abs(cos(a) * r)
@@ -1240,7 +1255,8 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	@SuppressLint("NewApi")
-	fun drawShadowAlpha(ctx: TNSCanvasRenderingContext2D) {
+	fun drawShadowAlpha(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		// Shadow
 
 		ctx.shadowColor = "rgba(255,0,0, 0.8)"
@@ -1249,12 +1265,12 @@ class MainActivity : AppCompatActivity() {
 		ctx.shadowOffsetY = 20F
 
 // Filled rectangle
-		ctx.fillStyle = TNSColor("rgba(0,255,0,0.2)")
+		ctx.fillStyle = TNSColor("rgba(0,0,255,0.2)")
 		ctx.fillRect(10F, 10F, 150F, 100F)
 
 // Stroked rectangle
 		ctx.lineWidth = 10F
-		ctx.strokeStyle = TNSColor("0,0,255,0.6")
+		ctx.strokeStyle = TNSColor("rgba(0,0,255,0.6)")
 		ctx.strokeRect(10F, 10F, 150F, 100F);
 	}
 
@@ -1285,7 +1301,8 @@ class MainActivity : AppCompatActivity() {
 		println(msg)
 	}
 
-	fun drawText(ctx: TNSCanvasRenderingContext2D) {
+	fun drawText(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		ctx.font = "48px serif";
 		ctx.fillText("Hi!", 150f, 50f);
 		ctx.direction = TNSTextDirection.Rtl;
@@ -1340,9 +1357,9 @@ class MainActivity : AppCompatActivity() {
 		ctx.fillRect(0f, 0f, ctx.canvas.width.toFloat(), ctx.canvas.height.toFloat())
 		ctx.fillStyle = TNSColor("black")
 		drawFace(ctx)
-		AnimationFrame.requestAnimationFrame {
-			faceLoop(ctx)
-		}
+//		AnimationFrame.requestAnimationFrame {
+//			faceLoop(ctx)
+//		}
 	}
 
 
@@ -1444,14 +1461,14 @@ class MainActivity : AppCompatActivity() {
 
 			val asset = TNSImageAsset()
 
-			if(img.exists() && img.length() == 0L){
+			if (img.exists() && img.length() == 0L) {
 				img.delete()
 			}
 
 			if (img.exists()) {
 				asset.loadImageFromPath(img.absolutePath)
 			} else {
-				val url = URL("https://mdn.mozillademos.org/files/222/Canvas_createpattern.png")
+				val url = URL("https://source.unsplash.com/random")
 				val fs = FileOutputStream(img)
 				url.openStream().use { input ->
 					fs.use { output ->
@@ -1462,13 +1479,15 @@ class MainActivity : AppCompatActivity() {
 			}
 
 
+			val start = System.nanoTime()
 			val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 			val pattern = ctx.createPattern(asset, TNSPatternRepetition.Repeat)
 			pattern?.let {
 				ctx.fillStyle = it
 			}
+			ctx.fillRect(0f, 0f, 300f, 300f)
 
-			ctx.fillRect(0f, 0f, 300f, 300f);
+			Log.d("TIME", "complete ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)}")
 
 		}
 	}
@@ -1517,6 +1536,8 @@ class MainActivity : AppCompatActivity() {
 			240.toByte(),
 			33.toByte()
 		)
+
+
 		Log.d(
 			"com.triniwiz.github",
 			"windows-decoded-value: ${win1251decoder.decode(bytes)}"
@@ -1531,13 +1552,22 @@ class MainActivity : AppCompatActivity() {
 		//decodeFile()
 		//drawRemoteGLImage(canvas!!)
 		//	ctx = canvas?.getContext("2d") as TNSCanvasRenderingContext2D?
-		//drawText(ctx!!)
-		// ballExample(ctx!!)
-		drawPattern(canvas!!)
-		//drawFace(ctx!!)
+
+		//print(ctx?.measureText("Osei"))
+
+		//createConicGradient(canvas!!)
+		//drawTriangle(ctx!!)
+		//drawText(canvas!!)
+		//ballExample(ctx!!)
 		//drawPattern(canvas!!)
-		// drawElements(canvas!!)
-		// drawPatterWithCanvas(canvas!!)
+		//	drawFace(ctx!!)
+		//drawPattern(canvas!!)
+		//drawElements(canvas!!)
+		//	drawPatterWithCanvas(canvas!!)
+		//	drawPatterWithCanvasWebGL(canvas!!)
+
+		//	testClip(canvas!!)
+		//roundRect(canvas!!)
 		//	executor.submit {
 		// drawPatterWithCanvas(canvas!!)
 		//  drawPatterWithCanvas(canvas!!)
@@ -1565,7 +1595,6 @@ class MainActivity : AppCompatActivity() {
 				 ctx?.fillStyle = CanvasColorStyle.Color(Color.BLACK)
 				 drawImageExample(ctx!!)
 		 },null,4000)*/
-		//drawHouse(ctx!!)
 		//drawSVG(svgView!!)
 		/* val cs = CanvasView(this)
 		 Log.d("com.test", "params " +  cs.layoutParams)
@@ -1636,6 +1665,528 @@ class MainActivity : AppCompatActivity() {
 		fos.close()
 		*/
 
+		//sourceIn(canvas!!)
+		//drawImageBitmap(canvas!!)
+		//clipTest(canvas!!)
+		//evenOddTest(canvas!!)
+		//drawShadowAlpha(canvas!!)
+		//roundClipTest(canvas!!)
+		//timeExample(canvas!!)
+
+		//	draw_image_space(canvas!!)
+		//	drawImage(canvas!!)
+		//fromBitmapBytes()
+		TNSDOMMatrix()
+	}
+
+	fun fromBitmapBytes() {
+			executor.execute {
+				val url = URL("https://hips.hearstapps.com/digitalspyuk.cdnds.net/17/19/1494434353-deadpool.jpg")
+				val connection = url.openConnection()
+				val buffer = ByteBuffer.allocateDirect(connection.contentLength)
+				val channel = Channels.newChannel(connection.getInputStream())
+				while (channel.read(buffer) != 0) {
+				}
+
+				TNSImageBitmap.createFromBufferEncoded(
+					buffer,
+					TNSImageBitmap.Options(),
+					object : TNSImageBitmap.Callback {
+						override fun onSuccess(result: TNSImageBitmap) {
+							draw_image_space(canvas!!, null, result)
+						}
+
+						override fun onError(message: String) {
+							Log.e("Canvas", " bitmap onError $message")
+						}
+					})
+			}
+
+	}
+
+
+	fun drawImage(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val asset = TNSImageAsset()
+		ResourcesCompat.getDrawable(resources, R.drawable.ic_launcher_background, null)?.let {
+			asset.loadImageFromImage(it)
+		}
+		ctx.drawImage(asset, 0f, 0f)
+	}
+
+	enum class ShaderSourceType {
+		vertex,
+		fragment
+	}
+
+	class ShaderSource(val type: ShaderSourceType, val source: String)
+
+	fun createProgramFromScripts(
+		gl: TNSWebGLRenderingContext,
+		shaderSources: Array<ShaderSource>?
+	): Int? {
+		// setup GLSL programs
+
+		val shaders = mutableListOf<Int>()
+
+		if (shaderSources == null) {
+			return null
+		}
+		shaderSources.forEach { element ->
+			if (element.type == ShaderSourceType.vertex) {
+				// Create the shader object
+				val vertexShader = gl.createShader(gl.VERTEX_SHADER)
+
+				// Load the shader source
+				gl.shaderSource(vertexShader, element.source)
+
+				// Compile the shader
+				gl.compileShader(vertexShader);
+
+				// Check the compile status
+				val compiled = gl.getShaderParameter(
+					vertexShader,
+					gl.COMPILE_STATUS
+				) as Boolean
+				if (!compiled) {
+					// Something went wrong during compilation; get the error
+					val lastError = gl.getShaderInfoLog(vertexShader);
+					Log.d(
+						"Canvas",
+						"*** Error compiling shader '" +
+							vertexShader +
+							"':" +
+							lastError
+					)
+					gl.deleteShader(vertexShader)
+					return null
+				}
+				shaders.add(vertexShader)
+			}
+
+			if (element.type == ShaderSourceType.fragment) {
+				// Create the shader object
+				val fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+				// Load the shader source
+				gl.shaderSource(fragmentShader, element.source);
+
+				// Compile the shader
+				gl.compileShader(fragmentShader);
+
+				// Check the compile status
+				val compiled = gl.getShaderParameter(
+					fragmentShader,
+					gl.COMPILE_STATUS
+				) as Boolean
+				if (!compiled) {
+					// Something went wrong during compilation; get the error
+					val lastError = gl.getShaderInfoLog(fragmentShader)
+					Log.d(
+						"Canvas",
+						"*** Error compiling shader '" +
+							fragmentShader +
+							"':" +
+							lastError
+					)
+					gl.deleteShader(fragmentShader)
+					return null
+				}
+				shaders.add(fragmentShader)
+			}
+		}
+
+		val program = gl.createProgram()
+
+		shaders.forEach { shader ->
+			gl.attachShader(program, shader)
+		}
+		gl.linkProgram(program);
+
+		// Check the link status
+		val linked = gl.getProgramParameter(program, gl.LINK_STATUS) as Boolean
+		if (!linked) {
+			// something went wrong with the link
+			val lastError = gl.getProgramInfoLog(program)
+			Log.d("Canvas", "Error in program linking:" + lastError);
+
+			gl.deleteProgram(program);
+			return null
+		}
+		return program
+	}
+
+
+	fun draw_image_space(canvas: TNSCanvas, callback: Callback? = null, bitmap: TNSImageBitmap? = null) {
+		val vs = """#version 300 es
+	precision highp float;
+	precision highp int;
+
+	void main()
+	{
+		gl_Position = vec4(2.f * float(uint(gl_VertexID) % 2u) - 1.f, 2.f * float(uint(gl_VertexID) / 2u) - 1.f, 0.0, 1.0);
+	}"""
+
+		val fs = """#version 300 es
+	precision highp float;
+	precision highp int;
+
+	uniform sampler2D diffuse;
+
+	uniform vec2 u_imageSize;
+
+	out vec4 color;
+
+	void main()
+	{
+		color = texture(diffuse, vec2(gl_FragCoord.x, u_imageSize.y - gl_FragCoord.y) / u_imageSize);
+	}
+	"""
+
+		val gl = canvas.getContext("webgl2") as? TNSWebGL2RenderingContext
+		val isWebGL2 = gl != null
+		if (!isWebGL2) {
+			Log.d("Canvas", "WebGL 2 is not available.");
+			return
+		}
+
+		// -- Init program
+		createProgramFromScripts(
+			gl!!, arrayOf(
+				ShaderSource(ShaderSourceType.vertex, vs),
+				ShaderSource(ShaderSourceType.fragment, fs)
+			)
+		)?.let { program ->
+			val diffuseLocation = gl.getUniformLocation(program, "diffuse")
+			val imageSizeLocation = gl.getUniformLocation(program, "u_imageSize")
+
+			// -- Init VertexArray
+			val vertexArray = gl.createVertexArray()
+			gl.bindVertexArray(vertexArray)
+			gl.bindVertexArray()
+
+			if (bitmap != null){
+				val texture = gl.createTexture()
+				gl.activeTexture(gl.TEXTURE0)
+				gl.bindTexture(gl.TEXTURE_2D, texture)
+				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, bitmap)
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+
+				// -- Render
+				gl.clearColor(0f, 0f, 0f, 1f)
+				gl.clear(gl.COLOR_BUFFER_BIT)
+
+				gl.useProgram(program)
+				gl.uniform1i(diffuseLocation, 0)
+				gl.uniform2f(
+					imageSizeLocation,
+					(gl.drawingBufferWidth / 2).toFloat(),
+					(gl.drawingBufferHeight / 2).toFloat()
+				)
+
+				gl.bindVertexArray(vertexArray)
+
+				gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+				// Delete WebGL resources
+				gl.deleteTexture(texture)
+				gl.deleteProgram(program)
+				gl.deleteVertexArray(vertexArray)
+				callback?.onSuccess(bitmap)
+
+				return
+			}
+
+
+			val asset = TNSImageAsset()
+			asset.loadImageFromResourceAsync(R.drawable.ic_launcher_background, this, object : Callback {
+				override fun onSuccess(value: Any?) {
+					val texture = gl.createTexture()
+					gl.activeTexture(gl.TEXTURE0)
+					gl.bindTexture(gl.TEXTURE_2D, texture)
+					gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset)
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+
+					// -- Render
+					gl.clearColor(0f, 0f, 0f, 1f)
+					gl.clear(gl.COLOR_BUFFER_BIT)
+
+					gl.useProgram(program)
+					gl.uniform1i(diffuseLocation, 0)
+					gl.uniform2f(
+						imageSizeLocation,
+						(gl.drawingBufferWidth / 2).toFloat(),
+						(gl.drawingBufferHeight / 2).toFloat()
+					)
+
+					gl.bindVertexArray(vertexArray)
+
+					gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+					// Delete WebGL resources
+					gl.deleteTexture(texture)
+					gl.deleteProgram(program)
+					gl.deleteVertexArray(vertexArray)
+					callback?.onSuccess(value)
+				}
+
+				override fun onError(error: String?) {
+					Log.d("Canvas", "$error")
+					callback?.onError(error)
+				}
+			})
+		}
+	}
+
+
+	fun timeExample(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+		ctx.rect(50f, 20f, 200f, 120f)
+		ctx.strokeRect(50f, 20f, 200f, 120f)
+		ctx.fillStyle = TNSColor("red")
+		handler.postDelayed({
+			ctx.fillRect(0f, 0f, 150f, 100f)
+		}, 2000)
+	}
+
+	fun canvasToImage() {
+
+		val glCanvas = TNSCanvas(this)
+
+		val width = resources.displayMetrics.widthPixels
+		val height = resources.displayMetrics.heightPixels
+		glCanvas.layoutParams = FrameLayout.LayoutParams(width, height)
+		val w = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
+		val h = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+		glCanvas.measure(w, h)
+		glCanvas.layout(0, 0, width, height)
+
+
+		val iv = ImageView(this)
+		ll?.addView(iv)
+
+		val activity = this
+		draw_image_space(canvas!!, object : Callback {
+			override fun onSuccess(value: Any?) {
+				val ss = canvas!!.getImage()
+				activity.runOnUiThread {
+					iv.setImageBitmap(ss!!)
+				}
+			}
+
+			override fun onError(error: String?) {
+
+			}
+		})
+	}
+
+	fun screenshotBitmap() {
+		val glCanvas = TNSCanvas(this)
+
+		val scale = resources.displayMetrics.density
+		val width = (300 * scale).toInt()
+		val height = (300 * scale).toInt()
+		glCanvas.layoutParams = FrameLayout.LayoutParams(width, height)
+		val w = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
+		val h = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+		glCanvas.measure(w, h)
+		glCanvas.layout(0, 0, width, height)
+
+		val iv = ImageView(this)
+		ll?.addView(iv)
+		val asset = TNSImageAsset()
+		val activity = this
+		asset.loadImageFromUrlAsync("https://source.unsplash.com/random", object : Callback {
+			override fun onSuccess(value: Any?) {
+				Log.d("Canvas", "w ${asset.width} h ${asset.height}")
+				try {
+					drawGLImage(glCanvas, asset)
+					//drawImageBitmap(glCanvas)
+					Log.d("com.test", "data ${glCanvas.toDataURL()}")
+					val ss = glCanvas.getImage()
+					activity.runOnUiThread {
+						Log.d("com.test", "ss ${ss?.width}  ${ss?.height}")
+						iv.setImageBitmap(ss!!)
+					}
+
+				} catch (e: Exception) {
+					e.printStackTrace()
+				}
+
+//					TNSImageBitmap.createFromImageAsset(asset, TNSImageBitmap.Options(), object: TNSImageBitmap.Callback{
+//						override fun onSuccess(result: TNSImageBitmap) {
+//							Log.d("Canvas", "imageBitmap w ${result.width} h ${result.height}")
+//							drawGLImage(canvas, result)
+//						}
+//
+//						override fun onError(message: String) {
+//							Log.e("Canvas"," bitmap onError $message")
+//						}
+//					})
+			}
+
+			override fun onError(error: String?) {
+				Log.e("Canvas", "onError asset ${asset.error ?: ""}")
+			}
+		})
+	}
+
+	fun roundClipTest(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val HALF_PI = (Math.PI / 2).toFloat()
+		val x = 50f
+		val y = 20f
+		val w = 200f
+		val h = 120f
+
+		val topLeft = 40f
+		val bottomLeft = 40f
+		val bottomRight = 40f
+		val topRight = 40f
+
+		ctx.arc(x + topLeft, y + topLeft, topLeft, -HALF_PI, Math.PI.toFloat(), true);
+		ctx.lineTo(x, y + h - bottomLeft);
+		ctx.arc(x + bottomLeft, y + h - bottomLeft, bottomLeft, Math.PI.toFloat(), HALF_PI, true);
+		ctx.lineTo(x + w - bottomRight, y + h);
+		ctx.arc(x + w - bottomRight, y + h - bottomRight, bottomRight, HALF_PI, 0f, true);
+		ctx.lineTo(x + w, y + topRight);
+		ctx.arc(x + w - topRight, y + topRight, topRight, 0f, -HALF_PI, true);
+		ctx.lineTo(x + topLeft, y);
+		//ctx.roundRect(x, y, w, h, topLeft, topRight, bottomRight, bottomLeft)
+		ctx.strokeStyle = TNSColor("red")
+		ctx.stroke();
+
+
+		ctx.clip();
+
+		// Draw red rectangle
+		ctx.fillStyle = TNSColor("red")
+		ctx.fillRect(0f, 0f, 150f, 100f);
+	}
+
+	fun evenOddTest(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+		// Create path
+		val region = TNSPath2D()
+		region.moveTo(30f, 90f)
+		region.lineTo(110f, 20f)
+		region.lineTo(240f, 130f)
+		region.lineTo(60f, 130f)
+		region.lineTo(190f, 20f)
+		region.lineTo(270f, 90f)
+		region.closePath()
+
+		// Fill path
+		ctx.fillStyle = TNSColor("green")
+		ctx.fill(region, TNSFillRule.EvenOdd)
+	}
+
+	fun clipTest(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		// Clip a rectangular area
+		ctx.rect(50F, 20F, 200F, 120F);
+		ctx.stroke()
+		ctx.clip()
+		// Draw red rectangle after clip()
+		ctx.fillStyle = TNSColor("red")
+		ctx.fillRect(0F, 0F, 150F, 100F);
+	}
+
+	fun drawImageBitmap(canvas: TNSCanvas) {
+		//	val file = File(filesDir, "random.png")
+		//	file.delete()
+		executor.execute {
+			val url = URL("https://source.unsplash.com/random")
+			val connection = url.openConnection()
+			val buffer = ByteBuffer.allocateDirect(connection.contentLength)
+			val channel = Channels.newChannel(connection.getInputStream())
+			while (channel.read(buffer) != 0) {
+			}
+
+			TNSImageBitmap.createFromBufferEncoded(
+				buffer,
+				TNSImageBitmap.Options(),
+				object : TNSImageBitmap.Callback {
+					override fun onSuccess(result: TNSImageBitmap) {
+						val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+						ctx.drawImage(result, 0f, 0f, 100f, 100f)
+					}
+
+					override fun onError(message: String) {
+						Log.e("Canvas", " bitmap onError $message")
+					}
+				})
+		}
+	}
+
+	fun sourceIn(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		ctx.setFillStyleWithString("blue")
+		ctx.fillRect(10f, 10f, 50f, 50f)
+		ctx.globalCompositeOperation = TNSCompositeOperationType.SourceIn
+		ctx.beginPath()
+		ctx.setFillStyleWithString("red")
+		ctx.arc(50f, 50f, 30f, 0f, (2 * Math.PI).toFloat())
+		ctx.fill()
+	}
+
+
+	fun testClip(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		// Create circular clipping region
+		ctx.beginPath()
+		ctx.arc(100F, 75F, 50F, 0F, (Math.PI * 2).toFloat())
+		ctx.clip()
+
+		// Draw stuff that gets clipped
+		ctx.setFillStyleWithString("blue")
+		ctx.fillRect(0f, 0f, canvas.widthDip.toFloat(), canvas.heightDip.toFloat())
+		ctx.setFillStyleWithString("orange")
+		ctx.fillRect(0f, 0f, 100f, 100f)
+	}
+
+	fun roundRect(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+		// Rounded rectangle with zero radius (specified as a number)
+		ctx.setStrokeStyleWithString("red")
+		ctx.beginPath()
+		ctx.roundRect(10f, 20f, 150f, 100f, 0f)
+		ctx.stroke()
+
+// Rounded rectangle with 40px radius (single element list)
+		ctx.setStrokeStyleWithString("blue")
+		ctx.beginPath()
+		ctx.roundRect(10f, 20f, 150f, 100f, floatArrayOf(40f));
+		ctx.stroke()
+
+
+		// Rounded rectangle with 2 different radii
+		ctx.setStrokeStyleWithString("orange")
+		ctx.beginPath()
+		ctx.roundRect(10f, 150f, 150f, 100f, floatArrayOf(10f, 40f))
+		ctx.stroke()
+
+
+		// Rounded rectangle with four different radii
+		ctx.setStrokeStyleWithString("green")
+		ctx.beginPath()
+		ctx.roundRect(400f, 20f, 200f, 100f, floatArrayOf(0f, 30f, 50f, 60f));
+		ctx.stroke()
+
+// Same rectangle drawn backwards
+		ctx.setStrokeStyleWithString("magenta")
+		ctx.beginPath()
+		ctx.roundRect(400f, 150f, -200f, 100f, floatArrayOf(0f, 30f, 50f, 60f));
+		ctx.stroke()
+
 	}
 
 
@@ -1659,9 +2210,11 @@ class MainActivity : AppCompatActivity() {
 		val ctx = canvas.getContext("webgl") as TNSWebGLRenderingContext
 	}
 
-	fun drawPatterWithCanvas(canvas: TNSCanvas) {
+
+	fun drawPatterWithCanvasWebGL(canvas: TNSCanvas) {
 		val patternCanvas = TNSCanvas(this)
-		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+
 // Give the pattern a width and height of 50
 		val scale = resources.displayMetrics.density
 		val width = (50 * scale).toInt()
@@ -1673,24 +2226,148 @@ class MainActivity : AppCompatActivity() {
 		patternCanvas.layout(0, 0, width, height)
 
 
-// Give the pattern a background color and draw an arc
-		patternContext.fillStyle = TNSColor("#fec")
-		val style = patternContext.fillStyle as TNSColor
-		patternContext.fillRect(
-			0f, 0f, 50f, 50f
-		);
-		patternContext.arc(0f, 0f, 50f, 0f, (0.5 * Math.PI).toFloat());
-		patternContext.stroke()
+		val patternContext = patternCanvas.getContext("webgl") as TNSWebGLRenderingContext
 
+		drawTriangle(patternCanvas)
 
-// Create our primary canvas and fill it with the pattern
+		//Create our primary canvas and fill it with the pattern
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		val pattern = ctx.createPattern(patternCanvas, TNSPatternRepetition.Repeat)
+
 		pattern?.let {
 			ctx.fillStyle = it
 		}
-		val density = resources.displayMetrics.density
+
 		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+	}
+
+	fun drawTriangle(canvas: TNSCanvas) {
+		val gl = canvas.getContext("webgl") as? TNSWebGLRenderingContext
+		canvas.queueEvent {
+			val vertex = floatArrayOf(
+				-1f, 1f, 0f,
+				-1f, -1f, 0f,
+				1f, -1f, 0f
+
+			)
+
+
+			val vertexBuf = ByteBuffer.allocate(vertex.size * 4).order(ByteOrder.nativeOrder())
+			vertexBuf.asFloatBuffer().put(vertex)
+			vertexBuf.rewind()
+			val vs_source = """
+				#version 300 es
+				in vec3 aPos;
+				void main(){
+				gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0f);
+				}
+			""".trimIndent()
+
+			val fs_source = """
+				#version 300 es
+				precision mediump float;
+				out vec4 FragColor;
+				void main(){
+				FragColor = vec4(1.0f,0.0f,0.0f,1.0f);
+				}
+			""".trimIndent()
+
+
+			val program = GLES20.glCreateProgram()
+			val vs = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
+			GLES20.glShaderSource(vs, vs_source)
+
+
+			val fs = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER)
+			GLES20.glShaderSource(fs, fs_source)
+
+			GLES20.glCompileShader(vs)
+			GLES20.glCompileShader(fs)
+
+			GLES20.glAttachShader(program, vs)
+			GLES20.glAttachShader(program, fs)
+
+			GLES20.glLinkProgram(program)
+
+			val attr = GLES20.glGetAttribLocation(program, "aPos")
+			val vbo = intArrayOf(0)
+			GLES20.glGenBuffers(1, vbo, 0)
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0])
+			GLES20.glBufferData(
+				GLES20.GL_ARRAY_BUFFER,
+				vertexBuf.capacity(),
+				vertexBuf,
+				GLES20.GL_STATIC_DRAW
+			)
+
+			GLES20.glVertexAttribPointer(attr, 3, GLES20.GL_FLOAT, false, 3 * 4, 0)
+			GLES20.glEnableVertexAttribArray(0)
+			GLES20.glUseProgram(program)
+
+			GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 3)
+			//	gl?.updateCanvas()
+
+			//	gl?.drawArrays(GLES20.GL_TRIANGLES, 0, 3)
+
+		}
+	}
+
+
+	fun drawPatterWithCanvas(canvas: TNSCanvas) {
+		val patternCanvas = TNSCanvas(this)
+
+
+// Give the pattern a width and height of 50
+		val scale = resources.displayMetrics.density
+		val width = (50 * scale).toInt()
+		val height = (50 * scale).toInt()
+		patternCanvas.layoutParams = FrameLayout.LayoutParams(width, height)
+		val w = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
+		val h = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+		patternCanvas.measure(w, h)
+		patternCanvas.layout(0, 0, width, height)
+
+
+		val patternContext = patternCanvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+// Give the pattern a background color and draw an arc
+		patternContext.fillStyle = TNSColor("#fec")
+		patternContext.fillRect(
+			0f, 0f, width.toFloat(), height.toFloat()
+		);
+		patternContext.arc(0f, 0f, width.toFloat(), 0f, (0.5 * Math.PI).toFloat());
+		patternContext.stroke()
+
+
+		//Create our primary canvas and fill it with the pattern
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+		val pattern = ctx.createPattern(patternCanvas, TNSPatternRepetition.Repeat)
+
+		pattern?.let {
+			ctx.fillStyle = it
+		}
+
+		ctx.fillRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+	}
+
+	fun createConicGradient(canvas: TNSCanvas) {
+		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
+
+// Create a conic gradient
+// The start angle is 0
+// The center position is 100, 100
+		val gradient = ctx.createConicGradient(0f, 100f, 100f)
+
+// Add five color stops
+		gradient.addColorStop(0f, "red");
+		gradient.addColorStop(0.25f, "orange");
+		gradient.addColorStop(0.5f, "yellow");
+		gradient.addColorStop(0.75f, "green");
+		gradient.addColorStop(1f, "blue");
+
+// Set the fill style and draw a rectangle
+		ctx.fillStyle = gradient;
+		ctx.fillRect(20f, 20f, 200f, 200f);
 	}
 
 
@@ -1840,9 +2517,9 @@ class MainActivity : AppCompatActivity() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer)
 		gl.drawElements(gl.TRIANGLES, indices.size, gl.UNSIGNED_SHORT, 0)
 
-		AnimationFrame.requestAnimationFrame {
-			cubeRotationAnimation(gl, it.toFloat())
-		}
+//		AnimationFrame.requestAnimationFrame {
+//			cubeRotationAnimation(gl, it.toFloat())
+//		}
 
 	}
 
@@ -2275,7 +2952,7 @@ class MainActivity : AppCompatActivity() {
 	}
 
 	fun drawHouse(ctx: TNSCanvasRenderingContext2D) {
-		ctx.shadowBlur = 10.0F
+		/*ctx.shadowBlur = 10.0F
 		ctx.shadowColor = "blue"
 		ctx.shadowOffsetX = 0F
 		ctx.shadowOffsetY = 0F
@@ -2292,6 +2969,29 @@ class MainActivity : AppCompatActivity() {
 		ctx.closePath();
 
 		ctx.stroke();
+
+
+		*/
+
+
+		// Set line width
+		ctx.lineWidth = 10F
+
+		// Wall
+		ctx.strokeRect(75F, 140F, 150F, 110F)
+
+		// Door
+		ctx.fillRect(130F, 190F, 40F, 60F)
+
+		// Roof
+		ctx.beginPath();
+		ctx.moveTo(50F, 140F)
+		ctx.lineTo(150F, 60F)
+		ctx.lineTo(250F, 140F)
+		ctx.closePath()
+		ctx.stroke()
+
+
 	}
 
 
@@ -2337,11 +3037,11 @@ class MainActivity : AppCompatActivity() {
 			ball.vx = -ball.vx;
 		}
 
-		AnimationFrame.requestAnimationFrame { called ->
-			draw(ctx)
-			Log.d("com.test", "requestAnimationFrame")
-			// canvas?.flush()
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			draw(ctx)
+//			Log.d("com.test", "requestAnimationFrame")
+//			// canvas?.flush()
+//		}
 	}
 
 	var ball = Ball()
@@ -2349,9 +3049,9 @@ class MainActivity : AppCompatActivity() {
 
 	fun ballExample(ctx: TNSCanvasRenderingContext2D) {
 		//canvas?.isHandleInvalidationManually = true
-		AnimationFrame.requestAnimationFrame { called ->
-			draw(ctx)
-		}
+//		AnimationFrame.requestAnimationFrame { called ->
+//			draw(ctx)
+//		}
 	}
 
 
@@ -2441,16 +3141,18 @@ class MainActivity : AppCompatActivity() {
 	fun drawImageFromUrl(canvas: TNSCanvas, src: String) {
 		val ctx = canvas.getContext("2d") as TNSCanvasRenderingContext2D
 		val asset = TNSImageAsset()
-		asset.loadImageFromUrlAsync(src, object : Callback {
-			override fun onSuccess(value: Any?) {
-				ctx.clearRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
-				ctx.drawImage(asset, 0f, 0f)
-			}
+		asset.loadImageFromUrlAsync(
+			"https://m.media-amazon.com/images/M/MV5BYzE5MjY1ZDgtMTkyNC00MTMyLThhMjAtZGI5OTE1NzFlZGJjXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+			object : Callback {
+				override fun onSuccess(value: Any?) {
+					ctx.clearRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat())
+					ctx.drawImage(asset, 0f, 0f)
+				}
 
-			override fun onError(error: String?) {
-				println(error)
-			}
-		})
+				override fun onError(error: String?) {
+					println(error)
+				}
+			})
 
 	}
 
@@ -2466,7 +3168,7 @@ class MainActivity : AppCompatActivity() {
 				val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
 				StrictMode.setThreadPolicy(policy)
 				val url =
-					URL("https://mdn.mozillademos.org/files/5397/rhino.jpg") // URL("https://mdn.mozillademos.org/files/5397/rhino.jpg")
+					URL("https://m.media-amazon.com/images/M/MV5BYzE5MjY1ZDgtMTkyNC00MTMyLThhMjAtZGI5OTE1NzFlZGJjXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg") // URL("https://mdn.mozillademos.org/files/5397/rhino.jpg")
 				val fs = FileOutputStream(file)
 				url.openStream().use { input ->
 					fs.use { output ->
@@ -2494,12 +3196,15 @@ class MainActivity : AppCompatActivity() {
 
 
 	fun drawTriangle(ctx: TNSCanvasRenderingContext2D) {
+		val start = System.nanoTime()
 		ctx.beginPath();
-		ctx.moveTo(20f, 140f);   // Move pen to bottom-left corner
-		ctx.lineTo(120f, 10f);   // Line to top corner
-		ctx.lineTo(220f, 140f);  // Line to bottom-right corner
-		ctx.closePath();       // Line to bottom-left corner
-		ctx.stroke();
+		ctx.moveTo(20f, 140f)   // Move pen to bottom-left corner
+		ctx.lineTo(120f, 10f)  // Line to top corner
+		ctx.lineTo(220f, 140f)  // Line to bottom-right corner
+		ctx.closePath()      // Line to bottom-left corner
+		ctx.stroke()
+		Log.d("TIME", "complete ${TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)}")
+
 	}
 
 	fun drawArcMDN(ctx: TNSCanvasRenderingContext2D) {

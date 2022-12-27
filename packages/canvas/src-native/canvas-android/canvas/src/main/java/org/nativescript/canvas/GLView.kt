@@ -3,6 +3,8 @@ package org.nativescript.canvas
 import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.util.Log
 import android.view.TextureView
@@ -22,19 +24,21 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	var gLContext: GLContext? = null
 		private set
 	private var mListener: TNSCanvas.Listener? = null
+
 	@JvmField
-    var drawingBufferWidth = 0
+	var drawingBufferWidth = 0
+
 	@JvmField
-    var drawingBufferHeight = 0
+	var drawingBufferHeight = 0
 
 	constructor(context: Context?) : super(context!!) {
 		init()
 	}
 
-	private fun setScaling(){
+	private fun setScaling() {
 		val matrix = Matrix()
 		val density = resources.displayMetrics.density
-		if(ignorePixelScaling){
+		if (ignorePixelScaling) {
 			matrix.postScale(density, density)
 		}
 		setTransform(matrix)
@@ -45,8 +49,6 @@ internal class GLView : TextureView, SurfaceTextureListener {
 			field = value
 			setScaling()
 		}
-
-
 
 	fun resize(width: Int, height: Int) {
 		drawingBufferWidth = width
@@ -61,9 +63,6 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	}
 
 	fun init() {
-		// setZOrderOnTop(true);
-		// getHolder().setFormat(PixelFormat.TRANSPARENT);
-		// getHolder().addCallback(this);
 		isOpaque = false
 		surfaceTextureListener = this
 		gLContext = GLContext()
@@ -97,6 +96,7 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		gLContext!!.flush()
 	}
 
+
 	fun queueEvent(runnable: Runnable?) {
 		gLContext!!.queueEvent(runnable!!)
 	}
@@ -114,9 +114,19 @@ internal class GLView : TextureView, SurfaceTextureListener {
 				isCreatedWithZeroSized = true
 			}
 			if (!isCreatedWithZeroSized) {
-				gLContext!!.init(surface)
-				if (mListener != null) {
-					mListener!!.contextReady()
+				gLContext?.let {
+					if (it.usingOffscreenTexture && it.didInit) {
+						it.usingOffscreenTexture = false
+						it.mGLThread!!.mSurface = surface
+						it.resize(width, height, true)
+					} else {
+						it.init(surface)
+					}
+					mListener?.let {
+						handler.post {
+							it.contextReady()
+						}
+					}
 				}
 			}
 			isCreated = true
@@ -133,8 +143,10 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
 			gLContext!!.init(surface)
 			isCreatedWithZeroSized = false
-			if (mListener != null) {
-				mListener!!.contextReady()
+			mListener?.let {
+				handler.post {
+					it.contextReady()
+				}
 			}
 		}
 	}
@@ -145,49 +157,5 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		return true
 	}
 
-	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {} /*@Override
-    public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
-        int width = surfaceHolder.getSurfaceFrame().width();
-        int height = surfaceHolder.getSurfaceFrame().height();
-        drawingBufferHeight = height;
-        drawingBufferWidth = width;
-        if (!isCreated) {
-            if (width == 0 || height == 0) {
-                isCreatedWithZeroSized = true;
-            }
-            if (!isCreatedWithZeroSized) {
-                mGLContext.init(surfaceHolder.getSurface());
-            }
-            isCreated = true;
-        }
-    }
-
-
-    @Override
-    public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int format, int width, int height) {
-        drawingBufferHeight = height;
-        drawingBufferWidth = width;
-        if (!isCreatedWithZeroSized) {
-            // resize
-        }
-        if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-            mGLContext.init(surfaceHolder.getSurface());
-            isCreatedWithZeroSized = false;
-            if (mListener != null) {
-                mListener.contextReady();
-            }
-        }
-    }
-
-    @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
-        isCreated = false;
-    }*/
-	//    public void setOpaque(boolean b) {
-	//        if(b){
-	//            getHolder().setFormat(PixelFormat.OPAQUE);
-	//        }else {
-	//            getHolder().setFormat(PixelFormat.TRANSPARENT);
-	//        }
-	//    }
+	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
 }

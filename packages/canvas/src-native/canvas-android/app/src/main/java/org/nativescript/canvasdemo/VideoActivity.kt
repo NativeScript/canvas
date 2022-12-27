@@ -172,6 +172,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
 				val ctx = canvas?.getContext("webgl2") as? TNSWebGLRenderingContext
+				ctx?.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, true)
 				canvas?.let {
 					it.queueEvent {
 						val textures = IntArray(2)
@@ -225,10 +226,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 							GLES20.GL_STATIC_DRAW
 						)
 
-
-
 						GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture)
-
 
 						val blue = byteArrayOf(0, 0, 255.toByte(), 255.toByte())
 						val buf = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder())

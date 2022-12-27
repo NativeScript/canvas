@@ -4,6 +4,7 @@ import CanvasNative
 class ViewController: UIViewController, TNSCanvasListener {
     func contextReady() {
         print("ready")
+        drawAll()
     }
     
     @IBOutlet weak var canvas1: TNSCanvas!
@@ -24,10 +25,10 @@ class ViewController: UIViewController, TNSCanvasListener {
        // canvas1.isHidden = true
         //let matrix = Canvas.createSVGMatrix()
         //matrix.a = 3.0
-        svg = TNSSVG(frame: view.bounds)
-        canvas1.addSubview(svg!)
-        svg?.bringSubviewToFront(canvas1)
-        svg?.ignorePixelScaling = false
+        //svg = TNSSVG(frame: view.bounds)
+       // canvas1.addSubview(svg!)
+        //svg?.bringSubviewToFront(canvas1)
+        //svg?.ignorePixelScaling = false
         
         
         svg?.src = """
@@ -368,7 +369,7 @@ class ViewController: UIViewController, TNSCanvasListener {
 //                    """
         
         
-          let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGLRenderingContext
+        //  let gl = self.canvas1?.getContext("webgl2")  as! TNSWebGL2RenderingContext
         //canvas1?.handleInvalidationManually = true
         
         //        let q = DispatchQueue(label: "bg", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
@@ -385,7 +386,7 @@ class ViewController: UIViewController, TNSCanvasListener {
        // drawRotatingCube(gl: gl)
         
         //drawRotatingCube(gl: gl)
-         drawTextures(canvas: canvas1)
+        // drawTextures(canvas: canvas1)
         
         
         // self.drawGL(canvas: self.canvas1!) // sun
@@ -409,7 +410,7 @@ class ViewController: UIViewController, TNSCanvasListener {
          */
         //canvas1?.useDeviceScale = true
         _ = Float(UIScreen.main.scale)
-       // let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
+        //let ctx = canvas1?.getContext("2d") as! TNSCanvasRenderingContext2D
         
         
 //
@@ -493,16 +494,328 @@ class ViewController: UIViewController, TNSCanvasListener {
         //  saveRestoreExample(ctx: ctx)
         //ballExample(ctx: ctx)
         
-        //ctx.fillRect(x: 200, y: 10, width: 200, height: 200);
+        //ctx.fillRect(200, 10, 200, 200);
         // scaleTransformation(ctx: ctx)
-        // particleAnimation(ctx: ctx)
+      //   particleAnimation(ctx: ctx)
         //        canvas1!.toDataURLAsync { (data) in
         //           print("data: ", data)
         //        }
         
-        // drawPatterWithCanvas(canvas: canvas1!)
+         //drawPatterWithCanvas(canvas: canvas1!)
         // ellipseExample(ctx: ctx)
         
+        
+//        var ctx = canvas1!.getContext("2d") as! TNSCanvasRenderingContext2D
+//
+//
+//
+//                ctx.font = "40px 'Helvetica'"
+//                ctx.fillText("Hello World", 10, 60)
+        
+       // clipTest(canvas1!)
+       // evenOddTest(canvas1)
+       // roundClipTest(canvas1!)
+        fromBitmapBytes()
+    }
+    
+    
+    enum ShaderSourceType {
+        case vertex
+        case fragment
+    }
+
+    struct ShaderSource{
+    let type: ShaderSourceType
+    let source: String
+    }
+    
+    
+    func createProgramFromScripts(
+        gl: TNSWebGLRenderingContext,
+        shaderSources: Array<ShaderSource>?
+    ) -> UInt32? {
+        // setup GLSL programs
+
+        var shaders: [UInt32] = []
+
+        guard let shaderSources = shaderSources else {
+            return nil
+        }
+        
+        shaderSources.forEach { element in
+            if (element.type == ShaderSourceType.vertex) {
+                // Create the shader object
+                let vertexShader = gl.createShader(gl.VERTEX_SHADER)
+
+                // Load the shader source
+                gl.shaderSource(vertexShader, element.source)
+
+                // Compile the shader
+                gl.compileShader(vertexShader)
+
+                // Check the compile status
+                let compiled = gl.getShaderParameter(
+                    vertexShader,
+                    gl.COMPILE_STATUS
+                ) as? Bool ?? false
+                if (!compiled) {
+                    // Something went wrong during compilation; get the error
+                    let lastError = gl.getShaderInfoLog(vertexShader)
+                    print(
+                        "Canvas",
+                        "*** Error compiling shader '" +
+                        String(vertexShader) +
+                            "':" +
+                            lastError
+                    )
+                    gl.deleteShader(vertexShader)
+                }
+                shaders.append(vertexShader)
+            }
+
+            if (element.type == ShaderSourceType.fragment) {
+                // Create the shader object
+                let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+
+                // Load the shader source
+                gl.shaderSource(fragmentShader, element.source)
+
+                // Compile the shader
+                gl.compileShader(fragmentShader)
+
+                // Check the compile status
+                let compiled = gl.getShaderParameter(
+                    fragmentShader,
+                    gl.COMPILE_STATUS
+                ) as? Bool ?? false
+                if (!compiled) {
+                    // Something went wrong during compilation; get the error
+                    let lastError = gl.getShaderInfoLog(fragmentShader)
+                    print(
+                        "Canvas",
+                        "*** Error compiling shader '" +
+                        String(fragmentShader) +
+                            "':" +
+                            lastError
+                    )
+                    gl.deleteShader(fragmentShader)
+                }
+                shaders.append(fragmentShader)
+            }
+        }
+     
+
+        let program = gl.createProgram()
+
+        
+        shaders.forEach { shader in
+            gl.attachShader(program, shader)
+        }
+        
+ 
+        gl.linkProgram(program)
+
+        // Check the link status
+        let linked = gl.getProgramParameter(program, gl.LINK_STATUS) as? Bool ?? false
+        if (!linked) {
+            // something went wrong with the link
+            let lastError = gl.getProgramInfoLog(program)
+            print("Canvas", "Error in program linking:" + lastError);
+
+            gl.deleteProgram(program);
+            return nil
+        }
+        return program
+    }
+    
+    
+    
+    func draw_image_space(canvas: TNSCanvas, callback: ((Any?) -> Void)? = nil, bitmap: TNSImageBitmap? = nil) {
+        let vs = """
+    #version 300 es
+    precision highp float;
+    precision highp int;
+
+    void main()
+    {
+        gl_Position = vec4(2.f * float(uint(gl_VertexID) % 2u) - 1.f, 2.f * float(uint(gl_VertexID) / 2u) - 1.f, 0.0, 1.0);
+    }
+"""
+
+        let fs = """
+    #version 300 es
+    precision highp float;
+    precision highp int;
+
+    uniform sampler2D diffuse;
+
+    uniform vec2 u_imageSize;
+
+    out vec4 color;
+
+    void main()
+    {
+        color = texture(diffuse, vec2(gl_FragCoord.x, u_imageSize.y - gl_FragCoord.y) / u_imageSize);
+    }
+    """
+
+        let gl = canvas.getContext("webgl2") as? TNSWebGL2RenderingContext
+        let isWebGL2 = gl != nil
+        if (!isWebGL2) {
+            print("Canvas", "WebGL 2 is not available.")
+            return
+        }
+
+        guard let gl = gl else {return}
+        // -- Init program
+        
+        let program = createProgramFromScripts(gl: gl, shaderSources: [
+        ShaderSource(type: ShaderSourceType.vertex, source: vs),
+        ShaderSource(type: ShaderSourceType.fragment, source: fs)
+        ])
+        
+        
+        guard let program = program else {return}
+        
+        
+        
+        let diffuseLocation = gl.getUniformLocation(program, "diffuse")
+            let imageSizeLocation = gl.getUniformLocation(program, "u_imageSize")
+
+            // -- Init VertexArray
+            let vertexArray = gl.createVertexArray()
+            gl.bindVertexArray(vertexArray)
+            gl.bindVertexArray(0)
+
+            if (bitmap != nil){
+                let texture = gl.createTexture()
+                gl.activeTexture(gl.TEXTURE0)
+                gl.bindTexture(gl.TEXTURE_2D, texture)
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0)
+                gl.texImage2D(gl.TEXTURE_2D, 0, Int32(gl.RGBA), gl.RGBA, gl.UNSIGNED_BYTE, bitmap: bitmap!)
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, Int32(gl.LINEAR))
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, Int32(gl.LINEAR))
+
+                // -- Render
+                gl.clearColor(0, 0, 0, 1)
+                gl.clear(gl.COLOR_BUFFER_BIT)
+
+                gl.useProgram(program)
+                gl.uniform1i(diffuseLocation, 0)
+                gl.uniform2f(
+                    imageSizeLocation,
+                    Float(gl.drawingBufferWidth / 2),
+                    Float(gl.drawingBufferHeight / 2)
+                )
+
+                gl.bindVertexArray(vertexArray)
+
+                gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+                // Delete WebGL resources
+                gl.deleteTexture(texture)
+                gl.deleteProgram(program)
+                gl.deleteVertexArray(vertexArray)
+                callback?(bitmap)
+
+                return
+            }
+       
+    }
+    
+    func fromBitmapBytes() {
+        DispatchQueue.global().async {
+            
+            let url = URL(string: "https://source.unsplash.com/random")!
+            let temp = NSData(contentsOf: url)!
+            
+            
+                let home = URL(fileURLWithPath:NSTemporaryDirectory())
+                let test = home.appendingPathComponent("test.jpg")
+            
+                
+    
+            do {
+                try temp.write(to: test)
+            }catch {
+                print(error)
+            }
+            
+            
+            let data = NSData(contentsOf: test)!
+
+            TNSImageBitmap.createFromDataEncoded(data, TNSImageBitmapOptions()) { [self] bitmap, error in
+                if(error != nil){
+                    print(error as Any)
+                }else {
+                    draw_image_space(canvas: canvas1!, callback: nil, bitmap: bitmap)
+                }
+            }
+            
+        }
+
+    }
+    
+    func roundClipTest(_ canvas: TNSCanvas){
+            var ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
+        let HALF_PI = Float.pi / 2
+        let x = Float(50)
+        let y = Float(20)
+        let w = Float(200)
+        let h = Float(120)
+
+        let topLeft = Float(40)
+        let bottomLeft = Float(40)
+        let bottomRight = Float(40)
+        let topRight = Float(40)
+
+        ctx.arc(x + topLeft, y + topLeft, topLeft, -HALF_PI, .pi, true);
+            ctx.lineTo(x, y + h - bottomLeft);
+        ctx.arc(x + bottomLeft, y + h - bottomLeft, bottomLeft, .pi, HALF_PI, true);
+            ctx.lineTo(x + w - bottomRight, y + h);
+            ctx.arc(x + w - bottomRight, y + h - bottomRight, bottomRight, HALF_PI, 0, true);
+            ctx.lineTo(x + w, y + topRight);
+            ctx.arc(x + w - topRight, y + topRight, topRight, 0, -HALF_PI, true);
+            ctx.lineTo(x + topLeft, y);
+        ctx.strokeStyle = TNSColorStyle.TNSColor("red")
+            ctx.stroke();
+
+
+            ctx.clip();
+
+            // Draw red rectangle
+            ctx.fillStyle = TNSColorStyle.TNSColor("red")
+            ctx.fillRect(0, 0, 150, 100)
+        }
+    
+    
+    func evenOddTest(_ canvas: TNSCanvas){
+        let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
+
+        // Create path
+        let region = TNSPath2D()
+        region.moveTo(30, 90)
+        region.lineTo(110, 20)
+        region.lineTo(240, 130)
+        region.lineTo(60, 130)
+        region.lineTo(190, 20)
+        region.lineTo(270, 90)
+        region.closePath()
+
+        // Fill path
+        ctx.fillStyle = TNSColorStyle.TNSColor("green")
+        ctx.fill(region, TNSFillRule.EvenOdd)
+    }
+    
+    func clipTest(_ canvas: TNSCanvas){
+        let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
+            // Clip a rectangular area
+            ctx.rect(50, 20, 200, 120)
+            ctx.stroke()
+            ctx.clip()
+            // Draw red rectangle after clip()
+            ctx.fillStyle = TNSColorStyle.TNSColor("red")
+            ctx.fillRect(0, 0, 150, 100);
     }
     
     func decoder() {
@@ -535,30 +848,33 @@ class ViewController: UIViewController, TNSCanvasListener {
     
     
     func drawPatterWithCanvas(canvas: TNSCanvas){
-        let patternCanvas = TNSCanvas(frame: .zero, useCpu: true)
+        let patternCanvas = TNSCanvas(frame: .zero, useCpu: false)
         let patternContext = patternCanvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let scale = UIScreen.main.scale
         let width = 50
         let height = 50
         var frame = CGRect()
-        frame.size.width = CGFloat(width)
-        frame.size.height = CGFloat(height)
+        frame.size.width = 50
+        frame.size.height = 50
         patternCanvas.frame = frame
         patternCanvas.setNeedsLayout()
         patternCanvas.layoutIfNeeded()
+    
         
         
         // Give the pattern a background color and draw an arc
         patternContext.fillStyle = TNSColorStyle.TNSColor("#fec")
-        patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height)
+        patternContext.fillRect(0, 0, patternCanvas.width * Float(scale), patternCanvas.height * Float(scale))
         patternContext.arc(0, 0, Float(50 * scale), 0, (0.5 * PI))
         patternContext.stroke()
+        
+        
         // Create our primary canvas and fill it with the pattern
         
         let ctx = canvas.getContext("2d") as! TNSCanvasRenderingContext2D
         let pattern = ctx.createPattern(patternCanvas, .Repeat)
         ctx.fillStyle = pattern as! ICanvasColorStyle
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.fillRect(0, 0, canvas.width * Float(scale), canvas.height * Float(scale))
     }
     
     var vertCode2 = """

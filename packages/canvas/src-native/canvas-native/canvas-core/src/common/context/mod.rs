@@ -50,6 +50,7 @@ pub struct Device {
     pub samples: usize,
     pub alpha: bool,
     pub ppi: c_float,
+    pub matrix: skia_safe::Matrix,
 }
 
 impl Device {
@@ -62,7 +63,12 @@ impl Device {
             samples: 0,
             alpha: false,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density)),
         }
+    }
+
+    pub(crate) fn matrix(&self) -> &skia_safe::Matrix {
+        &self.matrix
     }
 }
 
@@ -136,9 +142,27 @@ pub struct Context {
     pub(crate) state_stack: Vec<State>,
     pub(crate) device: Device,
     pub(crate) font_color: Color,
+    pub(crate) enable_scaling: bool,
 }
 
 impl Context {
+    pub(crate) fn new(surface: Surface,
+                      path: Path,
+                      state: State,
+                      state_stack: Vec<State>,
+                      device: Device,
+                      font_color: Color) -> Self {
+        Self {
+            surface,
+            path,
+            state,
+            state_stack,
+            device,
+            font_color,
+            enable_scaling: false,
+        }
+    }
+
     pub fn device(&self) -> &Device {
         &self.device
     }
@@ -150,11 +174,11 @@ impl Context {
 
     pub fn clear_canvas(&mut self) {
         self.surface.canvas().clear(Color::TRANSPARENT);
-        self.surface.flush();
+        self.flush();
     }
 
     pub fn flush(&mut self) {
-        self.surface.flush();
+        self.surface.flush_and_submit();
     }
 
     pub fn draw_on_surface(&mut self, surface: &mut Surface) {
@@ -165,5 +189,20 @@ impl Context {
             FilterQuality::High,
             None,
         )
+    }
+
+    pub fn set_scaling(&mut self, scaling: bool) {
+        self.enable_scaling = scaling;
+    }
+
+    pub(crate) fn set_scale_for_device(&mut self) {
+        if !self.enable_scaling { return; }
+        self.surface.canvas().save();
+        self.surface.canvas().concat(&self.device.matrix);
+    }
+
+    pub(crate) fn clear_scale_for_device(&mut self) {
+        if !self.enable_scaling { return; }
+        self.surface.canvas().restore();
     }
 }

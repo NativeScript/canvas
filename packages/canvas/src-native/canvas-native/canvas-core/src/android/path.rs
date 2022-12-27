@@ -271,6 +271,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeRect(
     }
 }
 
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeRoundRect(
+    _: JNIEnv,
+    _: JClass,
+    path: jlong,
+    x: jfloat,
+    y: jfloat,
+    width: jfloat,
+    height: jfloat,
+    top_left: jfloat,
+    top_right: jfloat,
+    bottom_right: jfloat,
+    bottom_left: jfloat,
+) {
+    unsafe {
+        if path == 0 {
+            return;
+        }
+        let path: *mut Path = path as _;
+        let path = &mut *path;
+        path.round_rect(x, y, width, height, [top_left, top_left, top_right, top_right, bottom_right, bottom_right, bottom_left, bottom_left]);
+    }
+}
+
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSPath2D_nativeDestroy(
     _: JNIEnv,

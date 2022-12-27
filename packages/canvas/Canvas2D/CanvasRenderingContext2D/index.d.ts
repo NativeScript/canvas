@@ -57,6 +57,8 @@ export declare class CanvasRenderingContext2D extends CanvasRenderingContext2DBa
 
 	createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient;
 
+	createConicGradient(startAngle: number, x: number, y: number): CanvasGradient;
+
 	drawFocusIfNeeded(element: any): void;
 	drawFocusIfNeeded(path: any, element: any): void;
 
@@ -99,6 +101,10 @@ export declare class CanvasRenderingContext2D extends CanvasRenderingContext2DBa
 	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
 
 	rect(x: number, y: number, width: number, height: number): void;
+
+	roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+
+	roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
 
 	removeHitRegion(id: string): void;
 

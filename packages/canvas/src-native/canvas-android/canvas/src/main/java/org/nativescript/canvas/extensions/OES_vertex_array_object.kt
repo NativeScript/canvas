@@ -16,13 +16,13 @@ class OES_vertex_array_object(var canvas: TNSCanvas) {
 	var VERTEX_ARRAY_BINDING_OES = Constants.GL_VERTEX_ARRAY_BINDING_OES
 	fun createVertexArrayOES(): Int {
 		val array = IntArray(1)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
+		canvas.queueEvent {
 			GLES30.glGenVertexArrays(1, array, 0)
-			lock.countDown()
-		})
+			lock?.countDown()
+		}
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return array[0]
@@ -30,40 +30,39 @@ class OES_vertex_array_object(var canvas: TNSCanvas) {
 
 	fun deleteVertexArrayOES(arrayObject: Int) {
 		val array = intArrayOf(arrayObject)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
+		canvas.queueEvent {
 			GLES30.glDeleteVertexArrays(1, array, 0)
-			lock.countDown()
-		})
+			lock?.countDown()
+		}
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
 
 	fun isVertexArrayOES(arrayObject: Int): Boolean {
 		val value = BooleanArray(1)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
+		canvas.queueEvent {
 			value[0] = GLES30.glIsVertexArray(arrayObject)
-			lock.countDown()
-		})
+			lock?.countDown()
+		}
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
 	}
 
 	fun bindVertexArrayOES(arrayObject: Int) {
-		val array = intArrayOf(arrayObject)
-		val lock = CountDownLatch(1)
-		canvas.queueEvent(Runnable {
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
+		canvas.queueEvent {
 			GLES30.glBindVertexArray(arrayObject)
-			lock.countDown()
-		})
+			lock?.countDown()
+		}
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}

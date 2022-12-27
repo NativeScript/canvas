@@ -3,6 +3,7 @@ package org.nativescript.canvas
 /**
  * Created by triniwiz on 4/21/20
  */
+
 class WebGLActiveInfo {
 	var name = ""
 	var size = 0

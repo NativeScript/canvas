@@ -6,7 +6,6 @@ import android.opengl.GLES20
 import android.os.Build
 import android.os.Environment
 import java.io.File
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 
@@ -123,7 +122,7 @@ object Utils {
 	@JvmStatic
 	fun createSurfaceTexture(context: TNSWebGLRenderingContext): Array<Any> {
 		val render = TextureRender()
-		val lock = CountDownLatch(1)
+		val lock = context.lock
 		context.canvas.queueEvent {
 			render.surfaceCreated()
 			lock.countDown()
@@ -131,6 +130,7 @@ object Utils {
 
 		try {
 			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
 		} catch (ignored: InterruptedException) {
 		}
 
@@ -138,14 +138,13 @@ object Utils {
 
 	}
 
-
 	@JvmStatic
 	fun createRenderAndAttachToGLContext(
 		context: TNSWebGLRenderingContext,
 		texture: SurfaceTexture,
 	): TextureRender {
 		val render = TextureRender()
-		val lock = CountDownLatch(1)
+		val lock = context.lock
 		context.canvas.queueEvent {
 			render.surfaceCreated()
 			texture.attachToGLContext(render.textureId)
@@ -154,6 +153,7 @@ object Utils {
 
 		try {
 			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
 		} catch (ignored: InterruptedException) {
 		}
 		return render
@@ -166,7 +166,7 @@ object Utils {
 		texture: SurfaceTexture,
 		render: TextureRender
 	) {
-		val lock = CountDownLatch(1)
+		val lock = context.lock
 		context.canvas.queueEvent {
 			texture.attachToGLContext(render.textureId)
 			lock.countDown()
@@ -174,13 +174,14 @@ object Utils {
 
 		try {
 			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
 		} catch (ignored: InterruptedException) {
 		}
 	}
 
 	@JvmStatic
 	fun detachFromGLContext(context: TNSWebGLRenderingContext, texture: SurfaceTexture) {
-		val lock = CountDownLatch(1)
+		val lock = context.lock
 		context.canvas.queueEvent {
 			texture.detachFromGLContext()
 			lock.countDown()
@@ -188,6 +189,7 @@ object Utils {
 
 		try {
 			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -203,7 +205,7 @@ object Utils {
 		internalFormat: Int,
 		format: Int,
 	) {
-		val lock = CountDownLatch(1)
+		val lock = context.lock
 		context.runOnGLThread {
 			render.drawFrame(texture, width, height, internalFormat, format, context.flipYWebGL)
 
@@ -216,6 +218,7 @@ object Utils {
 
 		try {
 			lock.await(2, TimeUnit.SECONDS)
+			lock.reset()
 		} catch (ignored: InterruptedException) {
 		}
 

@@ -72,7 +72,7 @@ pub extern "C" fn context_init_context(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
-    let mut device = Device {
+    let device = Device {
         width,
         height,
         density,
@@ -80,6 +80,7 @@ pub extern "C" fn context_init_context(
         samples,
         alpha,
         ppi,
+        matrix: skia_safe::Matrix::scale((density, density)),
     };
     let interface = Interface::new_native();
     let mut ctx = skia_safe::gpu::DirectContext::new_gl(interface, None).unwrap();
@@ -104,7 +105,7 @@ pub extern "C" fn context_init_context(
     if !alpha {
         color_type = ColorType::RGB565;
     }
-    let mut surface_holder = Surface::from_backend_render_target(
+    let surface_holder = Surface::from_backend_render_target(
         &mut ctx,
         &target,
         skia_safe::gpu::SurfaceOrigin::BottomLeft,
@@ -120,6 +121,7 @@ pub extern "C" fn context_init_context(
         state_stack: vec![],
         font_color: Color::new(font_color),
         device,
+        enable_scaling: false,
     })) as c_longlong
 }
 
@@ -133,7 +135,7 @@ pub extern "C" fn context_init_context_with_custom_surface(
     ppi: c_float,
     direction: TextDirection,
 ) -> c_longlong {
-    let mut device = Device {
+    let device = Device {
         width,
         height,
         density,
@@ -141,6 +143,7 @@ pub extern "C" fn context_init_context_with_custom_surface(
         samples: 0,
         alpha,
         ppi,
+        matrix: skia_safe::Matrix::scale((density, density)),
     };
     let info = ImageInfo::new(
         ISize::new(width as i32, height as i32),
@@ -156,7 +159,23 @@ pub extern "C" fn context_init_context_with_custom_surface(
         state_stack: vec![],
         font_color: Color::new(font_color as u32),
         device,
+        enable_scaling: false,
     })) as c_longlong
+}
+
+#[no_mangle]
+pub extern "C" fn context_set_scaling(
+    context: c_longlong,
+    scaling: bool,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        context.set_scaling(scaling);
+    }
 }
 
 #[no_mangle]
@@ -174,7 +193,7 @@ pub extern "C" fn context_resize_custom_surface(
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        let mut device = Device {
+        let device = Device {
             width,
             height,
             density,
@@ -182,6 +201,7 @@ pub extern "C" fn context_resize_custom_surface(
             samples: 0,
             alpha,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density)),
         };
 
         let info = ImageInfo::new(
@@ -224,7 +244,7 @@ pub extern "C" fn context_resize_surface(
         }
         let mut ctx = ctx.unwrap();
         ctx.reset(None);
-        let mut device = Device {
+        let device = Device {
             width,
             height,
             density,
@@ -232,6 +252,7 @@ pub extern "C" fn context_resize_surface(
             samples,
             alpha: false,
             ppi,
+            matrix: skia_safe::Matrix::scale((density, density)),
         };
         let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
@@ -301,25 +322,32 @@ pub(crate) fn context_to_data(context: *mut Context) -> Vec<u8> {
         let context: *mut Context = context as _;
         let context = &mut *context;
         let surface = &mut context.surface;
-        let width = surface.width();
-        let height = surface.height();
+
         let image = surface.image_snapshot();
-        let mut info = ImageInfo::new(
-            ISize::new(width, height),
-            ColorType::RGBA8888,
-            AlphaType::Premul,
-            None,
-        );
-        let row_bytes = info.width() * 4;
-        let mut pixels = vec![255u8; (row_bytes * info.height()) as usize];
-        let _ = image.read_pixels(
-            &mut info,
-            pixels.as_mut_slice(),
-            row_bytes as usize,
-            IPoint::new(0, 0),
-            CachingHint::Allow,
-        );
-        pixels
+
+        match image.to_raster_image(
+            CachingHint::Allow
+        ) {
+            Some(image) => {
+                let mut info = ImageInfo::new(
+                    ISize::new(image.width(), image.height()),
+                    ColorType::RGBA8888,
+                    AlphaType::Unpremul,
+                    None,
+                );
+                let row_bytes = info.width() * 4;
+                let mut pixels = vec![255u8; (row_bytes * info.height()) as usize];
+                let _read = image.read_pixels(
+                    &mut info,
+                    pixels.as_mut_slice(),
+                    row_bytes as usize,
+                    IPoint::new(0, 0),
+                    CachingHint::Allow,
+                );
+                pixels
+            }
+            _ => Vec::new()
+        }
     }
 }
 
@@ -332,7 +360,52 @@ pub extern "C" fn context_snapshot_canvas(context: c_longlong) -> *mut U8Array {
     unsafe {
         let context: *mut Context = context as _;
         let context = &mut *context;
-        context.surface.flush_and_submit();
+        let image = context.surface.image_snapshot();
+
+        match image.to_raster_image(
+            CachingHint::Allow
+        ) {
+            Some(image) => {
+                let mut info = ImageInfo::new(
+                    ISize::new(image.width(), image.height()),
+                    ColorType::RGBA8888,
+                    AlphaType::Unpremul,
+                    None,
+                );
+                let row_bytes = info.width() * 4;
+                let mut pixels = vec![255u8; (row_bytes * info.height()) as usize];
+                let _read = image.read_pixels(
+                    &mut info,
+                    pixels.as_mut_slice(),
+                    row_bytes as usize,
+                    IPoint::new(0, 0),
+                    CachingHint::Allow,
+                );
+
+                let len = pixels.len();
+                let mut ptr = pixels.into_boxed_slice();
+                let raw = U8Array {
+                    data_len: len,
+                    data: ptr.as_mut_ptr(),
+                };
+
+                Box::into_raw(ptr);
+                Box::into_raw(Box::new(raw))
+            }
+            _ => std::ptr::null_mut()
+        }
+    }
+}
+
+#[inline]
+#[no_mangle]
+pub extern "C" fn context_snapshot_canvas_encoded(context: c_longlong) -> *mut U8Array {
+    if context == 0 {
+        return std::ptr::null_mut();
+    }
+    unsafe {
+        let context: *mut Context = context as _;
+        let context = &mut *context;
         let ss = context.surface.image_snapshot();
         let data = ss.encode_to_data(EncodedImageFormat::PNG).unwrap();
         let len = data.len();
@@ -346,6 +419,7 @@ pub extern "C" fn context_snapshot_canvas(context: c_longlong) -> *mut U8Array {
         Box::into_raw(Box::new(raw))
     }
 }
+
 
 #[no_mangle]
 pub extern "C" fn context_flush(context: c_longlong) {
@@ -727,7 +801,7 @@ pub extern "C" fn context_set_shadow_color(context: c_longlong, r: u8, g: u8, b:
         }
         let context: *mut Context = context as _;
         let context = &mut *context;
-        context.set_shadow_color(skia_safe::Color::from_argb(a, r, g, b))
+        context.set_shadow_color(Color::from_argb(a, r, g, b))
     }
 }
 
@@ -741,7 +815,7 @@ pub extern "C" fn context_set_shadow_color_string(context: c_longlong, color: *c
         let context = &mut *context;
         let color = CStr::from_ptr(color).to_string_lossy();
         if let Ok(color) = css_color_parser::Color::from_str(color.as_ref()) {
-            context.set_shadow_color(skia_safe::Color::from_argb(
+            context.set_shadow_color(Color::from_argb(
                 (color.a * 255.0) as u8,
                 color.r,
                 color.g,
@@ -1010,7 +1084,7 @@ pub extern "C" fn context_close_path(context: c_longlong) {
 
 #[no_mangle]
 pub extern "C" fn context_create_image_data(width: c_int, height: c_int) -> c_longlong {
-    unsafe { Box::into_raw(Box::new(Context::create_image_data(width, height))) as c_longlong }
+    Box::into_raw(Box::new(Context::create_image_data(width, height))) as c_longlong
 }
 
 #[no_mangle]
@@ -1071,15 +1145,17 @@ pub extern "C" fn context_create_pattern_asset(
         let context = &mut *context;
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
-        if let Some(image) = from_image_slice(
-            bytes.as_slice(),
-            asset.width() as i32,
-            asset.height() as i32,
-        ) {
-            return Box::into_raw(Box::new(PaintStyle::Pattern(
-                context.create_pattern(image, repetition),
-            ))) as c_longlong;
+        let bytes = asset.get_bytes();
+        if let Some(bytes) = bytes {
+            if let Some(image) = from_image_slice(
+                bytes,
+                asset.width() as i32,
+                asset.height() as i32,
+            ) {
+                return Box::into_raw(Box::new(PaintStyle::Pattern(
+                    context.create_pattern(image, repetition),
+                ))) as c_longlong;
+            }
         }
         0
     }
@@ -1125,6 +1201,26 @@ pub extern "C" fn context_create_radial_gradient(
         let context = &mut *context;
         Box::into_raw(Box::new(PaintStyle::Gradient(
             context.create_radial_gradient(x0, y0, r0, x1, y1, r1),
+        ))) as c_longlong
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn context_create_conic_gradient(
+    context: c_longlong,
+    start_angle: c_float,
+    x: c_float,
+    y: c_float,
+) -> c_longlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        Box::into_raw(Box::new(PaintStyle::Gradient(
+            context.create_conic_gradient(start_angle, x, y),
         ))) as c_longlong
     }
 }
@@ -1348,17 +1444,27 @@ pub extern "C" fn context_draw_image_asset(
         let context = &mut *context;
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
-        if let Some(image) = from_image_slice(
-            bytes.as_slice(),
-            asset.width() as i32,
-            asset.height() as i32,
-        ) {
+        if let Some(image) = asset.skia_image() {
             context.draw_image(
                 &image,
                 Rect::from_xywh(sx, sy, s_width, s_height),
                 Rect::from_xywh(dx, dy, d_width, d_height),
             )
+        } else {
+            let bytes = asset.get_bytes();
+            if let Some(bytes) = bytes {
+                if let Some(image) = from_image_slice(
+                    bytes,
+                    asset.width() as i32,
+                    asset.height() as i32,
+                ) {
+                    context.draw_image(
+                        &image,
+                        Rect::from_xywh(sx, sy, s_width, s_height),
+                        Rect::from_xywh(dx, dy, d_width, d_height),
+                    )
+                }
+            }
         }
     }
 }
@@ -1639,6 +1745,29 @@ pub extern "C" fn context_rect(
         let context: *mut Context = context as _;
         let context = &mut *context;
         context.rect(x, y, width, height)
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn context_round_rect(
+    context: c_longlong,
+    x: c_float,
+    y: c_float,
+    width: c_float,
+    height: c_float,
+    top_left: c_float,
+    top_right: c_float,
+    bottom_right: c_float,
+    bottom_left: c_float,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        context.round_rect(x, y, width, height, [top_left, top_left, top_right, top_right, bottom_right, bottom_right, bottom_left, bottom_left])
     }
 }
 

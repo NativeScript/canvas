@@ -15,66 +15,66 @@ import java.util.concurrent.TimeUnit
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 	fun createQueryEXT(): Int {
-		val lock = CountDownLatch(1)
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
 		val query = IntArray(1)
 		canvas.queueEvent(Runnable {
 			GLES30.glGenQueries(1, query, 0)
-			lock.countDown()
+			lock?.countDown()
 		})
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return query[0]
 	}
 
 	fun deleteQueryEXT(query: Int) {
-		val lock = CountDownLatch(1)
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
 		val id = intArrayOf(query)
 		canvas.queueEvent(Runnable {
 			GLES30.glDeleteQueries(1, id, 0)
-			lock.countDown()
+			lock?.countDown()
 		})
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
 
 	fun isQueryEXT(query: Int): Boolean {
-		val lock = CountDownLatch(1)
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
 		val value = BooleanArray(1)
 		canvas.queueEvent(Runnable {
 			value[0] = GLES30.glIsQuery(query)
-			lock.countDown()
+			lock?.countDown()
 		})
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return value[0]
 	}
 
 	fun beginQueryEXT(target: Int, query: Int) {
-		val lock = CountDownLatch(1)
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
 		canvas.queueEvent(Runnable {
 			GLES30.glBeginQuery(target, query)
-			lock.countDown()
+			lock?.countDown()
 		})
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
 
 	fun endQueryEXT(target: Int) {
-		val lock = CountDownLatch(1)
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
 		canvas.queueEvent(Runnable {
 			GLES30.glEndQuery(target)
-			lock.countDown()
+			lock?.countDown()
 		})
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 	}
@@ -84,28 +84,28 @@ class EXT_disjoint_timer_query(var canvas: TNSCanvas) {
 	}
 
 	fun getQueryEXT(target: Int, pname: Int): Int {
-		val lock = CountDownLatch(1)
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
 		val query = IntArray(1)
 		canvas.queueEvent(Runnable {
 			GLES30.glGetQueryiv(target, pname, query, 0)
-			lock.countDown()
+			lock?.countDown()
 		})
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return query[0]
 	}
 
 	fun getQueryObjectEXT(query: Int, pname: Int): Any {
-		val lock = CountDownLatch(1)
+		val lock = canvas.webGLRenderingContext?.lock ?: canvas.webGL2RenderingContext?.lock
 		val value = IntArray(1)
 		canvas.queueEvent(Runnable {
 			GLES30.glGetQueryObjectuiv(query, pname, value, 0)
-			lock.countDown()
+			lock?.countDown()
 		})
 		try {
-			lock.await(2, TimeUnit.SECONDS)
+			lock?.await(2, TimeUnit.SECONDS)
 		} catch (ignored: InterruptedException) {
 		}
 		return if (pname == QUERY_RESULT_AVAILABLE_EXT) {

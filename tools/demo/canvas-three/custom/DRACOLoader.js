@@ -37,7 +37,7 @@ class DRACOLoader extends Loader {
 	this.decoderBinary = null;
 	this.decoderPending = null;
 
-	this.workerLimit = 1;
+	this.workerLimit = 10;
 	this.workerPool = [];
 	this.workerNextTaskID = 1;
 	this.workerSourceURL = '';
@@ -170,7 +170,7 @@ class DRACOLoader extends Loader {
 		// when the task completes.
 		var geometryPending = this._getWorker(taskID, taskCost)
 			.catch((e) => {
-				console.log('geometryPending', e);
+				console.error('geometryPending', e);
 			})
 			.then((_worker) => {
 				worker = _worker;
@@ -182,10 +182,10 @@ class DRACOLoader extends Loader {
 							type: 'decode',
 							id: taskID,
 							taskConfig,
-							buffer: JSON.stringify(Array.from(new Uint8Array(buffer))),
+							buffer: JSON.stringify(new Uint8Array(buffer)),
 						});
 					} catch (e) {
-						console.log('geometryPending postMessage', e);
+						console.erro('geometryPending postMessage', e);
 					}
 
 					// this.debug();
@@ -202,7 +202,6 @@ class DRACOLoader extends Loader {
 		// Note: replaced '.finally()' with '.catch().then()' block - iOS 11 support (#19416)
 		geometryPending
 			.catch((e) => {
-				console.log('geometryPending', e);
 				return true;
 			})
 			.then(() => {
@@ -223,8 +222,7 @@ class DRACOLoader extends Loader {
 	}
 
 	_createGeometry(geometryData) {
-		try {
-			var geometry = new BufferGeometry();
+		var geometry = new BufferGeometry();
 			var getBuffer = function (buf, type) {
 				if (type === 'Uint8Array') {
 					return new Uint8Array(buf);
@@ -256,10 +254,6 @@ class DRACOLoader extends Loader {
 
 				geometry.setAttribute(name, new BufferAttribute(array, itemSize));
 			}
-		} catch (e) {
-			console.log('_createGeometry', e);
-		}
-
 		return geometry;
 	}
 
@@ -318,7 +312,6 @@ class DRACOLoader extends Loader {
 		return this._initDecoder().then(() => {
 			if (this.workerPool.length < this.workerLimit) {
 				try {
-					console.log(this.workerSourceURL);
 					var worker = new Worker(URL.InternalAccessor.getPath(this.workerSourceURL));
 
 					worker._callbacks = {};
@@ -327,8 +320,7 @@ class DRACOLoader extends Loader {
 
 					worker.postMessage({ type: 'init', decoderConfig: this.decoderConfig });
 					worker.onmessage = function (e) {
-						var message = JSON.parse(e.data);
-
+						var message = e.data;
 						switch (message.type) {
 							case 'decode':
 								worker._callbacks[message.id].resolve(message);
@@ -395,6 +387,13 @@ class DRACOLoader extends Loader {
 DRACOLoader.DRACOWorker = function () {
 	var decoderConfig;
 	var decoderPending;
+	
+	if(global.isAndroid){
+		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DEFAULT);
+	}else if (global.isIOS){
+		NSThread.currentThread.threadPriority = .8;
+		NSThread.currentThread.qualityOfService = NSQualityOfServiceUserInitiated;
+	}
 
 	onmessage = function (e) {
 		var message = e.data;
@@ -412,15 +411,15 @@ DRACOLoader.DRACOWorker = function () {
 				break;
 
 			case 'decode':
-				var buffer = JSON.parse(message.buffer);
-				buffer = new Uint8Array(buffer);
+				const values = Object.values(JSON.parse(message.buffer));
+				buffer = Int8Array.from(values);
 				var taskConfig = message.taskConfig;
 				decoderPending.then((module) => {
 					try {
 						var draco = module.draco;
 						var decoder = new draco.Decoder();
 						var decoderBuffer = new draco.DecoderBuffer();
-						decoderBuffer.Init(new Int8Array(buffer), buffer.byteLength);
+						decoderBuffer.Init(buffer, buffer.byteLength);
 
 						var geometry = decodeGeometry(draco, decoder, decoderBuffer, taskConfig);
 						var bufferType = function (buf) {
@@ -454,9 +453,9 @@ DRACOLoader.DRACOWorker = function () {
 							indexType = bufferType(geometry.index.array);
 							geometry.index.array = Array.from(geometry.index.array);
 						}
-						self.postMessage(JSON.stringify({ type: 'decode', id: message.id, geometry, indexType, attributeTypes }));
+						self.postMessage({ type: 'decode', id: message.id, geometry, indexType, attributeTypes });
 					} catch (error) {
-						self.postMessage(JSON.stringify({ type: 'error', id: message.id, error: error.message }));
+						self.postMessage({ type: 'error', id: message.id, error: error.message });
 					} finally {
 						draco.destroy(decoderBuffer);
 						draco.destroy(decoder);

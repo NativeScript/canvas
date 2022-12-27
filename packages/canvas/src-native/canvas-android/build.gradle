@@ -1,17 +1,20 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '1.4.21'
+    ext.kotlin_version = '1.7.20'
     repositories {
         google()
-        jcenter()
 				mavenCentral()
+				maven {
+					url "https://plugins.gradle.org/m2/"
+				}
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath 'com.android.tools.build:gradle:7.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 				classpath 'com.vanniktech:gradle-maven-publish-plugin:0.18.0'
 				classpath 'org.jetbrains.dokka:dokka-gradle-plugin:1.4.10.2'
+				classpath 'org.mozilla.rust-android-gradle:plugin:0.9.3'
     }
 }
 
@@ -19,7 +22,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
 				mavenCentral()
     }
 }

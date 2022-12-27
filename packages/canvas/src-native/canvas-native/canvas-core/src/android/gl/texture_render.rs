@@ -160,32 +160,23 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
 
     gl_bindings::glEnableVertexAttribArray(pos as u32);
 
-    let _ = env.call_method(surface_texture_object, "updateTexImage", "()V", &[]);
-    let _ = env.call_method(
-        surface_texture_object,
-        "getTransformMatrix",
-        "([F)V",
-        &[matrix.into()],
-    );
+    let api = unsafe { super::android_get_device_api_level() };
 
-    if let Ok(matrix) = env.get_primitive_array_critical(matrix, ReleaseMode::CopyBack) {
-        // super::surface_texture::ASurfaceTexture_updateTexImage(std::mem::transmute(
-        //     surface_texture_object.into_inner(),
-        // ));
-        //
-        // super::surface_texture::ASurfaceTexture_getTransformMatrix(
-        //     std::mem::transmute(surface_texture_object.into_inner()),
-        //     matrix.as_ptr() as *mut _,
-        // );
+    if api >= 28 {
+        let jni_st = crate::android::SURFACE_TEXTURE.get().unwrap();
 
-        //  let clazz = env.find_class("android/opengl/Matrix").unwrap();
-        // env.call_static_method(clazz, "setIdentityM", "([F;I)V", &[])
+        let st = jni_st.from_surface_texture().unwrap()(env.get_native_interface() as _, surface_texture_object.into_raw());
 
-        let size = matrix.size().unwrap_or(0) as usize;
-        let matrix = std::slice::from_raw_parts_mut(matrix.as_ptr() as *mut f32, size);
+        jni_st.update_tex_image().unwrap()(st);
+
+        let mut mtx = [0f32; 16];
+
+        jni_st.get_transform_matrix().unwrap()(st, mtx.as_mut_ptr());
+
+        jni_st.release().unwrap()(st);
 
         if flip_y_web_gl {
-            identity(matrix);
+            identity(mtx.as_mut_slice());
         }
 
         gl_bindings::glBindTexture(
@@ -193,43 +184,91 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
             external_texture as u32,
         );
 
-        //      previous_active_texture[0] - gl_bindings::GL_TEXTURE0
-        // gl_bindings::glUniform1i(
-        //     sampler_pos,
-        //     0, // previous_active_texture[0] - gl_bindings::GL_TEXTURE0 as i32,
-        // );
-
         gl_bindings::glUniform1i(
             sampler_pos,
             previous_active_texture[0] - gl_bindings::GL_TEXTURE0 as i32,
         );
 
-        /*  let name = std::ffi::CString::new("aTexCoord").unwrap();
-        let pos = gl_bindings::glGetAttribLocation(program as u32, name.as_ptr()) as u32;
-
-        gl_bindings::glVertexAttribPointer(
-            pos,
-            2,
-            gl_bindings::GL_FLOAT,
-            0,
-            2 * std::mem::size_of::<f32>() as i32,
-            0 as *const std::ffi::c_void,
-        );
-
-        gl_bindings::glEnableVertexAttribArray(pos);
-        */
-
-        gl_bindings::glUniformMatrix4fv(matrix_pos, 1, 0, matrix.as_ptr() as _);
+        gl_bindings::glUniformMatrix4fv(matrix_pos, 1, 0, mtx.as_ptr() as _);
         gl_bindings::glViewport(0, 0, width, height);
 
         gl_bindings::glDrawArrays(gl_bindings::GL_TRIANGLE_STRIP, 0, draw_count);
+    } else {
+        let method = crate::android::find_static_method_id(crate::android::TEXTURE_RENDER_STATIC_UPDATE_TEX_IMAGE_AND_GET_TRANSFORM_MATRIX_METHOD).unwrap();
 
-        //  gl_bindings::glFinish();
+        let _ =  env.call_static_method_unchecked(
+            method.clazz(), method.id, crate::android::JAVA_VOID_TYPE, &[
+                jni::objects::JValue::Object(surface_texture_object).to_jni(),
+                jni::objects::JValue::Object(
+                    JObject::from_raw(matrix)
+                ).to_jni()
+            ]
+        );
+        if let Ok(matrix) = env.get_primitive_array_critical(matrix, ReleaseMode::CopyBack) {
+            // super::surface_texture::ASurfaceTexture_updateTexImage(std::mem::transmute(
+            //     surface_texture_object.into_inner(),
+            // ));
+            //
+            // super::surface_texture::ASurfaceTexture_getTransformMatrix(
+            //     std::mem::transmute(surface_texture_object.into_inner()),
+            //     matrix.as_ptr() as *mut _,
+            // );
 
-        //gl_bindings::glBindTexture(gl_bindings::GL_TEXTURE_EXTERNAL_OES, 0);
+            //  let clazz = env.find_class("android/opengl/Matrix").unwrap();
+            // env.call_static_method(clazz, "setIdentityM", "([F;I)V", &[])
 
-        //  gl_bindings::glBindRenderbuffer(gl_bindings::GL_RENDERBUFFER, previous_render_buffer[0] as u32);
+            let size = matrix.size().unwrap_or(0) as usize;
+
+            let matrix = std::slice::from_raw_parts_mut(matrix.as_ptr() as *mut f32, size);
+
+            if flip_y_web_gl {
+                identity(matrix);
+            }
+
+            gl_bindings::glBindTexture(
+                gl_bindings::GL_TEXTURE_EXTERNAL_OES,
+                external_texture as u32,
+            );
+
+            //      previous_active_texture[0] - gl_bindings::GL_TEXTURE0
+            // gl_bindings::glUniform1i(
+            //     sampler_pos,
+            //     0, // previous_active_texture[0] - gl_bindings::GL_TEXTURE0 as i32,
+            // );
+
+            gl_bindings::glUniform1i(
+                sampler_pos,
+                previous_active_texture[0] - gl_bindings::GL_TEXTURE0 as i32,
+            );
+
+            /*  let name = std::ffi::CString::new("aTexCoord").unwrap();
+            let pos = gl_bindings::glGetAttribLocation(program as u32, name.as_ptr()) as u32;
+
+            gl_bindings::glVertexAttribPointer(
+                pos,
+                2,
+                gl_bindings::GL_FLOAT,
+                0,
+                2 * std::mem::size_of::<f32>() as i32,
+                0 as *const std::ffi::c_void,
+            );
+
+            gl_bindings::glEnableVertexAttribArray(pos);
+            */
+
+            gl_bindings::glUniformMatrix4fv(matrix_pos, 1, 0, matrix.as_ptr() as _);
+            gl_bindings::glViewport(0, 0, width, height);
+
+            gl_bindings::glDrawArrays(gl_bindings::GL_TRIANGLE_STRIP, 0, draw_count);
+
+            //  gl_bindings::glFinish();
+
+            //gl_bindings::glBindTexture(gl_bindings::GL_TEXTURE_EXTERNAL_OES, 0);
+
+            //  gl_bindings::glBindRenderbuffer(gl_bindings::GL_RENDERBUFFER, previous_render_buffer[0] as u32);
+        }
     }
+
 
     gl_bindings::glBindRenderbuffer(
         gl_bindings::GL_RENDERBUFFER,
@@ -251,6 +290,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
     gl_bindings::glBindVertexArray(previous_vertex_array[0] as u32);
 }
 
+#[inline(always)]
 fn identity(out: &mut [f32]) {
     out[0] = 1.;
     out[1] = 0.;

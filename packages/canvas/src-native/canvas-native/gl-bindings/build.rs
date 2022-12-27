@@ -1,6 +1,10 @@
 use std::borrow::Borrow;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+use regex::Regex;
 
 const _IOS_SRC_BINDINGS_RS: &str = "src/bindings.rs";
 const _ANDROID_SRC_BINDINGS_RS: &str = "src/bindings.rs";
@@ -35,7 +39,7 @@ impl Display for Target {
         if let Some(ref abi) = self.abi {
             write!(f, "-{}", abi)
         } else {
-            Result::Ok(())
+            Ok(())
         }
     }
 }
@@ -44,9 +48,42 @@ pub fn ndk() -> String {
     std::env::var("ANDROID_NDK").expect("ANDROID_NDK variable not set")
 }
 
+fn host_tag() -> String {
+    // Because this is part of build.rs, the target_os is actually the host system
+    if cfg!(target_os = "windows") {
+        "windows-x86_64"
+    } else if cfg!(target_os = "linux") {
+        "linux-x86_64"
+    } else if cfg!(target_os = "macos") {
+        "darwin-x86_64"
+    } else {
+        panic!("host os is not supported")
+    }
+        .to_string()
+}
+
+/// Get NDK major version from source.properties
+fn ndk_major_version(ndk_dir: &Path) -> u32 {
+    // Capture version from the line with Pkg.Revision
+    let re = Regex::new(r"Pkg.Revision = (\d+)\.(\d+)\.(\d+)").unwrap();
+    // There's a source.properties file in the ndk directory, which contains
+    let mut source_properties =
+        File::open(ndk_dir.join("source.properties")).expect("Couldn't open source.properties");
+    let mut buf = "".to_string();
+    source_properties
+        .read_to_string(&mut buf)
+        .expect("Could not read source.properties");
+    // Capture version info
+    let captures = re
+        .captures(&buf)
+        .expect("source.properties did not match the regex");
+    // Capture 0 is the whole line of text
+    captures[1].parse().expect("could not parse major version")
+}
+
 fn main() {
     let target_str = std::env::var("TARGET").unwrap();
-    let mut include_dir = String::from("-I");
+    //let mut include_dir = String::from("-I");
     let target: Vec<String> = target_str.split('-').map(|s| s.into()).collect();
     if target.len() < 3 {
         assert!(!(target.len() < 3), "Failed to parse TARGET {}", target_str);
@@ -64,49 +101,72 @@ fn main() {
         system: target[2].clone(),
         abi,
     };
+
     println!("cargo:rerun-if-changed=build.rs");
 
-    println!("system {:?}", &target.system);
-    println!("target {:?}", &target);
     match target.system.borrow() {
         "android" | "androideabi" => {
             // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
-            let build_target;
-            include_dir.push_str(&ndk());
-            // after moving to newer ndk
-           // include_dir.push_str("/toolchains/llvm/prebuilt/darwin-x86_64");
+            //let build_target;
+
+            let mut bindings = bindgen::Builder::default();
 
 
-           include_dir.push_str("/sysroot/usr/include");
-            println!("cargo:rustc-link-search=native={}", include_dir);
+            let ndk = ndk();
+            let major = ndk_major_version(Path::new(&ndk));
+            // Version 22 is the first version that moved sysroot to toolchains folder
+            if major < 22 {
+                // sysroot is just in the ndk directory
+                bindings = bindings.clang_args([
+                    &format!("--sysroot={}/sysroot", ndk),
 
-            if target.architecture.eq("armv7") {
-                build_target = "armv7-linux-androideabi";
-            } else if target.architecture.eq("aarch64") {
-                build_target = "aarch64-linux-android";
-                println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
-            } else if target.architecture.eq("i686") {
-                build_target = "i686-linux-android";
-            } else if target.architecture.eq("x86_64") {
-                build_target = "x86_64-linux-android";
-                println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
+                    // note: Adding C++ includes messes with Apple's CLang 11 in the binding generator,
+                    // Which means that only we support the official LLVM versions for Android builds on macOS.
+
+                    &format!(
+                        "-isystem{}/sources/cxx-stl/llvm-libc++/include",
+                        ndk
+                    )
+                ]);
             } else {
-                return;
-            }
+                // NDK versions >= 22 have the sysroot in the llvm prebuilt by
+                let host_toolchain = format!("{}/toolchains/llvm/prebuilt/{}", ndk, host_tag());
+                // sysroot is stored in the prebuilt llvm, under the host
+                bindings = bindings.clang_arg(&format!("--sysroot={}/sysroot", host_toolchain));
+            };
 
-            println!("target {:?}", build_target);
-            println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
-            println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
-            println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
-            
-                                                     // The bindgen::Builder is the main entry point
-                                                     // to bindgen, and lets you build up options for
-                                                     // the resulting bindings.
-            let bindings = bindgen::Builder::default()
+
+            // println!("cargo:rustc-link-search=native={}", include_dir);
+
+
+            // if target.architecture.eq("armv7") {
+            //     build_target = "armv7-linux-androideabi";
+            // } else if target.architecture.eq("aarch64") {
+            //     build_target = "aarch64-linux-android";
+            //     println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
+            // } else if target.architecture.eq("i686") {
+            //     build_target = "i686-linux-android";
+            // } else if target.architecture.eq("x86_64") {
+            //     build_target = "x86_64-linux-android";
+            //     println!("cargo:rustc-link-lib=GLESv3"); // the "-l" flag
+            // } else {
+            //     return;
+            // }
+
+            // println!("cargo:rustc-link-lib=jnigraphics"); // the "-l" flag
+            //  println!("cargo:rustc-link-lib=EGL"); // the "-l" flag
+            //  println!("cargo:rustc-link-lib=GLESv2"); // the "-l" flag
+           // println!("cargo:rustc-link-lib=GLESv3");
+           // println!("cargo:rustc-link-lib=c++_shared");
+
+            // The bindgen::Builder is the main entry point
+            // to bindgen, and lets you build up options for
+            // the resulting bindings.
+            let bindings = bindings
                 // The input header we would like to generate
                 // bindings for.
                 .header("wrapper.h")
-                .clang_arg(include_dir)
+              //  .clang_arg(include_dir)
                 // Finish the builder and generate the bindings.
                 .generate()
                 // Unwrap the Result and panic on failure.
@@ -124,7 +184,6 @@ fn main() {
         "ios" | "darwin" => {
             let target = std::env::var("TARGET").unwrap();
             let directory = sdk_path(&target).ok();
-            println!("sdk_path {:?}", directory);
             build(directory.as_ref().map(String::as_ref), &target);
         }
         _ => {}
@@ -133,9 +192,9 @@ fn main() {
 
 fn sdk_path(target: &str) -> Result<String, std::io::Error> {
     use std::process::Command;
-    let sdk = if target.contains("apple-darwin") 
-    || target == "aarch64-apple-ios-macabi"
-    || target == "x86_64-apple-ios-macabi"  {
+    let sdk = if target.contains("apple-darwin")
+        || target == "aarch64-apple-ios-macabi"
+        || target == "x86_64-apple-ios-macabi" {
         "macosx"
     } else if target == "x86_64-apple-ios" || target == "i386-apple-ios" || target == "aarch64-apple-ios-sim" {
         "iphonesimulator"
@@ -172,7 +231,7 @@ fn build(sdk_path: Option<&str>, target: &str) {
     let mut headers: Vec<&str> = vec![];
 
 
-    if target.contains("apple-ios") &&  !target.contains("macabi"){
+    if target.contains("apple-ios") && !target.contains("macabi") {
         println!("cargo:rustc-link-lib=framework=GLKit");
         println!("cargo:rustc-link-lib=framework=OpenGLES");
         headers.push("OpenGLES/ES2/gl.h");
@@ -221,7 +280,9 @@ fn build(sdk_path: Option<&str>, target: &str) {
             .objc_extern_crate(true)
             .block_extern_crate(true)
             .allowlist_function("gl.*")
-            .allowlist_type("GL_.*")
+            .allowlist_recursively(true)
+            .allowlist_var("GL_.*")
+            .allowlist_type("GL_.*");
     }
 
     let meta_header: Vec<_> = headers

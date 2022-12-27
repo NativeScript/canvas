@@ -59,7 +59,7 @@ export class Path2D extends Path2DBase {
 		x: number,
 		y: number
 	): void {
-		this.nativeInstance.arcTo(
+		this.nativeInstance.bezierCurveTo(
 			cp1x,
 			cp1y,
 			cp2x,
@@ -109,5 +109,15 @@ export class Path2D extends Path2DBase {
 
 	rect(x: number, y: number, width: number, height: number): void {
 		this.nativeInstance.rect(x, y, width, height);
+	}
+
+	roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+	roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
+	roundRect(x: number, y: number, width: number, height: number, radii: any): void {
+		if (Array.isArray(radii)) {
+			this.nativeInstance.roundRectWithXYWidthHeightRadii(x, y, width, height, radii);
+		} else if (typeof radii === 'number') {
+			this.nativeInstance.roundRectWithRadii(x, y, width, height, radii);
+		}
 	}
 }

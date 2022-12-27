@@ -4,6 +4,18 @@ pub struct U8Array {
     pub data_len: usize,
 }
 
+impl U8Array {
+    pub fn into_box(self) -> Box<Self> {
+        Box::new(self)
+    }
+
+    pub fn into_raw(self) -> *mut U8Array {
+        Box::into_raw(
+            Box::new(self)
+        )
+    }
+}
+
 impl Into<Vec<u8>> for U8Array {
     fn into(self) -> Vec<u8> {
         unsafe {

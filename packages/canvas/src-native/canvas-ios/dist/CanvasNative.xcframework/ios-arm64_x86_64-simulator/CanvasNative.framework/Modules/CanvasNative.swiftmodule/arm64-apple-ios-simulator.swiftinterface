@@ -1,6 +1,7 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 5.5.2 (swiftlang-1300.0.47.5 clang-1300.0.29.30)
+// swift-compiler-version: Apple Swift version 5.7 (swiftlang-5.7.0.127.4 clang-1400.0.29.50)
 // swift-module-flags: -target arm64-apple-ios11.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
+// swift-module-flags-ignorable: -enable-bare-slash-regex
 import AVFoundation
 @_exported import CanvasNative
 import CoreVideo
@@ -11,6 +12,7 @@ import OpenGLES
 import Swift
 import UIKit
 import _Concurrency
+import _StringProcessing
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSDOMMatrix) public class TNSDOMMatrix : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc public var a: Swift.Float {
@@ -235,6 +237,10 @@ import _Concurrency
     @objc get
     @objc set
   }
+  @objc @_Concurrency.MainActor(unsafe) public var scaling: Swift.Bool {
+    @objc get
+    @objc set
+  }
   @objc @_Concurrency.MainActor(unsafe) public static func createSVGMatrix() -> CanvasNative.TNSDOMMatrix
   @objc @_Concurrency.MainActor(unsafe) public var handleInvalidationManually: Swift.Bool {
     @objc get
@@ -248,6 +254,8 @@ import _Concurrency
   @objc @_Concurrency.MainActor(unsafe) public func toDataURLAsync(_ type: Swift.String, _ callback: @escaping (Swift.String) -> Swift.Void)
   @objc @_Concurrency.MainActor(unsafe) public func toDataURLAsync(_ type: Swift.String, _ format: Swift.Float, _ callback: @escaping (Swift.String) -> Swift.Void)
   @objc @_Concurrency.MainActor(unsafe) public func snapshot() -> [Swift.UInt8]
+  @objc @_Concurrency.MainActor(unsafe) public func getImage(_ flip: Swift.Bool) -> UIKit.UIImage?
+  @objc @_Concurrency.MainActor(unsafe) public func snapshotEncoded() -> [Swift.UInt8]
   @objc @_Concurrency.MainActor(unsafe) public var isGL: Swift.Bool {
     @objc get
   }
@@ -265,11 +273,12 @@ import _Concurrency
   }
   @objc @_Concurrency.MainActor(unsafe) public func doDraw()
   @objc @_Concurrency.MainActor(unsafe) public func flush()
-  @objc @_Concurrency.MainActor(unsafe) public init(frame: CoreGraphics.CGRect, useCpu: Swift.Bool)
+  @objc @_Concurrency.MainActor(unsafe) public init(frame: CoreFoundation.CGRect, useCpu: Swift.Bool)
   @objc @_Concurrency.MainActor(unsafe) public func setListener(_ listener: CanvasNative.TNSCanvasListener?)
   @objc @_Concurrency.MainActor(unsafe) public var fps: Swift.Float {
     @objc get
   }
+  @objc @_Concurrency.MainActor(unsafe) public static func layoutView(_ view: UIKit.UIView, _ width: CoreFoundation.CGFloat, _ height: CoreFoundation.CGFloat)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
   @objc deinit
   @objc @_Concurrency.MainActor(unsafe) public func resume()
@@ -279,7 +288,15 @@ import _Concurrency
   @objc @_Concurrency.MainActor(unsafe) public func handleMoveOffMain()
   @objc @_Concurrency.MainActor(unsafe) public func handleMoveToMain()
   @objc @_Concurrency.MainActor(unsafe) public func getContext(_ type: Swift.String) -> CanvasNative.TNSCanvasRenderingContext?
-  @objc @_Concurrency.MainActor(unsafe) public func getContext(_ type: Swift.String, contextAttributes: Foundation.NSDictionary) -> CanvasNative.TNSCanvasRenderingContext?
+  @objc @_Concurrency.MainActor(unsafe) public func getContext(type: Swift.String, attributes: Swift.String) -> CanvasNative.TNSCanvasRenderingContext?
+  @objc @_Concurrency.MainActor(unsafe) public func getContext(_ type: Swift.String, contextAttributes: Swift.Dictionary<Swift.String, Any>) -> CanvasNative.TNSCanvasRenderingContext?
+  @objc @_Concurrency.MainActor(unsafe) public func getContext(type: Swift.String, contextAttributes: CanvasNative.TNSContextAttributes) -> CanvasNative.TNSCanvasRenderingContext?
+}
+@_inheritsConvenienceInitializers @objc(TNSContextAttributes) @objcMembers public class TNSContextAttributes : ObjectiveC.NSObject, Swift.Codable {
+  @objc override dynamic public init()
+  @objc deinit
+  public func encode(to encoder: Swift.Encoder) throws
+  required public init(from decoder: Swift.Decoder) throws
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSTextEncoder) public class TNSTextEncoder : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -1363,6 +1380,9 @@ extension Swift.RangeReplaceableCollection {
   @objc public func ellipse(_ x: Swift.Float, _ y: Swift.Float, _ radiusX: Swift.Float, _ radiusY: Swift.Float, _ rotation: Swift.Float, _ startAngle: Swift.Float, _ endAngle: Swift.Float)
   @objc public func ellipse(_ x: Swift.Float, _ y: Swift.Float, _ radiusX: Swift.Float, _ radiusY: Swift.Float, _ rotation: Swift.Float, _ startAngle: Swift.Float, _ endAngle: Swift.Float, _ anticlockwise: Swift.Bool)
   @objc public func rect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float)
+  @objc public func roundRect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float, _ topLeft: Swift.Float, _ topRight: Swift.Float, _ bottomRight: Swift.Float, _ bottomLeft: Swift.Float)
+  @objc public func roundRectWithRadii(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float, _ radii: Swift.Float)
+  @objc public func roundRect(x: Swift.Float, y: Swift.Float, width: Swift.Float, height: Swift.Float, radii: [Swift.Float])
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNS_OES_texture_half_float) public class TNS_OES_texture_half_float : ObjectiveC.NSObject {
   @objc override dynamic public init()
@@ -1432,8 +1452,10 @@ extension Swift.RangeReplaceableCollection {
     @objc set
   }
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreGraphics.CGRect)
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreGraphics.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
+  @objc @_Concurrency.MainActor(unsafe) public func toImage() -> UIKit.UIImage?
+  @objc @_Concurrency.MainActor(unsafe) public func toData() -> Foundation.NSData?
   @objc deinit
 }
 @objcMembers @objc(TNSWebGLRenderingContext) public class TNSWebGLRenderingContext : CanvasNative.TNSCanvasRenderingContext {
@@ -2586,7 +2608,8 @@ extension Swift.RangeReplaceableCollection {
   @objc public static func createTextureCache(_ context: CanvasNative.TNSWebGLRenderingContext) -> CoreVideo.CVOpenGLESTextureCache?
   @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
   @objc public static func setupRender() -> CanvasNative.TNSRender
-  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreGraphics.CGSize, _ render: CanvasNative.TNSRender, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ render: CanvasNative.TNSRender, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public static func writeToFile(_ data: Foundation.NSData, _ path: Swift.String) throws
   @objc override dynamic public init()
   @objc deinit
 }
@@ -2697,10 +2720,12 @@ extension Swift.RangeReplaceableCollection {
     @objc get
     @objc set
   }
+  @objc public func setFillStyleWithString(_ color: Swift.String)
   @objc public var fillStyle: CanvasNative.ICanvasColorStyle {
     @objc get
     @objc set
   }
+  @objc public func setStrokeStyleWithString(_ color: Swift.String)
   @objc public var strokeStyle: CanvasNative.ICanvasColorStyle {
     @objc get
     @objc set
@@ -2712,6 +2737,9 @@ extension Swift.RangeReplaceableCollection {
   @objc public func strokeText(_ text: Swift.String, _ x: Swift.Float, _ y: Swift.Float)
   @objc public func strokeText(_ text: Swift.String, _ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float)
   @objc public func rect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float)
+  @objc public func roundRect(x: Swift.Float, y: Swift.Float, width: Swift.Float, height: Swift.Float, topLeft: Swift.Float, topRight: Swift.Float, bottomRight: Swift.Float, bottomLeft: Swift.Float)
+  @objc public func roundRect(x: Swift.Float, y: Swift.Float, width: Swift.Float, height: Swift.Float, radii: Swift.Float)
+  @objc public func roundRect(_ x: Swift.Float, _ y: Swift.Float, _ width: Swift.Float, _ height: Swift.Float, _ radii: [Swift.Float])
   @objc public func fill()
   @objc public func fill(value: Any)
   @objc public func fill(_ path: CanvasNative.TNSPath2D, _ rule: CanvasNative.TNSFillRule)
@@ -2735,6 +2763,7 @@ extension Swift.RangeReplaceableCollection {
   @objc public func getCanvas() -> CanvasNative.TNSCanvas
   @objc public func createLinearGradient(_ x0: Swift.Float, _ y0: Swift.Float, _ x1: Swift.Float, _ y1: Swift.Float) -> CanvasNative.TNSColorStyle.TNSLinearGradient
   @objc public func createRadialGradient(_ x0: Swift.Float, _ y0: Swift.Float, _ r0: Swift.Float, _ x1: Swift.Float, _ y1: Swift.Float, _ r1: Swift.Float) -> CanvasNative.TNSColorStyle.TNSRadialGradient
+  @objc public func createConicGradient(_ startAngle: Swift.Float, _ x: Swift.Float, _ y: Swift.Float) -> CanvasNative.TNSColorStyle.TNSConicGradient
   @objc public func createPattern(_ value: Any, _ repetition: CanvasNative.TNSPatternRepetition) -> Any?
   @objc public func setTransform(_ a: Swift.Float, _ b: Swift.Float, _ c: Swift.Float, _ d: Swift.Float, _ e: Swift.Float, _ f: Swift.Float)
   @objc public func scale(_ x: Swift.Float, _ y: Swift.Float)
@@ -2833,17 +2862,17 @@ extension Swift.RangeReplaceableCollection {
   public init?(string: Swift.String)
 }
 @_hasMissingDesignatedInitializers @objcMembers @objc(CanvasGLKView) @_Concurrency.MainActor(unsafe) public class CanvasGLKView : GLKit.GLKView {
-  @objc dynamic public init()
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreGraphics.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc dynamic public init()
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func setNeedsDisplay()
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func setNeedsDisplay(_ rect: CoreGraphics.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func setNeedsDisplay(_ rect: CoreFoundation.CGRect)
   @objc deinit
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(CanvasCPUView) @_Concurrency.MainActor(unsafe) public class CanvasCPUView : UIKit.UIView {
   @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool
-  @objc dynamic public init()
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreGraphics.CGRect)
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreGraphics.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc dynamic public init()
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
   @objc deinit
 }
 public protocol RenderListener {
@@ -2860,9 +2889,9 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   }
 }
 @objc public class GLRenderer : ObjectiveC.NSObject, GLKit.GLKViewDelegate {
-  public var attributes: Foundation.NSDictionary
+  public var attributes: CanvasNative.TNSContextAttributes
   public func updateDirection(_ direction: Swift.String)
-  public var isDirty: Swift.Bool {
+  public var invalidateState: Swift.Int {
     get
     set
   }
@@ -2901,7 +2930,7 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   public func ensureIsReady()
   public func pause()
   public func resume()
-  @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreGraphics.CGRect)
+  @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreFoundation.CGRect)
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSIndexedParameter) public class TNSIndexedParameter : ObjectiveC.NSObject {
   @objc deinit
@@ -2972,6 +3001,8 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
   @objc public func loadImageFromUrl(url: Swift.String) -> Swift.Bool
   @objc public func loadImageFromUrlAsync(url: Swift.String, callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromPathAsync(path: Swift.String, callback: @escaping (Swift.String?) -> ())
+  @objc public func loadImageFromBuffer(_ buffer: Foundation.NSData) -> Swift.Bool
+  @objc public func loadImageFromBufferAsync(_ buffer: Foundation.NSData, callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromBytes(array: [Swift.UInt8]) -> Swift.Bool
   @objc public func loadImageFromBytesAsync(array: [Swift.UInt8], callback: @escaping (Swift.String?) -> ())
   @objc public func loadImageFromImage(image: UIKit.UIImage) -> Swift.Bool
@@ -3176,6 +3207,9 @@ public enum ContextType : Swift.Int, Swift.RawRepresentable {
     @objc deinit
   }
   @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSRadialGradient) public class TNSRadialGradient : CanvasNative.TNSColorStyle.TNSGradient {
+    @objc deinit
+  }
+  @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSConicGradient) public class TNSConicGradient : CanvasNative.TNSColorStyle.TNSGradient {
     @objc deinit
   }
   @_hasMissingDesignatedInitializers @objcMembers @objc(TNSPattern) public class TNSPattern : ObjectiveC.NSObject, CanvasNative.ICanvasColorStyle {

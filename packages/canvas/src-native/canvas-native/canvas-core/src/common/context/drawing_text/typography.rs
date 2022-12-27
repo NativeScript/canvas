@@ -1,4 +1,3 @@
-
 use std::collections::VecDeque;
 
 
@@ -7,7 +6,6 @@ use skia_safe::{
     typeface::Typeface,
     FontMetrics, FontMgr, FontStyle,
 };
-
 
 use crate::{
     common::context::text_styles::text_align::TextAlign,
@@ -102,6 +100,16 @@ impl Font {
         self.font = parse_font(font_details);
     }
 
+    pub fn load_type_from_path(&mut self, path: &str) -> Option<Typeface> {
+        let mgr = FontMgr::default();
+        match std::fs::read(std::path::Path::new(path)) {
+            Ok(bytes) => {
+                mgr.new_from_data(bytes.as_slice(), None)
+            }
+            Err(_) => None
+        }
+    }
+
     fn to_font(&self) -> skia_safe::Font {
         let style = to_font_style(self.font.font_weight(), self.font.font_style());
         let families: Vec<String> = parse_font_family(self.font.font_family());
@@ -118,7 +126,6 @@ impl Font {
                 }
             }
         }
-
         skia_safe::Font::from_typeface(
             default_typeface,
             Some(parse_size(self.font.font_size(), self.device)),
@@ -267,8 +274,7 @@ pub fn parse_font(font: &str) -> ParsedFont {
 
     for _ in 0..res.len() {
         if let Some(part) = res.pop_front() {
-            if part.eq("normal") {
-            } else if part.eq("small-caps") {
+            if part.eq("normal") {} else if part.eq("small-caps") {
                 parsed_font.font_variant = part.into();
             } else if ParsedFontStyle::is_supported(part) {
                 match part {

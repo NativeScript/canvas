@@ -1,15 +1,14 @@
-import { CanvasBase, ignorePixelScalingProperty } from './common';
+import { CanvasBase, ignorePixelScalingProperty, scalingProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile } from '@nativescript/core';
+import { Application, View, profile, ImageSource } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix(org.nativescript.canvas.TNSCanvas.createSVGMatrix());
 }
 
 export * from './common';
-
 
 export class Canvas extends CanvasBase {
 	_ready = false;
@@ -32,7 +31,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
-		this._canvas.setIgnorePixelScaling(value);
+		this._canvas?.setIgnorePixelScaling?.(value);
+	}
+
+	[scalingProperty.setNative](value: boolean) {
+		this._canvas?.setScaling?.(value);
 	}
 
 	// @ts-ignore
@@ -109,6 +112,11 @@ export class Canvas extends CanvasBase {
 		if (this.ignorePixelScaling) {
 			this._canvas.setIgnorePixelScaling(this.ignorePixelScaling);
 		}
+
+		if (this.scaling) {
+			this._canvas.setScaling(this.scaling);
+		}
+
 		const ref = new WeakRef(this);
 		this.on(View.layoutChangedEvent, (args) => {
 			const parent = this.parent as any;
@@ -176,6 +184,16 @@ export class Canvas extends CanvasBase {
 		return this.android.toDataURL(type, encoderOptions);
 	}
 
+	public snapshot(flip: boolean = false): ImageSource | null {
+		if (this._canvas) {
+			const bm = this._canvas.getImage?.(flip ?? false);
+			if (bm) {
+				return new ImageSource(bm);
+			}
+		}
+		return null;
+	}
+
 	_layoutNative() {
 		if (!this.parent) {
 			if ((typeof this.width === 'string' && this.width.indexOf('%')) || (typeof this.height === 'string' && this.height.indexOf('%'))) {
@@ -195,17 +213,7 @@ export class Canvas extends CanvasBase {
 			return null;
 		}
 		const getNativeOptions = (options) => {
-			const jsOptions = this._handleContextOptions(type, options);
-			const opts = new java.util.HashMap();
-			Object.keys(jsOptions).forEach((key) => {
-				let val = jsOptions[key];
-				if (typeof val === 'boolean') {
-					opts.put(key, java.lang.Boolean.valueOf(String(val)));
-				} else {
-					opts.put(key, val);
-				}
-			});
-			return opts;
+			return JSON.stringify(this._handleContextOptions(type, options));
 		};
 
 		if (typeof type === 'string') {
@@ -278,9 +286,7 @@ export class Canvas extends CanvasBase {
 		};
 	}
 
+	setPointerCapture() {}
 
-	setPointerCapture() { }
-
-	releasePointerCapture() { }
-
+	releasePointerCapture() {}
 }

@@ -83,8 +83,8 @@ impl From<i32> for CompositeOperationType {
             7 => CompositeOperationType::DestinationAtop,
             8 => CompositeOperationType::Lighter,
             9 => CompositeOperationType::Copy,
-            10 => CompositeOperationType::Multiply,
-            11 => CompositeOperationType::Xor,
+            10 => CompositeOperationType::Xor,
+            11 => CompositeOperationType::Multiply,
             12 => CompositeOperationType::Screen,
             13 => CompositeOperationType::Overlay,
             14 => CompositeOperationType::Darken,
@@ -97,7 +97,8 @@ impl From<i32> for CompositeOperationType {
             21 => CompositeOperationType::Exclusion,
             22 => CompositeOperationType::Hue,
             23 => CompositeOperationType::Saturation,
-            24 => CompositeOperationType::Luminosity,
+            24 => CompositeOperationType::Color,
+            25 => CompositeOperationType::Luminosity,
             _ => CompositeOperationType::SourceOver,
         }
     }

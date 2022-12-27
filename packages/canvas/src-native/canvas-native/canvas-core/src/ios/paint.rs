@@ -2,7 +2,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_longlong};
 use std::str::FromStr;
 
-use css_color_parser::{Color, ColorParseError};
+use css_color_parser::{Color};
 
 use crate::common::context::Context;
 use crate::common::context::fill_and_stroke_styles::paint::PaintStyle;
@@ -20,7 +20,7 @@ pub(crate) fn paint_style_set_color_with_string(
         let context: *mut Context = context as _;
         let context = &mut *context;
         let color = CStr::from_ptr(color).to_string_lossy();
-        if let Ok(color) = css_color_parser::Color::from_str(color.as_ref()) {
+        if let Ok(color) = Color::from_str(color.as_ref()) {
             let style = PaintStyle::Color(skia_safe::Color::from_argb(
                 (color.a * 255.0) as u8,
                 color.r,

@@ -12,7 +12,7 @@ import UIKit
 @objcMembers
 @objc(CanvasGLKView)
 public class CanvasGLKView: GLKView {
-    var isDirty: Bool = false
+    var invalidateState = TNSCanvas.INVALIDATE_STATE_NONE  // bitwise flag
     public init() {
         super.init(frame: .zero)
     }
@@ -38,7 +38,7 @@ public class CanvasGLKView: GLKView {
 @objcMembers
 @objc(CanvasCPUView)
 public class CanvasCPUView: UIView {
-    var isDirty: Bool = false
+    var invalidateState = TNSCanvas.INVALIDATE_STATE_NONE  // bitwise flag
     weak var renderer: GLRenderer?
     public var ignorePixelScaling = false
     public init() {
@@ -82,7 +82,7 @@ public class CanvasCPUView: UIView {
                 buffer.deallocate()
             }
         }
-        isDirty = false
+        invalidateState = TNSCanvas.INVALIDATE_STATE_NONE  // bitwise flag
     }
 }
 
@@ -102,25 +102,25 @@ public enum ContextType: Int, RawRepresentable {
 
 public class GLRenderer: NSObject, GLKViewDelegate {
     
-    public var attributes: NSDictionary = NSMutableDictionary()
+    public var attributes = TNSContextAttributes()
     
     public func updateDirection(_ direction: String) {
         cachedDirection = direction
     }
-    
-    public var isDirty: Bool {
+
+    public var invalidateState: Int {
         set{
             if(useCpu){
-                cpuView.isDirty = newValue
+                cpuView.invalidateState = newValue
             }else {
-                glkView.isDirty = newValue
+                glkView.invalidateState = newValue
             }
         }
         get {
             if(useCpu){
-                return cpuView.isDirty
+                return cpuView.invalidateState
             }
-            return glkView.isDirty
+            return glkView.invalidateState
         }
     }
     
@@ -228,15 +228,24 @@ public class GLRenderer: NSObject, GLKViewDelegate {
         }
     }
     
+    
+    func handleScaling(){
+        if(context != 0){
+            context_set_scaling(context, canvasView?.scaling ?? false)
+        }
+    }
+    
     var forceResize = false
     func handlePixelScale(){
-        forceResize = true
         if(!useCpu){
             glkView.contentScaleFactor = CGFloat(deviceScale())
         }else {
             cpuView.contentScaleFactor = CGFloat(deviceScale())
         }
-        resize()
+        if(context != 0 || drawingBufferWidth > 0){
+            forceResize = true
+            resize()
+        }
     }
     
     private var useCpu: Bool
@@ -363,9 +372,14 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         glClearStencil(0)
                         glClearDepthf(1)
                         glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
-                        print("buffer dim", drawingBufferWidth, drawingBufferHeight)
                         glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                        context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),deviceScale(), binding, 4,canvasView?.contextAlpha ?? true, 100.0)
+                        var scale = deviceScale()
+                        
+                        if (scale == 1 && canvasView?.scaling ?? false){
+                            scale =  Float32(UIScreen.main.nativeScale)
+                        }
+                        
+                        context_resize_surface(context,Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, binding, 4,canvasView?.contextAlpha ?? true, 100.0)
                     }
                     glkView.display()
                     
@@ -410,7 +424,16 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                     }
                     let width = Float(cpuView.frame.size.width) * deviceScale()
                     let height = Float(cpuView.frame.size.height) * deviceScale()
-                    context = context_init_context_with_custom_surface(width, height,deviceScale(), canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    var scale = deviceScale()
+                    
+                    if (scale == 1 && canvasView?.scaling ?? false){
+                        scale =  Float32(UIScreen.main.nativeScale)
+                    }
+                    
+                    context = context_init_context_with_custom_surface(width, height,scale, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    handleScaling()
                 }
                 
             }else {
@@ -451,7 +474,17 @@ public class GLRenderer: NSObject, GLKViewDelegate {
                         
                     }
                     glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
-                    context = context_init_context(Float32(drawingBufferWidth), Float32(drawingBufferHeight),deviceScale(), Int32(displayFramebuffer), 4, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    var scale = deviceScale()
+                    
+                    if (scale == 1 && canvasView?.scaling ?? false){
+                        scale =  Float32(UIScreen.main.nativeScale)
+                    }
+                    
+                    
+                    context = context_init_context(Float32(drawingBufferWidth), Float32(drawingBufferHeight),scale, Int32(displayFramebuffer), 4, canvasView?.contextAlpha ?? true,0,100.0, TextDirection(rawValue: direction.rawValue))
+                    
+                    handleScaling()
                     
                 }
                 
@@ -482,8 +515,9 @@ public class GLRenderer: NSObject, GLKViewDelegate {
             }
         }
         if(contextType == .twoD){
+            guard let listener = self.listener else {return}
             DispatchQueue.main.async {
-                self.listener?.didDraw()
+                listener.didDraw()
             }
         }
     }
@@ -491,20 +525,27 @@ public class GLRenderer: NSObject, GLKViewDelegate {
     public func flush(){
         if(didExit){return}
         ensureIsContextIsCurrent()
+        if((invalidateState & TNSCanvas.INVALIDATE_STATE_PENDING) == TNSCanvas.INVALIDATE_STATE_PENDING){
+            return
+        }
         if(useCpu){
-            cpuView.isDirty = true
+            cpuView.invalidateState = cpuView.invalidateState & TNSCanvas.INVALIDATE_STATE_INVALIDATING
         }else {
-            glkView.isDirty = true
+            glkView.invalidateState = cpuView.invalidateState & TNSCanvas.INVALIDATE_STATE_INVALIDATING
         }
-        if(contextType == .twoD){
-            DispatchQueue.main.async {
-                self.listener?.didDraw()
-            }
-        }
+//        if(contextType == .twoD){
+//            guard let listener = self.listener else {return}
+//            DispatchQueue.main.async {
+//                listener.didDraw()
+//            }
+//        }
     }
     
     public func ensureIsReady(){
-        glkView.isDirty = true
+        if((invalidateState & TNSCanvas.INVALIDATE_STATE_PENDING) == TNSCanvas.INVALIDATE_STATE_PENDING){
+            return
+        }
+        glkView.invalidateState = cpuView.invalidateState & TNSCanvas.INVALIDATE_STATE_INVALIDATING
     }
     
     
@@ -524,5 +565,6 @@ public class GLRenderer: NSObject, GLKViewDelegate {
     
     public func glkView(_ view: GLKView, drawIn rect: CGRect){
         internalFlush()
+        invalidateState = TNSCanvas.INVALIDATE_STATE_INVALIDATING
     }
 }

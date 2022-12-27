@@ -22,10 +22,15 @@ impl Context {
             paint = self.state.paint.stroke_paint();
         }
 
-        if let Some(rule) = fill_rule {
-            let path = path.unwrap_or(self.path.borrow_mut());
-            path.path.set_fill_type(rule.to_fill_type());
+        let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
 
+        if self.enable_scaling {
+            let scale = self.device.density;
+            path = path.make_scale((scale, scale));
+        }
+
+        if let Some(rule) = fill_rule {
+            path.path.set_fill_type(rule.to_fill_type());
             if let Some(paint) = self.state.paint.fill_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
@@ -36,7 +41,7 @@ impl Context {
 
             self.surface.canvas().draw_path(&path.path, &paint);
         } else {
-            let path = path.unwrap_or(self.path.borrow_mut());
+            path.path.set_fill_type(FillRule::NonZero.to_fill_type());
             if let Some(paint) = self.state.paint.stroke_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
@@ -57,25 +62,18 @@ impl Context {
     }
 
     pub fn clip(&mut self, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
-        match path {
-            None => {
-                self.path
-                    .path
-                    .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
-                let path = self.path.path.clone();
-                self.surface
-                    .canvas()
-                    .clip_path(&path, Some(ClipOp::Intersect), Some(true));
-            }
-            Some(path) => {
-                path.path
-                    .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
-                let path = path.path.clone();
-                self.surface
-                    .canvas()
-                    .clip_path(&path, Some(ClipOp::Intersect), Some(true));
-            }
+        let rule = fill_rule.unwrap_or(FillRule::NonZero);
+        let mut path = path.unwrap_or(self.path.borrow_mut()).clone();
+
+        if self.enable_scaling {
+            let scale = self.device.density;
+            path = path.make_scale((scale, scale));
         }
+
+        path.set_fill_type(rule);
+        self.surface
+            .canvas()
+            .clip_path(path.path(), Some(ClipOp::Intersect), Some(true));
     }
 
     pub fn is_point_in_path(
@@ -85,7 +83,13 @@ impl Context {
         y: f32,
         rule: FillRule,
     ) -> bool {
-        let path = path.unwrap_or(&self.path).clone();
+        let mut path = path.unwrap_or(&self.path).clone();
+
+        if self.enable_scaling {
+            let scale = self.device.density;
+            path = path.make_scale((scale, scale));
+        }
+
         let total_matrix = self.surface.canvas().local_to_device_as_3x3();
         let invertible = is_invertible(&total_matrix);
         if !invertible {
@@ -104,7 +108,13 @@ impl Context {
     }
 
     pub fn is_point_in_stroke(&mut self, path: Option<&Path>, x: f32, y: f32) -> bool {
-        let path = path.unwrap_or(&self.path).clone();
+        let mut path = path.unwrap_or(&self.path).clone();
+
+        if self.enable_scaling {
+            let scale = self.device.density;
+            path = path.make_scale((scale, scale));
+        }
+
         let matrix = self.surface.canvas().local_to_device_as_3x3();
         let invertible = is_invertible(&matrix);
         if !invertible {
@@ -116,7 +126,7 @@ impl Context {
         let inverse = matrix.invert().unwrap();
         let point: Point = (x, y).into();
         let transformed_point = inverse.map_point(point);
-        let path_to_compare = path.path.clone();
+        let path_to_compare = &path.path;
         path_to_compare.contains(transformed_point)
     }
 }

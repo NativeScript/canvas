@@ -15,4 +15,8 @@ export abstract class TextEncoderBase {
 	static [Symbol.hasInstance](obj) {
 		if (obj?.native && obj.constructor.name === 'TextEncoder') return true;
 	}
+
+	get [Symbol.toStringTag]() {
+		return 'TextEncoder';
+	}
 }

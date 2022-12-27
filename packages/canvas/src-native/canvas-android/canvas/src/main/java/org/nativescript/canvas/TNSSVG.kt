@@ -209,7 +209,19 @@ class TNSSVG : View {
 		doDraw()
 	}
 
+	fun toImage(): Bitmap? {
+		return bitmap
+	}
+
+	fun toData(): ByteArray {
+		return Utils.getBytesFromBitmap(bitmap)
+	}
+
 	companion object {
+		init {
+			TNSCanvas.loadLib()
+		}
+
 		@JvmStatic
 		private external fun nativeDrawSVG(svgCanvas: Long, svg: String)
 

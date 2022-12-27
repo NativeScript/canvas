@@ -13,6 +13,10 @@ export abstract class TextMetricsBase {
 		if (obj?.native && obj.constructor.name === 'TextMetrics') return true;
 	}
 
+	get [Symbol.toStringTag]() {
+		return 'TextMetrics';
+	}
+
 	public abstract readonly width: number;
 	public abstract readonly actualBoundingBoxLeft: number;
 	public abstract readonly actualBoundingBoxRight: number;

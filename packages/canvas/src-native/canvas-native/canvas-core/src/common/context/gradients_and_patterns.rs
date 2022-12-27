@@ -43,6 +43,41 @@ impl Context {
         }
     }
 
+    pub fn create_conic_gradient(
+        &self,
+        start_angle: c_float,
+        x: c_float,
+        y: c_float,
+    ) -> Gradient {
+        let angle = crate::common::utils::geometry::to_degrees(start_angle) - 90.0;
+        Gradient::Conic {
+            center: Point::new(x, y),
+            angle,
+            colors: Vec::new(),
+            stops: Vec::new(),
+            matrix: None,
+            tile_mode: TileMode::Clamp,
+        }
+    }
+
+
+    pub fn create_conic_gradient_with_matrix(
+        &self,
+        start_angle: c_float,
+        x: c_float,
+        y: c_float,
+        matrix: Matrix,
+    ) -> Gradient {
+        Gradient::Conic {
+            center: Point::new(x, y),
+            angle: start_angle,
+            colors: Vec::new(),
+            stops: Vec::new(),
+            matrix: Some(matrix),
+            tile_mode: TileMode::Clamp,
+        }
+    }
+
     pub fn create_pattern(&self, image: Image, rep: Repetition) -> Pattern {
         Pattern::new(image, rep)
     }

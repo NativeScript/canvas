@@ -16,4 +16,7 @@ export abstract class TextDecoderBase {
 		if (obj?.native && obj.constructor.name === 'TextDecoder') return true;
 	}
 
+	get [Symbol.toStringTag]() {
+		return 'TextDecoder';
+	}
 }

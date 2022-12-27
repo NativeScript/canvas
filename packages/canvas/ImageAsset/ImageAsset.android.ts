@@ -119,9 +119,9 @@ export class ImageAsset extends ImageAssetBase {
 
     loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
         if (bytes instanceof Uint8Array || bytes instanceof Uint8ClampedArray) {
-            return this.native.loadImageFromBytes(Array.from(bytes));
+            return this.native.loadImageFromBuffer(bytes);
         }
-        return this.native.loadImageFromBytes(bytes as any);
+        return this.native.loadImageFromBuffer(bytes as any);
     }
 
     loadFromBytesAsync(bytes: Uint8Array | Uint8ClampedArray) {
@@ -135,9 +135,9 @@ export class ImageAsset extends ImageAssetBase {
                 },
             });
             if (bytes instanceof Uint8Array || bytes instanceof Uint8ClampedArray) {
-                this.native.loadImageFromBytesAsync(Array.from(bytes), callback);
+                this.native.loadImageFromBuffer(bytes, callback);
             } else {
-                this.native.loadImageFromBytesAsync(bytes as any, callback);
+                this.native.loadImageFromBuffer(bytes as any, callback);
             }
         });
     }

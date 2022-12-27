@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 
 use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JString, JValue, ReleaseMode};
+use jni::objects::{JClass, JObject, JString, ReleaseMode};
 use jni::sys::{
     jboolean, jbyteArray, jfloat, jfloatArray, jint, jlong, JNI_FALSE, JNI_TRUE, jobject, jstring,
 };
@@ -27,8 +27,9 @@ use crate::common::ffi::paint_style_value::{PaintStyleValueType};
 use crate::common::utils::color::to_parsed_color;
 use crate::common::utils::image::{from_image_slice, from_image_slice_encoded};
 
-const JSON_CLASS: &str = "org/json/JSONObject";
-const SIG_OBJECT_CTOR: &str = "()V";
+use ndk::{
+    bitmap::AndroidBitmap
+};
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeSetDirection(
@@ -80,10 +81,8 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
-    let json_class = env.find_class(JSON_CLASS).unwrap();
-    let json = env.new_object(json_class, SIG_OBJECT_CTOR, &[]).unwrap();
     if context == 0 {
-        return json.into_inner();
+        return super::new_style_ref(&env, 0, -1).into_raw();
     }
     unsafe {
         let context: *mut Context = context as _;
@@ -94,42 +93,16 @@ fn get_style(env: JNIEnv, context: jlong, is_fill: bool) -> jobject {
         } else {
             style = context.stroke_style().clone();
         }
-        let mut value_args = vec![env.new_string("value").unwrap().into()];
-        let mut value_type_args = vec![env.new_string("value_type").unwrap().into()];
-        match style {
-            PaintStyle::Color(_) => {
-                value_type_args.push(JValue::Int(
-                    PaintStyleValueType::PaintStyleValueTypeColor.into(),
-                ));
-            }
-            PaintStyle::Gradient(_) => {
-                value_type_args.push(JValue::Int(
-                    PaintStyleValueType::PaintStyleValueTypeGradient.into(),
-                ));
-            }
-            PaintStyle::Pattern(_) => {
-                value_type_args.push(JValue::Int(
-                    PaintStyleValueType::PaintStyleValueTypePattern.into(),
-                ));
-            }
+
+        let type_ = match style {
+            PaintStyle::Color(_) => PaintStyleValueType::PaintStyleValueTypeColor,
+            PaintStyle::Gradient(_) => PaintStyleValueType::PaintStyleValueTypeGradient,
+            PaintStyle::Pattern(_) => PaintStyleValueType::PaintStyleValueTypePattern
         };
+
         let style = Box::into_raw(Box::new(style)) as jlong;
-        value_args.push(JValue::Long(style));
-        env.call_method(
-            json,
-            "put",
-            "(Ljava/lang/String;J)Lorg/json/JSONObject;",
-            value_args.as_slice(),
-        )
-            .unwrap();
-        env.call_method(
-            json,
-            "put",
-            "(Ljava/lang/String;I)Lorg/json/JSONObject;",
-            value_type_args.as_slice(),
-        )
-            .unwrap();
-        json.into_inner()
+
+        super::new_style_ref(&env, style, type_.into()).into_raw()
     }
 }
 
@@ -172,7 +145,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         let context: *const Context = context as _;
         let context = &*context;
         let filter = context.get_filter();
-        env.new_string(filter).unwrap().into_inner()
+        env.new_string(filter).unwrap().into_raw()
     }
 }
 
@@ -206,7 +179,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         let context: *const Context = context as _;
         let context = &*context;
         let font = context.font();
-        env.new_string(font).unwrap().into_inner()
+        env.new_string(font).unwrap().into_raw()
     }
 }
 
@@ -572,7 +545,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         let context = &*context;
         env.new_string(to_parsed_color(context.shadow_color()))
             .unwrap()
-            .into_inner()
+            .into_raw()
     }
 }
 
@@ -913,6 +886,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     }
 }
 
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternFromContext(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    repetition: jint,
+) -> jlong {
+    if context == 0 {
+        return 0;
+    }
+    unsafe {
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        let ss = context.surface.image_snapshot();
+        match ss.to_raster_image(None) {
+            None => 0,
+            Some(image) => {
+                return Box::into_raw(Box::new(PaintStyle::Pattern(
+                    context.create_pattern(image, Repetition::from(repetition)),
+                ))) as jlong;
+            }
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternEncoded(
     env: JNIEnv,
@@ -921,7 +920,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     image_data: jbyteArray,
     repetition: jint,
 ) -> jlong {
-    
     unsafe {
         if context == 0 {
             return 0;
@@ -954,7 +952,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     height: jint,
     repetition: jint,
 ) -> jlong {
-    
     unsafe {
         if context == 0 {
             return 0;
@@ -979,6 +976,45 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithBitmap(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    bitmap: JObject,
+    repetition: jint,
+) -> jlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+
+
+        let bm = AndroidBitmap::from_jni(env.get_native_interface(), bitmap.into_raw());
+
+        return match (bm.get_info(), bm.lock_pixels()) {
+            (Ok(bitmap_info), Ok(pixels)) => {
+                let length = (bitmap_info.height() * bitmap_info.stride()) as usize;
+                let slice: &mut [u8] =
+                    std::slice::from_raw_parts_mut(pixels as *mut u8, length as usize);
+
+                let mut ret = 0;
+                if let Some(image) = from_image_slice(slice, bitmap_info.width() as i32, bitmap_info.height() as i32) {
+                    ret = Box::into_raw(Box::new(PaintStyle::Pattern(
+                        context.create_pattern(image, Repetition::from(repetition)),
+                    ))) as jlong;
+                }
+                let _ = bm.unlock_pixels();
+                return ret;
+            }
+            (_, _) => 0
+        };
+    }
+}
+
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreatePatternWithAsset(
     _: JNIEnv,
     _: JClass,
@@ -997,9 +1033,9 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         let context = &mut *context;
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
+        let bytes = asset.get_bytes().unwrap_or_default();
         if let Some(image) = from_image_slice(
-            bytes.as_slice(),
+            bytes,
             asset.width() as i32,
             asset.height() as i32,
         ) {
@@ -1035,6 +1071,27 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     }
 }
 
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeCreateConicGradient(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    start_angle: jfloat,
+    x: jfloat,
+    y: jfloat,
+) -> jlong {
+    unsafe {
+        if context == 0 {
+            return 0;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        Box::into_raw(Box::new(PaintStyle::Gradient(
+            context.create_conic_gradient(start_angle, x, y),
+        ))) as jlong
+    }
+}
+
 fn draw_image(
     context: jlong,
     image_data: &[u8],
@@ -1065,6 +1122,34 @@ fn draw_image(
     }
 }
 
+fn draw_image_with_image(
+    context: jlong,
+    image: Option<&skia_safe::image::Image>,
+    sx: jfloat,
+    sy: jfloat,
+    s_width: jfloat,
+    s_height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+    d_width: jfloat,
+    d_height: jfloat,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        if let Some(image) = image {
+            context.draw_image(
+                image,
+                Rect::from_xywh(sx, sy, s_width, s_height),
+                Rect::from_xywh(dx, dy, d_width, d_height),
+            )
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeDrawImageDxDyWithBitmap(
     env: JNIEnv,
@@ -1076,21 +1161,22 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     dx: jfloat,
     dy: jfloat,
 ) {
-    let bytes = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap);
-    draw_image(
-        context,
-        bytes.0.as_slice(),
-        width,
-        height,
-        0.0,
-        0.0,
-        width,
-        height,
-        dx,
-        dy,
-        width,
-        height,
-    );
+    if let Some((bytes, _)) = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        draw_image(
+            context,
+            bytes.as_slice(),
+            width,
+            height,
+            0.0,
+            0.0,
+            width,
+            height,
+            dx,
+            dy,
+            width,
+            height,
+        );
+    }
 }
 
 #[no_mangle]
@@ -1133,23 +1219,38 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
-        draw_image(
-            context,
-            bytes.as_slice(),
-            width,
-            height,
-            0.0,
-            0.0,
-            width,
-            height,
-            dx,
-            dy,
-            width,
-            height,
-        );
+        if let Some(image) = asset.skia_image() {
+            draw_image_with_image(
+                context,
+                Some(&image),
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                width,
+                height,
+            );
+        } else {
+            let bytes = asset.get_bytes().unwrap_or_default();
+            draw_image(
+                context,
+                bytes,
+                width,
+                height,
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                width,
+                height,
+            );
+        }
     }
 }
 
@@ -1166,21 +1267,22 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     d_width: jfloat,
     d_height: jfloat,
 ) {
-    let bytes = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap);
-    draw_image(
-        context,
-        bytes.0.as_slice(),
-        width,
-        height,
-        0.0,
-        0.0,
-        width,
-        height,
-        dx,
-        dy,
-        d_width,
-        d_height,
-    )
+    if let Some((bytes, _)) = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        draw_image(
+            context,
+            bytes.as_slice(),
+            width,
+            height,
+            0.0,
+            0.0,
+            width,
+            height,
+            dx,
+            dy,
+            d_width,
+            d_height,
+        )
+    }
 }
 
 #[no_mangle]
@@ -1227,23 +1329,39 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
-        draw_image(
-            context,
-            bytes.as_slice(),
-            width,
-            height,
-            0.0,
-            0.0,
-            width,
-            height,
-            dx,
-            dy,
-            d_width,
-            d_height,
-        );
+
+        if let Some(image) = asset.skia_image() {
+            draw_image_with_image(
+                context,
+                Some(&image),
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        } else {
+            let bytes = asset.get_bytes().unwrap_or_default();
+            draw_image(
+                context,
+                bytes,
+                width,
+                height,
+                0.0,
+                0.0,
+                width,
+                height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        }
     }
 }
 
@@ -1264,21 +1382,22 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     d_width: jfloat,
     d_height: jfloat,
 ) {
-    let bytes = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap);
-    draw_image(
-        context,
-        bytes.0.as_slice(),
-        width,
-        height,
-        sx,
-        sy,
-        s_width,
-        s_height,
-        dx,
-        dy,
-        d_width,
-        d_height,
-    )
+    if let Some((bytes, _)) = crate::android::utils::image::get_bytes_from_bitmap(env, bitmap) {
+        draw_image(
+            context,
+            bytes.as_slice(),
+            width,
+            height,
+            sx,
+            sy,
+            s_width,
+            s_height,
+            dx,
+            dy,
+            d_width,
+            d_height,
+        )
+    }
 }
 
 #[no_mangle]
@@ -1302,23 +1421,38 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
     unsafe {
         let asset: *mut ImageAsset = asset as _;
         let asset = &mut *asset;
-        let bytes = asset.rgba_internal_bytes();
         let width = asset.width() as f32;
         let height = asset.height() as f32;
-        draw_image(
-            context,
-            bytes.as_slice(),
-            width,
-            height,
-            sx,
-            sy,
-            s_width,
-            s_height,
-            dx,
-            dy,
-            d_width,
-            d_height,
-        );
+        if let Some(image) = asset.skia_image() {
+            draw_image_with_image(
+                context,
+                Some(&image),
+                sx,
+                sy,
+                s_width,
+                s_height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        } else {
+            let bytes = asset.get_bytes().unwrap_or_default();
+            draw_image(
+                context,
+                bytes,
+                width,
+                height,
+                sx,
+                sy,
+                s_width,
+                s_height,
+                dx,
+                dy,
+                d_width,
+                d_height,
+            );
+        }
     }
 }
 
@@ -1681,6 +1815,32 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_
         context.rect(x, y, width, height)
     }
 }
+
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeRoundRect(
+    _: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+    y: jfloat,
+    width: jfloat,
+    height: jfloat,
+    top_left: jfloat,
+    top_right: jfloat,
+    bottom_right: jfloat,
+    bottom_left: jfloat,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut Context = context as _;
+        let context = &mut *context;
+        context.round_rect(x, y, width, height, [top_left, top_left, top_right, top_right, bottom_right, bottom_right, bottom_left, bottom_left])
+    }
+}
+
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvasRenderingContext2D_nativeResetTransform(

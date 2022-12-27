@@ -5,7 +5,9 @@ import android.opengl.GLES11Ext
 /**
  * Created by triniwiz on 5/1/20
  */
+
 object Constants {
+
 	@JvmField
 	var GL_RGBA16F_EXT = 0x881A
 	@JvmField

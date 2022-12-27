@@ -1,6 +1,12 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Rect
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.VectorDrawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import java.nio.ByteBuffer
@@ -55,6 +61,10 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		@JvmStatic
 		private val executor = Executors.newCachedThreadPool()
 
+		init {
+			TNSCanvas.loadLib()
+		}
+
 
 		@JvmStatic
 		fun createFromBuffer(
@@ -70,7 +80,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if(buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBufferSrcRect(
 						buffer,
 						imageWidth,
@@ -86,7 +96,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
+				} else {
 					asset = nativeCreateFromBytesSrcRect(
 						buffer.array(),
 						imageWidth,
@@ -125,7 +135,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if (buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBuffer(
 						buffer,
 						imageWidth,
@@ -137,7 +147,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
+				} else {
 					asset = nativeCreateFromBytes(
 						buffer.array(),
 						imageWidth,
@@ -173,7 +183,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if (buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBufferEncodedSrcRect(
 						buffer,
 						sx,
@@ -187,7 +197,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
+				} else {
 					asset = nativeCreateFromBytesEncodedSrcRect(
 						buffer.array(),
 						sx,
@@ -221,7 +231,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 		) {
 			executor.execute {
 				val asset: Long
-				if(buffer.isDirect){
+				if (buffer.isDirect) {
 					asset = nativeCreateFromBufferEncoded(
 						buffer,
 						options.flipY,
@@ -231,8 +241,8 @@ class TNSImageBitmap internal constructor(asset: Long) {
 						options.resizeWidth,
 						options.resizeHeight
 					)
-				}else {
-					 asset = nativeCreateFromBytesEncoded(
+				} else {
+					asset = nativeCreateFromBytesEncoded(
 						buffer.array(),
 						options.flipY,
 						options.premultiplyAlpha.toNative(),
@@ -260,7 +270,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			callback: Callback
 		) {
 			executor.execute {
-				val result = nativeCreateFromAsset(
+				val result = nativeCreateFromImageData(
 					imageData.nativeImageData,
 					options.flipY,
 					options.premultiplyAlpha.toNative(),
@@ -291,7 +301,7 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			callback: Callback
 		) {
 			executor.execute {
-				val result = nativeCreateFromAssetSrcRect(
+				val result = nativeCreateFromImageDataSrcRect(
 					imageData.nativeImageData,
 					sx, sy, sWidth, sHeight,
 					options.flipY,
@@ -691,6 +701,69 @@ class TNSImageBitmap internal constructor(asset: Long) {
 
 
 		@JvmStatic
+		fun createFromDrawable(
+			drawable: Drawable,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+				val bitmap = Helpers.getBitmap(drawable)
+				val result = nativeCreateFromBitmap(
+					bitmap,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result != 0L) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+		@JvmStatic
+		fun createFromDrawable(
+			drawable: Drawable,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			options: Options,
+			callback: Callback
+		) {
+			executor.execute {
+
+				val bitmap = Helpers.getBitmap(drawable)
+				val result = nativeCreateFromBitmapSrcRect(
+					bitmap,
+					sx, sy, sWidth, sHeight,
+					options.flipY,
+					options.premultiplyAlpha.toNative(),
+					options.colorSpaceConversion.toNative(),
+					options.resizeQuality.toNative(),
+					options.resizeWidth,
+					options.resizeHeight
+				)
+
+				handler.post {
+					if (result != 0L) {
+						callback.onSuccess(TNSImageBitmap(result))
+					} else {
+						callback.onError(FAILED_TO_LOAD)
+					}
+				}
+			}
+		}
+
+
+		@JvmStatic
 		private external fun nativeCreateFromBitmap(
 			bitmap: Bitmap,
 			flipY: Boolean,
@@ -715,6 +788,32 @@ class TNSImageBitmap internal constructor(asset: Long) {
 			resizeQuality: Int,
 			resizeWidth: Float,
 			resizeHeight: Float
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromImageData(
+			imageData: Long,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
+		): Long
+
+		@JvmStatic
+		private external fun nativeCreateFromImageDataSrcRect(
+			imageData: Long,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			flipY: Boolean,
+			premultiplyAlpha: Int,
+			colorSpaceConversion: Int,
+			resizeQuality: Int,
+			resizeWidth: Float,
+			resizeHeight: Float,
 		): Long
 
 		@JvmStatic

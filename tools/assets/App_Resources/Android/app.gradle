@@ -1,15 +1,23 @@
-// Add your native dependencies here:
+repositories {
+  mavenCentral()
+  maven {
+    url 'https://maven.google.com/'
+    name 'Google'
+  }
+  maven { url "https://repo1.maven.org/maven2/" }
+  google()
+}
 
-// Uncomment to add recyclerview-v7 dependency
-//dependencies {
-//	compile 'com.android.support:recyclerview-v7:+'
-//}
+dependencies {
+  releaseImplementation 'jp.wasabeef:takt-no-op:2.1.1'
+  debugImplementation 'jp.wasabeef:takt:2.1.1'
+}
 
 android {
-  compileSdkVersion 31
+  compileSdkVersion 33
   defaultConfig {
     minSdkVersion 21
-    targetSdkVersion 31
+    targetSdkVersion 33
     generatedDensities = []
   }
   aaptOptions {

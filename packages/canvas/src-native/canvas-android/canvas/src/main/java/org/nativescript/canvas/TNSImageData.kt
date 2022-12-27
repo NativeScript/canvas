@@ -6,7 +6,7 @@ import java.nio.ByteBuffer
  * Created by triniwiz on 2019-08-04
  */
 class TNSImageData(val width: Int, val height: Int, internal var nativeImageData: Long) {
-	internal var dataStore: ByteBuffer? = null
+	private var dataStore: ByteBuffer? = null
 
 	init {
 		if (nativeImageData == -1L) {

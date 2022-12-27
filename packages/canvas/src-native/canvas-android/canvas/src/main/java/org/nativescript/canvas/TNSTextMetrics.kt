@@ -3,7 +3,10 @@ package org.nativescript.canvas
 /**
  * Created by triniwiz on 2019-07-10
  */
-class TNSTextMetrics internal constructor(private var metrics: Long) {
+
+//@JvmInline
+//value
+class TNSTextMetrics internal constructor(private val metrics: Long) {
 	val width: Float
 		get() = nativeGetWidth(metrics)
 	val actualBoundingBoxLeft: Float
@@ -33,7 +36,6 @@ class TNSTextMetrics internal constructor(private var metrics: Long) {
 	@Throws(Throwable::class)
 	protected fun finalize() {
 		nativeDestroy(metrics)
-		metrics = 0
 	}
 
 	companion object {

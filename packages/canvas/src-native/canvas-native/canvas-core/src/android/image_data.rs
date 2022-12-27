@@ -1,5 +1,5 @@
 use jni::JNIEnv;
-use jni::objects::JClass;
+use jni::objects::{JClass};
 use jni::sys::{jint, jlong, jobject};
 
 use crate::common::context::pixel_manipulation::image_data::ImageData;
@@ -54,17 +54,16 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSImageData_nativeData(
 ) -> jobject {
     if image_data == 0 {
         let mut slice = [0u8; 0];
-        return env.new_direct_byte_buffer(&mut slice).unwrap().into_inner();
+        unsafe { return env.new_direct_byte_buffer(slice.as_mut_ptr(), slice.len()).unwrap().into_raw(); }
     }
     unsafe {
         let image_data: *mut ImageData = image_data as _;
         let image_data = &mut *image_data;
-        let slice = std::slice::from_raw_parts_mut(image_data.data, image_data.data_len);
-        if let Ok(image_data) = env.new_direct_byte_buffer(slice) {
-            return image_data.into_inner();
+        if let Ok(image_data) = env.new_direct_byte_buffer(image_data.data, image_data.data_len) {
+            return image_data.into_raw();
         }
         let mut slice = [0u8; 0];
-        env.new_direct_byte_buffer(&mut slice).unwrap().into_inner()
+        env.new_direct_byte_buffer(slice.as_mut_ptr(), slice.len()).unwrap().into_raw()
     }
 }
 

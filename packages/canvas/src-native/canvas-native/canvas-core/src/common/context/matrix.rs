@@ -5,7 +5,7 @@ use skia_safe::M44;
 
 #[derive(Clone)]
 pub struct Matrix {
-    pub(crate) matrix: skia_safe::M44,
+    pub(crate) matrix: M44,
 }
 
 impl Default for Matrix {
@@ -110,7 +110,13 @@ impl IndexMut<Member2DName> for [f32] {
 impl Matrix {
     pub fn new() -> Self {
         Self {
-            matrix: skia_safe::M44::new_identity(),
+            matrix: M44::new_identity(),
+        }
+    }
+
+    pub(crate) fn scale((sx, sy): (f32, f32)) -> Matrix {
+        Self {
+            matrix: M44::from(skia_safe::Matrix::scale((sx, sy)))
         }
     }
 

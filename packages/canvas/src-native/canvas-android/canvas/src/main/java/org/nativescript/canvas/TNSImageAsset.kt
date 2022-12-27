@@ -3,9 +3,16 @@ package org.nativescript.canvas
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.VectorDrawable
+import android.os.Build
+import androidx.core.content.res.ResourcesCompat
 import java.io.ByteArrayOutputStream
 import java.net.URL
+import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -90,31 +97,30 @@ class TNSImageAsset {
 
 	fun loadImageFromResource(id: Int, context: Context): Boolean {
 		try {
-			val drawable =
-				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-					context.resources.getDrawable(id, null)
-				} else {
-					context.resources.getDrawable(id)
-				}
 
-			return loadImageFromImage(
-				(drawable as? BitmapDrawable)?.bitmap ?: run {
-					val bitmap = Bitmap.createBitmap(
-						drawable.intrinsicWidth,
-						drawable.intrinsicHeight,
-						Bitmap.Config.ARGB_8888
-					)
-					val canvas = Canvas(bitmap)
-					drawable.draw(canvas)
-					bitmap
-				}
-			)
+			val drawable = ResourcesCompat.getDrawable(context.resources, id, null)!!
+			return (drawable as? BitmapDrawable)?.let {
+				return loadImageFromImage(it.bitmap)
+			} ?: run {
+				return loadImageFromImage(drawable)
+			}
 		} catch (e: Exception) {
 			hasResourceError = true
 			resourceError = e.toString()
 		}
 
 		return !hasResourceError
+	}
+
+	fun loadImageFromResourceAsync(id: Int, context: Context, callback: Callback) {
+		executorService.submit {
+			val done = loadImageFromResource(id, context)
+			if (done) {
+				callback.onSuccess(true)
+			} else {
+				callback.onError(error)
+			}
+		}
 	}
 
 	fun loadImageFromPath(path: String): Boolean {
@@ -152,7 +158,6 @@ class TNSImageAsset {
 		}
 		return result
 	}
-
 
 	fun loadImageFromUrlAsync(url: String, callback: Callback) {
 		resourceError = null
@@ -195,6 +200,22 @@ class TNSImageAsset {
 		} else nativeLoadAssetBytes(nativeImageAsset, buffer)
 	}
 
+	fun loadImageFromBufferAsync(buffer: ByteBuffer, callback: Callback) {
+		executorService.submit {
+			if (nativeLoadAssetBuffer(nativeImageAsset, buffer)) {
+				callback.onSuccess(true)
+			} else {
+				callback.onError(error)
+			}
+		}
+	}
+
+	fun loadImageFromBuffer(buffer: ByteBuffer): Boolean {
+		return if (nativeImageAsset == 0L) {
+			false
+		} else nativeLoadAssetBuffer(nativeImageAsset, buffer)
+	}
+
 	fun loadImageFromBytesAsync(buffer: ByteArray, callback: Callback) {
 		executorService.submit {
 			if (nativeLoadAssetBytes(nativeImageAsset, buffer)) {
@@ -209,16 +230,56 @@ class TNSImageAsset {
 		if (nativeImageAsset == 0L) {
 			return false
 		}
-		val os = ByteArrayOutputStream()
-		bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
-		return loadImageFromBytes(os.toByteArray())
+		return nativeLoadAssetBitmap(nativeImageAsset, bitmap)
 	}
 
 	fun loadImageFromImageAsync(bitmap: Bitmap, callback: Callback) {
 		executorService.submit {
-			val os = ByteArrayOutputStream()
-			bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
-			if (loadImageFromBytes(os.toByteArray())) {
+			if (loadImageFromImage(bitmap)) {
+				callback.onSuccess(true)
+			} else {
+				callback.onError(error)
+			}
+		}
+	}
+
+	fun loadImageFromImage(drawable: Drawable): Boolean {
+		if (nativeImageAsset == 0L) {
+			return false
+		}
+
+		val bitmap = (drawable as? BitmapDrawable)?.bitmap ?: run {
+			val bitmap = Bitmap.createBitmap(
+				drawable.intrinsicWidth,
+				drawable.intrinsicHeight,
+				Bitmap.Config.ARGB_8888
+			)
+			val canvas = Canvas(bitmap)
+			var previousBounds: Rect? = null
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				(drawable as? VectorDrawable)?.let {
+					previousBounds = drawable.bounds
+					drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+				}
+			}
+
+			drawable.draw(canvas)
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+				previousBounds?.let {
+					drawable.bounds = it
+				}
+			}
+
+			bitmap
+		}
+
+		return nativeLoadAssetBitmap(nativeImageAsset, bitmap)
+	}
+
+	fun loadImageFromImageAsync(drawable: Drawable, callback: Callback) {
+		executorService.submit {
+			if (loadImageFromImage(drawable)) {
 				callback.onSuccess(true)
 			} else {
 				callback.onError(error)
@@ -272,6 +333,7 @@ class TNSImageAsset {
 		@JvmStatic
 		private external fun nativeFlipY(asset: Long): Boolean
 
+
 		@JvmStatic
 		private external fun nativeGetBytes(asset: Long): ByteArray
 
@@ -292,6 +354,12 @@ class TNSImageAsset {
 
 		@JvmStatic
 		private external fun nativeLoadAssetBytes(asset: Long, buffer: ByteArray): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadAssetBuffer(asset: Long, buffer: ByteBuffer): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadAssetBitmap(asset: Long, bitmap: Bitmap): Boolean
 
 		@JvmStatic
 		private external fun nativeDestroy(asset: Long)

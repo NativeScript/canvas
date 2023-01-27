@@ -1,4 +1,6 @@
 {
+	"name": "canvas-media",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
 	"sourceRoot": "packages/canvas-media",
 	"projectType": "library",
 	"generators": {},
@@ -39,12 +41,12 @@
 			]
 		},
 		"build.all": {
-			"outputs": ["dist/packages/canvas-media"],
+			"outputs": ["{workspaceRoot}/dist/packages/canvas-media"],
 			"options": {
 				"commands": ["node tools/scripts/build-finish.ts canvas-media"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands",
+			"executor": "nx:run-commands",
 			"dependsOn": [
 				{
 					"target": "build.all",
@@ -61,7 +63,7 @@
 				"commands": ["nx workspace-schematic focus-packages canvas-media"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"lint": {
 			"executor": "@nrwl/linter:eslint",

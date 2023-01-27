@@ -1,5 +1,5 @@
 {
-	"main": "./app/app.ts",
+	"main": "./app/app.js",
 	"dependencies": {
 		"nativescript-vue": "file:../../node_modules/nativescript-vue",
 		"@nativescript/core": "file:../../node_modules/@nativescript/core",
@@ -13,7 +13,7 @@
 		"@nativescript/canvas-three": "file:../../packages/canvas-three"
 	},
 	"devDependencies": {
-		"@nativescript/android": "~8.2.0",
-		"@nativescript/ios": "~8.2.0"
+		"@nativescript/android": "~8.4.0",
+		"@nativescript/ios": "~8.4.0"
 	}
 }

@@ -16,5 +16,6 @@
 			"@nativescript/canvas-three": ["../../packages/canvas-three/index.ts"],
 			"@nativescript/canvas-media": ["../../packages/canvas-media/index.ts"]
 		}
-	}
+	},
+	"include": ["../../packages/**/*.ios.ts", "../../packages/**/*.android.ts"]
 }

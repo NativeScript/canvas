@@ -1,4 +1,6 @@
 {
+	"name": "canvas-pixi",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
 	"sourceRoot": "packages/canvas-pixi",
 	"projectType": "library",
 	"generators": {},
@@ -29,12 +31,12 @@
 			]
 		},
 		"build.all": {
-			"outputs": ["dist/packages/canvas-pixi"],
+			"outputs": ["{workspaceRoot}/dist/packages/canvas-pixi"],
 			"options": {
 				"commands": ["node tools/scripts/build-finish.ts canvas-pixi"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands",
+			"executor": "nx:run-commands",
 			"dependsOn": [
 				{
 					"target": "build.all",
@@ -51,7 +53,7 @@
 				"commands": ["nx workspace-schematic focus-packages canvas-pixi"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"lint": {
 			"executor": "@nrwl/linter:eslint",

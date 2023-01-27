@@ -1,0 +1,20 @@
+{
+  "migrations": [
+    {
+      "cli": "nx",
+      "version": "4.1.0",
+      "description": "Migrate tools to 4.1.0",
+      "implementation": "./src/migrations/update-4-1-0/update-4-1-0",
+      "package": "@nativescript/plugin-tools",
+      "name": "update-to-4.1.0"
+    },
+    {
+      "cli": "nx",
+      "version": "5.0.2",
+      "description": "Migrate tools to 5.0.0",
+      "implementation": "./src/migrations/update-5-0-0/update-5-0-0",
+      "package": "@nativescript/plugin-tools",
+      "name": "update-to-5.0.2"
+    }
+  ]
+}

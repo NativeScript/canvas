@@ -12,5 +12,6 @@
 		"demo": "apps/demo",
 		"demo-angular": "apps/demo-angular",
 		"demo-vue": "apps/demo-vue"
-	}
+	},
+	"$schema": "./node_modules/nx/schemas/workspace-schema.json"
 }

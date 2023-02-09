@@ -1,28 +1,26 @@
-use android_logger::Config;
-use jni::{JNIEnv, objects::GlobalRef};
-use jni::objects::{JClass, JMethodID, JObject, JStaticMethodID, JString, JValue};
-use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
+use std::collections::HashMap;
+use std::ffi::c_void;
+
 use log::Level;
+use parking_lot::RwLock;
 use skia_safe::{
     AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, ISize, PixelGeometry, Rect, Surface,
 };
 use skia_safe::gpu::gl::Interface;
 
-use std::ffi::c_void;
-
+use android_logger::Config;
+use jni::{JNIEnv, objects::GlobalRef};
 use jni::JavaVM;
+use jni::objects::{JClass, JMethodID, JObject, JStaticMethodID, JString, JValue};
+use jni::signature::{JavaType, Primitive, ReturnType};
+use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jstring};
+use once_cell::sync::OnceCell;
 
+use crate::common::{image_to_data_url, to_data_url};
 use crate::common::context::{Context, Device, State};
+use crate::common::context::filter_quality::FilterQuality::Low;
 use crate::common::context::paths::path::Path;
 use crate::common::context::text_styles::text_direction::TextDirection;
-use crate::common::{image_to_data_url, to_data_url};
-
-use once_cell::sync::OnceCell;
-use parking_lot::RwLock;
-
-use std::collections::HashMap;
-use jni::signature::{Primitive, ReturnType};
-
 
 pub mod context;
 pub mod gl;
@@ -249,6 +247,11 @@ pub(crate) static COLOR_STYLE_REF_SIG_OBJECT_CTOR: &str = "(JI)V";
 
 pub(crate) const COLOR_STYLE_REF_CTOR: &str = "org_nativescript_canvas_TNSColorStyleRef_ctor";
 
+
+pub(crate) const BUILD_VERSION_CLASS: &str = "android/os/Build$VERSION";
+
+pub static API_LEVEL: OnceCell<i32> = OnceCell::new();
+
 pub fn find_class(name: &str) -> Option<JClass> {
     JVM_CLASS_CACHE.get().map_or(None, |c| {
         unsafe {
@@ -307,6 +310,22 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
     }
 
     if let Ok(env) = vm.get_env() {
+
+        API_LEVEL.get_or_init(|| {
+            let clazz = env.find_class(BUILD_VERSION_CLASS).unwrap();
+
+            let sdk_int_id = env.get_static_field_id(
+                clazz, "SDK_INT", "I",
+            ).unwrap();
+
+            let sdk_int = env.get_static_field_unchecked(
+                clazz, sdk_int_id, JavaType::Primitive(jni::signature::Primitive::Int)
+            );
+
+            sdk_int.unwrap().i().unwrap()
+        });
+
+
         SURFACE_TEXTURE.get_or_init(|| {
             SurfaceTexture::new()
         });

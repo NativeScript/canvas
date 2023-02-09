@@ -160,7 +160,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
 
     gl_bindings::glEnableVertexAttribArray(pos as u32);
 
-    let api = unsafe { super::android_get_device_api_level() };
+    let api = *crate::android::API_LEVEL.get().unwrap();
 
     if api >= 28 {
         let jni_st = crate::android::SURFACE_TEXTURE.get().unwrap();

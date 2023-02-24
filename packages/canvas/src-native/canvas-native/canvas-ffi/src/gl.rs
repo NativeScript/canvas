@@ -38,7 +38,7 @@ pub extern "C" fn canvas_native_gl_tex_image_2D_asset(
                 height as usize,
             );
         }
-        gl_bindings::glTexImage2D(
+        gl_bindings::TexImage2D(
             target,
             level,
             internalformat,
@@ -87,7 +87,7 @@ pub extern "C" fn canvas_native_gl_tex_sub_image_2D_asset(
                 height as usize,
             );
         }
-        gl_bindings::glTexSubImage2D(
+        gl_bindings::TexSubImage2D(
             target,
             level,
             xoffset,
@@ -139,7 +139,7 @@ pub extern "C" fn canvas_native_gl_tex_image_3D_asset(
                 depth as usize,
             );
         }
-        gl_bindings::glTexImage3D(
+        gl_bindings::TexImage3D(
             target,
             level,
             internalformat,
@@ -193,7 +193,7 @@ pub extern "C" fn canvas_native_gl_tex_sub_image_3D_asset(
                 depth as usize,
             );
         }
-        gl_bindings::glTexSubImage3D(
+        gl_bindings::TexSubImage3D(
             target,
             level,
             xoffset,
@@ -219,7 +219,7 @@ pub unsafe extern "C" fn canvas_native_gl_vertex_attrib_pointer(
     stride: c_int,
     offset: c_longlong,
 ) {
-    gl_bindings::glVertexAttribPointer(
+    gl_bindings::VertexAttribPointer(
         index,
         size,
         pointer_type,
@@ -236,6 +236,6 @@ pub unsafe extern "C" fn canvas_native_gl_get_vertex_attrib_offset(
 ) -> c_longlong {
     let mut buf = [0i64; 1];
     let ptr_ptr: *mut *mut c_void = buf.as_mut_ptr() as *mut _;
-    gl_bindings::glGetVertexAttribPointerv(index, pname, ptr_ptr);
+    gl_bindings::GetVertexAttribPointerv(index, pname, ptr_ptr);
     buf[0]
 }

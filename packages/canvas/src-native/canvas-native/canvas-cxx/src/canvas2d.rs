@@ -17,7 +17,7 @@ use canvas_2d::context::compositing::composite_operation_type::CompositeOperatio
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
-use canvas_2d::context::image_asset::OutputFormat;
+use canvas_core::image_asset::OutputFormat;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
@@ -25,7 +25,6 @@ use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::gl::GLContext;
-use canvas_2d::image_asset::OutputFormat;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy,
@@ -50,12 +49,12 @@ pub fn str_to_buf(value: &str) -> Vec<u8> {
 
 /* TextEncoder */
 #[derive(Clone)]
-pub struct TextEncoder(canvas_core::context::text_encoder::TextEncoder);
+pub struct TextEncoder(canvas_2d::context::text_encoder::TextEncoder);
 /* TextEncoder */
 
 /* TextDecoder */
 #[derive(Clone)]
-pub struct TextDecoder(canvas_core::context::text_decoder::TextDecoder);
+pub struct TextDecoder(canvas_2d::context::text_decoder::TextDecoder);
 /* TextDecoder */
 
 /* CanvasRenderingContext2D */
@@ -111,13 +110,13 @@ impl PaintStyle {
     pub fn style_type(&self) -> ffi::PaintStyleType {
         if let Some(style) = self.0.as_ref() {
             return match style {
-                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
                     ffi::PaintStyleType::Color
                 }
-                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
                     ffi::PaintStyleType::Gradient
                 }
-                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
                     ffi::PaintStyleType::Pattern
                 }
             };
@@ -127,7 +126,7 @@ impl PaintStyle {
 }
 
 #[derive(Clone, Copy)]
-pub struct TextMetrics(canvas_core::context::drawing_text::text_metrics::TextMetrics);
+pub struct TextMetrics(canvas_2d::context::drawing_text::text_metrics::TextMetrics);
 
 #[cxx::bridge]
 pub(crate) mod ffi {
@@ -432,7 +431,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_image_asset_shared_clone(asset: &ImageAsset) -> Box<ImageAsset>;
 
-        fn canvas_native_image_asset_get_size(asset: &ImageAsset) -> usize;
+        //fn canvas_native_image_asset_get_size(asset: &ImageAsset) -> usize;
 
         fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &str) -> bool;
 
@@ -1233,12 +1232,12 @@ fn canvas_native_context_create_with_current(
     alpha: bool,
 ) -> Box<CanvasRenderingContext2D> {
     unsafe {
-        gl_bindings::glViewport(0, 0, width as i32, height as i32);
+        gl_bindings::Viewport(0, 0, width as i32, height as i32);
     }
     let mut frame_buffers = [0];
     unsafe {
-        gl_bindings::glGetIntegerv(
-            gl_bindings::GL_FRAMEBUFFER_BINDING,
+        gl_bindings::GetIntegerv(
+            gl_bindings::FRAMEBUFFER_BINDING,
             frame_buffers.as_mut_ptr(),
         )
     };
@@ -1340,7 +1339,7 @@ pub fn canvas_native_context_create_gl_no_window(
     let mut buffer_id = [0i32];
 
     unsafe {
-        gl_bindings::glGetIntegerv(gl_bindings::GL_FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr())
+        gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr())
     }
 
     let gl_context = GLContext::get_current();
@@ -1634,7 +1633,7 @@ pub fn canvas_native_paint_style_set_stroke_color_with_rgba(
     b: u8,
     a: u8,
 ) {
-    canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_rgba(
+    canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_rgba(
         &mut context.context,
         false,
         r,
@@ -1652,7 +1651,7 @@ pub fn canvas_native_paint_style_set_fill_color_with_rgba(
     b: u8,
     a: u8,
 ) {
-    canvas_core::context::fill_and_stroke_styles::paint::paint_style_set_color_with_rgba(
+    canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_rgba(
         &mut context.context,
         true,
         r,
@@ -1677,8 +1676,8 @@ pub fn canvas_native_parse_css_color_rgba(
 pub fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String {
     if let Some(color) = color.0.as_ref() {
         return match color {
-            canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(color) => {
-                to_parsed_color(*color)
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(color) => {
+                to_parsed_color(color.clone())
             }
             _ => String::new(),
         };
@@ -1691,13 +1690,13 @@ fn canvas_native_paint_style_get_current_stroke_color_string(
 ) -> String {
     let lock = context.get_context();
     match lock.stroke_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke)
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             String::with_capacity(0)
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             String::with_capacity(0)
         }
     }
@@ -1708,13 +1707,13 @@ fn canvas_native_paint_style_get_current_stroke_color_buf(
 ) -> Vec<u8> {
     let lock = context.get_context();
     match lock.stroke_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke).into_bytes()
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             Vec::with_capacity(0)
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             Vec::with_capacity(0)
         }
     }
@@ -1729,14 +1728,14 @@ fn canvas_native_paint_style_get_current_stroke_color_r_g_b_a(
 ) {
     let lock = context.get_context();
     match lock.stroke_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             *r = stroke.r();
             *g = stroke.g();
             *b = stroke.b();
             *a = stroke.a();
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
     }
 }
 
@@ -1749,14 +1748,14 @@ fn canvas_native_paint_style_get_current_fill_color_r_g_b_a(
 ) {
     let lock = context.get_context();
     match lock.fill_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             *r = stroke.r();
             *g = stroke.g();
             *b = stroke.b();
             *a = stroke.a();
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
     }
 }
 
@@ -1765,13 +1764,13 @@ fn canvas_native_paint_style_get_current_fill_color_string(
 ) -> String {
     let lock = context.get_context();
     match lock.fill_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke)
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             String::with_capacity(0)
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             String::with_capacity(0)
         }
     }
@@ -1782,13 +1781,13 @@ fn canvas_native_paint_style_get_current_fill_color_buf(
 ) -> Vec<u8> {
     let lock = context.get_context();
     match lock.fill_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke).into_bytes()
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             Vec::with_capacity(0)
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             Vec::with_capacity(0)
         }
     }
@@ -1803,13 +1802,13 @@ pub fn canvas_native_context_get_current_fill_style_type(
 ) -> ffi::PaintStyleType {
     let lock = context.get_context();
     return match lock.fill_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
             ffi::PaintStyleType::Color
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             ffi::PaintStyleType::Gradient
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             ffi::PaintStyleType::Pattern
         }
     };
@@ -1820,13 +1819,13 @@ pub fn canvas_native_context_get_current_stroke_style_type(
 ) -> ffi::PaintStyleType {
     let lock = context.get_context();
     return match lock.fill_style() {
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
             ffi::PaintStyleType::Color
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             ffi::PaintStyleType::Gradient
         }
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             ffi::PaintStyleType::Pattern
         }
     };
@@ -1989,7 +1988,7 @@ pub fn canvas_native_context_create_linear_gradient(
     y1: f32,
 ) -> Box<PaintStyle> {
     Box::new(PaintStyle(Some(
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
             context.get_context().create_linear_gradient(x0, y0, x1, y1),
         ),
     )))
@@ -2006,7 +2005,7 @@ pub fn canvas_native_context_create_pattern(
         None,
         |repetition| {
             from_image_slice(data, width, height).map(|image| {
-                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
             })
@@ -2026,7 +2025,7 @@ pub fn canvas_native_context_create_pattern_asset(
                 None,
                 |repetition| {
                     from_image_slice(bytes, asset.width() as i32, asset.height() as i32).map(|image| {
-                        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                             context.get_context().create_pattern(image, repetition),
                         )
                     })
@@ -2037,7 +2036,7 @@ pub fn canvas_native_context_create_pattern_asset(
                 None,
                 |repetition| {
                     from_bitmap_slice(bytes, asset.width() as i32, asset.height() as i32).map(|image| {
-                        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                             context.get_context().create_pattern(image, repetition),
                         )
                     })
@@ -2071,7 +2070,7 @@ fn canvas_native_context_create_pattern_bytes(
             }
             if let Some(bytes) = bm.0.data_mut() {
                 return from_image_slice(bytes, width as i32, height as i32).map(|image| {
-                    canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                    canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                         context.get_context().create_pattern(image, repetition),
                     )
                 });
@@ -2090,7 +2089,7 @@ pub fn canvas_native_context_create_pattern_encoded(
         None,
         |repetition| {
             from_image_slice_encoded(data).map(|image| {
-                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
             })
@@ -2127,15 +2126,15 @@ pub fn canvas_native_context_create_pattern_canvas2d(
                 /*   buf = vec![0u8; (width as i32 * height as i32 * 4) as usize];
 
                 unsafe {
-                    gl_bindings::glPixelStorei(gl_bindings::GL_UNPACK_ALIGNMENT, 1);
-                    //   gl_bindings::glFinish();
-                    gl_bindings::glReadPixels(
+                    gl_bindings::PixelStorei(gl_bindings::GL_UNPACK_ALIGNMENT, 1);
+                    //   gl_bindings::Finish();
+                    gl_bindings::ReadPixels(
                         0,
                         0,
                         width as i32,
                         height as i32,
-                        gl_bindings::GL_RGBA,
-                        gl_bindings::GL_UNSIGNED_BYTE,
+                        gl_bindings::RGBA,
+                        gl_bindings::UNSIGNED_BYTE,
                         buf.as_mut_ptr() as *mut c_void,
                     );
                 }
@@ -2144,7 +2143,7 @@ pub fn canvas_native_context_create_pattern_canvas2d(
                 // todo use gpu image created from snapshot ... need single or shared context or transfer to a texture
                 return if let Some(data) = source_ctx.read_pixels_to_encoded_data() {
                     to_image_encoded_from_data(data).map(|image| {
-                        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                             context.get_context().create_pattern(image, repetition),
                         )
                     })
@@ -2168,7 +2167,7 @@ pub fn canvas_native_context_create_pattern_canvas2d(
             }
 
             from_image_slice(buf.as_slice(), width as i32, height as i32).map(|image| {
-                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
             })
@@ -2193,21 +2192,21 @@ pub fn canvas_native_context_create_pattern_webgl(
             let mut buf = vec![0u8; (width * height * 4) as usize];
 
             unsafe {
-                gl_bindings::glFinish();
-                gl_bindings::glReadPixels(
+                gl_bindings::Finish();
+                gl_bindings::ReadPixels(
                     0,
                     0,
                     width,
                     height,
-                    gl_bindings::GL_RGBA,
-                    gl_bindings::GL_UNSIGNED_BYTE,
+                    gl_bindings::RGBA,
+                    gl_bindings::UNSIGNED_BYTE,
                     buf.as_mut_ptr() as *mut c_void,
                 );
             }
 
             context.make_current();
             from_image_slice(buf.as_slice(), width, height).map(|image| {
-                canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
             })
@@ -2225,7 +2224,7 @@ pub fn canvas_native_context_create_radial_gradient(
     r1: f32,
 ) -> Box<PaintStyle> {
     Box::new(PaintStyle(Some(
-        canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
             context
                 .get_context()
                 .create_radial_gradient(x0, y0, r0, x1, y1, r1),
@@ -2483,7 +2482,7 @@ pub fn canvas_native_context_get_image_data(
 
 pub fn canvas_native_context_get_transform(context: &mut CanvasRenderingContext2D) -> Box<Matrix> {
     context.make_current();
-    Box::new(Matrix(canvas_core::context::matrix::Matrix::from(
+    Box::new(Matrix(canvas_2d::context::matrix::Matrix::from(
         context.get_context_mut().get_transform(),
     )))
 }
@@ -2879,7 +2878,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
 
 /* Path2D */
 #[derive(Clone)]
-pub struct Path(canvas_core::context::paths::path::Path);
+pub struct Path(canvas_2d::context::paths::path::Path);
 
 impl Default for Path {
     fn default() -> Self {
@@ -2888,11 +2887,11 @@ impl Default for Path {
 }
 
 impl Path {
-    pub(crate) fn inner(&self) -> &canvas_core::context::paths::path::Path {
+    pub(crate) fn inner(&self) -> &canvas_2d::context::paths::path::Path {
         &self.0
     }
 
-    pub(crate) fn inner_mut(&mut self) -> &mut canvas_core::context::paths::path::Path {
+    pub(crate) fn inner_mut(&mut self) -> &mut canvas_2d::context::paths::path::Path {
         &mut self.0
     }
 }
@@ -2913,14 +2912,14 @@ pub fn canvas_native_path_create_with_path(path: &Path) -> Box<Path> {
 
 #[inline(always)]
 pub fn canvas_native_path_create_with_string(string: String) -> Box<Path> {
-    Box::new(Path(canvas_core::context::paths::path::Path::from_str(
+    Box::new(Path(canvas_2d::context::paths::path::Path::from_str(
         string.as_str(),
     )))
 }
 
 #[inline(always)]
 pub fn canvas_native_path_create_with_str(string: &str) -> Box<Path> {
-    let path = Path(canvas_core::context::paths::path::Path::from_str(string));
+    let path = Path(canvas_2d::context::paths::path::Path::from_str(string));
     Box::new(path)
 }
 
@@ -3014,20 +3013,20 @@ pub fn canvas_native_path_to_string(path: &Path) -> String {
 
 /* DOMMatrix */
 #[derive(Clone)]
-pub struct Matrix(canvas_core::context::matrix::Matrix);
+pub struct Matrix(canvas_2d::context::matrix::Matrix);
 
 impl Matrix {
-    pub fn inner(&self) -> &canvas_core::context::matrix::Matrix {
+    pub fn inner(&self) -> &canvas_2d::context::matrix::Matrix {
         &self.0
     }
 
-    pub fn inner_mut(&mut self) -> &mut canvas_core::context::matrix::Matrix {
+    pub fn inner_mut(&mut self) -> &mut canvas_2d::context::matrix::Matrix {
         &mut self.0
     }
 }
 
 pub fn canvas_native_matrix_create() -> Box<Matrix> {
-    Box::new(Matrix(canvas_core::context::matrix::Matrix::new()))
+    Box::new(Matrix(canvas_2d::context::matrix::Matrix::new()))
 }
 
 pub fn canvas_native_matrix_update(matrix: &mut Matrix, slice: &[f32]) {
@@ -3216,22 +3215,22 @@ pub fn canvas_native_matrix_set_m44(matrix: &mut Matrix, m44: f32) {
 
 /* ImageData */
 #[derive(Clone)]
-pub struct ImageData(canvas_core::context::pixel_manipulation::image_data::ImageData);
+pub struct ImageData(canvas_2d::context::pixel_manipulation::image_data::ImageData);
 
 impl ImageData {
     pub(crate) fn new(
-        data: canvas_core::context::pixel_manipulation::image_data::ImageData,
+        data: canvas_2d::context::pixel_manipulation::image_data::ImageData,
     ) -> Self {
         ImageData(data)
     }
 
-    pub fn inner(&self) -> &canvas_core::context::pixel_manipulation::image_data::ImageData {
+    pub fn inner(&self) -> &canvas_2d::context::pixel_manipulation::image_data::ImageData {
         &self.0
     }
 }
 
 pub fn canvas_native_image_data_create(width: i32, height: i32) -> Box<ImageData> {
-    let data = canvas_core::context::pixel_manipulation::ImageData::new(width, height);
+    let data = canvas_2d::context::pixel_manipulation::ImageData::new(width, height);
     Box::new(ImageData::new(data))
 }
 
@@ -3282,13 +3281,13 @@ impl ImageAsset {
         self.0.save_path(path, format)
     }
 
-    pub fn size(&self) -> usize {
-        self.0.size()
-    }
+    // pub fn size(&self) -> usize {
+    //     self.0.size()
+    // }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
     where
-        R: Read + std::io::Seek,
+        R: Read + std::io::Seek + std::io::BufRead
     {
         self.0.load_from_reader(reader)
     }
@@ -3332,9 +3331,9 @@ pub fn canvas_native_image_asset_shared_clone(asset: &ImageAsset) -> Box<ImageAs
     Box::new(asset.clone())
 }
 
-fn canvas_native_image_asset_get_size(asset: &ImageAsset) -> usize {
-    asset.size()
-}
+// fn canvas_native_image_asset_get_size(asset: &ImageAsset) -> usize {
+//     asset.size()
+// }
 
 pub fn canvas_native_image_asset_load_from_path(asset: &mut ImageAsset, path: &str) -> bool {
     asset.load_from_path(path)
@@ -3349,7 +3348,7 @@ pub fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str
 }
 
 pub(crate) fn canvas_native_image_asset_load_from_url_internal(
-    asset: &mut canvas_core::context::image_asset::ImageAsset,
+    asset: &mut canvas_2d::context::image_asset::ImageAsset,
     url: &str,
 ) -> bool {
     use std::io::prelude::*;
@@ -3422,7 +3421,7 @@ pub fn canvas_native_image_asset_save_path(
 ) -> bool {
     asset.save_path(
         path,
-        canvas_core::context::image_asset::OutputFormat::from(format),
+        canvas_2d::context::image_asset::OutputFormat::from(format),
     )
 }
 
@@ -3509,7 +3508,7 @@ pub fn canvas_native_text_metrics_get_ideographic_baseline(metrics: &TextMetrics
 pub fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, color: &str) {
     if let Some(style) = style.0.as_mut() {
         match style {
-            canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
                 gradient.add_color_stop_str(stop, color)
             }
             _ => {}
@@ -3523,7 +3522,7 @@ pub fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, 
 fn canvas_native_pattern_set_transform(pattern: &mut PaintStyle, matrix: &Matrix) {
     if let Some(pattern) = pattern.0.as_mut() {
         match pattern {
-            canvas_core::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(pattern) => {
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(pattern) => {
                 pattern.set_pattern_transform(matrix.inner())
             }
             _ => {}
@@ -3536,7 +3535,7 @@ fn canvas_native_pattern_set_transform(pattern: &mut PaintStyle, matrix: &Matrix
 /* TextDecoder */
 pub fn canvas_native_text_decoder_create(decoding: &str) -> Box<TextDecoder> {
     Box::new(TextDecoder(
-        canvas_core::context::text_decoder::TextDecoder::new(Some(decoding)),
+        canvas_2d::context::text_decoder::TextDecoder::new(Some(decoding)),
     ))
 }
 
@@ -3552,7 +3551,7 @@ pub fn canvas_native_text_decoder_get_encoding(decoder: &mut TextDecoder) -> Str
 /* TextEncoder */
 pub fn canvas_native_text_encoder_create(encoding: &str) -> Box<TextEncoder> {
     Box::new(TextEncoder(
-        canvas_core::context::text_encoder::TextEncoder::new(Some(encoding)),
+        canvas_2d::context::text_encoder::TextEncoder::new(Some(encoding)),
     ))
 }
 

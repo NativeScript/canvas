@@ -17,6 +17,6 @@ cbindgen = "0.24.3"
 cxx = "1.0.73"
 gl-bindings = { path = "../gl-bindings" }
 canvas-core = { path = "../canvas-core" }
-canvas-2d = { path = "../canvas-2d", optional = true }
+canvas-2d = { path = "../canvas-2d", optional = true,  features = ["gl"] }
 canvas-webgl = { path = "../canvas-webgl", optional = true }
 parking_lot = "0.12.0"

@@ -35,12 +35,12 @@ use canvas_2d::{
 };
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::OutputFormat;
-use canvas_webgl::prelude::{WebGLExtensionType, WebGLVersion};
+use canvas_webgl::prelude::{WebGLVersion};
 use once_cell::sync::OnceCell;
 
 use crate::canvas2d::ImageAsset;
 use crate::webgl;
-use crate::webgl::ffi::WebGLResultType;
+use crate::webgl::ffi::{WebGLExtensionType, WebGLResultType};
 
 #[cxx::bridge]
 pub(crate) mod ffi {
@@ -1141,6 +1141,75 @@ pub(crate) mod ffi {
     }
 }
 
+
+impl Into<ffi::WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
+    fn into(self) -> ffi::WebGLExtensionType {
+        match self {
+            canvas_webgl::prelude::WebGLExtensionType::EXT_blend_minmax => ffi::WebGLExtensionType::EXT_blend_minmax,
+            canvas_webgl::prelude::WebGLExtensionType::EXT_color_buffer_half_float => {
+                ffi::WebGLExtensionType::EXT_color_buffer_half_float
+            }
+            canvas_webgl::prelude::WebGLExtensionType::EXT_disjoint_timer_query => {
+                ffi::WebGLExtensionType::EXT_disjoint_timer_query
+            }
+            canvas_webgl::prelude::WebGLExtensionType::EXT_sRGB => ffi::WebGLExtensionType::EXT_sRGB,
+            canvas_webgl::prelude::WebGLExtensionType::EXT_shader_texture_lod => {
+                ffi::WebGLExtensionType::EXT_shader_texture_lod
+            }
+            canvas_webgl::prelude::WebGLExtensionType::EXT_texture_filter_anisotropic => {
+                ffi::WebGLExtensionType::EXT_texture_filter_anisotropic
+            }
+            canvas_webgl::prelude::WebGLExtensionType::OES_element_index_uint => {
+                ffi::WebGLExtensionType::OES_element_index_uint
+            }
+            canvas_webgl::prelude::WebGLExtensionType::OES_standard_derivatives => {
+                ffi::WebGLExtensionType::OES_standard_derivatives
+            }
+            canvas_webgl::prelude::WebGLExtensionType::OES_texture_float => ffi::WebGLExtensionType::OES_texture_float,
+            canvas_webgl::prelude::WebGLExtensionType::OES_texture_float_linear => {
+                ffi::WebGLExtensionType::OES_texture_float_linear
+            }
+            canvas_webgl::prelude::WebGLExtensionType::OES_texture_half_float => {
+                ffi::WebGLExtensionType::OES_texture_half_float
+            }
+            canvas_webgl::prelude::WebGLExtensionType::OES_texture_half_float_linear => {
+                ffi::WebGLExtensionType::OES_texture_half_float_linear
+            }
+            canvas_webgl::prelude::WebGLExtensionType::OES_vertex_array_object => {
+                ffi::WebGLExtensionType::OES_vertex_array_object
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_color_buffer_float => {
+                ffi::WebGLExtensionType::WEBGL_color_buffer_float
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_atc => {
+                ffi::WebGLExtensionType::WEBGL_compressed_texture_atc
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_etc1 => {
+                ffi::WebGLExtensionType::WEBGL_compressed_texture_etc1
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_s3tc => {
+                ffi::WebGLExtensionType::WEBGL_compressed_texture_s3tc
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb => {
+                ffi::WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_etc => {
+                ffi::WebGLExtensionType::WEBGL_compressed_texture_etc
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_pvrtc => {
+                ffi::WebGLExtensionType::WEBGL_compressed_texture_pvrtc
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_lose_context => ffi::WebGLExtensionType::WEBGL_lose_context,
+            canvas_webgl::prelude::WebGLExtensionType::ANGLE_instanced_arrays => {
+                ffi::WebGLExtensionType::ANGLE_instanced_arrays
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_depth_texture => ffi::WebGLExtensionType::WEBGL_depth_texture,
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_draw_buffers => ffi::WebGLExtensionType::WEBGL_draw_buffers,
+            canvas_webgl::prelude::WebGLExtensionType::None => ffi::WebGLExtensionType::None,
+        }
+    }
+}
+
 /* GL */
 
 pub fn canvas_native_webgl_make_current(state: &WebGLState) -> bool {
@@ -1163,16 +1232,16 @@ fn canvas_native_webgl_to_data_url(state: &WebGLState, format: &str, quality: i3
     let width = info.drawing_buffer_width();
     let height = info.drawing_buffer_height();
     info.make_current();
-    // gl_bindings::glPixelStorei(gl_bindings::GL_UNPACK_ALIGNMENT, 1);
+    // gl_bindings::PixelStorei(gl_bindings::UNPACK_ALIGNMENT, 1);
     let mut buffer = vec![0u8; (width * height * 4) as usize];
     unsafe {
-        gl_bindings::glReadPixels(
+        gl_bindings::ReadPixels(
             0,
             0,
             width as i32,
             height as i32,
-            gl_bindings::GL_RGBA,
-            gl_bindings::GL_UNSIGNED_BYTE,
+            gl_bindings::RGBA,
+            gl_bindings::UNSIGNED_BYTE,
             buffer.as_mut_ptr() as *mut c_void,
         );
     }
@@ -1341,7 +1410,7 @@ impl WebGLExtension {
         if self.is_none() {
             return WebGLExtensionType::None;
         }
-        self.0.as_ref().unwrap().extension_type()
+        self.0.as_ref().unwrap().extension_type().into()
     }
 
     pub fn into_ext_disjoint_timer_query(self) -> Box<EXT_disjoint_timer_query> {
@@ -1564,7 +1633,7 @@ pub fn canvas_native_webgl_context_extension_is_none(extension: &WebGLExtension)
 pub fn canvas_native_webgl_context_extension_get_type(
     extension: &WebGLExtension,
 ) -> WebGLExtensionType {
-    extension.extension_type()
+    extension.extension_type().into()
 }
 
 pub fn canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(

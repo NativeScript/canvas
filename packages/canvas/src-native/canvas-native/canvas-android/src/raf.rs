@@ -16,6 +16,7 @@ struct RafInner {
     callback: RafCallback,
     use_deprecated: bool,
 }
+
 pub struct Raf {
     inner: Arc<parking_lot::Mutex<RafInner>>,
 }

@@ -1,14 +1,14 @@
 use std::os::raw::c_void;
 
+use jni::objects::{JClass, JFloatArray, JObject, JValue, ReleaseMode};
+use jni::sys::jint;
 use jni::JNIEnv;
-use jni::objects::{JClass, JObject, ReleaseMode};
-use jni::sys::{jfloatArray, jint};
 
-use crate::{__log, LogPriority};
+use crate::{LogPriority, __log};
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFrame(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     surface_texture_object: JObject,
     flip_y_web_gl: bool,
@@ -19,7 +19,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
     sampler_pos: jint,
     array_buffer: jint,
     pos: jint,
-    matrix: jfloatArray,
+    matrix: JFloatArray,
     matrix_pos: jint,
     width: jint,
     height: jint,
@@ -131,8 +131,6 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
             0,
         );
 
-
-
         if gl_bindings::glCheckFramebufferStatus(gl_bindings::GL_FRAMEBUFFER)
             != gl_bindings::GL_FRAMEBUFFER_COMPLETE
         {}
@@ -162,15 +160,15 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
 
     gl_bindings::glEnableVertexAttribArray(pos as u32);
 
-    let _ = env.call_method(surface_texture_object, "updateTexImage", "()V", &[]);
+    let _ = env.call_method(&surface_texture_object, "updateTexImage", "()V", &[]);
     let _ = env.call_method(
-        surface_texture_object,
+        &surface_texture_object,
         "getTransformMatrix",
         "([F)V",
-        &[matrix.into()],
+        &[JValue::Object(&matrix)],
     );
 
-    if let Ok(matrix) = env.get_primitive_array_critical(matrix, ReleaseMode::CopyBack) {
+    if let Ok(matrix) = env.get_array_elements_critical(&matrix, ReleaseMode::CopyBack) {
         // super::surface_texture::ASurfaceTexture_updateTexImage(std::mem::transmute(
         //     surface_texture_object.into_inner(),
         // ));
@@ -183,7 +181,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeD
         //  let clazz = env.find_class("android/opengl/MatrixImpl").unwrap();
         // env.call_static_method(clazz, "setIdentityM", "([F;I)V", &[])
 
-        let size = matrix.size().unwrap_or(0) as usize;
+        let size = matrix.len();
         let matrix = std::slice::from_raw_parts_mut(matrix.as_ptr() as *mut f32, size);
 
         if flip_y_web_gl {

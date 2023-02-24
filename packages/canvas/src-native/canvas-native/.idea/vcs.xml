@@ -2,38 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$/../../../.." vcs="Git" />
-    <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/depot_tools" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/buildtools" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/common" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/Nima-Cpp" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/Nima-Math-Cpp" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/angle2" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/dng_sdk" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/egl-registry" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/expat" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/freetype" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/harfbuzz" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/icu" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/imgui" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/libjpeg-turbo" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/libpng" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/libwebp" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/lua" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/microhttpd" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/opencl-lib" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/opencl-registry" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/opengl-registry" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/piex" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/sdl" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/sfntly" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/spirv-headers" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/spirv-tools" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/swiftshader" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/wuffs" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/rust-skia/skia-bindings/skia/third_party/externals/zlib" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/stb" vcs="Git" />
   </component>
 </project>

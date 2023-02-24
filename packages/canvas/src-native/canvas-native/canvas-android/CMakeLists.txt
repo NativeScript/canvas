@@ -7,9 +7,9 @@ else ()
 endif ()
 
 
-if(ENABLE_LTO)
+if (ENABLE_LTO)
     set(RUST_FLAGS "-Clinker-plugin-lto" "-Clinker=clang-14" "-Clink-arg=-fuse-ld=lld-14")
-endif()
+endif ()
 
 set(CANVAS_CORE_LIB ${PROJECT_NATIVE_ROOT_DIR}/target/${TARGET_DIR}/libcanvasandroid.a)
 
@@ -27,7 +27,7 @@ include_directories(
 
 add_custom_command(
         OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-android/lib.rs.cc"
-        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS="${RUST_FLAGS}" ${CARGO_CMD}
+        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS= "${RUST_FLAGS}" ${CARGO_CMD}
         WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
 )
 

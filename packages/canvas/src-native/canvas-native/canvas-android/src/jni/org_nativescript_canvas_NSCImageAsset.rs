@@ -1,12 +1,12 @@
 use std::ffi::CStr;
 
-use jni::objects::{JByteBuffer, JClass, JObject, JString, ReleaseMode};
-use jni::sys::{jboolean, jbyteArray, jint, jlong, JNI_FALSE, JNI_TRUE};
+use jni::objects::{JByteArray, JByteBuffer, JClass, JObject, JString, ReleaseMode};
+use jni::sys::{jboolean, jint, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSave(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     asset: jlong,
     path: JString,
@@ -15,7 +15,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSave(
     if asset == 0 {
         return JNI_FALSE;
     }
-    if let Ok(path) = env.get_string(path) {
+    if let Ok(path) = env.get_string(&path) {
         unsafe {
             let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
             let asset = &mut *asset;
@@ -34,7 +34,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSave(
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFromUrl(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     asset: jlong,
     url: JString,
@@ -42,7 +42,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
     if asset == 0 {
         return JNI_FALSE;
     }
-    if let Ok(url) = env.get_string(url) {
+    if let Ok(url) = env.get_string(&url) {
         unsafe {
             let asset: *mut crate::ImageAsset = asset as _;
             let asset = &mut *asset;
@@ -90,7 +90,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeDestroyR
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFromPath(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     asset: jlong,
     path: JString,
@@ -98,7 +98,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
     if asset == 0 {
         return JNI_FALSE;
     }
-    if let Ok(path) = env.get_string(path) {
+    if let Ok(path) = env.get_string(&path) {
         unsafe {
             let asset: *mut crate::ImageAsset = asset as _;
             let asset = &mut *asset;
@@ -114,23 +114,25 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFromBytes(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     asset: jlong,
-    buffer: jbyteArray,
+    buffer: JByteArray,
 ) -> jboolean {
     if asset == 0 {
         return JNI_FALSE;
     }
 
-    if let Ok(array) = env.get_primitive_array_critical(buffer, ReleaseMode::NoCopyBack) {
-        let size = array.size().unwrap_or(0) as usize;
-        let bytes = unsafe { std::slice::from_raw_parts_mut(array.as_ptr() as *mut u8, size) };
+    unsafe {
+        if let Ok(array) = env.get_array_elements_critical(&buffer, ReleaseMode::NoCopyBack) {
+            let size = array.len();
+            let bytes = unsafe { std::slice::from_raw_parts_mut(array.as_ptr() as *mut u8, size) };
 
-        let asset: *mut crate::ImageAsset = asset as _;
-        let asset = unsafe { &mut *asset };
-        if asset.load_from_bytes(bytes) {
-            return JNI_TRUE;
+            let asset: *mut crate::ImageAsset = asset as _;
+            let asset = unsafe { &mut *asset };
+            if asset.load_from_bytes(bytes) {
+                return JNI_TRUE;
+            }
         }
     }
 
@@ -148,9 +150,13 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
         return JNI_FALSE;
     }
 
-    if let Ok(buf) = env.get_direct_buffer_address(buffer) {
+    if let (Ok(buf), Ok(size)) = (
+        env.get_direct_buffer_address(&buffer),
+        env.get_direct_buffer_capacity(&buffer),
+    ) {
         let asset: *mut crate::ImageAsset = asset as _;
         let asset = unsafe { &mut *asset };
+        let buf = unsafe { std::slice::from_raw_parts_mut(buf, size) };
         if asset.load_from_bytes(buf) {
             return JNI_TRUE;
         }
@@ -186,7 +192,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSetError(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     asset: jlong,
     error: JString,
@@ -194,7 +200,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSetError
     if asset == 0 {
         return;
     }
-    if let Ok(error) = env.get_string(error) {
+    if let Ok(error) = env.get_string(&error) {
         unsafe {
             let asset: *mut crate::ImageAsset = asset as _;
             let asset = &mut *asset;

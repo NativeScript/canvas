@@ -1,0 +1,22 @@
+[package]
+name = "canvas-cxx"
+version = "0.1.0"
+edition = "2021"
+
+
+[features]
+2d = ["dep:canvas-2d"]
+webgl = ["dep:canvas-webgl"]
+
+
+[build-dependencies]
+cxx-build = "1.0.73"
+cbindgen = "0.24.3"
+
+[dependencies]
+cxx = "1.0.73"
+gl-bindings = { path = "../gl-bindings" }
+canvas-core = { path = "../canvas-core" }
+canvas-2d = { path = "../canvas-2d", optional = true }
+canvas-webgl = { path = "../canvas-webgl", optional = true }
+parking_lot = "0.12.0"

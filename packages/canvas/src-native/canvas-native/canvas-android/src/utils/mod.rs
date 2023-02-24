@@ -3,10 +3,8 @@ use std::ffi::{CStr, CString};
 use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jstring};
 use jni::JNIEnv;
-use libc::{c_char, size_t};
 
-use canvas_core::context::paths::path::Path;
-use canvas_core::context::{Context, ContextWrapper, State};
+use canvas_2d::context::{Context, ContextWrapper};
 
 use crate::console_log;
 
@@ -14,25 +12,8 @@ pub mod gl;
 pub mod image;
 
 pub fn get_sdk_version() -> i32 {
-    let mut ret = -1;
-    let cmd = CString::new("getprop ro.build.version.sdk").unwrap();
-    let mode = CString::new("r").unwrap();
-    let file = unsafe { libc::popen(cmd.as_ptr(), mode.as_ptr()) };
-    if !file.is_null() {
-        let mut output = [0 as c_char; 100];
-        if !unsafe { libc::fgets(output.as_mut_ptr(), 100, file).is_null() } {
-            let string = unsafe { CStr::from_ptr(output.as_ptr()) };
-            let lossy = string.to_string_lossy();
-            if let Ok(value) = lossy.trim().parse::<i32>() {
-                ret = value;
-            }
-        }
-
-        unsafe {
-            libc::pclose(file);
-        }
-    }
-    ret
+    // todo
+    -1
 }
 
 pub(crate) fn init_with_custom_surface(
@@ -51,7 +32,7 @@ pub(crate) fn init_with_custom_surface(
         alpha == jni::sys::JNI_TRUE,
         font_color,
         ppi,
-        canvas_core::context::text_styles::text_direction::TextDirection::from(direction as u32),
+        canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
     ))) as jlong
 }
 
@@ -69,8 +50,6 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeInitContextW
 ) -> jlong {
     init_with_custom_surface(width, height, density, alpha, font_color, ppi, direction)
 }
-
-
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeResizeCustomSurface(
@@ -142,7 +121,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDestroyConte
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _: JClass,
     context: jlong,
     format: JString,
@@ -150,23 +129,23 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
 ) -> jstring {
     unsafe {
         if context == 0 {
-            return env.new_string("").unwrap().into_inner();
+            return env.new_string("").unwrap().into_raw();
         }
         let context: *mut ContextWrapper = context as _;
         let context = &mut *context;
-        if let Ok(format) = env.get_string(format) {
+        if let Ok(format) = env.get_string(&format) {
             let format = format.to_string_lossy();
 
             return env
-                .new_string(canvas_core::to_data_url(
+                .new_string(canvas_2d::to_data_url(
                     context,
                     format.as_ref(),
                     (quality * 100 as f32) as i32,
                 ))
                 .unwrap()
-                .into_inner();
+                .into_raw();
         }
-        return env.new_string("").unwrap().into_inner();
+        return env.new_string("").unwrap().into_raw();
     }
 }
 
@@ -179,12 +158,12 @@ pub struct ByteBufInner {
 #[repr(C)]
 pub struct ByteBuf {
     pub data: *const u8,
-    pub len: size_t,
+    pub len: usize,
     inner: ByteBufInner,
 }
 
 impl ByteBuf {
-    pub fn new(data: *const u8, length: size_t) -> Self {
+    pub fn new(data: *const u8, length: usize) -> Self {
         Self {
             data,
             len: length,

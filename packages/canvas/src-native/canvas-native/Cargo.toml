@@ -3,9 +3,13 @@
 members = [
     "gl-bindings",
     "canvas-core",
+    "canvas-2d",
+    "canvas-webgl",
     "canvas-android",
     "canvas-ios",
-    "canvas-ffi"
+    "canvas-ffi",
+    "playground",
+    "canvas-cxx"
 ]
 
 [profile.release]

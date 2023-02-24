@@ -5,7 +5,7 @@ use jni::sys::jlong;
 use jni::JNIEnv;
 use ndk::bitmap::{AndroidBitmap, AndroidBitmapInfo, BitmapResult};
 
-use canvas_core::image_bitmap::ImageBitmapPremultiplyAlpha::Default;
+use canvas_2d::image_bitmap::ImageBitmapPremultiplyAlpha::Default;
 
 pub(crate) struct BitmapBytes {
     pub(crate) bitmap: GlobalRef,
@@ -18,7 +18,7 @@ impl BitmapBytes {
     pub fn new(env: JNIEnv, bitmap: JObject) -> Self {
         let bitmap_ref = env.new_global_ref(bitmap).unwrap();
         let native_interface = env.get_native_interface();
-        let bitmap = bitmap_ref.as_obj().into_inner();
+        let bitmap = bitmap_ref.as_obj().as_raw();
         let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
 
         Self {
@@ -93,7 +93,7 @@ impl Drop for BitmapBytes {
 
 pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> Option<(Vec<u8>, AndroidBitmapInfo)> {
     let native_interface = env.get_native_interface();
-    let bitmap = bitmap.into_inner();
+    let bitmap = bitmap.as_raw();
     let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
 
     match (native_bitmap.lock_pixels(), native_bitmap.get_info()) {
@@ -116,7 +116,7 @@ pub fn bitmap_handler(
     handler: Box<dyn Fn(Option<(&mut [u8], &AndroidBitmapInfo)>)>,
 ) {
     let native_interface = env.get_native_interface();
-    let bitmap = bitmap.into_inner();
+    let bitmap = bitmap.as_raw();
     let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
     match (native_bitmap.lock_pixels(), native_bitmap.get_info()) {
         (Ok(pixels), Ok(info)) => {

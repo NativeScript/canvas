@@ -8,8 +8,9 @@ name = "canvasnative"
 crate-type = ["staticlib"]
 
 [features]
-default = ["gl"]
-gl = ["canvas-ffi/gl"]
+default = ["2d"]
+2d = ["canvas-ffi/2d"]
+webgl = ["canvas-ffi/webgl"]
 
 
 [dependencies]
@@ -17,8 +18,8 @@ gl = ["canvas-ffi/gl"]
 [target.'cfg(target_os="ios")'.dependencies]
 gl-bindings = { path = "../gl-bindings" }
 canvas-ffi = { path = "../canvas-ffi" }
-skia-bindings = { version ="0.54.0",  features = ["gl"] }
-skia-safe = { version ="0.54.0", features = ["gl"] }
+skia-bindings = { version = "0.58.0", features = ["gl"] }
+skia-safe = { version = "0.58.0", features = ["gl"] }
 cocoa = { version = "0.24.0" }
 objc = { version = "0.2.4" }
 block = "0.1.6"

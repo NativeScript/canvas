@@ -60,7 +60,7 @@ pub extern "C" fn canvas_native_context_init_gl(
         ppi,
         direction,
     ))
-    .into_raw()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -76,7 +76,7 @@ pub extern "C" fn canvas_native_context_init(
     canvas_core::context::ContextWrapper::new(Context::new(
         width, height, density, alpha, font_color, ppi, direction,
     ))
-    .into_raw()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -140,8 +140,8 @@ pub extern "C" fn canvas_native_context_data_url(
             format.as_ref(),
             (quality * 100 as f32) as i32,
         ))
-        .unwrap()
-        .into_raw()
+            .unwrap()
+            .into_raw()
     }
 }
 

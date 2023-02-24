@@ -1,6 +1,8 @@
 use jni::JNIEnv;
 use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE};
 
+pub use canvas_webgl::prelude::WebGLState;
+
 pub(crate) mod surface_texture;
 pub mod texture_render;
 pub mod webgl2_rendering_context;
@@ -15,7 +17,8 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
     if state == 0 {
         return JNI_FALSE;
     }
-    let state = unsafe { state as *mut crate::gl::prelude::WebGLState };
+
+    let state = unsafe { state as *mut WebGLState };
     if state.is_null() {
         return JNI_FALSE;
     }
@@ -35,7 +38,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetFlipYW
     if state == 0 {
         return JNI_FALSE;
     }
-    let state = unsafe { state as *mut crate::gl::prelude::WebGLState };
+    let state = unsafe { state as *mut WebGLState };
     if state.is_null() {
         return JNI_FALSE;
     }

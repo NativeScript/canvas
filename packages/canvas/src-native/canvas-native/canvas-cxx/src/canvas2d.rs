@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use cxx::{type_id, ExternType};
 use std::borrow::Cow;
 use std::error::Error;
 use std::ffi::{CStr, CString};
@@ -9,10 +10,9 @@ use std::os::unix::io::FromRawFd;
 use std::os::unix::prelude::IntoRawFd;
 use std::sync::Arc;
 
-use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
 use parking_lot::lock_api::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
 
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -23,6 +23,7 @@ use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::gl::GLContext;
 use canvas_2d::image_asset::OutputFormat;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
@@ -63,6 +64,11 @@ pub struct CanvasRenderingContext2D {
     context: ContextWrapper,
     pub(crate) gl_context: GLContext,
     alpha: bool,
+}
+
+unsafe impl ExternType for CanvasRenderingContext2D {
+    type Id = type_id!("CanvasRenderingContext2D");
+    type Kind = cxx::kind::Trivial;
 }
 
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: i32) -> String {
@@ -154,6 +160,11 @@ pub(crate) mod ffi {
         Medium,
         High,
         Pixelated,
+    }
+
+    extern "C++" {
+        include!("canvas-cxx/src/lib.rs.h");
+        type WebGLState = crate::webgl::WebGLState;
     }
 
     extern "Rust" {
@@ -461,7 +472,7 @@ pub(crate) mod ffi {
         fn canvas_native_text_metrics_get_actual_bounding_box_ascent(metrics: &TextMetrics) -> f32;
 
         fn canvas_native_text_metrics_get_actual_bounding_box_descent(metrics: &TextMetrics)
-                                                                      -> f32;
+            -> f32;
 
         fn canvas_native_text_metrics_get_font_bounding_box_ascent(metrics: &TextMetrics) -> f32;
 
@@ -506,7 +517,7 @@ pub(crate) mod ffi {
 
         /* CanvasRenderingContext2D */
         fn canvas_native_context_create_with_wrapper(context: i64)
-                                                     -> Box<CanvasRenderingContext2D>;
+            -> Box<CanvasRenderingContext2D>;
 
         fn canvas_native_context_resize(
             context: &mut CanvasRenderingContext2D,
@@ -661,7 +672,7 @@ pub(crate) mod ffi {
         );
 
         fn canvas_native_context_get_global_composition(context: &CanvasRenderingContext2D)
-                                                        -> &str;
+            -> &str;
 
         fn canvas_native_context_set_global_composition(
             context: &CanvasRenderingContext2D,
@@ -869,7 +880,7 @@ pub(crate) mod ffi {
 
         #[cfg(feature = "webgl")]
         pub fn canvas_native_context_create_pattern_webgl(
-            source: &mut canvas_webgl::prelude::WebGLState,
+            source: &mut WebGLState,
             context: &mut CanvasRenderingContext2D,
             repetition: &str,
         ) -> Box<PaintStyle>;
@@ -3245,7 +3256,12 @@ pub fn canvas_native_image_data_get_shared_instance(image_data: &mut ImageData) 
 /* ImageAsset */
 
 #[derive(Clone)]
-pub struct ImageAsset(pub(crate) canvas_core::context::image_asset::ImageAsset);
+pub struct ImageAsset(pub(crate) canvas_core::image_asset::ImageAsset);
+
+unsafe impl ExternType for ImageAsset {
+    type Id = type_id!("ImageAsset");
+    type Kind = cxx::kind::Trivial;
+}
 
 impl Default for ImageAsset {
     fn default() -> Self {
@@ -3271,8 +3287,8 @@ impl ImageAsset {
     }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
-        where
-            R: Read + std::io::Seek,
+    where
+        R: Read + std::io::Seek,
     {
         self.0.load_from_reader(reader)
     }

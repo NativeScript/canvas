@@ -11,7 +11,7 @@ use jni::objects::{
 use jni::sys::{jboolean, jint, jlong, JNI_TRUE};
 use jni::JNIEnv;
 
-use canvas_core::context::image_asset::ImageAsset;
+use canvas_2d::context::image_asset::ImageAsset;
 use canvas_core::image_asset::ImageAsset;
 
 use crate::{LogPriority, __log};
@@ -33,7 +33,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
         env.get_direct_buffer_capacity(&pixels),
     ) {
         let buf = unsafe { std::slice::from_raw_parts_mut(buf, size) };
-        canvas_core::utils::gl::flip_in_place_3d(
+        canvas_2d::utils::gl::flip_in_place_3d(
             buf.as_mut_ptr(),
             buf.len(),
             bytesPerPixel as usize,
@@ -57,17 +57,17 @@ fn texImage3D(
     buf: &mut [u8],
 ) {
     if flipY {
-        canvas_core::utils::gl::flip_in_place_3d(
+        canvas_2d::utils::gl::flip_in_place_3d(
             buf.as_mut_ptr(),
             buf.len(),
-            canvas_core::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
+            canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
                 * width as usize,
             height as usize,
             depth as usize,
         );
     }
     unsafe {
-        gl_bindings::glTexImage3D(
+        gl_bindings::TexImage3D(
             target as u32,
             level,
             internalformat,
@@ -383,16 +383,16 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     if let Some(mut data) = asset.get_bytes() {
         if flipY == JNI_TRUE {
             let mut data_array = data.to_vec();
-            canvas_core::utils::gl::flip_in_place_3d(
+            canvas_2d::utils::gl::flip_in_place_3d(
                 data_array.as_mut_ptr(),
                 data_array.len(),
-                canvas_core::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
+                canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
                     * asset.width() as usize,
                 asset.height() as usize,
                 depth as usize,
             );
 
-            gl_bindings::glTexImage3D(
+            gl_bindings::TexImage3D(
                 target as u32,
                 level,
                 internalformat,
@@ -405,7 +405,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 data_array.as_ptr() as *const c_void,
             );
         } else {
-            gl_bindings::glTexImage3D(
+            gl_bindings::TexImage3D(
                 target as u32,
                 level,
                 internalformat,
@@ -440,17 +440,17 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     if let Some(mut data) = super::super::image::get_bytes_from_bitmap(env, bitmap) {
         if !data.0.is_empty() {
             if flipY == JNI_TRUE {
-                canvas_core::utils::gl::flip_in_place_3d(
+                canvas_2d::utils::gl::flip_in_place_3d(
                     data.0.as_mut_ptr(),
                     data.0.len(),
-                    canvas_core::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                    canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
                         as usize
                         * data.1.width() as usize,
                     data.1.height() as usize,
                     depth as usize,
                 );
             }
-            gl_bindings::glTexImage3D(
+            gl_bindings::TexImage3D(
                 target as u32,
                 level,
                 internalformat,
@@ -482,16 +482,16 @@ fn texSubImage3D(
 ) {
     if flipY {
         let mut buf = buf.to_vec();
-        canvas_core::utils::gl::flip_in_place_3d(
+        canvas_2d::utils::gl::flip_in_place_3d(
             buf.as_mut_ptr(),
             buf.len(),
-            canvas_core::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
+            canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
                 * width as usize,
             height as usize,
             depth as usize,
         );
         unsafe {
-            gl_bindings::glTexSubImage3D(
+            gl_bindings::TexSubImage3D(
                 target as u32,
                 level,
                 xoffset,
@@ -507,7 +507,7 @@ fn texSubImage3D(
         }
     } else {
         unsafe {
-            gl_bindings::glTexSubImage3D(
+            gl_bindings::TexSubImage3D(
                 target as u32,
                 level,
                 xoffset,
@@ -840,15 +840,15 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     if let Some(data_array) = asset.get_bytes() {
         if flipY == JNI_TRUE {
             let mut data_array = data_array.to_vec();
-            canvas_core::utils::gl::flip_in_place_3d(
+            canvas_2d::utils::gl::flip_in_place_3d(
                 data_array.as_mut_ptr(),
                 data_array.len(),
-                canvas_core::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
+                canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32) as usize
                     * asset.width() as usize,
                 asset.height() as usize,
                 depth as usize,
             );
-            gl_bindings::glTexSubImage3D(
+            gl_bindings::TexSubImage3D(
                 target as u32,
                 level,
                 xoffset,
@@ -862,7 +862,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 data_array.as_ptr() as *const c_void,
             );
         } else {
-            gl_bindings::glTexSubImage3D(
+            gl_bindings::TexSubImage3D(
                 target as u32,
                 level,
                 xoffset,
@@ -900,17 +900,17 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     if let Some(mut data) = data {
         if !data.0.is_empty() {
             if flipY == JNI_TRUE {
-                canvas_core::utils::gl::flip_in_place_3d(
+                canvas_2d::utils::gl::flip_in_place_3d(
                     data.0.as_mut_ptr(),
                     data.0.len(),
-                    canvas_core::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
+                    canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
                         as usize
                         * data.1.width() as usize,
                     data.1.height() as usize,
                     depth as usize,
                 );
             }
-            gl_bindings::glTexSubImage3D(
+            gl_bindings::TexSubImage3D(
                 target as u32,
                 level,
                 xoffset,

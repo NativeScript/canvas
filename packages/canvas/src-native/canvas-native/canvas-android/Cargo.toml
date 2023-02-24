@@ -16,6 +16,7 @@ bindgen = "0.64.0"
 canvas-core = { path = "../canvas-core" }
 canvas-2d = { path = "../canvas-2d" }
 canvas-webgl = { path = "../canvas-webgl" }
+canvas-cxx = { path = "../canvas-cxx", features = ["2d", "webgl"] }
 gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.5.0"
 cxx = "1.0.73"

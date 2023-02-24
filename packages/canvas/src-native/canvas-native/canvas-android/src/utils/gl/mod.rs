@@ -1,12 +1,15 @@
-use jni::JNIEnv;
 use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 
 pub use canvas_webgl::prelude::WebGLState;
 
+pub mod st;
 pub(crate) mod surface_texture;
 pub mod texture_render;
 pub mod webgl2_rendering_context;
 pub mod webgl_rendering_context;
+
+pub const TEXTURE_EXTERNAL_OES: u32 = 0x00008d65;
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeStateContextCurrent(

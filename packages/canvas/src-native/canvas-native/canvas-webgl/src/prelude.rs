@@ -1,10 +1,13 @@
+#![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
+
 use std::borrow::Cow;
 use std::ffi::CString;
 use std::os::raw::{c_long, c_void};
 use std::sync::Arc;
 
-use parking_lot::{RawMutex, RawRwLock};
 use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{RawMutex, RawRwLock};
 
 use canvas_core::gl::GLContext;
 
@@ -23,7 +26,6 @@ pub const WEBGL_UNPACK_PREMULTIPLY_ALPHA_WEBGL: u32 = 0x9241;
 /* Pixel storage modes */
 
 pub const WEBGL_BROWSER_DEFAULT_WEBGL: u32 = 0x9244;
-
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -86,6 +88,7 @@ pub enum WebGLVersion {
     NONE,
 }
 
+#[derive(Debug)]
 struct WebGLStateInner {
     version: WebGLVersion,
     gl_context: GLContext,
@@ -116,6 +119,7 @@ struct WebGLStateInner {
     unpack_colorspace_conversion_webgl: i32,
 }
 
+#[derive(Debug)]
 pub struct WebGLState(Arc<parking_lot::RwLock<WebGLStateInner>>);
 
 impl WebGLState {
@@ -132,10 +136,7 @@ impl WebGLState {
         self.0.write()
     }
 
-    pub fn new_with_context(
-        context: GLContext,
-        version: WebGLVersion,
-    ) -> Self {
+    pub fn new_with_context(context: GLContext, version: WebGLVersion) -> Self {
         let mut ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
             version,
             alpha: true,
@@ -678,7 +679,6 @@ pub trait WebGLExtension {
     fn extension_type(&self) -> WebGLExtensionType;
 }
 
-
 pub struct EXT_blend_minmax {
     min_ext: u32,
     max_ext: u32,
@@ -956,8 +956,7 @@ pub struct OES_standard_derivatives {
 impl OES_standard_derivatives {
     pub fn new() -> Self {
         Self {
-            fragment_shader_derivative_hint_oes:
-            gl_bindings::FRAGMENT_SHADER_DERIVATIVE_HINT,
+            fragment_shader_derivative_hint_oes: gl_bindings::FRAGMENT_SHADER_DERIVATIVE_HINT,
         }
     }
 }
@@ -1113,7 +1112,7 @@ impl WEBGL_compressed_texture_atc {
             compressed_rgb_atc_webgl: gl_bindings::ATC_RGB_AMD,
             compressed_rgba_atc_explicit_alpha_webgl: gl_bindings::ATC_RGBA_EXPLICIT_ALPHA_AMD,
             compressed_rgba_atc_interpolated_alpha_webgl:
-            gl_bindings::ATC_RGBA_INTERPOLATED_ALPHA_AMD,
+                gl_bindings::ATC_RGBA_INTERPOLATED_ALPHA_AMD,
         }
     }
 }
@@ -1177,12 +1176,9 @@ impl WEBGL_compressed_texture_s3tc_srgb {
     pub fn new() -> Self {
         Self {
             compressed_srgb_s3tc_dxt1_ext: gl_bindings::COMPRESSED_SRGB_S3TC_DXT1_EXT,
-            compressed_srgb_alpha_s3tc_dxt1_ext:
-            gl_bindings::COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT,
-            compressed_srgb_alpha_s3tc_dxt3_ext:
-            gl_bindings::COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT,
-            compressed_srgb_alpha_s3tc_dxt5_ext:
-            gl_bindings::COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT,
+            compressed_srgb_alpha_s3tc_dxt1_ext: gl_bindings::COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT,
+            compressed_srgb_alpha_s3tc_dxt3_ext: gl_bindings::COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT,
+            compressed_srgb_alpha_s3tc_dxt5_ext: gl_bindings::COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT,
         }
     }
 }

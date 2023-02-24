@@ -1,6 +1,6 @@
 #[cfg(feature = "2d")]
-mod canvas2d;
+pub mod canvas2d;
 #[cfg(feature = "webgl")]
-mod webgl;
+pub mod webgl;
 #[cfg(feature = "webgl")]
-mod webgl2;
+pub mod webgl2;

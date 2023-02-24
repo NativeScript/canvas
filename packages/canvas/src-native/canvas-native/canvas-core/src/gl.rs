@@ -27,17 +27,20 @@ use crate::gl;
 
 const EGL_CONTEXT_MINOR_VERSION: i32 = 0x000030fb;
 
+#[derive(Debug)]
 pub enum SurfaceHelper {
     Window(Surface<WindowSurface>),
     Pbuffer(Surface<PbufferSurface>),
     Pixmap(Surface<PixmapSurface>),
 }
 
+#[derive(Debug, Default)]
 pub struct GLContext {
     surface: Option<SurfaceHelper>,
     context: Option<PossiblyCurrentContext>,
     display: Option<Display>,
 }
+
 
 impl Into<ConfigTemplate> for ContextAttributes {
     fn into(self) -> ConfigTemplate {
@@ -550,11 +553,9 @@ impl GLContext {
     }
 
     fn has_extension(extensions: &str, name: &str) -> bool {
-        extensions
-            .split(" ")
-            .into_iter()
-            .find(|s| *s == name)
-            .is_none()
+        !extensions
+            .split(' ')
+            .into_iter().any(|s| s == name)
     }
 
     fn has_gl2support() -> bool {
@@ -700,12 +701,4 @@ impl GLContext {
     }
 }
 
-impl Default for GLContext {
-    fn default() -> Self {
-        Self {
-            surface: None,
-            context: None,
-            display: None,
-        }
-    }
-}
+

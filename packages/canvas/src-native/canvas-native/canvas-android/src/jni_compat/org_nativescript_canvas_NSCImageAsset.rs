@@ -4,6 +4,8 @@ use jni::objects::{JByteArray, JByteBuffer, JClass, JObject, JString, ReleaseMod
 use jni::sys::{jboolean, jint, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
+use canvas_core::image_asset::ImageAsset;
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSave(
     mut env: JNIEnv,
@@ -17,12 +19,12 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSave(
     }
     if let Ok(path) = env.get_string(&path) {
         unsafe {
-            let asset: *mut canvas_core::context::image_asset::ImageAsset = asset as _;
+            let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
             let path = CStr::from_ptr(path.as_ptr());
             if asset.save_path(
                 &path.to_string_lossy(),
-                canvas_core::context::image_asset::OutputFormat::from(format),
+                canvas_core::image_asset::OutputFormat::from(format),
             ) {
                 return JNI_TRUE;
             }
@@ -44,10 +46,14 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
     }
     if let Ok(url) = env.get_string(&url) {
         unsafe {
-            let asset: *mut crate::ImageAsset = asset as _;
+            let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
             let url = CStr::from_ptr(url.as_ptr());
-            if crate::canvas_native_image_asset_load_from_url(asset, &url.to_string_lossy()) {
+            let mut tmp_asset = canvas_cxx::canvas2d::ImageAsset(asset.clone());
+            if canvas_cxx::canvas2d::canvas_native_image_asset_load_from_url(
+                &mut tmp_asset,
+                &url.to_string_lossy(),
+            ) {
                 return JNI_TRUE;
             }
             return JNI_FALSE;
@@ -66,7 +72,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeCloneRef
         return 0;
     }
 
-    let asset: *mut crate::ImageAsset = asset as _;
+    let asset: *mut ImageAsset = asset as _;
     let asset = unsafe { &mut *asset };
     let clone = asset.clone();
     Box::into_raw(Box::new(clone)) as jlong
@@ -82,7 +88,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeDestroyR
         return;
     }
 
-    let asset: *mut crate::ImageAsset = asset as _;
+    let asset: *mut ImageAsset = asset as _;
     unsafe {
         let _ = Box::from_raw(asset);
     }
@@ -100,7 +106,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
     }
     if let Ok(path) = env.get_string(&path) {
         unsafe {
-            let asset: *mut crate::ImageAsset = asset as _;
+            let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
             let path = CStr::from_ptr(path.as_ptr());
             if asset.load_from_path(&path.to_string_lossy()) {
@@ -128,7 +134,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
             let size = array.len();
             let bytes = unsafe { std::slice::from_raw_parts_mut(array.as_ptr() as *mut u8, size) };
 
-            let asset: *mut crate::ImageAsset = asset as _;
+            let asset: *mut ImageAsset = asset as _;
             let asset = unsafe { &mut *asset };
             if asset.load_from_bytes(bytes) {
                 return JNI_TRUE;
@@ -154,7 +160,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
         env.get_direct_buffer_address(&buffer),
         env.get_direct_buffer_capacity(&buffer),
     ) {
-        let asset: *mut crate::ImageAsset = asset as _;
+        let asset: *mut ImageAsset = asset as _;
         let asset = unsafe { &mut *asset };
         let buf = unsafe { std::slice::from_raw_parts_mut(buf, size) };
         if asset.load_from_bytes(buf) {
@@ -176,7 +182,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
         return JNI_FALSE;
     }
 
-    let asset: *mut crate::ImageAsset = asset as _;
+    let asset: *mut ImageAsset = asset as _;
     let asset = unsafe { &mut *asset };
 
     let mut bm = crate::utils::image::BitmapBytes::new(env, bitmap);
@@ -202,7 +208,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeSetError
     }
     if let Ok(error) = env.get_string(&error) {
         unsafe {
-            let asset: *mut crate::ImageAsset = asset as _;
+            let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
             let error = CStr::from_ptr(error.as_ptr());
             asset.set_error(&error.to_string_lossy());

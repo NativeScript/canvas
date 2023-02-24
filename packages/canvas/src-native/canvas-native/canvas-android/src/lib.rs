@@ -15,6 +15,7 @@ use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
 use std::sync::Arc;
 
+use ::jni::signature::JavaType;
 use ::jni::sys::jint;
 use ::jni::JavaVM;
 use cxx::{let_cxx_string, type_id, CxxString, CxxVector, ExternType, SharedPtr, UniquePtr};
@@ -25,9 +26,6 @@ use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
-use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
-use canvas_2d::context::image_asset::OutputFormat;
-use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
@@ -39,37 +37,45 @@ use canvas_2d::utils::image::{
     from_image_slice_encoded_no_copy, from_image_slice_no_copy, to_image, to_image_encoded,
     to_image_encoded_from_data,
 };
-use gl::prelude::WebGLVersion;
-use gl_context::GLContext;
 
-use crate::ffi::{ImageBitmapPremultiplyAlpha, WebGLExtensionType, WebGLResultType};
+use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
 
 pub mod choregrapher;
-mod jni;
-pub mod looper;
+mod jni_compat;
 pub mod raf;
 pub mod utils;
 
 pub static JVM: OnceCell<JavaVM> = OnceCell::new();
 
+pub static API_LEVEL: OnceCell<i32> = OnceCell::new();
+
+pub(crate) const BUILD_VERSION_CLASS: &str = "android/os/Build$VERSION";
+
 #[no_mangle]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
+    if let Ok(mut env) = vm.get_env() {
+        API_LEVEL.get_or_init(|| {
+            let clazz = env.find_class(BUILD_VERSION_CLASS).unwrap();
+
+            let sdk_int_id = env.get_static_field_id(&clazz, "SDK_INT", "I").unwrap();
+
+            let sdk_int = env.get_static_field_unchecked(
+                clazz,
+                sdk_int_id,
+                JavaType::Primitive(jni_compat::signature::Primitive::Int),
+            );
+
+            sdk_int.unwrap().i().unwrap()
+        });
+
+        SURFACE_TEXTURE.get_or_init(|| SurfaceTexture::new());
+    }
+
     JVM.get_or_init(|| vm);
-    ::jni::sys::JNI_VERSION_1_6
+    jni::sys::JNI_VERSION_1_6
 }
-
-static THREAD_HANDLE_NEXT_ID: AtomicIsize = AtomicIsize::new(0);
-
-pub static THREAD_HANDLE_MAP: OnceCell<
-    parking_lot::RwLock<HashMap<isize, std::thread::JoinHandle<()>>>,
-> = OnceCell::new();
 
 /* Utils */
-
-fn get_thread_handle_map<'a>(
-) -> &'a parking_lot::RwLock<HashMap<isize, std::thread::JoinHandle<()>>> {
-    THREAD_HANDLE_MAP.get_or_init(|| RwLock::new(HashMap::new()))
-}
 
 #[derive(Clone, Copy)]
 #[repr(isize)]

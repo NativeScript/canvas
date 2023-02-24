@@ -10,10 +10,9 @@ use std::os::raw::{c_char, c_int, c_longlong, c_uint, c_ulong, c_void};
 use std::os::unix::io::FromRawFd;
 use std::os::unix::prelude::IntoRawFd;
 use std::pin::Pin;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
+use std::sync::Arc;
 
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -24,6 +23,7 @@ use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded,
@@ -39,13 +39,17 @@ use crate::webgl::{WebGLActiveInfo, WebGLResult, WebGLState};
 
 #[cxx::bridge]
 pub(crate) mod ffi {
-    extern "Rust" {
+
+    extern "C++" {
+        include!("canvas-cxx/src/lib.rs.h");
         type ImageAsset = crate::canvas2d::ImageAsset;
         type WebGLState = crate::webgl::WebGLState;
         type WebGLActiveInfo = crate::webgl::WebGLActiveInfo;
         type WebGLResult = crate::webgl::WebGLResult;
         type ContextAttributes = crate::webgl::ContextAttributes;
+    }
 
+    extern "Rust" {
         type WebGLSync;
         type WebGLIndexedParameter;
 

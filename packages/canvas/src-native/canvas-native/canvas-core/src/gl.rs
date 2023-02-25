@@ -1,6 +1,7 @@
 use std::ffi::{CStr, CString};
 use std::num::NonZeroU32;
 use std::os::raw::c_void;
+use std::sync::Arc;
 
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{
@@ -10,22 +11,22 @@ use glutin::api::cgl::{
 use glutin::api::egl::{
     config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
 };
-use glutin::config::{ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig};
+use glutin::config::{
+    Api, AsRawConfig, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig,
+};
 use glutin::context::{ContextApi, GlContext, Version};
 use glutin::display::GetGlDisplay;
 use glutin::display::{AsRawDisplay, DisplayApiPreference};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SurfaceAttributes, WindowSurface};
+use parking_lot::{MappedRwLockReadGuard, MutexGuard, RwLock, RwLockReadGuard};
 use raw_window_handle::{
     AndroidDisplayHandle, AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
     UiKitDisplayHandle,
 };
 
 use crate::context_attributes::ContextAttributes;
-use crate::gl;
-
-const EGL_CONTEXT_MINOR_VERSION: i32 = 0x000030fb;
 
 #[derive(Debug)]
 pub enum SurfaceHelper {
@@ -35,12 +36,37 @@ pub enum SurfaceHelper {
 }
 
 #[derive(Debug, Default)]
-pub struct GLContext {
+pub struct GLContextInner {
     surface: Option<SurfaceHelper>,
     context: Option<PossiblyCurrentContext>,
     display: Option<Display>,
 }
 
+#[derive(Debug, Default)]
+pub struct GLContext {
+    inner: Arc<RwLock<GLContextInner>>,
+}
+
+impl GLContext {
+    // pointer has to
+    pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
+        Arc::into_raw(Arc::clone(&self.inner))
+    }
+
+    pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
+        Self {
+            inner: unsafe { Arc::from_raw(raw) },
+        }
+    }
+}
+
+impl Clone for GLContext {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
+}
 
 impl Into<ConfigTemplate> for ContextAttributes {
     fn into(self) -> ConfigTemplate {
@@ -78,6 +104,67 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
 // }
 
 impl GLContext {
+    pub fn set_surface(
+        &mut self,
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        window: RawWindowHandle,
+    ) -> bool {
+        let cfg = context_attrs.into();
+        let mut lock = self.inner.write();
+        unsafe {
+            if let Some(display) = lock.display.as_ref() {
+                let config = display
+                    .find_configs(cfg)
+                    .map(|c| {
+                        c.reduce(|acc, cconfig| {
+                            if cconfig.supports_transparency().unwrap_or_default()
+                                && context_attrs.get_alpha()
+                                && context_attrs.get_alpha()
+                                && cconfig.alpha_size() == 8u8
+                                && context_attrs.get_stencil()
+                                && cconfig.stencil_size() == 8u8
+                                && context_attrs.get_depth()
+                                && cconfig.depth_size() == 16u8
+                            {
+                                return cconfig;
+                            }
+
+                            acc
+                        })
+                    })
+                    .ok()
+                    .flatten();
+
+                return match config {
+                    Some(config) => {
+                        let surface_attr =
+                            glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
+                                .build(
+                                    window,
+                                    NonZeroU32::try_from(width as u32).unwrap(),
+                                    NonZeroU32::try_from(height as u32).unwrap(),
+                                );
+
+                        let surface = display
+                            .create_window_surface(&config, &surface_attr)
+                            .map(SurfaceHelper::Window)
+                            .ok();
+
+                        let ret = surface.is_some();
+
+                        lock.surface = surface;
+
+                        ret
+                    }
+                    None => false,
+                };
+            }
+        }
+        false
+    }
+
     #[cfg(target_os = "macos")]
     pub fn create_window_surface(
         context_attrs: &mut ContextAttributes,
@@ -127,7 +214,7 @@ impl GLContext {
 
                         let surface = display
                             .create_window_surface(&config, &surface_attr)
-                            .map(|v| SurfaceHelper::Window(v))
+                            .map(SurfaceHelper::Window)
                             .ok();
 
                         let context_attrs = glutin::context::ContextAttributesBuilder::new()
@@ -146,9 +233,11 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            surface,
-                            context,
-                            display: Some(display),
+                            inner: Arc::new(RwLock::new(GLContextInner {
+                                surface,
+                                context,
+                                display: Some(display),
+                            })),
                         })
                     }
                     None => None,
@@ -226,9 +315,11 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            surface,
-                            context,
-                            display: Some(display),
+                            inner: Arc::new(RwLock::new(GLContextInner {
+                                surface,
+                                context,
+                                display: Some(display),
+                            })),
                         })
                     }
                     None => None,
@@ -306,9 +397,11 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            surface,
-                            context,
-                            display: Some(display),
+                            inner: Arc::new(RwLock::new(GLContextInner {
+                                surface,
+                                context,
+                                display: Some(display),
+                            })),
                         })
                     }
                     None => None,
@@ -384,9 +477,11 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            surface,
-                            context,
-                            display: Some(display),
+                            inner: Arc::new(RwLock::new(GLContextInner {
+                                surface,
+                                context,
+                                display: Some(display),
+                            })),
                         })
                     }
                     None => None,
@@ -462,9 +557,11 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            surface,
-                            context,
-                            display: Some(display),
+                            inner: Arc::new(RwLock::new(GLContextInner {
+                                surface,
+                                context,
+                                display: Some(display),
+                            })),
                         })
                     }
                     None => None,
@@ -540,9 +637,11 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            surface,
-                            context,
-                            display: Some(display),
+                            inner: Arc::new(RwLock::new(GLContextInner {
+                                surface,
+                                context,
+                                display: Some(display),
+                            })),
                         })
                     }
                     None => None,
@@ -553,76 +652,56 @@ impl GLContext {
     }
 
     fn has_extension(extensions: &str, name: &str) -> bool {
-        !extensions
-            .split(' ')
-            .into_iter().any(|s| s == name)
+        !extensions.split(' ').into_iter().any(|s| s == name)
     }
 
-    fn has_gl2support() -> bool {
-        return true;
-        /* let mut highest_es_version = 0;
-        glutin::display::Display::new(
-            RawDisplayHandle::AppKit()
-        )
-
-        let display = egl::get_display(EGL_DEFAULT_DISPLAY);
-        if display.is_none() {
-            return false;
+    #[cfg(target_os = "macos")]
+    pub fn has_gl2support() -> bool {
+        match unsafe { Display::new(RawDisplayHandle::AppKit(AppKitDisplayHandle::empty())) } {
+            Ok(display) => unsafe {
+                display
+                    .find_configs(
+                        ConfigTemplateBuilder::default()
+                            .with_api(Api::OPENGL)
+                            .build(),
+                    )
+                    .is_ok()
+            },
+            Err(_) => false,
         }
-        let display = display.unwrap();
-        let query = egl::query_string(display, EGL_EXTENSIONS);
-        if query.is_none() {
-            return false;
-        }
-        let query = query.unwrap();
-        let check_es3 =
-            GLContext::has_extension(query.to_string_lossy().as_ref(), "EGL_KHR_create_context");
-
-        let list = egl::get_configs(display, 1);
-
-        let mut value = 0i32;
-        for _ in 0..list.count {
-            if egl::get_config_attrib(display, list.configs, EGL_RENDERABLE_TYPE, &mut value) {
-                if check_es3 && value & EGL_VG_ALPHA_FORMAT_PRE_BIT == EGL_VG_ALPHA_FORMAT_PRE_BIT {
-                    if highest_es_version < 3 {
-                        highest_es_version = 3;
-                    }
-                } else if value & EGL_OPENGL_ES2_BIT == EGL_OPENGL_ES2_BIT {
-                    if highest_es_version < 2 {
-                        highest_es_version = 2;
-                    }
-                } else if value & EGL_OPENGL_ES_BIT == EGL_OPENGL_ES_BIT {
-                    if highest_es_version < 1 {
-                        highest_es_version = 1
-                    }
-                }
-            }
-        }
-
-        if highest_es_version >= 3 {
-            return true;
-        }
-        return false;
-
-        */
     }
 
-    // pub fn new_with_window(
-    //     window: *mut c_void,
-    //     width: i32,
-    //     height: i32,
-    //     surface_type: i32,
-    //     config: &mut ContextAttributes,
-    // ) -> Self {
-    //     match GLContext::create_surface(surface_type, config, width, height, window) {
-    //         Some((display, _, context, surface)) => Self {
-    //             surface: Some(surface),
-    //             context: Some(context),
-    //             display: Some(display),
-    //         },
-    //         None => Self::default(),
-    //     }
-    // }
+    #[cfg(target_os = "ios")]
+    pub fn has_gl2support() -> bool {
+        match unsafe { Display::new(RawDisplayHandle::UiKit(UiKitDisplayHandle::empty())) } {
+            Ok(display) => unsafe {
+                display
+                    .find_configs(
+                        ConfigTemplateBuilder::default()
+                            .with_api(Api::GLES3)
+                            .build(),
+                    )
+                    .is_ok()
+            },
+            Err(_) => false,
+        }
+    }
+
+    #[cfg(target_os = "android")]
+    pub fn has_gl2support() -> bool {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+            Ok(display) => unsafe {
+                display
+                    .find_configs(
+                        ConfigTemplateBuilder::default()
+                            .with_api(Api::GLES3)
+                            .build(),
+                    )
+                    .is_ok()
+            },
+            Err(_) => false,
+        }
+    }
 
     pub fn new_with_no_window(
         width: i32,
@@ -632,28 +711,21 @@ impl GLContext {
         GLContext::create_pbuffer(config, width, height)
     }
 
-    // pub fn get_current() -> Self {
-    //     Self {
-    //         surface: egl::get_current_surface(egl::EGL_DRAW),
-    //         context: egl::get_current_context(),
-    //         display: egl::get_current_display(),
-    //     }
-    // }
-
-    pub fn surface(&self) -> Option<&SurfaceHelper> {
-        self.surface.as_ref()
+    pub fn surface(&self) -> Option<MappedRwLockReadGuard<SurfaceHelper>> {
+        RwLockReadGuard::try_map(self.inner.read(), |lock| lock.surface.as_ref()).ok()
     }
 
-    pub fn context(&self) -> Option<&PossiblyCurrentContext> {
-        self.context.as_ref()
+    pub fn context(&self) -> Option<MappedRwLockReadGuard<PossiblyCurrentContext>> {
+        RwLockReadGuard::try_map(self.inner.read(), |lock| lock.context.as_ref()).ok()
     }
 
-    pub fn display(&self) -> Option<&Display> {
-        self.display.as_ref()
+    pub fn display(&self) -> Option<MappedRwLockReadGuard<Display>> {
+        RwLockReadGuard::try_map(self.inner.read(), |lock| lock.display.as_ref()).ok()
     }
 
     pub fn make_current(&self) -> bool {
-        match (self.context.as_ref(), self.surface.as_ref()) {
+        let lock = self.inner.read();
+        match (lock.context.as_ref(), lock.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).is_ok(),
@@ -664,11 +736,12 @@ impl GLContext {
     }
 
     pub fn remove_if_current(&self) {
-        if let Some(context) = self.context.as_ref() {}
+        if let Some(context) = self.inner.write().context.as_ref() {}
     }
 
     pub fn swap_buffers(&self) -> bool {
-        match (self.context.as_ref(), self.surface.as_ref()) {
+        let lock = self.inner.read();
+        match (lock.context.as_ref(), lock.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => buffer.swap_buffers(context).is_ok(),
@@ -679,7 +752,9 @@ impl GLContext {
     }
 
     pub fn get_surface_width(&self) -> i32 {
-        self.surface
+        self.inner
+            .read()
+            .surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.width().unwrap_or_default() as i32,
@@ -690,7 +765,9 @@ impl GLContext {
     }
 
     pub fn get_surface_height(&self) -> i32 {
-        self.surface
+        self.inner
+            .read()
+            .surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,
@@ -700,5 +777,3 @@ impl GLContext {
             .unwrap_or_default()
     }
 }
-
-

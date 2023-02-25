@@ -1,30 +1,25 @@
 #![allow(non_snake_case)]
 
-use cxx::{type_id, ExternType};
 use std::borrow::Cow;
-use std::error::Error;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::io::Read;
-use std::os::raw::{c_char, c_int, c_longlong, c_uint, c_ulong, c_void};
-use std::os::unix::io::FromRawFd;
-use std::os::unix::prelude::IntoRawFd;
+use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::sync::Arc;
 
-use parking_lot::lock_api::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-use parking_lot::{Mutex, MutexGuard, RawMutex, RawRwLock};
+use cxx::{type_id, ExternType};
+use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{RawRwLock, RwLock};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
-use canvas_core::image_asset::OutputFormat;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::context::{Context, ContextWrapper};
-use canvas_2d::gl::GLContext;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy,
@@ -32,10 +27,6 @@ use canvas_2d::utils::image::{
 };
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::OutputFormat;
-
-use crate::canvas2d;
-use crate::ffi::{ImageBitmapPremultiplyAlpha, WebGLExtensionType, WebGLResultType};
-use crate::webgl2::BitmapBytes;
 
 /* Utils */
 
@@ -71,7 +62,7 @@ unsafe impl ExternType for CanvasRenderingContext2D {
 }
 
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: i32) -> String {
-    canvas_core::to_data_url(&mut context.context, format, quality)
+    canvas_2d::to_data_url(&mut context.context, format, quality)
 }
 
 impl CanvasRenderingContext2D {
@@ -98,9 +89,20 @@ impl CanvasRenderingContext2D {
 }
 
 #[derive(Clone)]
-pub struct PaintStyle(Option<canvas2d::fill_and_stroke_styles::paint::PaintStyle>);
+pub struct PaintStyle(Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>);
+
+unsafe impl ExternType for PaintStyle {
+    type Id = type_id!("PaintStyle");
+    type Kind = cxx::kind::Trivial;
+}
 
 impl PaintStyle {
+    pub fn new(
+        style: Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>,
+    ) -> Self {
+        Self(style)
+    }
+
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.0.is_none()
@@ -130,6 +132,7 @@ pub struct TextMetrics(canvas_2d::context::drawing_text::text_metrics::TextMetri
 
 #[cxx::bridge]
 pub(crate) mod ffi {
+
     pub(crate) enum PaintStyleType {
         None,
         Color,
@@ -488,6 +491,17 @@ pub(crate) mod ffi {
         fn canvas_native_text_metrics_get_ideographic_baseline(metrics: &TextMetrics) -> f32;
         /* TextMetrics */
 
+        /* PaintStyle */
+        fn canvas_native_paint_style_from_bytes(
+            context: &CanvasRenderingContext2D,
+            repetition: i32,
+            width: i32,
+            height: i32,
+            bytes: &[u8],
+        ) -> Box<PaintStyle>;
+        fn canvas_native_paint_style_empty() -> Box<PaintStyle>;
+        /* PaintStyle */
+
         /* CanvasGradient */
         fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, color: &str);
 
@@ -515,24 +529,16 @@ pub(crate) mod ffi {
         /* GL */
 
         /* CanvasRenderingContext2D */
-        fn canvas_native_context_create_with_wrapper(context: i64)
-            -> Box<CanvasRenderingContext2D>;
+        fn canvas_native_context_create_with_wrapper(
+            context: i64,
+            gl_context: i64,
+        ) -> Box<CanvasRenderingContext2D>;
 
         fn canvas_native_context_resize(
             context: &mut CanvasRenderingContext2D,
             width: f32,
             height: f32,
         );
-
-        fn canvas_native_context_create_with_current(
-            width: f32,
-            height: f32,
-            scale: f32,
-            font_color: i32,
-            ppi: f32,
-            direction: u32,
-            alpha: bool,
-        ) -> Box<CanvasRenderingContext2D>;
 
         fn canvas_native_context_create(
             width: f32,
@@ -548,7 +554,7 @@ pub(crate) mod ffi {
             width: f32,
             height: f32,
             density: f32,
-            buffer_id: i32,
+            gl_context: i64,
             samples: i32,
             alpha: bool,
             font_color: i32,
@@ -856,12 +862,6 @@ pub(crate) mod ffi {
             data: &[u8],
             width: i32,
             height: i32,
-            repetition: &str,
-        ) -> Box<PaintStyle>;
-
-        fn canvas_native_context_create_pattern_bytes(
-            context: &mut CanvasRenderingContext2D,
-            bytes: i64,
             repetition: &str,
         ) -> Box<PaintStyle>;
 
@@ -1201,57 +1201,30 @@ impl Into<i32> for ffi::ImageBitmapResizeQuality {
     }
 }
 
-fn canvas_native_context_create_with_wrapper(context: i64) -> Box<CanvasRenderingContext2D> {
+fn canvas_native_context_create_with_wrapper(
+    context: i64,
+    gl_context: i64,
+) -> Box<CanvasRenderingContext2D> {
     let mut wrapper: *mut ContextWrapper = unsafe { context as _ };
     let mut wrapper = unsafe { &mut *wrapper };
+
+    let gl_context: *const RwLock<canvas_core::gl::GLContextInner> = unsafe { gl_context as _ };
+    let mut gl_context = GLContext::from_raw_inner(gl_context);
     let mut alpha = false;
     {
         let lock = wrapper.get_context();
         alpha = lock.device().alpha;
     }
     let clone = ContextWrapper::from_inner(Arc::clone(wrapper.get_inner()));
-    let ctx = GLContext::get_current();
     Box::new(CanvasRenderingContext2D {
         context: clone,
-        gl_context: ctx,
+        gl_context,
         alpha,
     })
 }
 
 fn canvas_native_context_resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
     context.resize(width, height);
-}
-
-fn canvas_native_context_create_with_current(
-    width: f32,
-    height: f32,
-    scale: f32,
-    font_color: i32,
-    ppi: f32,
-    direction: u32,
-    alpha: bool,
-) -> Box<CanvasRenderingContext2D> {
-    unsafe {
-        gl_bindings::Viewport(0, 0, width as i32, height as i32);
-    }
-    let mut frame_buffers = [0];
-    unsafe {
-        gl_bindings::GetIntegerv(
-            gl_bindings::FRAMEBUFFER_BINDING,
-            frame_buffers.as_mut_ptr(),
-        )
-    };
-    canvas_native_context_create_gl(
-        width,
-        height,
-        scale,
-        frame_buffers[0],
-        0,
-        alpha,
-        font_color,
-        ppi,
-        direction,
-    )
 }
 
 pub fn canvas_native_context_create(
@@ -1282,27 +1255,34 @@ pub fn canvas_native_context_create_gl(
     width: f32,
     height: f32,
     density: f32,
-    buffer_id: i32,
+    gl_context: i64,
     samples: i32,
     alpha: bool,
     font_color: i32,
     ppi: f32,
     direction: u32,
 ) -> Box<CanvasRenderingContext2D> {
-    let ctx = GLContext::get_current();
+    let gl_context: *const RwLock<canvas_core::gl::GLContextInner> = unsafe { gl_context as _ };
+    let mut gl_context = GLContext::from_raw_inner(gl_context);
+    gl_context.make_current();
+    let mut frame_buffers = [0];
+    unsafe {
+        gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
+    };
+
     let ret = Box::new(CanvasRenderingContext2D {
         context: ContextWrapper::new(Context::new_gl(
             width,
             height,
             density,
-            buffer_id,
+            frame_buffers[0],
             samples,
             alpha,
             font_color,
             ppi,
             TextDirection::from(direction),
         )),
-        gl_context: ctx,
+        gl_context,
         alpha,
     });
     ret.gl_context.swap_buffers();
@@ -1336,13 +1316,17 @@ pub fn canvas_native_context_create_gl_no_window(
         true,
     );
 
+    let mut attr = canvas_core::context_attributes::ContextAttributes::new(
+        alpha, false, false, false, "default", true, false, false, false, false, true,
+    );
+
+    let gl_context = GLContext::new_with_no_window(width as i32, height as i32, &mut attr).unwrap();
+
+    gl_context.make_current();
+
     let mut buffer_id = [0i32];
 
-    unsafe {
-        gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr())
-    }
-
-    let gl_context = GLContext::get_current();
+    unsafe { gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr()) }
 
     let context = ContextWrapper::new(Context::new_gl(
         width,
@@ -1669,7 +1653,7 @@ pub fn canvas_native_parse_css_color_rgba(
     b: &mut u8,
     a: &mut u8,
 ) -> bool {
-    canvas_core::utils::color::parse_color_rgba(value, r, g, b, a)
+    canvas_2d::utils::color::parse_color_rgba(value, r, g, b, a)
 }
 
 #[inline]
@@ -2024,60 +2008,30 @@ pub fn canvas_native_context_create_pattern_asset(
             Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
                 None,
                 |repetition| {
-                    from_image_slice(bytes, asset.width() as i32, asset.height() as i32).map(|image| {
-                        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
-                            context.get_context().create_pattern(image, repetition),
-                        )
-                    })
+                    from_image_slice(bytes, asset.width() as i32, asset.height() as i32).map(
+                        |image| {
+                            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                                context.get_context().create_pattern(image, repetition),
+                            )
+                        },
+                    )
                 },
             )))
         } else {
-            Box::new(PaintStyle(Repetition::try_from(repetition.as_ref()).map_or(
-                None,
-                |repetition| {
-                    from_bitmap_slice(bytes, asset.width() as i32, asset.height() as i32).map(|image| {
-                        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
-                            context.get_context().create_pattern(image, repetition),
-                        )
-                    })
-                },
-            )))
+            Box::new(PaintStyle(
+                Repetition::try_from(repetition.as_ref()).map_or(None, |repetition| {
+                    from_bitmap_slice(bytes, asset.width() as i32, asset.height() as i32).map(
+                        |image| {
+                            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                                context.get_context().create_pattern(image, repetition),
+                            )
+                        },
+                    )
+                }),
+            ))
         };
     }
     Box::new(PaintStyle(None))
-}
-
-fn canvas_native_context_create_pattern_bytes(
-    context: &mut CanvasRenderingContext2D,
-    bm: i64,
-    repetition: &str,
-) -> Box<PaintStyle> {
-    Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
-        None,
-        |repetition| {
-            if bm == 0 {
-                return None;
-            }
-            let bm = unsafe { bm as *mut BitmapBytes };
-            let mut bm = unsafe { *Box::from_raw(bm) };
-            let mut width = 0;
-            let mut height = 0;
-            {
-                if let Some(info) = bm.0.info() {
-                    width = info.width();
-                    height = info.height();
-                }
-            }
-            if let Some(bytes) = bm.0.data_mut() {
-                return from_image_slice(bytes, width as i32, height as i32).map(|image| {
-                    canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
-                        context.get_context().create_pattern(image, repetition),
-                    )
-                });
-            }
-            None
-        },
-    )))
 }
 
 pub fn canvas_native_context_create_pattern_encoded(
@@ -2724,7 +2678,7 @@ fn canvas_native_image_bitmap_create_from_asset(
     resize_height: f32,
 ) -> Box<ImageAsset> {
     Box::new(ImageAsset(
-        canvas_core::image_bitmap::create_from_image_asset_src_rect(
+        canvas_2d::image_bitmap::create_from_image_asset_src_rect(
             &mut asset.0,
             None,
             flip_y,
@@ -2751,7 +2705,7 @@ fn canvas_native_image_bitmap_create_from_asset_src_rect(
     resize_height: f32,
 ) -> Box<ImageAsset> {
     Box::new(ImageAsset(
-        canvas_core::image_bitmap::create_from_image_asset_src_rect(
+        canvas_2d::image_bitmap::create_from_image_asset_src_rect(
             &mut asset.0,
             Some((sx, sy, s_width, s_height).into()),
             flip_y,
@@ -2774,7 +2728,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes(
     resize_height: f32,
 ) -> Box<ImageAsset> {
     Box::new(ImageAsset(
-        canvas_core::image_bitmap::create_image_asset_encoded(
+        canvas_2d::image_bitmap::create_image_asset_encoded(
             bytes,
             None,
             flip_y,
@@ -2797,7 +2751,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
     resize_height: f32,
     output: &mut ImageAsset,
 ) -> bool {
-    canvas_core::image_bitmap::create_image_asset_with_output(
+    canvas_2d::image_bitmap::create_image_asset_with_output(
         bytes,
         None,
         flip_y,
@@ -2829,7 +2783,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
     resize_height: f32,
 ) -> Box<ImageAsset> {
     Box::new(ImageAsset(
-        canvas_core::image_bitmap::create_image_asset_encoded(
+        canvas_2d::image_bitmap::create_image_asset_encoded(
             bytes,
             Some((sx, sy, s_width, s_height).into()),
             flip_y,
@@ -2856,7 +2810,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
     resize_height: f32,
     output: &mut ImageAsset,
 ) -> bool {
-    canvas_core::image_bitmap::create_image_asset_with_output(
+    canvas_2d::image_bitmap::create_image_asset_with_output(
         bytes,
         Some((sx, sy, s_width, s_height).into()),
         flip_y,
@@ -3218,9 +3172,7 @@ pub fn canvas_native_matrix_set_m44(matrix: &mut Matrix, m44: f32) {
 pub struct ImageData(canvas_2d::context::pixel_manipulation::image_data::ImageData);
 
 impl ImageData {
-    pub(crate) fn new(
-        data: canvas_2d::context::pixel_manipulation::image_data::ImageData,
-    ) -> Self {
+    pub(crate) fn new(data: canvas_2d::context::pixel_manipulation::image_data::ImageData) -> Self {
         ImageData(data)
     }
 
@@ -3257,6 +3209,12 @@ pub fn canvas_native_image_data_get_shared_instance(image_data: &mut ImageData) 
 #[derive(Clone)]
 pub struct ImageAsset(pub(crate) canvas_core::image_asset::ImageAsset);
 
+impl ImageAsset {
+    pub fn new(asset: canvas_core::image_asset::ImageAsset) -> Self {
+        Self(asset)
+    }
+}
+
 unsafe impl ExternType for ImageAsset {
     type Id = type_id!("ImageAsset");
     type Kind = cxx::kind::Trivial;
@@ -3287,7 +3245,7 @@ impl ImageAsset {
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
     where
-        R: Read + std::io::Seek + std::io::BufRead
+        R: Read + std::io::Seek + std::io::BufRead,
     {
         self.0.load_from_reader(reader)
     }
@@ -3348,7 +3306,7 @@ pub fn canvas_native_image_asset_load_from_url(asset: &mut ImageAsset, url: &str
 }
 
 pub(crate) fn canvas_native_image_asset_load_from_url_internal(
-    asset: &mut canvas_2d::context::image_asset::ImageAsset,
+    asset: &mut canvas_core::image_asset::ImageAsset,
     url: &str,
 ) -> bool {
     use std::io::prelude::*;
@@ -3419,18 +3377,8 @@ pub fn canvas_native_image_asset_save_path(
     path: &str,
     format: u32,
 ) -> bool {
-    asset.save_path(
-        path,
-        canvas_2d::context::image_asset::OutputFormat::from(format),
-    )
+    asset.save_path(path, OutputFormat::from(format))
 }
-
-#[derive(Debug, Clone)]
-pub struct LooperData {
-    looper: *mut looper::ALooper,
-}
-
-unsafe impl Send for LooperData {}
 
 #[derive(Debug, Clone)]
 struct ThreadCallbackData {
@@ -3504,6 +3452,32 @@ pub fn canvas_native_text_metrics_get_ideographic_baseline(metrics: &TextMetrics
 
 /* TextMetrics */
 
+/* PaintStyle */
+fn canvas_native_paint_style_from_bytes(
+    context: &CanvasRenderingContext2D,
+    repetition: i32,
+    width: i32,
+    height: i32,
+    bytes: &[u8],
+) -> Box<PaintStyle> {
+    Box::new(PaintStyle(from_image_slice(bytes, width, height).map(
+        |image| {
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                context.get_context().create_pattern(
+                    image,
+                    canvas_2d::context::fill_and_stroke_styles::pattern::Repetition::from(
+                        repetition,
+                    ),
+                ),
+            )
+        },
+    )))
+}
+
+fn canvas_native_paint_style_empty() -> Box<PaintStyle> {
+    Box::new(PaintStyle(None))
+}
+/* PaintStyle */
 /* CanvasGradient */
 pub fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, color: &str) {
     if let Some(style) = style.0.as_mut() {

@@ -10,7 +10,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	private var isCreatedWithZeroSized = false
 	var gLContext: GLContext? = null
 		private set
-	private var mListener: TNSCanvas.Listener? = null
+	private var mListener: NSCCanvas.Listener? = null
 
 	constructor(context: Context?) : super(context) {
 		init()
@@ -33,7 +33,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 		gLContext!!.queueEvent(runnable!!)
 	}
 
-	fun setListener(listener: TNSCanvas.Listener?) {
+	fun setListener(listener: NSCCanvas.Listener?) {
 		mListener = listener
 	}
 

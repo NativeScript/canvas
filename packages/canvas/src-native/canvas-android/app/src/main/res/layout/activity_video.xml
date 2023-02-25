@@ -6,7 +6,7 @@
 	android:layout_height="match_parent"
 	tools:context="org.nativescript.canvasdemo.VideoActivity">
 
-	<org.nativescript.canvas.TNSCanvas
+	<org.nativescript.canvas.NSCCanvas
 		android:id="@+id/canvasView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"

@@ -1,40 +1,8 @@
 #![allow(non_snake_case)]
 
-use std::any::Any;
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::error::Error;
-use std::ffi::{CStr, CString};
-use std::io::Read;
-use std::os::raw::{c_char, c_int, c_longlong, c_uint, c_ulong, c_void};
-use std::os::unix::io::FromRawFd;
-use std::os::unix::prelude::IntoRawFd;
-use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
-use std::sync::Arc;
-
-use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
-use canvas_2d::context::drawing_paths::fill_rule::FillRule;
-use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
-use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
-use canvas_2d::context::image_asset::OutputFormat;
-use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
-use canvas_2d::context::line_styles::line_cap::LineCap;
-use canvas_2d::context::line_styles::line_join::LineJoin;
-use canvas_2d::context::text_styles::text_align::TextAlign;
-use canvas_2d::context::text_styles::text_direction::TextDirection;
-use canvas_2d::context::{Context, ContextWrapper};
-use canvas_2d::utils::color::{parse_color, to_parsed_color};
-use canvas_2d::utils::image::{
-    from_bitmap_slice, from_image_slice, from_image_slice_encoded,
-    from_image_slice_encoded_no_copy, from_image_slice_no_copy, to_image, to_image_encoded,
-    to_image_encoded_from_data,
-};
-use gl::prelude::WebGLVersion;
-use once_cell::sync::OnceCell;
+use std::os::raw::c_ulong;
 
 use crate::canvas2d::ImageAsset;
-use crate::webgl;
 use crate::webgl::{WebGLActiveInfo, WebGLResult, WebGLState};
 
 #[cxx::bridge]

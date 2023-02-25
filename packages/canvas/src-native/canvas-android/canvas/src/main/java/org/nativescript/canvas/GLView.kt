@@ -4,13 +4,9 @@ import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
-import android.util.Log
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
-import java.lang.Exception
 import java.lang.ref.WeakReference
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by triniwiz on 6/9/20
@@ -19,9 +15,7 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	internal var isCreated = false
 	private var isCreatedWithZeroSized = false
 
-	internal var renderer: WeakReference<GLRenderer>? = null
-
-	private var mListener: TNSCanvas.Listener? = null
+	private var mListener: NSCCanvas.Listener? = null
 
 	constructor(context: Context?) : super(context!!) {
 		init()
@@ -61,7 +55,7 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		surfaceTextureListener = this
 	}
 
-	fun setListener(listener: TNSCanvas.Listener?) {
+	fun setListener(listener: NSCCanvas.Listener?) {
 		mListener = listener
 	}
 

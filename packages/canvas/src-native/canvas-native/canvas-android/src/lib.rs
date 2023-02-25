@@ -62,7 +62,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
             let sdk_int = env.get_static_field_unchecked(
                 clazz,
                 sdk_int_id,
-                JavaType::Primitive(jni_compat::signature::Primitive::Int),
+                JavaType::Primitive(jni::signature::Primitive::Int),
             );
 
             sdk_int.unwrap().i().unwrap()
@@ -73,6 +73,69 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
     JVM.get_or_init(|| vm);
     jni::sys::JNI_VERSION_1_6
+}
+
+pub struct BitmapBytes(utils::image::BitmapBytes);
+
+#[cxx::bridge]
+pub(crate) mod ffi {
+    unsafe extern "C++" {
+        include!("canvas-cxx/src/canvas2d.rs.h");
+        pub(crate) type CanvasRenderingContext2D = canvas_cxx::canvas2d::CanvasRenderingContext2D;
+        pub(crate) type PaintStyle = canvas_cxx::canvas2d::PaintStyle;
+        pub(crate) fn canvas_native_paint_style_from_bytes(
+            context: &CanvasRenderingContext2D,
+            repetition: i32,
+            width: i32,
+            height: i32,
+            bytes: &[u8],
+        ) -> Box<PaintStyle>;
+        pub(crate) fn canvas_native_paint_style_empty() -> Box<PaintStyle>;
+    }
+
+    extern "Rust" {
+        type BitmapBytes;
+        fn canvas_native_context_create_pattern_bytes(
+            context: &mut CanvasRenderingContext2D,
+            bytes: i64,
+            repetition: &str,
+        ) -> Box<PaintStyle>;
+    }
+}
+
+fn canvas_native_context_create_pattern_bytes(
+    context: &mut ffi::CanvasRenderingContext2D,
+    bm: i64,
+    repetition: &str,
+) -> Box<ffi::PaintStyle> {
+    unsafe {
+        canvas_2d::context::fill_and_stroke_styles::pattern::Repetition::try_from(repetition)
+            .map_or(ffi::canvas_native_paint_style_empty(), |repetition| {
+                if bm == 0 {
+                    return ffi::canvas_native_paint_style_empty();
+                }
+                let bm = unsafe { bm as *mut BitmapBytes };
+                let mut bm = unsafe { *Box::from_raw(bm) };
+                let mut width = 0;
+                let mut height = 0;
+                {
+                    if let Some(info) = bm.0.info() {
+                        width = info.width();
+                        height = info.height();
+                    }
+                }
+                if let Some(bytes) = bm.0.data_mut() {
+                    return ffi::canvas_native_paint_style_from_bytes(
+                        context,
+                        repetition.into(),
+                        width as i32,
+                        height as i32,
+                        bytes,
+                    );
+                }
+                ffi::canvas_native_paint_style_empty()
+            })
+    }
 }
 
 /* Utils */

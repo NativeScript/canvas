@@ -2,12 +2,8 @@ package org.nativescript.canvasdemo
 
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
-import android.opengl.GLES20
 import android.os.Bundle
-import android.util.Log
 import android.view.Surface
-import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.SimpleExoPlayer
 import org.nativescript.canvas.*
@@ -17,7 +13,7 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
 class VideoActivity : AppCompatActivity() {
-	var canvas: TNSCanvas? = null
+	var canvas: NSCCanvas? = null
 	var surfaceTexture: SurfaceTexture? = null
 	var surface: Surface? = null
 	var hasFrame = true
@@ -157,7 +153,7 @@ gl_FragColor = texture2D(uSampler, TexCoord);
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_video)
-		TNSCanvas.enableDebug = true
+		NSCCanvas.enableDebug = true
 		player = MediaPlayer()
 		player.setOnPreparedListener {
 			this.width = it.videoWidth

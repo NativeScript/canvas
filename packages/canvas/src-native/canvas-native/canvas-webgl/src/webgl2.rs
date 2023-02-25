@@ -559,11 +559,9 @@ pub fn canvas_native_webgl2_get_active_uniforms(
     }
 
     match pname {
-        gl_bindings::UNIFORM_TYPE | gl_bindings::UNIFORM_SIZE => {
-            WebGLResult::U32Array(unsafe {
-                std::slice::from_raw_parts(params.as_ptr() as *const u32, params.len()).to_vec()
-            })
-        }
+        gl_bindings::UNIFORM_TYPE | gl_bindings::UNIFORM_SIZE => WebGLResult::U32Array(unsafe {
+            std::slice::from_raw_parts(params.as_ptr() as *const u32, params.len()).to_vec()
+        }),
         gl_bindings::UNIFORM_BLOCK_INDEX
         | gl_bindings::UNIFORM_OFFSET
         | gl_bindings::UNIFORM_ARRAY_STRIDE
@@ -640,8 +638,7 @@ pub fn canvas_native_webgl2_get_indexed_parameter(
     let mut binding = WebGLIndexedParameter::default();
 
     match target {
-        gl_bindings::UNIFORM_BUFFER_BINDING
-        | gl_bindings::TRANSFORM_FEEDBACK_BUFFER_BINDING => {
+        gl_bindings::UNIFORM_BUFFER_BINDING | gl_bindings::TRANSFORM_FEEDBACK_BUFFER_BINDING => {
             let mut new_target = [0i32];
             unsafe { gl_bindings::GetIntegerv(target, new_target.as_mut_ptr()) }
             if new_target[0] == 0 {
@@ -822,9 +819,7 @@ pub fn canvas_native_webgl2_get_sampler_parameter(
     match pname {
         gl_bindings::TEXTURE_MAX_LOD | gl_bindings::TEXTURE_MIN_LOD => {
             let mut float_value = [0f32];
-            unsafe {
-                gl_bindings::GetSamplerParameterfv(sampler, pname, float_value.as_mut_ptr())
-            }
+            unsafe { gl_bindings::GetSamplerParameterfv(sampler, pname, float_value.as_mut_ptr()) }
             return WebGLResult::F32(float_value[0]);
         }
         gl_bindings::TEXTURE_COMPARE_FUNC
@@ -1138,8 +1133,8 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
                 utils::gl::flip_in_place_3d(
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32
-                        * width) as usize,
+                    (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width)
+                        as usize,
                     height as usize,
                     depth as usize,
                 );
@@ -1196,8 +1191,7 @@ pub fn canvas_native_webgl2_tex_image3d(
             utils::gl::flip_in_place_3d(
                 buffer.as_mut_ptr(),
                 buffer.len(),
-                (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32
-                    * width) as usize,
+                (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width) as usize,
                 height as usize,
                 depth as usize,
             );
@@ -1350,8 +1344,7 @@ pub fn canvas_native_webgl2_tex_sub_image3d(
         utils::gl::flip_in_place_3d(
             buffer.as_mut_ptr(),
             buffer.len(),
-            (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width)
-                as usize,
+            (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width) as usize,
             height as usize,
             depth as usize,
         );
@@ -1756,3 +1749,568 @@ pub fn canvas_native_webgl2_vertex_attrib_i4uiv(index: u32, value: &[u32], state
         gl_bindings::VertexAttribI4uiv(index, value.as_ptr());
     }
 }
+
+pub const READ_BUFFER: u32 = 0x0C02;
+
+pub const UNPACK_ROW_LENGTH: u32 = 0x0CF2;
+
+pub const UNPACK_SKIP_ROWS: u32 = 0x0CF3;
+
+pub const UNPACK_SKIP_PIXELS: u32 = 0x0CF4;
+
+pub const PACK_ROW_LENGTH: u32 = 0x0D02;
+
+pub const PACK_SKIP_ROWS: u32 = 0x0D03;
+
+pub const PACK_SKIP_PIXELS: u32 = 0x0D04;
+
+pub const TEXTURE_BINDING_3D: u32 = 0x806A;
+
+pub const UNPACK_SKIP_IMAGES: u32 = 0x806D;
+
+pub const UNPACK_IMAGE_HEIGHT: u32 = 0x806E;
+
+pub const MAX_3D_TEXTURE_SIZE: u32 = 0x8073;
+
+pub const MAX_ELEMENTS_VERTICES: u32 = 0x80E8;
+
+pub const MAX_ELEMENTS_INDICES: u32 = 0x80E9;
+
+pub const MAX_TEXTURE_LOD_BIAS: u32 = 0x84FD;
+
+pub const MAX_FRAGMENT_UNIFORM_COMPONENTS: u32 = 0x8B49;
+
+pub const MAX_VERTEX_UNIFORM_COMPONENTS: u32 = 0x8B4A;
+
+pub const MAX_ARRAY_TEXTURE_LAYERS: u32 = 0x88FF;
+
+pub const MIN_PROGRAM_TEXEL_OFFSET: u32 = 0x8904;
+
+pub const MAX_PROGRAM_TEXEL_OFFSET: u32 = 0x8905;
+
+pub const MAX_VARYING_COMPONENTS: u32 = 0x8B4B;
+
+pub const FRAGMENT_SHADER_DERIVATIVE_HINT: u32 = 0x8B8B;
+
+pub const RASTERIZER_DISCARD: u32 = 0x8C89;
+
+pub const VERTEX_ARRAY_BINDING: u32 = 0x85B5;
+
+pub const MAX_VERTEX_OUTPUT_COMPONENTS: u32 = 0x9122;
+
+pub const MAX_FRAGMENT_INPUT_COMPONENTS: u32 = 0x9125;
+
+pub const MAX_SERVER_WAIT_TIMEOUT: u32 = 0x9111;
+
+pub const MAX_ELEMENT_INDEX: u32 = 0x8D6B;
+
+pub const RED: u32 = 0x1903;
+
+pub const RGB8: u32 = 0x8051;
+
+pub const RGBA8: u32 = 0x8058;
+
+pub const RGB10_A2: u32 = 0x8059;
+
+pub const TEXTURE_3D: u32 = 0x806F;
+
+pub const TEXTURE_WRAP_R: u32 = 0x8072;
+
+pub const TEXTURE_MIN_LOD: u32 = 0x813A;
+
+pub const TEXTURE_MAX_LOD: u32 = 0x813B;
+
+pub const TEXTURE_BASE_LEVEL: u32 = 0x813C;
+
+pub const TEXTURE_MAX_LEVEL: u32 = 0x813D;
+
+pub const TEXTURE_COMPARE_MODE: u32 = 0x884C;
+
+pub const TEXTURE_COMPARE_FUNC: u32 = 0x884D;
+
+pub const SRGB: u32 = 0x8C40;
+
+pub const SRGB8: u32 = 0x8C41;
+
+pub const SRGB8_ALPHA8: u32 = 0x8C43;
+
+pub const COMPARE_REF_TO_TEXTURE: u32 = 0x884E;
+
+pub const RGBA32F: u32 = 0x8814;
+
+pub const RGB32F: u32 = 0x8815;
+
+pub const RGBA16F: u32 = 0x881A;
+
+pub const RGB16F: u32 = 0x881B;
+
+pub const TEXTURE_2D_ARRAY: u32 = 0x8C1A;
+
+pub const TEXTURE_BINDING_2D_ARRAY: u32 = 0x8C1D;
+
+pub const R11F_G11F_B10F: u32 = 0x8C3A;
+
+pub const RGB9_E5: u32 = 0x8C3D;
+
+pub const RGBA32UI: u32 = 0x8D70;
+
+pub const RGB32UI: u32 = 0x8D71;
+
+pub const RGBA16UI: u32 = 0x8D76;
+
+pub const RGB16UI: u32 = 0x8D77;
+
+pub const RGBA8UI: u32 = 0x8D7C;
+
+pub const RGB8UI: u32 = 0x8D7D;
+
+pub const RGBA32I: u32 = 0x8D82;
+
+pub const RGB32I: u32 = 0x8D83;
+
+pub const RGBA16I: u32 = 0x8D88;
+
+pub const RGB16I: u32 = 0x8D89;
+
+pub const RGBA8I: u32 = 0x8D8E;
+
+pub const RGB8I: u32 = 0x8D8F;
+
+pub const RED_INTEGER: u32 = 0x8D94;
+
+pub const RGB_INTEGER: u32 = 0x8D98;
+
+pub const RGBA_INTEGER: u32 = 0x8D99;
+
+pub const R8: u32 = 0x8229;
+
+pub const RG8: u32 = 0x822B;
+
+pub const R16F: u32 = 0x822D;
+
+pub const R32F: u32 = 0x822E;
+
+pub const RG16F: u32 = 0x822F;
+
+pub const RG32F: u32 = 0x8230;
+
+pub const R8I: u32 = 0x8231;
+
+pub const R8UI: u32 = 0x8232;
+
+pub const R16I: u32 = 0x8233;
+
+pub const R16UI: u32 = 0x8234;
+
+pub const R32I: u32 = 0x8235;
+
+pub const R32UI: u32 = 0x8236;
+
+pub const RG8I: u32 = 0x8237;
+
+pub const RG8UI: u32 = 0x8238;
+
+pub const RG16I: u32 = 0x8239;
+
+pub const RG16UI: u32 = 0x823A;
+
+pub const RG32I: u32 = 0x823B;
+
+pub const RG32UI: u32 = 0x823C;
+
+pub const R8_SNORM: u32 = 0x8F94;
+
+pub const RG8_SNORM: u32 = 0x8F95;
+
+pub const RGB8_SNORM: u32 = 0x8F96;
+
+pub const RGBA8_SNORM: u32 = 0x8F97;
+
+pub const RGB10_A2UI: u32 = 0x906F;
+
+pub const TEXTURE_IMMUTABLE_FORMAT: u32 = 0x912F;
+
+pub const TEXTURE_IMMUTABLE_LEVELS: u32 = 0x82DF;
+
+pub const UNSIGNED_INT_2_10_10_10_REV: u32 = 0x8368;
+
+pub const UNSIGNED_INT_10F_11F_11F_REV: u32 = 0x8C3B;
+
+pub const UNSIGNED_INT_5_9_9_9_REV: u32 = 0x8C3E;
+
+pub const FLOAT_32_UNSIGNED_INT_24_8_REV: u32 = 0x8DAD;
+
+pub const UNSIGNED_INT_24_8: u32 = 0x84FA;
+
+pub const HALF_FLOAT: u32 = 0x140B;
+
+pub const RG: u32 = 0x8227;
+
+pub const RG_INTEGER: u32 = 0x8228;
+
+pub const INT_2_10_10_10_REV: u32 = 0x8D9F;
+
+pub const QUERY_RESULT_AVAILABLE: u32 = 0x8865;
+
+pub const QUERY_RESULT: u32 = 0x8866;
+
+pub const CURRENT_QUERY: u32 = 0x8867;
+
+pub const ANY_SAMPLES_PASSED: u32 = 0x8C2F;
+
+pub const ANY_SAMPLES_PASSED_CONSERVATIVE: u32 = 0x8D6A;
+
+pub const MAX_DRAW_BUFFERS: u32 = 0x8824;
+
+pub const DRAW_BUFFER0: u32 = 0x8825;
+
+pub const DRAW_BUFFER1: u32 = 0x8826;
+
+pub const DRAW_BUFFER2: u32 = 0x8827;
+
+pub const DRAW_BUFFER3: u32 = 0x8828;
+
+pub const DRAW_BUFFER4: u32 = 0x8829;
+
+pub const DRAW_BUFFER5: u32 = 0x882A;
+
+pub const DRAW_BUFFER6: u32 = 0x882B;
+
+pub const DRAW_BUFFER7: u32 = 0x882C;
+
+pub const DRAW_BUFFER8: u32 = 0x882D;
+
+pub const DRAW_BUFFER9: u32 = 0x882E;
+
+pub const DRAW_BUFFER10: u32 = 0x882F;
+
+/* Getting GL parameter information */
+
+/* Textures */
+
+pub const DRAW_BUFFER11: u32 = 0x8830;
+
+pub const DRAW_BUFFER12: u32 = 0x8831;
+
+pub const DRAW_BUFFER13: u32 = 0x8832;
+
+pub const DRAW_BUFFER14: u32 = 0x8833;
+
+pub const DRAW_BUFFER15: u32 = 0x8834;
+
+pub const MAX_COLOR_ATTACHMENTS: u32 = 0x8CDF;
+
+pub const COLOR_ATTACHMENT1: u32 = 0x8CE1;
+
+pub const COLOR_ATTACHMENT2: u32 = 0x8CE2;
+
+pub const COLOR_ATTACHMENT3: u32 = 0x8CE3;
+
+pub const COLOR_ATTACHMENT4: u32 = 0x8CE4;
+
+pub const COLOR_ATTACHMENT5: u32 = 0x8CE5;
+
+pub const COLOR_ATTACHMENT6: u32 = 0x8CE6;
+
+pub const COLOR_ATTACHMENT7: u32 = 0x8CE7;
+
+pub const COLOR_ATTACHMENT8: u32 = 0x8CE8;
+
+pub const COLOR_ATTACHMENT9: u32 = 0x8CE9;
+
+pub const COLOR_ATTACHMENT10: u32 = 0x8CEA;
+
+pub const COLOR_ATTACHMENT11: u32 = 0x8CEB;
+
+pub const COLOR_ATTACHMENT12: u32 = 0x8CEC;
+
+pub const COLOR_ATTACHMENT13: u32 = 0x8CED;
+
+pub const COLOR_ATTACHMENT14: u32 = 0x8CEE;
+
+pub const COLOR_ATTACHMENT15: u32 = 0x8CEF;
+
+pub const SAMPLER_3D: u32 = 0x8B5F;
+
+pub const SAMPLER_2D_SHADOW: u32 = 0x8B62;
+
+pub const SAMPLER_2D_ARRAY: u32 = 0x8DC1;
+
+pub const SAMPLER_2D_ARRAY_SHADOW: u32 = 0x8DC4;
+
+pub const SAMPLER_CUBE_SHADOW: u32 = 0x8DC5;
+
+pub const INT_SAMPLER_2D: u32 = 0x8DCA;
+
+pub const INT_SAMPLER_3D: u32 = 0x8DCB;
+
+pub const INT_SAMPLER_CUBE: u32 = 0x8DCC;
+
+pub const INT_SAMPLER_2D_ARRAY: u32 = 0x8DCF;
+
+pub const UNSIGNED_INT_SAMPLER_2D: u32 = 0x8DD2;
+
+pub const UNSIGNED_INT_SAMPLER_3D: u32 = 0x8DD3;
+
+pub const UNSIGNED_INT_SAMPLER_CUBE: u32 = 0x8DD4;
+
+pub const UNSIGNED_INT_SAMPLER_2D_ARRAY: u32 = 0x8DD7;
+
+pub const MAX_SAMPLES: u32 = 0x8D57;
+
+pub const SAMPLER_BINDING: u32 = 0x8919;
+
+pub const PIXEL_PACK_BUFFER: u32 = 0x88EB;
+
+pub const PIXEL_UNPACK_BUFFER: u32 = 0x88EC;
+
+pub const PIXEL_PACK_BUFFER_BINDING: u32 = 0x88ED;
+
+pub const PIXEL_UNPACK_BUFFER_BINDING: u32 = 0x88EF;
+
+pub const COPY_READ_BUFFER: u32 = 0x8F36;
+
+pub const COPY_WRITE_BUFFER: u32 = 0x8F37;
+
+pub const COPY_READ_BUFFER_BINDING: u32 = 0x8F36;
+
+pub const COPY_WRITE_BUFFER_BINDING: u32 = 0x8F37;
+
+pub const FLOAT_MAT2x3: u32 = 0x8B65;
+
+pub const FLOAT_MAT2x4: u32 = 0x8B66;
+
+pub const FLOAT_MAT3x2: u32 = 0x8B67;
+
+pub const FLOAT_MAT3x4: u32 = 0x8B68;
+
+pub const FLOAT_MAT4x2: u32 = 0x8B69;
+
+pub const FLOAT_MAT4x3: u32 = 0x8B6A;
+
+pub const UNSIGNED_INT_VEC2: u32 = 0x8DC6;
+
+pub const UNSIGNED_INT_VEC3: u32 = 0x8DC7;
+
+pub const UNSIGNED_INT_VEC4: u32 = 0x8DC8;
+
+pub const UNSIGNED_NORMALIZED: u32 = 0x8C17;
+
+pub const SIGNED_NORMALIZED: u32 = 0x8F9C;
+
+/* Vertex attributes */
+pub const VERTEX_ATTRIB_ARRAY_INTEGER: u32 = 0x88FD;
+
+pub const VERTEX_ATTRIB_ARRAY_DIVISOR: u32 = 0x88FE;
+
+pub const TRANSFORM_FEEDBACK_BUFFER_MODE: u32 = 0x8C7F;
+
+pub const MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS: u32 = 0x8C80;
+
+pub const TRANSFORM_FEEDBACK_VARYINGS: u32 = 0x8C83;
+
+pub const TRANSFORM_FEEDBACK_BUFFER_START: u32 = 0x8C84;
+
+pub const TRANSFORM_FEEDBACK_BUFFER_SIZE: u32 = 0x8C85;
+
+pub const TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN: u32 = 0x8C88;
+
+pub const MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS: u32 = 0x8C8A;
+
+/* Textures */
+
+/* Pixel types */
+
+pub const MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS: u32 = 0x8C8B;
+
+pub const INTERLEAVED_ATTRIBS: u32 = 0x8C8C;
+
+pub const SEPARATE_ATTRIBS: u32 = 0x8C8D;
+
+pub const TRANSFORM_FEEDBACK_BUFFER: u32 = 0x8C8E;
+
+pub const TRANSFORM_FEEDBACK_BUFFER_BINDING: u32 = 0x8C8F;
+
+pub const TRANSFORM_FEEDBACK: u32 = 0x8E22;
+
+pub const TRANSFORM_FEEDBACK_PAUSED: u32 = 0x8E23;
+
+pub const TRANSFORM_FEEDBACK_ACTIVE: u32 = 0x8E24;
+
+pub const TRANSFORM_FEEDBACK_BINDING: u32 = 0x8E25;
+
+/* Pixel types */
+
+/* Queries */
+
+pub const FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING: u32 = 0x8210;
+
+pub const FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE: u32 = 0x8211;
+
+pub const FRAMEBUFFER_ATTACHMENT_RED_SIZE: u32 = 0x8212;
+
+pub const FRAMEBUFFER_ATTACHMENT_GREEN_SIZE: u32 = 0x8213;
+
+pub const FRAMEBUFFER_ATTACHMENT_BLUE_SIZE: u32 = 0x8214;
+
+/* Queries */
+
+/* Draw buffers */
+
+pub const FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE: u32 = 0x8215;
+
+pub const FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE: u32 = 0x8216;
+
+pub const FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE: u32 = 0x8217;
+
+pub const FRAMEBUFFER_DEFAULT: u32 = 0x8218;
+
+pub const DEPTH_STENCIL_ATTACHMENT: u32 = 0x821A;
+
+pub const DEPTH_STENCIL: u32 = 0x84F9;
+
+pub const DEPTH24_STENCIL8: u32 = 0x88F0;
+
+pub const DRAW_FRAMEBUFFER_BINDING: u32 = 0x8CA6;
+
+pub const READ_FRAMEBUFFER: u32 = 0x8CA8;
+
+pub const DRAW_FRAMEBUFFER: u32 = 0x8CA9;
+
+pub const READ_FRAMEBUFFER_BINDING: u32 = 0x8CAA;
+
+pub const RENDERBUFFER_SAMPLES: u32 = 0x8CAB;
+
+pub const FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER: u32 = 0x8CD4;
+
+pub const FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: u32 = 0x8D56;
+
+pub const UNIFORM_BUFFER: u32 = 0x8A11;
+
+pub const UNIFORM_BUFFER_BINDING: u32 = 0x8A28;
+
+pub const UNIFORM_BUFFER_START: u32 = 0x8A29;
+
+pub const UNIFORM_BUFFER_SIZE: u32 = 0x8A2A;
+
+pub const MAX_VERTEX_UNIFORM_BLOCKS: u32 = 0x8A2B;
+
+pub const MAX_FRAGMENT_UNIFORM_BLOCKS: u32 = 0x8A2D;
+
+pub const MAX_COMBINED_UNIFORM_BLOCKS: u32 = 0x8A2E;
+
+pub const MAX_UNIFORM_BUFFER_BINDINGS: u32 = 0x8A2F;
+
+pub const MAX_UNIFORM_BLOCK_SIZE: u32 = 0x8A30;
+
+pub const MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS: u32 = 0x8A31;
+
+pub const MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS: u32 = 0x8A33;
+
+pub const UNIFORM_BUFFER_OFFSET_ALIGNMENT: u32 = 0x8A34;
+
+pub const ACTIVE_UNIFORM_BLOCKS: u32 = 0x8A36;
+
+pub const UNIFORM_TYPE: u32 = 0x8A37;
+
+pub const UNIFORM_SIZE: u32 = 0x8A38;
+
+pub const UNIFORM_BLOCK_INDEX: u32 = 0x8A3A;
+
+pub const UNIFORM_OFFSET: u32 = 0x8A3B;
+
+pub const UNIFORM_ARRAY_STRIDE: u32 = 0x8A3C;
+
+pub const UNIFORM_MATRIX_STRIDE: u32 = 0x8A3D;
+
+/* Draw buffers */
+
+/* Samplers */
+
+pub const UNIFORM_IS_ROW_MAJOR: u32 = 0x8A3E;
+
+pub const UNIFORM_BLOCK_BINDING: u32 = 0x8A3F;
+
+pub const UNIFORM_BLOCK_DATA_SIZE: u32 = 0x8A40;
+
+pub const UNIFORM_BLOCK_ACTIVE_UNIFORMS: u32 = 0x8A42;
+
+pub const UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES: u32 = 0x8A43;
+
+pub const UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER: u32 = 0x8A44;
+
+pub const UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER: u32 = 0x8A46;
+
+pub const OBJECT_TYPE: u32 = 0x9112;
+
+pub const SYNC_CONDITION: u32 = 0x9113;
+
+pub const SYNC_STATUS: u32 = 0x9114;
+
+pub const SYNC_FLAGS: u32 = 0x9115;
+
+pub const SYNC_FENCE: u32 = 0x9116;
+
+pub const SYNC_GPU_COMMANDS_COMPLETE: u32 = 0x9117;
+
+pub const UNSIGNALED: u32 = 0x9118;
+
+pub const SIGNALED: u32 = 0x9119;
+
+/* Samplers */
+
+/* Buffers */
+
+pub const ALREADY_SIGNALED: u32 = 0x911A;
+
+pub const TIMEOUT_EXPIRED: u32 = 0x911B;
+
+pub const CONDITION_SATISFIED: u32 = 0x911C;
+
+pub const WAIT_FAILED: u32 = 0x911D;
+
+pub const SYNC_FLUSH_COMMANDS_BIT: u32 = 0x00000001;
+
+pub const COLOR: u32 = 0x1800;
+
+pub const DEPTH: u32 = 0x1801;
+
+pub const STENCIL: u32 = 0x1802;
+
+/* Buffers */
+
+/* Data types */
+
+pub const MIN: u32 = 0x8007;
+
+pub const MAX: u32 = 0x8008;
+
+pub const DEPTH_COMPONENT24: u32 = 0x81A6;
+
+pub const STREAM_READ: u32 = 0x88E1;
+
+pub const STREAM_COPY: u32 = 0x88E2;
+
+pub const STATIC_READ: u32 = 0x88E5;
+
+pub const STATIC_COPY: u32 = 0x88E6;
+
+pub const DYNAMIC_READ: u32 = 0x88E9;
+
+pub const DYNAMIC_COPY: u32 = 0x88EA;
+
+pub const DEPTH_COMPONENT32F: u32 = 0x8CAC;
+
+pub const DEPTH32F_STENCIL8: u32 = 0x8CAD;
+
+/* Data types */
+
+pub const INVALID_INDEX: u32 = 0xFFFFFFFF;
+
+pub const TIMEOUT_IGNORED: i32 = -1;
+
+/* Vertex attributes */
+
+/* Transform feedback */
+
+pub const MAX_CLIENT_WAIT_TIMEOUT_WEBGL: u32 = 0x9247;

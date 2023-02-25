@@ -11,7 +11,6 @@ use jni::objects::{
 use jni::sys::{jboolean, jint, jlong, JNI_TRUE};
 use jni::JNIEnv;
 
-use canvas_2d::context::image_asset::ImageAsset;
 use canvas_core::image_asset::ImageAsset;
 
 use crate::{LogPriority, __log};

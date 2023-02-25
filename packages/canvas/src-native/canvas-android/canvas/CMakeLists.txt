@@ -42,8 +42,8 @@ set(CARGO_MANIFEST ${PROJECT_NATIVE_ROOT_DIR}/Cargo.toml)
 set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
-set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs)
-set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc)
+set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs)
+set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs.cc)
 
 set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -nostdinc++ -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
 
@@ -71,6 +71,8 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
         ${PROJECT_SOURCE_DIR}/src/main/cpp
+        ${PROJECT_SOURCE_DIR}/src/main/jsi
+        ${PROJECT_SOURCE_DIR}/src/main/v8runtime
 )
 include_directories(
         canvasnativev8
@@ -98,75 +100,21 @@ add_library(
 
         src/main/cpp/rust/cxx.cc
 
-        src/main/cpp/Bridge.cpp
-        src/main/cpp/Caches.cpp
-        src/main/cpp/Helpers.cpp
-        src/main/cpp/Configuration.cpp
-        src/main/cpp/ImageAssetImpl.cpp
-        src/main/cpp/ImageBitmapImpl.cpp
-        src/main/cpp/ObjectCacheEntry.cpp
-        src/main/cpp/OneByteStringResource.cpp
-        src/main/cpp/OnImageAssetLoadCallbackHolder.cpp
-        src/main/cpp/OnImageBitmapLoadCallbackHolder.cpp
-        src/main/cpp/OnRafCallback.cpp
-        src/main/cpp/RafImpl.cpp
-        src/main/cpp/TextDecoderImpl.cpp
-        src/main/cpp/TextEncoderImpl.cpp
 
-        src/main/cpp/canvas2d/Canvas2D.cpp
-        src/main/cpp/canvas2d/CanvasGradient.cpp
-        src/main/cpp/canvas2d/CanvasPattern.cpp
-        src/main/cpp/canvas2d/CanvasRenderingContext2DImpl.cpp
-        src/main/cpp/canvas2d/ImageDataImpl.cpp
-        src/main/cpp/canvas2d/MatrixImpl.cpp
-        src/main/cpp/canvas2d/Path2D.cpp
-        src/main/cpp/canvas2d/TextMetricsImpl.cpp
+        src/main/cpp/jsi/jsi.cpp
+        src/main/cpp/jsi/jsilib-posix.cpp
+        src/main/cpp/jsi/jsilib-windows.cpp
 
-        src/main/cpp/webgl/WebGL.cpp
-        src/main/cpp/webgl/WebGLActiveInfoImpl.cpp
-        src/main/cpp/webgl/WebGLBuffer.cpp
-        src/main/cpp/webgl/WebGLFramebuffer.cpp
-        src/main/cpp/webgl/WebGLProgram.cpp
-        src/main/cpp/webgl/WebGLRenderbuffer.cpp
-        src/main/cpp/webgl/WebGLRenderingContext.cpp
-        src/main/cpp/webgl/WebGLRenderingContextBase.cpp
-        src/main/cpp/webgl/WebGLShader.cpp
-        src/main/cpp/webgl/WebGLShaderPrecisionFormatImpl.cpp
-        src/main/cpp/webgl/WebGLTexture.cpp
-        src/main/cpp/webgl/WebGLUniformLocation.cpp
 
-        src/main/cpp/webgl/extensions/ANGLE_instanced_arraysImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_blend_minmaxImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_color_buffer_half_floatImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_disjoint_timer_queryImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_shader_texture_lodImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_sRGBImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_texture_filter_anisotropicImpl.cpp
-        src/main/cpp/webgl/extensions/OES_element_index_uintImpl.cpp
-        src/main/cpp/webgl/extensions/OES_standard_derivativesImpl.cpp
-        src/main/cpp/webgl/extensions/OES_texture_float_linearImpl.cpp
-        src/main/cpp/webgl/extensions/OES_texture_floatImpl.cpp
-        src/main/cpp/webgl/extensions/OES_texture_half_float_linearImpl.cpp
-        src/main/cpp/webgl/extensions/OES_texture_half_floatImpl.cpp
-        src/main/cpp/webgl/extensions/OES_vertex_array_objectImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_color_buffer_floatImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_atcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_etc1Impl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_etcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_pvrtcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_s3tc_srgbImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_s3tcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_depth_textureImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_draw_buffersImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_lose_contextImpl.cpp
+        src/main/cpp/v8runtime/HostProxy.cpp
+        src/main/cpp/v8runtime/JSIV8ValueConverter.cpp
+        src/main/cpp/v8runtime/V8PointerValue.cpp
+        src/main/cpp/v8runtime/V8Runtime.cpp
+        src/main/cpp/v8runtime/V8RuntimeFactory.cpp
 
-        src/main/cpp/webgl2/WebGL2.cpp
-        src/main/cpp/webgl2/WebGL2RenderingContext.cpp
-        src/main/cpp/webgl2/WebGLQuery.cpp
-        src/main/cpp/webgl2/WebGLSampler.cpp
-        src/main/cpp/webgl2/WebGLSyncImpl.cpp
-        src/main/cpp/webgl2/WebGLTransformFeedback.cpp
-        src/main/cpp/webgl2/WebGLVertexArrayObject.cpp
+        src/main/cpp/CanvasJSIModule.cpp
+
+        src/main/cpp/JSIRuntime.cpp
 
         ${CANVAS_ANDROID_BRIDGE_CPP}
 )
@@ -210,8 +158,7 @@ if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND
           ${egl}
           ${gl2}
           ${gl3}
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libv8.a
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libzip.a
+          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
           ${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
           ${CANVAS_ANDROID_LIB}
           android

@@ -19,7 +19,7 @@ pub struct Raf {
 }
 
 impl Raf {
-    extern "C" fn callback(frame_time_nanos: c_long, data: *mut ::std::os::raw::c_void) {
+    extern "C" fn callback(frame_time_nanos: c_long, data: *mut std::os::raw::c_void) {
         if !data.is_null() {
             let data_ptr = data;
             let data = data as *mut Raf;

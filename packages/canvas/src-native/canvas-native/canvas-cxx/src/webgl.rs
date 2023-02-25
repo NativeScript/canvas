@@ -1,46 +1,16 @@
 #![allow(non_snake_case)]
 
-extern crate core;
-
-use std::any::Any;
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::error::Error;
-use std::ffi::{CStr, CString};
-use std::io::Read;
 use std::os::raw::c_void;
-use std::os::unix::io::FromRawFd;
-use std::os::unix::prelude::IntoRawFd;
 
 use cxx::{type_id, ExternType};
+use parking_lot::RwLock;
 
-use canvas_2d::{
-    context::compositing::composite_operation_type::CompositeOperationType,
-    context::drawing_paths::fill_rule::FillRule,
-    context::fill_and_stroke_styles::paint::paint_style_set_color_with_string,
-    context::fill_and_stroke_styles::pattern::Repetition,
-    context::image_asset::OutputFormat,
-    context::line_styles::line_cap::LineCap,
-    context::line_styles::line_join::LineJoin,
-    context::text_styles::text_align::TextAlign,
-    context::text_styles::TextDirection,
-    context::ImageSmoothingQuality,
-    context::{Context, ContextWrapper},
-    utils::color::{parse_color, to_parsed_color},
-    utils::image::{
-        from_bitmap_slice, from_image_slice, from_image_slice_encoded,
-        from_image_slice_encoded_no_copy, from_image_slice_no_copy, to_image, to_image_encoded,
-        to_image_encoded_from_data,
-    },
-};
-use canvas_core::gl::GLContext;
-use canvas_core::image_asset::OutputFormat;
-use canvas_webgl::prelude::{WebGLVersion};
-use once_cell::sync::OnceCell;
+use canvas_webgl::prelude::WebGLVersion;
 
 use crate::canvas2d::ImageAsset;
-use crate::webgl;
 use crate::webgl::ffi::{WebGLExtensionType, WebGLResultType};
+
+pub struct GLContext(pub(crate) canvas_core::gl::GLContext);
 
 #[cxx::bridge]
 pub(crate) mod ffi {
@@ -366,6 +336,7 @@ pub(crate) mod ffi {
         /* WebGLRenderingContext */
 
         fn canvas_native_webgl_create(
+            gl_context: i64,
             version: &str,
             alpha: bool,
             antialias: bool,
@@ -1141,18 +1112,21 @@ pub(crate) mod ffi {
     }
 }
 
-
 impl Into<ffi::WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
     fn into(self) -> ffi::WebGLExtensionType {
         match self {
-            canvas_webgl::prelude::WebGLExtensionType::EXT_blend_minmax => ffi::WebGLExtensionType::EXT_blend_minmax,
+            canvas_webgl::prelude::WebGLExtensionType::EXT_blend_minmax => {
+                ffi::WebGLExtensionType::EXT_blend_minmax
+            }
             canvas_webgl::prelude::WebGLExtensionType::EXT_color_buffer_half_float => {
                 ffi::WebGLExtensionType::EXT_color_buffer_half_float
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_disjoint_timer_query => {
                 ffi::WebGLExtensionType::EXT_disjoint_timer_query
             }
-            canvas_webgl::prelude::WebGLExtensionType::EXT_sRGB => ffi::WebGLExtensionType::EXT_sRGB,
+            canvas_webgl::prelude::WebGLExtensionType::EXT_sRGB => {
+                ffi::WebGLExtensionType::EXT_sRGB
+            }
             canvas_webgl::prelude::WebGLExtensionType::EXT_shader_texture_lod => {
                 ffi::WebGLExtensionType::EXT_shader_texture_lod
             }
@@ -1165,7 +1139,9 @@ impl Into<ffi::WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType
             canvas_webgl::prelude::WebGLExtensionType::OES_standard_derivatives => {
                 ffi::WebGLExtensionType::OES_standard_derivatives
             }
-            canvas_webgl::prelude::WebGLExtensionType::OES_texture_float => ffi::WebGLExtensionType::OES_texture_float,
+            canvas_webgl::prelude::WebGLExtensionType::OES_texture_float => {
+                ffi::WebGLExtensionType::OES_texture_float
+            }
             canvas_webgl::prelude::WebGLExtensionType::OES_texture_float_linear => {
                 ffi::WebGLExtensionType::OES_texture_float_linear
             }
@@ -1199,12 +1175,18 @@ impl Into<ffi::WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_pvrtc => {
                 ffi::WebGLExtensionType::WEBGL_compressed_texture_pvrtc
             }
-            canvas_webgl::prelude::WebGLExtensionType::WEBGL_lose_context => ffi::WebGLExtensionType::WEBGL_lose_context,
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_lose_context => {
+                ffi::WebGLExtensionType::WEBGL_lose_context
+            }
             canvas_webgl::prelude::WebGLExtensionType::ANGLE_instanced_arrays => {
                 ffi::WebGLExtensionType::ANGLE_instanced_arrays
             }
-            canvas_webgl::prelude::WebGLExtensionType::WEBGL_depth_texture => ffi::WebGLExtensionType::WEBGL_depth_texture,
-            canvas_webgl::prelude::WebGLExtensionType::WEBGL_draw_buffers => ffi::WebGLExtensionType::WEBGL_draw_buffers,
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_depth_texture => {
+                ffi::WebGLExtensionType::WEBGL_depth_texture
+            }
+            canvas_webgl::prelude::WebGLExtensionType::WEBGL_draw_buffers => {
+                ffi::WebGLExtensionType::WEBGL_draw_buffers
+            }
             canvas_webgl::prelude::WebGLExtensionType::None => ffi::WebGLExtensionType::None,
         }
     }
@@ -1246,7 +1228,7 @@ fn canvas_native_webgl_to_data_url(state: &WebGLState, format: &str, quality: i3
         );
     }
 
-    canvas_core::bytes_to_data_url(width, height, buffer.as_slice(), format, quality)
+    canvas_2d::bytes_to_data_url(width, height, buffer.as_slice(), format, quality)
 }
 
 #[derive(Debug)]
@@ -1259,7 +1241,7 @@ unsafe impl ExternType for WebGLState {
 
 impl WebGLState {
     pub fn new_with_context(
-        context: GLContext,
+        context: canvas_core::gl::GLContext,
         version: WebGLVersion,
         alpha: bool,
         antialias: bool,
@@ -1944,6 +1926,7 @@ fn canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(
 /* OES_vertex_array_object */
 
 pub fn canvas_native_webgl_create(
+    gl_context: i64,
     version: &str,
     alpha: bool,
     antialias: bool,
@@ -1964,8 +1947,11 @@ pub fn canvas_native_webgl_create(
         WebGLVersion::NONE
     };
 
+    let gl_context: *const RwLock<canvas_core::gl::GLContextInner> = unsafe { gl_context as _ };
+    let mut gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
+
     let inner = WebGLState::new_with_context(
-        ctx,
+        gl_context,
         version,
         alpha,
         antialias,
@@ -2054,7 +2040,8 @@ pub fn canvas_native_webgl_create_no_window_internal(
         is_canvas,
     );
 
-    let ctx = GLContext::new_with_no_window(width, height, &mut attrs).unwrap_or_default();
+    let ctx = canvas_core::gl::GLContext::new_with_no_window(width, height, &mut attrs)
+        .unwrap_or_default();
 
     WebGLState::new_with_context(
         ctx,
@@ -3112,18 +3099,54 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas: &mut crate::canvas2d::CanvasRenderingContext2D,
     state: &mut WebGLState,
 ) {
-    let mut pixels =
-        canvas_webgl::webgl::canvas_native_webgl_read_canvas2d_pixels(canvas, &mut state.0);
+    let mut context = &mut state.0;
+
+    context.remove_if_current();
+    let mut width = 0f32;
+    let mut height = 0f32;
+    let mut source_non_gpu = false;
+    {
+        let ctx = canvas.get_context();
+        let device = ctx.device();
+        width = device.width;
+        height = device.height;
+        source_non_gpu = device.non_gpu;
+    }
+
+    let mut source_ctx = canvas.get_context_mut();
+    let mut buf;
+    if !source_non_gpu {
+        canvas.gl_context.make_current();
+        buf = vec![0u8; (width as i32 * height as i32 * 4) as usize];
+        unsafe {
+            gl_bindings::Finish();
+            gl_bindings::ReadPixels(
+                0,
+                0,
+                width as i32,
+                height as i32,
+                gl_bindings::RGBA,
+                gl_bindings::UNSIGNED_BYTE,
+                buf.as_mut_ptr() as *mut c_void,
+            );
+        }
+        canvas.gl_context.remove_if_current();
+    } else {
+        buf = source_ctx.read_pixels();
+    }
+
+    context.make_current();
+
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
         internalformat,
-        pixels.0,
-        pixels.1,
+        width as i32,
+        height as i32,
         0,
         format,
         image_type,
-        pixels.2.as_mut_slice(),
+        buf.as_mut_slice(),
         state.get_inner_mut(),
     );
 }

@@ -18,7 +18,7 @@ class NSCImageAsset {
 	companion object {
 
 		init {
-			TNSCanvas.loadLib()
+			NSCCanvas.loadLib()
 		}
 
 		@JvmStatic

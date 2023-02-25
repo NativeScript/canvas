@@ -1467,7 +1467,7 @@ pub fn canvas_native_webgl_get_vertex_attrib(
     }
 }
 
-pub fn canvas_native_webgl_get_is_context_lost(state: &mut WebGLState) -> bool {
+pub fn canvas_native_webgl_get_is_context_lost(_state: &mut WebGLState) -> bool {
     // TODO improve
     false
 }
@@ -1824,51 +1824,6 @@ pub fn canvas_native_webgl_read_webgl_pixels(
     (width as i32, height as i32, buf)
 }
 
-/*
-pub fn canvas_native_webgl_read_canvas2d_pixels(
-    source: &mut crate::CanvasRenderingContext2D,
-    context: &mut WebGLState,
-) -> (i32, i32, Vec<u8>) {
-    context.remove_if_current();
-    let mut width = 0f32;
-    let mut height = 0f32;
-    let mut source_non_gpu = false;
-    {
-        let ctx = source.get_context();
-        let device = ctx.device();
-        width = device.width;
-        height = device.height;
-        source_non_gpu = device.non_gpu;
-    }
-
-    let mut source_ctx = source.get_context_mut();
-    let mut buf;
-    if !source_non_gpu {
-        source.gl_context.make_current();
-        buf = vec![0u8; (width as i32 * height as i32 * 4) as usize];
-        unsafe {
-            gl_bindings::Finish();
-            gl_bindings::ReadPixels(
-                0,
-                0,
-                width as i32,
-                height as i32,
-                gl_bindings::RGBA,
-                gl_bindings::UNSIGNED_BYTE,
-                buf.as_mut_ptr() as *mut c_void,
-            );
-        }
-        source.gl_context.remove_if_current();
-    } else {
-        buf = source_ctx.read_pixels();
-    }
-
-    context.make_current();
-
-    (width as i32, height as i32, buf)
-}
-
-*/
 
 //    texImage2D(target, level, internalformat, width, height, border, format, type)
 //    texImage2D(target, level, internalformat, width, height, border, format, type, pixels) // pixels is instance of ArrayBufferView

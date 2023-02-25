@@ -12,7 +12,6 @@ class CPUView @JvmOverloads constructor(
 	context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 	internal var view: Bitmap? = null
-	internal var glRenderer: GLRenderer? = null
 
 	fun resize(width: Int, height: Int) {
 		val previousWidth = view?.width ?: 0

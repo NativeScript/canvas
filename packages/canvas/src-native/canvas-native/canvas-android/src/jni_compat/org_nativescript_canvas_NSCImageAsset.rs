@@ -49,7 +49,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
             let asset: *mut ImageAsset = asset as _;
             let asset = &mut *asset;
             let url = CStr::from_ptr(url.as_ptr());
-            let mut tmp_asset = canvas_cxx::canvas2d::ImageAsset(asset.clone());
+            let mut tmp_asset = canvas_cxx::canvas2d::ImageAsset::new(asset.clone());
             if canvas_cxx::canvas2d::canvas_native_image_asset_load_from_url(
                 &mut tmp_asset,
                 &url.to_string_lossy(),

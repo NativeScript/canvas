@@ -7,31 +7,30 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 option(ENABLE_LTO "Enable cross language linking time optimization" ON)
-if(ENABLE_LTO)
+if (ENABLE_LTO)
   include(CheckIPOSupported)
   check_ipo_supported(RESULT supported OUTPUT error)
-  if(supported)
+  if (supported)
     message(STATUS "IPO / LTO enabled")
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
     add_link_options(-fuse-ld=lld)
-  else()
+  else ()
     message(STATUS "IPO / LTO not supported: <${error}>")
-  endif()
-endif()
+  endif ()
+endif ()
 
 
-
-if("${ANDROID_ABI}" MATCHES "armeabi-v7a$")
+if ("${ANDROID_ABI}" MATCHES "armeabi-v7a$")
   set(RUST_BUILD_TARGET "armv7-linux-androideabi")
-elseif("${ANDROID_ABI}" MATCHES "arm64-v8a$")
+elseif ("${ANDROID_ABI}" MATCHES "arm64-v8a$")
   set(RUST_BUILD_TARGET "aarch64-linux-android")
-elseif("${ANDROID_ABI}" MATCHES "x86_64$")
+elseif ("${ANDROID_ABI}" MATCHES "x86_64$")
   set(RUST_BUILD_TARGET "x86_64-linux-android")
-elseif("${ANDROID_ABI}" MATCHES "x86$")
+elseif ("${ANDROID_ABI}" MATCHES "x86$")
   set(RUST_BUILD_TARGET "i686-linux-android")
-endif()
+endif ()
 
-get_filename_component(PROJECT_ROOT_DIR  ${PROJECT_SOURCE_DIR} DIRECTORY)
+get_filename_component(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 
 get_filename_component(PROJECT_NATIVE_ROOT_DIR ${PROJECT_ROOT_DIR} DIRECTORY)
 
@@ -45,13 +44,13 @@ set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs)
 set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs.cc)
 
-set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -nostdinc++ -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
+set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RUST_BUILD_TYPE)
   set(CANVAS_ANDROID_LIB ${CURRENT_TARGET_DIR}/debug)
 else ()
-  set(RUST_BUILD_TYPE  --release)
+  set(RUST_BUILD_TYPE --release)
   set(CANVAS_ANDROID_LIB ${CURRENT_TARGET_DIR}/release)
   set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -O3")
 endif ()
@@ -59,10 +58,10 @@ endif ()
 
 set(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB}/${CMAKE_STATIC_LIBRARY_PREFIX}canvasandroid${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
+if ("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
   # Enable pointer compression on 64 bit platforms
   set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -DV8_COMPRESS_POINTERS")
-endif()
+endif ()
 
 
 include_directories(
@@ -116,9 +115,20 @@ add_library(
 
         src/main/cpp/JSIRuntime.cpp
 
+        src/main/cpp/canvas2d/CanvasRenderingContext2DImpl.cpp
+        src/main/cpp/canvas2d/CanvasGradient.cpp
+        src/main/cpp/canvas2d/CanvasPattern.cpp
+
+        src/main/cpp/canvas2d/MatrixImpl.cpp
+
+        src/main/cpp/canvas2d/ImageDataImpl.cpp
+
+        src/main/cpp/ImageAssetImpl.cpp
+
+        #src/main/cpp/JSIRuntime.cpp
+
         ${CANVAS_ANDROID_BRIDGE_CPP}
 )
-
 
 
 message("CARGO_TARGET_DIR " ${CARGO_TARGET_DIR})
@@ -164,21 +174,18 @@ if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND
           android
           )
 
-else()
+else ()
   target_link_libraries(canvasnativev8
           ${system-log}
           ${system-z}
           ${egl}
           ${gl2}
           ${gl3}
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libv8.a
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libzip.a
+          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
           ${CANVAS_ANDROID_LIB}
           android
           )
 endif ()
-
-
 
 
 add_custom_command(TARGET canvasnativev8

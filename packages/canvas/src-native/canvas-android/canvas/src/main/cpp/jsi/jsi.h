@@ -31,12 +31,30 @@ class FBJSRuntime;
 namespace facebook {
 namespace jsi {
 
+
+/// Base class for buffers of data or bytecode that need to be passed to the
+/// runtime. The buffer is expected to be fully immutable, so the result of
+/// size(), data(), and the contents of the pointer returned by data() must not
+/// change after construction.
 class JSI_EXPORT Buffer {
  public:
   virtual ~Buffer();
   virtual size_t size() const = 0;
   virtual const uint8_t* data() const = 0;
 };
+
+/// Base class for buffers of data that need to be passed to the runtime. The
+/// result of size() and data() must not change after construction. However, the
+/// region pointed to by data() may be modified by the user or the runtime. The
+/// user must ensure that access to the contents of the buffer is properly
+/// synchronised.
+class JSI_EXPORT MutableBuffer {
+    public:
+        virtual ~MutableBuffer();
+        virtual size_t size() const = 0;
+        virtual uint8_t* data() = 0;
+};
+
 
 class JSI_EXPORT StringBuffer : public Buffer {
  public:
@@ -319,6 +337,8 @@ class JSI_EXPORT Runtime {
   virtual int64_t int64Value(const BigInt&, bool *lossless) const = 0;
 
   virtual Array createArray(size_t length) = 0;
+  virtual ArrayBuffer createArrayBuffer(
+            std::shared_ptr<MutableBuffer> buffer) = 0;
   virtual size_t size(const Array&) = 0;
   virtual size_t size(const ArrayBuffer&) = 0;
   virtual uint8_t* data(const ArrayBuffer&) = 0;
@@ -851,6 +871,8 @@ class JSI_EXPORT ArrayBuffer : public Object {
  public:
   ArrayBuffer(ArrayBuffer&&) = default;
   ArrayBuffer& operator=(ArrayBuffer&&) = default;
+  ArrayBuffer(Runtime& runtime, std::shared_ptr<MutableBuffer> buffer)
+            : ArrayBuffer(runtime.createArrayBuffer(std::move(buffer))) {}
 
   /// \return the size of the ArrayBuffer, according to its byteLength property.
   /// (C++ naming convention)

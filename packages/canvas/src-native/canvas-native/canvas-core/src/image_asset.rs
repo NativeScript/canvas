@@ -171,9 +171,9 @@ impl ImageAsset {
             }
             lock.image = None;
         }
-        let mut file = std::fs::File::open(path);
+        let file = std::fs::File::open(path);
         match file {
-            Ok(mut file) => {
+            Ok(file) => {
                 let mut reader = std::io::BufReader::new(file);
                 return self.load_from_reader(&mut reader);
             }

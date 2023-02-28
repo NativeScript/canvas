@@ -5,7 +5,7 @@
 #pragma once
 #include "rust/cxx.h"
 #include "canvas-cxx/src/canvas2d.rs.h"
-#import "v8runtime/V8Runtime.h"
+#include "v8runtime/V8Runtime.h"
 #include "MatrixImpl.h"
 
 using namespace facebook;

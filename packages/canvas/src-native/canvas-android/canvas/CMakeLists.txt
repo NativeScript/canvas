@@ -123,7 +123,19 @@ add_library(
 
         src/main/cpp/canvas2d/ImageDataImpl.cpp
 
+        src/main/cpp/canvas2d/Path2D.cpp
+
+        src/main/cpp/canvas2d/TextMetricsImpl.cpp
+
         src/main/cpp/ImageAssetImpl.cpp
+        src/main/cpp/ImageBitmapImpl.cpp
+        src/main/cpp/TextDecoderImpl.cpp
+        src/main/cpp/TextEncoderImpl.cpp
+
+        src/main/cpp/webgl/WebGLActiveInfoImpl.cpp
+        src/main/cpp/webgl/WebGLRenderingContextBase.cpp
+        src/main/cpp/webgl/WebGLRenderingContext.cpp
+
 
         #src/main/cpp/JSIRuntime.cpp
 

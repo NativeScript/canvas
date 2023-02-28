@@ -34,12 +34,10 @@ private:
 ImageDataImpl::ImageDataImpl(rust::Box<ImageData> imageData) : imageData_(std::move(imageData)) {}
 
 std::vector<jsi::PropNameID> ImageDataImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<facebook::jsi::PropNameID> result;
-    result.reserve(3);
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("width")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("height")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("data")));
-    return result;
+    return {
+            jsi::PropNameID::forUtf8(rt, std::string("width")),
+            jsi::PropNameID::forUtf8(rt, std::string("height")),
+            jsi::PropNameID::forUtf8(rt, std::string("data"))};
 }
 
 jsi::Value ImageDataImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
@@ -49,7 +47,8 @@ jsi::Value ImageDataImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name
     } else if (methodName == "height") {
         return {canvas_native_image_data_get_height(this->GetImageData())};
     } else if (methodName == "data") {
-        auto buf = std::make_shared<ImageDataBuffer>(canvas_native_image_data_get_shared_instance(this->GetImageData()));
+        auto buf = std::make_shared<ImageDataBuffer>(
+                canvas_native_image_data_get_shared_instance(this->GetImageData()));
         return jsi::ArrayBuffer(runtime, buf);
     }
     return jsi::Value::undefined();

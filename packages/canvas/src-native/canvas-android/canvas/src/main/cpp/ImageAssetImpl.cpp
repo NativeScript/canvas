@@ -8,22 +8,20 @@ ImageAssetImpl::ImageAssetImpl(rust::Box<ImageAsset> asset)
         : asset_(std::move(asset)) {}
 
 std::vector<jsi::PropNameID> ImageAssetImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<facebook::jsi::PropNameID> result;
-    result.reserve(12);
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("width")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("height")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("error")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("scale")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("fromUrlSync")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("fromUrlCb")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("fromFileSync")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("fromFileCb")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("fromBytesSync")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("fromBytesCb")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("saveSync")));
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("saveCb")));
-
-    return result;
+    return {
+            jsi::PropNameID::forUtf8(rt, std::string("width")),
+            jsi::PropNameID::forUtf8(rt, std::string("height")),
+            jsi::PropNameID::forUtf8(rt, std::string("error")),
+            jsi::PropNameID::forUtf8(rt, std::string("scale")),
+            jsi::PropNameID::forUtf8(rt, std::string("fromUrlSync")),
+            jsi::PropNameID::forUtf8(rt, std::string("fromUrlCb")),
+            jsi::PropNameID::forUtf8(rt, std::string("fromFileSync")),
+            jsi::PropNameID::forUtf8(rt, std::string("fromFileCb")),
+            jsi::PropNameID::forUtf8(rt, std::string("fromBytesSync")),
+            jsi::PropNameID::forUtf8(rt, std::string("fromBytesCb")),
+            jsi::PropNameID::forUtf8(rt, std::string("saveSync")),
+            jsi::PropNameID::forUtf8(rt, std::string("saveCb")),
+    };
 }
 
 jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
@@ -305,6 +303,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
         );
     }
 
+    return jsi::Value::undefined();
 
 }
 

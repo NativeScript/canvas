@@ -9,10 +9,7 @@ CanvasGradient::CanvasGradient(rust::Box<PaintStyle> style) : style_(std::move(s
 
 
 std::vector<jsi::PropNameID> CanvasGradient::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<facebook::jsi::PropNameID> result;
-    result.reserve(1);
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("addColorStop")));
-    return result;
+    return {jsi::PropNameID::forUtf8(rt, std::string("addColorStop"))};
 }
 
 jsi::Value CanvasGradient::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

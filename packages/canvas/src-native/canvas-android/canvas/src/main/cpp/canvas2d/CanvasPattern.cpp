@@ -5,13 +5,10 @@
 #include "CanvasPattern.h"
 
 
-CanvasPattern::CanvasPattern(rust::Box <PaintStyle> style) : style_(std::move(style)) {}
+CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 
-std::vector <jsi::PropNameID> CanvasPattern::getPropertyNames(jsi::Runtime &rt) {
-    std::vector <facebook::jsi::PropNameID> result;
-    result.reserve(1);
-    result.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("setTransform")));
-    return result;
+std::vector<jsi::PropNameID> CanvasPattern::getPropertyNames(jsi::Runtime &rt) {
+    return {jsi::PropNameID::forUtf8(rt, std::string("setTransform"))};
 }
 
 jsi::Value CanvasPattern::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include "../Common.h"
+#include "rust/cxx.h"
+#include "canvas-cxx/src/webgl.rs.h"
+#include "v8runtime/V8Runtime.h"
 #include "../Helpers.h"
-#include "../Caches.h"
 #include "../RafImpl.h"
 
 
@@ -15,9 +16,15 @@ enum class WebGLRenderingVersion : uint8_t {
     V2
 };
 
-class WebGLRenderingContextBase {
+using namespace facebook;
+
+class WebGLRenderingContextBase: jsi::HostObject {
 public:
     WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version);
+
+    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
+
+    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
     ~WebGLRenderingContextBase();
 

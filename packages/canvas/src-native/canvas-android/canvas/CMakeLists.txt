@@ -133,8 +133,41 @@ add_library(
         src/main/cpp/TextEncoderImpl.cpp
 
         src/main/cpp/webgl/WebGLActiveInfoImpl.cpp
+        src/main/cpp/webgl/WebGLShaderPrecisionFormatImpl.cpp
+
+
+        src/main/cpp/webgl/extensions/ANGLE_instanced_arraysImpl.cpp
+        src/main/cpp/webgl/extensions/EXT_blend_minmaxImpl.cpp
+        src/main/cpp/webgl/extensions/EXT_color_buffer_half_floatImpl.cpp
+        src/main/cpp/webgl/extensions/EXT_disjoint_timer_queryImpl.cpp
+        src/main/cpp/webgl/extensions/EXT_shader_texture_lodImpl.cpp
+        src/main/cpp/webgl/extensions/EXT_sRGBImpl.cpp
+        src/main/cpp/webgl/extensions/EXT_texture_filter_anisotropicImpl.cpp
+        src/main/cpp/webgl/extensions/OES_element_index_uintImpl.cpp
+        src/main/cpp/webgl/extensions/OES_standard_derivativesImpl.cpp
+        src/main/cpp/webgl/extensions/OES_texture_float_linearImpl.cpp
+        src/main/cpp/webgl/extensions/OES_texture_floatImpl.cpp
+        src/main/cpp/webgl/extensions/OES_texture_half_float_linearImpl.cpp
+        src/main/cpp/webgl/extensions/OES_texture_half_floatImpl.cpp
+        src/main/cpp/webgl/extensions/OES_vertex_array_objectImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_color_buffer_floatImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_atcImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_etc1Impl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_etcImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_pvrtcImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_s3tc_srgbImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_s3tcImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_depth_textureImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_draw_buffersImpl.cpp
+        src/main/cpp/webgl/extensions/WEBGL_lose_contextImpl.cpp
+
+
+
+
+
         src/main/cpp/webgl/WebGLRenderingContextBase.cpp
         src/main/cpp/webgl/WebGLRenderingContext.cpp
+
 
 
         #src/main/cpp/JSIRuntime.cpp

@@ -10,7 +10,7 @@
 
 
 #include <cmath>
-#include "../Helpers.h"
+#include "Helpers.h"
 
 #include "../ImageAssetImpl.h"
 #include "../ImageBitmapImpl.h"

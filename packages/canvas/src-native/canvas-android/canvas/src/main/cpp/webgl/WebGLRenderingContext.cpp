@@ -13,12 +13,148 @@ WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state)
 std::vector<jsi::PropNameID> WebGLRenderingContext::getPropertyNames(jsi::Runtime &rt) {
     return {
             jsi::PropNameID::forUtf8(rt, std::string("activeTexture")),
+            jsi::PropNameID::forUtf8(rt, std::string("attachShader")),
+            jsi::PropNameID::forUtf8(rt, std::string("bindAttribLocation")),
+            jsi::PropNameID::forUtf8(rt, std::string("bindBuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("bindFramebuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("bindRenderbuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("bindTexture")),
+            jsi::PropNameID::forUtf8(rt, std::string("blendColor")),
+            jsi::PropNameID::forUtf8(rt, std::string("blendEquationSeparate")),
+            jsi::PropNameID::forUtf8(rt, std::string("blendEquation")),
+            jsi::PropNameID::forUtf8(rt, std::string("blendFuncSeparate")),
+            jsi::PropNameID::forUtf8(rt, std::string("blendFunc")),
+            jsi::PropNameID::forUtf8(rt, std::string("bufferData")),
+            jsi::PropNameID::forUtf8(rt, std::string("bufferSubData")),
+            jsi::PropNameID::forUtf8(rt, std::string("checkFramebufferStatus")),
+            jsi::PropNameID::forUtf8(rt, std::string("clearColor")),
+            jsi::PropNameID::forUtf8(rt, std::string("clearDepth")),
+            jsi::PropNameID::forUtf8(rt, std::string("clearStencil")),
+            jsi::PropNameID::forUtf8(rt, std::string("clear")),
+            jsi::PropNameID::forUtf8(rt, std::string("colorMask")),
+            jsi::PropNameID::forUtf8(rt, std::string("commit")),
+            jsi::PropNameID::forUtf8(rt, std::string("compileShader")),
+            jsi::PropNameID::forUtf8(rt, std::string("compressedTexImage2D")),
+            jsi::PropNameID::forUtf8(rt, std::string("compressedTexSubImage2D")),
+            jsi::PropNameID::forUtf8(rt, std::string("copyTexImage2D")),
+            jsi::PropNameID::forUtf8(rt, std::string("copyTexSubImage2D")),
+            jsi::PropNameID::forUtf8(rt, std::string("createBuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("createFramebuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("createProgram")),
+            jsi::PropNameID::forUtf8(rt, std::string("createRenderbuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("createShader")),
+            jsi::PropNameID::forUtf8(rt, std::string("createTexture")),
+            jsi::PropNameID::forUtf8(rt, std::string("cullFace")),
+            jsi::PropNameID::forUtf8(rt, std::string("deleteBuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("deleteFramebuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("deleteProgram")),
+            jsi::PropNameID::forUtf8(rt, std::string("deleteRenderbuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("deleteShader")),
+            jsi::PropNameID::forUtf8(rt, std::string("deleteTexture")),
+            jsi::PropNameID::forUtf8(rt, std::string("depthFunc")),
+            jsi::PropNameID::forUtf8(rt, std::string("depthMask")),
+            jsi::PropNameID::forUtf8(rt, std::string("depthRange")),
+            jsi::PropNameID::forUtf8(rt, std::string("detachShader")),
+            jsi::PropNameID::forUtf8(rt, std::string("disableVertexAttribArray")),
+            jsi::PropNameID::forUtf8(rt, std::string("disable")),
+            jsi::PropNameID::forUtf8(rt, std::string("drawArrays")),
+            jsi::PropNameID::forUtf8(rt, std::string("drawElements")),
+            jsi::PropNameID::forUtf8(rt, std::string("enableVertexAttribArray")),
+            jsi::PropNameID::forUtf8(rt, std::string("enable")),
+            jsi::PropNameID::forUtf8(rt, std::string("finish")),
+            jsi::PropNameID::forUtf8(rt, std::string("flush")),
+            jsi::PropNameID::forUtf8(rt, std::string("framebufferRenderbuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("framebufferTexture2D")),
+            jsi::PropNameID::forUtf8(rt, std::string("frontFace")),
+            jsi::PropNameID::forUtf8(rt, std::string("generateMipmap")),
+            jsi::PropNameID::forUtf8(rt, std::string("getActiveAttrib")),
+            jsi::PropNameID::forUtf8(rt, std::string("getActiveUniform")),
+            jsi::PropNameID::forUtf8(rt, std::string("getAttachedShaders")),
+            jsi::PropNameID::forUtf8(rt, std::string("getAttribLocation")),
+            jsi::PropNameID::forUtf8(rt, std::string("getBufferParameter")),
+            jsi::PropNameID::forUtf8(rt, std::string("getContextAttributes")),
+            jsi::PropNameID::forUtf8(rt, std::string("getError")),
+            jsi::PropNameID::forUtf8(rt, std::string("getExtension")),
+            jsi::PropNameID::forUtf8(rt, std::string("getFramebufferAttachmentParameter")),
+            jsi::PropNameID::forUtf8(rt, std::string("getParameter")),
+            jsi::PropNameID::forUtf8(rt, std::string("getProgramInfoLog")),
+            jsi::PropNameID::forUtf8(rt, std::string("getProgramParameter")),
+            jsi::PropNameID::forUtf8(rt, std::string("getRenderbufferParameter")),
+            jsi::PropNameID::forUtf8(rt, std::string("getShaderInfoLog")),
+            jsi::PropNameID::forUtf8(rt, std::string("getShaderParameter")),
+            jsi::PropNameID::forUtf8(rt, std::string("getShaderPrecisionFormat")),
+            jsi::PropNameID::forUtf8(rt, std::string("getShaderSource")),
+            jsi::PropNameID::forUtf8(rt, std::string("getSupportedExtensions")),
+            jsi::PropNameID::forUtf8(rt, std::string("getTexParameter")),
+            jsi::PropNameID::forUtf8(rt, std::string("getUniformLocation")),
+            jsi::PropNameID::forUtf8(rt, std::string("getUniform")),
+            jsi::PropNameID::forUtf8(rt, std::string("getVertexAttribOffset")),
+            jsi::PropNameID::forUtf8(rt, std::string("getVertexAttrib")),
+            jsi::PropNameID::forUtf8(rt, std::string("hint")),
+            jsi::PropNameID::forUtf8(rt, std::string("isBuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("isContextLost")),
+            jsi::PropNameID::forUtf8(rt, std::string("isEnabled")),
+            jsi::PropNameID::forUtf8(rt, std::string("isFramebuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("isProgram")),
+            jsi::PropNameID::forUtf8(rt, std::string("isRenderbuffer")),
+            jsi::PropNameID::forUtf8(rt, std::string("isShader")),
+            jsi::PropNameID::forUtf8(rt, std::string("isTexture")),
+            jsi::PropNameID::forUtf8(rt, std::string("lineWidth")),
+            jsi::PropNameID::forUtf8(rt, std::string("linkProgram")),
+            jsi::PropNameID::forUtf8(rt, std::string("pixelStorei")),
+            jsi::PropNameID::forUtf8(rt, std::string("polygonOffset")),
+            jsi::PropNameID::forUtf8(rt, std::string("readPixels")),
+            jsi::PropNameID::forUtf8(rt, std::string("renderbufferStorage")),
+            jsi::PropNameID::forUtf8(rt, std::string("sampleCoverage")),
+            jsi::PropNameID::forUtf8(rt, std::string("scissor")),
+            jsi::PropNameID::forUtf8(rt, std::string("shaderSource")),
+            jsi::PropNameID::forUtf8(rt, std::string("stencilFuncSeparate")),
+            jsi::PropNameID::forUtf8(rt, std::string("stencilFunc")),
+            jsi::PropNameID::forUtf8(rt, std::string("stencilMaskSeparate")),
+            jsi::PropNameID::forUtf8(rt, std::string("stencilMask")),
+            jsi::PropNameID::forUtf8(rt, std::string("stencilOpSeparate")),
+            jsi::PropNameID::forUtf8(rt, std::string("stencilOp")),
+            jsi::PropNameID::forUtf8(rt, std::string("texImage2D")),
+            jsi::PropNameID::forUtf8(rt, std::string("texParameterf")),
+            jsi::PropNameID::forUtf8(rt, std::string("texParameteri")),
+            jsi::PropNameID::forUtf8(rt, std::string("texSubImage2D")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform1f")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform1iv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform1fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform1i")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform2f")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform2iv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform2fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform2i")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform3f")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform3iv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform3fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform3i")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform4f")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform4iv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform4fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniform4i")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix2fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix3fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix4fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("useProgram")),
+            jsi::PropNameID::forUtf8(rt, std::string("validateProgram")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib1f")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib1fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib2f")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib2fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib3f")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib3fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib4f")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib4fv")),
+            jsi::PropNameID::forUtf8(rt, std::string("vertexAttribPointer")),
+            jsi::PropNameID::forUtf8(rt, std::string("viewport")),
     };
 }
 
 jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
-    if(methodName == "activeTexture"){
+    if (methodName == "activeTexture") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -28,13 +164,1799 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             size_t count) -> jsi::Value {
 
 
-                                                         auto texture = (uint32_t)arguments[0].asNumber();
-                                                         canvas_native_webgl_active_texture(texture, this->GetState());
+                                                         auto texture = (uint32_t) arguments[0].asNumber();
+                                                         canvas_native_webgl_active_texture(texture,
+                                                                                            this->GetState());
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "attachShader") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         auto program = arguments[0].asObject(
+                                                                 runtime).asHostObject<WebGLProgram>(
+                                                                 runtime);
+                                                         auto shader = arguments[1].asObject(
+                                                                 runtime).asHostObject<WebGLShader>(
+                                                                 runtime);
+
+                                                         if (program == nullptr) {
+                                                             return Value::undefined();
+                                                         }
+
+                                                         if (shader == nullptr) {
+                                                             return Value::undefined();
+                                                         }
+
+                                                         canvas_native_webgl_attach_shader(
+                                                                 program->GetProgram(),
+                                                                 shader->GetShader(),
+                                                                 this->GetState()
+                                                         );
+
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "bindAttribLocation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 2) {
+                                                             auto program = arguments[0].asObject(
+                                                                     runtime).asHostObject<WebGLProgram>(
+                                                                     runtime);
+
+                                                             if (program != nullptr &&
+                                                                 arguments[1].isNumber() &&
+                                                                 arguments[2].isString()) {
+                                                                 auto index = (uint32_t) arguments[1].asNumber();
+                                                                 auto name = arguments[2].asString(
+                                                                         runtime).utf8(runtime);
+                                                                 canvas_native_webgl_bind_attrib_location(
+                                                                         program->GetProgram(),
+                                                                         index,
+                                                                         rust::Str(name.data(),
+                                                                                   name.size()),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "bindBuffer") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 1) {
+
+                                                             if (arguments[0].isNumber()) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+                                                                 if (!arguments[1].isNull() &&
+                                                                     arguments[1].isObject()) {
+                                                                     auto buffer = arguments[1].asObject(
+                                                                             runtime).asHostObject<WebGLBuffer>(
+                                                                             runtime);
+                                                                     if (buffer ==
+                                                                         nullptr) { return Value::undefined(); }
+                                                                     canvas_native_webgl_bind_buffer(
+                                                                             target,
+                                                                             buffer->GetBuffer(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 } else {
+                                                                     // unbind
+                                                                     // check for null or undefined ?
+                                                                     canvas_native_webgl_bind_buffer(
+                                                                             target,
+                                                                             0,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "bindFramebuffer") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 1) {
+
+                                                             if (arguments[0].isNumber()) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+                                                                 if (arguments[1].isObject()) {
+                                                                     auto framebuffer = arguments[1].asObject(
+                                                                             runtime).asHostObject<WebGLFramebuffer>(
+                                                                             runtime);
+                                                                     canvas_native_webgl_bind_frame_buffer(
+                                                                             target,
+                                                                             framebuffer->GetFrameBuffer(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 } else {
+                                                                     // null value
+                                                                     // unbind
+                                                                     canvas_native_webgl_bind_frame_buffer(
+                                                                             target,
+                                                                             0,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "bindRenderbuffer") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 1) {
+                                                             if (arguments[0].isNumber()) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+                                                                 if (arguments[1].isObject()) {
+                                                                     auto renderbuffer = arguments[1].asObject(
+                                                                             runtime).asHostObject<WebGLRenderbuffer>(
+                                                                             runtime);
+
+                                                                     if (renderbuffer ==
+                                                                         nullptr) { return Value::undefined(); }
+                                                                     canvas_native_webgl_bind_render_buffer(
+                                                                             target,
+                                                                             renderbuffer->GetRenderBuffer(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 } else {
+                                                                     canvas_native_webgl_bind_render_buffer(
+                                                                             target,
+                                                                             0,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "bindTexture") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 1) {
+                                                             if (arguments[0].isNumber()) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+                                                                 if (arguments[1].isObject()) {
+                                                                     auto texture = arguments[1].asObject(
+                                                                             runtime).asHostObject<WebGLTexture>(
+                                                                             runtime);
+                                                                     canvas_native_webgl_bind_texture(
+                                                                             target,
+                                                                             texture->GetTexture(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 } else {
+                                                                     canvas_native_webgl_bind_texture(
+                                                                             target,
+                                                                             0,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendColor") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 3) {
+                                                             auto red = arguments[0].asNumber();
+                                                             auto green = arguments[1].asNumber();
+                                                             auto blue = arguments[2].asNumber();
+                                                             auto alpha = arguments[3].asNumber();
+
+                                                             canvas_native_webgl_blend_color(
+                                                                     static_cast<float>(red),
+                                                                     static_cast<float>(green),
+                                                                     static_cast<float>(blue),
+                                                                     static_cast<float>(alpha),
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquationSeparate") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 1) {
+                                                             auto modeRGB = (uint32_t) arguments[0].asNumber();
+                                                             auto modeAlpha = (uint32_t) arguments[1].asNumber();
+
+                                                             canvas_native_webgl_blend_equation_separate(
+                                                                     modeRGB,
+                                                                     modeAlpha,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto mode = (uint32_t) arguments[0].asNumber();
+                                                             canvas_native_webgl_blend_equation(
+                                                                     mode,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendFuncSeparate") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count > 3) {
+                                                             auto srcRGB = (uint32_t) arguments[0].asNumber();
+                                                             auto dstRGB = (uint32_t) arguments[1].asNumber();
+                                                             auto srcAlpha = (uint32_t) arguments[2].asNumber();
+                                                             auto dstAlpha = (uint32_t) arguments[3].asNumber();
+
+                                                             canvas_native_webgl_blend_func_separate(
+                                                                     srcRGB,
+                                                                     dstRGB,
+                                                                     srcAlpha,
+                                                                     dstAlpha,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendFunc") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count > 1) {
+                                                             auto sfactor = (uint32_t) arguments[0].asNumber();
+                                                             auto dfactor = (uint32_t) arguments[1].asNumber();
+
+                                                             canvas_native_webgl_blend_func(
+                                                                     sfactor,
+                                                                     dfactor,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "bufferData") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count == 2) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto usage = (uint32_t) arguments[1].asNumber();
+
+                                                             canvas_native_webgl_buffer_data_none(
+                                                                     target,
+                                                                     0,
+                                                                     usage,
+                                                                     this->GetState()
+                                                             );
+                                                         } else if (count == 3) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+
+                                                             auto usage = (uint32_t) arguments[2].asNumber();
+
+                                                             if (arguments[1].isObject()) {
+                                                                 auto sizeOrBuf = arguments[1].asObject(
+                                                                         runtime);
+                                                                 if (sizeOrBuf.isArrayBufferView(
+                                                                         runtime)) {
+                                                                     if (sizeOrBuf.isUint16Array(
+                                                                             runtime)) {
+                                                                         auto array = sizeOrBuf.getTypedArray(
+                                                                                 runtime);
+                                                                         auto buf = GetTypedArrayData<uint16_t>(
+                                                                                 runtime, array);
+
+                                                                         canvas_native_webgl_buffer_data_u16(
+                                                                                 target,
+                                                                                 buf,
+                                                                                 usage,
+                                                                                 this->GetState()
+                                                                         );
+                                                                     } else if (sizeOrBuf.isFloat32Array(
+                                                                             runtime)) {
+                                                                         auto array = sizeOrBuf.getTypedArray(
+                                                                                 runtime);
+                                                                         auto buf = GetTypedArrayData<const float>(
+                                                                                 runtime, array);
+                                                                         canvas_native_webgl_buffer_data_f32(
+                                                                                 target,
+                                                                                 buf,
+                                                                                 usage,
+                                                                                 this->GetState()
+                                                                         );
+                                                                     } else {
+                                                                         auto array = sizeOrBuf.getTypedArray(
+                                                                                 runtime);
+                                                                         auto buf = GetTypedArrayData<const uint8_t>(
+                                                                                 runtime, array);
+                                                                         canvas_native_webgl_buffer_data(
+                                                                                 target,
+                                                                                 buf,
+                                                                                 usage,
+                                                                                 this->GetState()
+                                                                         );
+                                                                     }
+                                                                 } else if (sizeOrBuf.isArrayBuffer(
+                                                                         runtime)) {
+                                                                     auto buffer = sizeOrBuf.getArrayBuffer(
+                                                                             runtime);
+                                                                     auto data = buffer.data(
+                                                                             runtime);
+                                                                     auto size = buffer.size(
+                                                                             runtime);
+                                                                     rust::Slice<const uint8_t> buf(
+                                                                             data, size);
+                                                                     canvas_native_webgl_buffer_data(
+                                                                             target,
+                                                                             buf,
+                                                                             usage,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             } else {
+                                                                 auto sizeOrBuf = arguments[1].asNumber();
+                                                                 canvas_native_webgl_buffer_data_none(
+                                                                         target,
+                                                                         static_cast<ssize_t>(sizeOrBuf),
+                                                                         usage,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "bufferSubData") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count == 2) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto offset = arguments[1].asNumber();
+
+                                                             canvas_native_webgl_buffer_sub_data_none(
+                                                                     target,
+                                                                     static_cast<ssize_t>(offset),
+                                                                     this->GetState()
+                                                             );
+                                                         } else if (count == 3) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto offset = arguments[1].asNumber();
+
+                                                             if (arguments[2].isObject()) {
+                                                                 auto buf = arguments[2].asObject(
+                                                                         runtime);
+
+                                                                 if (buf.isTypedArray(runtime)) {
+                                                                     auto array = arguments[2].asObject(
+                                                                             runtime).getTypedArray(
+                                                                             runtime);
+                                                                     auto buff = GetTypedArrayData<const uint8_t>(
+                                                                             runtime, array);
+                                                                     canvas_native_webgl_buffer_sub_data(
+                                                                             target,
+                                                                             static_cast<ssize_t>(offset),
+                                                                             buff,
+                                                                             this->GetState()
+                                                                     );
+                                                                 } else if (buf.isArrayBuffer(
+                                                                         runtime)) {
+                                                                     auto arrayBuffer = buf.getArrayBuffer(
+                                                                             runtime);
+                                                                     auto store = arrayBuffer.data(
+                                                                             runtime);
+                                                                     auto size = arrayBuffer.size(
+                                                                             runtime);
+                                                                     rust::Slice<const uint8_t> data(
+                                                                             store, size);
+                                                                     canvas_native_webgl_buffer_sub_data(
+                                                                             target,
+                                                                             static_cast<ssize_t>(offset),
+                                                                             buf,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+
+                                                             }
+
+                                                         }
+
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "checkFramebufferStatus") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+
+                                                             if (arguments[0].isNumber()) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+
+                                                                 auto ret = canvas_native_webgl_check_frame_buffer_status(
+                                                                         target,
+                                                                         this->GetState()
+                                                                 );
+                                                                 return {ret};
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "clearColor") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count > 3) {
+                                                             auto red = arguments[0].asNumber();
+                                                             auto green = arguments[1].asNumber();
+                                                             auto blue = arguments[2].asNumber();
+                                                             auto alpha = arguments[3].asNumber();
+
+                                                             canvas_native_webgl_clear_color(
+                                                                     static_cast<float>(red),
+                                                                     static_cast<float>(green),
+                                                                     static_cast<float>(blue),
+                                                                     static_cast<float>(alpha),
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "clearDepth") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto depth = arguments[0].asNumber();
+
+                                                             canvas_native_webgl_clear_depth(
+                                                                     static_cast<float>(depth),
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "clearStencil") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto stencil = (int32_t) arguments[0].asNumber();
+                                                             canvas_native_webgl_clear_stencil(
+                                                                     stencil,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "clear") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count > 0) {
+                                                             auto mask = (uint32_t) arguments[0].asNumber();
+
+                                                             canvas_native_webgl_clear(
+                                                                     mask,
+                                                                     this->GetState()
+                                                             );
+
+                                                             this->UpdateInvalidateState();
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "colorMask") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 3) {
+                                                             auto red = arguments[0].asBool();
+                                                             auto green = arguments[1].asBool();
+                                                             auto blue = arguments[2].asBool();
+                                                             auto alpha = arguments[3].asBool();
+
+                                                             canvas_native_webgl_color_mask(
+                                                                     red,
+                                                                     green,
+                                                                     blue,
+                                                                     alpha,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "commit") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "compileShader") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto shader = arguments[0].asObject(
+                                                                     runtime).asHostObject<WebGLShader>(
+                                                                     runtime);
+                                                             if (shader != nullptr) {
+                                                                 canvas_native_webgl_compile_shader(
+                                                                         shader->GetShader(),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "blendEquation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
                                                          return jsi::Value::undefined();
                                                      }
         );
     }
+
+
+    return Value::undefined();
 }
 
 
@@ -65,8 +1987,9 @@ void WebGLRenderingContext::ToDataURL(const v8::FunctionCallbackInfo<v8::Value> 
         quality = qualityVal->Int32Value(context).FromMaybe(quality);
     }
 
-    auto data = canvas_native_webgl_to_data_url(ptr->GetState(), rust::Str(type.c_str(), type.size()),
-                                          quality);
+    auto data = canvas_native_webgl_to_data_url(ptr->GetState(),
+                                                rust::Str(type.c_str(), type.size()),
+                                                quality);
     args.GetReturnValue().Set(
             Helpers::ConvertToV8String(isolate, std::string(data.c_str(), data.size())));
 }
@@ -291,544 +2214,6 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
         return;
     }
     args.GetReturnValue().SetUndefined();
-}
-
-
-void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-
-    auto len = args.Length();
-    if (len < 2) {
-        std::string message;
-        if (ptr->GetVersion() == WebGLRenderingVersion::V2) {
-            message =
-                    "Failed to execute 'attachShader' on 'WebGL2RenderingContext': 3 arguments required, but only" +
-                    std::to_string(len) + " present.";
-        } else {
-            message =
-                    "Failed to execute 'attachShader' on 'WebGLRenderingContext': 3 arguments required, but only" +
-                    std::to_string(len) + " present.";
-        }
-
-        auto errMsg = Helpers::ConvertToV8String(isolate, message);
-        auto error = v8::Exception::TypeError(errMsg);
-        isolate->ThrowException(error);
-        return;
-    }
-
-    auto program = args[0];
-    auto shader = args[1];
-
-    if (Helpers::GetInstanceType(isolate, program) != ObjectType::WebGLProgram) {
-        auto message = "Failed to execute 'attachShader' on 'WebGLRenderingContext': parameter 1 is not of type 'WebGLProgram'";
-        if (ptr->GetVersion() == WebGLRenderingVersion::V2) {
-            message = "Failed to execute 'attachShader' on 'WebGL2RenderingContext': parameter 1 is not of type 'WebGLProgram'";
-        }
-
-        auto error = v8::Exception::TypeError(Helpers::ConvertToV8String(isolate, message));
-        isolate->ThrowException(error);
-        return;
-    }
-
-    if (Helpers::GetInstanceType(isolate, shader) != ObjectType::WebGLShader) {
-        auto message = "Failed to execute 'attachShader' on 'WebGLRenderingContext': parameter 2 is not of type 'WebGLShader'";
-        if (ptr->GetVersion() == WebGLRenderingVersion::V2) {
-            message = "Failed to execute 'attachShader' on 'WebGL2RenderingContext': parameter 2 is not of type 'WebGLShader'";
-        }
-        auto error = v8::Exception::TypeError(Helpers::ConvertToV8String(isolate, message));
-        isolate->ThrowException(error);
-        return;
-    }
-
-    auto p = program.As<v8::Object>();
-    auto s = shader.As<v8::Object>();
-    auto programValue = Helpers::GetPrivate(isolate, p, "instance")->ToUint32(context);
-    auto shaderValue = Helpers::GetPrivate(isolate, s, "instance")->ToUint32(context);
-    canvas_native_webgl_attach_shader(
-            programValue.ToLocalChecked()->Value(),
-            shaderValue.ToLocalChecked()->Value(),
-            ptr->GetState()
-    );
-}
-
-void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 2) {
-        auto program = args[0];
-        auto index = args[1];
-        auto name = args[2];
-
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
-            index->IsNumber() &&
-            name->IsString()) {
-            auto p = program.As<v8::Object>();
-            auto i = index.As<v8::Object>();
-            auto programValue = Helpers::GetPrivate(isolate, p, "instance")->ToUint32(context);
-            auto indexValue = index->ToUint32(context);
-
-            auto nameValue = Helpers::ConvertFromV8String(isolate, name);
-
-            canvas_native_webgl_bind_attrib_location(
-                    programValue.ToLocalChecked()->Value(),
-                    indexValue.ToLocalChecked()->Value(),
-                    rust::Str(nameValue.c_str(), nameValue.size()),
-                    ptr->GetState()
-            );
-        }
-    }
-
-}
-
-void WebGLRenderingContext::BindBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto target = args[0];
-        auto buffer = args[1];
-
-        if (target->IsNumber()) {
-            auto targetValue = target->ToUint32(context);
-            if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLBuffer) {
-                auto b = buffer->ToObject(context).ToLocalChecked();
-                auto bufferValue = Helpers::GetPrivate(isolate, b, "instance")->ToUint32(context);
-                canvas_native_webgl_bind_buffer(
-                        targetValue.ToLocalChecked()->Value(),
-                        bufferValue.ToLocalChecked()->Value(),
-                        ptr->GetState()
-                );
-            } else {
-                // unbind
-                // check for null or undefined ?
-                canvas_native_webgl_bind_buffer(
-                        targetValue.ToLocalChecked()->Value(),
-                        0,
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::BindFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto target = args[0];
-        auto framebuffer = args[1];
-
-        if (target->IsNumber()) {
-            auto targetValue = target->ToUint32(context);
-            if (Helpers::GetInstanceType(isolate, framebuffer) == ObjectType::WebGLFramebuffer) {
-                auto f = framebuffer.As<v8::Object>();
-                auto framebufferValue = Helpers::GetPrivate(isolate, f, "instance")->ToUint32(
-                        context);
-
-                canvas_native_webgl_bind_frame_buffer(
-                        targetValue.ToLocalChecked()->Value(),
-                        framebufferValue.ToLocalChecked()->Value(),
-                        ptr->GetState()
-                );
-            } else {
-                // null value
-                // unbind
-                canvas_native_webgl_bind_frame_buffer(
-                        targetValue.ToLocalChecked()->Value(),
-                        0,
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::BindRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto target = args[0];
-        auto renderbuffer = args[1];
-
-        if (target->IsNumber()) {
-            auto targetValue = target->ToUint32(context);
-            if (Helpers::GetInstanceType(isolate, renderbuffer) == ObjectType::WebGLRenderbuffer) {
-                auto r = renderbuffer.As<v8::Object>();
-                auto renderbufferValue = Helpers::GetPrivate(isolate, r, "instance")->ToUint32(
-                        context);
-
-                canvas_native_webgl_bind_render_buffer(
-                        targetValue.ToLocalChecked()->Value(),
-                        renderbufferValue.ToLocalChecked()->Value(),
-                        ptr->GetState()
-                );
-            } else {
-                canvas_native_webgl_bind_render_buffer(
-                        targetValue.ToLocalChecked()->Value(),
-                        0,
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::BindTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto target = args[0];
-        auto texture = args[1];
-
-        if (target->IsNumber()) {
-            auto targetValue = target->ToUint32(context);
-            if (Helpers::GetInstanceType(isolate, texture) == ObjectType::WebGLTexture) {
-                auto t = texture.As<v8::Object>();
-                auto textureValue = Helpers::GetPrivate(isolate, t, "instance")->ToUint32(context);
-                canvas_native_webgl_bind_texture(
-                        targetValue.ToLocalChecked()->Value(),
-                        textureValue.ToLocalChecked()->Value(),
-                        ptr->GetState()
-                );
-            } else {
-                canvas_native_webgl_bind_texture(
-                        targetValue.ToLocalChecked()->Value(),
-                        0,
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::BlendColor(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 3) {
-        auto red = args[0];
-        auto green = args[1];
-        auto blue = args[2];
-        auto alpha = args[3];
-
-        canvas_native_webgl_blend_color(
-                static_cast<float>(red->NumberValue(context).ToChecked()),
-                static_cast<float>(green->NumberValue(context).ToChecked()),
-                static_cast<float>(blue->NumberValue(context).ToChecked()),
-                static_cast<float>(alpha->NumberValue(context).ToChecked()),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::BlendEquationSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto modeRGB = args[0];
-        auto modeAlpha = args[1];
-
-        canvas_native_webgl_blend_equation_separate(
-                modeRGB->Uint32Value(context).ToChecked(),
-                modeAlpha->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::BlendEquation(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto mode = args[0];
-        canvas_native_webgl_blend_equation(
-                mode->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::BlendFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 3) {
-        auto srcRGB = args[0];
-        auto dstRGB = args[1];
-        auto srcAlpha = args[2];
-        auto dstAlpha = args[3];
-
-        canvas_native_webgl_blend_func_separate(
-                srcRGB->Uint32Value(context).ToChecked(),
-                dstRGB->Uint32Value(context).ToChecked(),
-                srcAlpha->Uint32Value(context).ToChecked(),
-                dstAlpha->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::BlendFunc(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto sfactor = args[0];
-        auto dfactor = args[1];
-
-        canvas_native_webgl_blend_func(
-                sfactor->Uint32Value(context).ToChecked(),
-                dfactor->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() == 2) {
-        auto target = args[0];
-        auto usage = args[1];
-
-        canvas_native_webgl_buffer_data_none(
-                target->Uint32Value(context).ToChecked(),
-                0,
-                usage->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    } else if (args.Length() == 3) {
-        auto target = args[0];
-        auto sizeOrBuf = args[1];
-        auto usage = args[2];
-
-        if (sizeOrBuf->IsArrayBufferView()) {
-            if (sizeOrBuf->IsUint16Array()) {
-                auto buf = Helpers::GetTypedArrayData<const uint16_t>(
-                        sizeOrBuf.As<v8::TypedArray>());
-                canvas_native_webgl_buffer_data_u16(
-                        target->Uint32Value(context).ToChecked(),
-                        buf,
-                        usage->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-            if (sizeOrBuf->IsUint16Array()) {
-                auto buf = Helpers::GetTypedArrayData<const float>(sizeOrBuf.As<v8::TypedArray>());
-                canvas_native_webgl_buffer_data_f32(
-                        target->Uint32Value(context).ToChecked(),
-                        buf,
-                        usage->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            } else {
-                auto buf = Helpers::GetTypedArrayData<const uint8_t>(
-                        sizeOrBuf.As<v8::TypedArray>());
-                canvas_native_webgl_buffer_data(
-                        target->Uint32Value(context).ToChecked(),
-                        buf,
-                        usage->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        } else if (sizeOrBuf->IsArrayBuffer()) {
-            auto buffer = sizeOrBuf.As<v8::ArrayBuffer>();
-            auto store = buffer->GetBackingStore();
-            auto data = static_cast<uint8_t *>(store->Data());
-            rust::Slice<const uint8_t> buf(data, store->ByteLength());
-            canvas_native_webgl_buffer_data(
-                    target->Uint32Value(context).ToChecked(),
-                    buf,
-                    usage->Uint32Value(context).ToChecked(),
-                    ptr->GetState()
-            );
-        } else {
-            canvas_native_webgl_buffer_data_none(
-                    target->Uint32Value(context).ToChecked(),
-                    static_cast<ssize_t>(sizeOrBuf->IntegerValue(context).ToChecked()),
-                    usage->Uint32Value(context).ToChecked(),
-                    ptr->GetState()
-            );
-        }
-    }
-}
-
-void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() == 2) {
-        auto target = args[0];
-        auto offset = args[1];
-
-        canvas_native_webgl_buffer_sub_data_none(
-                target->Uint32Value(context).ToChecked(),
-                static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
-                ptr->GetState()
-        );
-    } else if (args.Length() == 3) {
-        auto target = args[0];
-        auto offset = args[1];
-        auto buf = args[2];
-
-        if (buf->IsArrayBufferView()) {
-            auto buff = Helpers::GetTypedArrayData<const uint8_t>(buf.As<v8::TypedArray>());
-            canvas_native_webgl_buffer_sub_data(
-                    target->Uint32Value(context).ToChecked(),
-                    static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
-                    buff,
-                    ptr->GetState()
-            );
-        } else if (buf->IsArrayBuffer()) {
-            auto arrayBuffer = buf.As<v8::ArrayBuffer>();
-            auto store = arrayBuffer->GetBackingStore();
-            rust::Slice<const uint8_t> buf(static_cast<uint8_t *>(store->Data()),
-                                           store->ByteLength());
-            canvas_native_webgl_buffer_sub_data(
-                    target->Uint32Value(context).ToChecked(),
-                    static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
-                    buf,
-                    ptr->GetState()
-            );
-        }
-    }
-}
-
-void
-WebGLRenderingContext::CheckFramebufferStatus(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto target = args[0];
-
-        if (target->IsNumber()) {
-            auto targetValue = target->ToUint32(context);
-
-            auto ret = canvas_native_webgl_check_frame_buffer_status(
-                    targetValue.ToLocalChecked()->Value(),
-                    ptr->GetState()
-            );
-            args.GetReturnValue().Set(ret);
-        }
-    } else {
-        // TODO check failed return
-        args.GetReturnValue().Set(v8::Undefined(isolate));
-    }
-}
-
-void WebGLRenderingContext::ClearColor(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 3) {
-        auto red = args[0];
-        auto green = args[1];
-        auto blue = args[2];
-        auto alpha = args[3];
-
-        canvas_native_webgl_clear_color(
-                static_cast<float>(red->NumberValue(context).ToChecked()),
-                static_cast<float>(green->NumberValue(context).ToChecked()),
-                static_cast<float>(blue->NumberValue(context).ToChecked()),
-                static_cast<float>(alpha->NumberValue(context).ToChecked()),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::ClearDepth(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto depth = args[0];
-
-        canvas_native_webgl_clear_depth(
-                static_cast<float>(depth->NumberValue(context).ToChecked()),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::ClearStencil(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto stencil = args[0];
-        canvas_native_webgl_clear_stencil(
-                stencil->Int32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::Clear(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto mask = args[0];
-
-        canvas_native_webgl_clear(
-                mask->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-
-        ptr->UpdateInvalidateState();
-    }
-}
-
-void WebGLRenderingContext::ColorMask(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 3) {
-        auto red = args[0];
-        auto green = args[1];
-        auto blue = args[2];
-        auto alpha = args[3];
-
-        canvas_native_webgl_color_mask(
-                red->BooleanValue(isolate),
-                green->BooleanValue(isolate),
-                blue->BooleanValue(isolate),
-                alpha->BooleanValue(isolate),
-                ptr->GetState()
-        );
-    }
-
-}
-
-void WebGLRenderingContext::Commit(const v8::FunctionCallbackInfo<v8::Value> &args) {
-// noop
-}
-
-void WebGLRenderingContext::CompileShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto shader = args[0];
-        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
-            auto s = shader.As<v8::Object>();
-            auto shaderValue = Helpers::GetPrivate(isolate, s, "instance")->ToUint32(context);
-            canvas_native_webgl_compile_shader(
-                    shaderValue.ToLocalChecked()->Value(),
-                    ptr->GetState()
-            );
-        }
-    }
 }
 
 void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -1952,7 +3337,8 @@ void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<
             auto buffer = v8::ArrayBuffer::New(isolate, byte_len);
             auto view = v8::Int32Array::New(buffer, 0, len);
             for (int j = 0; j < len; ++j) {
-                Helpers::LogToConsole("Set: index " + std::to_string(j) + " value: " + std::to_string(ret[j]));
+                Helpers::LogToConsole(
+                        "Set: index " + std::to_string(j) + " value: " + std::to_string(ret[j]));
                 view->Set(context, j, v8::Int32::New(isolate, ret[j]));
             }
             args.GetReturnValue().Set(view);

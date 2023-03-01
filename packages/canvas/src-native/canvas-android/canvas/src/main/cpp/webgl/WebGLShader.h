@@ -10,15 +10,15 @@
 
 using namespace facebook;
 
-class JSI_EXPORT WebGLBuffer : public jsi::HostObject {
+class JSI_EXPORT WebGLShader : public jsi::HostObject {
 public:
-    WebGLBuffer(uint32_t buffer) : buffer_(buffer) {}
+    WebGLShader(uint32_t shader) : shader_(shader) {}
 
-    uint32_t GetBuffer() {
-        return this->buffer_;
+    uint32_t GetShader() {
+        return this->shader_;
     }
 
 private:
-    uint32_t buffer_;
+    uint32_t shader_;
 };
 

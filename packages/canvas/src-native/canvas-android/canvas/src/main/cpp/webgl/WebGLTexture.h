@@ -10,15 +10,14 @@
 
 using namespace facebook;
 
-class JSI_EXPORT WebGLBuffer : public jsi::HostObject {
+class JSI_EXPORT WebGLTexture : jsi::HostObject {
 public:
-    WebGLBuffer(uint32_t buffer) : buffer_(buffer) {}
+    WebGLTexture(uint32_t texture) : texture_(texture) {}
 
-    uint32_t GetBuffer() {
-        return this->buffer_;
+    uint32_t GetTexture() {
+        return this->texture_;
     }
 
 private:
-    uint32_t buffer_;
+    uint32_t texture_;
 };
-

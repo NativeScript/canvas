@@ -10,6 +10,183 @@ WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state)
         : WebGLRenderingContextBase(
         std::move(state), WebGLRenderingVersion::V1) {}
 
+jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
+                                                 uint32_t pnameValue,
+                                                 rust::Box<WebGLResult> result) {
+
+    switch (pnameValue) {
+        case GL_ACTIVE_TEXTURE:
+        case GL_ALPHA_BITS:
+        case GL_ARRAY_BUFFER_BINDING:
+        case GL_BLEND_DST_ALPHA:
+        case GL_BLEND_DST_RGB:
+        case GL_BLEND_EQUATION:
+        case GL_BLEND_EQUATION_ALPHA:
+        case GL_BLEND_SRC_ALPHA:
+        case GL_BLEND_SRC_RGB:
+        case GL_BLUE_BITS:
+        case GL_CULL_FACE_MODE:
+        case GL_CURRENT_PROGRAM:
+        case GL_DEPTH_BITS:
+        case GL_DEPTH_FUNC:
+        case GL_ELEMENT_ARRAY_BUFFER_BINDING:
+        case GL_FRAMEBUFFER_BINDING:
+        case GL_FRONT_FACE:
+        case GL_GENERATE_MIPMAP_HINT:
+        case GL_GREEN_BITS:
+        case GL_IMPLEMENTATION_COLOR_READ_FORMAT:
+        case GL_IMPLEMENTATION_COLOR_READ_TYPE:
+        case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS:
+        case GL_MAX_CUBE_MAP_TEXTURE_SIZE:
+        case GL_MAX_FRAGMENT_UNIFORM_VECTORS:
+        case GL_MAX_RENDERBUFFER_SIZE:
+        case GL_MAX_TEXTURE_IMAGE_UNITS:
+        case GL_MAX_TEXTURE_SIZE:
+        case GL_MAX_VARYING_VECTORS:
+        case GL_MAX_VERTEX_ATTRIBS:
+        case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS:
+        case GL_MAX_VERTEX_UNIFORM_VECTORS:
+        case GL_PACK_ALIGNMENT:
+        case GL_RED_BITS:
+        case GL_RENDERBUFFER_BINDING:
+        case GL_SAMPLE_BUFFERS:
+        case GL_SAMPLES:
+        case GL_STENCIL_BACK_FAIL:
+        case GL_STENCIL_BACK_FUNC:
+        case GL_STENCIL_BACK_PASS_DEPTH_FAIL:
+        case GL_STENCIL_BACK_PASS_DEPTH_PASS:
+        case GL_STENCIL_BACK_REF:
+        case GL_STENCIL_BACK_VALUE_MASK:
+        case GL_STENCIL_BACK_WRITEMASK:
+        case GL_STENCIL_BITS:
+        case GL_STENCIL_CLEAR_VALUE:
+        case GL_STENCIL_FAIL:
+        case GL_STENCIL_FUNC:
+        case GL_STENCIL_PASS_DEPTH_FAIL:
+        case GL_STENCIL_PASS_DEPTH_PASS:
+        case GL_STENCIL_REF:
+        case GL_STENCIL_VALUE_MASK:
+        case GL_STENCIL_WRITEMASK:
+        case GL_SUBPIXEL_BITS:
+        case GL_TEXTURE_BINDING_2D:
+        case GL_TEXTURE_BINDING_CUBE_MAP:
+        case GL_UNPACK_ALIGNMENT: {
+            auto value = canvas_native_webgl_result_get_i32(*result);
+            if ((pnameValue == GL_CURRENT_PROGRAM || pnameValue == GL_ARRAY_BUFFER_BINDING ||
+                 pnameValue == GL_ELEMENT_ARRAY_BUFFER_BINDING ||
+                 pnameValue == GL_TEXTURE_BINDING_2D ||
+                 pnameValue == GL_TEXTURE_BINDING_CUBE_MAP ||
+                 pnameValue == GL_RENDERBUFFER_BINDING ||
+                 pnameValue == GL_FRAMEBUFFER_BINDING) &&
+                value == 0) {
+                return Value::null();
+            }
+            return {value};
+        }
+        case UNPACK_COLORSPACE_CONVERSION_WEBGL:
+            return {canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
+                    this->GetState()};
+        case GL_ALIASED_LINE_WIDTH_RANGE:
+        case GL_ALIASED_POINT_SIZE_RANGE:
+        case GL_DEPTH_RANGE: {
+            auto ret = canvas_native_webgl_result_get_f32_array(*result);
+            auto buf = std::make_shared<VecMutableBuffer<float>>(std::move(ret));
+            auto array = jsi::ArrayBuffer(runtime, buf);
+
+            auto Float32Array = runtime.global()
+                    .getProperty(runtime,
+                                 "Float32Array")
+                    .asObject(runtime)
+                    .asFunction(runtime);
+
+
+            return Float32Array.callAsConstructor(
+                    runtime, array);
+        }
+            break;
+        case GL_BLEND_COLOR:
+        case GL_COLOR_CLEAR_VALUE: {
+            auto ret = canvas_native_webgl_result_get_f32_array(*result);
+
+            auto buf = std::make_shared<VecMutableBuffer<float>>(std::move(ret));
+            auto array = jsi::ArrayBuffer(runtime, buf);
+
+            auto Float32Array = runtime.global()
+                    .getProperty(runtime,
+                                 "Float32Array")
+                    .asObject(runtime)
+                    .asFunction(runtime);
+
+
+            return Float32Array.callAsConstructor(
+                    runtime, array);
+
+        }
+            break;
+        case UNPACK_FLIP_Y_WEBGL:
+           return {canvas_native_webgl_state_get_flip_y(this->GetState())};
+        case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
+            return { canvas_native_webgl_state_get_premultiplied_alpha(this->GetState())};
+        case GL_BLEND:
+        case GL_CULL_FACE:
+        case GL_DEPTH_TEST:
+        case GL_DEPTH_WRITEMASK:
+        case GL_DITHER:
+        case GL_POLYGON_OFFSET_FILL:
+        case GL_SAMPLE_COVERAGE_INVERT:
+        case GL_SCISSOR_TEST:
+        case GL_STENCIL_TEST:
+            return {canvas_native_webgl_result_get_bool(*result)};
+        case GL_COLOR_WRITEMASK: {
+            auto ret = canvas_native_webgl_result_get_bool_array(*result);
+            auto len = ret.size();
+            auto array = jsi::Array(runtime, len);
+            for (int j = 0; j < len; ++j) {
+                array.setValueAtIndex(runtime, j, Value(ret[j] == 1));
+            }
+            return array;
+        }
+        case GL_COMPRESSED_TEXTURE_FORMATS:
+        case GL_MAX_VIEWPORT_DIMS:
+        case GL_SCISSOR_BOX:
+        case GL_VIEWPORT: {
+            auto ret = canvas_native_webgl_result_get_i32_array(*result);
+
+            auto buf = std::make_shared<VecMutableBuffer<int32_t>>(std::move(ret));
+            auto array = jsi::ArrayBuffer(runtime, buf);
+
+            auto Int32Array = runtime.global()
+                    .getProperty(runtime,
+                                 "Int32Array")
+                    .asObject(runtime)
+                    .asFunction(runtime);
+
+
+            return Int32Array.callAsConstructor(
+                    runtime, array);
+
+        }
+            break;
+        case GL_DEPTH_CLEAR_VALUE:
+        case GL_LINE_WIDTH:
+        case GL_POLYGON_OFFSET_FACTOR:
+        case GL_POLYGON_OFFSET_UNITS:
+        case GL_SAMPLE_COVERAGE_VALUE: {
+            return {static_cast<double>(canvas_native_webgl_result_get_f32(*result))};
+        }
+        case GL_RENDERER:
+        case GL_SHADING_LANGUAGE_VERSION:
+        case GL_VENDOR:
+        case GL_VERSION: {
+            auto ret = canvas_native_webgl_result_get_string(*result);
+            return jsi::String::createFromAscii(runtime, ret.data(), ret.size());
+        }
+        default:
+            return Value::null();
+
+    }
+}
+
 std::vector<jsi::PropNameID> WebGLRenderingContext::getPropertyNames(jsi::Runtime &rt) {
     return {
             jsi::PropNameID::forUtf8(rt, std::string("activeTexture")),
@@ -154,6 +331,17 @@ std::vector<jsi::PropNameID> WebGLRenderingContext::getPropertyNames(jsi::Runtim
 
 jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
+
+    if(methodName == "drawingBufferWidth"){
+        return {canvas_native_webgl_state_get_drawing_buffer_width(this->GetState())};
+    }if(methodName == "drawingBufferHeight"){
+        return {canvas_native_webgl_state_get_drawing_buffer_height(this->GetState())};
+    }if(methodName == "__flipY"){
+        return {canvas_native_webgl_state_get_flip_y(this->GetState())};
+    }
+
+
+
     if (methodName == "activeTexture") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
@@ -849,115 +1037,321 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "compressedTexImage2D") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     7,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count == 6) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto level = (int32_t)arguments[1].asNumber();
+                                                             auto internalformat = (uint32_t)arguments[2].asNumber();
+                                                             auto width = (int32_t)arguments[3].asNumber();
+                                                             auto height = (int32_t)arguments[4].asNumber();
+                                                             auto border = (int32_t)arguments[5].asNumber();
+
+                                                             canvas_native_webgl_compressed_tex_image2d_none(
+                                                                     target,
+                                                                     level,
+                                                                     internalformat,
+                                                                     width,
+                                                                     height,
+                                                                     border,
+                                                                     this->GetState()
+                                                             );
+                                                         } else if (count > 6) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto level = (int32_t)arguments[1].asNumber();
+                                                             auto internalformat = (uint32_t)arguments[2].asNumber();
+                                                             auto width = (int32_t)arguments[3].asNumber();
+                                                             auto height = (int32_t)arguments[4].asNumber();
+                                                             auto border = (int32_t)arguments[5].asNumber();
+                                                             if(arguments[6].isObject()){
+                                                                 auto pixels = arguments[6].asObject(runtime);
+                                                                 if (pixels.isTypedArray(runtime)) {
+                                                                     auto array = pixels.getTypedArray(runtime);
+                                                                     auto buf = GetTypedArrayData<const uint8_t>(runtime, array);
+                                                                     canvas_native_webgl_compressed_tex_image2d(
+                                                                             target,
+                                                                             level,
+                                                                             internalformat,
+                                                                             width,
+                                                                             height,
+                                                                             border,
+                                                                             buf,
+                                                                             this->GetState()
+                                                                     );
+                                                                 } else if (pixels.isArrayBuffer(runtime)) {
+                                                                     auto ab = pixels.getArrayBuffer(runtime);
+                                                                     auto size = ab.size(runtime);
+                                                                     auto data = ab.data(runtime);
+                                                                     rust::Slice<const uint8_t> buf(data, size);
+
+                                                                     canvas_native_webgl_compressed_tex_image2d(
+                                                                             target,
+                                                                             level,
+                                                                             internalformat,
+                                                                             width,
+                                                                             height,
+                                                                             border,
+                                                                             buf,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "compressedTexSubImage2D") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     8,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         if (count > 7) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto level = (int32_t)arguments[1].asNumber();
+                                                             auto xoffset = (int32_t)arguments[2].asNumber();
+                                                             auto yoffset = (int32_t)arguments[3].asNumber();
+                                                             auto width = (int32_t)arguments[4].asNumber();
+                                                             auto height = (int32_t)arguments[5].asNumber();
+                                                             auto format = (uint32_t)arguments[6].asNumber();
+
+                                                             if(arguments[7].isObject()){
+                                                                 auto pixels = arguments[7].asObject(runtime);
+                                                                 if (pixels.isTypedArray(runtime)) {
+                                                                     auto px = pixels.getTypedArray(runtime);
+                                                                     auto buf = GetTypedArrayData<const uint8_t>(runtime, px);
+                                                                     canvas_native_webgl_compressed_tex_sub_image2d(
+                                                                             target,
+                                                                             level,
+                                                                             xoffset,
+                                                                             yoffset,
+                                                                             width,
+                                                                             height,
+                                                                             format,
+                                                                             buf,
+                                                                             this->GetState()
+                                                                     );
+                                                                 } else if (pixels.isArrayBuffer(runtime)) {
+                                                                     auto buffer = pixels.getArrayBuffer(runtime);
+                                                                     auto size = buffer.size(runtime);
+                                                                     auto data = buffer.data(runtime);
+                                                                     rust::Slice<const uint8_t> buf(data, size);
+
+                                                                     canvas_native_webgl_compressed_tex_sub_image2d(
+                                                                             target,
+                                                                             level,
+                                                                             xoffset,
+                                                                             yoffset,
+                                                                             width,
+                                                                             height,
+                                                                             format,
+                                                                             buf,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "copyTexImage2D") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     8,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 7) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto level = (int32_t)arguments[1].asNumber();
+                                                             auto internalformat = (uint32_t)arguments[2].asNumber();
+                                                             auto x = (int32_t)arguments[3].asNumber();
+                                                             auto y = (int32_t)arguments[4].asNumber();
+                                                             auto width = (int32_t)arguments[5].asNumber();
+                                                             auto height = (int32_t)arguments[6].asNumber();
+                                                             auto border = (int32_t)arguments[7].asNumber();
+
+                                                             canvas_native_webgl_copy_tex_image2d(
+                                                                     target,
+                                                                     level,
+                                                                     internalformat,
+                                                                     x,
+                                                                     y,
+                                                                     width,
+                                                                     height,
+                                                                     border,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "copyTexSubImage2D") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     8,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 7) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto level = (int32_t)arguments[1].asNumber();
+                                                             auto xoffset = (int32_t)arguments[2].asNumber();
+                                                             auto yoffset = (int32_t)arguments[3].asNumber();
+                                                             auto x = (int32_t)arguments[4].asNumber();
+                                                             auto y = (int32_t)arguments[5].asNumber();
+                                                             auto width = (int32_t)arguments[6].asNumber();
+                                                             auto height = (int32_t)arguments[7].asNumber();
+
+                                                             canvas_native_webgl_copy_tex_sub_image2d(
+                                                                     target,
+                                                                     level,
+                                                                     xoffset,
+                                                                     yoffset,
+                                                                     x,
+                                                                     y,
+                                                                     width,
+                                                                     height,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "createBuffer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         auto buffer = canvas_native_webgl_create_buffer(this->GetState());
+                                                         if (buffer != 0) {
+                                                             auto ret = std::make_shared<WebGLBuffer>(buffer);
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "createFramebuffer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         auto buffer = canvas_native_webgl_create_framebuffer(this->GetState());
+                                                         if (buffer != 0) {;
+                                                             auto ret = std::make_shared<WebGLFramebuffer>(buffer);
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "createProgram") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         auto program = canvas_native_webgl_create_program(this->GetState());
+                                                         if (program != 0) {
+                                                             auto ret = std::make_shared<WebGLProgram>(program);
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "createRenderbuffer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         auto buffer = canvas_native_webgl_create_renderbuffer(this->GetState());
+                                                         if (buffer != 0) {
+                                                             auto ret = std::make_shared<WebGLRenderbuffer>(buffer);
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "createShader") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count == 0) {
+                                                             return Value::undefined();
+                                                         }
+
+                                                         auto type = (uint32_t)arguments[0].asNumber();
+                                                         auto shader = canvas_native_webgl_create_shader(type, this->GetState());
+                                                         if (shader != 0) {
+                                                             auto ret = std::make_shared<WebGLShader>(shader);
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "createTexture") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         auto texture = canvas_native_webgl_create_texture(this->GetState());
+                                                         if (texture != 0) {
+                                                             auto ret = std::make_shared<WebGLTexture>(texture);
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "cullFace") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -965,11 +1359,20 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto mode = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_cull_face(
+                                                                     mode,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "deleteBuffer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -977,11 +1380,23 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             if (arguments[0].isObject()) {
+                                                                 auto buffer = arguments[0].asObject(runtime).asHostObject<WebGLBuffer>(runtime);
+                                                                if(buffer != nullptr){
+                                                                    canvas_native_webgl_delete_buffer(
+                                                                            buffer->GetBuffer(),
+                                                                            this->GetState()
+                                                                    );
+                                                                }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "deleteFramebuffer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -989,11 +1404,48 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             if (arguments[0].isObject()) {
+                                                                 auto buffer = arguments[0].asObject(runtime).asHostObject<WebGLFramebuffer>(runtime);
+
+                                                                 if (buffer != nullptr) {
+                                                                     canvas_native_webgl_delete_framebuffer(
+                                                                             buffer->GetFrameBuffer(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "deleteProgram") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+
+                                                             if (arguments[0].isObject()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     canvas_native_webgl_delete_framebuffer(
+                                                                             program->GetProgram(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "deleteRenderbuffer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1001,11 +1453,24 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+
+                                                             if (arguments[0].isObject()) {
+                                                                 auto buffer = arguments[0].asObject(runtime).asHostObject<WebGLRenderbuffer>(runtime);
+                                                                 if (buffer != nullptr) {
+                                                                     canvas_native_webgl_delete_renderbuffer(
+                                                                             buffer->GetRenderBuffer(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "deleteShader") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1013,11 +1478,23 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             if (arguments[0].isObject()) {
+                                                                 auto shader = arguments[0].asObject(runtime).asHostObject<WebGLRenderbuffer>(runtime);
+                                                                 if (shader != nullptr) {
+                                                                     canvas_native_webgl_delete_shader(
+                                                                             shader->GetRenderBuffer(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "deleteTexture") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1025,11 +1502,45 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             if (arguments[0].isObject()) {
+                                                                 auto texture = arguments[0].asObject(runtime).asHostObject<WebGLTexture>(runtime);
+                                                                 if (texture != nullptr) {
+                                                                     canvas_native_webgl_delete_texture(
+                                                                             texture->GetTexture(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "depthFunc") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto func = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_depth_func(
+                                                                     func,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+
+
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "DepthMask") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1037,35 +1548,67 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto mask = arguments[0].asBool();
+
+                                                             canvas_native_webgl_depth_mask(
+                                                                     mask,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "depthRange") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 1) {
+                                                             auto zNear = arguments[0].asNumber();
+                                                             auto zFar = arguments[1].asNumber();
+
+                                                             canvas_native_webgl_depth_range(
+                                                                     static_cast<float>(zNear),
+                                                                     static_cast<float>(zFar),
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "detachShader") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 1 && arguments[0].isObject() && arguments[1].isObject())  {
+                                                             auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                             auto shader = arguments[1].asObject(runtime).asHostObject<WebGLShader>(runtime);
+                                                             if (program != nullptr && shader != nullptr) {
+                                                                 canvas_native_webgl_detach_shader(
+                                                                         program->GetProgram(),
+                                                                         shader->GetShader(),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "disableVertexAttribArray") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1073,11 +1616,40 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto index = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_disable_vertex_attrib_array(
+                                                                     index,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "disable") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto cap = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_disable(
+                                                                     cap,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "drawArrays") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1085,23 +1657,54 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 2) {
+                                                             auto mode = (uint32_t)arguments[0].asNumber();
+                                                             auto first = (int32_t)arguments[1].asNumber();
+                                                             auto count_ = (int32_t)arguments[2].asNumber();
+
+                                                             canvas_native_webgl_draw_arrays(
+                                                                     mode,
+                                                                     first,
+                                                                     count_,
+                                                                     this->GetState()
+                                                             );
+                                                             this->UpdateInvalidateState();
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "drawElements") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     4,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 3) {
+                                                             auto mode = (uint32_t)arguments[0].asNumber();
+                                                             auto count_ = (int32_t)arguments[1].asNumber();
+                                                             auto type = (uint32_t)arguments[2].asNumber();
+                                                             auto offset = arguments[3].asNumber();
+
+                                                             canvas_native_webgl_draw_elements(
+                                                                     mode,
+                                                                     count,
+                                                                     type,
+                                                                     static_cast<ssize_t>(offset),
+                                                                     this->GetState()
+                                                             );
+                                                             this->UpdateInvalidateState();
+                                                         }
+
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "enableVertexAttribArray") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1109,47 +1712,134 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto index = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_enable_vertex_attrib_array(
+                                                                     index,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "enable") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto cap = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_enable(
+                                                                     cap,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "finish") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         canvas_native_webgl_finish(
+                                                                 this->GetState()
+                                                         );
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "flush") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         canvas_native_webgl_flush(
+                                                                 this->GetState()
+                                                         );
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "framebufferRenderbuffer") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count == 4) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto attachment = (uint32_t)arguments[1].asNumber();
+                                                             auto renderbuffertarget = (uint32_t)arguments[2].asNumber();
+
+                                                             if (arguments[3].isObject()) {
+                                                                 auto renderbuffer = arguments[3].asObject(runtime).asHostObject<WebGLRenderbuffer>(runtime);
+                                                                 if (renderbuffer != nullptr) {
+                                                                     canvas_native_webgl_framebuffer_renderbuffer(
+                                                                             target,
+                                                                             attachment,
+                                                                             renderbuffertarget,
+                                                                             renderbuffer->GetRenderBuffer(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "framebufferTexture2D") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     5,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count == 5) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto attachment = (uint32_t)arguments[1].asNumber();
+                                                             auto textarget = (uint32_t)arguments[2].asNumber();
+                                                             auto level = (int32_t)arguments[4].asNumber();
+                                                             if (arguments[3].isObject()) {
+                                                                 auto texture = arguments[3].asObject(runtime).asHostObject<WebGLTexture>(runtime);
+                                                                 if (texture != nullptr) {
+                                                                     canvas_native_webgl_framebuffer_texture2d(
+                                                                             target,
+                                                                             attachment,
+                                                                             textarget,
+                                                                             texture->GetTexture(),
+                                                                             level,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "frontFace") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1157,11 +1847,20 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto mode = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_front_face(
+                                                                     mode,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "generateMipmap") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1169,23 +1868,76 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+
+                                                             canvas_native_webgl_generate_mipmap(
+                                                                     target,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "getActiveAttrib") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 1) {
+                                                             auto index = (int32_t)arguments[1].asNumber();
+                                                             if (arguments[0].isObject()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     auto info = canvas_native_webgl_get_active_attrib(
+                                                                             program->GetProgram(),
+                                                                             index,
+                                                                             this->GetState()
+                                                                     );
+                                                                     auto ret = std::make_shared<WebGLActiveInfoImpl>(std::move(info));
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getActiveUniform") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         if (count > 1) {
+                                                             auto index = (int32_t)arguments[1].asNumber();
+                                                             if (arguments[0].isObject()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     auto info = canvas_native_webgl_get_active_uniform(
+                                                                             program->GetProgram(),
+                                                                             index,
+                                                                             this->GetState()
+                                                                     );
+                                                                     auto ret = std::make_shared<WebGLActiveInfoImpl>(std::move(info));
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             }
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getAttachedShaders") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1193,11 +1945,87 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         if (count > 0) {
+                                                             if (arguments[0].isObject()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     auto info = canvas_native_webgl_get_attached_shaders(
+                                                                             program->GetProgram(),
+                                                                             this->GetState()
+                                                                     );
+                                                                     auto len = info.size();
+                                                                     auto array = jsi::Array(runtime, len);
+                                                                     for (int i = 0; i < len; ++i) {
+                                                                         auto shader = std::make_shared<WebGLShader>(info[i]);
+                                                                         array.setValueAtIndex(runtime, i, jsi::Object::createFromHostObject(runtime, shader));
+                                                                     }
+                                                                     return array;
+                                                                 }
+                                                             }
+                                                         }
+
+
+                                                         return jsi::Array(runtime, 0);
+                                                     }
+        );
+    } else if (methodName == "getAttribLocation") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count > 1) {
+                                                             auto name = arguments[1].asString(runtime).utf8(runtime);
+                                                             if (arguments[0].isObject()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     auto location = canvas_native_webgl_get_attrib_location(
+                                                                             program->GetProgram(),
+                                                                             rust::Str(name.data(), name.size()),
+                                                                             this->GetState()
+                                                                     );
+                                                                    return {location}
+                                                                 }
+                                                             }
+                                                         }
+
+
+                                                         return {-1};
+                                                     }
+        );
+    } else if (methodName == "getBufferParameter") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count > 1) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto pname = (uint32_t)arguments[1].asNumber();
+
+                                                             auto param = canvas_native_webgl_get_buffer_parameter(
+                                                                     target,
+                                                                     pname,
+                                                                     this->GetState()
+                                                             );
+
+                                                             return {param};
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getContextAttributes") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1205,23 +2033,273 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         auto attr = canvas_native_webgl_get_context_attributes(this->GetState());
+                                                         auto ret = jsi::Object(runtime);
+                                                         auto alpha = canvas_native_webgl_context_attribute_get_get_alpha(*attr);
+
+                                                         ret.setProperty(runtime, "alpha", alpha);
+
+                                                         auto antialias = canvas_native_webgl_context_attribute_get_get_antialias(*attr);
+
+                                                         ret.setProperty(runtime, "antialias", antialias);
+
+                                                         auto depth = canvas_native_webgl_context_attribute_get_get_depth(*attr);
+
+                                                         ret.setProperty(runtime, "depth", depth);
+
+                                                         auto fail_if_major_performance_caveat = canvas_native_webgl_context_attribute_get_get_fail_if_major_performance_caveat(
+                                                                 *attr);
+
+                                                         ret.setProperty(runtime, "failIfMajorPerformanceCaveat", fail_if_major_performance_caveat);
+
+                                                         auto power_preference = canvas_native_webgl_context_attribute_get_get_power_preference(*attr);
+
+                                                         ret.setProperty(runtime, "powerPreference", jsi::String::createFromAscii(runtime, power_preference.data(), power_preference.size()));
+
+                                                         auto premultiplied_alpha = canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(
+                                                                 *attr);
+
+                                                         ret.setProperty(runtime, "premultipliedAlpha", premultiplied_alpha);
+
+                                                         auto preserve_drawing_buffer = canvas_native_webgl_context_attribute_get_get_preserve_drawing_buffer(
+                                                                 *attr);
+
+                                                         ret.setProperty(runtime, "preserveDrawingBuffer", preserve_drawing_buffer);
+
+                                                         auto stencil = canvas_native_webgl_context_attribute_get_get_stencil(*attr);
+
+                                                         ret.setProperty(runtime, "stencil", stencil);
+
+                                                         auto desynchronized = canvas_native_webgl_context_attribute_get_get_desynchronized(*attr);
+
+                                                         ret.setProperty(runtime, "desynchronized", desynchronized);
+
+                                                         auto xr_compatible = canvas_native_webgl_context_attribute_get_get_xr_compatible(*attr);
+
+                                                         ret.setProperty(runtime, "xrCompatible", xr_compatible);
+
+                                                        return ret;
+                                                     }
+        );
+    } else if (methodName == "getError") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         auto ret = canvas_native_webgl_get_error(this->GetState());
+
+                                                         return {ret};
+                                                     }
+        );
+    } else if (methodName == "getExtension") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count == 0) {
+                                                             return Value::undefined();
+                                                         }
+
+                                                         if (!arguments[0].isString()) {
+                                                             return Value::null();
+                                                         }
+                                                         auto name = arguments[0].asString(runtime).utf8(runtime);
+
+                                                         auto ext = canvas_native_webgl_get_extension(rust::Str(name.c_str(), name.size()),
+                                                                                                      this->GetState());
+
+                                                         if (canvas_native_webgl_context_extension_is_none(*ext)) {
+                                                             return Value::null();
+                                                         }
+
+                                                         auto type = anvas_native_webgl_context_extension_get_type(*ext);
+                                                         switch (type) {
+                                                             case WebGLExtensionType::EXT_blend_minmax:
+                                                             {
+                                                                 auto ret = std::make_shared<EXT_blend_minmaxImpl>();
+                                                                 return jsi::Object::createFromHostObject(runtime, ret);
+                                                             }
+                                                             case WebGLExtensionType::EXT_color_buffer_half_float:
+                                                             {
+                                                                 auto ret = std::make_shared<EXT_color_buffer_half_floatImpl>();
+                                                                 return jsi::Object::createFromHostObject(runtime, ret);
+                                                             }
+                                                             case WebGLExtensionType::EXT_disjoint_timer_query: {
+                                                                 auto ret = canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(
+                                                                         std::move(ext));
+                                                                 auto query = std::make_shared<EXT_disjoint_timer_queryImpl>(std::move(ret));
+                                                                 return jsi::Object::createFromHostObject(runtime, query);
+
+                                                             }
+                                                                 break;
+                                                             case WebGLExtensionType::EXT_sRGB:{
+                                                             auto ret = std::make_shared<EXT_sRGBImpl>();
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::EXT_shader_texture_lod:{
+                                                             auto ret = std::make_shared<EXT_shader_texture_lodImpl>();
+                                                             return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::EXT_texture_filter_anisotropic:
+                                                                 {
+                                                                     auto ret = std::make_shared<EXT_texture_filter_anisotropicImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::OES_element_index_uint:
+                                                                 {
+                                                                     auto ret = std::make_shared<OES_element_index_uintImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::OES_standard_derivatives:
+                                                                 {
+                                                                     auto ret = std::make_shared<OES_standard_derivativesImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::OES_texture_float:
+                                                                 {
+                                                                     auto ret = std::make_shared<OES_texture_floatImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::OES_texture_float_linear:
+                                                                 {
+                                                                     auto ret = std::make_shared<OES_texture_float_linearImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::OES_texture_half_float:
+                                                                 {
+                                                                     auto ret = std::make_shared<OES_texture_half_floatImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::OES_texture_half_float_linear:
+                                                                 {
+                                                                     auto ret = std::make_shared<OES_texture_half_float_linearImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::OES_vertex_array_object: {
+                                                                 auto ret = canvas_native_webgl_context_extension_to_oes_vertex_array_object(
+                                                                         std::move(ext));
+                                                                 auto array = std::make_shared<OES_vertex_array_objectImpl>(std::move(ret));
+                                                                 return jsi::Object::createFromHostObject(runtime, array);
+                                                             }
+                                                                 break;
+                                                             case WebGLExtensionType::WEBGL_color_buffer_float:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_color_buffer_floatImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_compressed_texture_atc:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_compressed_texture_atcImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_compressed_texture_etc1:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_compressed_texture_etc1Impl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_compressed_texture_s3tc:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_compressed_texture_s3tcImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_compressed_texture_s3tc_srgbImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_compressed_texture_etc:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_compressed_texture_etcImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_compressed_texture_pvrtc:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_compressed_texture_pvrtcImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_lose_context: {
+                                                                 auto ret = canvas_native_webgl_context_extension_to_lose_context(std::move(ext));
+                                                                 auto context = std::make_shared<WEBGL_lose_contextImpl>(std::move(ret));
+                                                                 return jsi::Object::createFromHostObject(runtime, context);
+                                                             }
+                                                                 break;
+                                                             case WebGLExtensionType::ANGLE_instanced_arrays: {
+                                                                 auto ret = canvas_native_webgl_context_extension_to_angle_instanced_arrays(
+                                                                         std::move(ext));
+                                                                 auto instance = std::make_shared<ANGLE_instanced_arraysImpl>(std::move(ret));
+                                                                 return jsi::Object::createFromHostObject(runtime, instance);
+                                                             }
+                                                                 break;
+                                                             case WebGLExtensionType::WEBGL_depth_texture:
+                                                                 {
+                                                                     auto ret = std::make_shared<WEBGL_depth_textureImpl>();
+                                                                     return jsi::Object::createFromHostObject(runtime, ret);
+                                                                 }
+                                                             case WebGLExtensionType::WEBGL_draw_buffers: {
+                                                                 auto ret = canvas_native_webgl_context_extension_to_draw_buffers(std::move(ext));
+
+                                                                 auto buffers = std::make_shared<WEBGL_draw_buffersImpl>(std::move(ret));
+                                                                 return jsi::Object::createFromHostObject(runtime, buffers);
+                                                             }
+                                                                 break;
+                                                             case WebGLExtensionType::None:
+                                                                 return jsi::Value::undefined();
+                                                         }
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getFramebufferAttachmentParameter") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     3,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         if (count > 2) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto attachment = (uint32_t)arguments[1].asNumber();
+                                                             auto pname = (uint32_t)arguments[2].asNumber();
+                                                             auto ret = canvas_native_webgl_get_framebuffer_attachment_parameter(
+                                                                     target,
+                                                                     attachment,
+                                                                     pname,
+                                                                     this->GetState()
+                                                             );
+                                                             if (canvas_native_webgl_framebuffer_attachment_parameter_get_is_texture(*ret)) {
+                                                                 auto value = canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret);
+                                                                 auto texture = std::make_shared<WebGLTexture>(value);
+                                                                 return jsi::Object::createFromHostObject(runtime, texture);
+                                                             }
+                                                             if (canvas_native_webgl_framebuffer_attachment_parameter_get_is_renderbuffer(*ret)) {
+                                                                 auto value = canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret);
+                                                                 auto buffer = std::make_shared<WebGLRenderbuffer>(value);
+                                                                 return jsi::Object::createFromHostObject(runtime, buffer);
+                                                             }
+
+                                                             return {canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret)};
+                                                         }
+
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getParameter") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1229,11 +2307,127 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
+
+
+                                                         // TODO remove extra allocations
+                                                         if (count > 0) {
+                                                             auto pname = (uint32_t)arguments[0].asNumber();
+                                                             auto result = canvas_native_webgl_get_parameter(pname,
+                                                                                                             this->GetState());
+
+                                                             return GetParameterInternal(runtime, pname, std::move(result));
+                                                         }
+
+                                                         return jsi::Value::null();
+                                                     }
+        );
+    } else if (methodName == "getProgramInfoLog") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count > 0) {
+                                                             if ( arguments[0].isObject()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     auto log = canvas_native_webgl_get_program_info_log(
+                                                                             program->GetProgram(),
+                                                                             this->GetState()
+                                                                     );
+
+
+                                                                     if (log.empty()) {
+                                                                         return jsi::String::createFromAscii(runtime, "");
+                                                                     }
+
+                                                                     return jsi::String::createFromAscii(runtime, log.data(), log.size());
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::String::createFromAscii(runtime, "");
+                                                     }
+        );
+    } else if (methodName == "getProgramParameter") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         if (count > 1) {
+                                                             auto pname = (uint32_t)arguments[1].asNumber();
+                                                             if (arguments[0].isObject()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     auto ret = canvas_native_webgl_get_program_parameter(
+                                                                             program->GetProgram(),
+                                                                             pname,
+                                                                             this->GetState()
+                                                                     );
+
+                                                                     if (canvas_native_webgl_result_get_is_none(*ret)) {
+                                                                        return Value::null();
+                                                                     }
+                                                                     switch (pname) {
+                                                                         case GL_DELETE_STATUS:
+                                                                         case GL_LINK_STATUS:
+                                                                         case GL_VALIDATE_STATUS:
+                                                                             return {canvas_native_webgl_result_get_bool(*ret)};
+                                                                         default:
+                                                                             return {canvas_native_webgl_result_get_i32(*ret)};
+                                                                     }
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::Value::null();
+                                                     }
+        );
+    } else if (methodName == "getRenderbufferParameter") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+
+                                                         void
+                                                         WebGLRenderingContext::GetRenderbufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
+                                                             auto isolate = args.GetIsolate();
+                                                             auto context = isolate->GetCurrentContext();
+                                                             auto ptr = GetPointerBase(args.This());
+                                                             if (args.Length() > 1) {
+                                                                 auto target = args[0];
+                                                                 auto pname = args[1];
+                                                                 auto ret = canvas_native_webgl_get_renderbuffer_parameter(
+                                                                         target->Uint32Value(context).ToChecked(),
+                                                                         pname->Uint32Value(context).ToChecked(),
+                                                                         ptr->GetState()
+                                                                 );
+                                                                 args.GetReturnValue().Set(ret);
+                                                             }
+
+                                                             // todo check return
+                                                             args.GetReturnValue().SetNull();
+                                                         }
+
 
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getShaderInfoLog") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1242,34 +2436,89 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+
+                                                         if (count > 0) {
+                                                             if (arguments[0].isObject()) {
+                                                                 auto shader = arguments[0].asObject(runtime).asHostObject<WebGLShader>(runtime);
+                                                                 if (shader != nullptr) {
+                                                                     auto log = canvas_native_webgl_get_shader_info_log(
+                                                                             shader->GetShader(),
+                                                                             this->GetState()
+                                                                     );
+
+                                                                     return jsi::String::createFromAscii(runtime, log.data(), log.size());
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::String::createFromAscii(runtime, "");
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getShaderParameter") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+                                                         if (count > 1) {
+                                                             auto pname = (uint32_t)arguments[1].asNumber();
+                                                             if (arguments[0].isObject()) {
+                                                                 auto shader = arguments[0].asObject(runtime).asHostObject<WebGLShader>(runtime);
+                                                                 if (shader != nullptr) {
+                                                                     auto ret = canvas_native_webgl_get_shader_parameter(
+                                                                             shader->GetShader(),
+                                                                             pname,
+                                                                             this->GetState()
+                                                                     );
+
+                                                                     if (canvas_native_webgl_result_get_is_none(*ret)) {
+                                                                         return Value::null();
+                                                                     }
+
+                                                                     if (pname == GL_DELETE_STATUS || pname == GL_COMPILE_STATUS) {
+                                                                         return {canvas_native_webgl_result_get_bool(*ret)};
+                                                                     }
+
+                                                                     return {canvas_native_webgl_result_get_i32(*ret)};
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::Value::null();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getShaderPrecisionFormat") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+
+                                                         if (count > 1) {
+                                                             auto shaderType = (uint32_t)arguments[0].asNumber();
+                                                             auto precisionType = (uint32_t)arguments[1].asNumber();
+                                                             auto ret = canvas_native_webgl_get_shader_precision_format(
+                                                                     shaderType,
+                                                                     precisionType,
+                                                                     this->GetState()
+                                                             );
+                                                             auto shader = std::make_shared<WebGLShaderPrecisionFormatImpl>(std::move(ret));
+                                                             return jsi::Object::createFromHostObject(runtime, shader);
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::Value::null();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getShaderSource") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1278,82 +2527,248 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+
+                                                         if (count > 0) {
+                                                             if (arguments[0].isObject()) {
+                                                                 auto shader = arguments[0].asObject(runtime).asHostObject<WebGLShader>(runtime);
+
+                                                                 if (shader != nullptr) {
+                                                                     auto source = canvas_native_webgl_get_shader_source(
+                                                                             shader->GetShader(),
+                                                                             this->GetState()
+                                                                     );
+
+                                                                    return jsi::String::createFromAscii(runtime, source.data(), source.size());
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::String::createFromAscii(runtime, "");
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getSupportedExtensions") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+                                                         auto exts = canvas_native_webgl_get_supported_extensions(this->GetState());
+                                                         auto len = exts.size();
+                                                         auto array = jsi::Array(runtime, len);
+                                                         for (int i = 0; i < len; ++i) {
+                                                             auto item = exts[i];
+                                                             array.setValueAtIndex(runtime, i, jsi::String::createFromAscii(runtime, item.data(), item.size()));
+                                                         }
+                                                         return array;
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "__getSupportedExtensions") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+                                                         auto exts = canvas_native_webgl_get_supported_extensions_to_string(this->GetState());
+
+                                                         return jsi::String::createFromAscii(runtime, exts.data(), exts.size());
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getTexParameter") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+                                                         if (count > 1) {
+                                                             auto target = (uint32_t)arguments[0].asNumber();
+                                                             auto pname = (uint32_t)arguments[1].asNumber();
+                                                             auto ret = canvas_native_webgl_get_tex_parameter(
+                                                                     target,
+                                                                     pname,
+                                                                     this->GetState()
+                                                             );
+                                                             return {ret};
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::Value::null();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getUniformLocation") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+                                                         if (count > 1) {
+                                                             if (arguments[0].isObject() && arguments[1].isString()) {
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 if (program != nullptr) {
+                                                                     auto name = arguments[1].asString(runtime).utf8(runtime);
+
+                                                                     auto ret = canvas_native_webgl_get_uniform_location(
+                                                                             program->GetProgram(),
+                                                                             rust::Str(name.c_str(), name.size()),
+                                                                             this->GetState()
+                                                                     );
+
+                                                                     auto location = std::make_shared<WebGLUniformLocation>(ret);
+
+                                                                     return jsi::Object::createFromHostObject(runtime, location);
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::Value::null();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getUniform") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+                                                         if (count > 1) {
+                                                             if (arguments[0].isObject() && arguments[1].isObject()) {
+
+                                                                 auto program = arguments[0].asObject(runtime).asHostObject<WebGLProgram>(runtime);
+                                                                 auto location = arguments[1].asObject(runtime).asHostObject<WebGLUniformLocation>(runtime);
+
+
+                                                                 if (program != nullptr && location != nullptr) {
+
+                                                                     auto val = canvas_native_webgl_get_uniform(
+                                                                             program,
+                                                                             location,
+                                                                             this->GetState());
+                                                                     switch (canvas_native_webgl_result_get_type(*val)) {
+                                                                         case WebGLResultType::Boolean:
+                                                                            return {canvas_native_webgl_result_get_bool(*val)};
+                                                                         case WebGLResultType::None:
+                                                                             return Value::null();
+                                                                         case WebGLResultType::String: {
+                                                                             auto str = canvas_native_webgl_result_get_string(*val);
+                                                                             return jsi::String::createFromAscii(runtime, str.data(), str.size());
+                                                                         }
+                                                                             break;
+                                                                         case WebGLResultType::BooleanArray: {
+                                                                             auto ret = canvas_native_webgl_result_get_bool_array(*val);
+                                                                             auto len = ret.size();
+                                                                             auto array = jsi::Array(runtime, len);
+                                                                             for (int i = 0; i < len; ++i) {
+                                                                                 auto item = ret[i];
+                                                                                 array.setValueAtIndex(runtime, i, Value(item == 1));
+                                                                             }
+                                                                             return array;
+                                                                         }
+                                                                             break;
+                                                                         case WebGLResultType::F32Array: {
+                                                                             auto ret = canvas_native_webgl_result_get_f32_array(*val);
+
+                                                                             auto buf = std::make_shared<VecMutableBuffer<float>>(std::move(ret));
+                                                                             auto array = jsi::ArrayBuffer(runtime, buf);
+
+                                                                             auto Float32Array = runtime.global()
+                                                                                     .getProperty(runtime,
+                                                                                                  "Float32Array")
+                                                                                     .asObject(runtime)
+                                                                                     .asFunction(runtime);
+
+
+                                                                             return Float32Array.callAsConstructor(
+                                                                                     runtime, array);
+                                                                         }
+                                                                             break;
+                                                                         case WebGLResultType::I32Array: {
+                                                                             auto ret = canvas_native_webgl_result_get_i32_array(*val);
+
+                                                                             auto buf = std::make_shared<VecMutableBuffer<int32_t>>(std::move(ret));
+                                                                             auto array = jsi::ArrayBuffer(runtime, buf);
+
+                                                                             auto Int32Array = runtime.global()
+                                                                                     .getProperty(runtime,
+                                                                                                  "Int32Array")
+                                                                                     .asObject(runtime)
+                                                                                     .asFunction(runtime);
+
+
+                                                                             return Int32Array.callAsConstructor(
+                                                                                     runtime, array);
+                                                                         }
+                                                                             break;
+                                                                         case WebGLResultType::U32Array: {
+                                                                             auto ret = canvas_native_webgl_result_get_u32_array(*val);
+
+                                                                             auto buf = std::make_shared<VecMutableBuffer<uint32_t>>(std::move(ret));
+                                                                             auto array = jsi::ArrayBuffer(runtime, buf);
+
+                                                                             auto Uint32Array = runtime.global()
+                                                                                     .getProperty(runtime,
+                                                                                                  "Uint32Array")
+                                                                                     .asObject(runtime)
+                                                                                     .asFunction(runtime);
+
+
+                                                                             return Uint32Array.callAsConstructor(
+                                                                                     runtime, array);
+                                                                         }
+                                                                             break;
+                                                                         case WebGLResultType::F32:
+                                                                             return {(double)canvas_native_webgl_result_get_f32(*val)};
+                                                                         case WebGLResultType::I32:
+                                                                             return { canvas_native_webgl_result_get_i32(*val)};
+                                                                         case WebGLResultType::U32:
+                                                                            return { canvas_native_webgl_result_get_u32(*val)};
+                                                                     }
+                                                                 }
+                                                             }
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::Value::null();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getVertexAttribOffset") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
+                                                         if (count > 1) {
+                                                             auto index = (uint32_t)arguments[0].asNumber();
+                                                             auto pname = (uint32_t)arguments[1].asNumber();
+                                                             auto ret = canvas_native_webgl_get_vertex_attrib_offset(
+                                                                     index,
+                                                                     pname,
+                                                                     this->GetState());
+                                                             return {static_cast<double>(ret)};
+                                                         }
+
+                                                         // todo check return
+                                                         return jsi::Value::null();
                                                      }
         );
-    } else if (methodName == "blendEquation") {
+    } else if (methodName == "getVertexAttrib") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -1362,163 +2777,44 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+                                                         void WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value> &args) {
+                                                             auto isolate = args.GetIsolate();
+                                                             auto context = isolate->GetCurrentContext();
+                                                             auto ptr = GetPointerBase(args.This());
+                                                             if (args.Length() > 1) {
+                                                                 auto index = args[0];
+                                                                 auto pname = args[1];
+                                                                 auto pnameValue = pname->Uint32Value(context).ToChecked();
+                                                                 auto ret = canvas_native_webgl_get_vertex_attrib(index->Uint32Value(context).ToChecked(),
+                                                                                                                  pnameValue, ptr->GetState());
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+                                                                 if (pnameValue == GL_CURRENT_VERTEX_ATTRIB) {
+                                                                     auto val = canvas_native_webgl_result_get_f32_array(*ret);
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+                                                                     auto buf = std::make_shared<VecMutableBuffer<float>>(std::move(value));
+                                                                     auto array = jsi::ArrayBuffer(runtime, buf);
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+                                                                     auto Float32Array = runtime.global()
+                                                                             .getProperty(runtime,
+                                                                                          "Float32Array")
+                                                                             .asObject(runtime)
+                                                                             .asFunction(runtime);
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+                                                                     return Float32Array.callAsConstructor(
+                                                                             runtime, array);
+                                                                 } else if (pnameValue == GL_VERTEX_ATTRIB_ARRAY_ENABLED ||
+                                                                            pnameValue == GL_VERTEX_ATTRIB_ARRAY_NORMALIZED) {
+                                                                     return {canvas_native_webgl_result_get_bool(*ret)};
+                                                                 } else {
+                                                                     return {canvas_native_webgl_result_get_i32(*ret)};
+                                                                 }
+                                                             }
+                                                         }
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
+                                                         // todo check return
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "blendEquation") {
@@ -2216,1628 +3512,6 @@ void WebGLRenderingContext::InstanceFromPointer(const v8::FunctionCallbackInfo<v
     args.GetReturnValue().SetUndefined();
 }
 
-void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() == 6) {
-        auto target = args[0];
-        auto level = args[1];
-        auto internalformat = args[2];
-        auto width = args[3];
-        auto height = args[4];
-        auto border = args[5];
-
-        canvas_native_webgl_compressed_tex_image2d_none(
-                target->Uint32Value(context).ToChecked(),
-                level->Int32Value(context).ToChecked(),
-                internalformat->Uint32Value(context).ToChecked(),
-                width->Int32Value(context).ToChecked(),
-                height->Int32Value(context).ToChecked(),
-                border->Int32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    } else if (args.Length() > 6) {
-        auto target = args[0];
-        auto level = args[1];
-        auto internalformat = args[2];
-        auto width = args[3];
-        auto height = args[4];
-        auto border = args[5];
-        auto pixels = args[6];
-        if (pixels->IsArrayBufferView()) {
-            auto buf = Helpers::GetTypedArrayData<const uint8_t>(pixels.As<v8::TypedArray>());
-            canvas_native_webgl_compressed_tex_image2d(
-                    target->Uint32Value(context).ToChecked(),
-                    level->Int32Value(context).ToChecked(),
-                    internalformat->Uint32Value(context).ToChecked(),
-                    width->Int32Value(context).ToChecked(),
-                    height->Int32Value(context).ToChecked(),
-                    border->Int32Value(context).ToChecked(),
-                    buf,
-                    ptr->GetState()
-            );
-        } else if (pixels->IsArrayBuffer()) {
-            auto ab = pixels.As<v8::ArrayBuffer>();
-            auto store = ab->GetBackingStore();
-            auto data = static_cast<uint8_t *>(store->Data());
-            rust::Slice<const uint8_t> buf(data, store->ByteLength());
-
-            canvas_native_webgl_compressed_tex_image2d(
-                    target->Uint32Value(context).ToChecked(),
-                    level->Int32Value(context).ToChecked(),
-                    internalformat->Uint32Value(context).ToChecked(),
-                    width->Int32Value(context).ToChecked(),
-                    height->Int32Value(context).ToChecked(),
-                    border->Int32Value(context).ToChecked(),
-                    buf,
-                    ptr->GetState()
-            );
-        }
-    }
-}
-
-void
-WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 7) {
-        auto target = args[0];
-        auto level = args[1];
-        auto xoffset = args[2];
-        auto yoffset = args[3];
-        auto width = args[4];
-        auto height = args[5];
-        auto format = args[6];
-        auto pixels = args[7];
-        if (pixels->IsArrayBufferView()) {
-            auto buf = Helpers::GetTypedArrayData<const uint8_t>(pixels.As<v8::TypedArray>());
-            canvas_native_webgl_compressed_tex_sub_image2d(
-                    target->Uint32Value(context).ToChecked(),
-                    level->Int32Value(context).ToChecked(),
-                    xoffset->Int32Value(context).ToChecked(),
-                    yoffset->Int32Value(context).ToChecked(),
-                    width->Int32Value(context).ToChecked(),
-                    height->Int32Value(context).ToChecked(),
-                    format->Uint32Value(context).ToChecked(),
-                    buf,
-                    ptr->GetState()
-            );
-        } else if (pixels->IsArrayBuffer()) {
-            auto buffer = pixels.As<v8::ArrayBuffer>();
-            auto store = buffer->GetBackingStore();
-            auto data = static_cast<uint8_t *>(store->Data());
-            rust::Slice<const uint8_t> buf(data, store->ByteLength());
-
-            canvas_native_webgl_compressed_tex_sub_image2d(
-                    target->Uint32Value(context).ToChecked(),
-                    level->Int32Value(context).ToChecked(),
-                    xoffset->Int32Value(context).ToChecked(),
-                    yoffset->Int32Value(context).ToChecked(),
-                    width->Int32Value(context).ToChecked(),
-                    height->Int32Value(context).ToChecked(),
-                    format->Uint32Value(context).ToChecked(),
-                    buf,
-                    ptr->GetState()
-            );
-        }
-    }
-}
-
-void WebGLRenderingContext::CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 7) {
-        auto target = args[0];
-        auto level = args[1];
-        auto internalformat = args[2];
-        auto x = args[3];
-        auto y = args[4];
-        auto width = args[5];
-        auto height = args[6];
-        auto border = args[7];
-
-        canvas_native_webgl_copy_tex_image2d(
-                target->Uint32Value(context).ToChecked(),
-                level->Int32Value(context).ToChecked(),
-                internalformat->Uint32Value(context).ToChecked(),
-                x->Int32Value(context).ToChecked(),
-                y->Int32Value(context).ToChecked(),
-                width->Int32Value(context).ToChecked(),
-                height->Int32Value(context).ToChecked(),
-                border->Int32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 7) {
-        auto target = args[0];
-        auto level = args[1];
-        auto xoffset = args[2];
-        auto yoffset = args[3];
-        auto x = args[4];
-        auto y = args[5];
-        auto width = args[6];
-        auto height = args[7];
-
-        canvas_native_webgl_copy_tex_sub_image2d(
-                target->Uint32Value(context).ToChecked(),
-                level->Int32Value(context).ToChecked(),
-                xoffset->Int32Value(context).ToChecked(),
-                yoffset->Int32Value(context).ToChecked(),
-                x->Int32Value(context).ToChecked(),
-                y->Int32Value(context).ToChecked(),
-                width->Int32Value(context).ToChecked(),
-                height->Int32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto buffer = canvas_native_webgl_create_buffer(ptr->GetState());
-    if (buffer == 0) {
-        args.GetReturnValue().SetUndefined();
-    } else {
-        args.GetReturnValue().Set(WebGLBuffer::NewInstance(isolate, buffer));
-    }
-}
-
-void WebGLRenderingContext::CreateFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto ret = canvas_native_webgl_create_framebuffer(ptr->GetState());
-    if (ret == 0) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
-        return;
-    }
-    args.GetReturnValue().Set(WebGLFramebuffer::NewInstance(isolate, ret));
-}
-
-void WebGLRenderingContext::CreateProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto ret = canvas_native_webgl_create_program(ptr->GetState());
-    if (ret == 0) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
-        return;
-    }
-    args.GetReturnValue().Set(WebGLProgram::NewInstance(isolate, ret));
-}
-
-void WebGLRenderingContext::CreateRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto ret = canvas_native_webgl_create_renderbuffer(ptr->GetState());
-    if (ret == 0) {
-        args.GetReturnValue().Set(v8::Undefined(isolate));
-        return;
-    }
-    args.GetReturnValue().Set(WebGLRenderbuffer::NewInstance(isolate, ret));
-}
-
-void WebGLRenderingContext::CreateShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() == 0) {
-        args.GetReturnValue().SetUndefined();
-        return;
-    }
-    if (args[0]->IsNumber()) {
-        // todo throw ?
-    }
-    auto type = args[0]->Uint32Value(context).ToChecked();
-    auto ret = canvas_native_webgl_create_shader(type, ptr->GetState());
-    if (ret == 0) {
-        args.GetReturnValue().SetUndefined();
-        return;
-    }
-    args.GetReturnValue().Set(WebGLShader::NewInstance(isolate, ret));
-}
-
-void WebGLRenderingContext::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto ret = canvas_native_webgl_create_texture(ptr->GetState());
-    if (ret == 0) {
-        args.GetReturnValue().SetUndefined();
-        return;
-    }
-    args.GetReturnValue().Set(WebGLTexture::NewInstance(isolate, ret));
-}
-
-void WebGLRenderingContext::CullFace(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto mode = args[0];
-
-        canvas_native_webgl_cull_face(
-                mode->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::DeleteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto buffer = args[0];
-        if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLBuffer) {
-            auto instance = Helpers::GetPrivate(isolate, buffer.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_delete_buffer(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::DeleteFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto buffer = args[0];
-        if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLFramebuffer) {
-            auto instance = Helpers::GetPrivate(isolate, buffer.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_delete_framebuffer(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::DeleteProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto program = args[0];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_delete_framebuffer(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::DeleteRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto buffer = args[0];
-        if (Helpers::GetInstanceType(isolate, buffer) == ObjectType::WebGLRenderbuffer) {
-            auto instance = Helpers::GetPrivate(isolate, buffer.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_delete_renderbuffer(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::DeleteShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto shader = args[0];
-        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLRenderbuffer) {
-            auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_delete_shader(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::DeleteTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto texture = args[0];
-        if (Helpers::GetInstanceType(isolate, texture) == ObjectType::WebGLTexture) {
-            auto instance = Helpers::GetPrivate(isolate, texture.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_delete_texture(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::DepthFunc(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto func = args[0];
-
-        canvas_native_webgl_depth_func(
-                func->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::DepthMask(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto mask = args[0];
-
-        canvas_native_webgl_depth_mask(
-                mask->BooleanValue(isolate),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::DepthRange(const v8::FunctionCallbackInfo<v8::Value> &args) {
-
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto zNear = args[0];
-        auto zFar = args[1];
-
-        canvas_native_webgl_depth_range(
-                static_cast<float>(zNear->NumberValue(context).ToChecked()),
-                static_cast<float>(zFar->NumberValue(context).ToChecked()),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::DetachShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        auto shader = args[1];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
-            Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
-            auto p = program.As<v8::Object>();
-            auto s = shader.As<v8::Object>();
-            auto programValue = Helpers::GetPrivate(isolate, p, "instance")->ToUint32(context);
-            auto shaderValue = Helpers::GetPrivate(isolate, s, "instance")->ToUint32(context);
-            canvas_native_webgl_detach_shader(
-                    programValue.ToLocalChecked()->Value(),
-                    shaderValue.ToLocalChecked()->Value(),
-                    ptr->GetState()
-            );
-        }
-    }
-}
-
-void
-WebGLRenderingContext::DisableVertexAttribArray(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto index = args[0];
-
-        canvas_native_webgl_disable_vertex_attrib_array(
-                index->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::Disable(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto cap = args[0];
-
-        canvas_native_webgl_disable(
-                cap->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::DrawArrays(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 2) {
-        auto mode = args[0];
-        auto first = args[1];
-        auto count = args[2];
-
-        canvas_native_webgl_draw_arrays(
-                mode->Uint32Value(context).ToChecked(),
-                first->Int32Value(context).ToChecked(),
-                count->Int32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-        ptr->UpdateInvalidateState();
-    }
-}
-
-void WebGLRenderingContext::DrawElements(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 3) {
-        auto mode = args[0];
-        auto count = args[1];
-        auto type = args[2];
-        auto offset = args[3];
-
-        canvas_native_webgl_draw_elements(
-                mode->Uint32Value(context).ToChecked(),
-                count->Int32Value(context).ToChecked(),
-                type->Uint32Value(context).ToChecked(),
-                static_cast<ssize_t>(offset->IntegerValue(context).ToChecked()),
-                ptr->GetState()
-        );
-        ptr->UpdateInvalidateState();
-    }
-}
-
-void
-WebGLRenderingContext::EnableVertexAttribArray(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto index = args[0];
-
-        canvas_native_webgl_enable_vertex_attrib_array(
-                index->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::Enable(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto cap = args[0];
-
-        canvas_native_webgl_enable(
-                cap->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::Finish(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    canvas_native_webgl_finish(
-            ptr->GetState()
-    );
-}
-
-void WebGLRenderingContext::Flush(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    canvas_native_webgl_flush(
-            ptr->GetState()
-    );
-}
-
-void
-WebGLRenderingContext::FramebufferRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() == 4) {
-        auto target = args[0];
-        auto attachment = args[1];
-        auto renderbuffertarget = args[2];
-        auto renderbuffer = args[3];
-
-        if (Helpers::GetInstanceType(isolate, renderbuffer) == ObjectType::WebGLRenderbuffer) {
-            auto instance = Helpers::GetPrivate(isolate, renderbuffer.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_framebuffer_renderbuffer(
-                        target->Uint32Value(context).ToChecked(),
-                        attachment->Uint32Value(context).ToChecked(),
-                        renderbuffertarget->Uint32Value(context).ToChecked(),
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::FramebufferTexture2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() == 5) {
-        auto target = args[0];
-        auto attachment = args[1];
-        auto textarget = args[2];
-        auto texture = args[3];
-        auto level = args[4];
-        if (Helpers::GetInstanceType(isolate, texture) == ObjectType::WebGLTexture) {
-            auto instance = Helpers::GetPrivate(isolate, texture.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                canvas_native_webgl_framebuffer_texture2d(
-                        target->Uint32Value(context).ToChecked(),
-                        attachment->Uint32Value(context).ToChecked(),
-                        textarget->Uint32Value(context).ToChecked(),
-                        instance->Uint32Value(context).ToChecked(),
-                        level->Int32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-            }
-        }
-    }
-}
-
-void WebGLRenderingContext::FrontFace(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto mode = args[0];
-
-        canvas_native_webgl_front_face(
-                mode->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::GenerateMipmap(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto target = args[0];
-
-        canvas_native_webgl_generate_mipmap(
-                target->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
-}
-
-void WebGLRenderingContext::GetActiveAttrib(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        auto index = args[1];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto info = canvas_native_webgl_get_active_attrib(
-                        instance->Uint32Value(context).ToChecked(),
-                        index->Int32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-                auto ret = WebGLActiveInfoImpl::NewInstance(isolate, std::move(info));
-                args.GetReturnValue().Set(ret);
-                return;
-            }
-        }
-    }
-    args.GetReturnValue().SetUndefined();
-}
-
-void WebGLRenderingContext::GetActiveUniform(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        auto index = args[1];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto info = canvas_native_webgl_get_active_uniform(
-                        instance->Uint32Value(context).ToChecked(),
-                        index->Int32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-                auto ret = WebGLActiveInfoImpl::NewInstance(isolate, std::move(info));
-                args.GetReturnValue().Set(ret);
-                return;
-            }
-        }
-    }
-    args.GetReturnValue().SetUndefined();
-}
-
-void WebGLRenderingContext::GetAttachedShaders(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto info = canvas_native_webgl_get_attached_shaders(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-                auto len = info.size();
-                auto array = v8::Array::New(isolate, len);
-                for (int i = 0; i < len; ++i) {
-                    auto shader = info[i];
-                    array->Set(context, i,
-                               WebGLShader::NewInstance(isolate, shader));
-                }
-                args.GetReturnValue().Set(array);
-                return;
-            }
-        }
-    }
-    args.GetReturnValue().Set(v8::Array::New(isolate, 0));
-}
-
-void WebGLRenderingContext::GetAttribLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        auto name = args[1];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto nameValue = Helpers::ConvertFromV8String(isolate, name);
-
-                auto location = canvas_native_webgl_get_attrib_location(
-                        instance->Uint32Value(context).ToChecked(),
-                        rust::Str(nameValue.c_str(), nameValue.size()),
-                        ptr->GetState()
-                );
-                args.GetReturnValue().Set(location);
-                return;
-            }
-        }
-    }
-    args.GetReturnValue().Set(-1);
-}
-
-void WebGLRenderingContext::GetBufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto target = args[0];
-        auto pname = args[1];
-
-        auto param = canvas_native_webgl_get_buffer_parameter(
-                target->Uint32Value(context).ToChecked(),
-                pname->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-
-        args.GetReturnValue().Set(param);
-        return;
-    }
-
-    args.GetReturnValue().SetUndefined();
-}
-
-void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto attr = canvas_native_webgl_get_context_attributes(ptr->GetState());
-    auto ret = v8::Object::New(isolate);
-    auto alpha = canvas_native_webgl_context_attribute_get_get_alpha(*attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "alpha"),
-             v8::Boolean::New(isolate, alpha));
-
-    auto antialias = canvas_native_webgl_context_attribute_get_get_antialias(*attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "antialias"),
-             v8::Boolean::New(isolate, antialias));
-
-    auto depth = canvas_native_webgl_context_attribute_get_get_depth(*attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "depth"),
-             v8::Boolean::New(isolate, depth));
-
-    auto fail_if_major_performance_caveat = canvas_native_webgl_context_attribute_get_get_fail_if_major_performance_caveat(
-            *attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "failIfMajorPerformanceCaveat"),
-             v8::Boolean::New(isolate, fail_if_major_performance_caveat));
-
-    auto power_preference = canvas_native_webgl_context_attribute_get_get_power_preference(*attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "powerPreference"),
-             Helpers::ConvertToV8String(isolate, power_preference.c_str()));
-
-    auto premultiplied_alpha = canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(
-            *attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "premultipliedAlpha"),
-             v8::Boolean::New(isolate, premultiplied_alpha));
-
-    auto preserve_drawing_buffer = canvas_native_webgl_context_attribute_get_get_preserve_drawing_buffer(
-            *attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "preserveDrawingBuffer"),
-             v8::Boolean::New(isolate, preserve_drawing_buffer));
-
-    auto stencil = canvas_native_webgl_context_attribute_get_get_stencil(*attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "stencil"),
-             v8::Boolean::New(isolate, stencil));
-
-    auto desynchronized = canvas_native_webgl_context_attribute_get_get_desynchronized(*attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "desynchronized"),
-             v8::Boolean::New(isolate, desynchronized));
-
-    auto xr_compatible = canvas_native_webgl_context_attribute_get_get_xr_compatible(*attr);
-    ret->Set(context, Helpers::ConvertToV8String(isolate, "xrCompatible"),
-             v8::Boolean::New(isolate, xr_compatible));
-
-    args.GetReturnValue().Set(ret);
-}
-
-void WebGLRenderingContext::GetError(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto ret = canvas_native_webgl_get_error(ptr->GetState());
-    args.GetReturnValue().Set(ret);
-}
-
-
-void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() == 0) {
-        args.GetReturnValue().SetNull();
-        return;
-    }
-    auto name = args[0];
-    if (!name->IsString()) {
-        args.GetReturnValue().SetNull();
-        return;
-    }
-
-    auto val = Helpers::ConvertFromV8String(isolate, name);
-    auto ext = canvas_native_webgl_get_extension(rust::Str(val.c_str(), val.size()),
-                                                 ptr->GetState());
-
-    if (canvas_native_webgl_context_extension_is_none(*ext)) {
-        args.GetReturnValue().SetNull();
-        return;
-    }
-
-    auto type = canvas_native_webgl_context_extension_get_type(*ext);
-    switch (type) {
-        case WebGLExtensionType::EXT_blend_minmax:
-            args.GetReturnValue().Set(EXT_blend_minmaxImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::EXT_color_buffer_half_float:
-            args.GetReturnValue().Set(EXT_color_buffer_half_floatImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::EXT_disjoint_timer_query: {
-            auto ret = canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(
-                    std::move(ext));
-            args.GetReturnValue().Set(
-                    EXT_disjoint_timer_queryImpl::NewInstance(isolate, std::move(ret)));
-        }
-            break;
-        case WebGLExtensionType::EXT_sRGB:
-            args.GetReturnValue().Set(EXT_sRGBImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::EXT_shader_texture_lod:
-            args.GetReturnValue().Set(EXT_shader_texture_lodImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::EXT_texture_filter_anisotropic:
-            args.GetReturnValue().Set(EXT_texture_filter_anisotropicImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::OES_element_index_uint:
-            args.GetReturnValue().Set(OES_element_index_uintImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::OES_standard_derivatives:
-            args.GetReturnValue().Set(OES_standard_derivativesImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::OES_texture_float:
-            args.GetReturnValue().Set(OES_texture_floatImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::OES_texture_float_linear:
-            args.GetReturnValue().Set(OES_texture_float_linearImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::OES_texture_half_float:
-            args.GetReturnValue().Set(OES_texture_half_floatImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::OES_texture_half_float_linear:
-            args.GetReturnValue().Set(OES_texture_half_float_linearImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::OES_vertex_array_object: {
-            auto ret = canvas_native_webgl_context_extension_to_oes_vertex_array_object(
-                    std::move(ext));
-            args.GetReturnValue().Set(
-                    OES_vertex_array_objectImpl::NewInstance(isolate, std::move(ret)));
-        }
-            break;
-        case WebGLExtensionType::WEBGL_color_buffer_float:
-            args.GetReturnValue().Set(WEBGL_color_buffer_floatImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_compressed_texture_atc:
-            args.GetReturnValue().Set(WEBGL_compressed_texture_atcImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_compressed_texture_etc1:
-            args.GetReturnValue().Set(WEBGL_compressed_texture_etc1Impl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_compressed_texture_s3tc:
-            args.GetReturnValue().Set(WEBGL_compressed_texture_s3tcImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb:
-            args.GetReturnValue().Set(WEBGL_compressed_texture_s3tc_srgbImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_compressed_texture_etc:
-            args.GetReturnValue().Set(WEBGL_compressed_texture_etcImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_compressed_texture_pvrtc:
-            args.GetReturnValue().Set(WEBGL_compressed_texture_pvrtcImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_lose_context: {
-            auto ret = canvas_native_webgl_context_extension_to_lose_context(std::move(ext));
-            args.GetReturnValue().Set(WEBGL_lose_contextImpl::NewInstance(isolate, std::move(ret)));
-        }
-            break;
-        case WebGLExtensionType::ANGLE_instanced_arrays: {
-            auto ret = canvas_native_webgl_context_extension_to_angle_instanced_arrays(
-                    std::move(ext));
-            args.GetReturnValue().Set(
-                    ANGLE_instanced_arraysImpl::NewInstance(isolate, std::move(ret)));
-        }
-            break;
-        case WebGLExtensionType::WEBGL_depth_texture:
-            args.GetReturnValue().Set(WEBGL_depth_textureImpl::NewInstance(isolate));
-            break;
-        case WebGLExtensionType::WEBGL_draw_buffers: {
-            auto ret = canvas_native_webgl_context_extension_to_draw_buffers(std::move(ext));
-            args.GetReturnValue().Set(WEBGL_draw_buffersImpl::NewInstance(isolate, std::move(ret)));
-        }
-            break;
-        case WebGLExtensionType::None:
-            args.GetReturnValue().SetUndefined();
-            break;
-    }
-}
-
-void WebGLRenderingContext::GetFramebufferAttachmentParameter(
-        const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-
-    if (args.Length() > 2) {
-        auto target = args[0];
-        auto attachment = args[1];
-        auto pname = args[2];
-        auto ret = canvas_native_webgl_get_framebuffer_attachment_parameter(
-                target->Uint32Value(context).ToChecked(),
-                attachment->Uint32Value(context).ToChecked(),
-                pname->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-        if (canvas_native_webgl_framebuffer_attachment_parameter_get_is_texture(*ret)) {
-            auto value = canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret);
-            args.GetReturnValue().Set(WebGLTexture::NewInstance(isolate, value));
-            return;
-        }
-        if (canvas_native_webgl_framebuffer_attachment_parameter_get_is_renderbuffer(*ret)) {
-            auto value = canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret);
-            args.GetReturnValue().Set(WebGLRenderbuffer::NewInstance(isolate, value));
-            return;
-        }
-
-        args.GetReturnValue().Set(
-                canvas_native_webgl_framebuffer_attachment_parameter_get_value(*ret)
-        );
-    }
-}
-
-void WebGLRenderingContext::GetParameterInternal(const v8::FunctionCallbackInfo<v8::Value> &args,
-                                                 uint32_t pnameValue,
-                                                 rust::Box<WebGLResult> result) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    switch (pnameValue) {
-        case GL_ACTIVE_TEXTURE:
-        case GL_ALPHA_BITS:
-        case GL_ARRAY_BUFFER_BINDING:
-        case GL_BLEND_DST_ALPHA:
-        case GL_BLEND_DST_RGB:
-        case GL_BLEND_EQUATION:
-        case GL_BLEND_EQUATION_ALPHA:
-        case GL_BLEND_SRC_ALPHA:
-        case GL_BLEND_SRC_RGB:
-        case GL_BLUE_BITS:
-        case GL_CULL_FACE_MODE:
-        case GL_CURRENT_PROGRAM:
-        case GL_DEPTH_BITS:
-        case GL_DEPTH_FUNC:
-        case GL_ELEMENT_ARRAY_BUFFER_BINDING:
-        case GL_FRAMEBUFFER_BINDING:
-        case GL_FRONT_FACE:
-        case GL_GENERATE_MIPMAP_HINT:
-        case GL_GREEN_BITS:
-        case GL_IMPLEMENTATION_COLOR_READ_FORMAT:
-        case GL_IMPLEMENTATION_COLOR_READ_TYPE:
-        case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS:
-        case GL_MAX_CUBE_MAP_TEXTURE_SIZE:
-        case GL_MAX_FRAGMENT_UNIFORM_VECTORS:
-        case GL_MAX_RENDERBUFFER_SIZE:
-        case GL_MAX_TEXTURE_IMAGE_UNITS:
-        case GL_MAX_TEXTURE_SIZE:
-        case GL_MAX_VARYING_VECTORS:
-        case GL_MAX_VERTEX_ATTRIBS:
-        case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS:
-        case GL_MAX_VERTEX_UNIFORM_VECTORS:
-        case GL_PACK_ALIGNMENT:
-        case GL_RED_BITS:
-        case GL_RENDERBUFFER_BINDING:
-        case GL_SAMPLE_BUFFERS:
-        case GL_SAMPLES:
-        case GL_STENCIL_BACK_FAIL:
-        case GL_STENCIL_BACK_FUNC:
-        case GL_STENCIL_BACK_PASS_DEPTH_FAIL:
-        case GL_STENCIL_BACK_PASS_DEPTH_PASS:
-        case GL_STENCIL_BACK_REF:
-        case GL_STENCIL_BACK_VALUE_MASK:
-        case GL_STENCIL_BACK_WRITEMASK:
-        case GL_STENCIL_BITS:
-        case GL_STENCIL_CLEAR_VALUE:
-        case GL_STENCIL_FAIL:
-        case GL_STENCIL_FUNC:
-        case GL_STENCIL_PASS_DEPTH_FAIL:
-        case GL_STENCIL_PASS_DEPTH_PASS:
-        case GL_STENCIL_REF:
-        case GL_STENCIL_VALUE_MASK:
-        case GL_STENCIL_WRITEMASK:
-        case GL_SUBPIXEL_BITS:
-        case GL_TEXTURE_BINDING_2D:
-        case GL_TEXTURE_BINDING_CUBE_MAP:
-        case GL_UNPACK_ALIGNMENT: {
-            auto value = canvas_native_webgl_result_get_i32(*result);
-            if ((pnameValue == GL_CURRENT_PROGRAM || pnameValue == GL_ARRAY_BUFFER_BINDING ||
-                 pnameValue == GL_ELEMENT_ARRAY_BUFFER_BINDING ||
-                 pnameValue == GL_TEXTURE_BINDING_2D ||
-                 pnameValue == GL_TEXTURE_BINDING_CUBE_MAP ||
-                 pnameValue == GL_RENDERBUFFER_BINDING ||
-                 pnameValue == GL_FRAMEBUFFER_BINDING) &&
-                value == 0) {
-                args.GetReturnValue().SetNull();
-                break;
-            }
-            args.GetReturnValue().Set(value);
-        }
-            break;
-        case UNPACK_COLORSPACE_CONVERSION_WEBGL:
-            args.GetReturnValue().Set(
-                    canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
-                            ptr->GetState())
-            );
-
-            break;
-        case GL_ALIASED_LINE_WIDTH_RANGE:
-        case GL_ALIASED_POINT_SIZE_RANGE:
-        case GL_DEPTH_RANGE: {
-            auto ret = canvas_native_webgl_result_get_f32_array(*result);
-            auto len = ret.size();
-            auto byte_len = len * sizeof(float);
-            auto buffer = v8::ArrayBuffer::New(isolate, byte_len);
-            auto view = v8::Float32Array::New(buffer, 0, len);
-            for (int j = 0; j < len; ++j) {
-                view->Set(context, j,
-                          v8::Number::New(isolate, static_cast<double>(ret[j])));
-            }
-            args.GetReturnValue().Set(view);
-        }
-            break;
-        case GL_BLEND_COLOR:
-        case GL_COLOR_CLEAR_VALUE: {
-            auto ret = canvas_native_webgl_result_get_f32_array(*result);
-            auto len = ret.size();
-            auto byte_len = len * sizeof(float);
-            auto buffer = v8::ArrayBuffer::New(isolate, byte_len);
-            auto view = v8::Float32Array::New(buffer, 0, len);
-            for (int j = 0; j < len; ++j) {
-                view->Set(context, j,
-                          v8::Number::New(isolate, static_cast<double>(ret[j])));
-            }
-            args.GetReturnValue().Set(view);
-        }
-            break;
-        case UNPACK_FLIP_Y_WEBGL:
-            args.GetReturnValue().Set(canvas_native_webgl_state_get_flip_y(ptr->GetState()));
-            break;
-        case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
-            args.GetReturnValue().Set(
-                    canvas_native_webgl_state_get_premultiplied_alpha(ptr->GetState()));
-            break;
-        case GL_BLEND:
-        case GL_CULL_FACE:
-        case GL_DEPTH_TEST:
-        case GL_DEPTH_WRITEMASK:
-        case GL_DITHER:
-        case GL_POLYGON_OFFSET_FILL:
-        case GL_SAMPLE_COVERAGE_INVERT:
-        case GL_SCISSOR_TEST:
-        case GL_STENCIL_TEST: {
-            args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(*result));
-        }
-            break;
-        case GL_COLOR_WRITEMASK: {
-            auto ret = canvas_native_webgl_result_get_bool_array(*result);
-            auto len = ret.size();
-            auto array = v8::Array::New(isolate, len);
-            for (int j = 0; j < len; ++j) {
-                array->Set(context, j, v8::Boolean::New(isolate, ret[j] == 1));
-            }
-            args.GetReturnValue().Set(array);
-        }
-            break;
-        case GL_COMPRESSED_TEXTURE_FORMATS:
-        case GL_MAX_VIEWPORT_DIMS:
-        case GL_SCISSOR_BOX:
-        case GL_VIEWPORT: {
-            auto ret = canvas_native_webgl_result_get_i32_array(*result);
-            auto len = ret.size();
-            auto byte_len = len * sizeof(int32_t);
-            Helpers::LogToConsole("GL_VIEWPORT");
-            Helpers::LogToConsole("len: " + std::to_string(len));
-            Helpers::LogToConsole("byte_len: " + std::to_string(byte_len));
-
-            auto buffer = v8::ArrayBuffer::New(isolate, byte_len);
-            auto view = v8::Int32Array::New(buffer, 0, len);
-            for (int j = 0; j < len; ++j) {
-                Helpers::LogToConsole(
-                        "Set: index " + std::to_string(j) + " value: " + std::to_string(ret[j]));
-                view->Set(context, j, v8::Int32::New(isolate, ret[j]));
-            }
-            args.GetReturnValue().Set(view);
-        }
-            break;
-        case GL_DEPTH_CLEAR_VALUE:
-        case GL_LINE_WIDTH:
-        case GL_POLYGON_OFFSET_FACTOR:
-        case GL_POLYGON_OFFSET_UNITS:
-        case GL_SAMPLE_COVERAGE_VALUE: {
-            args.GetReturnValue().Set(
-                    static_cast<double>(canvas_native_webgl_result_get_f32(*result))
-            );
-        }
-            break;
-        case GL_RENDERER:
-        case GL_SHADING_LANGUAGE_VERSION:
-        case GL_VENDOR:
-        case GL_VERSION: {
-            auto ret = canvas_native_webgl_result_get_string(*result);
-            args.GetReturnValue().Set(
-                    Helpers::ConvertToV8String(isolate, std::string(ret.data(), ret.size())));
-        }
-            break;
-        default:
-            args.GetReturnValue().SetNull();
-            break;
-
-    }
-}
-
-void WebGLRenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-
-    // TODO remove extra allocations
-    if (args.Length() > 0) {
-        auto pname = args[0];
-        auto pnameValue = pname->Uint32Value(context).ToChecked();
-        auto result = canvas_native_webgl_get_parameter(pnameValue,
-                                                        ptr->GetState());
-        Helpers::LogToConsole("GetParameter: " + std::to_string(pnameValue));
-
-        GetParameterInternal(args, pnameValue, std::move(result));
-        return;
-    }
-    args.GetReturnValue().SetNull();
-}
-
-void WebGLRenderingContext::GetProgramInfoLog(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto program = args[0];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto log = canvas_native_webgl_get_program_info_log(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-
-
-                if (log.empty()) {
-                    return args.GetReturnValue().SetEmptyString();
-                }
-
-                args.GetReturnValue().Set(
-                        Helpers::ConvertToV8String(isolate, std::string(log.data(), log.size())));
-                return;
-            }
-        }
-    }
-
-    // todo check return
-    args.GetReturnValue().Set(Helpers::ConvertToV8String(isolate, ""));
-}
-
-void WebGLRenderingContext::GetProgramParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        auto pname = args[1];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto ret = canvas_native_webgl_get_program_parameter(
-                        instance->Uint32Value(context).ToChecked(),
-                        pname->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-
-                if (canvas_native_webgl_result_get_is_none(*ret)) {
-                    args.GetReturnValue().SetNull();
-                    return;
-                }
-                switch (pname->Uint32Value(context).ToChecked()) {
-                    case GL_DELETE_STATUS:
-                    case GL_LINK_STATUS:
-                    case GL_VALIDATE_STATUS:
-                        args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(*ret));
-                        break;
-                    default:
-                        args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(*ret));
-                        break;
-                }
-
-                return;
-            }
-        }
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void
-WebGLRenderingContext::GetRenderbufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto target = args[0];
-        auto pname = args[1];
-        auto ret = canvas_native_webgl_get_renderbuffer_parameter(
-                target->Uint32Value(context).ToChecked(),
-                pname->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-        args.GetReturnValue().Set(ret);
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void WebGLRenderingContext::GetShaderInfoLog(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto shader = args[0];
-        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
-            auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto log = canvas_native_webgl_get_shader_info_log(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-
-                args.GetReturnValue().Set(
-                        Helpers::ConvertToV8String(isolate, std::string(log.data(), log.size())));
-                return;
-            }
-        }
-    }
-
-    // todo check return
-    args.GetReturnValue().SetEmptyString();
-}
-
-void WebGLRenderingContext::GetShaderParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto shader = args[0];
-        auto pname = args[1];
-        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
-            auto pnameValue = pname->Uint32Value(context).ToChecked();
-            auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto ret = canvas_native_webgl_get_shader_parameter(
-                        instance->Uint32Value(context).ToChecked(),
-                        pnameValue,
-                        ptr->GetState()
-                );
-
-                if (canvas_native_webgl_result_get_is_none(*ret)) {
-                    args.GetReturnValue().Set(v8::Null(isolate));
-                    return;
-                }
-
-                if (pnameValue == GL_DELETE_STATUS || pnameValue == GL_COMPILE_STATUS) {
-                    args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(*ret));
-                    return;
-                }
-
-                args.GetReturnValue().Set(
-                        canvas_native_webgl_result_get_i32(*ret));
-                return;
-            }
-        }
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void
-WebGLRenderingContext::GetShaderPrecisionFormat(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto shaderType = args[0];
-        auto precisionType = args[1];
-        auto ret = canvas_native_webgl_get_shader_precision_format(
-                shaderType->Uint32Value(context).ToChecked(),
-                precisionType->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-        args.GetReturnValue().Set(
-                WebGLShaderPrecisionFormatImpl::NewInstance(isolate, std::move(ret)));
-        return;
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-
-}
-
-void WebGLRenderingContext::GetShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 0) {
-        auto shader = args[0];
-        if (Helpers::GetInstanceType(isolate, shader) == ObjectType::WebGLShader) {
-            auto instance = Helpers::GetPrivate(isolate, shader.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-                auto source = canvas_native_webgl_get_shader_source(
-                        instance->Uint32Value(context).ToChecked(),
-                        ptr->GetState()
-                );
-
-                args.GetReturnValue().Set(
-                        Helpers::ConvertToV8String(isolate,
-                                                   std::string(source.data(), source.size())));
-                return;
-            }
-        }
-    }
-
-    // todo check return
-    args.GetReturnValue().SetEmptyString();
-}
-
-void
-WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    auto exts = canvas_native_webgl_get_supported_extensions(ptr->GetState());
-    auto len = exts.size();
-    auto array = v8::Array::New(isolate, len);
-    for (int i = 0; i < len; ++i) {
-        auto item = exts[i];
-        array->Set(context, i, Helpers::ConvertToV8String(isolate, item.c_str()));
-    }
-    args.GetReturnValue().Set(array);
-}
-
-
-void
-WebGLRenderingContext::GetSupportedExtensionsString(
-        const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto ptr = GetPointerBase(args.This());
-    auto exts = canvas_native_webgl_get_supported_extensions_to_string(ptr->GetState());
-    args.GetReturnValue().Set(
-            Helpers::ConvertToV8String(isolate, std::string(
-                    exts.data(), exts.size()
-            ))
-    );
-}
-
-void WebGLRenderingContext::GetTexParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto target = args[0];
-        auto pname = args[1];
-        auto ret = canvas_native_webgl_get_tex_parameter(
-                target->Uint32Value(context).ToChecked(),
-                pname->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-        args.GetReturnValue().Set(ret);
-        return;
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        auto name = args[1];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-            auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-            if (!instance.IsEmpty()) {
-
-                auto nameValue = Helpers::ConvertFromV8String(isolate, name);
-
-                auto ret = canvas_native_webgl_get_uniform_location(
-                        instance->Uint32Value(context).ToChecked(),
-                        rust::Str(nameValue.c_str(), nameValue.size()),
-                        ptr->GetState()
-                );
-
-                args.GetReturnValue().Set(WebGLUniformLocation::NewInstance(isolate, ret));
-                return;
-            }
-        }
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto program = args[0];
-        auto location = args[1];
-        if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
-            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-            auto programInstance = Helpers::GetPrivate(isolate, program.As<v8::Object>(),
-                                                       "instance");
-            auto locationInstance = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                        "instance");
-            if (!programInstance.IsEmpty() && !locationInstance.IsEmpty()) {
-
-                auto val = canvas_native_webgl_get_uniform(
-                        programInstance->Uint32Value(context).ToChecked(),
-                        location->Uint32Value(context).ToChecked(),
-                        ptr->GetState());
-                switch (canvas_native_webgl_result_get_type(*val)) {
-                    case WebGLResultType::Boolean:
-                        args.GetReturnValue().Set(
-                                canvas_native_webgl_result_get_bool(*val)
-                        );
-                        break;
-                    case WebGLResultType::None:
-                        args.GetReturnValue().Set(v8::Null(isolate));
-                        break;
-                    case WebGLResultType::String: {
-                        auto str = canvas_native_webgl_result_get_string(*val);
-                        args.GetReturnValue().Set(
-                                Helpers::ConvertToV8String(isolate,
-                                                           std::string(str.data(), str.size()))
-                        );
-                    }
-                        break;
-                    case WebGLResultType::BooleanArray: {
-                        auto ret = canvas_native_webgl_result_get_bool_array(*val);
-                        auto len = ret.size();
-                        auto array = v8::Array::New(isolate, len);
-                        for (int i = 0; i < len; ++i) {
-                            auto item = ret[i];
-                            array->Set(context, i,
-                                       v8::Boolean::New(isolate, item == 1));
-                        }
-                        args.GetReturnValue().Set(array);
-                    }
-                        break;
-                    case WebGLResultType::F32Array: {
-                        auto ret = canvas_native_webgl_result_get_f32_array(*val);
-                        auto len = ret.size();
-                        auto byte_len = len * sizeof(float);
-                        auto array = v8::ArrayBuffer::New(isolate, byte_len);
-                        auto view = v8::Float32Array::New(array, 0, len);
-                        for (int i = 0; i < len; ++i) {
-                            auto item = ret[i];
-                            view->Set(context, i,
-                                      v8::Number::New(isolate, static_cast<double>(item)));
-                        }
-                        args.GetReturnValue().Set(view);
-                    }
-                        break;
-                    case WebGLResultType::I32Array: {
-                        auto ret = canvas_native_webgl_result_get_i32_array(*val);
-                        auto len = ret.size();
-                        auto byte_len = len * sizeof(int32_t);
-                        auto array = v8::ArrayBuffer::New(isolate, byte_len);
-                        auto view = v8::Int32Array::New(array, 0, len);
-                        for (int i = 0; i < len; ++i) {
-                            auto item = ret[i];
-                            view->Set(context, i, v8::Int32::New(isolate, item));
-                        }
-                        args.GetReturnValue().Set(view);
-                    }
-                        break;
-                    case WebGLResultType::U32Array: {
-                        auto ret = canvas_native_webgl_result_get_u32_array(*val);
-                        auto len = ret.size();
-                        auto byte_len = len * sizeof(uint32_t);
-                        auto array = v8::ArrayBuffer::New(isolate, byte_len);
-                        auto view = v8::Uint32Array::New(array, 0, len);
-                        for (int i = 0; i < len; ++i) {
-                            auto item = ret[i];
-                            view->Set(context, i, v8::Uint32::New(isolate, item));
-                        }
-                        args.GetReturnValue().Set(view);
-                    }
-                        break;
-                    case WebGLResultType::F32:
-                        args.GetReturnValue().Set(
-                                canvas_native_webgl_result_get_f32(*val)
-                        );
-                        break;
-                    case WebGLResultType::I32:
-                        args.GetReturnValue().Set(
-                                canvas_native_webgl_result_get_i32(*val)
-                        );
-                        break;
-                    case WebGLResultType::U32:
-                        args.GetReturnValue().Set(
-                                canvas_native_webgl_result_get_u32(*val)
-                        );
-                        break;
-                }
-
-                return;
-            }
-        }
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void WebGLRenderingContext::GetVertexAttribOffset(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto index = args[0];
-        auto pname = args[1];
-        auto ret = canvas_native_webgl_get_vertex_attrib_offset(
-                index->Uint32Value(context).ToChecked(),
-                pname->Uint32Value(context).ToChecked(),
-                ptr->GetState());
-        args.GetReturnValue().Set(v8::Number::New(isolate, static_cast<double>(ret)));
-        return;
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(args.This());
-    if (args.Length() > 1) {
-        auto index = args[0];
-        auto pname = args[1];
-        auto pnameValue = pname->Uint32Value(context).ToChecked();
-        auto ret = canvas_native_webgl_get_vertex_attrib(index->Uint32Value(context).ToChecked(),
-                                                         pnameValue, ptr->GetState());
-
-        if (pnameValue == GL_CURRENT_VERTEX_ATTRIB) {
-            auto val = canvas_native_webgl_result_get_f32_array(*ret);
-            auto len = val.size();
-            auto byte_len = len * sizeof(float);
-            auto array = v8::ArrayBuffer::New(isolate, byte_len);
-            auto view = v8::Float32Array::New(array, 0, len);
-            for (int i = 0; i < len; ++i) {
-                auto item = val[i];
-                view->Set(context, i,
-                          v8::Number::New(isolate, static_cast<double>(item)));
-            }
-            args.GetReturnValue().Set(view);
-        } else if (pnameValue == GL_VERTEX_ATTRIB_ARRAY_ENABLED ||
-                   pnameValue == GL_VERTEX_ATTRIB_ARRAY_NORMALIZED) {
-            args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(*ret));
-        } else {
-            args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(*ret));
-        }
-
-        return;
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
 
 void WebGLRenderingContext::Hint(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
@@ -5390,40 +5064,7 @@ void WebGLRenderingContext::Viewport(const v8::FunctionCallbackInfo<v8::Value> &
 }
 
 
-void WebGLRenderingContext::GetDrawingBufferWidth(v8::Local<v8::String> name,
-                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
-    auto ptr = GetPointerBase(info.This());
-
-    int32_t ret = 0;
-    if (ptr != nullptr) {
-        ret = canvas_native_webgl_state_get_drawing_buffer_width(ptr->GetState());
-    }
-    info.GetReturnValue().Set(ret);
-}
-
-void WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::String> name,
-                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(info.This());
-    int32_t ret = 0;
-    if (ptr != nullptr) {
-        ret = canvas_native_webgl_state_get_drawing_buffer_height(ptr->GetState());
-    }
-    info.GetReturnValue().Set(ret);
-}
-
-
-void WebGLRenderingContext::GetFlipY(v8::Local<v8::String> name,
-                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointerBase(info.This());
-    info.GetReturnValue().Set(canvas_native_webgl_state_get_flip_y(ptr->GetState()));
-}
 
 
 v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isolate) {

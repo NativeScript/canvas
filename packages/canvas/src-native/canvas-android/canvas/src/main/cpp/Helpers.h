@@ -26,4 +26,8 @@ inline static rust::Slice<T> GetTypedArrayData(Runtime &runtime, facebook::jsi::
     return std::move(slice);
 }
 
+
+
+
+
 #endif //CANVAS_ANDROID_HELPERS_H

@@ -7,6 +7,7 @@
 #include "rust/cxx.h"
 #include "canvas-cxx/src/webgl.rs.h"
 #include "v8runtime/V8Runtime.h"
+#include "VecMutableBuffer.h"
 
 
 #include <cmath>
@@ -217,7 +218,7 @@ public:
 
     static void GetParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void GetParameterInternal(const v8::FunctionCallbackInfo<v8::Value> &args, uint32_t pnameValue,
+    jsi::Value GetParameterInternal(jsi::Runtime &runtime, uint32_t pnameValue,
                                      rust::Box<WebGLResult> result);
 
     static void GetProgramInfoLog(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -371,29 +372,6 @@ public:
     static void SetProps(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl);
 
     static void SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl);
-
-    template<typename T>
-    static void AddWeakListener(v8::Isolate *isolate, const v8::Local<v8::Object> &object, T *data){
-        auto ext = v8::External::New(isolate, data);
-        object->SetInternalField(0, ext);
-        auto persistent = new v8::Persistent<v8::Object>(isolate, object);
-        auto entry = new ObjectCacheEntry(static_cast<void *>(data), persistent);
-        auto callback = [](const v8::WeakCallbackInfo<ObjectCacheEntry> &cacheEntry) {
-            auto value = cacheEntry.GetParameter();
-            auto ptr = static_cast<T *>(value->data);
-            if (ptr != nullptr) {
-                delete ptr;
-            }
-            auto persistent_ptr = value->object;
-            if (persistent_ptr != nullptr) {
-                if (!persistent_ptr->IsEmpty()) {
-                    persistent_ptr->Reset();
-                }
-            }
-            delete value;
-        };
-        persistent->SetWeak(entry, callback, v8::WeakCallbackType::kFinalizer);
-    }
 
 private:
     static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object);

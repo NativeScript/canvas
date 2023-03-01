@@ -32,7 +32,7 @@ public:
     }
 
 private:
-    uint8_t *buf_;
+    T *buf_;
     size_t size_;
     rust::Vec<T> vec_;
 };

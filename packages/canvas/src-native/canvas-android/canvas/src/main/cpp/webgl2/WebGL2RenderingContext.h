@@ -13,8 +13,6 @@
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArrayObject.h"
 
-#include "../webgl/WebGLRenderingContextBase.h"
-
 
 class WebGL2RenderingContext: public WebGLRenderingContext {
 public:

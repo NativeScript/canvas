@@ -55,7 +55,6 @@ class JSI_EXPORT MutableBuffer {
         virtual uint8_t* data() = 0;
 };
 
-
 class JSI_EXPORT StringBuffer : public Buffer {
  public:
   StringBuffer(std::string s) : s_(std::move(s)) {}

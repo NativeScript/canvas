@@ -26,8 +26,17 @@ inline static rust::Slice<T> GetTypedArrayData(Runtime &runtime, facebook::jsi::
     return std::move(slice);
 }
 
+template<typename T>
+inline static std::shared_ptr<T> getHostObject(Runtime &runtime, const facebook::jsi::Value &value) {
+    if (value.isObject()) {
+        auto valueObject = value.asObject(runtime);
+        if (valueObject.template isHostObject(runtime)) {
+            return valueObject.template asHostObject<T>(runtime);
+        }
+    }
 
-
+    return nullptr;
+}
 
 
 #endif //CANVAS_ANDROID_HELPERS_H

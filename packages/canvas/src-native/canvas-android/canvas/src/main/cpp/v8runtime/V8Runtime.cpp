@@ -963,7 +963,6 @@ namespace rnv8 {
         return array->ByteLength();
     }
 
-
     size_t V8Runtime::offset(const jsi::TypedArray &typedArray) {
         v8::Locker locker(isolate_);
         v8::Isolate::Scope scopedIsolate(isolate_);
@@ -998,7 +997,7 @@ namespace rnv8 {
 
         v8::Local<v8::Object> v8Object =
                 JSIV8ValueConverter::ToV8Object(*this, typedArray);
-        assert(v8Object->IsArrayBuffer());
+        assert(v8Object->IsTypedArray());
         auto array = v8Object.As<v8::TypedArray>();
         return reinterpret_cast<uint8_t *>(array->Buffer()->GetBackingStore()->Data());
     }

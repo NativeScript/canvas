@@ -5,7 +5,6 @@
 #include "WebGLRenderingContextBase.h"
 
 #include <utility>
-#include "canvas-android/src/lib.rs.h"
 
 WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state,
                                                      WebGLRenderingVersion version)

@@ -59,10 +59,11 @@
 
 
 class JSI_EXPORT WebGLRenderingContext : public WebGLRenderingContextBase {
-
 public:
 
     WebGLRenderingContext(rust::Box<WebGLState> state);
+
+    WebGLRenderingContext(rust::Box<WebGLState> state, WebGLRenderingVersion version);
 
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 

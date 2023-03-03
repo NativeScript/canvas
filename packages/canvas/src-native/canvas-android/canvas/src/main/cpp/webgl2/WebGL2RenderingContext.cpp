@@ -2010,9 +2010,9 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 rust::Str val(name.data(), name.size());
                                                                 store.push_back(val);
                                                             }
-                                                            rust::Slice<const rust::Str> buf(store.data(), store.size());
+                                                           // rust::Slice<const rust::Str> buf(store.data(), store.size());
                                                             auto ret = canvas_native_webgl2_get_uniform_indices(
-                                                                    program->GetProgram(), buf,
+                                                                    program->GetProgram(), &store,
                                                                     this->GetState());
 
                                                             auto retSize = ret.size();
@@ -2031,31 +2031,28 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     }else if(methodName == "invalidateFramebuffer"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void
-                                                    WebGL2RenderingContext::InvalidateFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto target = args[0];
-                                                        auto attachments = args[1];
-                                                        if (args.Length() > 1 && attachments->IsArray()) {
-                                                            auto array = attachments.As<v8::Array>();
-                                                            std::vector <uint32_t> buf;
 
-                                                            auto len = array->Length();
+
+                                                    if (count > 1 && arguments[1].isObject()) {
+                                                        auto target = (uint32_t)arguments[0].asNumber();
+                                                        auto attachments = arguments[1].asObject(runtime);
+
+                                                        if(attachments.isArray(runtime)){
+                                                            auto array = attachments.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            rust::Vec<uint32_t> buf;
+                                                            buf.reserve(len);
                                                             for (int j = 0; j < len; ++j) {
-                                                                auto item = array->Get(context, j).ToLocalChecked();
-                                                                buf.push_back(item->Uint32Value(context).ToChecked());
+                                                                auto item = (uint32_t)array.getValueAtIndex(runtime, j).asNumber();
+                                                                buf.push_back(item);
                                                             }
-                                                            rust::Slice<const uint32_t> slice(buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_invalidate_framebuffer(target->Uint32Value(context).ToChecked(), slice,
-                                                                                                        ptr->GetState());
-                                                            return;
+                                                            canvas_native_webgl2_invalidate_framebuffer(target, &buf,
+                                                                                                        this->GetState());
                                                         }
                                                     }
 
@@ -2064,41 +2061,41 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     }else if(methodName == "invalidateSubFramebuffer"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void
-                                                    WebGL2RenderingContext::InvalidateSubFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto target = args[0];
-                                                        auto attachments = args[1];
-                                                        auto x = args[2];
-                                                        auto y = args[3];
-                                                        auto width = args[4];
-                                                        auto height = args[5];
-                                                        if (args.Length() > 5 && attachments->IsArray()) {
-                                                            auto array = attachments.As<v8::Array>();
-                                                            std::vector <uint32_t> buf;
 
-                                                            auto len = array->Length();
+
+                                                    if (count > 5 && arguments[1].isObject()) {
+                                                        auto attachments = arguments[1].asObject(runtime);
+                                                        if(attachments.isArray(runtime)){
+                                                            auto target = (uint32_t)arguments[0].asNumber();
+                                                            auto x = (int32_t)arguments[2].asNumber();
+                                                            auto y = (int32_t)arguments[3].asNumber();
+                                                            auto width = (int32_t)arguments[4].asNumber();
+                                                            auto height = (int32_t)arguments[5].asNumber();
+
+                                                            auto array = attachments.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            rust::Vec<uint32_t> buf;
+                                                            buf.reserve(len);
                                                             for (int j = 0; j < len; ++j) {
-                                                                auto item = array->Get(context, j).ToLocalChecked();
-                                                                buf.push_back(item->Uint32Value(context).ToChecked());
+                                                                auto item = (uint)array.getValueAtIndex(runtime, j).asNumber();
+                                                                buf.push_back(item);
                                                             }
-                                                            rust::Slice<const uint32_t> slice(buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_invalidate_sub_framebuffer(target->Uint32Value(context).ToChecked(),
-                                                                                                            slice,
-                                                                                                            x->Int32Value(context).ToChecked(),
-                                                                                                            y->Int32Value(context).ToChecked(),
-                                                                                                            width->Int32Value(context).ToChecked(),
-                                                                                                            height->Int32Value(context).ToChecked(),
-                                                                                                            ptr->GetState());
-                                                            return;
+                                                            canvas_native_webgl2_invalidate_sub_framebuffer(target,
+                                                                                                            &buf,
+                                                                                                            x,
+                                                                                                            y,
+                                                                                                            width,
+                                                                                                            height,
+                                                                                                            this->GetState());
                                                         }
+
+
+
                                                     }
 
                                                     return Value::undefined();
@@ -2106,125 +2103,80 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     }else if(methodName == "isQuery"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::IsQuery(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 0) {
-                                                            auto query = args[0];
-                                                            if (Helpers::GetInstanceType(isolate, query) == ObjectType::WebGLQuery) {
-                                                                auto instance = Helpers::GetPrivate(isolate, query.As<v8::Object>(), "instance");
-                                                                if (!instance.IsEmpty()) {
-                                                                    auto ret = canvas_native_webgl2_is_query(instance->Uint32Value(context).ToChecked(),
-                                                                                                             ptr->GetState());
-                                                                    args.GetReturnValue().Set(ret);
-                                                                    return;
-                                                                }
-                                                            }
+                                                    if (count > 0) {
+                                                        auto query = getHostObject<WebGLQuery>(runtime, arguments[0]);
+                                                        if (query != nullptr) {
+                                                            auto ret = canvas_native_webgl2_is_query(query->GetQuery(),
+                                                                                                     this->GetState());
+                                                           return {ret};
                                                         }
-
-                                                        // todo check return
-                                                        args.GetReturnValue().Set(false);
                                                     }
-
-                                                    return Value::undefined();
+                                                    // todo check return
+                                                    return {false};
                                                 }
         );
     }else if(methodName == "isSampler"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::IsSampler(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 0) {
-                                                            auto sampler = args[0];
-                                                            if (Helpers::GetInstanceType(isolate, sampler) == ObjectType::WebGLSampler) {
-                                                                auto instance = Helpers::GetPrivate(isolate, sampler.As<v8::Object>(), "instance");
-                                                                if (!instance.IsEmpty()) {
-                                                                    auto ret = canvas_native_webgl2_is_sampler(
-                                                                            instance->Uint32Value(context).ToChecked(),
-                                                                            ptr->GetState());
-                                                                    args.GetReturnValue().Set(ret);
-                                                                    return;
-                                                                }
-                                                            }
+                                                    if (count > 0) {
+                                                        auto sampler = getHostObject<WebGLSampler>(
+                                                                runtime, arguments[0]);
+                                                        if (sampler != nullptr) {
+                                                            auto ret = canvas_native_webgl2_is_sampler(
+                                                                    sampler->GetSampler(),
+                                                                    this->GetState());
+                                                            return {ret};
                                                         }
-
-                                                        // todo check return
-                                                        args.GetReturnValue().Set(false);
                                                     }
-
-                                                    return Value::undefined();
+                                                    // todo check return
+                                                    return {false};
                                                 }
         );
     }else if(methodName == "isSync"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::IsSync(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 0) {
-                                                            auto sync = args[0];
-                                                            if (Helpers::GetInstanceType(isolate, sync) == ObjectType::WebGLSync) {
-                                                                auto instance = WebGLSyncImpl::GetPointer(sync->ToObject(context).ToLocalChecked());
-                                                                auto ret = canvas_native_webgl2_is_sync(instance->GetSync(),
-                                                                                                        ptr->GetState());
-                                                                args.GetReturnValue().Set(ret);
-                                                                return;
-                                                            }
+                                                    if (count > 0) {
+                                                        auto sync = getHostObject<WebGLSyncImpl>(
+                                                                runtime, arguments[0]);
+                                                        if (sync != nullptr) {
+                                                            auto ret = canvas_native_webgl2_is_sync(
+                                                                    sync->GetSync(),
+                                                                    this->GetState());
+                                                            return {ret};
                                                         }
-
-                                                        // todo check return
-                                                        args.GetReturnValue().Set(false);
-
                                                     }
-
-                                                    return Value::undefined();
+                                                    // todo check return
+                                                    return {false};
                                                 }
         );
     }else if(methodName == "isTransformFeedback"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::IsTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 0) {
-                                                            auto transformFeedback = args[0];
-                                                            if (Helpers::GetInstanceType(isolate, transformFeedback) ==
-                                                                ObjectType::WebGLTransformFeedback) {
-                                                                auto instance = Helpers::GetPrivate(isolate, transformFeedback.As<v8::Object>(),
-                                                                                                    "instance");
-                                                                if (!instance.IsEmpty()) {
-                                                                    auto ret = canvas_native_webgl2_is_transform_feedback(
-                                                                            instance->Uint32Value(context).ToChecked(),
-                                                                            ptr->GetState());
-                                                                    args.GetReturnValue().Set(ret);
-                                                                    return;
-                                                                }
-                                                            }
+                                                    if (count > 0) {
+                                                        auto transformFeedback = getHostObject<WebGLTransformFeedback>(
+                                                                runtime, arguments[0]);
+                                                        if (transformFeedback != nullptr) {
+                                                            auto ret = canvas_native_webgl2_is_transform_feedback(
+                                                                    transformFeedback->GetFeedback(),
+                                                                    this->GetState());
+                                                            return {ret};
                                                         }
-
-                                                        // todo check return
-                                                        args.GetReturnValue().Set(false);
                                                     }
-
-                                                    return Value::undefined();
+                                                    // todo check return
+                                                    return {false};
                                                 }
         );
     }else if(methodName == "isVertexArray"){
@@ -2233,66 +2185,46 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::IsVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 0) {
-                                                            auto vertexArray = args[0];
-                                                            if (Helpers::GetInstanceType(isolate, vertexArray) == ObjectType::WebGLVertexArrayObject) {
-                                                                auto instance = Helpers::GetPrivate(isolate, vertexArray.As<v8::Object>(), "instance");
-                                                                if (!instance.IsEmpty()) {
-                                                                    auto ret = canvas_native_webgl2_is_vertex_array(
-                                                                            instance->Uint32Value(context).ToChecked(),
-                                                                            ptr->GetState());
-                                                                    args.GetReturnValue().Set(ret);
-                                                                    return;
-                                                                }
-                                                            }
+                                                    if (count > 0) {
+                                                        auto vertexArray = getHostObject<WebGLVertexArrayObject>(
+                                                                runtime, arguments[0]);
+                                                        if (vertexArray != nullptr) {
+                                                            auto ret = canvas_native_webgl2_is_vertex_array(
+                                                                    vertexArray->GetVertexArrayObject(),
+                                                                    this->GetState());
+                                                            return {ret};
                                                         }
-
-                                                        // todo check return
-                                                        args.GetReturnValue().Set(false);
                                                     }
+                                                    // todo check return
+                                                    return {false};
 
-                                                    return Value::undefined();
+
                                                 }
         );
     }else if(methodName == "pauseTransformFeedback"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
 
-                                                    void
-                                                    WebGL2RenderingContext::PauseTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        canvas_native_webgl2_pause_transform_feedback(ptr->GetState());
-                                                    }
+                                                    canvas_native_webgl2_pause_transform_feedback(this->GetState());
 
                                                     return Value::undefined();
                                                 }
         );
     }else if(methodName == "readBuffer"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::ReadBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 0) {
-                                                            auto src = args[0];
-                                                            canvas_native_webgl2_read_buffer(
-                                                                    src->Uint32Value(context).ToChecked(),
-                                                                    ptr->GetState()
-                                                            );
-                                                        }
+                                                    if (count > 0) {
+                                                        auto src = (uint32_t)arguments[0].asNumber();
+                                                        canvas_native_webgl2_read_buffer(
+                                                                src,
+                                                                this->GetState()
+                                                        );
                                                     }
 
                                                     return Value::undefined();
@@ -2606,333 +2538,141 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
                                                 }
         );
-    }else if(methodName == "bindBufferBase"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::TexSubImage3D(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-
-                                                        if (args.Length() == 11) {
-                                                            auto target = args[0];
-                                                            auto level = args[1];
-                                                            auto xoffset = args[2];
-                                                            auto yoffset = args[3];
-                                                            auto zoffset = args[4];
-                                                            auto width = args[5];
-                                                            auto height = args[6];
-                                                            auto depth = args[7];
-                                                            auto format = args[8];
-                                                            auto type = args[9];
-                                                            auto imageOrPixelsOrOffset = args[10];
-
-                                                            if (imageOrPixelsOrOffset->IsNumber()) {
-                                                                canvas_native_webgl2_tex_sub_image3d_none(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        static_cast<ssize_t>(imageOrPixelsOrOffset->IntegerValue(context).ToChecked()),
-                                                                        ptr->GetState()
-                                                                );
-                                                                return;
-                                                            }
-
-                                                            if (imageOrPixelsOrOffset->IsArrayBufferView()) {
-
-                                                                auto buf = imageOrPixelsOrOffset.As<v8::ArrayBufferView>();
-                                                                auto array = buf->Buffer();
-                                                                auto store = array->GetBackingStore();
-                                                                auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-                                                                rust::Slice<const uint8_t> slice(data, store->ByteLength());
-
-                                                                canvas_native_webgl2_tex_sub_image3d(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-
-                                                                return;
-                                                            }
-
-                                                            if (Helpers::GetInstanceType(isolate, imageOrPixelsOrOffset) == ObjectType::ImageAsset) {
-                                                                auto asset = ImageAssetImpl::GetPointer(
-                                                                        imageOrPixelsOrOffset->ToObject(context).ToLocalChecked());
-
-                                                                canvas_native_webgl2_tex_sub_image3d_asset(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        asset->GetImageAsset(),
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-
-                                                        } else if (args.Length() > 11) {
-                                                            auto target = args[0];
-                                                            auto level = args[1];
-                                                            auto xoffset = args[2];
-                                                            auto yoffset = args[3];
-                                                            auto zoffset = args[4];
-                                                            auto width = args[5];
-                                                            auto height = args[6];
-                                                            auto depth = args[7];
-                                                            auto format = args[8];
-                                                            auto type = args[9];
-                                                            auto imageOrPixelsOrOffset = args[10];
-
-                                                            auto srcOffset = args[11];
-                                                            size_t srcOffsetValue = 0;
-                                                            if (srcOffset->IsNumber()) {
-                                                                srcOffsetValue = static_cast<size_t>(srcOffset->IntegerValue(context).ToChecked());
-                                                            }
-
-                                                            if (imageOrPixelsOrOffset->IsArrayBufferView()) {
-                                                                auto buf = imageOrPixelsOrOffset.As<v8::TypedArray>();
-                                                                auto array = buf->Buffer();
-                                                                auto store = array->GetBackingStore();
-
-                                                                srcOffsetValue = srcOffsetValue * (buf->ByteLength() / buf->Length());
-                                                                if (srcOffsetValue > buf->Length()) {
-                                                                    return;
-                                                                }
-
-
-                                                                auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-                                                                rust::Slice<const uint8_t> slice(data, store->ByteLength());
-                                                                canvas_native_webgl2_tex_sub_image3d_offset(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        slice,
-                                                                        srcOffsetValue,
-                                                                        ptr->GetState()
-                                                                );
-                                                                return;
-                                                            }
-
-
-                                                        }
-
-                                                    }
-
-                                                    void
-                                                    WebGL2RenderingContext::TransformFeedbackVaryings(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 2) {
-                                                            auto program = args[0];
-                                                            auto varyings = args[1];
-                                                            auto bufferMode = args[2];
-                                                            if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
-                                                                varyings->IsArray()) {
-                                                                auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-                                                                if (!instance.IsEmpty()) {
-
-                                                                    auto array = varyings.As<v8::Array>();
-                                                                    rust::Vec <rust::Str> store;
-
-                                                                    auto len = array->Length();
-                                                                    for (int j = 0; j < len; ++j) {
-                                                                        auto name = array->Get(context, j).ToLocalChecked();
-                                                                        auto nameValue = Helpers::ConvertFromV8String(isolate, name);
-                                                                        rust::Str val(nameValue.data(), nameValue.size());
-                                                                        store.push_back(val);
-                                                                    }
-
-                                                                    rust::Slice<const rust::Str> buf(store.data(), store.size());
-
-                                                                    canvas_native_webgl2_transform_feedback_varyings(
-                                                                            instance->Uint32Value(context).ToChecked(),
-                                                                            buf,
-                                                                            bufferMode->Uint32Value(context).ToChecked(),
-                                                                            ptr->GetState()
-                                                                    );
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    return Value::undefined();
-                                                }
-        );
     }else if(methodName == "texSubImage3D"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 12,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::TexSubImage3D(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
+                                                    if (count == 11) {
+                                                        auto target = arguments[0];
+                                                        auto level = arguments[1];
+                                                        auto xoffset = arguments[2];
+                                                        auto yoffset = arguments[3];
+                                                        auto zoffset = arguments[4];
+                                                        auto width = arguments[5];
+                                                        auto height = arguments[6];
+                                                        auto depth = arguments[7];
+                                                        auto format = arguments[8];
+                                                        auto type = arguments[9];
+                                                        auto imageOrPixelsOrOffset = args[10];
 
-                                                        if (args.Length() == 11) {
-                                                            auto target = args[0];
-                                                            auto level = args[1];
-                                                            auto xoffset = args[2];
-                                                            auto yoffset = args[3];
-                                                            auto zoffset = args[4];
-                                                            auto width = args[5];
-                                                            auto height = args[6];
-                                                            auto depth = args[7];
-                                                            auto format = args[8];
-                                                            auto type = args[9];
-                                                            auto imageOrPixelsOrOffset = args[10];
-
-                                                            if (imageOrPixelsOrOffset->IsNumber()) {
-                                                                canvas_native_webgl2_tex_sub_image3d_none(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        static_cast<ssize_t>(imageOrPixelsOrOffset->IntegerValue(context).ToChecked()),
-                                                                        ptr->GetState()
-                                                                );
-                                                                return;
-                                                            }
-
-                                                            if (imageOrPixelsOrOffset->IsArrayBufferView()) {
-
-                                                                auto buf = imageOrPixelsOrOffset.As<v8::ArrayBufferView>();
-                                                                auto array = buf->Buffer();
-                                                                auto store = array->GetBackingStore();
-                                                                auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-                                                                rust::Slice<const uint8_t> slice(data, store->ByteLength());
-
-                                                                canvas_native_webgl2_tex_sub_image3d(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-
-                                                                return;
-                                                            }
-
-                                                            if (Helpers::GetInstanceType(isolate, imageOrPixelsOrOffset) == ObjectType::ImageAsset) {
-                                                                auto asset = ImageAssetImpl::GetPointer(
-                                                                        imageOrPixelsOrOffset->ToObject(context).ToLocalChecked());
-
-                                                                canvas_native_webgl2_tex_sub_image3d_asset(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        asset->GetImageAsset(),
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-
-                                                        } else if (args.Length() > 11) {
-                                                            auto target = args[0];
-                                                            auto level = args[1];
-                                                            auto xoffset = args[2];
-                                                            auto yoffset = args[3];
-                                                            auto zoffset = args[4];
-                                                            auto width = args[5];
-                                                            auto height = args[6];
-                                                            auto depth = args[7];
-                                                            auto format = args[8];
-                                                            auto type = args[9];
-                                                            auto imageOrPixelsOrOffset = args[10];
-
-                                                            auto srcOffset = args[11];
-                                                            size_t srcOffsetValue = 0;
-                                                            if (srcOffset->IsNumber()) {
-                                                                srcOffsetValue = static_cast<size_t>(srcOffset->IntegerValue(context).ToChecked());
-                                                            }
-
-                                                            if (imageOrPixelsOrOffset->IsArrayBufferView()) {
-                                                                auto buf = imageOrPixelsOrOffset.As<v8::TypedArray>();
-                                                                auto array = buf->Buffer();
-                                                                auto store = array->GetBackingStore();
-
-                                                                srcOffsetValue = srcOffsetValue * (buf->ByteLength() / buf->Length());
-                                                                if (srcOffsetValue > buf->Length()) {
-                                                                    return;
-                                                                }
-
-
-                                                                auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
-                                                                rust::Slice<const uint8_t> slice(data, store->ByteLength());
-                                                                canvas_native_webgl2_tex_sub_image3d_offset(
-                                                                        target->Uint32Value(context).ToChecked(),
-                                                                        level->Int32Value(context).ToChecked(),
-                                                                        xoffset->Int32Value(context).ToChecked(),
-                                                                        yoffset->Int32Value(context).ToChecked(),
-                                                                        zoffset->Int32Value(context).ToChecked(),
-                                                                        width->Int32Value(context).ToChecked(),
-                                                                        height->Int32Value(context).ToChecked(),
-                                                                        depth->Int32Value(context).ToChecked(),
-                                                                        format->Uint32Value(context).ToChecked(),
-                                                                        type->Int32Value(context).ToChecked(),
-                                                                        slice,
-                                                                        srcOffsetValue,
-                                                                        ptr->GetState()
-                                                                );
-                                                                return;
-                                                            }
-
-
+                                                        if (imageOrPixelsOrOffset->IsNumber()) {
+                                                            canvas_native_webgl2_tex_sub_image3d_none(
+                                                                    target->Uint32Value(context).ToChecked(),
+                                                                    level->Int32Value(context).ToChecked(),
+                                                                    xoffset->Int32Value(context).ToChecked(),
+                                                                    yoffset->Int32Value(context).ToChecked(),
+                                                                    zoffset->Int32Value(context).ToChecked(),
+                                                                    width->Int32Value(context).ToChecked(),
+                                                                    height->Int32Value(context).ToChecked(),
+                                                                    depth->Int32Value(context).ToChecked(),
+                                                                    format->Uint32Value(context).ToChecked(),
+                                                                    type->Int32Value(context).ToChecked(),
+                                                                    static_cast<ssize_t>(imageOrPixelsOrOffset->IntegerValue(context).ToChecked()),
+                                                                    ptr->GetState()
+                                                            );
+                                                            return;
                                                         }
 
-                                                    }
+                                                        if (imageOrPixelsOrOffset->IsArrayBufferView()) {
 
+                                                            auto buf = imageOrPixelsOrOffset.As<v8::ArrayBufferView>();
+                                                            auto array = buf->Buffer();
+                                                            auto store = array->GetBackingStore();
+                                                            auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
+                                                            rust::Slice<const uint8_t> slice(data, store->ByteLength());
+
+                                                            canvas_native_webgl2_tex_sub_image3d(
+                                                                    target->Uint32Value(context).ToChecked(),
+                                                                    level->Int32Value(context).ToChecked(),
+                                                                    xoffset->Int32Value(context).ToChecked(),
+                                                                    yoffset->Int32Value(context).ToChecked(),
+                                                                    zoffset->Int32Value(context).ToChecked(),
+                                                                    width->Int32Value(context).ToChecked(),
+                                                                    height->Int32Value(context).ToChecked(),
+                                                                    depth->Int32Value(context).ToChecked(),
+                                                                    format->Uint32Value(context).ToChecked(),
+                                                                    type->Int32Value(context).ToChecked(),
+                                                                    slice,
+                                                                    ptr->GetState()
+                                                            );
+
+                                                            return;
+                                                        }
+
+                                                        if (Helpers::GetInstanceType(isolate, imageOrPixelsOrOffset) == ObjectType::ImageAsset) {
+                                                            auto asset = ImageAssetImpl::GetPointer(
+                                                                    imageOrPixelsOrOffset->ToObject(context).ToLocalChecked());
+
+                                                            canvas_native_webgl2_tex_sub_image3d_asset(
+                                                                    target->Uint32Value(context).ToChecked(),
+                                                                    level->Int32Value(context).ToChecked(),
+                                                                    xoffset->Int32Value(context).ToChecked(),
+                                                                    yoffset->Int32Value(context).ToChecked(),
+                                                                    zoffset->Int32Value(context).ToChecked(),
+                                                                    width->Int32Value(context).ToChecked(),
+                                                                    height->Int32Value(context).ToChecked(),
+                                                                    depth->Int32Value(context).ToChecked(),
+                                                                    format->Uint32Value(context).ToChecked(),
+                                                                    type->Int32Value(context).ToChecked(),
+                                                                    asset->GetImageAsset(),
+                                                                    ptr->GetState()
+                                                            );
+                                                        }
+
+                                                    } else if (args.Length() > 11) {
+                                                        auto target = args[0];
+                                                        auto level = args[1];
+                                                        auto xoffset = args[2];
+                                                        auto yoffset = args[3];
+                                                        auto zoffset = args[4];
+                                                        auto width = args[5];
+                                                        auto height = args[6];
+                                                        auto depth = args[7];
+                                                        auto format = args[8];
+                                                        auto type = args[9];
+                                                        auto imageOrPixelsOrOffset = args[10];
+
+                                                        auto srcOffset = args[11];
+                                                        size_t srcOffsetValue = 0;
+                                                        if (srcOffset->IsNumber()) {
+                                                            srcOffsetValue = static_cast<size_t>(srcOffset->IntegerValue(context).ToChecked());
+                                                        }
+
+                                                        if (imageOrPixelsOrOffset->IsArrayBufferView()) {
+                                                            auto buf = imageOrPixelsOrOffset.As<v8::TypedArray>();
+                                                            auto array = buf->Buffer();
+                                                            auto store = array->GetBackingStore();
+
+                                                            srcOffsetValue = srcOffsetValue * (buf->ByteLength() / buf->Length());
+                                                            if (srcOffsetValue > buf->Length()) {
+                                                                return;
+                                                            }
+
+
+                                                            auto data = static_cast<uint8_t *>(store->Data()) + buf->ByteOffset();
+                                                            rust::Slice<const uint8_t> slice(data, store->ByteLength());
+                                                            canvas_native_webgl2_tex_sub_image3d_offset(
+                                                                    target->Uint32Value(context).ToChecked(),
+                                                                    level->Int32Value(context).ToChecked(),
+                                                                    xoffset->Int32Value(context).ToChecked(),
+                                                                    yoffset->Int32Value(context).ToChecked(),
+                                                                    zoffset->Int32Value(context).ToChecked(),
+                                                                    width->Int32Value(context).ToChecked(),
+                                                                    height->Int32Value(context).ToChecked(),
+                                                                    depth->Int32Value(context).ToChecked(),
+                                                                    format->Uint32Value(context).ToChecked(),
+                                                                    type->Int32Value(context).ToChecked(),
+                                                                    slice,
+                                                                    srcOffsetValue,
+                                                                    ptr->GetState()
+                                                            );
+                                                            return;
+                                                        }
+
+
+                                                    }
                                                     return Value::undefined();
 
                                                 }
@@ -2943,120 +2683,92 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void
-                                                    WebGL2RenderingContext::TransformFeedbackVaryings(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 2) {
-                                                            auto program = args[0];
-                                                            auto varyings = args[1];
-                                                            auto bufferMode = args[2];
-                                                            if (Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram &&
-                                                                varyings->IsArray()) {
-                                                                auto instance = Helpers::GetPrivate(isolate, program.As<v8::Object>(), "instance");
-                                                                if (!instance.IsEmpty()) {
+                                                    if (count > 2 && arguments[1].isObject()) {
+                                                        auto program = getHostObject<WebGLProgram>(runtime, arguments[0]);
+                                                        auto varyingsObject = arguments[1].asObject(runtime);
+                                                        auto bufferMode = (uint32_t)arguments[2].asNumber();
 
-                                                                    auto array = varyings.As<v8::Array>();
-                                                                    rust::Vec <rust::Str> store;
-
-                                                                    auto len = array->Length();
-                                                                    for (int j = 0; j < len; ++j) {
-                                                                        auto name = array->Get(context, j).ToLocalChecked();
-                                                                        auto nameValue = Helpers::ConvertFromV8String(isolate, name);
-                                                                        rust::Str val(nameValue.data(), nameValue.size());
-                                                                        store.push_back(val);
-                                                                    }
-
-                                                                    rust::Slice<const rust::Str> buf(store.data(), store.size());
-
-                                                                    canvas_native_webgl2_transform_feedback_varyings(
-                                                                            instance->Uint32Value(context).ToChecked(),
-                                                                            buf,
-                                                                            bufferMode->Uint32Value(context).ToChecked(),
-                                                                            ptr->GetState()
-                                                                    );
-                                                                }
+                                                        if(program != nullptr && varyingsObject.isArray(runtime)){
+                                                            auto varyings = varyingsObject.getArray(runtime);
+                                                            auto len = varyings.size(runtime);
+                                                            rust::Vec <rust::Str> store;
+                                                            store.reserve(len);
+                                                            for (int j = 0; j < len; ++j) {
+                                                                auto name = varyings.getValueAtIndex(runtime, j).asString(runtime).utf8(runtime);
+                                                                rust::Str val(name.data(), name.size());
+                                                                store.emplace_back(val);
                                                             }
+
+                                                            canvas_native_webgl2_transform_feedback_varyings(
+                                                                    program->GetProgram(),
+                                                                    &store,
+                                                                    bufferMode,
+                                                                    this->GetState()
+                                                            );
                                                         }
                                                     }
-
                                                     return Value::undefined();
                                                 }
         );
     }else if(methodName == "uniform1ui"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform1ui(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto v0 = args[1];
-                                                        if (args.Length() > 1 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
+
+                                                    if (count > 1 && arguments[1].isNumber()) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto v0 = (uint32_t)arguments[1].asNumber();
+
+                                                        if(location != nullptr){
                                                             canvas_native_webgl2_uniform1ui(
-                                                                    locationValue.ToLocalChecked()->Value(),
-                                                                    v0->Uint32Value(context).ToChecked(),
-                                                                    ptr->GetState()
+                                                                    location->GetUniformLocation(),
+                                                                    v0,
+                                                                    this->GetState()
                                                             );
                                                         }
                                                     }
-
                                                     return Value::undefined();
                                                 }
         );
-    }else if(methodName == "Uniform1uiv"){
+    }else if(methodName == "uniform1uiv"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform1uiv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto data = args[1];
-                                                        if (args.Length() > 1 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
 
-                                                            if (data->IsUint32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform1uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else {
-                                                                std::vector <uint32_t> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i).ToLocalChecked();
-                                                                    buf.push_back(item->Uint32Value(context).ToChecked());
-                                                                }
-
-                                                                rust::Slice<const uint32_t> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform1uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
+                                                    if (count > 1 && arguments[1].isObject()) {
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto data = arguments[1].asObject(runtime);
+                                                        if (location != nullptr && data.isUint32Array(runtime)) {
+                                                            auto array = data.getTypedArray(runtime);
+                                                            auto slice = GetTypedArrayData<const uint32_t>(runtime, array);
+                                                            canvas_native_webgl2_uniform1uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else {
+                                                            rust::Vec <uint32_t> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            buf.reserve(len);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = (uint32_t)array.getValueAtIndex(runtime, i).asNumber();
+                                                                buf.push_back(item);
                                                             }
-
-
+                                                            canvas_native_webgl2_uniform1uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    &buf,
+                                                                    this->GetState()
+                                                            );
                                                         }
-                                                    }
 
+
+                                                    }
                                                     return Value::undefined();
 
                                                 }

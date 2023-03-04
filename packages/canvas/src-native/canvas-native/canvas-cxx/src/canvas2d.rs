@@ -133,6 +133,12 @@ pub struct TextMetrics(canvas_2d::context::drawing_text::text_metrics::TextMetri
 #[cxx::bridge]
 pub(crate) mod ffi {
 
+    pub(crate) enum InvalidateState {
+        NONE,
+        PENDING,
+        INVALIDATING,
+    }
+
     pub(crate) enum PaintStyleType {
         None,
         Color,

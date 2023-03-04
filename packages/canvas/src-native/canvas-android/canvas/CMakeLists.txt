@@ -162,14 +162,10 @@ add_library(
         src/main/cpp/webgl/extensions/WEBGL_lose_contextImpl.cpp
 
 
-
-
-
         src/main/cpp/webgl/WebGLRenderingContextBase.cpp
         src/main/cpp/webgl/WebGLRenderingContext.cpp
 
         src/main/cpp/webgl2/WebGL2RenderingContext.cpp
-
 
 
         #src/main/cpp/JSIRuntime.cpp

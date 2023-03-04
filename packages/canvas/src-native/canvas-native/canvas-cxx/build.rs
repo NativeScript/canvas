@@ -10,6 +10,9 @@ fn main() {
     #[cfg(feature = "webgl")]
     bridges.push("src/webgl2.rs");
 
+    #[cfg(feature = "webgl")]
+    bridges.push("src/constants.rs");
+
     if !bridges.is_empty() {
         let _ = cxx_build::bridges(bridges.as_slice());
     }

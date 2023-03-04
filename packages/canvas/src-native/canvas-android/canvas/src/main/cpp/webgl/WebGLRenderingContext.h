@@ -56,6 +56,7 @@
 #include "extensions/WEBGL_draw_buffersImpl.h"
 
 #include "WebGLRenderingContextBase.h"
+#include "gl.h"
 
 
 class JSI_EXPORT WebGLRenderingContext : public WebGLRenderingContextBase {

@@ -3,6 +3,7 @@
 //
 
 #include "WebGLRenderingContext.h"
+#include "canvas-cxx/src/constants.rs.h"
 
 WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state)
         : WebGLRenderingContextBase(
@@ -17,6 +18,7 @@ WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state,
 jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
                                                  uint32_t pnameValue,
                                                  rust::Box<WebGLResult> result) {
+
 
     switch (pnameValue) {
         case GL_ACTIVE_TEXTURE:
@@ -87,9 +89,9 @@ jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
             }
             return {value};
         }
-        case UNPACK_COLORSPACE_CONVERSION_WEBGL:
+        case (uint32_t)GLConstants::UNPACK_COLORSPACE_CONVERSION_WEBGL:
             return {canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
-                    this->GetState()};
+                    this->GetState())};
         case GL_ALIASED_LINE_WIDTH_RANGE:
         case GL_ALIASED_POINT_SIZE_RANGE:
         case GL_DEPTH_RANGE: {
@@ -127,9 +129,9 @@ jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
 
         }
             break;
-        case UNPACK_FLIP_Y_WEBGL:
+        case (uint32_t)GLConstants::UNPACK_FLIP_Y_WEBGL:
            return {canvas_native_webgl_state_get_flip_y(this->GetState())};
-        case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
+        case (uint32_t)GLConstants::UNPACK_PREMULTIPLY_ALPHA_WEBGL:
             return { canvas_native_webgl_state_get_premultiplied_alpha(this->GetState())};
         case GL_BLEND:
         case GL_CULL_FACE:

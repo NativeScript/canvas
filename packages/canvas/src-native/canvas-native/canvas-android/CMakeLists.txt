@@ -37,6 +37,12 @@ add_custom_command(
         WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
 )
 
+add_custom_command(
+        OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-cxx/constants.rs.cc"
+        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS= "${RUST_FLAGS}" ${CARGO_CMD}
+        WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
+)
+
 
 add_custom_command(
         OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-cxx/webgl.rs.cc"

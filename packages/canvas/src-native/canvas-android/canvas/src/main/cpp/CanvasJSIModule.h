@@ -18,6 +18,7 @@
 #include "TextEncoderImpl.h"
 #include "canvas2d/MatrixImpl.h"
 
+#include "webgl/WebGLRenderingContextBase.h"
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
 

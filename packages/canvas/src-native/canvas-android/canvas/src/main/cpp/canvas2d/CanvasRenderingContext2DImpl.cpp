@@ -10,6 +10,19 @@
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
         rust::Box<CanvasRenderingContext2D> context) : context_(
         std::move(context)) {
+
+    auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
+    auto raf_callback = new OnRafCallback(ctx_ptr, 0);
+    auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
+    auto raf = canvas_native_raf_create(raf_callback_ptr);
+    this->raf_ = std::make_shared<RafImpl>(raf_callback, raf_callback_ptr,
+                                           std::move(raf));
+
+
+    auto _raf = this->raf_;
+    if (_raf != nullptr) {
+        canvas_native_raf_start(_raf->GetRaf());
+    }
 }
 
 
@@ -592,32 +605,27 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                                         runtime, ret);
                                                             }
                                                         }
-
-                                                        /*
-                                                        auto webgl = object.asHostObject<W>(runtime);
-
-                                                        if (type == ObjectType::WebGLRenderingContext ||
-                                                                  type == ObjectType::WebGL2RenderingContext) {
-                                                           auto source = WebGLRenderingContextBase::GetPointerBase(image);
-                                                           auto rep = Helpers::ConvertFromV8String(isolate, args[1]);
-                                                           rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_webgl(
-                                                                   source->GetState(),
-                                                                   ptr->GetContext(),
-                                                                   rust::Str(rep.c_str(),
-                                                                             rep.size()));
-                                                           auto type = canvas_native_context_get_style_type(*pattern);
-                                                           if (type == PaintStyleType::None) {
-                                                               args.GetReturnValue().SetUndefined();
-                                                           } else {
-                                                               args.GetReturnValue().Set(CanvasPattern::NewInstance(isolate, std::move(pattern)));
-                                                           }
-                                                           return;
-                                                       }
-
-
-                                                        */
-
-
+                                                        auto webgl = object.asHostObject<WebGLRenderingContextBase>(
+                                                                runtime);
+                                                        if (webgl != nullptr) {
+                                                            auto rep = arguments[1].asString(
+                                                                    runtime).utf8(runtime);
+                                                            rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_webgl(
+                                                                    webgl->GetState(),
+                                                                    this->GetContext(),
+                                                                    rust::Str(rep.data(),
+                                                                              rep.size()));
+                                                            auto type = canvas_native_context_get_style_type(
+                                                                    *pattern);
+                                                            if (type == PaintStyleType::None) {
+                                                                return Value::undefined();
+                                                            } else {
+                                                                auto ret = std::make_shared<CanvasPattern>(
+                                                                        std::move(pattern));
+                                                                return jsi::Object::createFromHostObject(
+                                                                        runtime, ret);
+                                                            }
+                                                        }
                                                     }
 
 
@@ -1518,100 +1526,6 @@ void CanvasRenderingContext2DImpl::Flush(intptr_t context) {
     if (ctx != nullptr) {
         ctx->Flush();
     }
-}
-
-void CanvasRenderingContext2DImpl::Init(v8::Isolate *isolate) {
-    auto ctorFunc = GetCtor(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "CanvasRenderingContext2D"),
-                ctorFunc->GetFunction(context).ToLocalChecked());
-    auto funcTpl = v8::FunctionTemplate::New(isolate, &InstanceFromPointer);
-    global->Set(context, Helpers::ConvertToV8String(isolate, "__getCanvasRenderingContext2DImpl"),
-                funcTpl->GetFunction(context).ToLocalChecked());
-}
-
-void
-CanvasRenderingContext2DImpl::InstanceFromPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    if (args.Length() > 0) {
-        auto width = args[0];
-        auto height = args[1];
-        auto density = args[2];
-        auto fontColor = args[3];
-        auto ppi = args[4];
-        auto direction = args[5];
-        auto alpha = args[6];
-        auto offscreenValue = args[7];
-        bool offscreen = false;
-        if (args.Length() < 6) {
-            args.GetReturnValue().SetUndefined();
-            return;
-        } else {
-            auto cache = Caches::Get(isolate);
-
-            if (offscreenValue->IsBoolean() || offscreenValue->IsBooleanObject()) {
-                offscreen = offscreenValue->BooleanValue(isolate);
-            }
-
-            if (offscreen) {
-                auto ctx = canvas_native_context_create_gl_no_window(
-                        static_cast<float>(width->NumberValue(context).ToChecked()),
-                        static_cast<float>(height->NumberValue(context).ToChecked()),
-                        static_cast<float>(density->NumberValue(context).ToChecked()),
-                        fontColor->Int32Value(context).ToChecked(),
-                        static_cast<float>(ppi->NumberValue(context).ToChecked()),
-                        direction->Uint32Value(context).ToChecked(),
-                        alpha->BooleanValue(isolate)
-                );
-                auto ret = NewInstance(isolate, std::move(ctx));
-                args.GetReturnValue().Set(ret);
-                return;
-            } else {
-                auto ctx = canvas_native_context_create_with_current(
-                        static_cast<float>(width->NumberValue(context).ToChecked()),
-                        static_cast<float>(height->NumberValue(context).ToChecked()),
-                        static_cast<float>(density->NumberValue(context).ToChecked()),
-                        fontColor->Int32Value(context).ToChecked(),
-                        static_cast<float>(ppi->NumberValue(context).ToChecked()),
-                        direction->Uint32Value(context).ToChecked(),
-                        alpha->BooleanValue(isolate)
-                );
-                auto ret = NewInstance(isolate, std::move(ctx));
-                args.GetReturnValue().Set(ret);
-                return;
-            }
-
-        }
-    }
-    args.GetReturnValue().SetUndefined();
-}
-
-v8::Local<v8::Object>
-CanvasRenderingContext2DImpl::NewInstance(v8::Isolate *isolate,
-                                          rust::Box<CanvasRenderingContext2D> ctx) {
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto *renderingContext = new CanvasRenderingContext2DImpl(std::move(ctx));
-
-
-    auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
-    auto raf_callback = new OnRafCallback(ctx_ptr, 0);
-    auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
-    auto raf = canvas_native_raf_create(raf_callback_ptr);
-    renderingContext->raf_ = std::make_shared<RafImpl>(raf_callback, raf_callback_ptr,
-                                                       std::move(raf));
-
-
-    auto _raf = renderingContext->raf_.get();
-    canvas_native_raf_start(_raf->GetRaf());
-
-
-    auto ret = GetCtor(isolate)->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, ret, ObjectType::CanvasRenderingContext2D);
-    AddWeakListener(isolate, ret, renderingContext);
-    return handle_scope.Escape(ret);
 }
 
 

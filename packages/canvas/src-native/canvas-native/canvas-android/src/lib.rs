@@ -75,10 +75,21 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
     jni::sys::JNI_VERSION_1_6
 }
 
+/* Raf */
+#[derive(Clone)]
+pub struct Raf(raf::Raf);
+/* Raf */
+
 pub struct BitmapBytes(utils::image::BitmapBytes);
 
 #[cxx::bridge]
 pub(crate) mod ffi {
+
+    unsafe extern "C++" {
+        include!("OnRafCallback.h");
+        pub(crate) fn OnRafCallbackOnFrame(callback: isize, ts: i64);
+    }
+
     unsafe extern "C++" {
         include!("canvas-cxx/src/canvas2d.rs.h");
         pub(crate) type CanvasRenderingContext2D = canvas_cxx::canvas2d::CanvasRenderingContext2D;
@@ -94,12 +105,21 @@ pub(crate) mod ffi {
     }
 
     extern "Rust" {
+        type Raf;
         type BitmapBytes;
         fn canvas_native_context_create_pattern_bytes(
             context: &mut CanvasRenderingContext2D,
             bytes: i64,
             repetition: &str,
         ) -> Box<PaintStyle>;
+
+        /* Raf */
+        fn canvas_native_raf_create(callback: isize) -> Box<Raf>;
+        fn canvas_native_raf_start(raf: &mut Raf);
+        fn canvas_native_raf_stop(raf: &mut Raf);
+        fn canvas_native_raf_get_started(raf: &Raf) -> bool;
+        /* Raf */
+
     }
 }
 
@@ -137,6 +157,26 @@ fn canvas_native_context_create_pattern_bytes(
             })
     }
 }
+
+/* Raf */
+pub fn canvas_native_raf_create(callback: isize) -> Box<Raf> {
+    Box::new(Raf(raf::Raf::new(Some(Box::new(move |ts| unsafe {
+        ffi::OnRafCallbackOnFrame(callback, ts);
+    })))))
+}
+
+pub fn canvas_native_raf_start(raf: &mut Raf) {
+    raf.0.start();
+}
+
+pub fn canvas_native_raf_stop(raf: &mut Raf) {
+    raf.0.stop()
+}
+
+pub fn canvas_native_raf_get_started(raf: &Raf) -> bool {
+    raf.0.started()
+}
+/* Raf */
 
 /* Utils */
 

@@ -1119,7 +1119,7 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto dx = static_cast<float>(arguments[1].asNumber());
                                                         auto dy = static_cast<float>(arguments[2].asNumber());
                                                         auto dirtyX = static_cast<float>(arguments[3].asNumber());
-                                                        auto dirtyY = static_cast<float>(arguments[4].asNumber());;
+                                                        auto dirtyY = static_cast<float>(arguments[4].asNumber());
                                                         auto dirtyWidth = static_cast<float>(arguments[5].asNumber());
                                                         auto dirtyHeight = static_cast<float>(arguments[6].asNumber());
                                                         canvas_native_context_put_image_data(

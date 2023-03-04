@@ -7,7 +7,7 @@
 
 struct ImageDataBuffer : jsi::MutableBuffer {
 public:
-    ImageDataBuffer(rust::Box<ImageData> imageData) : imageData_(std::move(imageData)) {
+    explicit ImageDataBuffer(rust::Box<ImageData> imageData) : imageData_(std::move(imageData)) {
         auto slice = canvas_native_image_data_get_data(*this->imageData_);
         this->buf_ = slice.data();
         this->size_ = slice.size();

@@ -84,5 +84,9 @@ WebGLRenderingVersion WebGLRenderingContextBase::GetVersion() const {
 }
 
 WebGLRenderingContextBase::~WebGLRenderingContextBase() {
-
+    auto _raf = this->GetRaf();
+    if (_raf != nullptr) {
+        canvas_native_raf_start(
+                _raf->GetRaf());
+    }
 }

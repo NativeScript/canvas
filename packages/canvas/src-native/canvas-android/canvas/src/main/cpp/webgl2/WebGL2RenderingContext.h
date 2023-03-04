@@ -5,7 +5,7 @@
 #pragma once
 
 #include <cmath>
-#include "../Helpers.h"
+#include "Helpers.h"
 #include "../webgl/WebGLRenderingContext.h"
 #include "WebGLQuery.h"
 #include "WebGLSampler.h"
@@ -13,6 +13,7 @@
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArrayObject.h"
 
+using namespace facebook::jsi;
 
 class JSI_EXPORT WebGL2RenderingContext : public WebGLRenderingContext {
 public:
@@ -23,9 +24,15 @@ public:
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
-    ~WebGL2RenderingContext();
-
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
+
+    WebGLState &GetState() {
+        return nullptr;
+    }
+
+    void UpdateInvalidateState() {
+
+    }
 
     static inline jsi::Value GetProperty(const std::string &methodName) {
         if (methodName == "READ_BUFFER") { return {0x0C02}; }

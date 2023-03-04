@@ -29,7 +29,7 @@ public:
     }
 
     uint8_t *data() override {
-        return (uint8_t *)this->buf_;
+        return (uint8_t *) this->buf_;
     }
 
     size_t size() const override {

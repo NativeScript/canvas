@@ -9,7 +9,8 @@
 #import "v8runtime/V8Runtime.h"
 
 using namespace facebook;
-class JSI_EXPORT TextEncoderImpl: public jsi::HostObject {
+
+class JSI_EXPORT TextEncoderImpl : public jsi::HostObject {
 
 public:
     TextEncoderImpl(rust::Box<TextEncoder> encoder);

@@ -3,28 +3,18 @@
 //
 
 #include "WEBGL_depth_textureImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-v8::Local<v8::FunctionTemplate> WEBGL_depth_textureImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_depth_textureImplTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
+jsi::Value WEBGL_depth_textureImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "UNSIGNED_INT_24_8_WEBGL") {
+        return {0x84FA};
     }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_depth_texture"));
-    cache->WEBGL_depth_textureImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
+
+    return jsi::Value::undefined();
 }
 
-v8::Local<v8::Object> WEBGL_depth_textureImpl::NewInstance(v8::Isolate *isolate) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_depth_texture);
-    result->Set(context, Helpers::ConvertToV8String(isolate, "UNSIGNED_INT_24_8_WEBGL"),
-                v8::Int32::New(isolate, 0x84FA));
-    return handle_scope.Escape(result);
+std::vector<jsi::PropNameID> WEBGL_depth_textureImpl::getPropertyNames(jsi::Runtime &rt) {
+    return {
+            jsi::PropNameID::forUtf8(rt, std::string("UNSIGNED_INT_24_8_WEBGL"))
+    };
 }

@@ -3,16 +3,16 @@
 //
 
 #include "CanvasJSIModule.h"
-#include "v8runtime/JSIV8ValueConverter.h"
-#include "canvas2d/CanvasRenderingContext2DImpl.h"
+
+#include <array>
 
 
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
 
     CREATE_FUNC("DOMMatrix", canvas_module, 1,
-                [](Runtime &runtime, const Value &thisValue,
-                   const Value *arguments, size_t count) -> Value {
+                ([](Runtime &runtime, const Value &thisValue,
+                    const Value *arguments, size_t count) -> Value {
 
                     if (count > 0) {
                         auto obj = &arguments[0];
@@ -40,8 +40,8 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                                 if (size == 16) {
                                     auto matrix = canvas_native_matrix_create();
-                                    std::array<float, 16> buf{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                              0, 0, 0};
+                                    std::array<float, 16> buf;
+
                                     for (int i = 0; i < size; i++) {
                                         auto item = init.getValueAtIndex(runtime, i).asNumber();
                                         buf[i] = (float) item;
@@ -61,7 +61,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         return jsi::Object::createFromHostObject(runtime, std::move(object));
                     }
                     return Value::undefined();
-                }
+                })
 
     );
 

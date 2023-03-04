@@ -9,8 +9,12 @@ use crate::webgl::{WebGLActiveInfo, WebGLResult, WebGLState};
 pub(crate) mod ffi {
 
     extern "C++" {
-        include!("canvas-cxx/src/lib.rs.h");
+        include!("canvas-cxx/src/canvas2d.rs.h");
         type ImageAsset = crate::canvas2d::ImageAsset;
+    }
+
+    extern "C++" {
+        include!("canvas-cxx/src/webgl.rs.h");
         type WebGLState = crate::webgl::WebGLState;
         type WebGLActiveInfo = crate::webgl::WebGLActiveInfo;
         type WebGLResult = crate::webgl::WebGLResult;

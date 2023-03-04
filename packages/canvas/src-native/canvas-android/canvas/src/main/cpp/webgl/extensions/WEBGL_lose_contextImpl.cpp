@@ -6,62 +6,46 @@
 
 
 WEBGL_lose_contextImpl::WEBGL_lose_contextImpl(rust::Box<WEBGL_lose_context> context) : context_(
-        std::move(context)) {
+        std::move(context)) {}
 
-}
+jsi::Value WEBGL_lose_contextImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "loseContext") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-WEBGL_lose_contextImpl *WEBGL_lose_contextImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-    if (ptr == nullptr) {
-        return nullptr;
+                                                         canvas_native_webgl_lose_context_lose_context(
+                                                                 this->GetContext());
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "restoreContext") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         canvas_native_webgl_lose_context_restore_context(
+                                                                 this->GetContext());
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
     }
-    return static_cast<WEBGL_lose_contextImpl *>(ptr);
+    return jsi::Value::undefined();
 }
 
-v8::Local<v8::Object>
-WEBGL_lose_contextImpl::NewInstance(v8::Isolate *isolate, rust::Box<WEBGL_lose_context> context) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto ctorFunc = GetCtor(isolate);
-    WEBGL_lose_contextImpl *contextImpl = new WEBGL_lose_contextImpl(std::move(context));
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_lose_context);
-    AddWeakListener(isolate, result, contextImpl);
-    return handle_scope.Escape(result);
-}
-
-v8::Local<v8::FunctionTemplate> WEBGL_lose_contextImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->ANGLE_instanced_arraysImplTmpl.get();
-
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
-    }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ANGLE_instanced_arrays"));
-
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-    auto tmpl = ctorTmpl->PrototypeTemplate();
-
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "loseContext"),
-              v8::FunctionTemplate::New(isolate, &LoseContext));
-
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "restore"),
-              v8::FunctionTemplate::New(isolate, &RestoreContext));
-
-    cache->ANGLE_instanced_arraysImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
-}
-
-void WEBGL_lose_contextImpl::LoseContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto ptr = GetPointer(args.This());
-
-    canvas_native_webgl_lose_context_lose_context(*ptr->context_);
-}
-
-void WEBGL_lose_contextImpl::RestoreContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto ptr = GetPointer(args.This());
-    canvas_native_webgl_lose_context_restore_context(*ptr->context_);
+std::vector<jsi::PropNameID> WEBGL_lose_contextImpl::getPropertyNames(jsi::Runtime &rt) {
+    return {
+            jsi::PropNameID::forUtf8(rt, std::string("loseContext")),
+            jsi::PropNameID::forUtf8(rt, std::string("restoreContext"))
+    };
 }

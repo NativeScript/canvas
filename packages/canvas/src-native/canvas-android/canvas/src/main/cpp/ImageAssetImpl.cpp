@@ -307,8 +307,6 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
 }
 
-
 ImageAsset &ImageAssetImpl::GetImageAsset() {
     return *this->asset_;
 }
-

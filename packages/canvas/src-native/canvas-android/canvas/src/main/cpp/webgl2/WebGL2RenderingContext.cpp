@@ -510,7 +510,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
 
     if (methodName == "beginQuery") {
-        return Function::createFromHostFunction(runtime,
+        return jsi::Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 2,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
@@ -782,10 +782,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                     }
                                                                 }
 
+                                                                rust::Slice<const float> slice(
+                                                                        buf.data(), buf.size());
                                                                 canvas_native_webgl2_clear_bufferfv(
                                                                         buffer->GetBuffer(),
                                                                         drawbuffer,
-                                                                        buf,
+                                                                        slice,
                                                                         this->GetState()
                                                                 );
 
@@ -838,11 +840,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                             static_cast<int32_t>(item.asNumber())
                                                                     );
                                                                 }
+                                                                rust::Slice<const int32_t> slice(buf.data(), buf.size());
 
                                                                 canvas_native_webgl2_clear_bufferiv(
                                                                         buffer->GetBuffer(),
                                                                         drawbuffer,
-                                                                        buf,
+                                                                        slice,
                                                                         this->GetState()
                                                                 );
 
@@ -895,10 +898,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                     );
                                                                 }
 
+                                                                rust::Slice<const uint32_t> slice(
+                                                                        buf.data(), buf.size());
+
                                                                 canvas_native_webgl2_clear_bufferuiv(
                                                                         buffer->GetBuffer(),
                                                                         drawbuffer,
-                                                                        buf,
+                                                                        slice,
                                                                         this->GetState()
                                                                 );
 
@@ -1363,7 +1369,9 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 buf.emplace_back(
                                                                         (uint32_t) item.asNumber());
                                                             }
-                                                            canvas_native_webgl2_draw_buffers(buf,
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
+                                                            canvas_native_webgl2_draw_buffers(slice,
                                                                                               this->GetState());
                                                         }
                                                     }
@@ -1624,9 +1632,10 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                         runtime, j).asNumber();
                                                                 buf.emplace_back(item);
                                                             }
+                                                            rust::Slice<const uint32_t> slice(buf.data(), buf.size());
                                                             auto ret = canvas_native_webgl2_get_active_uniforms(
                                                                     program->GetProgram(),
-                                                                    buf,
+                                                                    slice,
                                                                     pname,
                                                                     this->GetState()
                                                             );

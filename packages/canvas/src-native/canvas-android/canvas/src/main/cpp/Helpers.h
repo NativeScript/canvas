@@ -7,14 +7,15 @@
 
 #include "v8runtime/V8Runtime.h"
 
-using namespace facebook::jsi;
+using namespace facebook;
 
-inline static int64_t getPointerValue(Runtime &runtime, const facebook::jsi::Value &value) {
+inline static int64_t getPointerValue(jsi::Runtime &runtime, const facebook::jsi::Value &value) {
     return value.asBigInt(runtime).Int64Value(runtime);
 }
 
 template<typename T>
-inline static rust::Slice<T> GetTypedArrayData(Runtime &runtime, facebook::jsi::TypedArray &array) {
+inline static rust::Slice<T>
+GetTypedArrayData(jsi::Runtime &runtime, facebook::jsi::TypedArray &array) {
     auto buf = array.data(runtime);
     auto offset = array.offset(runtime);
     auto size = array.size(runtime);
@@ -27,7 +28,7 @@ inline static rust::Slice<T> GetTypedArrayData(Runtime &runtime, facebook::jsi::
 
 template<typename T>
 inline static std::shared_ptr<T>
-getHostObject(Runtime &runtime, const facebook::jsi::Value &value) {
+getHostObject(jsi::Runtime &runtime, const facebook::jsi::Value &value) {
     if (value.isObject()) {
         auto valueObject = value.asObject(runtime);
         if (valueObject.template isHostObject(runtime)) {

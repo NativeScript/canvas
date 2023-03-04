@@ -3,151 +3,168 @@
 //
 
 #include "WEBGL_draw_buffersImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(rust::Box <WEBGL_draw_buffers> buffers) : buffers_(
+WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(rust::Box<WEBGL_draw_buffers> buffers) : buffers_(
         std::move(buffers)) {
 
 }
 
-WEBGL_draw_buffersImpl *WEBGL_draw_buffersImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-    if (ptr == nullptr) {
-        return nullptr;
-    }
-    return static_cast<WEBGL_draw_buffersImpl *>(ptr);
-}
+jsi::Value WEBGL_draw_buffersImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "drawBuffersWEBGL") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-v8::Local<v8::Object>
-WEBGL_draw_buffersImpl::NewInstance(v8::Isolate *isolate, rust::Box <WEBGL_draw_buffers> buffers) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto ctorFunc = GetCtor(isolate);
-    WEBGL_draw_buffersImpl *buffersImpl = new WEBGL_draw_buffersImpl(std::move(buffers));
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(
-            isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_draw_buffers);
-    AddWeakListener(isolate, result, buffersImpl);
+                                                         if (arguments[0].isObject()) {
+                                                             auto buffersObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (buffersObject.isArray(runtime)) {
+                                                                 auto buffers = buffersObject.getArray(
+                                                                         runtime);
+                                                                 auto len = buffers.size(runtime);
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 buf.reserve(len);
+                                                                 for (int j = 0; j < len; ++j) {
+                                                                     auto item = buffers.getValueAtIndex(
+                                                                             runtime, j);
+                                                                     if (!item.isNumber()) {
+                                                                         // todo verify
+                                                                         buf.push_back(0);
+                                                                     } else {
+                                                                         buf.push_back(
+                                                                                 (uint32_t) item.asNumber());
+                                                                     }
 
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT0_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT0_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT1_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT1_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT2_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT2_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT3_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT3_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT4_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT4_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT5_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT5_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT6_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT6_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT7_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT7_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT8_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT8_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT9_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT9_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT10_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT10_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT11_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT11_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT12_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT12_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT13_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT13_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT14_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT14_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COLOR_ATTACHMENT15_WEBGL"),
-                v8::Uint32::New(isolate, GL_COLOR_ATTACHMENT15_EXT));
+                                                                 }
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
+                                                                 canvas_native_webgl_draw_buffers_draw_buffers_webgl(
+                                                                         slice,
+                                                                         this->GetDrawBuffers());
+                                                             }
 
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER0_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER0_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER1_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER1_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER2_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER2_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER3_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER3_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER4_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER4_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER5_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER5_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER6_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER6_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER7_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER7_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER8_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER8_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER9_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER9_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER10_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER10_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER11_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER11_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER12_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER12_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER13_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER13_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER14_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER14_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "DRAW_BUFFER15_WEBGL"),
-                v8::Uint32::New(isolate, GL_DRAW_BUFFER15_EXT));
+                                                         }
 
-    result->Set(context, Helpers::ConvertToV8String(isolate, "MAX_COLOR_ATTACHMENTS_WEBGL"),
-                v8::Uint32::New(isolate, GL_MAX_COLOR_ATTACHMENTS_EXT));
-
-    result->Set(context, Helpers::ConvertToV8String(isolate, "MAX_DRAW_BUFFERS_WEBGL"),
-                v8::Uint32::New(isolate, GL_MAX_DRAW_BUFFERS_EXT));
-
-    return handle_scope.Escape(result);
-}
-
-v8::Local<v8::FunctionTemplate> WEBGL_draw_buffersImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_draw_buffersImplTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
-    }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_draw_buffers"));
-
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-    auto tmpl = ctorTmpl->PrototypeTemplate();
-
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "drawBuffersWEBGL"),
-              v8::FunctionTemplate::New(isolate, &DrawBuffersWEBGL));
-
-    cache->WEBGL_draw_buffersImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(
-            isolate, ctorTmpl);
-    return ctorTmpl;
-}
-
-void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.This());
-    auto buffers = args[0];
-    if (buffers->IsArray()) {
-        auto buffersVal = buffers.As<v8::Array>();
-        auto len = buffersVal->Length();
-        std::vector <uint32_t> buf;
-        for (int j = 0; j < len; ++j) {
-            auto item = buffersVal->Get(context, j);
-            if (item.IsEmpty()) {
-                // todo verify
-                buf.push_back(0);
-            } else {
-                buf.push_back(item.ToLocalChecked()->Uint32Value(context).ToChecked());
-            }
-
-        }
-        rust::Slice<const uint32_t> slice(buf.data(), buf.size());
-        canvas_native_webgl_draw_buffers_draw_buffers_webgl(slice, *ptr->buffers_);
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "COLOR_ATTACHMENT0_WEBGL") {
+        return {GL_COLOR_ATTACHMENT0_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT1_WEBGL") {
+        return {GL_COLOR_ATTACHMENT1_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT2_WEBGL") {
+        return {GL_COLOR_ATTACHMENT2_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT3_WEBGL") {
+        return {GL_COLOR_ATTACHMENT3_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT4_WEBGL") {
+        return {GL_COLOR_ATTACHMENT4_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT5_WEBGL") {
+        return {GL_COLOR_ATTACHMENT5_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT6_WEBGL") {
+        return {GL_COLOR_ATTACHMENT6_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT7_WEBGL") {
+        return {GL_COLOR_ATTACHMENT7_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT8_WEBGL") {
+        return {GL_COLOR_ATTACHMENT8_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT9_WEBGL") {
+        return {GL_COLOR_ATTACHMENT9_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT10_WEBGL") {
+        return {GL_COLOR_ATTACHMENT10_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT11_WEBGL") {
+        return {GL_COLOR_ATTACHMENT11_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT12_WEBGL") {
+        return {GL_COLOR_ATTACHMENT12_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT13_WEBGL") {
+        return {GL_COLOR_ATTACHMENT13_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT14_WEBGL") {
+        return {GL_COLOR_ATTACHMENT14_EXT};
+    } else if (methodName == "COLOR_ATTACHMENT15_WEBGL") {
+        return {GL_COLOR_ATTACHMENT15_EXT};
+    } else if (methodName == "DRAW_BUFFER0_WEBGL") {
+        return {GL_DRAW_BUFFER0_EXT};
+    } else if (methodName == "DRAW_BUFFER1_WEBGL") {
+        return {GL_DRAW_BUFFER1_EXT};
+    } else if (methodName == "DRAW_BUFFER2_WEBGL") {
+        return {GL_DRAW_BUFFER2_EXT};
+    } else if (methodName == "DRAW_BUFFER3_WEBGL") {
+        return {GL_DRAW_BUFFER3_EXT};
+    } else if (methodName == "DRAW_BUFFER4_WEBGL") {
+        return {GL_DRAW_BUFFER4_EXT};
+    } else if (methodName == "DRAW_BUFFER5_WEBGL") {
+        return {GL_DRAW_BUFFER5_EXT};
+    } else if (methodName == "DRAW_BUFFER6_WEBGL") {
+        return {GL_DRAW_BUFFER6_EXT};
+    } else if (methodName == "DRAW_BUFFER0_WEBGL") {
+        return {GL_DRAW_BUFFER0_EXT};
+    } else if (methodName == "DRAW_BUFFER7_WEBGL") {
+        return {GL_DRAW_BUFFER7_EXT};
+    } else if (methodName == "DRAW_BUFFER8_WEBGL") {
+        return {GL_DRAW_BUFFER8_EXT};
+    } else if (methodName == "DRAW_BUFFER9_WEBGL") {
+        return {GL_DRAW_BUFFER9_EXT};
+    } else if (methodName == "DRAW_BUFFER10_WEBGL") {
+        return {GL_DRAW_BUFFER10_EXT};
+    } else if (methodName == "DRAW_BUFFER11_WEBGL") {
+        return {GL_DRAW_BUFFER11_EXT};
+    } else if (methodName == "DRAW_BUFFER12_WEBGL") {
+        return {GL_DRAW_BUFFER12_EXT};
+    } else if (methodName == "DRAW_BUFFER13_WEBGL") {
+        return {GL_DRAW_BUFFER13_EXT};
+    } else if (methodName == "DRAW_BUFFER14_WEBGL") {
+        return {GL_DRAW_BUFFER14_EXT};
+    } else if (methodName == "DRAW_BUFFER15_WEBGL") {
+        return {GL_DRAW_BUFFER15_EXT};
+    } else if (methodName == "MAX_COLOR_ATTACHMENTS_WEBGL") {
+        return {GL_MAX_COLOR_ATTACHMENTS_EXT};
+    } else if (methodName == "MAX_DRAW_BUFFERS_WEBGL") {
+        return {GL_MAX_DRAW_BUFFERS_EXT};
     }
 
+    return jsi::Value::undefined();
 }
+
+std::vector<jsi::PropNameID> WEBGL_draw_buffersImpl::getPropertyNames(jsi::Runtime &rt) {
+    return {
+            jsi::PropNameID::forUtf8(rt, std::string("drawBuffersWEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT0_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT1_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT2_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT3_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT4_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT5_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT6_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT7_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT8_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT9_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT10_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT11_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT12_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT13_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT14_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT15_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER0_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER1_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER2_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER3_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER4_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER5_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER6_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER7_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER8_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER9_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER10_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER11_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER12_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER13_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER14_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER15_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("MAX_COLOR_ATTACHMENTS_WEBGL")),
+            jsi::PropNameID::forUtf8(rt, std::string("MAX_DRAW_BUFFERS_WEBGL")),
+    };
+}
+

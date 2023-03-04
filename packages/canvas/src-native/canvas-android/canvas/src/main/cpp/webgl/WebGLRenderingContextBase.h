@@ -18,31 +18,11 @@ enum class WebGLRenderingVersion : uint8_t {
 
 using namespace facebook;
 
-class WebGLRenderingContextBase: public jsi::HostObject {
+class WebGLRenderingContextBase : public jsi::HostObject {
 public:
     WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version);
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
-
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
-
     ~WebGLRenderingContextBase();
-
-    static WebGLRenderingContextBase *GetPointerBase(const v8::Local<v8::Object> &object) {
-        auto ptrValue = object->GetInternalField(0);
-
-        if (ptrValue.IsEmpty()) {
-            return nullptr;
-        }
-
-        void *ptr = ptrValue.As<v8::External>()->Value();
-
-        if (ptr == nullptr) {
-            return nullptr;
-        }
-
-        return (WebGLRenderingContextBase *) (ptr);
-    }
 
     void UpdateInvalidateState();
 
@@ -56,7 +36,7 @@ public:
 
     WebGLState &GetState();
 
-    void SetRaf(std::shared_ptr <RafImpl> raf);
+    void SetRaf(std::shared_ptr<RafImpl> raf);
 
     RafImpl *GetRaf();
 
@@ -70,6 +50,6 @@ private:
 
     int invalidateState_ = static_cast<int>(InvalidateState::NONE);
 
-    std::shared_ptr <RafImpl> raf_ = nullptr;
+    std::shared_ptr<RafImpl> raf_ = nullptr;
 };
 

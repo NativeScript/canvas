@@ -70,10 +70,16 @@ public:
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
-    ~WebGLRenderingContext();
-
     jsi::Value GetParameterInternal(jsi::Runtime &runtime, uint32_t pnameValue,
                                     rust::Box<WebGLResult> result);
+
+    WebGLState &GetState() {
+        return nullptr;
+    }
+
+    void UpdateInvalidateState() {
+
+    }
 
     static inline jsi::Value GetProperty(const std::string &methodName) {
         if (methodName == "DEPTH_BUFFER_BIT") { return {0x00000100}; }

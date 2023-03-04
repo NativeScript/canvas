@@ -10,7 +10,7 @@
 
 using namespace facebook;
 
-class JSI_EXPORT ANGLE_instanced_arraysImpl : jsi::HostObject {
+class JSI_EXPORT ANGLE_instanced_arraysImpl : public jsi::HostObject {
 public:
     ANGLE_instanced_arraysImpl(rust::Box<ANGLE_instanced_arrays> arrays);
 

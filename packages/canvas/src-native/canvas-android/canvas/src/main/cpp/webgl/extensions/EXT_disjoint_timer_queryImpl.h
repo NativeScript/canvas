@@ -11,7 +11,7 @@
 
 using namespace facebook;
 
-class JSI_EXPORT EXT_disjoint_timer_queryImpl : jsi::HostObject {
+class JSI_EXPORT EXT_disjoint_timer_queryImpl : public jsi::HostObject {
 public:
     EXT_disjoint_timer_queryImpl(rust::Box<EXT_disjoint_timer_query> query);
 

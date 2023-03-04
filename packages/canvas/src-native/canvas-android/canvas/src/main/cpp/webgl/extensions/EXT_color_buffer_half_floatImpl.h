@@ -10,7 +10,7 @@
 
 using namespace facebook;
 
-class JSI_EXPORT EXT_color_buffer_half_floatImpl : jsi::HostObject {
+class JSI_EXPORT EXT_color_buffer_half_floatImpl : public jsi::HostObject {
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;

@@ -16,6 +16,10 @@
 #include "ImageBitmapImpl.h"
 #include "TextDecoderImpl.h"
 #include "TextEncoderImpl.h"
+#include "canvas2d/MatrixImpl.h"
+
+#include "webgl/WebGLRenderingContext.h"
+#include "webgl2/WebGL2RenderingContext.h"
 
 using namespace facebook::jsi;
 using namespace std;

@@ -13,7 +13,6 @@ inline static int64_t getPointerValue(Runtime &runtime, const facebook::jsi::Val
     return value.asBigInt(runtime).Int64Value(runtime);
 }
 
-
 template<typename T>
 inline static rust::Slice<T> GetTypedArrayData(Runtime &runtime, facebook::jsi::TypedArray &array) {
     auto buf = array.data(runtime);
@@ -27,7 +26,8 @@ inline static rust::Slice<T> GetTypedArrayData(Runtime &runtime, facebook::jsi::
 }
 
 template<typename T>
-inline static std::shared_ptr<T> getHostObject(Runtime &runtime, const facebook::jsi::Value &value) {
+inline static std::shared_ptr<T>
+getHostObject(Runtime &runtime, const facebook::jsi::Value &value) {
     if (value.isObject()) {
         auto valueObject = value.asObject(runtime);
         if (valueObject.template isHostObject(runtime)) {

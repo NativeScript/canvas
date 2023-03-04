@@ -10,7 +10,7 @@
 
 using namespace facebook;
 
-class JSI_EXPORT WebGLRenderbuffer : jsi::HostObject {
+class JSI_EXPORT WebGLRenderbuffer : public jsi::HostObject {
 public:
     WebGLRenderbuffer(uint32_t renderbuffer) : renderbuffer_(renderbuffer) {}
 

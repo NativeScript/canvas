@@ -15,67 +15,67 @@ CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
 
 std::vector<PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(Runtime &rt) {
     return {
-        jsi::PropNameID::forUtf8(rt, std::string("__resize")),
-    jsi::PropNameID::forUtf8(rt, std::string("font")),
-    jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")),
-    jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingEnabled")),
-    jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingQuality")),
-    jsi::PropNameID::forUtf8(rt, std::string("lineDashOffset")),
-    jsi::PropNameID::forUtf8(rt, std::string("lineJoin")),
-    jsi::PropNameID::forUtf8(rt, std::string("lineCap")),
-    jsi::PropNameID::forUtf8(rt, std::string("miterLimit")),
-    jsi::PropNameID::forUtf8(rt, std::string("shadowColor")),
-    jsi::PropNameID::forUtf8(rt, std::string("shadowBlur")),
-    jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetX")),
-    jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetY")),
-    jsi::PropNameID::forUtf8(rt, std::string("textAlign")),
-    jsi::PropNameID::forUtf8(rt, std::string("globalCompositeOperation")),
-    jsi::PropNameID::forUtf8(rt, std::string("fillStyle")),
-    jsi::PropNameID::forUtf8(rt, std::string("strokeStyle")),
-    jsi::PropNameID::forUtf8(rt, std::string("lineWidth")),
-    jsi::PropNameID::forUtf8(rt, std::string("lineDash")),
-    jsi::PropNameID::forUtf8(rt, std::string("addHitRegion")),
-    jsi::PropNameID::forUtf8(rt, std::string("arc")),
-    jsi::PropNameID::forUtf8(rt, std::string("arcTo")),
-    jsi::PropNameID::forUtf8(rt, std::string("beginPath")),
-    jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")),
-    jsi::PropNameID::forUtf8(rt, std::string("clearHitRegions")),
-    jsi::PropNameID::forUtf8(rt, std::string("clearRect")),
-    jsi::PropNameID::forUtf8(rt, std::string("clip")),
-    jsi::PropNameID::forUtf8(rt, std::string("closePath")),
-    jsi::PropNameID::forUtf8(rt, std::string("createImageData")),
-    jsi::PropNameID::forUtf8(rt, std::string("createLinearGradient")),
-    jsi::PropNameID::forUtf8(rt, std::string("createPattern")),
-    jsi::PropNameID::forUtf8(rt, std::string("drawImage")),
-    jsi::PropNameID::forUtf8(rt, std::string("ellipse")),
-    jsi::PropNameID::forUtf8(rt, std::string("fill")),
-    jsi::PropNameID::forUtf8(rt, std::string("fillRect")),
-    jsi::PropNameID::forUtf8(rt, std::string("fillText")),
-    jsi::PropNameID::forUtf8(rt, std::string("getImageData")),
-    jsi::PropNameID::forUtf8(rt, std::string("getLineDash")),
-    jsi::PropNameID::forUtf8(rt, std::string("isPointInPath")),
-    jsi::PropNameID::forUtf8(rt, std::string("isPointInStroke")),
-    jsi::PropNameID::forUtf8(rt, std::string("lineTo")),
-    jsi::PropNameID::forUtf8(rt, std::string("measureText")),
-    jsi::PropNameID::forUtf8(rt, std::string("moveTo")),
-    jsi::PropNameID::forUtf8(rt, std::string("putImageData")),
-    jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")),
-    jsi::PropNameID::forUtf8(rt, std::string("rect")),
-    jsi::PropNameID::forUtf8(rt, std::string("removeHitRegion")),
-    jsi::PropNameID::forUtf8(rt, std::string("resetTransform")),
-    jsi::PropNameID::forUtf8(rt, std::string("restore")),
-    jsi::PropNameID::forUtf8(rt, std::string("rotate")),
-    jsi::PropNameID::forUtf8(rt, std::string("save")),
-    jsi::PropNameID::forUtf8(rt, std::string("scale")),
-    jsi::PropNameID::forUtf8(rt, std::string("scrollPathIntoView")),
-    jsi::PropNameID::forUtf8(rt, std::string("setLineDash")),
-    jsi::PropNameID::forUtf8(rt, std::string("setTransform")),
-    jsi::PropNameID::forUtf8(rt, std::string("stroke")),
-    jsi::PropNameID::forUtf8(rt, std::string("strokeRect")),
-    jsi::PropNameID::forUtf8(rt, std::string("strokeText")),
-    jsi::PropNameID::forUtf8(rt, std::string("transform")),
-    jsi::PropNameID::forUtf8(rt, std::string("translate")),
-    jsi::PropNameID::forUtf8(rt, std::string("__toDataURL"))
+            jsi::PropNameID::forUtf8(rt, std::string("__resize")),
+            jsi::PropNameID::forUtf8(rt, std::string("font")),
+            jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")),
+            jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingEnabled")),
+            jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingQuality")),
+            jsi::PropNameID::forUtf8(rt, std::string("lineDashOffset")),
+            jsi::PropNameID::forUtf8(rt, std::string("lineJoin")),
+            jsi::PropNameID::forUtf8(rt, std::string("lineCap")),
+            jsi::PropNameID::forUtf8(rt, std::string("miterLimit")),
+            jsi::PropNameID::forUtf8(rt, std::string("shadowColor")),
+            jsi::PropNameID::forUtf8(rt, std::string("shadowBlur")),
+            jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetX")),
+            jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetY")),
+            jsi::PropNameID::forUtf8(rt, std::string("textAlign")),
+            jsi::PropNameID::forUtf8(rt, std::string("globalCompositeOperation")),
+            jsi::PropNameID::forUtf8(rt, std::string("fillStyle")),
+            jsi::PropNameID::forUtf8(rt, std::string("strokeStyle")),
+            jsi::PropNameID::forUtf8(rt, std::string("lineWidth")),
+            jsi::PropNameID::forUtf8(rt, std::string("lineDash")),
+            jsi::PropNameID::forUtf8(rt, std::string("addHitRegion")),
+            jsi::PropNameID::forUtf8(rt, std::string("arc")),
+            jsi::PropNameID::forUtf8(rt, std::string("arcTo")),
+            jsi::PropNameID::forUtf8(rt, std::string("beginPath")),
+            jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")),
+            jsi::PropNameID::forUtf8(rt, std::string("clearHitRegions")),
+            jsi::PropNameID::forUtf8(rt, std::string("clearRect")),
+            jsi::PropNameID::forUtf8(rt, std::string("clip")),
+            jsi::PropNameID::forUtf8(rt, std::string("closePath")),
+            jsi::PropNameID::forUtf8(rt, std::string("createImageData")),
+            jsi::PropNameID::forUtf8(rt, std::string("createLinearGradient")),
+            jsi::PropNameID::forUtf8(rt, std::string("createPattern")),
+            jsi::PropNameID::forUtf8(rt, std::string("drawImage")),
+            jsi::PropNameID::forUtf8(rt, std::string("ellipse")),
+            jsi::PropNameID::forUtf8(rt, std::string("fill")),
+            jsi::PropNameID::forUtf8(rt, std::string("fillRect")),
+            jsi::PropNameID::forUtf8(rt, std::string("fillText")),
+            jsi::PropNameID::forUtf8(rt, std::string("getImageData")),
+            jsi::PropNameID::forUtf8(rt, std::string("getLineDash")),
+            jsi::PropNameID::forUtf8(rt, std::string("isPointInPath")),
+            jsi::PropNameID::forUtf8(rt, std::string("isPointInStroke")),
+            jsi::PropNameID::forUtf8(rt, std::string("lineTo")),
+            jsi::PropNameID::forUtf8(rt, std::string("measureText")),
+            jsi::PropNameID::forUtf8(rt, std::string("moveTo")),
+            jsi::PropNameID::forUtf8(rt, std::string("putImageData")),
+            jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")),
+            jsi::PropNameID::forUtf8(rt, std::string("rect")),
+            jsi::PropNameID::forUtf8(rt, std::string("removeHitRegion")),
+            jsi::PropNameID::forUtf8(rt, std::string("resetTransform")),
+            jsi::PropNameID::forUtf8(rt, std::string("restore")),
+            jsi::PropNameID::forUtf8(rt, std::string("rotate")),
+            jsi::PropNameID::forUtf8(rt, std::string("save")),
+            jsi::PropNameID::forUtf8(rt, std::string("scale")),
+            jsi::PropNameID::forUtf8(rt, std::string("scrollPathIntoView")),
+            jsi::PropNameID::forUtf8(rt, std::string("setLineDash")),
+            jsi::PropNameID::forUtf8(rt, std::string("setTransform")),
+            jsi::PropNameID::forUtf8(rt, std::string("stroke")),
+            jsi::PropNameID::forUtf8(rt, std::string("strokeRect")),
+            jsi::PropNameID::forUtf8(rt, std::string("strokeText")),
+            jsi::PropNameID::forUtf8(rt, std::string("transform")),
+            jsi::PropNameID::forUtf8(rt, std::string("translate")),
+            jsi::PropNameID::forUtf8(rt, std::string("__toDataURL"))
     };
 }
 
@@ -656,8 +656,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 0,
                                                 [](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+                                                   const Value *arguments,
+                                                   size_t count) -> Value {
 
                                                     return Value::undefined();
                                                 }
@@ -867,7 +867,9 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                     auto y = static_cast<float>(arguments[1].asNumber());
                                                     auto width = static_cast<float>(arguments[2].asNumber());
                                                     auto height = static_cast<float>(arguments[3].asNumber());
-                                                    canvas_native_context_fill_rect(this->GetContext(), x, y, width, height);
+                                                    canvas_native_context_fill_rect(
+                                                            this->GetContext(), x, y, width,
+                                                            height);
                                                     this->UpdateInvalidateState();
 
                                                     return Value::undefined();
@@ -880,15 +882,18 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        const Value *arguments,
                                                        size_t count) -> Value {
 
-                                                    auto text = arguments[0].asString(runtime).utf8(runtime);
+                                                    auto text = arguments[0].asString(runtime).utf8(
+                                                            runtime);
                                                     auto x = static_cast<float>(arguments[1].asNumber());
                                                     auto y = static_cast<float>(arguments[2].asNumber());
                                                     float width = -1;
                                                     if (arguments[3].isNumber()) {
                                                         width = static_cast<float>(arguments[3].asNumber());
                                                     }
-                                                    canvas_native_context_fill_text(this->GetContext(), rust::Str(text.data(), text.size()), x,
-                                                                                    y, width);
+                                                    canvas_native_context_fill_text(
+                                                            this->GetContext(),
+                                                            rust::Str(text.data(), text.size()), x,
+                                                            y, width);
                                                     this->UpdateInvalidateState();
 
                                                     return Value::undefined();
@@ -901,14 +906,17 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        const Value *arguments,
                                                        size_t count) -> Value {
 
-                                                    if(count == 4){
+                                                    if (count == 4) {
                                                         auto sx = static_cast<float>(arguments[0].asNumber());
                                                         auto sy = static_cast<float>(arguments[1].asNumber());
                                                         auto sw = static_cast<float>(arguments[2].asNumber());
                                                         auto sh = static_cast<float>(arguments[3].asNumber());
-                                                        auto data = canvas_native_context_get_image_data(this->GetContext(), sx, sy, sw, sh);
-                                                        auto object = std::make_shared<ImageDataImpl>(std::move(data));
-                                                        return jsi::Object::createFromHostObject(runtime, object);
+                                                        auto data = canvas_native_context_get_image_data(
+                                                                this->GetContext(), sx, sy, sw, sh);
+                                                        auto object = std::make_shared<ImageDataImpl>(
+                                                                std::move(data));
+                                                        return jsi::Object::createFromHostObject(
+                                                                runtime, object);
                                                     }
 
                                                     return Value::undefined();
@@ -921,11 +929,13 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        const Value *arguments,
                                                        size_t count) -> Value {
 
-                                                    auto dash = canvas_native_context_get_line_dash(this->GetContext());
+                                                    auto dash = canvas_native_context_get_line_dash(
+                                                            this->GetContext());
                                                     auto size = dash.size();
                                                     auto array = jsi::Array(runtime, size);
                                                     for (int i = 0; i < size; ++i) {
-                                                        array.setValueAtIndex(runtime, i, Value((double) dash[i]));
+                                                        array.setValueAtIndex(runtime, i,
+                                                                              Value((double) dash[i]));
                                                     }
                                                     return array;
                                                 }
@@ -941,28 +951,40 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto x = static_cast<float>(arguments[0].asNumber());
                                                         auto y = static_cast<float>(arguments[1].asNumber());
                                                         std::string rule("nonzero");
-                                                        auto ret = canvas_native_context_is_point_in_path(this->GetContext(), x, y,
-                                                                                                          rust::Str(rule.data(), rule.size()));
+                                                        auto ret = canvas_native_context_is_point_in_path(
+                                                                this->GetContext(), x, y,
+                                                                rust::Str(rule.data(),
+                                                                          rule.size()));
                                                         return {ret};
-                                                    } else if (count == 3 && arguments[2].isString()) {
+                                                    } else if (count == 3 &&
+                                                               arguments[2].isString()) {
                                                         auto x = static_cast<float>(arguments[0].asNumber());
                                                         auto y = static_cast<float>(arguments[1].asNumber());
-                                                        auto rule = arguments[2].asString(runtime).utf8(runtime);
-                                                        auto ret = canvas_native_context_is_point_in_path(this->GetContext(), x, y,
-                                                                                                          rust::Str(rule.data(), rule.size()));
+                                                        auto rule = arguments[2].asString(
+                                                                runtime).utf8(runtime);
+                                                        auto ret = canvas_native_context_is_point_in_path(
+                                                                this->GetContext(), x, y,
+                                                                rust::Str(rule.data(),
+                                                                          rule.size()));
                                                         return {ret};
-                                                    } else if (count == 4 && arguments[0].isObject() && arguments[3].isString()) {
-                                                        auto path = arguments[0].asObject(runtime).asHostObject<Path2D>(runtime);
+                                                    } else if (count == 4 &&
+                                                               arguments[0].isObject() &&
+                                                               arguments[3].isString()) {
+                                                        auto path = arguments[0].asObject(
+                                                                runtime).asHostObject<Path2D>(
+                                                                runtime);
                                                         auto x = static_cast<float>(arguments[1].asNumber());
                                                         auto y = static_cast<float>(arguments[2].asNumber());
-                                                        auto rule = arguments[3].asString(runtime).utf8(runtime);
+                                                        auto rule = arguments[3].asString(
+                                                                runtime).utf8(runtime);
 
 
                                                         if (path != nullptr) {
-                                                            auto ret = canvas_native_context_is_point_in_path_with_path(this->GetContext(),
-                                                                                                                        path->GetPath(), x, y,
-                                                                                                                        rust::Str(rule.data(),
-                                                                                                                                  rule.size()));
+                                                            auto ret = canvas_native_context_is_point_in_path_with_path(
+                                                                    this->GetContext(),
+                                                                    path->GetPath(), x, y,
+                                                                    rust::Str(rule.data(),
+                                                                              rule.size()));
                                                             return {ret};
                                                         }
                                                     }
@@ -981,17 +1003,22 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                     if (count == 2) {
                                                         auto x = static_cast<float>(arguments[0].asNumber());
                                                         auto y = static_cast<float>(arguments[1].asNumber());
-                                                        auto ret = canvas_native_context_is_point_in_stroke(this->GetContext(), x, y);
+                                                        auto ret = canvas_native_context_is_point_in_stroke(
+                                                                this->GetContext(), x, y);
                                                         return {ret};
-                                                    } else if (count == 3 && arguments[0].isObject()) {
-                                                        auto path = arguments[0].asObject(runtime).asHostObject<Path2D>(runtime);
+                                                    } else if (count == 3 &&
+                                                               arguments[0].isObject()) {
+                                                        auto path = arguments[0].asObject(
+                                                                runtime).asHostObject<Path2D>(
+                                                                runtime);
                                                         auto x = static_cast<float>(arguments[1].asNumber());
                                                         auto y = static_cast<float>(arguments[2].asNumber());
                                                         if (path != nullptr) {
-                                                            auto ret = canvas_native_context_is_point_in_stroke_with_path(this->GetContext(),
-                                                                                                                          path->GetPath(), x,
-                                                                                                                          y);
-                                                            return  {ret};
+                                                            auto ret = canvas_native_context_is_point_in_stroke_with_path(
+                                                                    this->GetContext(),
+                                                                    path->GetPath(), x,
+                                                                    y);
+                                                            return {ret};
                                                         }
                                                     }
 
@@ -1009,7 +1036,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                     if (count > 1) {
                                                         auto x = static_cast<float>(arguments[0].asNumber());
                                                         auto y = static_cast<float>(arguments[1].asNumber());
-                                                        canvas_native_context_line_to(this->GetContext(), x, y);
+                                                        canvas_native_context_line_to(
+                                                                this->GetContext(), x, y);
                                                     }
 
                                                     return Value::undefined();
@@ -1023,13 +1051,17 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        const Value *arguments,
                                                        size_t count) -> Value {
 
-                                                    auto text = arguments[0].asString(runtime).utf8(runtime);
-                                                    auto metrics = canvas_native_context_measure_text(this->GetContext(),
-                                                                                                      rust::Str(text.c_str(), text.size()));
+                                                    auto text = arguments[0].asString(runtime).utf8(
+                                                            runtime);
+                                                    auto metrics = canvas_native_context_measure_text(
+                                                            this->GetContext(),
+                                                            rust::Str(text.c_str(), text.size()));
 
-                                                    auto object = std::make_shared<TextMetricsImpl>(std::move(metrics));
+                                                    auto object = std::make_shared<TextMetricsImpl>(
+                                                            std::move(metrics));
 
-                                                    return jsi::Object::createFromHostObject(runtime, object);
+                                                    return jsi::Object::createFromHostObject(
+                                                            runtime, object);
                                                 }
         );
     } else if (methodName == "moveTo") {
@@ -1057,17 +1089,23 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        const Value *arguments,
                                                        size_t count) -> Value {
 
-                                                    auto imageData = arguments[0].asObject(runtime).asHostObject<ImageDataImpl>(runtime);
+                                                    auto imageData = arguments[0].asObject(
+                                                            runtime).asHostObject<ImageDataImpl>(
+                                                            runtime);
                                                     if (count == 3) {
                                                         auto dx = static_cast<float>(arguments[1].asNumber());
                                                         auto dy = static_cast<float>(arguments[2].asNumber());
                                                         float dirtyX = 0;
                                                         float dirtyY = 0;
-                                                        auto dirtyWidth = (float)canvas_native_image_data_get_width(imageData->GetImageData());
-                                                        auto dirtyHeight = (float)canvas_native_image_data_get_height(imageData->GetImageData());
-                                                        canvas_native_context_put_image_data(this->GetContext(), imageData->GetImageData(), dx,
-                                                                                             dy, dirtyX, dirtyY,
-                                                                                             dirtyWidth, dirtyHeight);
+                                                        auto dirtyWidth = (float) canvas_native_image_data_get_width(
+                                                                imageData->GetImageData());
+                                                        auto dirtyHeight = (float) canvas_native_image_data_get_height(
+                                                                imageData->GetImageData());
+                                                        canvas_native_context_put_image_data(
+                                                                this->GetContext(),
+                                                                imageData->GetImageData(), dx,
+                                                                dy, dirtyX, dirtyY,
+                                                                dirtyWidth, dirtyHeight);
                                                         this->UpdateInvalidateState();
                                                     } else if (count == 7) {
                                                         auto dx = static_cast<float>(arguments[1].asNumber());
@@ -1076,9 +1114,11 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto dirtyY = static_cast<float>(arguments[4].asNumber());;
                                                         auto dirtyWidth = static_cast<float>(arguments[5].asNumber());
                                                         auto dirtyHeight = static_cast<float>(arguments[6].asNumber());
-                                                        canvas_native_context_put_image_data(this->GetContext(), imageData->GetImageData(), dx,
-                                                                                             dy, dirtyX, dirtyY,
-                                                                                             dirtyWidth, dirtyHeight);
+                                                        canvas_native_context_put_image_data(
+                                                                this->GetContext(),
+                                                                imageData->GetImageData(), dx,
+                                                                dy, dirtyX, dirtyY,
+                                                                dirtyWidth, dirtyHeight);
                                                         this->UpdateInvalidateState();
                                                     }
 
@@ -1098,7 +1138,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto cpy = static_cast<float>(arguments[1].asNumber());
                                                         auto x = static_cast<float>(arguments[2].asNumber());
                                                         auto y = static_cast<float>(arguments[3].asNumber());
-                                                        canvas_native_context_quadratic_curve_to(this->GetContext(), cpx, cpy, x, y);
+                                                        canvas_native_context_quadratic_curve_to(
+                                                                this->GetContext(), cpx, cpy, x, y);
                                                     }
 
                                                     return Value::undefined();
@@ -1117,7 +1158,9 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto y = static_cast<float>(arguments[1].asNumber());
                                                         auto width = static_cast<float>(arguments[2].asNumber());
                                                         auto height = static_cast<float>(arguments[3].asNumber());
-                                                        canvas_native_context_rect(this->GetContext(), x, y, width, height);
+                                                        canvas_native_context_rect(
+                                                                this->GetContext(), x, y, width,
+                                                                height);
                                                     }
 
                                                     return Value::undefined();
@@ -1128,8 +1171,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 0,
                                                 [](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+                                                   const Value *arguments,
+                                                   size_t count) -> Value {
 
                                                     return Value::undefined();
 
@@ -1141,7 +1184,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    canvas_native_context_reset_transform(this->GetContext());
+                                                    canvas_native_context_reset_transform(
+                                                            this->GetContext());
                                                     return Value::undefined();
 
                                                 }
@@ -1152,7 +1196,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    canvas_native_context_restore(this->GetContext());
+                                                    canvas_native_context_restore(
+                                                            this->GetContext());
                                                     return Value::undefined();
 
                                                 }
@@ -1165,7 +1210,9 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        size_t count) -> Value {
 
                                                     if (count == 1 && arguments[0].isNumber()) {
-                                                        canvas_native_context_rotate(this->GetContext(), (float)arguments[0].asNumber());
+                                                        canvas_native_context_rotate(
+                                                                this->GetContext(),
+                                                                (float) arguments[0].asNumber());
                                                     }
 
                                                     return Value::undefined();
@@ -1193,7 +1240,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                     if (count == 2) {
                                                         auto x = static_cast<float>(arguments[0].asNumber());
                                                         auto y = static_cast<float>(arguments[1].asNumber());
-                                                        canvas_native_context_scale(this->GetContext(), x, y);
+                                                        canvas_native_context_scale(
+                                                                this->GetContext(), x, y);
                                                     }
 
                                                     return Value::undefined();
@@ -1203,8 +1251,8 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 0,
                                                 [](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+                                                   const Value *arguments,
+                                                   size_t count) -> Value {
                                                     return Value::undefined();
 
                                                 }
@@ -1218,16 +1266,23 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
 
                                                     if (count == 1) {
                                                         auto vec = &arguments[0];
-                                                        if (vec->isObject() && vec->asObject(runtime).isArray(runtime)) {
-                                                            auto segments = vec->asObject(runtime).asArray(runtime);
+                                                        if (vec->isObject() &&
+                                                            vec->asObject(runtime).isArray(
+                                                                    runtime)) {
+                                                            auto segments = vec->asObject(
+                                                                    runtime).asArray(runtime);
                                                             auto len = segments.size(runtime);
                                                             std::vector<float> data;
                                                             for (int i = 0; i < len; ++i) {
-                                                                auto item = segments.getValueAtIndex(runtime, i);
-                                                                data.push_back(static_cast<float>(item.asNumber()));
+                                                                auto item = segments.getValueAtIndex(
+                                                                        runtime, i);
+                                                                data.push_back(
+                                                                        static_cast<float>(item.asNumber()));
                                                             }
-                                                            rust::Slice<const float> slice{data.data(), data.size()};
-                                                            canvas_native_context_set_line_dash(this->GetContext(), slice);
+                                                            rust::Slice<const float> slice{
+                                                                    data.data(), data.size()};
+                                                            canvas_native_context_set_line_dash(
+                                                                    this->GetContext(), slice);
                                                         }
                                                     }
                                                     return Value::undefined();
@@ -1243,9 +1298,13 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
 
 
                                                     if (count == 1 && arguments[0].isObject()) {
-                                                        auto matrix = arguments[0].asObject(runtime).asHostObject<MatrixImpl>(runtime);
+                                                        auto matrix = arguments[0].asObject(
+                                                                runtime).asHostObject<MatrixImpl>(
+                                                                runtime);
                                                         if (matrix != nullptr) {
-                                                            canvas_native_context_set_transform_matrix(this->GetContext(), matrix->GetMatrix());
+                                                            canvas_native_context_set_transform_matrix(
+                                                                    this->GetContext(),
+                                                                    matrix->GetMatrix());
                                                         }
                                                     } else if (count == 6) {
                                                         auto a = static_cast<float>(arguments[0].asNumber());
@@ -1254,7 +1313,9 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto d = static_cast<float>(arguments[3].asNumber());
                                                         auto e = static_cast<float>(arguments[4].asNumber());
                                                         auto f = static_cast<float>(arguments[5].asNumber());
-                                                        canvas_native_context_set_transform(this->GetContext(), a, b, c, d, e, f);
+                                                        canvas_native_context_set_transform(
+                                                                this->GetContext(), a, b, c, d, e,
+                                                                f);
                                                     }
 
                                                     return Value::undefined();
@@ -1269,13 +1330,18 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        size_t count) -> Value {
 
                                                     if (count == 1 && arguments[0].isObject()) {
-                                                        auto path = arguments[0].asObject(runtime).asHostObject<Path2D>(runtime);
+                                                        auto path = arguments[0].asObject(
+                                                                runtime).asHostObject<Path2D>(
+                                                                runtime);
                                                         if (path != nullptr) {
-                                                            canvas_native_context_stroke_with_path(this->GetContext(), path->GetPath());
+                                                            canvas_native_context_stroke_with_path(
+                                                                    this->GetContext(),
+                                                                    path->GetPath());
                                                             this->UpdateInvalidateState();
                                                         }
                                                     } else {
-                                                        canvas_native_context_stroke(this->GetContext());
+                                                        canvas_native_context_stroke(
+                                                                this->GetContext());
                                                         this->UpdateInvalidateState();
                                                     }
 
@@ -1295,7 +1361,9 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto y = static_cast<float>(arguments[1].asNumber());
                                                         auto width = static_cast<float>(arguments[2].asNumber());
                                                         auto height = static_cast<float>(arguments[3].asNumber());
-                                                        canvas_native_context_stroke_rect(this->GetContext(), x, y, width, height);
+                                                        canvas_native_context_stroke_rect(
+                                                                this->GetContext(), x, y, width,
+                                                                height);
                                                         this->UpdateInvalidateState();
                                                     }
 
@@ -1311,17 +1379,21 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                        size_t count) -> Value {
 
                                                     if (count >= 3) {
-                                                        auto text = arguments[0].asString(runtime).utf8(runtime);
+                                                        auto text = arguments[0].asString(
+                                                                runtime).utf8(runtime);
                                                         auto x = static_cast<float>(arguments[1].asNumber());
                                                         auto y = static_cast<float>(arguments[2].asNumber());
                                                         float maxWidth = -1;
 
-                                                        if(count > 3){
+                                                        if (count > 3) {
                                                             maxWidth = static_cast<float>(arguments[3].asNumber());
                                                         }
 
-                                                        canvas_native_context_stroke_text(this->GetContext(), rust::Str(text.c_str(), text.size()),
-                                                                                          x, y, maxWidth);
+                                                        canvas_native_context_stroke_text(
+                                                                this->GetContext(),
+                                                                rust::Str(text.c_str(),
+                                                                          text.size()),
+                                                                x, y, maxWidth);
                                                         this->UpdateInvalidateState();
                                                     }
                                                     return Value::undefined();
@@ -1342,7 +1414,9 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                         auto d = static_cast<float>(arguments[3].asNumber());
                                                         auto e = static_cast<float>(arguments[4].asNumber());
                                                         auto f = static_cast<float>(arguments[5].asNumber());
-                                                        canvas_native_context_transform(this->GetContext(), a, b, c, d, e, f);
+                                                        canvas_native_context_transform(
+                                                                this->GetContext(), a, b, c, d, e,
+                                                                f);
                                                     }
 
                                                     return Value::undefined();
@@ -1359,14 +1433,15 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                                                     if (count == 2) {
                                                         auto x = static_cast<float>(arguments[0].asNumber());
                                                         auto y = static_cast<float>(arguments[1].asNumber());
-                                                        canvas_native_context_translate(this->GetContext(), x, y);
+                                                        canvas_native_context_translate(
+                                                                this->GetContext(), x, y);
                                                     }
 
                                                     return Value::undefined();
 
                                                 }
         );
-    }else if (methodName == "__toDataURL") {
+    } else if (methodName == "__toDataURL") {
 
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 2,

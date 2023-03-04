@@ -364,7 +364,7 @@ pub(crate) mod ffi {
             stencil: bool,
             desynchronized: bool,
             xr_compatible: bool,
-            is_bool: bool,
+            is_canvas: bool,
         ) -> Box<WebGLState>;
 
         fn canvas_native_webgl_active_texture(texture: u32, state: &mut WebGLState);

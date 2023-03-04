@@ -10,6 +10,61 @@
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
 
+    CREATE_FUNC("DOMMatrix", canvas_module, 1,
+                [](Runtime &runtime, const Value &thisValue,
+                   const Value *arguments, size_t count) -> Value {
+
+                    if (count > 0) {
+                        auto obj = &arguments[0];
+                        if (arguments[0].isObject()) {
+                            auto initObject = arguments[0].asObject(runtime);
+                            if (initObject.isArray(runtime)) {
+                                auto init = initObject.getArray(runtime);
+                                auto size = init.size(runtime);
+                                if (size == 6) {
+                                    auto matrix = canvas_native_matrix_create();
+                                    rust::Vec<float> buf;
+                                    buf.reserve(size);
+                                    for (int i = 0; i < size; i++) {
+                                        auto item = init.getValueAtIndex(runtime, i).asNumber();
+                                        buf.emplace_back((float) item);
+                                    }
+                                    rust::Slice<const float> slice(buf.data(), buf.size());
+
+                                    canvas_native_matrix_update(*matrix, slice);
+
+                                    auto object = std::make_shared<MatrixImpl>(std::move(matrix));
+                                    return jsi::Object::createFromHostObject(runtime,
+                                                                             std::move(object));
+                                }
+
+                                if (size == 16) {
+                                    auto matrix = canvas_native_matrix_create();
+                                    std::array<float, 16> buf{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                              0, 0, 0};
+                                    for (int i = 0; i < size; i++) {
+                                        auto item = init.getValueAtIndex(runtime, i).asNumber();
+                                        buf[i] = (float) item;
+                                    }
+                                    canvas_native_matrix_update_3d(*matrix, buf);
+
+                                    auto object = std::make_shared<MatrixImpl>(std::move(matrix));
+                                    return jsi::Object::createFromHostObject(runtime,
+                                                                             std::move(object));
+                                }
+                            }
+                        }
+
+                    } else {
+                        auto matrix = canvas_native_matrix_create();
+                        auto object = std::make_shared<MatrixImpl>(std::move(matrix));
+                        return jsi::Object::createFromHostObject(runtime, std::move(object));
+                    }
+                    return Value::undefined();
+                }
+
+    );
+
     CREATE_FUNC("Path2D", canvas_module, 1,
                 [](Runtime &runtime, const Value &thisValue,
                    const Value *arguments, size_t count) -> Value {
@@ -32,12 +87,11 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                 return jsi::Object::createFromHostObject(runtime,
                                                                          std::move(object));
                             }
-                        } else {
-                            auto path = canvas_native_path_create();
-                            auto object = std::make_shared<Path2D>(std::move(path));
-                            return jsi::Object::createFromHostObject(runtime, std::move(object));
                         }
-
+                    } else {
+                        auto path = canvas_native_path_create();
+                        auto object = std::make_shared<Path2D>(std::move(path));
+                        return jsi::Object::createFromHostObject(runtime, std::move(object));
                     }
                     return Value::undefined();
                 }
@@ -345,7 +399,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                     auto width = (float) arguments[0].asNumber();
                     auto height = (float) arguments[1].asNumber();
                     auto density = (float) arguments[2].asNumber();
-                    auto context = getPointerValue(arguments[3], runtime);
+                    auto context = getPointerValue(runtime, arguments[3]);
                     auto samples = (int) arguments[4].asNumber();
                     auto alpha = (bool) arguments[5].asBool();
                     auto font_color = (int) arguments[6].asNumber();
@@ -356,19 +410,19 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                                                       samples, alpha,
                                                                       font_color, ppi, direction);
 
-                    auto obj = CanvasRenderingContext2DImpl(std::move(context_2d));
+                    auto ret = std::make_shared<CanvasRenderingContext2DImpl>(
+                            std::move(context_2d));
 
+                    return jsi::Object::createFromHostObject(runtime, ret);
                 }
 
     );
 
     CREATE_FUNC("createWebGLContext", canvas_module, 3,
                 [](Runtime &runtime, const Value &thisValue,
-                   const Value *arguments, size_t count) -> Value {
+                        const Value *arguments, size_t count) -> Value {
 
-
-
-                    if (arguments[0].isObject()) {
+                        if (arguments[0].isObject()) {
                         auto config = arguments[0].asObject(runtime);
                         std::string version("none");
                         auto alpha = true;
@@ -385,174 +439,161 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                         auto versionValue = config.getProperty(runtime, "version");
                         if (versionValue.isString()) {
-                            version = versionValue.asString(runtime).utf8(runtime);
-                        }
-
-                        auto alphaMaybe = config->Get(context, Helpers::ConvertToV8String(isolate, "alpha"));
-                        if (!alphaMaybe.IsEmpty()) {
-                            auto alphaLocal = alphaMaybe.ToLocalChecked();
-                            if (Helpers::IsBoolean(alphaLocal)) {
-                                alpha = alphaLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto antialiasMaybe = config->Get(context,
-                                                          Helpers::ConvertToV8String(isolate, "antialias"));
-                        if (!antialiasMaybe.IsEmpty()) {
-                            auto antialiasLocal = antialiasMaybe.ToLocalChecked();
-                            if (Helpers::IsBoolean(antialiasLocal)) {
-                                antialias = antialiasLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto failIfMajorPerformanceCaveatMaybe = config->Get(context,
-                                                                             Helpers::ConvertToV8String(isolate,
-                                                                                                        "failIfMajorPerformanceCaveat"));
-                        if (!failIfMajorPerformanceCaveatMaybe.IsEmpty()) {
-                            auto failIfMajorPerformanceCaveatLocal = failIfMajorPerformanceCaveatMaybe.ToLocalChecked();
-                            if (failIfMajorPerformanceCaveatLocal->IsBoolean()) {
-                                fail_if_major_performance_caveat = failIfMajorPerformanceCaveatLocal->BooleanValue(
-                                        isolate);
-                            }
-                        }
-
-                        auto powerPreferenceMaybe = config->Get(context, Helpers::ConvertToV8String(isolate,
-                                                                                                    "powerPreference"));
-                        if (!powerPreferenceMaybe.IsEmpty()) {
-                            auto powerPreferenceLocal = powerPreferenceMaybe.ToLocalChecked();
-                            if (powerPreferenceLocal->IsString()) {
-                                power_preference = Helpers::ConvertFromV8String(isolate,
-                                                                                powerPreferenceLocal);
-                            }
-                        }
-
-                        auto premultipliedAlphaMaybe = config->Get(context, Helpers::ConvertToV8String(isolate,
-                                                                                                       "premultipliedAlpha"));
-                        if (!premultipliedAlphaMaybe.IsEmpty()) {
-                            auto premultipliedAlphaLocal = premultipliedAlphaMaybe.ToLocalChecked();
-                            if (premultipliedAlphaLocal->IsBoolean()) {
-                                premultiplied_alpha = premultipliedAlphaLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto preserveDrawingBufferMaybe = config->Get(context,
-                                                                      Helpers::ConvertToV8String(isolate,
-                                                                                                 "preserveDrawingBuffer"));
-                        if (!preserveDrawingBufferMaybe.IsEmpty()) {
-                            auto preserveDrawingBufferLocal = preserveDrawingBufferMaybe.ToLocalChecked();
-                            if (preserveDrawingBufferLocal->IsBoolean()) {
-                                preserve_drawing_buffer = preserveDrawingBufferLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto stencilMaybe = config->Get(context, Helpers::ConvertToV8String(isolate, "stencil"));
-                        if (!stencilMaybe.IsEmpty()) {
-                            auto stencilLocal = stencilMaybe.ToLocalChecked();
-                            if (stencilLocal->IsBoolean()) {
-                                stencil = stencilLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto desynchronizedMaybe = config->Get(context, Helpers::ConvertToV8String(isolate,
-                                                                                                   "desynchronized"));
-                        if (!desynchronizedMaybe.IsEmpty()) {
-                            auto desynchronizedLocal = desynchronizedMaybe.ToLocalChecked();
-                            if (desynchronizedLocal->IsBoolean()) {
-                                desynchronized = desynchronizedLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto xrCompatibleMaybe = config->Get(context,
-                                                             Helpers::ConvertToV8String(isolate, "xrCompatible"));
-                        if (!xrCompatibleMaybe.IsEmpty()) {
-                            auto xrCompatibleLocal = xrCompatibleMaybe.ToLocalChecked();
-                            if (xrCompatibleLocal->IsBoolean()) {
-                                xr_compatible = xrCompatibleLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        if (version != "v1" && version != "v2") {
-                            args.GetReturnValue().SetUndefined();
-                            return;
-                        } else {
-                            WebGLRenderingContext *renderingContext = nullptr;
-
-                            if (args.Length() == 7) {
-                                auto width = args[1];
-                                auto height = args[2];
-                                auto density = args[3];
-                                auto fontColor = args[4];
-                                auto ppi = args[5];
-                                auto direction = args[6];
-                                auto ctx = canvas_native_webgl_create_no_window(
-                                        width->Int32Value(context).ToChecked(),
-                                        height->Int32Value(context).ToChecked(),
-                                        rust::Str(version.c_str(), version.size()),
-                                        alpha,
-                                        antialias,
-                                        depth,
-                                        fail_if_major_performance_caveat,
-                                        rust::Str(power_preference.c_str(), power_preference.size()),
-                                        premultiplied_alpha,
-                                        preserve_drawing_buffer,
-                                        stencil,
-                                        desynchronized,
-                                        xr_compatible,
-                                        false
-                                );
-                                renderingContext = new WebGLRenderingContext(std::move(ctx));
-
-                            } else {
-                                auto ctx = canvas_native_webgl_create(
-                                        rust::Str(version.c_str(), version.size()),
-                                        alpha,
-                                        antialias,
-                                        depth,
-                                        fail_if_major_performance_caveat,
-                                        rust::Str(power_preference.c_str(), power_preference.size()),
-                                        premultiplied_alpha,
-                                        preserve_drawing_buffer,
-                                        stencil,
-                                        desynchronized,
-                                        xr_compatible
-                                );
-
-                                renderingContext = new WebGLRenderingContext(std::move(ctx));
-                            }
-
-                            auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
-                            auto raf_callback = new OnRafCallback(ctx_ptr, 1);
-                            auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
-                            auto raf = canvas_native_raf_create(raf_callback_ptr);
-                            renderingContext->SetRaf(
-                                    std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf)));
-
-                            auto _raf = renderingContext->GetRaf();
-                            canvas_native_raf_start(_raf->GetRaf());
-
-                            auto tmpl = GetCtor(isolate)->InstanceTemplate();
-                            tmpl->SetInternalFieldCount(1);
-                            auto ret = tmpl->NewInstance(context).ToLocalChecked();
-                            Helpers::SetInstanceType(isolate, ret, ObjectType::WebGLRenderingContext);
-                            AddWeakListener(isolate, ret, renderingContext);
-
-                            args.GetReturnValue().Set(ret);
-                        }
-                    }
-
-
-                return Value::undefined();
+                        version = versionValue.asString(runtime).utf8(runtime);
                 }
+
+                        auto alphaValue = config.getProperty(runtime, "alpha");
+                        if (alphaValue.isBool()) {
+                        alpha = alphaValue.asBool();
+                }
+
+                        auto antialiasValue = config.getProperty(runtime, "antialias");
+                        if (antialiasValue.isBool()) {
+                        antialias = antialiasValue.asBool();
+                }
+
+                        auto failIfMajorPerformanceCaveatValue = config.getProperty(runtime, "failIfMajorPerformanceCaveat");
+                        if (failIfMajorPerformanceCaveatValue.isBool()) {
+                        fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue.asBool();
+                }
+
+                        auto powerPreferenceValue = config.getProperty(runtime, "powerPreference");
+                        if (powerPreferenceValue.isString()) {
+                        power_preference = powerPreferenceValue.asString(runtime).utf8(runtime);
+                }
+
+                        auto premultipliedAlphaValue = config.getProperty(runtime, "premultipliedAlpha");
+                        if (premultipliedAlphaValue.isBool()) {
+                        premultiplied_alpha = premultipliedAlphaValue.asBool();
+                }
+
+                        auto preserveDrawingBufferValue = config.getProperty(runtime, "preserveDrawingBuffer");
+                        if (preserveDrawingBufferValue.isBool()) {
+                        preserve_drawing_buffer = preserveDrawingBufferValue.asBool();
+                }
+
+                        auto stencilValue = config.getProperty(runtime, "stencil");
+                        if (stencilValue.isBool()) {
+                        stencil = stencilValue.asBool();
+                }
+
+                        auto desynchronizedValue = config.getProperty(runtime, "desynchronized"));
+                                                                                                     if (desynchronizedValue.isBool()) {
+                                                                                                         desynchronized = desynchronizedValue.asBool();
+                                                                                                     }
+
+                                                                                                     auto xrCompatibleValue = config.getProperty(
+                                                                                                             runtime,
+                                                                                                             "xrCompatible");
+                                                                                                     if (xrCompatibleValue.isBool()) {
+                                                                                                         xr_compatible = xrCompatibleValue.asBool();
+                                                                                                     }
+
+                                                                                                     if (version !=
+                                                                                                         "v1" &&
+                                                                                                         version !=
+                                                                                                         "v2") {
+                                                                                                         return Value::undefined();
+                                                                                                     } else {
+                                                                                                         std::shared_ptr<WebGLRenderingContext> renderingContext = nullptr;
+
+                                                                                                         if (count ==
+                                                                                                             7) {
+                                                                                                             auto width = arguments[1].asNumber();
+                                                                                                             auto height = arguments[2].asNumber();
+                                                                                                             auto density = arguments[3].asNumber();
+                                                                                                             auto fontColor = arguments[4].asNumber();
+                                                                                                             auto ppi = arguments[5].asNumber();
+                                                                                                             auto direction = arguments[6].asNumber();
+                                                                                                             auto ctx = canvas_native_webgl_create_no_window(
+                                                                                                                     (int32_t) width,
+                                                                                                                     (int32_t) height,
+                                                                                                                     rust::Str(
+                                                                                                                             version.c_str(),
+                                                                                                                             version.size()),
+                                                                                                                     alpha,
+                                                                                                                     antialias,
+                                                                                                                     depth,
+                                                                                                                     fail_if_major_performance_caveat,
+                                                                                                                     rust::Str(
+                                                                                                                             power_preference.c_str(),
+                                                                                                                             power_preference.size()),
+                                                                                                                     premultiplied_alpha,
+                                                                                                                     preserve_drawing_buffer,
+                                                                                                                     stencil,
+                                                                                                                     desynchronized,
+                                                                                                                     xr_compatible,
+                                                                                                                     false
+                                                                                                             );
+                                                                                                             renderingContext = std::make_shared<WebGLRenderingContext>(
+                                                                                                                     std::move(
+                                                                                                                             ctx));
+
+                                                                                                         } else {
+                                                                                                             auto width = (int32_t) arguments[1].asNumber();
+                                                                                                             auto height = (int32_t) arguments[2].asNumber();
+
+                                                                                                             auto ctx = canvas_native_webgl_create_no_window(
+                                                                                                                     width,
+                                                                                                                     height,
+                                                                                                                     rust::Str(
+                                                                                                                             version.c_str(),
+                                                                                                                             version.size()),
+                                                                                                                     alpha,
+                                                                                                                     antialias,
+                                                                                                                     depth,
+                                                                                                                     fail_if_major_performance_caveat,
+                                                                                                                     rust::Str(
+                                                                                                                             power_preference.data(),
+                                                                                                                             power_preference.size()),
+                                                                                                                     premultiplied_alpha,
+                                                                                                                     preserve_drawing_buffer,
+                                                                                                                     stencil,
+                                                                                                                     desynchronized,
+                                                                                                                     xr_compatible,
+                                                                                                                     false
+                                                                                                             );
+
+                                                                                                             renderingContext = std::make_shared<WebGLRenderingContext>(
+                                                                                                                     std::move(
+                                                                                                                             ctx));
+                                                                                                         }
+
+                                                                                                         auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
+                                                                                                         auto raf_callback = new OnRafCallback(
+                                                                                                                 ctx_ptr,
+                                                                                                                 1);
+                                                                                                         auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
+                                                                                                         auto raf = canvas_native_raf_create(
+                                                                                                                 raf_callback_ptr);
+                                                                                                         renderingContext->SetRaf(
+                                                                                                                 std::make_shared<RafImpl>(
+                                                                                                                         raf_callback,
+                                                                                                                         raf_callback_ptr,
+                                                                                                                         std::move(
+                                                                                                                                 raf)));
+
+                                                                                                         auto _raf = renderingContext->GetRaf();
+                                                                                                         canvas_native_raf_start(
+                                                                                                                 _raf->GetRaf());
+
+                                                                                                         return jsi::Object::createFromHostObject(
+                                                                                                                 runtime,
+                                                                                                                 renderingContext);
+                                                                                                     }
+                                                                                                 }
+
+
+                                                                                                     return Value::undefined();
+                                                                                                 }
 
     );
 
     CREATE_FUNC("createWebGL2Context", canvas_module, 3,
                 [](Runtime &runtime, const Value &thisValue,
-                   const Value *arguments, size_t count) -> Value {
+                        const Value *arguments, size_t count) -> Value {
 
-
-
-                    if (arguments[0].isObject()) {
+                        if (arguments[0].isObject()) {
                         auto config = arguments[0].asObject(runtime);
                         std::string version("none");
                         auto alpha = true;
@@ -569,164 +610,151 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                         auto versionValue = config.getProperty(runtime, "version");
                         if (versionValue.isString()) {
-                            version = versionValue.asString(runtime).utf8(runtime);
-                        }
-
-                        auto alphaMaybe = config->Get(context, Helpers::ConvertToV8String(isolate, "alpha"));
-                        if (!alphaMaybe.IsEmpty()) {
-                            auto alphaLocal = alphaMaybe.ToLocalChecked();
-                            if (Helpers::IsBoolean(alphaLocal)) {
-                                alpha = alphaLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto antialiasMaybe = config->Get(context,
-                                                          Helpers::ConvertToV8String(isolate, "antialias"));
-                        if (!antialiasMaybe.IsEmpty()) {
-                            auto antialiasLocal = antialiasMaybe.ToLocalChecked();
-                            if (Helpers::IsBoolean(antialiasLocal)) {
-                                antialias = antialiasLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto failIfMajorPerformanceCaveatMaybe = config->Get(context,
-                                                                             Helpers::ConvertToV8String(isolate,
-                                                                                                        "failIfMajorPerformanceCaveat"));
-                        if (!failIfMajorPerformanceCaveatMaybe.IsEmpty()) {
-                            auto failIfMajorPerformanceCaveatLocal = failIfMajorPerformanceCaveatMaybe.ToLocalChecked();
-                            if (failIfMajorPerformanceCaveatLocal->IsBoolean()) {
-                                fail_if_major_performance_caveat = failIfMajorPerformanceCaveatLocal->BooleanValue(
-                                        isolate);
-                            }
-                        }
-
-                        auto powerPreferenceMaybe = config->Get(context, Helpers::ConvertToV8String(isolate,
-                                                                                                    "powerPreference"));
-                        if (!powerPreferenceMaybe.IsEmpty()) {
-                            auto powerPreferenceLocal = powerPreferenceMaybe.ToLocalChecked();
-                            if (powerPreferenceLocal->IsString()) {
-                                power_preference = Helpers::ConvertFromV8String(isolate,
-                                                                                powerPreferenceLocal);
-                            }
-                        }
-
-                        auto premultipliedAlphaMaybe = config->Get(context, Helpers::ConvertToV8String(isolate,
-                                                                                                       "premultipliedAlpha"));
-                        if (!premultipliedAlphaMaybe.IsEmpty()) {
-                            auto premultipliedAlphaLocal = premultipliedAlphaMaybe.ToLocalChecked();
-                            if (premultipliedAlphaLocal->IsBoolean()) {
-                                premultiplied_alpha = premultipliedAlphaLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto preserveDrawingBufferMaybe = config->Get(context,
-                                                                      Helpers::ConvertToV8String(isolate,
-                                                                                                 "preserveDrawingBuffer"));
-                        if (!preserveDrawingBufferMaybe.IsEmpty()) {
-                            auto preserveDrawingBufferLocal = preserveDrawingBufferMaybe.ToLocalChecked();
-                            if (preserveDrawingBufferLocal->IsBoolean()) {
-                                preserve_drawing_buffer = preserveDrawingBufferLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto stencilMaybe = config->Get(context, Helpers::ConvertToV8String(isolate, "stencil"));
-                        if (!stencilMaybe.IsEmpty()) {
-                            auto stencilLocal = stencilMaybe.ToLocalChecked();
-                            if (stencilLocal->IsBoolean()) {
-                                stencil = stencilLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto desynchronizedMaybe = config->Get(context, Helpers::ConvertToV8String(isolate,
-                                                                                                   "desynchronized"));
-                        if (!desynchronizedMaybe.IsEmpty()) {
-                            auto desynchronizedLocal = desynchronizedMaybe.ToLocalChecked();
-                            if (desynchronizedLocal->IsBoolean()) {
-                                desynchronized = desynchronizedLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        auto xrCompatibleMaybe = config->Get(context,
-                                                             Helpers::ConvertToV8String(isolate, "xrCompatible"));
-                        if (!xrCompatibleMaybe.IsEmpty()) {
-                            auto xrCompatibleLocal = xrCompatibleMaybe.ToLocalChecked();
-                            if (xrCompatibleLocal->IsBoolean()) {
-                                xr_compatible = xrCompatibleLocal->BooleanValue(isolate);
-                            }
-                        }
-
-                        if (version != "v1" && version != "v2") {
-                            args.GetReturnValue().SetUndefined();
-                            return;
-                        } else {
-                            WebGLRenderingContext *renderingContext = nullptr;
-
-                            if (args.Length() == 7) {
-                                auto width = args[1];
-                                auto height = args[2];
-                                auto density = args[3];
-                                auto fontColor = args[4];
-                                auto ppi = args[5];
-                                auto direction = args[6];
-                                auto ctx = canvas_native_webgl_create_no_window(
-                                        width->Int32Value(context).ToChecked(),
-                                        height->Int32Value(context).ToChecked(),
-                                        rust::Str(version.c_str(), version.size()),
-                                        alpha,
-                                        antialias,
-                                        depth,
-                                        fail_if_major_performance_caveat,
-                                        rust::Str(power_preference.c_str(), power_preference.size()),
-                                        premultiplied_alpha,
-                                        preserve_drawing_buffer,
-                                        stencil,
-                                        desynchronized,
-                                        xr_compatible,
-                                        false
-                                );
-                                renderingContext = new WebGLRenderingContext(std::move(ctx));
-
-                            } else {
-                                auto ctx = canvas_native_webgl_create(
-                                        rust::Str(version.c_str(), version.size()),
-                                        alpha,
-                                        antialias,
-                                        depth,
-                                        fail_if_major_performance_caveat,
-                                        rust::Str(power_preference.c_str(), power_preference.size()),
-                                        premultiplied_alpha,
-                                        preserve_drawing_buffer,
-                                        stencil,
-                                        desynchronized,
-                                        xr_compatible
-                                );
-
-                                renderingContext = new WebGLRenderingContext(std::move(ctx));
-                            }
-
-                            auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
-                            auto raf_callback = new OnRafCallback(ctx_ptr, 1);
-                            auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
-                            auto raf = canvas_native_raf_create(raf_callback_ptr);
-                            renderingContext->SetRaf(
-                                    std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf)));
-
-                            auto _raf = renderingContext->GetRaf();
-                            canvas_native_raf_start(_raf->GetRaf());
-
-                            auto tmpl = GetCtor(isolate)->InstanceTemplate();
-                            tmpl->SetInternalFieldCount(1);
-                            auto ret = tmpl->NewInstance(context).ToLocalChecked();
-                            Helpers::SetInstanceType(isolate, ret, ObjectType::WebGLRenderingContext);
-                            AddWeakListener(isolate, ret, renderingContext);
-
-                            args.GetReturnValue().Set(ret);
-                        }
-                    }
-
-
-                    return Value::undefined();
+                        version = versionValue.asString(runtime).utf8(runtime);
                 }
+
+                        auto alphaValue = config.getProperty(runtime, "alpha");
+                        if (alphaValue.isBool()) {
+                        alpha = alphaValue.asBool();
+                }
+
+                        auto antialiasValue = config.getProperty(runtime, "antialias");
+                        if (antialiasValue.isBool()) {
+                        antialias = antialiasValue.asBool();
+                }
+
+                        auto failIfMajorPerformanceCaveatValue = config.getProperty(runtime, "failIfMajorPerformanceCaveat");
+                        if (failIfMajorPerformanceCaveatValue.isBool()) {
+                        fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue.asBool();
+                }
+
+                        auto powerPreferenceValue = config.getProperty(runtime, "powerPreference");
+                        if (powerPreferenceValue.isString()) {
+                        power_preference = powerPreferenceValue.asString(runtime).utf8(runtime);
+                }
+
+                        auto premultipliedAlphaValue = config.getProperty(runtime, "premultipliedAlpha");
+                        if (premultipliedAlphaValue.isBool()) {
+                        premultiplied_alpha = premultipliedAlphaValue.asBool();
+                }
+
+                        auto preserveDrawingBufferValue = config.getProperty(runtime, "preserveDrawingBuffer");
+                        if (preserveDrawingBufferValue.isBool()) {
+                        preserve_drawing_buffer = preserveDrawingBufferValue.asBool();
+                }
+
+                        auto stencilValue = config.getProperty(runtime, "stencil");
+                        if (stencilValue.isBool()) {
+                        stencil = stencilValue.asBool();
+                }
+
+                        auto desynchronizedValue = config.getProperty(runtime, "desynchronized"));
+                                                                                                     if (desynchronizedValue.isBool()) {
+                                                                                                         desynchronized = desynchronizedValue.asBool();
+                                                                                                     }
+
+                                                                                                     auto xrCompatibleValue = config.getProperty(
+                                                                                                             runtime,
+                                                                                                             "xrCompatible");
+                                                                                                     if (xrCompatibleValue.isBool()) {
+                                                                                                         xr_compatible = xrCompatibleValue.asBool();
+                                                                                                     }
+
+                                                                                                     if (version !=
+                                                                                                         "v1" &&
+                                                                                                         version !=
+                                                                                                         "v2") {
+                                                                                                         return Value::undefined();
+                                                                                                     } else {
+                                                                                                         std::shared_ptr<WebGL2RenderingContext> renderingContext = nullptr;
+
+                                                                                                         if (count ==
+                                                                                                             7) {
+                                                                                                             auto width = arguments[1].asNumber();
+                                                                                                             auto height = arguments[2].asNumber();
+                                                                                                             auto density = arguments[3].asNumber();
+                                                                                                             auto fontColor = arguments[4].asNumber();
+                                                                                                             auto ppi = arguments[5].asNumber();
+                                                                                                             auto direction = arguments[6].asNumber();
+                                                                                                             auto ctx = canvas_native_webgl_create_no_window(
+                                                                                                                     (int32_t) width,
+                                                                                                                     (int32_t) height,
+                                                                                                                     rust::Str(
+                                                                                                                             version.c_str(),
+                                                                                                                             version.size()),
+                                                                                                                     alpha,
+                                                                                                                     antialias,
+                                                                                                                     depth,
+                                                                                                                     fail_if_major_performance_caveat,
+                                                                                                                     rust::Str(
+                                                                                                                             power_preference.c_str(),
+                                                                                                                             power_preference.size()),
+                                                                                                                     premultiplied_alpha,
+                                                                                                                     preserve_drawing_buffer,
+                                                                                                                     stencil,
+                                                                                                                     desynchronized,
+                                                                                                                     xr_compatible,
+                                                                                                                     false
+                                                                                                             );
+                                                                                                             renderingContext = std::make_shared<WebGL2RenderingContext>(
+                                                                                                                     std::move(
+                                                                                                                             ctx));
+
+                                                                                                         } else {
+                                                                                                             auto width = (int32_t) arguments[1].asNumber();
+                                                                                                             auto height = (int32_t) arguments[2].asNumber();
+                                                                                                             auto ctx = canvas_native_webgl_create_no_window(
+                                                                                                                     width,
+                                                                                                                     height,
+                                                                                                                     rust::Str(
+                                                                                                                             version.c_str(),
+                                                                                                                             version.size()),
+                                                                                                                     alpha,
+                                                                                                                     antialias,
+                                                                                                                     depth,
+                                                                                                                     fail_if_major_performance_caveat,
+                                                                                                                     rust::Str(
+                                                                                                                             power_preference.c_str(),
+                                                                                                                             power_preference.size()),
+                                                                                                                     premultiplied_alpha,
+                                                                                                                     preserve_drawing_buffer,
+                                                                                                                     stencil,
+                                                                                                                     desynchronized,
+                                                                                                                     xr_compatible,
+                                                                                                                     false
+                                                                                                             );
+
+                                                                                                             renderingContext = std::make_shared<WebGL2RenderingContext>(
+                                                                                                                     std::move(
+                                                                                                                             ctx));
+                                                                                                         }
+
+                                                                                                         auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(renderingContext));
+                                                                                                         auto raf_callback = new OnRafCallback(
+                                                                                                                 ctx_ptr,
+                                                                                                                 1);
+                                                                                                         auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
+                                                                                                         auto raf = canvas_native_raf_create(
+                                                                                                                 raf_callback_ptr);
+                                                                                                         renderingContext->SetRaf(
+                                                                                                                 std::make_shared<RafImpl>(
+                                                                                                                         raf_callback,
+                                                                                                                         raf_callback_ptr,
+                                                                                                                         std::move(
+                                                                                                                                 raf)));
+
+                                                                                                         auto _raf = renderingContext->GetRaf();
+                                                                                                         canvas_native_raf_start(
+                                                                                                                 _raf->GetRaf());
+
+                                                                                                         return jsi::Object::createFromHostObject(
+                                                                                                                 runtime,
+                                                                                                                 renderingContext);
+                                                                                                     }
+                                                                                                 }
+
+                                                                                                     return Value::undefined();
+                                                                                                 }
 
     );
 }

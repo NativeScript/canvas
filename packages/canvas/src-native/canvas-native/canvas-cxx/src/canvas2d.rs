@@ -330,6 +330,8 @@ pub(crate) mod ffi {
 
         fn canvas_native_matrix_update(matrix: &mut Matrix, slice: &[f32]);
 
+        fn canvas_native_matrix_update_3d(matrix: &mut Matrix, slice: &[f32;16]);
+
         fn canvas_native_matrix_get_a(matrix: &Matrix) -> f32;
 
         fn canvas_native_matrix_set_a(matrix: &mut Matrix, a: f32);
@@ -2987,6 +2989,29 @@ pub fn canvas_native_matrix_update(matrix: &mut Matrix, slice: &[f32]) {
     let mut affine = [0f32; 6];
     affine.copy_from_slice(slice);
     matrix.inner_mut().set_affine(&affine);
+}
+
+pub fn canvas_native_matrix_update_3d(matrix: &mut Matrix, slice: &[f32;16]) {
+    let mut matrix  = matrix.inner_mut();
+    matrix.set_m11(slice[0]);
+    matrix.set_m12(slice[1]);
+    matrix.set_m13(slice[2]);
+    matrix.set_m14(slice[3]);
+
+    matrix.set_m21(slice[4]);
+    matrix.set_m22(slice[5]);
+    matrix.set_m23(slice[6]);
+    matrix.set_m24(slice[7]);
+
+    matrix.set_m31(slice[8]);
+    matrix.set_m32(slice[9]);
+    matrix.set_m33(slice[10]);
+    matrix.set_m34(slice[11]);
+
+    matrix.set_m41(slice[12]);
+    matrix.set_m42(slice[13]);
+    matrix.set_m43(slice[14]);
+    matrix.set_m44(slice[15]);
 }
 
 pub fn canvas_native_matrix_get_a(matrix: &Matrix) -> f32 {

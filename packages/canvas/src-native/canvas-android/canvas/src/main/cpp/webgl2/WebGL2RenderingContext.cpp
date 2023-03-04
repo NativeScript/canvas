@@ -739,7 +739,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                             if (values.isArray(runtime)) {
                                                                 auto array = values.getArray(runtime);
                                                                 auto len = array.size(runtime);
-                                                                std::vector<float> buf;
+                                                                rust::Vec<float> buf;
                                                                 buf.reserve(len);
                                                                 for (int j = 0; j < len; ++j) {
                                                                     auto item = array.getValueAtIndex(runtime, j);
@@ -752,11 +752,10 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                     }
                                                                 }
 
-                                                                rust::Slice<const float> slice(buf.data(), buf.size());
                                                                 canvas_native_webgl2_clear_bufferfv(
                                                                         buffer->GetBuffer(),
                                                                         drawbuffer,
-                                                                        slice,
+                                                                        buf,
                                                                         this->GetState()
                                                                 );
 
@@ -792,7 +791,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                             if (values.isArray(runtime)) {
                                                                 auto array = values.getArray(runtime);
                                                                 auto len = array.size(runtime);
-                                                                std::vector<int32_t> buf;
+                                                                rust::Vec<int32_t> buf;
                                                                 buf.reserve(len);
                                                                 for (int j = 0; j < len; ++j) {
                                                                     auto item = array.getValueAtIndex(runtime, j);
@@ -801,11 +800,10 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                     );
                                                                 }
 
-                                                                rust::Slice<const int32_t> slice(buf.data(), buf.size());
                                                                 canvas_native_webgl2_clear_bufferiv(
                                                                         buffer->GetBuffer(),
                                                                         drawbuffer,
-                                                                        slice,
+                                                                        buf,
                                                                         this->GetState()
                                                                 );
 
@@ -840,7 +838,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                             if (values.isArray(runtime)) {
                                                                 auto array = values.getArray(runtime);
                                                                 auto len = array.size(runtime);
-                                                                std::vector<uint32_t> buf;
+                                                                rust::Vec<uint32_t> buf;
                                                                 buf.reserve(len);
                                                                 for (int j = 0; j < len; ++j) {
                                                                     auto item = array.getValueAtIndex(runtime, j);
@@ -849,11 +847,10 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                     );
                                                                 }
 
-                                                                rust::Slice<const uint32_t> slice(buf.data(), buf.size());
                                                                 canvas_native_webgl2_clear_bufferuiv(
                                                                         buffer->GetBuffer(),
                                                                         drawbuffer,
-                                                                        slice,
+                                                                        buf,
                                                                         this->GetState()
                                                                 );
 
@@ -1274,14 +1271,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         if(buffersObject.isArray(runtime)){
                                                             auto array = buffersObject.getArray(runtime);
                                                             auto len = array.size(runtime);
-                                                            std::vector <uint32_t> buf;
+                                                            rust::Vec <uint32_t> buf;
                                                             buf.reserve(len);
                                                             for (int j = 0; j < len; ++j) {
                                                                 auto item = array.getValueAtIndex(runtime, j);
-                                                                buf.push_back((uint32_t)item.asNumber());
+                                                                buf.emplace_back((uint32_t)item.asNumber());
                                                             }
-                                                            rust::Slice<const uint32_t> slice(buf.data(), buf.size());
-                                                            canvas_native_webgl2_draw_buffers(slice, this->GetState());
+                                                            canvas_native_webgl2_draw_buffers(buf, this->GetState());
                                                         }
                                                     }
 
@@ -1517,16 +1513,15 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         if(uniformIndicesObject.isArray(runtime)){
                                                             auto uniformIndices = uniformIndicesObject.asArray(runtime);
                                                             auto size = uniformIndices.size(runtime);
-                                                            std::vector <uint32_t> buf;
+                                                            rust::Vec <uint32_t> buf;
                                                             buf.reserve(size);
                                                             for (int j = 0; j < size;j++) {
                                                                 auto item = (uint32_t)uniformIndices.getValueAtIndex(runtime, j).asNumber();
-                                                                buf.push_back(item);
+                                                                buf.emplace_back(item);
                                                             }
-                                                            rust::Slice<const uint32_t> slice(buf.data(), buf.size());
                                                             auto ret = canvas_native_webgl2_get_active_uniforms(
                                                                     program->GetProgram(),
-                                                                    slice,
+                                                                    buf,
                                                                     pname,
                                                                     this->GetState()
                                                             );
@@ -2773,108 +2768,91 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
                                                 }
         );
-    }else if(methodName == "Uniform2ui"){
+    }else if(methodName == "uniform2ui"){
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 3,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform2ui(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto v0 = args[1];
-                                                        auto v1 = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
+
+                                                    if (count > 2) {
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto v0 = (uint32_t)arguments[1].asNumber();
+                                                        auto v1 = (uint32_t)arguments[2].asNumber();
+
+                                                        if(location != nullptr){
                                                             canvas_native_webgl2_uniform2ui(
-                                                                    locationValue.ToLocalChecked()->Value(),
-                                                                    v0->Uint32Value(context).ToChecked(),
-                                                                    v1->Uint32Value(context).ToChecked(),
-                                                                    ptr->GetState()
+                                                                    location->GetUniformLocation(),
+                                                                    v0,
+                                                                    v1,
+                                                                    this->GetState()
                                                             );
                                                         }
-                                                    }
 
+
+                                                    }
                                                     return Value::undefined();
                                                 }
         );
     }else if(methodName == "Uniform2uiv"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform2uiv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto data = args[1];
-                                                        if (args.Length() > 1 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
 
-                                                            if (data->IsUint32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform2uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else {
-                                                                std::vector <uint32_t> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i).ToLocalChecked();
-                                                                    buf.push_back(item->Uint32Value(context).ToChecked());
-                                                                }
+                                                    if (count > 1 && arguments[1].isObject()) {
 
-                                                                rust::Slice<const uint32_t> slice(buf.data(), len);
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto data = arguments[1].asObject(runtime);
 
-                                                                canvas_native_webgl2_uniform2uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
+                                                        if (data.isUint32Array(runtime)) {
+                                                            auto array = data.getTypedArray(runtime);
+                                                            auto slice = GetTypedArrayData<const uint32_t>(runtime, array);
+                                                            canvas_native_webgl2_uniform2uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else {
+                                                            rust::Vec <uint32_t> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            buf.reserve(len);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = (uint32_t)array.getValueAtIndex(runtime, i).asNumber();
+                                                                buf.push_back(item);
                                                             }
+
+                                                            canvas_native_webgl2_uniform2uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    &buf,
+                                                                    this->GetState()
+                                                            );
                                                         }
                                                     }
-
                                                     return Value::undefined();
 
                                                 }
         );
-    }else if(methodName == "Uniform3ui"){
+    }else if(methodName == "uniform3ui"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform3ui(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto v0 = args[1];
-                                                        auto v1 = args[2];
-                                                        auto v2 = args[3];
-                                                        auto v3 = args[4];
-                                                        if (args.Length() > 3 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
+                                                    if (count > 3) {
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto v0 = (uint32_t)arguments[1].asNumber();
+                                                        auto v1 = (uint32_t)arguments[2].asNumber();
+                                                        auto v2 = (uint32_t)arguments[3].asNumber();
+                                                        if(location != nullptr){
                                                             canvas_native_webgl2_uniform3ui(
-                                                                    locationValue.ToLocalChecked()->Value(),
-                                                                    v0->Uint32Value(context).ToChecked(),
-                                                                    v1->Uint32Value(context).ToChecked(),
-                                                                    v2->Uint32Value(context).ToChecked(),
-                                                                    ptr->GetState()
+                                                                    location->GetUniformLocation(),
+                                                                    v0,
+                                                                    v1,
+                                                                    v2,
+                                                                    this->GetState()
                                                             );
                                                         }
                                                     }
@@ -2882,157 +2860,230 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                     return Value::undefined();
                                                 }
         );
-    }else if(methodName == "Uniform3uiv"){
+    }else if(methodName == "uniform3uiv"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform3uiv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto data = args[1];
-                                                        if (args.Length() > 1 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
 
-                                                            if (data->IsUint32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform3uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else {
-                                                                std::vector <uint32_t> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i).ToLocalChecked();
-                                                                    buf.push_back(item->Uint32Value(context).ToChecked());
-                                                                }
+                                                    if (count > 1 && arguments[1].isObject()) {
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto data = arguments[1].asObject(runtime);
 
-                                                                rust::Slice<const uint32_t> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform3uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
+                                                        if (data.isUint32Array(runtime)) {
+                                                            auto array = data.getTypedArray(runtime);
+                                                            auto slice = GetTypedArrayData<const uint32_t>(runtime, array);
+                                                            canvas_native_webgl2_uniform3uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else {
+                                                            rust::Vec <uint32_t> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            buf.reserve(len);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i).asNumber();
+                                                                buf.push_back((uint32_t)item);
                                                             }
+
+                                                            canvas_native_webgl2_uniform3uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    &buf,
+                                                                    this->GetState()
+                                                            );
                                                         }
                                                     }
-
                                                     return Value::undefined();
 
                                                 }
         );
-    }else if(methodName == "Uniform4ui"){
+    }else if(methodName == "uniform4ui"){
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform4ui(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto v0 = args[1];
-                                                        auto v1 = args[2];
-                                                        auto v2 = args[3];
-                                                        auto v3 = args[4];
-                                                        if (args.Length() > 4 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
-                                                            canvas_native_webgl2_uniform4ui(
-                                                                    locationValue.ToLocalChecked()->Value(),
-                                                                    v0->Uint32Value(context).ToChecked(),
-                                                                    v1->Uint32Value(context).ToChecked(),
-                                                                    v2->Uint32Value(context).ToChecked(),
-                                                                    v3->Uint32Value(context).ToChecked(),
-                                                                    ptr->GetState()
+
+                                                    if (count > 4) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto v0 = (uint32_t)arguments[1].asNumber();
+                                                        auto v1 = (uint32_t)arguments[2].asNumber();
+                                                        auto v2 = (uint32_t)arguments[3].asNumber();
+                                                        auto v3 = (uint32_t)arguments[4].asNumber();
+                                                       if(location != nullptr){
+                                                           canvas_native_webgl2_uniform4ui(
+                                                                   location->GetUniformLocation(),
+                                                                   v0,
+                                                                   v1,
+                                                                   v2,
+                                                                   v3,
+                                                                   this->GetState()
+                                                           );
+                                                       }
+                                                    }
+
+                                                    return Value::undefined();
+                                                }
+        );
+    }else if(methodName == "uniform4uiv"){
+        return Function::createFromHostFunction(runtime,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
+                                                [this](Runtime &runtime, const Value &thisValue,
+                                                       const Value *arguments,
+                                                       size_t count) -> Value {
+
+
+                                                    if (count > 1 && arguments[1].isObject()) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto data = arguments[1].asObject(runtime);
+
+                                                        if (data.isUint32Array(runtime)) {
+                                                            auto array = data.getTypedArray(runtime);
+                                                            auto slice = GetTypedArrayData<const uint32_t>(runtime, array);
+                                                            canvas_native_webgl2_uniform4uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else {
+                                                            rust::Vec<uint32_t> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            buf.reserve(len);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i).asNumber();
+                                                                buf.push_back((uint32_t)item);
+                                                            }
+
+                                                            canvas_native_webgl2_uniform4uiv(
+                                                                    location->GetUniformLocation(),
+                                                                    buf,
+                                                                    this->GetState()
                                                             );
                                                         }
                                                     }
 
                                                     return Value::undefined();
+
                                                 }
         );
-    }else if(methodName == "Uniform4uiv"){
+    }else if(methodName == "uniformBlockBinding"){
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 3,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::Uniform4uiv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto data = args[1];
-                                                        if (args.Length() > 1 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
+                                                    if (count > 2) {
 
-                                                            if (data->IsUint32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const uint32_t>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform4uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else {
-                                                                std::vector <uint32_t> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i).ToLocalChecked();
-                                                                    buf.push_back(item->Uint32Value(context).ToChecked());
-                                                                }
+                                                        auto program = getHostObject<WebGLProgram>(runtime, arguments[0]);
+                                                        auto uniformBlockIndex = arguments[1].asNumber();
+                                                        auto uniformBlockBinding = arguments[2].asNumber();
 
-                                                                rust::Slice<const uint32_t> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform4uiv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-
-                                                    return Value::undefined();
-
-                                                }
-        );
-    }else if(methodName == "UniformBlockBinding"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::UniformBlockBinding(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto program = args[0];
-                                                        auto uniformBlockIndex = args[1];
-                                                        auto uniformBlockBinding = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, program) == ObjectType::WebGLProgram) {
-                                                            auto programValue = Helpers::GetPrivate(isolate, program.As<v8::Object>(),
-                                                                                                    "instance")->ToUint32(context);
+                                                        if(program != nullptr){
                                                             canvas_native_webgl2_uniform_block_binding(
-                                                                    programValue.ToLocalChecked()->Value(),
-                                                                    uniformBlockIndex->Uint32Value(context).ToChecked(),
-                                                                    uniformBlockBinding->Uint32Value(context).ToChecked(),
-                                                                    ptr->GetState()
+                                                                    program->GetProgram(),
+                                                                    (uint32_t)uniformBlockIndex,
+                                                                    (uint32_t)uniformBlockBinding,
+                                                                    this->GetState()
+                                                            );
+                                                        }
+
+                                                    }
+                                                    return Value::undefined();
+                                                }
+        );
+    }else if(methodName == "uniformMatrix2x3fv"){
+        return Function::createFromHostFunction(runtime,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                [this](Runtime &runtime, const Value &thisValue,
+                                                       const Value *arguments,
+                                                       size_t count) -> Value {
+
+                                                    if (count > 2 && arguments[2].isObject()) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto transpose = arguments[1].asBool();
+                                                        auto data = arguments[2].asObject(runtime);
+
+                                                        if (data.isFloat32Array(runtime)) {
+                                                            auto array = data.getArray(runtime);
+                                                            auto slice = GetTypedArrayData<const float>(runtime, array);
+                                                            canvas_native_webgl2_uniform_matrix2x3fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else if (data.isArray(runtime)) {
+                                                            rust::Vec<float> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i);
+                                                                if (item.isNumber()) {
+                                                                    buf.push_back(static_cast<float>(item.asNumber()));
+                                                                } else {
+                                                                    buf.push_back(std::nanf(""));
+                                                                }
+                                                            }
+
+                                                            canvas_native_webgl2_uniform_matrix2x3fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    buf,
+                                                                    this->GetState()
+                                                            );
+                                                        }
+                                                    }
+                                                    return Value::undefined();
+
+                                                }
+        );
+    }else if(methodName == "uniformMatrix2x4fv"){
+        return Function::createFromHostFunction(runtime,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                [this](Runtime &runtime, const Value &thisValue,
+                                                       const Value *arguments,
+                                                       size_t count) -> Value {
+
+                                                    if (count > 2 && arguments[2].isObject()) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto transpose = arguments[1].asBool();
+                                                        auto data = arguments[2].asObject(runtime);
+
+                                                        if (data.isFloat32Array(runtime)) {
+                                                            auto array = data.getArray(runtime);
+                                                            auto slice = GetTypedArrayData<const float>(runtime, array);
+                                                            canvas_native_webgl2_uniform_matrix2x4fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else if (data.isArray(runtime)) {
+                                                            rust::Vec<float> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i);
+                                                                if (item.isNumber()) {
+                                                                    buf.push_back(static_cast<float>(item.asNumber()));
+                                                                } else {
+                                                                    buf.push_back(std::nanf(""));
+                                                                }
+                                                            }
+
+                                                            canvas_native_webgl2_uniform_matrix2x4fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    buf,
+                                                                    this->GetState()
                                                             );
                                                         }
                                                     }
@@ -3040,346 +3091,46 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                     return Value::undefined();
                                                 }
         );
-    }else if(methodName == "UniformMatrix2x3fv"){
+    }else if(methodName == "uniformMatrix3x2fv"){
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 3,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::UniformMatrix2x3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto transpose = args[1];
-                                                        auto data = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
 
-                                                            if (data->IsFloat32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform_matrix2x3fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else if (data->IsArray()) {
-                                                                std::vector<float> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i);
-                                                                    if (!item.IsEmpty()) {
-                                                                        buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item.ToLocalChecked())));
-                                                                    } else {
-                                                                        buf.push_back(std::nanf(""));
-                                                                    }
+                                                    if (count > 2 && arguments[2].isObject()) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto transpose = arguments[1].asBool();
+                                                        auto data = arguments[2].asObject(runtime);
+
+                                                        if (data.isFloat32Array(runtime)) {
+                                                            auto array = data.getArray(runtime);
+                                                            auto slice = GetTypedArrayData<const float>(runtime, array);
+                                                            canvas_native_webgl2_uniform_matrix3x2fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else if (data.isArray(runtime)) {
+                                                            rust::Vec<float> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i);
+                                                                if (item.isNumber()) {
+                                                                    buf.push_back(static_cast<float>(item.asNumber()));
+                                                                } else {
+                                                                    buf.push_back(std::nanf(""));
                                                                 }
-
-                                                                rust::Slice<const float> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform_matrix2x3fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
                                                             }
-                                                        }
-                                                    }
 
-                                                    return Value::undefined();
-
-                                                }
-        );
-    }else if(methodName == "UniformMatrix2x4fv"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto transpose = args[1];
-                                                        auto data = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
-
-                                                            if (data->IsFloat32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform_matrix2x4fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else if (data->IsArray()) {
-                                                                std::vector<float> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i);
-                                                                    if (!item.IsEmpty()) {
-                                                                        buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item.ToLocalChecked())));
-                                                                    } else {
-                                                                        buf.push_back(std::nanf(""));
-                                                                    }
-                                                                }
-
-                                                                rust::Slice<const float> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform_matrix2x4fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-
-                                                    return Value::undefined();
-                                                }
-        );
-    }else if(methodName == "UniformMatrix3x2fv"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto transpose = args[1];
-                                                        auto data = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
-
-                                                            if (data->IsFloat32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform_matrix3x2fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else if (data->IsArray()) {
-                                                                std::vector<float> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i);
-                                                                    if (!item.IsEmpty()) {
-                                                                        buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item.ToLocalChecked())));
-                                                                    } else {
-                                                                        buf.push_back(std::nanf(""));
-                                                                    }
-                                                                }
-
-                                                                rust::Slice<const float> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform_matrix3x2fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-
-                                                    return Value::undefined();
-                                                }
-        );
-    }else if(methodName == "UniformMatrix3x4fv"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto transpose = args[1];
-                                                        auto data = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
-                                                            if (data->IsFloat32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform_matrix3x4fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else if (data->IsArray()) {
-                                                                std::vector<float> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i);
-                                                                    if (!item.IsEmpty()) {
-                                                                        buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item.ToLocalChecked())));
-                                                                    } else {
-                                                                        buf.push_back(std::nanf(""));
-                                                                    }
-                                                                }
-
-                                                                rust::Slice<const float> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform_matrix3x4fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-
-                                                    return Value::undefined();
-                                                }
-        );
-    }else if(methodName == "UniformMatrix4x2fv"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto transpose = args[1];
-                                                        auto data = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
-                                                            if (data->IsFloat32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform_matrix4x2fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else if (data->IsArray()) {
-                                                                std::vector<float> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i);
-                                                                    if (!item.IsEmpty()) {
-                                                                        buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item.ToLocalChecked())));
-                                                                    } else {
-                                                                        buf.push_back(std::nanf(""));
-                                                                    }
-                                                                }
-
-                                                                rust::Slice<const float> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform_matrix4x2fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-
-                                                    return Value::undefined();
-
-                                                }
-        );
-    }else if(methodName == "UniformMatrix4x3fv"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto location = args[0];
-                                                        auto transpose = args[1];
-                                                        auto data = args[2];
-                                                        if (args.Length() > 2 &&
-                                                            Helpers::GetInstanceType(isolate, location) == ObjectType::WebGLUniformLocation) {
-                                                            auto locationValue = Helpers::GetPrivate(isolate, location.As<v8::Object>(),
-                                                                                                     "instance")->ToInt32(context);
-                                                            if (data->IsFloat32Array()) {
-                                                                auto slice = Helpers::GetTypedArrayData<const float>(data.As<v8::TypedArray>());
-                                                                canvas_native_webgl2_uniform_matrix4x3fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            } else if (data->IsArray()) {
-                                                                std::vector<float> buf;
-                                                                auto array = data.As<v8::Array>();
-                                                                auto len = array->Length();
-                                                                for (int i = 0; i < len; i++) {
-                                                                    auto item = array->Get(context, i);
-                                                                    if (!item.IsEmpty()) {
-                                                                        buf.push_back(static_cast<float>(Helpers::GetNumberValue(isolate, item.ToLocalChecked())));
-                                                                    } else {
-                                                                        buf.push_back(std::nanf(""));
-                                                                    }
-                                                                }
-
-                                                                rust::Slice<const float> slice(buf.data(), len);
-
-                                                                canvas_native_webgl2_uniform_matrix4x3fv(
-                                                                        locationValue.ToLocalChecked()->Value(),
-                                                                        transpose->BooleanValue(isolate),
-                                                                        slice,
-                                                                        ptr->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-
-                                                    return Value::undefined();
-                                                }
-        );
-    }else if(methodName == "VertexAttribDivisor"){
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    void WebGL2RenderingContext::VertexAttribDivisor(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto index = args[0];
-                                                        auto divisor = args[1];
-                                                        if (args.Length() > 1) {
-                                                            canvas_native_webgl2_vertex_attrib_divisor(
-                                                                    index->Uint32Value(context).ToChecked(),
-                                                                    divisor->Uint32Value(context).ToChecked(),
-                                                                    ptr->GetState()
+                                                            canvas_native_webgl2_uniform_matrix3x2fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    buf,
+                                                                    this->GetState()
                                                             );
                                                         }
                                                     }
@@ -3387,30 +3138,45 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                     return Value::undefined();
                                                 }
         );
-    }else if(methodName == "VertexAttribI4i"){
+    }else if(methodName == "uniformMatrix3x4fv"){
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 3,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::VertexAttribI4i(const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        auto index = args[0];
-                                                        auto v0 = args[1];
-                                                        auto v1 = args[2];
-                                                        auto v2 = args[3];
-                                                        auto v3 = args[4];
+                                                    if (count > 2 && arguments[2].isObject()) {
 
-                                                        if (args.Length() > 4) {
-                                                            canvas_native_webgl2_vertex_attrib_i4i(
-                                                                    index->Uint32Value(context).ToChecked(),
-                                                                    v0->Int32Value(context).ToChecked(),
-                                                                    v1->Int32Value(context).ToChecked(),
-                                                                    v2->Int32Value(context).ToChecked(),
-                                                                    v3->Int32Value(context).ToChecked(),
-                                                                    ptr->GetState()
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto transpose = arguments[1].asBool();
+                                                        auto data = arguments[2].asObject(runtime);
+
+                                                        if (data.isFloat32Array(runtime)) {
+                                                            auto array = data.getArray(runtime);
+                                                            auto slice = GetTypedArrayData<const float>(runtime, array);
+                                                            canvas_native_webgl2_uniform_matrix3x4fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else if (data.isArray(runtime)) {
+                                                            rust::Vec<float> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i);
+                                                                if (item.isNumber()) {
+                                                                    buf.push_back(static_cast<float>(item.asNumber()));
+                                                                } else {
+                                                                    buf.push_back(std::nanf(""));
+                                                                }
+                                                            }
+
+                                                            canvas_native_webgl2_uniform_matrix3x4fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    buf,
+                                                                    this->GetState()
                                                             );
                                                         }
                                                     }
@@ -3418,7 +3184,142 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                     return Value::undefined();
                                                 }
         );
-    }else if(methodName == "VertexAttribI4iv"){
+    }else if(methodName == "uniformMatrix4x2fv"){
+        return Function::createFromHostFunction(runtime,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                [this](Runtime &runtime, const Value &thisValue,
+                                                       const Value *arguments,
+                                                       size_t count) -> Value {
+                                                    if (count > 2 && arguments[2].isObject()) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto transpose = arguments[1].asBool();
+                                                        auto data = arguments[2].asObject(runtime);
+
+                                                        if (data.isFloat32Array(runtime)) {
+                                                            auto array = data.getArray(runtime);
+                                                            auto slice = GetTypedArrayData<const float>(runtime, array);
+                                                            canvas_native_webgl2_uniform_matrix4x2fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else if (data.isArray(runtime)) {
+                                                            rust::Vec<float> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i);
+                                                                if (item.isNumber()) {
+                                                                    buf.push_back(static_cast<float>(item.asNumber()));
+                                                                } else {
+                                                                    buf.push_back(std::nanf(""));
+                                                                }
+                                                            }
+
+                                                            canvas_native_webgl2_uniform_matrix4x2fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    buf,
+                                                                    this->GetState()
+                                                            );
+                                                        }
+                                                    }
+                                                    return Value::undefined();
+
+                                                }
+        );
+    }else if(methodName == "uniformMatrix4x3fv"){
+        return Function::createFromHostFunction(runtime,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                [this](Runtime &runtime, const Value &thisValue,
+                                                       const Value *arguments,
+                                                       size_t count) -> Value {
+                                                    if (count > 2 && arguments[2].isObject()) {
+
+                                                        auto location = getHostObject<WebGLUniformLocation>(runtime, arguments[0]);
+                                                        auto transpose = arguments[1].asBool();
+                                                        auto data = arguments[2].asObject(runtime);
+
+                                                        if (data.isFloat32Array(runtime)) {
+                                                            auto array = data.getArray(runtime);
+                                                            auto slice = GetTypedArrayData<const float>(runtime, array);
+                                                            canvas_native_webgl2_uniform_matrix4x3fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    slice,
+                                                                    this->GetState()
+                                                            );
+                                                        } else if (data.isArray(runtime)) {
+                                                            rust::Vec<float> buf;
+                                                            auto array = data.getArray(runtime);
+                                                            auto len = array.size(runtime);
+                                                            for (int i = 0; i < len; i++) {
+                                                                auto item = array.getValueAtIndex(runtime, i);
+                                                                if (item.isNumber()) {
+                                                                    buf.push_back(static_cast<float>(item.asNumber()));
+                                                                } else {
+                                                                    buf.push_back(std::nanf(""));
+                                                                }
+                                                            }
+
+                                                            canvas_native_webgl2_uniform_matrix4x3fv(
+                                                                    location->GetUniformLocation(),
+                                                                    transpose,
+                                                                    buf,
+                                                                    this->GetState()
+                                                            );
+                                                        }
+                                                    }
+
+                                                    return Value::undefined();
+                                                }
+        );
+    }else if(methodName == "vertexAttribDivisor"){
+        return Function::createFromHostFunction(runtime,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
+                                                [this](Runtime &runtime, const Value &thisValue,
+                                                       const Value *arguments,
+                                                       size_t count) -> Value {
+                                                    if (count > 1) {
+                                                        auto index = arguments[0].asNumber();
+                                                        auto divisor = arguments[1].asNumber();
+                                                        canvas_native_webgl2_vertex_attrib_divisor(
+                                                                (uint32_t)index,
+                                                                (uint32_t)divisor,
+                                                                this->GetState()
+                                                        );
+                                                    }
+                                                    return Value::undefined();
+                                                }
+        );
+    }else if(methodName == "vertexAttribI4i"){
+        return Function::createFromHostFunction(runtime,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
+                                                [this](Runtime &runtime, const Value &thisValue,
+                                                       const Value *arguments,
+                                                       size_t count) -> Value {
+
+                                                    if (count > 4) {
+                                                        auto index = arguments[0].asNumber();
+                                                        auto v0 = arguments[1].asNumber();
+                                                        auto v1 = arguments[2].asNumber();
+                                                        auto v2 = arguments[3].asNumber();
+                                                        auto v3 = arguments[4].asNumber();
+                                                        canvas_native_webgl2_vertex_attrib_i4i(
+                                                                (uint32_t)index,
+                                                                (int32_t)v0,
+                                                                (int32_t)v1,
+                                                                (int32_t)v2,
+                                                                (int32_t)v3,
+                                                                this->GetState()
+                                                        );
+                                                    }
+                                                    return Value::undefined();
+                                                }
+        );
+    }else if(methodName == "vertexAttribI4iv"){
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 2,
                                                 [this](Runtime &runtime, const Value &thisValue,
@@ -3439,18 +3340,16 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         } else if (value.isArray(runtime)) {
                                                             auto array = value.getArray(runtime);
                                                             auto len = array.size(runtime);
-                                                            std::vector <int32_t> buf;
+                                                            rust::Vec<int32_t> buf;
                                                             buf.reserve(len);
                                                             for (int i = 0; i < len; i++) {
                                                                 auto item = (int32_t)array.getValueAtIndex(runtime, i).asNumber();
                                                                 buf.push_back(item);
                                                             }
 
-                                                            rust::Slice<const int32_t> slice(buf.data(), len);
-
                                                             canvas_native_webgl2_vertex_attrib_i4iv(
                                                                     index,
-                                                                    slice,
+                                                                    buf,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3459,7 +3358,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                     return Value::undefined();
                                                 }
         );
-    }else if(methodName == "VertexAttribI4ui"){
+    }else if(methodName == "vertexAttribI4ui"){
         return Function::createFromHostFunction(runtime,
                                                 jsi::PropNameID::forAscii(runtime, methodName), 5,
                                                 [this](Runtime &runtime, const Value &thisValue,
@@ -3507,18 +3406,16 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         } else if (value.isArray(runtime)) {
                                                             auto array = value.getArray(runtime);
                                                             auto len = array.size(runtime);
-                                                            std::vector <uint32_t> buf;
+                                                            rust::Vec <uint32_t> buf;
                                                             buf.reserve(len);
                                                             for (int i = 0; i < len; i++) {
                                                                 auto item = (uint32_t)array.getValueAtIndex(runtime, i).asNumber();
                                                                 buf.push_back(item);
                                                             }
 
-                                                            rust::Slice<const uint32_t> slice(buf.data(), len);
-
                                                             canvas_native_webgl2_vertex_attrib_i4uiv(
                                                                     index,
-                                                                    slice,
+                                                                    buf,
                                                                     this->GetState()
                                                             );
                                                         }

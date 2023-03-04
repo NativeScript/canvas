@@ -8,7 +8,7 @@
 
 using namespace facebook;
 
-class JSI_EXPORT WebGLVertexArrayObject : jsi::HostObject {
+class JSI_EXPORT WebGLVertexArrayObject : public jsi::HostObject {
 public:
     WebGLVertexArrayObject(uint32_t vertexArrayObject) : vertexArrayObject_(vertexArrayObject) {}
 

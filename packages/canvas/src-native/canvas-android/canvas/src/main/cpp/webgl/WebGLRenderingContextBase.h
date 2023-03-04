@@ -18,7 +18,7 @@ enum class WebGLRenderingVersion : uint8_t {
 
 using namespace facebook;
 
-class WebGLRenderingContextBase: jsi::HostObject {
+class WebGLRenderingContextBase: public jsi::HostObject {
 public:
     WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version);
 

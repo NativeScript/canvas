@@ -10,7 +10,7 @@
 
 using namespace facebook;
 
-class JSI_EXPORT WebGLTexture : jsi::HostObject {
+class JSI_EXPORT WebGLTexture : public jsi::HostObject {
 public:
     WebGLTexture(uint32_t texture) : texture_(texture) {}
 

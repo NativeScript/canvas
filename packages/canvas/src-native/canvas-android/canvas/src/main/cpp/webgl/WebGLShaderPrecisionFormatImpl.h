@@ -9,7 +9,7 @@
 
 using namespace facebook;
 
-class WebGLShaderPrecisionFormatImpl: jsi::HostObject {
+class WebGLShaderPrecisionFormatImpl: public jsi::HostObject {
 public:
     WebGLShaderPrecisionFormatImpl(rust::Box<WebGLShaderPrecisionFormat> shader);
 

@@ -10,7 +10,7 @@
 
 using namespace facebook;
 
-class JSI_EXPORT MatrixImpl : jsi::HostObject {
+class JSI_EXPORT MatrixImpl : public jsi::HostObject {
 public:
     MatrixImpl(rust::Box<Matrix> matrix);
 

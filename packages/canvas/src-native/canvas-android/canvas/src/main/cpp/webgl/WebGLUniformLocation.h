@@ -13,7 +13,7 @@ using namespace facebook;
 
 class JSI_EXPORT WebGLUniformLocation
 
-        : jsi::HostObject {
+        : public jsi::HostObject {
 public:
     WebGLUniformLocation(int32_t
                          uniformLocation) :

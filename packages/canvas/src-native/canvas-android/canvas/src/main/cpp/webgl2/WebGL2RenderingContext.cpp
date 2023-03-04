@@ -19,7 +19,7 @@ WebGL2RenderingContext::WebGL2RenderingContext(rust::Box<WebGLState> state,
 std::vector<jsi::PropNameID> WebGL2RenderingContext::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> names = WebGLRenderingContext::getPropertyNames(rt);
 
-    std::vector<jsi::PropNameID> props{
+    std::vector<jsi::PropNameID> props = {
             jsi::PropNameID::forAscii(rt, "beginQuery"),
             jsi::PropNameID::forAscii(rt, "beginTransformFeedback"),
             jsi::PropNameID::forAscii(rt, "bindBufferBase"),
@@ -494,7 +494,13 @@ std::vector<jsi::PropNameID> WebGL2RenderingContext::getPropertyNames(jsi::Runti
     };
 
     names.reserve(names.size() + props.size());
-    names.insert(names.end(), props.begin(), props.end());
+
+    names.insert(
+            names.end(),
+            std::make_move_iterator(props.begin()),
+            std::make_move_iterator(props.end())
+    );
+
     return names;
 }
 
@@ -511,29 +517,32 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
     if (methodName == "beginQuery") {
         return jsi::Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](Runtime &runtime,
+                                                            const Value &thisValue,
+                                                            const Value *arguments,
+                                                            size_t count) -> Value {
 
-                                                    if (count > 1 && arguments[0].isNumber() &&
-                                                        arguments[1].isObject()) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto queryObject = arguments[1].asObject(
-                                                                runtime);
+                                                         if (count > 1 && arguments[0].isNumber() &&
+                                                             arguments[1].isObject()) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto queryObject = arguments[1].asObject(
+                                                                     runtime);
 
-                                                        if (queryObject.isHostObject(runtime)) {
-                                                            auto query = queryObject.asHostObject<WebGLQuery>(
-                                                                    runtime);
-                                                            canvas_native_webgl2_begin_query(
-                                                                    target,
-                                                                    query->GetQuery(),
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                             if (queryObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto query = queryObject.asHostObject<WebGLQuery>(
+                                                                         runtime);
+                                                                 canvas_native_webgl2_begin_query(
+                                                                         target,
+                                                                         query->GetQuery(),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return Value::undefined();
+                                                     }
         );
     } else if (methodName == "beginTransformFeedback") {
         return Function::createFromHostFunction(runtime,
@@ -840,7 +849,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                             static_cast<int32_t>(item.asNumber())
                                                                     );
                                                                 }
-                                                                rust::Slice<const int32_t> slice(buf.data(), buf.size());
+                                                                rust::Slice<const int32_t> slice(
+                                                                        buf.data(), buf.size());
 
                                                                 canvas_native_webgl2_clear_bufferiv(
                                                                         buffer->GetBuffer(),
@@ -1632,7 +1642,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                         runtime, j).asNumber();
                                                                 buf.emplace_back(item);
                                                             }
-                                                            rust::Slice<const uint32_t> slice(buf.data(), buf.size());
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
                                                             auto ret = canvas_native_webgl2_get_active_uniforms(
                                                                     program->GetProgram(),
                                                                     slice,
@@ -1727,9 +1738,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                             auto array = dstDataObject.getTypedArray(
                                                                     runtime);
                                                             auto slice = GetTypedArrayData<uint8_t>(
-                                                                    runtime,
-                                                                    dstDataObject.getTypedArray(
-                                                                            runtime));
+                                                                    runtime, array);
 
                                                             canvas_native_webgl2_get_buffer_sub_data(
                                                                     target,
@@ -1829,7 +1838,6 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         auto target = (uint32_t) arguments[0].asNumber();
                                                         auto internalformat = (uint32_t) arguments[1].asNumber();
                                                         auto pname = (uint32_t) arguments[2].asNumber();
-                                                        auto returnEarly = false;
                                                         switch (internalformat) {
                                                             case GL_RGB:
                                                             case GL_RGBA:
@@ -1976,7 +1984,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
 
                                                             auto ret = canvas_native_webgl2_get_query_parameter(
-                                                                    query,
+                                                                    query->GetQuery(),
                                                                     pname,
                                                                     this->GetState());
                                                             if (pname == GL_QUERY_RESULT) {
@@ -2098,9 +2106,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 runtime, arguments[0]);
                                                         auto index = (uint32_t) arguments[1].asNumber();
                                                         if (program != nullptr) {
-
                                                             auto ret = canvas_native_webgl2_get_transform_feedback_varying(
-                                                                    program,
+                                                                    program->GetProgram(),
                                                                     index,
                                                                     this->GetState()
                                                             );
@@ -2181,9 +2188,10 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                               name.size());
                                                                 store.push_back(val);
                                                             }
-                                                            // rust::Slice<const rust::Str> buf(store.data(), store.size());
+                                                            rust::Slice<const rust::Str> slice(
+                                                                    store.data(), store.size());
                                                             auto ret = canvas_native_webgl2_get_uniform_indices(
-                                                                    program->GetProgram(), &store,
+                                                                    program->GetProgram(), slice,
                                                                     this->GetState());
 
                                                             auto retSize = ret.size();
@@ -2227,8 +2235,10 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 buf.push_back(item);
                                                             }
 
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
                                                             canvas_native_webgl2_invalidate_framebuffer(
-                                                                    target, &buf,
+                                                                    target, slice,
                                                                     this->GetState());
                                                         }
                                                     }
@@ -2264,10 +2274,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                         runtime, j).asNumber();
                                                                 buf.push_back(item);
                                                             }
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
 
                                                             canvas_native_webgl2_invalidate_sub_framebuffer(
                                                                     target,
-                                                                    &buf,
+                                                                    slice,
                                                                     x,
                                                                     y,
                                                                     width,
@@ -2415,36 +2427,25 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     } else if (methodName == "renderbufferStorageMultisample") {
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void
-                                                    WebGL2RenderingContext::RenderbufferStorageMultisample(
-                                                            const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 4) {
-                                                            auto target = args[0];
-                                                            auto samples = args[1];
-                                                            auto internalFormat = args[2];
-                                                            auto width = args[3];
-                                                            auto height = args[4];
-                                                            canvas_native_webgl2_renderbuffer_storage_multisample(
-                                                                    target->Uint32Value(
-                                                                            context).ToChecked(),
-                                                                    samples->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    internalFormat->Uint32Value(
-                                                                            context).ToChecked(),
-                                                                    width->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    height->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    ptr->GetState()
-                                                            );
-                                                        }
+
+                                                    if (count > 4) {
+                                                        auto target = (uint32_t) arguments[0].asNumber();
+                                                        auto samples = (int32_t) arguments[1].asNumber();
+                                                        auto internalFormat = (uint32_t) arguments[2].asNumber();
+                                                        auto width = (int32_t) arguments[3].asNumber();
+                                                        auto height = (int32_t) arguments[4].asNumber();
+                                                        canvas_native_webgl2_renderbuffer_storage_multisample(
+                                                                target,
+                                                                samples,
+                                                                internalFormat,
+                                                                width,
+                                                                height,
+                                                                this->GetState()
+                                                        );
                                                     }
 
                                                     return Value::undefined();
@@ -2452,20 +2453,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     } else if (methodName == "resumeTransformFeedback") {
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void
-                                                    WebGL2RenderingContext::ResumeTransformFeedback(
-                                                            const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        canvas_native_webgl2_resume_transform_feedback(
-                                                                ptr->GetState());
-                                                    }
-
+                                                    canvas_native_webgl2_resume_transform_feedback(
+                                                            this->GetState());
                                                     return Value::undefined();
                                                 }
         );
@@ -2475,35 +2468,21 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::SamplerParameterf(
-                                                            const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 2) {
-                                                            auto sampler = args[0];
-                                                            auto pname = args[1];
-                                                            auto param = args[2];
-                                                            if (Helpers::GetInstanceType(isolate,
-                                                                                         sampler) ==
-                                                                ObjectType::WebGLSampler) {
-                                                                auto instance = Helpers::GetPrivate(
-                                                                        isolate,
-                                                                        sampler.As<v8::Object>(),
-                                                                        "instance");
-                                                                if (!instance.IsEmpty()) {
-                                                                    canvas_native_webgl2_sampler_parameterf(
-                                                                            instance->Uint32Value(
-                                                                                    context).ToChecked(),
-                                                                            pname->Uint32Value(
-                                                                                    context).ToChecked(),
-                                                                            static_cast<float>(param->NumberValue(
-                                                                                    context).ToChecked()),
-                                                                            ptr->GetState());
-                                                                }
-                                                            }
+
+                                                    if (count > 2) {
+                                                        auto sampler = getHostObject<WebGLSampler>(
+                                                                runtime, arguments[0]);
+                                                        auto pname = (uint32_t) arguments[1].asNumber();
+                                                        auto param = arguments[2].asNumber();
+                                                        if (sampler != nullptr) {
+                                                            canvas_native_webgl2_sampler_parameterf(
+                                                                    sampler->GetSampler(),
+                                                                    pname,
+                                                                    static_cast<float>(param),
+                                                                    this->GetState());
                                                         }
                                                     }
+
                                                     return Value::undefined();
                                                 }
         );
@@ -2513,33 +2492,18 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::SamplerParameteri(
-                                                            const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 2) {
-                                                            auto sampler = args[0];
-                                                            auto pname = args[1];
-                                                            auto param = args[2];
-                                                            if (Helpers::GetInstanceType(isolate,
-                                                                                         sampler) ==
-                                                                ObjectType::WebGLSampler) {
-                                                                auto instance = Helpers::GetPrivate(
-                                                                        isolate,
-                                                                        sampler.As<v8::Object>(),
-                                                                        "instance");
-                                                                if (!instance.IsEmpty()) {
-                                                                    canvas_native_webgl2_sampler_parameteri(
-                                                                            instance->Uint32Value(
-                                                                                    context).ToChecked(),
-                                                                            pname->Uint32Value(
-                                                                                    context).ToChecked(),
-                                                                            param->Int32Value(
-                                                                                    context).ToChecked(),
-                                                                            ptr->GetState());
-                                                                }
-                                                            }
+
+                                                    if (count > 2) {
+                                                        auto sampler = getHostObject<WebGLSampler>(
+                                                                runtime, arguments[0]);
+                                                        auto pname = (uint32_t) arguments[1].asNumber();
+                                                        auto param = (int32_t) arguments[2].asNumber();
+                                                        if (sampler != nullptr) {
+                                                            canvas_native_webgl2_sampler_parameteri(
+                                                                    sampler->GetSampler(),
+                                                                    pname,
+                                                                    param,
+                                                                    this->GetState());
                                                         }
                                                     }
 
@@ -2552,180 +2516,139 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::TexImage3D(
-                                                            const v8::FunctionCallbackInfo<v8::Value> &args) {
-// target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: any
+                                                    // target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: any
 // target, level, internalformat, width, height, depth, border, format, type, srcData, srcOffset
 // target, level, internalformat, width, height, depth, border, format, type, source
 
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
 
-                                                        if (args.Length() == 10) {
-                                                            auto target = args[0];
-                                                            auto level = args[1];
-                                                            auto internalformat = args[2];
-                                                            auto width = args[3];
-                                                            auto height = args[4];
-                                                            auto depth = args[5];
-                                                            auto border = args[6];
-                                                            auto format = args[7];
-                                                            auto type = args[8];
-                                                            auto imageOrPixelsOrOffset = args[9];
 
-                                                            if (imageOrPixelsOrOffset->IsNumber()) {
-                                                                canvas_native_webgl2_tex_image3d_none(
-                                                                        target->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        level->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        internalformat->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        width->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        height->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        depth->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        border->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        format->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        type->Uint32Value(
-                                                                                context).ToChecked(),
-                                                                        static_cast<ssize_t>(imageOrPixelsOrOffset->IntegerValue(
-                                                                                context).ToChecked()),
-                                                                        ptr->GetState()
-                                                                );
-                                                                return;
-                                                            }
+                                                    if (count == 10) {
+                                                        auto target = (int32_t) arguments[0].asNumber();
+                                                        auto level = (int32_t) arguments[1].asNumber();
+                                                        auto internalformat = (int32_t) arguments[2].asNumber();
+                                                        auto width = (int32_t) arguments[3].asNumber();
+                                                        auto height = (int32_t) arguments[4].asNumber();
+                                                        auto depth = (int32_t) arguments[5].asNumber();
+                                                        auto border = (int32_t) arguments[6].asNumber();
+                                                        auto format = (int32_t) arguments[7].asNumber();
+                                                        auto type = (uint32_t) arguments[8].asNumber();
 
-                                                            if (imageOrPixelsOrOffset->IsArrayBufferView()) {
-                                                                auto buf = imageOrPixelsOrOffset.As<v8::ArrayBufferView>();
-                                                                auto array = buf->Buffer();
-                                                                auto store = array->GetBackingStore();
-                                                                auto data =
-                                                                        static_cast<uint8_t *>(store->Data()) +
-                                                                        buf->ByteOffset();
-                                                                rust::Slice<const uint8_t> slice(
-                                                                        data, store->ByteLength());
+
+                                                        if (arguments[9].isNumber()) {
+                                                            auto imageOrPixelsOrOffset = arguments[9].asNumber();
+                                                            canvas_native_webgl2_tex_image3d_none(
+                                                                    target,
+                                                                    level,
+                                                                    internalformat,
+                                                                    width,
+                                                                    height,
+                                                                    depth,
+                                                                    border,
+                                                                    format,
+                                                                    type,
+                                                                    static_cast<ssize_t>(imageOrPixelsOrOffset),
+                                                                    this->GetState()
+                                                            );
+                                                            return jsi::Value::undefined();
+                                                        }
+
+                                                        if (arguments[9].isObject()) {
+                                                            auto imageOrPixelsOrOffsetObject = arguments[9].asObject(
+                                                                    runtime);
+
+                                                            if (imageOrPixelsOrOffsetObject.isTypedArray(
+                                                                    runtime)) {
+                                                                auto buf = imageOrPixelsOrOffsetObject.getTypedArray(
+                                                                        runtime);
+                                                                auto slice = GetTypedArrayData<const uint8_t>(
+                                                                        runtime, buf);
+
+
                                                                 canvas_native_webgl2_tex_image3d(
-                                                                        target->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        level->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        internalformat->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        width->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        height->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        depth->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        border->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        format->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        type->Uint32Value(
-                                                                                context).ToChecked(),
+                                                                        target,
+                                                                        level,
+                                                                        internalformat,
+                                                                        width,
+                                                                        height,
+                                                                        depth,
+                                                                        border,
+                                                                        format,
+                                                                        type,
                                                                         slice,
-                                                                        ptr->GetState()
+                                                                        this->GetState()
                                                                 );
-                                                                return;
+                                                                return Value::undefined();
                                                             }
 
-                                                            if (Helpers::GetInstanceType(isolate,
-                                                                                         imageOrPixelsOrOffset) ==
-                                                                ObjectType::ImageAsset) {
-                                                                auto asset = ImageAssetImpl::GetPointer(
-                                                                        imageOrPixelsOrOffset->ToObject(
-                                                                                context).ToLocalChecked());
+
+                                                            auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                    runtime, arguments[9]);
+                                                            if (image_asset != nullptr) {
                                                                 canvas_native_webgl2_tex_image3d_asset(
-                                                                        target->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        level->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        internalformat->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        width->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        height->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        depth->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        border->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        format->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        type->Uint32Value(
-                                                                                context).ToChecked(),
-                                                                        asset->GetImageAsset(),
-                                                                        ptr->GetState()
+                                                                        target,
+                                                                        level,
+                                                                        internalformat,
+                                                                        width,
+                                                                        height,
+                                                                        depth,
+                                                                        border,
+                                                                        format,
+                                                                        type,
+                                                                        image_asset->GetImageAsset(),
+                                                                        this->GetState()
                                                                 );
+                                                                return Value::undefined();
                                                             }
-                                                        } else if (args.Length() > 10) {
+                                                        }
+                                                    } else if (count > 10) {
 
-                                                            auto target = args[0];
-                                                            auto level = args[1];
-                                                            auto internalformat = args[2];
-                                                            auto width = args[3];
-                                                            auto height = args[4];
-                                                            auto depth = args[5];
-                                                            auto border = args[6];
-                                                            auto format = args[7];
-                                                            auto type = args[8];
-                                                            auto imageOrPixelsOrOffset = args[9];
-                                                            auto srcOffset = args[10];
+                                                        auto target = (int32_t) arguments[0].asNumber();
+                                                        auto level = (int32_t) arguments[1].asNumber();
+                                                        auto internalformat = (int32_t) arguments[2].asNumber();
+                                                        auto width = (int32_t) arguments[3].asNumber();
+                                                        auto height = (int32_t) arguments[4].asNumber();
+                                                        auto depth = (int32_t) arguments[5].asNumber();
+                                                        auto border = (int32_t) arguments[6].asNumber();
+                                                        auto format = (int32_t) arguments[7].asNumber();
+                                                        auto type = (uint32_t) arguments[8].asNumber();
+                                                        if (arguments[9].isObject()) {
+                                                            auto imageOrPixelsOrOffset = arguments[9].asObject(
+                                                                    runtime);
                                                             size_t srcOffsetValue = 0;
-                                                            if (srcOffset->IsNumber()) {
-                                                                srcOffsetValue = static_cast<size_t>(srcOffset->IntegerValue(
-                                                                        context).ToChecked());
+                                                            if (arguments[9].isNumber()) {
+                                                                srcOffsetValue = static_cast<size_t>(arguments[9].asNumber());
                                                             }
 
-                                                            if (imageOrPixelsOrOffset->IsArrayBufferView()) {
-                                                                auto buf = imageOrPixelsOrOffset.As<v8::TypedArray>();
-                                                                auto array = buf->Buffer();
-                                                                auto store = array->GetBackingStore();
+                                                            if (imageOrPixelsOrOffset.isTypedArray(
+                                                                    runtime)) {
+                                                                auto buf = imageOrPixelsOrOffset.getTypedArray(
+                                                                        runtime);
+                                                                auto size = buf.size(runtime);
+                                                                auto array = GetTypedArrayData<const uint8_t>(
+                                                                        runtime, buf);
 
-                                                                srcOffsetValue = srcOffsetValue *
-                                                                                 (buf->ByteLength() /
-                                                                                  buf->Length());
+                                                                srcOffsetValue =
+                                                                        srcOffsetValue * size;
                                                                 if (srcOffsetValue >
-                                                                    buf->Length()) {
-                                                                    return;
+                                                                    size) {
+                                                                    return Value::undefined();
                                                                 }
 
-
-                                                                auto data =
-                                                                        static_cast<uint8_t *>(store->Data()) +
-                                                                        buf->ByteOffset();
-                                                                rust::Slice<const uint8_t> slice(
-                                                                        data, store->ByteLength());
                                                                 canvas_native_webgl2_tex_image3d_offset(
-                                                                        target->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        level->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        internalformat->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        width->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        height->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        depth->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        border->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        format->Int32Value(
-                                                                                context).ToChecked(),
-                                                                        type->Uint32Value(
-                                                                                context).ToChecked(),
-                                                                        slice,
+                                                                        target,
+                                                                        level,
+                                                                        internalformat,
+                                                                        width,
+                                                                        height,
+                                                                        depth,
+                                                                        border,
+                                                                        format,
+                                                                        type,
+                                                                        array,
                                                                         srcOffsetValue,
-                                                                        ptr->GetState()
+                                                                        this->GetState()
                                                                 );
-                                                                return;
+                                                                return Value::undefined();
                                                             }
                                                         }
 
@@ -2736,35 +2659,24 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     } else if (methodName == "texStorage2D") {
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::TexStorage2D(
-                                                            const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 4) {
-                                                            auto target = args[0];
-                                                            auto levels = args[1];
-                                                            auto internalFormat = args[2];
-                                                            auto width = args[3];
-                                                            auto height = args[4];
-                                                            canvas_native_webgl2_tex_storage2d(
-                                                                    target->Uint32Value(
-                                                                            context).ToChecked(),
-                                                                    levels->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    internalFormat->Uint32Value(
-                                                                            context).ToChecked(),
-                                                                    width->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    height->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    ptr->GetState()
-                                                            );
-                                                        }
+                                                    if (count > 4) {
+                                                        auto target = (uint32_t) arguments[0].asNumber();
+                                                        auto levels = (int32_t) arguments[1].asNumber();
+                                                        auto internalFormat = (uint32_t) arguments[2].asNumber();
+                                                        auto width = (int32_t) arguments[3].asNumber();
+                                                        auto height = (int32_t) arguments[4].asNumber();
+                                                        canvas_native_webgl2_tex_storage2d(
+                                                                target,
+                                                                levels,
+                                                                internalFormat,
+                                                                width,
+                                                                height,
+                                                                this->GetState()
+                                                        );
                                                     }
 
                                                     return Value::undefined();
@@ -2773,38 +2685,27 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     } else if (methodName == "texStorage3D") {
         return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
+                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
                                                 [this](Runtime &runtime, const Value &thisValue,
                                                        const Value *arguments,
                                                        size_t count) -> Value {
-                                                    void WebGL2RenderingContext::TexStorage3D(
-                                                            const v8::FunctionCallbackInfo<v8::Value> &args) {
-                                                        auto isolate = args.GetIsolate();
-                                                        auto context = isolate->GetCurrentContext();
-                                                        auto ptr = GetPointerBase(args.This());
-                                                        if (args.Length() > 5) {
-                                                            auto target = args[0];
-                                                            auto levels = args[1];
-                                                            auto internalFormat = args[2];
-                                                            auto width = args[3];
-                                                            auto height = args[4];
-                                                            auto depth = args[5];
-                                                            canvas_native_webgl2_tex_storage3d(
-                                                                    target->Uint32Value(
-                                                                            context).ToChecked(),
-                                                                    levels->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    internalFormat->Uint32Value(
-                                                                            context).ToChecked(),
-                                                                    width->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    height->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    depth->Int32Value(
-                                                                            context).ToChecked(),
-                                                                    ptr->GetState()
-                                                            );
-                                                        }
+
+                                                    if (count > 5) {
+                                                        auto target = (uint32_t) arguments[0].asNumber();
+                                                        auto levels = (int32_t) arguments[1].asNumber();
+                                                        auto internalFormat = (uint32_t) arguments[2].asNumber();
+                                                        auto width = (int32_t) arguments[3].asNumber();
+                                                        auto height = (int32_t) arguments[4].asNumber();
+                                                        auto depth = (int32_t) arguments[5].asNumber();
+                                                        canvas_native_webgl2_tex_storage3d(
+                                                                target,
+                                                                levels,
+                                                                internalFormat,
+                                                                width,
+                                                                height,
+                                                                depth,
+                                                                this->GetState()
+                                                        );
                                                     }
 
                                                     return Value::undefined();
@@ -2899,16 +2800,16 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         }
 
                                                     } else if (count > 11) {
-                                                        auto target = arguments[0].asNumber();
-                                                        auto level = arguments[1].asNumber();
-                                                        auto xoffset = arguments[2].asNumber();
-                                                        auto yoffset = arguments[3].asNumber();
-                                                        auto zoffset = arguments[4].asNumber();
-                                                        auto width = arguments[5].asNumber();
-                                                        auto height = arguments[6].asNumber();
-                                                        auto depth = arguments[7].asNumber();
-                                                        auto format = arguments[8].asNumber();
-                                                        auto type = arguments[9].asNumber();
+                                                        auto target = (uint32_t) arguments[0].asNumber();
+                                                        auto level = (int32_t) arguments[1].asNumber();
+                                                        auto xoffset = (int32_t) arguments[2].asNumber();
+                                                        auto yoffset = (int32_t) arguments[3].asNumber();
+                                                        auto zoffset = (int32_t) arguments[4].asNumber();
+                                                        auto width = (int32_t) arguments[5].asNumber();
+                                                        auto height = (int32_t) arguments[6].asNumber();
+                                                        auto depth = (int32_t) arguments[7].asNumber();
+                                                        auto format = (uint32_t) arguments[8].asNumber();
+                                                        auto type = (uint32_t) arguments[9].asNumber();
 
                                                         size_t srcOffsetValue = 0;
                                                         if (arguments[11].isNumber()) {
@@ -2923,7 +2824,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                     runtime)) {
                                                                 auto array = imageOrPixelsOrOffsetObject.getTypedArray(
                                                                         runtime);
-                                                                auto slice = GetTypedArrayData<uint8_t>(
+                                                                auto buf = GetTypedArrayData<uint8_t>(
                                                                         runtime, array);
                                                                 auto size = array.size(runtime);
                                                                 srcOffsetValue =
@@ -2931,6 +2832,9 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 if (srcOffsetValue > size) {
                                                                     return Value::undefined();
                                                                 }
+
+                                                                rust::Slice<const uint8_t> slice(
+                                                                        buf.data(), buf.size());
 
                                                                 canvas_native_webgl2_tex_sub_image3d_offset(
                                                                         target,
@@ -2974,20 +2878,23 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                             auto varyings = varyingsObject.getArray(
                                                                     runtime);
                                                             auto len = varyings.size(runtime);
-                                                            rust::Vec<rust::Str> store;
-                                                            store.reserve(len);
+                                                            rust::Vec<rust::Str> buf;
+                                                            buf.reserve(len);
                                                             for (int j = 0; j < len; ++j) {
                                                                 auto name = varyings.getValueAtIndex(
                                                                         runtime, j).asString(
                                                                         runtime).utf8(runtime);
                                                                 rust::Str val(name.data(),
                                                                               name.size());
-                                                                store.emplace_back(val);
+                                                                buf.emplace_back(val);
                                                             }
+
+                                                            rust::Slice<const rust::Str> slice(
+                                                                    buf.data(), buf.size());
 
                                                             canvas_native_webgl2_transform_feedback_varyings(
                                                                     program->GetProgram(),
-                                                                    &store,
+                                                                    slice,
                                                                     bufferMode,
                                                                     this->GetState()
                                                             );
@@ -3052,9 +2959,11 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                         runtime, i).asNumber();
                                                                 buf.push_back(item);
                                                             }
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
                                                             canvas_native_webgl2_uniform1uiv(
                                                                     location->GetUniformLocation(),
-                                                                    &buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3126,9 +3035,11 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 buf.push_back(item);
                                                             }
 
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
                                                             canvas_native_webgl2_uniform2uiv(
                                                                     location->GetUniformLocation(),
-                                                                    &buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3196,9 +3107,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 buf.push_back((uint32_t) item);
                                                             }
 
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_uniform3uiv(
                                                                     location->GetUniformLocation(),
-                                                                    &buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3272,9 +3186,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 buf.push_back((uint32_t) item);
                                                             }
 
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_uniform4uiv(
                                                                     location->GetUniformLocation(),
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3325,7 +3242,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         auto data = arguments[2].asObject(runtime);
 
                                                         if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getArray(runtime);
+                                                            auto array = data.getTypedArray(
+                                                                    runtime);
                                                             auto slice = GetTypedArrayData<const float>(
                                                                     runtime, array);
                                                             canvas_native_webgl2_uniform_matrix2x3fv(
@@ -3349,10 +3267,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 }
                                                             }
 
+                                                            rust::Slice<const float> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_uniform_matrix2x3fv(
                                                                     location->GetUniformLocation(),
                                                                     transpose,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3376,7 +3297,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         auto data = arguments[2].asObject(runtime);
 
                                                         if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getArray(runtime);
+                                                            auto array = data.getTypedArray(
+                                                                    runtime);
                                                             auto slice = GetTypedArrayData<const float>(
                                                                     runtime, array);
                                                             canvas_native_webgl2_uniform_matrix2x4fv(
@@ -3399,11 +3321,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                     buf.push_back(std::nanf(""));
                                                                 }
                                                             }
+                                                            rust::Slice<const float> slice(
+                                                                    buf.data(), buf.size());
 
                                                             canvas_native_webgl2_uniform_matrix2x4fv(
                                                                     location->GetUniformLocation(),
                                                                     transpose,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3427,7 +3351,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         auto data = arguments[2].asObject(runtime);
 
                                                         if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getArray(runtime);
+                                                            auto array = data.getTypedArray(
+                                                                    runtime);
                                                             auto slice = GetTypedArrayData<const float>(
                                                                     runtime, array);
                                                             canvas_native_webgl2_uniform_matrix3x2fv(
@@ -3451,10 +3376,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 }
                                                             }
 
+                                                            rust::Slice<const float> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_uniform_matrix3x2fv(
                                                                     location->GetUniformLocation(),
                                                                     transpose,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3477,7 +3405,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         auto data = arguments[2].asObject(runtime);
 
                                                         if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getArray(runtime);
+                                                            auto array = data.getTypedArray(
+                                                                    runtime);
                                                             auto slice = GetTypedArrayData<const float>(
                                                                     runtime, array);
                                                             canvas_native_webgl2_uniform_matrix3x4fv(
@@ -3501,10 +3430,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 }
                                                             }
 
+                                                            rust::Slice<const float> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_uniform_matrix3x4fv(
                                                                     location->GetUniformLocation(),
                                                                     transpose,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3527,7 +3459,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         auto data = arguments[2].asObject(runtime);
 
                                                         if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getArray(runtime);
+                                                            auto array = data.getTypedArray(
+                                                                    runtime);
                                                             auto slice = GetTypedArrayData<const float>(
                                                                     runtime, array);
                                                             canvas_native_webgl2_uniform_matrix4x2fv(
@@ -3551,10 +3484,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 }
                                                             }
 
+                                                            rust::Slice<const float> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_uniform_matrix4x2fv(
                                                                     location->GetUniformLocation(),
                                                                     transpose,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3577,7 +3513,8 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                         auto data = arguments[2].asObject(runtime);
 
                                                         if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getArray(runtime);
+                                                            auto array = data.getTypedArray(
+                                                                    runtime);
                                                             auto slice = GetTypedArrayData<const float>(
                                                                     runtime, array);
                                                             canvas_native_webgl2_uniform_matrix4x3fv(
@@ -3601,10 +3538,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 }
                                                             }
 
+                                                            rust::Slice<const float> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_uniform_matrix4x3fv(
                                                                     location->GetUniformLocation(),
                                                                     transpose,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3687,9 +3627,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 buf.push_back(item);
                                                             }
 
+                                                            rust::Slice<const int32_t> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_vertex_attrib_i4iv(
                                                                     index,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }
@@ -3756,9 +3699,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                 buf.push_back(item);
                                                             }
 
+                                                            rust::Slice<const uint32_t> slice(
+                                                                    buf.data(), buf.size());
+
                                                             canvas_native_webgl2_vertex_attrib_i4uiv(
                                                                     index,
-                                                                    buf,
+                                                                    slice,
                                                                     this->GetState()
                                                             );
                                                         }

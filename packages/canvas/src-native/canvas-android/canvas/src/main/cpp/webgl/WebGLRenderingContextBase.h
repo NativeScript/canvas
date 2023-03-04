@@ -34,14 +34,13 @@ public:
 
     static void Flush(intptr_t context);
 
-    WebGLState &GetState();
+    virtual WebGLState &GetState();
 
     void SetRaf(std::shared_ptr<RafImpl> raf);
 
     RafImpl *GetRaf();
 
     WebGLRenderingVersion GetVersion() const;
-
 
 private:
     rust::Box<WebGLState> state_;

@@ -27,6 +27,23 @@ pub(crate) mod ffi {
 
         /* WebGL2RenderingContext */
 
+
+
+        /* WebGLIndexedParameter */
+        pub fn canvas_native_webgl2_indexed_parameter_get_value(param: &WebGLIndexedParameter) -> isize;
+
+        pub fn canvas_native_webgl2_indexed_parameter_get_buffer_value(
+            param: &WebGLIndexedParameter,
+        ) -> isize;
+
+        pub fn canvas_native_webgl2_indexed_parameter_get_is_buffer(param: &WebGLIndexedParameter) -> bool;
+
+        /* WebGLIndexedParameter */
+
+
+
+
+
         fn canvas_native_webgl2_begin_query(target: u32, id: u32, state: &mut WebGLState);
 
         fn canvas_native_webgl2_begin_transform_feedback(

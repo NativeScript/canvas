@@ -3,7 +3,6 @@
 //
 
 #include "WebGLRenderingContext.h"
-#include "canvas-cxx/src/constants.rs.h"
 
 WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state)
         : WebGLRenderingContextBase(

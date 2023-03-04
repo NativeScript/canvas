@@ -14,6 +14,8 @@
 #include <cmath>
 #include "Helpers.h"
 
+#include "WebGLRenderingContextBase.h"
+
 #include "../ImageAssetImpl.h"
 #include "../ImageBitmapImpl.h"
 #include "../RafImpl.h"
@@ -55,8 +57,9 @@
 #include "extensions/ANGLE_instanced_arraysImpl.h"
 #include "extensions/WEBGL_draw_buffersImpl.h"
 
-#include "WebGLRenderingContextBase.h"
 #include "gl.h"
+
+#include "canvas-cxx/src/constants.rs.h"
 
 
 class JSI_EXPORT WebGLRenderingContext : public WebGLRenderingContextBase {
@@ -73,13 +76,6 @@ public:
     jsi::Value GetParameterInternal(jsi::Runtime &runtime, uint32_t pnameValue,
                                     rust::Box<WebGLResult> result);
 
-    WebGLState &GetState() {
-        return nullptr;
-    }
-
-    void UpdateInvalidateState() {
-
-    }
 
     static inline jsi::Value GetProperty(const std::string &methodName) {
         if (methodName == "DEPTH_BUFFER_BIT") { return {0x00000100}; }
@@ -516,7 +512,7 @@ public:
         if (methodName == "UNPACK_PREMULTIPLY_ALPHA_WEBGL") { return {0x9241}; }
         if (methodName == "UNPACK_COLORSPACE_CONVERSION_WEBGL") { return {0x9243}; }
 
-        return Value::undefined();
+        return jsi::Value::undefined();
     }
 
 };

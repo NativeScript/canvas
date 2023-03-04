@@ -4,9 +4,15 @@
 
 #pragma once
 
+#include "rust/cxx.h"
+#include "canvas-cxx/src/webgl.rs.h"
+#include "v8runtime/V8Runtime.h"
+#include "VecMutableBuffer.h"
+#include "canvas-cxx/src/webgl2.rs.h"
 #include <cmath>
 #include "Helpers.h"
-#include "../webgl/WebGLRenderingContext.h"
+#include "webgl/WebGLRenderingContextBase.h"
+#include "webgl/WebGLRenderingContext.h"
 #include "WebGLQuery.h"
 #include "WebGLSampler.h"
 #include "WebGLSyncImpl.h"
@@ -25,14 +31,6 @@ public:
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
-
-    WebGLState &GetState() {
-        return nullptr;
-    }
-
-    void UpdateInvalidateState() {
-
-    }
 
     static inline jsi::Value GetProperty(const std::string &methodName) {
         if (methodName == "READ_BUFFER") { return {0x0C02}; }

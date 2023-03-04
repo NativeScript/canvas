@@ -3,13 +3,14 @@
 //
 
 #pragma once
+
 #include "rust/cxx.h"
 #include "canvas-cxx/src/webgl.rs.h"
 #include "v8runtime/V8Runtime.h"
 
 using namespace facebook;
 
-class WebGLShaderPrecisionFormatImpl: public jsi::HostObject {
+class WebGLShaderPrecisionFormatImpl : public jsi::HostObject {
 public:
     WebGLShaderPrecisionFormatImpl(rust::Box<WebGLShaderPrecisionFormat> shader);
 
@@ -18,12 +19,6 @@ public:
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
     WebGLShaderPrecisionFormat &GetShaderPrecisionFormat();
-
-    static void GetRangeMin(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
-
-    static void GetRangeMax(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
-
-    static void GetPrecision(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     rust::Box<WebGLShaderPrecisionFormat> shader_;

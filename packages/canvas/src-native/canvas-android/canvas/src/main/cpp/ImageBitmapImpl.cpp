@@ -34,7 +34,7 @@ jsi::Value ImageBitmapImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &na
                                                      }
         );
     }
-    return Value::undefined();
+    return jsi::Value::undefined();
 }
 
 
@@ -51,7 +51,7 @@ Options
 ImageBitmapImpl::HandleOptions(jsi::Runtime &runtime, const jsi::Value &options) {
     Options ret;
 
-    if (options.isNull() || options.isUndefined() && options.isObject()) {
+    if (options.isObject()) {
         auto config = options.asObject(runtime);
 
 

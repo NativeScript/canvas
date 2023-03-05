@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
+import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
 import java.lang.ref.WeakReference
@@ -14,10 +15,10 @@ import java.lang.ref.WeakReference
 internal class GLView : TextureView, SurfaceTextureListener {
 	internal var isCreated = false
 	private var isCreatedWithZeroSized = false
+	internal var canvas: NSCCanvas? = null
+	internal var surface: Surface? = null
 
-	private var mListener: NSCCanvas.Listener? = null
-
-	constructor(context: Context?) : super(context!!) {
+	constructor(context: Context) : super(context) {
 		init()
 	}
 
@@ -38,14 +39,8 @@ internal class GLView : TextureView, SurfaceTextureListener {
 
 	private var isReady = false
 
-
-	fun resize(width: Int, height: Int) {
-		renderer?.get()?.drawingBufferWidth = width
-		renderer?.get()?.drawingBufferHeight = height
-	}
-
-	constructor(context: Context?, attrs: AttributeSet?) : super(
-		context!!, attrs
+	constructor(context: Context, attrs: AttributeSet?) : super(
+		context, attrs
 	) {
 		init()
 	}
@@ -55,23 +50,20 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		surfaceTextureListener = this
 	}
 
-	fun setListener(listener: NSCCanvas.Listener?) {
-		mListener = listener
-	}
-
 	@Synchronized
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-		renderer?.get()?.drawingBufferHeight = height
-		renderer?.get()?.drawingBufferWidth = width
 		if (!isCreated) {
 			if (width == 0 || height == 0) {
 				isCreatedWithZeroSized = true
 			}
 			if (!isCreatedWithZeroSized) {
-				renderer?.get()?.setTexture(surface)
-				if (mListener != null && !isReady) {
-					mListener!!.contextReady()
-					isReady = true
+				this.surface = Surface(surfaceTexture)
+
+				canvas?.let {
+					if (!isReady) {
+						it.listener?.contextReady()
+						isReady = true
+					}
 				}
 			}
 			isCreated = true
@@ -80,17 +72,17 @@ internal class GLView : TextureView, SurfaceTextureListener {
 
 	@Synchronized
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-		renderer?.get()?.drawingBufferHeight = height
-		renderer?.get()?.drawingBufferWidth = width
 		if (!isCreatedWithZeroSized) {
 			// resize
 		}
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-			renderer?.get()?.setTexture(surface)
+			this.surface = Surface(surfaceTexture)
 			isCreatedWithZeroSized = false
-			if (mListener != null && !isReady) {
-				mListener!!.contextReady()
-				isReady = true
+			canvas?.let {
+				if (!isReady) {
+					it.listener?.contextReady()
+					isReady = true
+				}
 			}
 		}
 	}

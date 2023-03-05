@@ -10,17 +10,17 @@ Path2D::Path2D(rust::Box<Path> path)
 
 std::vector<jsi::PropNameID> Path2D::getPropertyNames(jsi::Runtime &rt) {
     return {
-            jsi::PropNameID::forUtf8(rt, std::string("addPath")),
-            jsi::PropNameID::forUtf8(rt, std::string("arc")),
-            jsi::PropNameID::forUtf8(rt, std::string("arcTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("closePath")),
-            jsi::PropNameID::forUtf8(rt, std::string("ellipse")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("moveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("rect")),
-            jsi::PropNameID::forUtf8(rt, std::string("__toSVG"))
+            jsi::PropNameID::forUtf8(rt, "addPath"),
+            jsi::PropNameID::forUtf8(rt, "arc"),
+            jsi::PropNameID::forUtf8(rt, "arcTo"),
+            jsi::PropNameID::forUtf8(rt, "bezierCurveTo"),
+            jsi::PropNameID::forUtf8(rt, "closePath"),
+            jsi::PropNameID::forUtf8(rt, "ellipse"),
+            jsi::PropNameID::forUtf8(rt, "lineTo"),
+            jsi::PropNameID::forUtf8(rt, "moveTo"),
+            jsi::PropNameID::forUtf8(rt, "quadraticCurveTo"),
+            jsi::PropNameID::forUtf8(rt, "rect"),
+            jsi::PropNameID::forUtf8(rt, "__toSVG")
     };
 }
 
@@ -34,13 +34,9 @@ jsi::Value Path2D::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
-                                                         auto obj = &arguments[0];
-                                                         if (!obj->isUndefined() ||
-                                                             !obj->isNull() && obj->isObject()) {
-                                                             auto object = obj->asObject(
-                                                                     runtime).asHostObject<Path2D>(
-                                                                     runtime);
-                                                             if (object != nullptr) {}
+                                                         auto object = getHostObject<Path2D>(
+                                                                 runtime, arguments[0]);
+                                                         if (object != nullptr) {
                                                              canvas_native_path_add_path(
                                                                      this->GetPath(),
                                                                      object->GetPath());

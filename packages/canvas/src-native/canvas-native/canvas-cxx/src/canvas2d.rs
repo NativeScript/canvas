@@ -56,11 +56,6 @@ pub struct CanvasRenderingContext2D {
     alpha: bool,
 }
 
-unsafe impl ExternType for CanvasRenderingContext2D {
-    type Id = type_id!("CanvasRenderingContext2D");
-    type Kind = cxx::kind::Trivial;
-}
-
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: i32) -> String {
     canvas_2d::to_data_url(&mut context.context, format, quality)
 }
@@ -90,11 +85,6 @@ impl CanvasRenderingContext2D {
 
 #[derive(Clone)]
 pub struct PaintStyle(Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>);
-
-unsafe impl ExternType for PaintStyle {
-    type Id = type_id!("PaintStyle");
-    type Kind = cxx::kind::Trivial;
-}
 
 impl PaintStyle {
     pub fn new(
@@ -130,16 +120,31 @@ impl PaintStyle {
 #[derive(Clone, Copy)]
 pub struct TextMetrics(canvas_2d::context::drawing_text::text_metrics::TextMetrics);
 
-#[cxx::bridge]
-pub(crate) mod ffi {
+unsafe impl ExternType for CanvasRenderingContext2D {
+    type Id = type_id!("::CanvasRenderingContext2D");
+    type Kind = cxx::kind::Trivial;
+}
 
-    pub(crate) enum InvalidateState {
+unsafe impl ExternType for ImageAsset {
+    type Id = type_id!("::ImageAsset");
+    type Kind = cxx::kind::Trivial;
+}
+
+unsafe impl ExternType for PaintStyle {
+    type Id = type_id!("::PaintStyle");
+    type Kind = cxx::kind::Trivial;
+}
+
+#[cxx::bridge]
+pub mod ffi {
+
+    pub enum InvalidateState {
         NONE,
         PENDING,
         INVALIDATING,
     }
 
-    pub(crate) enum PaintStyleType {
+    pub enum PaintStyleType {
         None,
         Color,
         Gradient,
@@ -171,18 +176,18 @@ pub(crate) mod ffi {
     }
 
     extern "C++" {
-        include!("canvas-cxx/src/lib.rs.h");
+        include!("canvas-cxx/src/webgl.rs.h");
         type WebGLState = crate::webgl::WebGLState;
     }
 
     extern "Rust" {
-        type CanvasRenderingContext2D;
+        pub type CanvasRenderingContext2D;
         type PaintStyle;
         type TextMetrics;
         type Path;
         type Matrix;
         type ImageData;
-        type ImageAsset;
+        pub type ImageAsset;
         type TextDecoder;
         type TextEncoder;
 
@@ -336,7 +341,7 @@ pub(crate) mod ffi {
 
         fn canvas_native_matrix_update(matrix: &mut Matrix, slice: &[f32]);
 
-        fn canvas_native_matrix_update_3d(matrix: &mut Matrix, slice: &[f32;16]);
+        fn canvas_native_matrix_update_3d(matrix: &mut Matrix, slice: &[f32; 16]);
 
         fn canvas_native_matrix_get_a(matrix: &Matrix) -> f32;
 
@@ -2997,8 +3002,8 @@ pub fn canvas_native_matrix_update(matrix: &mut Matrix, slice: &[f32]) {
     matrix.inner_mut().set_affine(&affine);
 }
 
-pub fn canvas_native_matrix_update_3d(matrix: &mut Matrix, slice: &[f32;16]) {
-    let mut matrix  = matrix.inner_mut();
+pub fn canvas_native_matrix_update_3d(matrix: &mut Matrix, slice: &[f32; 16]) {
+    let mut matrix = matrix.inner_mut();
     matrix.set_m11(slice[0]);
     matrix.set_m12(slice[1]);
     matrix.set_m13(slice[2]);
@@ -3245,12 +3250,6 @@ impl ImageAsset {
         Self(asset)
     }
 }
-
-unsafe impl ExternType for ImageAsset {
-    type Id = type_id!("ImageAsset");
-    type Kind = cxx::kind::Trivial;
-}
-
 impl Default for ImageAsset {
     fn default() -> Self {
         Self(Default::default())

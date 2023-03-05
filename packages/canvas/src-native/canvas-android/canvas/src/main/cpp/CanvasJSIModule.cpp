@@ -7,6 +7,7 @@
 #include <array>
 
 
+
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
 
@@ -78,8 +79,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                             auto object = std::make_shared<Path2D>(std::move(path));
                             return jsi::Object::createFromHostObject(runtime, std::move(object));
                         } else if (obj->isObject() && (!obj->isNull() || !obj->isUndefined())) {
-                            auto path_to_copy = obj->asObject(runtime).asHostObject<Path2D>(
-                                    runtime);
+                            auto path_to_copy = getHostObject<Path2D>(runtime, obj);
                             if (path_to_copy != nullptr) {
                                 auto path = canvas_native_path_create_with_path(
                                         path_to_copy->GetPath());
@@ -176,33 +176,34 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                     if (image->isNull() || image->isUndefined()) {
                         cb->asObject(runtime).asFunction(runtime).call(runtime,
-                                                                       jsi::String::createFromAscii(
+                                                                       {jsi::String::createFromAscii(
                                                                                runtime,
                                                                                "Failed to load image"),
-                                                                       Value::null());
+                                                                        Value::null()});
                         return Value::undefined();
                     }
 
                     if (len >= 4 && (sw->isNumber() && sw->asNumber() == 0)) {
                         auto error = jsi::JSError(runtime,
                                                   "Failed to execute 'createImageBitmap' : The crop rect width is 0");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, error,
-                                                                       Value::undefined());
+                        cb->asObject(runtime).asFunction(runtime).call(runtime, {error,
+                                                                                 Value::undefined()});
                         return Value::undefined();
                     }
                     if (len >= 5 && (sh->isNumber() && sh->asNumber() == 0)) {
                         auto error = jsi::JSError(runtime,
                                                   "Failed to execute 'createImageBitmap' : The crop rect height is 0");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, error,
-                                                                       Value::undefined());
+                        cb->asObject(runtime).asFunction(runtime).call(runtime, {error,
+                                                                                 Value::undefined()});
                         return Value::undefined();
                     }
 
 
-                    auto image_asset = image->asObject(runtime).asHostObject<ImageAssetImpl>(
-                            runtime);
-                    auto image_bitmap = image->asObject(runtime).asHostObject<ImageBitmapImpl>(
-                            runtime);
+                    auto image_asset = getHostObject<ImageAssetImpl>(
+                            runtime, image);
+
+                    auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                            runtime, image);
 
                     if (len == 1 || len == 2) {
                         if (len == 2) {
@@ -225,8 +226,9 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                         auto bitmap_object = jsi::Object::createFromHostObject(runtime, bitmap);
 
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, Value::null(),
-                                                                       std::move(bitmap));
+                        cb->asObject(runtime).asFunction(runtime).call(runtime, {Value::null(),
+                                                                                 std::move(
+                                                                                         bitmap)});
 
                         return Value::undefined();
                     } else if (len == 5 || len == 6) {
@@ -253,8 +255,9 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                         auto bitmap_object = jsi::Object::createFromHostObject(runtime, bitmap);
 
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, Value::null(),
-                                                                       std::move(bitmap));
+                        cb->asObject(runtime).asFunction(runtime).call(runtime, {Value::null(),
+                                                                                 std::move(
+                                                                                         bitmap)});
 
                         return Value::undefined();
                     }
@@ -267,8 +270,8 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                     if (nsBuffer.isNull() || nsBuffer.isUndefined()) {
                         auto error = jsi::JSError(runtime, "Failed to load image");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, error,
-                                                                       Value::undefined());
+                        cb->asObject(runtime).asFunction(runtime).call(runtime, {error,
+                                                                                 Value::undefined()});
                         return Value::undefined();
 
                     }
@@ -283,15 +286,15 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                     if (len >= 4 && (sw->isNumber() && sw->asNumber() == 0)) {
                         auto error = jsi::JSError(runtime,
                                                   "Failed to execute 'createImageBitmap' : The crop rect width is 0");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, error,
-                                                                       Value::undefined());
+                        cb->asObject(runtime).asFunction(runtime).call(runtime, {error,
+                                                                                 Value::undefined()});
                         return Value::undefined();
                     }
                     if (len >= 5 && (sh->isNumber() && sh->asNumber() == 0)) {
                         auto error = jsi::JSError(runtime,
                                                   "Failed to execute 'createImageBitmap' : The crop rect height is 0");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, error,
-                                                                       Value::undefined());
+                        cb->asObject(runtime).asFunction(runtime).call(runtime, {error,
+                                                                                 Value::undefined()});
                         return Value::undefined();
                     }
 
@@ -329,7 +332,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                         auto object = jsi::Object::createFromHostObject(runtime,
                                                                                         std::move(
                                                                                                 ret));
-                                        cbFunc.call(runtime, jsi::Value::undefined(), object);
+                                        cbFunc.call(runtime, {jsi::Value::undefined(), object});
                                     }
                                 }, std::move(asset));
 
@@ -368,14 +371,14 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                                     if (!done) {
                                         auto error = jsi::JSError(runtime, "Failed to load image");
-                                        cbFunc.call(runtime, error, jsi::Value::undefined());
+                                        cbFunc.call(runtime, {error, jsi::Value::undefined()});
                                     } else {
                                         auto ret = std::make_shared<ImageBitmapImpl>(
                                                 std::move(asset));
                                         auto object = jsi::Object::createFromHostObject(runtime,
                                                                                         std::move(
                                                                                                 ret));
-                                        cbFunc.call(runtime, jsi::Value::undefined(), object);
+                                        cbFunc.call(runtime, {jsi::Value::undefined(), object});
                                     }
 
 
@@ -498,7 +501,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                             "v2") {
                             return Value::undefined();
                         } else {
-                            std::shared_ptr<WebGLRenderingContext> renderingContext = nullptr;
+                            std::shared_ptr<WebGLRenderingContext> renderingContext;
 
                             if (count == 7) {
                                 auto width = arguments[1].asNumber();
@@ -653,7 +656,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                             "v2") {
                             return Value::undefined();
                         } else {
-                            std::shared_ptr<WebGL2RenderingContext> renderingContext = nullptr;
+                            std::shared_ptr<WebGL2RenderingContext> renderingContext;
 
                             if (count ==
                                 7) {

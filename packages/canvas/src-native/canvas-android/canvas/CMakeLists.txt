@@ -43,8 +43,8 @@ set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
 set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs)
 set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs.cc)
-
-set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
+#-frtti
+set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -frtti -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -fno-rtti -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RUST_BUILD_TYPE)
@@ -70,6 +70,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
         ${PROJECT_SOURCE_DIR}/src/main/cpp
+        ${PROJECT_SOURCE_DIR}/src/main/cpp/canvas2d
         ${PROJECT_SOURCE_DIR}/src/main/jsi
         ${PROJECT_SOURCE_DIR}/src/main/v8runtime
 )
@@ -163,8 +164,10 @@ add_library(
 
         src/main/cpp/webgl2/WebGL2RenderingContext.cpp
 
+        src/main/cpp/OnRafCallback.cpp
+        src/main/cpp/RafImpl.cpp
 
-        #src/main/cpp/JSIRuntime.cpp
+        src/main/cpp/JSIRuntime.cpp
 
         ${CANVAS_ANDROID_BRIDGE_CPP}
 )

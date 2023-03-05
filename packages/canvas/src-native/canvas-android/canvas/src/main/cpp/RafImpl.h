@@ -10,8 +10,7 @@
 
 class RafImpl {
 public:
-    RafImpl(OnRafCallback *rafCallback, intptr_t callback, rust::Box<Raf> raf)
-            : rafCallback_(rafCallback), callback_(callback), raf_(std::move(raf)) {}
+    RafImpl(OnRafCallback *rafCallback, intptr_t callback, rust::Box<Raf> raf);
 
     Raf &GetRaf() {
         return *this->raf_;

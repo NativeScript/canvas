@@ -3,14 +3,16 @@
 //
 
 #pragma once
+
 #include "rust/cxx.h"
 #include "canvas-cxx/src/canvas2d.rs.h"
 #include "v8runtime/V8Runtime.h"
 #include "MatrixImpl.h"
+#include <vector>
 
 using namespace facebook;
 
-class JSI_EXPORT CanvasPattern: public jsi::HostObject {
+class JSI_EXPORT CanvasPattern : public jsi::HostObject {
 public:
     CanvasPattern(rust::Box<PaintStyle> style);
 
@@ -18,9 +20,7 @@ public:
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
-    static void SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-    PaintStyle& GetPaintStyle();
+    PaintStyle &GetPaintStyle();
 
 private:
     rust::Box<PaintStyle> style_;

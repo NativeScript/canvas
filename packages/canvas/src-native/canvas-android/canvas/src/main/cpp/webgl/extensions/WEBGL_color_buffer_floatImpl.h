@@ -7,6 +7,7 @@
 #include "rust/cxx.h"
 #include "v8runtime/V8Runtime.h"
 #include "gl.h"
+#include <vector>
 
 using namespace facebook;
 

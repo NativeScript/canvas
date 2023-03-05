@@ -3,7 +3,7 @@
 //
 
 #include "WebGLRenderingContextBase.h"
-
+#include "RafImpl.h"
 #include <utility>
 
 WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state,

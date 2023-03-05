@@ -5,27 +5,18 @@
 #pragma once
 
 #include <cstdint>
+#include "canvas2d/CanvasRenderingContext2DImpl.h"
+#include "webgl/WebGLRenderingContextBase.h"
 #include "canvas-android/src/lib.rs.h"
-#include "./canvas2d/CanvasRenderingContext2DImpl.h"
-#include "./webgl/WebGLRenderingContextBase.h"
 
 class OnRafCallback {
     // 0 2d
     // 1 gl
     // 2 gl2
 public:
-    OnRafCallback(intptr_t context, uint32_t version) : context_(context), version_(version) {}
+    OnRafCallback(intptr_t context, uint32_t version);
 
-    void OnFrame(int64_t ts) const {
-        if (this->version_ == 0) {
-            CanvasRenderingContext2DImpl::Flush(this->context_);
-        }
-
-        if (this->version_ == 1 || this->version_ == 2) {
-            WebGLRenderingContextBase::Flush(this->context_);
-        }
-
-    }
+    void OnFrame(int64_t ts) const;
 
 private:
     intptr_t context_;

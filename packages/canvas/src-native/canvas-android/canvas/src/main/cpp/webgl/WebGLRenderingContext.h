@@ -5,22 +5,23 @@
 #pragma once
 #pragma process_pending_includes
 
-
+#include <vector>
 #include "rust/cxx.h"
 #include "canvas-cxx/src/webgl.rs.h"
 #include "v8runtime/V8Runtime.h"
 #include "VecMutableBuffer.h"
 
+#include "WebGLRenderingContextBase.h"
+
 #include <cmath>
 #include "Helpers.h"
 
-#include "WebGLRenderingContextBase.h"
 
-#include "../ImageAssetImpl.h"
-#include "../ImageBitmapImpl.h"
-#include "../RafImpl.h"
+#include "ImageAssetImpl.h"
+#include "ImageBitmapImpl.h"
+#include "RafImpl.h"
 
-#include "../canvas2d/CanvasRenderingContext2DImpl.h"
+#include "canvas2d/CanvasRenderingContext2DImpl.h"
 
 #include "WebGLBuffer.h"
 #include "WebGLFramebuffer.h"

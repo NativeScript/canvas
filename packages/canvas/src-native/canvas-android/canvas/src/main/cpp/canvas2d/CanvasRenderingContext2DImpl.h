@@ -18,7 +18,7 @@
 #include "../ImageAssetImpl.h"
 #include "../ImageBitmapImpl.h"
 #include "Path2D.h"
-#include "../RafImpl.h"
+#include "RafImpl.h"
 
 #include "v8runtime/V8Runtime.h"
 

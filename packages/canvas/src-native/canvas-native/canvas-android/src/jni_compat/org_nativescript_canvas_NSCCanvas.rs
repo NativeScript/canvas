@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use jni::objects::{JClass, JString};
 use jni::strings::JavaStr;
-use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE};
+use jni::sys::{jboolean, jint, jlong, jobject, jstring, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
@@ -74,6 +74,30 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
         }
     }
     0
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurface(
+    mut env: JNIEnv,
+    _: JClass,
+    surface: jobject,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut AndroidGLContext;
+    let context = unsafe { &mut *context };
+    unsafe {
+        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+            context.gl_context.set_window_surface(
+                &context.contextAttributes,
+                window.width(),
+                window.height(),
+                window.raw_window_handle(),
+            );
+        }
+    }
 }
 
 #[no_mangle]

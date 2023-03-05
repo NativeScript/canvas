@@ -9,14 +9,13 @@
 #include <unistd.h>
 #include <thread>
 #import "v8runtime/V8Runtime.h"
+#include <vector>
 
 using namespace facebook;
 
 class JSI_EXPORT ImageAssetImpl : public jsi::HostObject {
 public:
     ImageAssetImpl(rust::Box<ImageAsset> asset);
-
-    ~ImageAssetImpl();
 
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 

@@ -7,8 +7,9 @@
 #include "rust/cxx.h"
 #include "canvas-cxx/src/webgl.rs.h"
 #include "v8runtime/V8Runtime.h"
-#include "../Helpers.h"
-#include "../RafImpl.h"
+#include "Helpers.h"
+#include "RafImpl.h"
+#include <vector>
 
 
 enum class WebGLRenderingVersion : uint8_t {

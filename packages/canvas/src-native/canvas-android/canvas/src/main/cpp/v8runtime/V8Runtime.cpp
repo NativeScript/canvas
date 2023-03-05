@@ -633,6 +633,28 @@ namespace rnv8 {
         }
     }
 
+    facebook::jsi::ArrayBuffer V8Runtime::createArrayBuffer(
+            std::shared_ptr<facebook::jsi::MutableBuffer> buffer) {
+        v8::Locker locker(isolate_);
+        v8::Isolate::Scope scopedIsolate(isolate_);
+        v8::HandleScope scopedHandle(isolate_);
+        v8::Context::Scope scopedContext(context_.Get(isolate_));
+
+        auto size = buffer->size();
+        auto *data = buffer->data();
+        auto *ctx = new std::shared_ptr<jsi::MutableBuffer>(std::move(buffer));
+        auto finalize = [](void*ctx, size_t, void*) {
+            delete static_cast<std::shared_ptr<jsi::MutableBuffer> *>(ctx);
+        };
+
+        auto store = v8::ArrayBuffer::NewBackingStore(data, size, finalize, ctx);
+        auto arrayBuffer = v8::ArrayBuffer::New(isolate_, std::move(store));
+
+
+        return make<jsi::Object>(new V8PointerValue(isolate_, arrayBuffer))
+                .getArrayBuffer(*this);
+    }
+
     uint64_t V8Runtime::uint64Value(const jsi::BigInt &bigInt, bool *lossless) const {
         v8::Locker locker(isolate_);
         v8::Isolate::Scope scopedIsolate(isolate_);

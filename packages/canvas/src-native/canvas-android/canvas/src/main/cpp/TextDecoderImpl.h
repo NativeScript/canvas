@@ -7,6 +7,7 @@
 #include "rust/cxx.h"
 #include "canvas-cxx/src/canvas2d.rs.h"
 #import "v8runtime/V8Runtime.h"
+#include <vector>
 
 using namespace facebook;
 
@@ -19,11 +20,6 @@ public:
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
     TextDecoder &GetTextDecoder();
-
-    static void
-    GetEncoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
-
-    static void Decode(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     rust::Box<TextDecoder> decoder_;

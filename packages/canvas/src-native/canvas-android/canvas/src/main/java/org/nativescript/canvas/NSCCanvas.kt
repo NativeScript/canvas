@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.*
 import android.util.AttributeSet
+import android.view.Surface
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.ViewCompat
@@ -19,133 +20,224 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class NSCCanvas : FrameLayout {
 
+	internal var nativeGL: Long = 0
 
-	val nativeContext: Long
-		get() {
-			return renderer.nativeContext
-		}
+	var nativeContext: Long = 0
+		private set
 
-	internal var invalidateState: Int
-	get() {
-		return renderer.invalidateState
+	enum class SurfaceType {
+		Texture,
+		Surface
 	}
-
-	set(value) {
-		renderer.invalidateState = value
-	}
-
-	var isHandleInvalidationManually: Boolean
-		set(value) {
-			renderer.isHandleInvalidationManually = value
-		}
-		get() {
-			return renderer.isHandleInvalidationManually
-		}
 
 	var ignorePixelScaling: Boolean
 		set(value) {
-			renderer.ignorePixelScaling = value
+			if (surfaceType == SurfaceType.Surface) {
+				surfaceView.ignorePixelScaling = value
+			}
+			textureView.ignorePixelScaling = value
 		}
 		get() {
-			return renderer.ignorePixelScaling
+			if (surfaceType == SurfaceType.Surface) {
+				return surfaceView.ignorePixelScaling
+			}
+			return textureView.ignorePixelScaling
 		}
 
 
+	private var surfaceType = SurfaceType.Texture
+	private lateinit var textureView: GLView
+	private lateinit var surfaceView: GLViewSV
+
 	constructor(context: Context) : super(context, null) {
-		init(context, false)
+		init(context, SurfaceType.Texture)
 	}
 
-	constructor(context: Context, softwareRenderer: Boolean) : super(context, null) {
-		init(context, softwareRenderer)
+	constructor(context: Context, type: SurfaceType) : super(context, null) {
+		init(context, type)
 	}
 
 	constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-		init(context, false)
+		init(context, SurfaceType.Texture)
+		textureView = GLView(context, attrs)
+		surfaceView = GLViewSV(context, attrs)
 	}
 
-	private fun init(context: Context, softwareRenderer: Boolean) {
+	private fun init(context: Context, type: SurfaceType) {
+		surfaceType = type
 		setBackgroundColor(Color.TRANSPARENT)
-
-		if (isInEditMode) {
-			return
-		}
-
-		renderer = GLRenderer(this, context, softwareRenderer)
-
 	}
 
 	val drawingBufferWidth: Int
 		get() {
-			return renderer.drawingBufferWidth
+			if (surfaceType == SurfaceType.Surface) {
+				return surfaceView.width
+			}
+			return textureView.width
 		}
+
 	val drawingBufferHeight: Int
 		get() {
-			return renderer.drawingBufferHeight
+			if (surfaceType == SurfaceType.Surface) {
+				return surfaceView.height
+			}
+			return textureView.height
 		}
 
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		if (renderer.nativeContext != 0L) {
-			nativeDestroyContext(renderer.nativeContext)
-			renderer.nativeContext = 0
+		if (nativeGL != 0L) {
+			nativeReleaseGL(nativeGL)
+			nativeGL = 0
+		}
+		if (nativeContext != 0L) {
+			nativeReleaseGLPointer(nativeContext)
+			nativeContext = 0
 		}
 	}
 
-	fun toData(): ByteArray? {
-		return renderer.toData()
+	fun initContext(type: String) {
+		initContext(type, null)
 	}
 
-	fun snapshot(): ByteBuffer {
-		return renderer.snapshot()
-	}
+	fun initContext(type: String, contextAttributes: String?) {
 
-	@JvmOverloads
-	fun toDataURL(type: String = "image/png", quality: Float = 0.92f): String? {
-		return renderer.toDataURL(type, quality)
-	}
+		var alpha = true
 
-	enum class ContextType {
-		NONE, CANVAS, WEBGL;
-		companion object {
-			@JvmStatic
-			fun fromString(value: String): ContextType {
-				return when(value){
-					"2d" -> CANVAS
-					"experimental-webgl", "webgl",  "webgl2" -> WEBGL
-					else -> NONE
-				}
-			}
-		}
-	}
+		var antialias = true
 
-	fun getContextAttributesJson(): String {
-		return renderer.contextAttributes.toJSON()
-	}
+		var depth = true
 
-	fun getContext(type: String) {
-		getContext(type, GLRenderer.ContextAttributes.default)
-	}
+		var failIfMajorPerformanceCaveat = false
 
-	fun getContext(type: String, contextAttributes: String?){
+		var powerPreference = "default"
 
-		val attrs = contextAttributes?.let {
+		var premultipliedAlpha = true
+
+		var preserveDrawingBuffer = false
+
+		var stencil = false
+
+		var desynchronized = false
+
+		var xrCompatible = false
+
+		contextAttributes?.let {
 			try {
-				val attrsJSON = JSONObject(contextAttributes)
-				GLRenderer.ContextAttributes.fromJSON(attrsJSON)
-			}catch (e: Exception) {
-				GLRenderer.ContextAttributes.default
+				val attr = JSONObject(it)
+				attr.keys().forEach { key ->
+					val value = attr[key]
+					when (key) {
+						"alpha" -> {
+							alpha = (value as? Boolean) ?: true
+						}
+						"antialias" -> {
+							antialias = value as? Boolean ?: true
+						}
+						"depth" -> {
+							depth = value as? Boolean ?: true
+						}
+						"failIfMajorPerformanceCaveat" -> {
+							failIfMajorPerformanceCaveat = value as? Boolean ?: false
+						}
+						"premultipliedAlpha" -> {
+							premultipliedAlpha = value as? Boolean ?: true
+						}
+						"preserveDrawingBuffer" -> {
+							preserveDrawingBuffer = value as? Boolean ?: false
+						}
+						"stencil" -> {
+							stencil = value as? Boolean ?: false
+						}
+						"xrCompatible" -> {
+							xrCompatible = value as? Boolean ?: false
+						}
+						"desynchronized" -> {
+							desynchronized = value as? Boolean ?: false
+						}
+						"powerPreference" -> {
+							powerPreference = value as? String ?: "default"
+						}
+						else -> {}
+					}
+				}
+			} catch (_: Exception) {
 			}
-		} ?: GLRenderer.ContextAttributes.default
-		return renderer.getContext(type, attrs)
+		}
+
+		initContext(
+			type,
+			alpha,
+			antialias,
+			depth,
+			failIfMajorPerformanceCaveat,
+			powerPreference,
+			premultipliedAlpha,
+			preserveDrawingBuffer,
+			stencil,
+			desynchronized,
+			xrCompatible
+		)
 	}
 
-	internal fun getContext(type: String, contextAttributes: GLRenderer.ContextAttributes) {
-		return renderer.getContext(type, contextAttributes)
-	}
+	fun initContext(
+		type: String,
+		alpha: Boolean,
+		antialias: Boolean,
+		depth: Boolean,
+		failIfMajorPerformanceCaveat: Boolean,
+		powerPreference: String,
+		premultipliedAlpha: Boolean,
+		preserveDrawingBuffer: Boolean,
+		stencil: Boolean,
+		desynchronized: Boolean,
+		xrCompatible: Boolean
+	) {
+		var version = -1
+		var isCanvas = false
+		when (type) {
+			"2d" -> {
+				version = 0
+				isCanvas = true
+			}
+			"experimental-webgl", "webgl" -> {
+				version = 1
+			}
+			"webgl2" -> {
+				version = 2
+			}
+		}
 
-	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-		renderer.resize(w, h)
+		if (version == -1) {
+			return
+		}
+		if (nativeGL == 0L) {
+			val surface = if (surfaceType == SurfaceType.Surface) {
+				surfaceView.holder.surface
+			} else {
+				textureView.surface
+			}
+
+			surface?.let {
+				nativeGL = nativeInitGL(
+					it,
+					alpha,
+					antialias,
+					depth,
+					failIfMajorPerformanceCaveat,
+					powerPreference,
+					premultipliedAlpha,
+					preserveDrawingBuffer,
+					stencil,
+					desynchronized,
+					xrCompatible,
+					version,
+					isCanvas
+				)
+				nativeContext = nativeGetGLPointer(nativeGL)
+			}
+		}
 	}
 
 	internal var isPaused = false
@@ -167,18 +259,7 @@ class NSCCanvas : FrameLayout {
 		fun surfaceResize(width: Int, height: Int)
 	}
 
-	var listener: Listener?
-		set(value) {
-			renderer.listener = value
-		}
-		get() {
-			return renderer.listener
-		}
-
-	fun flush() {
-		renderer.flush()
-	}
-
+	var listener: Listener? = null
 
 	companion object {
 		var views: ConcurrentHashMap<*, *> = ConcurrentHashMap<Any?, Any?>()
@@ -190,7 +271,7 @@ class NSCCanvas : FrameLayout {
 		}
 
 		@JvmStatic
-		fun loadLib(){
+		fun loadLib() {
 			if (!isLibraryLoaded) {
 				System.loadLibrary("canvasnativev8")
 				isLibraryLoaded = true
@@ -230,6 +311,44 @@ class NSCCanvas : FrameLayout {
 		}
 
 		@JvmStatic
+		external fun nativeInitGL(
+			surface: Surface,
+			alpha: Boolean,
+			antialias: Boolean,
+			depth: Boolean,
+			failIfMajorPerformanceCaveat: Boolean,
+			powerPreference: String,
+			premultipliedAlpha: Boolean,
+			preserveDrawingBuffer: Boolean,
+			stencil: Boolean,
+			desynchronized: Boolean,
+			xrCompatible: Boolean,
+			version: Int,
+			isCanvas: Boolean,
+		): Long
+
+		@JvmStatic
+		external fun nativeUpdateGLSurface(
+			surface: Surface,
+			context: Long
+		)
+
+		@JvmStatic
+		external fun nativeReleaseGL(
+			context: Long
+		)
+
+		@JvmStatic
+		external fun nativeGetGLPointer(
+			context: Long
+		): Long
+
+		@JvmStatic
+		external fun nativeReleaseGLPointer(
+			gl: Long
+		)
+
+		@JvmStatic
 		external fun nativeInitContextWithCustomSurface(
 			width: Float,
 			height: Float,
@@ -251,36 +370,9 @@ class NSCCanvas : FrameLayout {
 			ppi: Int,
 		)
 
-		@JvmStatic
-		external fun nativeDestroyContext(context: Long)
 
 		@JvmStatic
 		external fun nativeCustomWithBitmapFlush(context: Long, view: Bitmap)
-
-		@JvmStatic
-		internal fun nativeDataURLImpl(context: Long, type: String?, quality: Float): String? {
-			return nativeDataURL(context, type, quality)
-		}
-
-		@JvmStatic
-		private external fun nativeDataURL(context: Long, type: String?, quality: Float): String?
-
-		@JvmStatic
-		internal fun nativeToDataImpl(context: Long): ByteArray? {
-			return nativeToData(context)
-		}
-
-		@JvmStatic
-		private external fun nativeToData(context: Long): ByteArray?
-
-		@JvmStatic
-		internal fun nativeSnapshotCanvasImpl(context: Long): ByteBuffer {
-			return nativeSnapshotCanvas(context)
-		}
-
-		@JvmStatic
-		private external fun nativeSnapshotCanvas(context: Long): ByteBuffer
-
 
 		@JvmStatic
 		internal val direction: Int

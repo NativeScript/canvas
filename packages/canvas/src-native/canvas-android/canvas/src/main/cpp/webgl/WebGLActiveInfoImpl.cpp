@@ -8,11 +8,13 @@ WebGLActiveInfoImpl::WebGLActiveInfoImpl(rust::Box<WebGLActiveInfo> info) : info
         std::move(info)) {}
 
 std::vector<jsi::PropNameID> WebGLActiveInfoImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
+    std::vector<jsi::PropNameID> ret = {
             jsi::PropNameID::forUtf8(rt, std::string("name")),
             jsi::PropNameID::forUtf8(rt, std::string("size")),
             jsi::PropNameID::forUtf8(rt, std::string("type"))
     };
+
+    return ret;
 }
 
 jsi::Value WebGLActiveInfoImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

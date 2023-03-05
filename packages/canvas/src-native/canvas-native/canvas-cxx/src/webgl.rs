@@ -7,10 +7,27 @@ use parking_lot::RwLock;
 
 use canvas_webgl::prelude::WebGLVersion;
 
-use crate::canvas2d::ImageAsset;
-use crate::webgl::ffi::{WebGLExtensionType, WebGLResultType};
-
 pub struct GLContext(pub(crate) canvas_core::gl::GLContext);
+
+unsafe impl ExternType for WebGLActiveInfo {
+    type Id = type_id!("::WebGLActiveInfo");
+    type Kind = cxx::kind::Trivial;
+}
+
+unsafe impl ExternType for ContextAttributes {
+    type Id = type_id!("::ContextAttributes");
+    type Kind = cxx::kind::Trivial;
+}
+
+unsafe impl ExternType for WebGLResult {
+    type Id = type_id!("::WebGLResult");
+    type Kind = cxx::kind::Trivial;
+}
+
+unsafe impl ExternType for WebGLState {
+    type Id = type_id!("::WebGLState");
+    type Kind = cxx::kind::Trivial;
+}
 
 #[cxx::bridge]
 pub(crate) mod ffi {
@@ -660,8 +677,9 @@ pub(crate) mod ffi {
             state: &mut WebGLState,
         ) -> i32;
 
-        fn canvas_native_webgl_get_context_attributes(state: &mut WebGLState)
-            -> Box<ContextAttributes>;
+        fn canvas_native_webgl_get_context_attributes(
+            state: &mut WebGLState,
+        ) -> Box<ContextAttributes>;
 
         fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32;
 
@@ -869,7 +887,7 @@ pub(crate) mod ffi {
             image_type: i32,
             state: &mut WebGLState,
         );
-        
+
         fn canvas_native_webgl_tex_image2d_canvas2d(
             target: i32,
             level: i32,
@@ -1224,11 +1242,6 @@ fn canvas_native_webgl_to_data_url(state: &mut WebGLState, format: &str, quality
 #[derive(Debug)]
 pub struct WebGLState(canvas_webgl::prelude::WebGLState);
 
-unsafe impl ExternType for WebGLState {
-    type Id = type_id!("WebGLState");
-    type Kind = cxx::kind::Trivial;
-}
-
 impl WebGLState {
     pub fn new_with_context(
         context: canvas_core::gl::GLContext,
@@ -1274,11 +1287,6 @@ impl WebGLState {
 
 pub struct WebGLActiveInfo(pub(crate) canvas_webgl::prelude::WebGLActiveInfo);
 
-unsafe impl ExternType for WebGLActiveInfo {
-    type Id = type_id!("WebGLActiveInfo");
-    type Kind = cxx::kind::Trivial;
-}
-
 impl WebGLActiveInfo {
     pub fn get_name(&self) -> &str {
         self.0.get_name()
@@ -1298,11 +1306,6 @@ impl WebGLActiveInfo {
 }
 
 pub struct ContextAttributes(canvas_webgl::prelude::ContextAttributes);
-
-unsafe impl ExternType for ContextAttributes {
-    type Id = type_id!("ContextAttributes");
-    type Kind = cxx::kind::Trivial;
-}
 
 impl ContextAttributes {
     pub fn get_alpha(&self) -> bool {
@@ -1378,9 +1381,9 @@ impl WebGLExtension {
         self.0.is_none()
     }
 
-    pub fn extension_type(&self) -> WebGLExtensionType {
+    pub fn extension_type(&self) -> ffi::WebGLExtensionType {
         if self.is_none() {
-            return WebGLExtensionType::None;
+            return ffi::WebGLExtensionType::None;
         }
         self.0.as_ref().unwrap().extension_type().into()
     }
@@ -1495,11 +1498,6 @@ pub struct WEBGL_draw_buffers(canvas_webgl::prelude::WEBGL_draw_buffers);
 
 pub struct WebGLResult(pub(crate) canvas_webgl::prelude::WebGLResult);
 
-unsafe impl ExternType for WebGLResult {
-    type Id = type_id!("WebGLResult");
-    type Kind = cxx::kind::Trivial;
-}
-
 /* WebGLActiveInfo */
 
 pub fn canvas_native_webgl_active_info_get_name(info: &WebGLActiveInfo) -> &str {
@@ -1604,7 +1602,7 @@ pub fn canvas_native_webgl_context_extension_is_none(extension: &WebGLExtension)
 
 pub fn canvas_native_webgl_context_extension_get_type(
     extension: &WebGLExtension,
-) -> WebGLExtensionType {
+) -> ffi::WebGLExtensionType {
     extension.extension_type().into()
 }
 
@@ -1641,18 +1639,18 @@ pub fn canvas_native_webgl_context_extension_to_oes_vertex_array_object(
 /* WebGLExtension */
 
 /* WebGLResult */
-fn canvas_native_webgl_result_get_type(result: &WebGLResult) -> WebGLResultType {
+fn canvas_native_webgl_result_get_type(result: &WebGLResult) -> ffi::WebGLResultType {
     match result.0 {
-        canvas_webgl::prelude::WebGLResult::Boolean(_) => WebGLResultType::Boolean,
-        canvas_webgl::prelude::WebGLResult::I32Array(_) => WebGLResultType::I32Array,
-        canvas_webgl::prelude::WebGLResult::U32Array(_) => WebGLResultType::U32Array,
-        canvas_webgl::prelude::WebGLResult::F32Array(_) => WebGLResultType::F32Array,
-        canvas_webgl::prelude::WebGLResult::BooleanArray(_) => WebGLResultType::BooleanArray,
-        canvas_webgl::prelude::WebGLResult::U32(_) => WebGLResultType::U32,
-        canvas_webgl::prelude::WebGLResult::I32(_) => WebGLResultType::I32,
-        canvas_webgl::prelude::WebGLResult::F32(_) => WebGLResultType::F32,
-        canvas_webgl::prelude::WebGLResult::String(_) => WebGLResultType::String,
-        canvas_webgl::prelude::WebGLResult::None => WebGLResultType::None,
+        canvas_webgl::prelude::WebGLResult::Boolean(_) => ffi::WebGLResultType::Boolean,
+        canvas_webgl::prelude::WebGLResult::I32Array(_) => ffi::WebGLResultType::I32Array,
+        canvas_webgl::prelude::WebGLResult::U32Array(_) => ffi::WebGLResultType::U32Array,
+        canvas_webgl::prelude::WebGLResult::F32Array(_) => ffi::WebGLResultType::F32Array,
+        canvas_webgl::prelude::WebGLResult::BooleanArray(_) => ffi::WebGLResultType::BooleanArray,
+        canvas_webgl::prelude::WebGLResult::U32(_) => ffi::WebGLResultType::U32,
+        canvas_webgl::prelude::WebGLResult::I32(_) => ffi::WebGLResultType::I32,
+        canvas_webgl::prelude::WebGLResult::F32(_) => ffi::WebGLResultType::F32,
+        canvas_webgl::prelude::WebGLResult::String(_) => ffi::WebGLResultType::String,
+        canvas_webgl::prelude::WebGLResult::None => ffi::WebGLResultType::None,
     }
 }
 
@@ -1743,12 +1741,13 @@ fn canvas_native_webgl_result_get_is_none(result: &WebGLResult) -> bool {
 /* WebGLResult */
 
 /* WebGLState */
-pub fn canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(state: &mut WebGLState) -> i32 {
+pub fn canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
+    state: &mut WebGLState,
+) -> i32 {
     state.get_inner().get_unpack_colorspace_conversion_webgl()
 }
 
 pub fn canvas_native_webgl_state_get_flip_y(state: &mut WebGLState) -> bool {
-    dbg!("state {:?}", state);
     state.get_inner().get_flip_y()
 }
 
@@ -2632,7 +2631,9 @@ pub fn canvas_native_webgl_get_buffer_parameter(
     )
 }
 
-pub fn canvas_native_webgl_get_context_attributes(state: &mut WebGLState) -> Box<ContextAttributes> {
+pub fn canvas_native_webgl_get_context_attributes(
+    state: &mut WebGLState,
+) -> Box<ContextAttributes> {
     Box::new(ContextAttributes(
         canvas_webgl::webgl::canvas_native_webgl_get_context_attributes(state.get_inner()),
     ))
@@ -3202,7 +3203,7 @@ fn canvas_native_webgl_tex_image2d_image_asset(
     internalformat: i32,
     format: i32,
     image_type: i32,
-    image_asset: &mut ImageAsset,
+    image_asset: &mut crate::canvas2d::ImageAsset,
     state: &mut WebGLState,
 ) {
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d_asset(
@@ -3216,11 +3217,21 @@ fn canvas_native_webgl_tex_image2d_image_asset(
     )
 }
 
-pub fn canvas_native_webgl_tex_parameterf(target: u32, pname: u32, param: f32, state: &mut WebGLState) {
+pub fn canvas_native_webgl_tex_parameterf(
+    target: u32,
+    pname: u32,
+    param: f32,
+    state: &mut WebGLState,
+) {
     canvas_webgl::webgl::canvas_native_webgl_tex_parameterf(target, pname, param, state.get_inner())
 }
 
-pub fn canvas_native_webgl_tex_parameteri(target: u32, pname: u32, param: i32, state: &mut WebGLState) {
+pub fn canvas_native_webgl_tex_parameteri(
+    target: u32,
+    pname: u32,
+    param: i32,
+    state: &mut WebGLState,
+) {
     canvas_webgl::webgl::canvas_native_webgl_tex_parameteri(target, pname, param, state.get_inner())
 }
 
@@ -3231,7 +3242,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
     yoffset: i32,
     format: u32,
     image_type: i32,
-    asset: &mut ImageAsset,
+    asset: &mut crate::canvas2d::ImageAsset,
     state: &mut WebGLState,
 ) {
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d_asset(

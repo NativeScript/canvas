@@ -10,6 +10,7 @@
 #include "gl.h"
 #include "../../webgl2/WebGLVertexArrayObject.h"
 #include "Helpers.h"
+#include <vector>
 
 using namespace facebook;
 

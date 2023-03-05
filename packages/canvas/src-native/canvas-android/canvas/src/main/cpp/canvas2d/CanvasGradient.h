@@ -7,6 +7,7 @@
 #include "rust/cxx.h"
 #include "canvas-cxx/src/canvas2d.rs.h"
 #include "v8runtime/V8Runtime.h"
+#include <vector>
 
 using namespace facebook;
 

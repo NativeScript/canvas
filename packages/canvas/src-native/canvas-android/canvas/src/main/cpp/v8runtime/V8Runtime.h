@@ -104,6 +104,10 @@ class V8Runtime : public facebook::jsi::Runtime {
   facebook::jsi::Object createObject() override;
   facebook::jsi::Object createObject(
       std::shared_ptr<facebook::jsi::HostObject> hostObject) override;
+
+    facebook::jsi::ArrayBuffer createArrayBuffer(
+            std::shared_ptr<facebook::jsi::MutableBuffer> buffer) override;
+
   std::shared_ptr<facebook::jsi::HostObject> getHostObject(
       const facebook::jsi::Object &) override;
   facebook::jsi::HostFunctionType &getHostFunction(

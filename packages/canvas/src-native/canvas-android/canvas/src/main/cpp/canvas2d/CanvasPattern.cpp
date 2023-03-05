@@ -8,7 +8,7 @@
 CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 
 std::vector<jsi::PropNameID> CanvasPattern::getPropertyNames(jsi::Runtime &rt) {
-    return {jsi::PropNameID::forUtf8(rt, std::string("setTransform"))};
+    return {jsi::PropNameID::forUtf8(rt, "setTransform")};
 }
 
 jsi::Value CanvasPattern::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

@@ -9,18 +9,18 @@ TextMetricsImpl::TextMetricsImpl(rust::Box<TextMetrics> metrics) : metrics_(std:
 
 std::vector<jsi::PropNameID> TextMetricsImpl::getPropertyNames(jsi::Runtime &rt) {
     return {
-            jsi::PropNameID::forUtf8(rt, std::string("width")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxLeft")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxRight")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxAscent")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxDescent")),
-            jsi::PropNameID::forUtf8(rt, std::string("fontBoundingBoxAscent")),
-            jsi::PropNameID::forUtf8(rt, std::string("fontBoundingBoxDescent")),
-            jsi::PropNameID::forUtf8(rt, std::string("emHeightAscent")),
-            jsi::PropNameID::forUtf8(rt, std::string("emHeightDescent")),
-            jsi::PropNameID::forUtf8(rt, std::string("hangingBaseline")),
-            jsi::PropNameID::forUtf8(rt, std::string("alphabeticBaseline")),
-            jsi::PropNameID::forUtf8(rt, std::string("ideographicBaseline")),
+            jsi::PropNameID::forUtf8(rt, "width"),
+            jsi::PropNameID::forUtf8(rt, "actualBoundingBoxLeft"),
+            jsi::PropNameID::forUtf8(rt, "actualBoundingBoxRight"),
+            jsi::PropNameID::forUtf8(rt, "actualBoundingBoxAscent"),
+            jsi::PropNameID::forUtf8(rt, "actualBoundingBoxDescent"),
+            jsi::PropNameID::forUtf8(rt, "fontBoundingBoxAscent"),
+            jsi::PropNameID::forUtf8(rt, "fontBoundingBoxDescent"),
+            jsi::PropNameID::forUtf8(rt, "emHeightAscent"),
+            jsi::PropNameID::forUtf8(rt, "emHeightDescent"),
+            jsi::PropNameID::forUtf8(rt, "hangingBaseline"),
+            jsi::PropNameID::forUtf8(rt, "alphabeticBaseline"),
+            jsi::PropNameID::forUtf8(rt, "ideographicBaseline"),
     };
 }
 

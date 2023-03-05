@@ -411,6 +411,67 @@ impl GLContext {
         }
     }
 
+
+    #[cfg(target_os = "android")]
+    pub fn set_window_surface(
+        &mut self,
+        context_attrs: &ContextAttributes,
+        width: i32,
+        height: i32,
+        window: RawWindowHandle,
+    )  {
+        unsafe {
+            if let Some(display) = self.display() {
+                gl_bindings::load_with(|symbol| {
+                    let symbol = CString::new(symbol).unwrap();
+                    display.get_proc_address(symbol.as_c_str()).cast()
+                });
+
+                let cfg = context_attrs.clone().into();
+                let config = display
+                    .find_configs(cfg)
+                    .map(|c| {
+                        c.reduce(|acc, cconfig| {
+                            if cconfig.supports_transparency().unwrap_or_default()
+                                && context_attrs.get_alpha()
+                                && context_attrs.get_alpha()
+                                && cconfig.alpha_size() == 8u8
+                                && context_attrs.get_stencil()
+                                && cconfig.stencil_size() == 8u8
+                                && context_attrs.get_depth()
+                                && cconfig.depth_size() == 16u8
+                            {
+                                return cconfig;
+                            }
+
+                            acc
+                        })
+                    })
+                    .ok()
+                    .flatten();
+
+                if let Some(config) = config {
+                    let surface_attr =
+                        glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
+                            .build(
+                                window,
+                                NonZeroU32::try_from(width as u32).unwrap(),
+                                NonZeroU32::try_from(height as u32).unwrap(),
+                            );
+
+                    let surface = display
+                        .create_window_surface(&config, &surface_attr)
+                        .map(SurfaceHelper::Window)
+                        .ok();
+
+
+                    let mut lock = self.inner.write();
+                    lock.surface = surface;
+                }
+            }
+        }
+    }
+
     #[cfg(target_os = "macos")]
     pub fn create_pbuffer(
         context_attrs: &mut ContextAttributes,

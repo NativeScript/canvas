@@ -8,6 +8,7 @@
 #include "canvas-cxx/src/canvas2d.rs.h"
 #include "Helpers.h"
 #import "v8runtime/V8Runtime.h"
+#include <vector>
 
 struct Options {
     bool flipY = false;

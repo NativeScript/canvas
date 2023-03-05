@@ -8,6 +8,7 @@
 #include "v8runtime/V8Runtime.h"
 #include "gl.h"
 #include "canvas-cxx/src/webgl.rs.h"
+#include <vector>
 
 using namespace facebook;
 

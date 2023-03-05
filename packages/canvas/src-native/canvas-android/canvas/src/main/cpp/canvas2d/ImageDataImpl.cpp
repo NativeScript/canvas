@@ -35,9 +35,9 @@ ImageDataImpl::ImageDataImpl(rust::Box<ImageData> imageData) : imageData_(std::m
 
 std::vector<jsi::PropNameID> ImageDataImpl::getPropertyNames(jsi::Runtime &rt) {
     return {
-            jsi::PropNameID::forUtf8(rt, std::string("width")),
-            jsi::PropNameID::forUtf8(rt, std::string("height")),
-            jsi::PropNameID::forUtf8(rt, std::string("data"))};
+            jsi::PropNameID::forUtf8(rt, "width"),
+            jsi::PropNameID::forUtf8(rt, "height"),
+            jsi::PropNameID::forUtf8(rt, "data")};
 }
 
 jsi::Value ImageDataImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

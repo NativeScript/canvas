@@ -5,6 +5,7 @@
 #ifndef CANVAS_ANDROID_CANVASJSIMODULE_H
 #define CANVAS_ANDROID_CANVASJSIMODULE_H
 
+#include <array>
 #include "v8runtime/JSIV8ValueConverter.h"
 #include "canvas2d/CanvasRenderingContext2DImpl.h"
 

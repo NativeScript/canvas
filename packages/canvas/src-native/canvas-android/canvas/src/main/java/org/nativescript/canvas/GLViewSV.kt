@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.content.Context
+import android.graphics.Matrix
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -8,33 +9,35 @@ import android.view.SurfaceView
 internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	private var isCreated = false
 	private var isCreatedWithZeroSized = false
-	var gLContext: GLContext? = null
-		private set
-	private var mListener: NSCCanvas.Listener? = null
+	internal var canvas: NSCCanvas? = null
 
-	constructor(context: Context?) : super(context) {
+	private fun setScaling() {
+		val density = resources.displayMetrics.density
+		if (ignorePixelScaling) {
+			scaleX = density
+			scaleY = density
+		}else {
+			scaleX = 1f
+			scaleY = 1f
+		}
+	}
+
+	var ignorePixelScaling: Boolean = false
+		set(value) {
+			field = value
+			setScaling()
+		}
+
+	constructor(context: Context) : super(context) {
 		init()
 	}
 
-	constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {
+	constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
 		init()
 	}
 
 	fun init() {
-		gLContext = GLContext()
 		holder.addCallback(this)
-	}
-
-	fun flush() {
-		gLContext!!.flush()
-	}
-
-	fun queueEvent(runnable: Runnable?) {
-		gLContext!!.queueEvent(runnable!!)
-	}
-
-	fun setListener(listener: NSCCanvas.Listener?) {
-		mListener = listener
 	}
 
 	override fun surfaceCreated(holder: SurfaceHolder) {
@@ -46,10 +49,9 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 
 	override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-			gLContext!!.setTexture(holder.surface)
 			isCreatedWithZeroSized = false
-			if (mListener != null) {
-				mListener!!.contextReady()
+			canvas?.let {
+				it.listener?.contextReady()
 			}
 		}
 	}

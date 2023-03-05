@@ -26,75 +26,76 @@ CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
 }
 
 
-std::vector<PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(Runtime &rt) {
+std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
     return {
-            jsi::PropNameID::forUtf8(rt, std::string("__resize")),
-            jsi::PropNameID::forUtf8(rt, std::string("font")),
-            jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")),
-            jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingEnabled")),
-            jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingQuality")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineDashOffset")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineJoin")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineCap")),
-            jsi::PropNameID::forUtf8(rt, std::string("miterLimit")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowColor")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowBlur")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetX")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetY")),
-            jsi::PropNameID::forUtf8(rt, std::string("textAlign")),
-            jsi::PropNameID::forUtf8(rt, std::string("globalCompositeOperation")),
-            jsi::PropNameID::forUtf8(rt, std::string("fillStyle")),
-            jsi::PropNameID::forUtf8(rt, std::string("strokeStyle")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineWidth")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineDash")),
-            jsi::PropNameID::forUtf8(rt, std::string("addHitRegion")),
-            jsi::PropNameID::forUtf8(rt, std::string("arc")),
-            jsi::PropNameID::forUtf8(rt, std::string("arcTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("beginPath")),
-            jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("clearHitRegions")),
-            jsi::PropNameID::forUtf8(rt, std::string("clearRect")),
-            jsi::PropNameID::forUtf8(rt, std::string("clip")),
-            jsi::PropNameID::forUtf8(rt, std::string("closePath")),
-            jsi::PropNameID::forUtf8(rt, std::string("createImageData")),
-            jsi::PropNameID::forUtf8(rt, std::string("createLinearGradient")),
-            jsi::PropNameID::forUtf8(rt, std::string("createPattern")),
-            jsi::PropNameID::forUtf8(rt, std::string("drawImage")),
-            jsi::PropNameID::forUtf8(rt, std::string("ellipse")),
-            jsi::PropNameID::forUtf8(rt, std::string("fill")),
-            jsi::PropNameID::forUtf8(rt, std::string("fillRect")),
-            jsi::PropNameID::forUtf8(rt, std::string("fillText")),
-            jsi::PropNameID::forUtf8(rt, std::string("getImageData")),
-            jsi::PropNameID::forUtf8(rt, std::string("getLineDash")),
-            jsi::PropNameID::forUtf8(rt, std::string("isPointInPath")),
-            jsi::PropNameID::forUtf8(rt, std::string("isPointInStroke")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("measureText")),
-            jsi::PropNameID::forUtf8(rt, std::string("moveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("putImageData")),
-            jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("rect")),
-            jsi::PropNameID::forUtf8(rt, std::string("removeHitRegion")),
-            jsi::PropNameID::forUtf8(rt, std::string("resetTransform")),
-            jsi::PropNameID::forUtf8(rt, std::string("restore")),
-            jsi::PropNameID::forUtf8(rt, std::string("rotate")),
-            jsi::PropNameID::forUtf8(rt, std::string("save")),
-            jsi::PropNameID::forUtf8(rt, std::string("scale")),
-            jsi::PropNameID::forUtf8(rt, std::string("scrollPathIntoView")),
-            jsi::PropNameID::forUtf8(rt, std::string("setLineDash")),
-            jsi::PropNameID::forUtf8(rt, std::string("setTransform")),
-            jsi::PropNameID::forUtf8(rt, std::string("stroke")),
-            jsi::PropNameID::forUtf8(rt, std::string("strokeRect")),
-            jsi::PropNameID::forUtf8(rt, std::string("strokeText")),
-            jsi::PropNameID::forUtf8(rt, std::string("transform")),
-            jsi::PropNameID::forUtf8(rt, std::string("translate")),
-            jsi::PropNameID::forUtf8(rt, std::string("__toDataURL"))
+            jsi::PropNameID::forUtf8(rt, "__resize"),
+            jsi::PropNameID::forUtf8(rt, "font"),
+            jsi::PropNameID::forUtf8(rt, "globalAlpha"),
+            jsi::PropNameID::forUtf8(rt, "imageSmoothingEnabled"),
+            jsi::PropNameID::forUtf8(rt, "imageSmoothingQuality"),
+            jsi::PropNameID::forUtf8(rt, "lineDashOffset"),
+            jsi::PropNameID::forUtf8(rt, "lineJoin"),
+            jsi::PropNameID::forUtf8(rt, "lineCap"),
+            jsi::PropNameID::forUtf8(rt, "miterLimit"),
+            jsi::PropNameID::forUtf8(rt, "shadowColor"),
+            jsi::PropNameID::forUtf8(rt, "shadowBlur"),
+            jsi::PropNameID::forUtf8(rt, "shadowOffsetX"),
+            jsi::PropNameID::forUtf8(rt, "shadowOffsetY"),
+            jsi::PropNameID::forUtf8(rt, "textAlign"),
+            jsi::PropNameID::forUtf8(rt, "globalCompositeOperation"),
+            jsi::PropNameID::forUtf8(rt, "fillStyle"),
+            jsi::PropNameID::forUtf8(rt, "strokeStyle"),
+            jsi::PropNameID::forUtf8(rt, "lineWidth"),
+            jsi::PropNameID::forUtf8(rt, "lineDash"),
+            jsi::PropNameID::forUtf8(rt, "addHitRegion"),
+            jsi::PropNameID::forUtf8(rt, "arc"),
+            jsi::PropNameID::forUtf8(rt, "arcTo"),
+            jsi::PropNameID::forUtf8(rt, "beginPath"),
+            jsi::PropNameID::forUtf8(rt, "bezierCurveTo"),
+            jsi::PropNameID::forUtf8(rt, "clearHitRegions"),
+            jsi::PropNameID::forUtf8(rt, "clearRect"),
+            jsi::PropNameID::forUtf8(rt, "clip"),
+            jsi::PropNameID::forUtf8(rt, "closePath"),
+            jsi::PropNameID::forUtf8(rt, "createImageData"),
+            jsi::PropNameID::forUtf8(rt, "createLinearGradient"),
+            jsi::PropNameID::forUtf8(rt, "createPattern"),
+            jsi::PropNameID::forUtf8(rt, "drawImage"),
+            jsi::PropNameID::forUtf8(rt, "ellipse"),
+            jsi::PropNameID::forUtf8(rt, "fill"),
+            jsi::PropNameID::forUtf8(rt, "fillRect"),
+            jsi::PropNameID::forUtf8(rt, "fillText"),
+            jsi::PropNameID::forUtf8(rt, "getImageData"),
+            jsi::PropNameID::forUtf8(rt, "getLineDash"),
+            jsi::PropNameID::forUtf8(rt, "isPointInPath"),
+            jsi::PropNameID::forUtf8(rt, "isPointInStroke"),
+            jsi::PropNameID::forUtf8(rt, "lineTo"),
+            jsi::PropNameID::forUtf8(rt, "measureText"),
+            jsi::PropNameID::forUtf8(rt, "moveTo"),
+            jsi::PropNameID::forUtf8(rt, "putImageData"),
+            jsi::PropNameID::forUtf8(rt, "quadraticCurveTo"),
+            jsi::PropNameID::forUtf8(rt, "rect"),
+            jsi::PropNameID::forUtf8(rt, "removeHitRegion"),
+            jsi::PropNameID::forUtf8(rt, "resetTransform"),
+            jsi::PropNameID::forUtf8(rt, "restore"),
+            jsi::PropNameID::forUtf8(rt, "rotate"),
+            jsi::PropNameID::forUtf8(rt, "save"),
+            jsi::PropNameID::forUtf8(rt, "scale"),
+            jsi::PropNameID::forUtf8(rt, "scrollPathIntoView"),
+            jsi::PropNameID::forUtf8(rt, "setLineDash"),
+            jsi::PropNameID::forUtf8(rt, "setTransform"),
+            jsi::PropNameID::forUtf8(rt, "stroke"),
+            jsi::PropNameID::forUtf8(rt, "strokeRect"),
+            jsi::PropNameID::forUtf8(rt, "strokeText"),
+            jsi::PropNameID::forUtf8(rt, "transform"),
+            jsi::PropNameID::forUtf8(rt, "translate"),
+            jsi::PropNameID::forUtf8(rt, "__toDataURL")
     };
 }
 
 
 void
-CanvasRenderingContext2DImpl::set(Runtime &runtime, const PropNameID &name, const Value &value) {
+CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &name,
+                                  const jsi::Value &value) {
     auto methodName = name.utf8(runtime);
     if (methodName == "font") {
         auto val = value.asString(runtime).utf8(runtime);
@@ -214,20 +215,24 @@ CanvasRenderingContext2DImpl::set(Runtime &runtime, const PropNameID &name, cons
 }
 
 
-Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name) {
+jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
     if (methodName == "__resize") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    auto width = arguments[0].asNumber();
-                                                    auto height = arguments[1].asNumber();
-                                                    canvas_native_context_resize(this->GetContext(),
-                                                                                 static_cast<float>(width),
-                                                                                 static_cast<float>(height));
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto width = arguments[0].asNumber();
+                                                         auto height = arguments[1].asNumber();
+                                                         canvas_native_context_resize(
+                                                                 this->GetContext(),
+                                                                 static_cast<float>(width),
+                                                                 static_cast<float>(height));
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "font") {
         auto font = canvas_native_context_get_font(this->GetContext());
@@ -287,7 +292,7 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                 return jsi::Object::createFromHostObject(runtime, style);
             }
             case PaintStyleType::None: {
-                return Value::undefined();
+                return jsi::Value::undefined();
             }
         }
     } else if (methodName == "strokeStyle") {
@@ -310,7 +315,7 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
                 return jsi::Object::createFromHostObject(runtime, style);
             }
             case PaintStyleType::None: {
-                return Value::undefined();
+                return jsi::Value::undefined();
             }
         }
     } else if (methodName == "lineWidth") {
@@ -322,1166 +327,1277 @@ Value CanvasRenderingContext2DImpl::get(Runtime &runtime, const PropNameID &name
         auto ret = jsi::Array(runtime, size);
         for (size_t i = 0; i < size; i++) {
             auto item = lineDash[i];
-            ret.setValueAtIndex(runtime, i, Value((double) item));
+            ret.setValueAtIndex(runtime, i, jsi::Value((double) item));
         }
         return ret;
     } else if (methodName == "addHitRegion") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [](Runtime &runtime, const Value &thisValue,
-                                                   const Value *arguments,
-                                                   size_t count) -> Value {
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "arc") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    auto anti_clockwise = false;
-                                                    if (count == 6) {
-                                                        anti_clockwise = arguments[5].asBool();
-                                                    }
-                                                    canvas_native_context_arc(
-                                                            this->GetContext(),
-                                                            static_cast<float>(arguments[0].asNumber()),
-                                                            static_cast<float>(arguments[1].asNumber()),
-                                                            static_cast<float>(arguments[2].asNumber()),
-                                                            static_cast<float>(arguments[3].asNumber()),
-                                                            static_cast<float>(arguments[4].asNumber()),
-                                                            anti_clockwise
-                                                    );
+                                                         auto anti_clockwise = false;
+                                                         if (count == 6) {
+                                                             anti_clockwise = arguments[5].asBool();
+                                                         }
+                                                         canvas_native_context_arc(
+                                                                 this->GetContext(),
+                                                                 static_cast<float>(arguments[0].asNumber()),
+                                                                 static_cast<float>(arguments[1].asNumber()),
+                                                                 static_cast<float>(arguments[2].asNumber()),
+                                                                 static_cast<float>(arguments[3].asNumber()),
+                                                                 static_cast<float>(arguments[4].asNumber()),
+                                                                 anti_clockwise
+                                                         );
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "arcTo") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    auto x1 = static_cast<float>(arguments[0].asNumber());
-                                                    auto y1 = static_cast<float>(arguments[1].asNumber());
-                                                    auto x2 = static_cast<float>(arguments[2].asNumber());
-                                                    auto y2 = static_cast<float>(arguments[3].asNumber());
-                                                    auto radius = static_cast<float>(arguments[4].asNumber());
-                                                    canvas_native_context_arc_to(
-                                                            this->GetContext(),
-                                                            x1,
-                                                            y1,
-                                                            x2,
-                                                            y2,
-                                                            radius
-                                                    );
+                                                         auto x1 = static_cast<float>(arguments[0].asNumber());
+                                                         auto y1 = static_cast<float>(arguments[1].asNumber());
+                                                         auto x2 = static_cast<float>(arguments[2].asNumber());
+                                                         auto y2 = static_cast<float>(arguments[3].asNumber());
+                                                         auto radius = static_cast<float>(arguments[4].asNumber());
+                                                         canvas_native_context_arc_to(
+                                                                 this->GetContext(),
+                                                                 x1,
+                                                                 y1,
+                                                                 x2,
+                                                                 y2,
+                                                                 radius
+                                                         );
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "beginPath") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    canvas_native_context_begin_path(
-                                                            this->GetContext());
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         canvas_native_context_begin_path(
+                                                                 this->GetContext());
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "bezierCurveTo") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    canvas_native_context_bezier_curve_to(
-                                                            this->GetContext(),
-                                                            static_cast<float>(arguments[0].asNumber()),
-                                                            static_cast<float>(arguments[1].asNumber()),
-                                                            static_cast<float>(arguments[2].asNumber()),
-                                                            static_cast<float>(arguments[3].asNumber()),
-                                                            static_cast<float>(arguments[4].asNumber()),
-                                                            static_cast<float>(arguments[5].asNumber())
-                                                    );
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         canvas_native_context_bezier_curve_to(
+                                                                 this->GetContext(),
+                                                                 static_cast<float>(arguments[0].asNumber()),
+                                                                 static_cast<float>(arguments[1].asNumber()),
+                                                                 static_cast<float>(arguments[2].asNumber()),
+                                                                 static_cast<float>(arguments[3].asNumber()),
+                                                                 static_cast<float>(arguments[4].asNumber()),
+                                                                 static_cast<float>(arguments[5].asNumber())
+                                                         );
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "clearHitRegions") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [](Runtime &runtime, const Value &thisValue,
-                                                   const Value *arguments,
-                                                   size_t count) -> Value {
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "clearRect") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    canvas_native_context_clear_rect(
-                                                            this->GetContext(),
-                                                            static_cast<float>(arguments[0].asNumber()),
-                                                            static_cast<float>(arguments[1].asNumber()),
-                                                            static_cast<float>(arguments[2].asNumber()),
-                                                            static_cast<float>(arguments[3].asNumber())
-                                                    );
-                                                    this->UpdateInvalidateState();
+                                                         canvas_native_context_clear_rect(
+                                                                 this->GetContext(),
+                                                                 static_cast<float>(arguments[0].asNumber()),
+                                                                 static_cast<float>(arguments[1].asNumber()),
+                                                                 static_cast<float>(arguments[2].asNumber()),
+                                                                 static_cast<float>(arguments[3].asNumber())
+                                                         );
+                                                         this->UpdateInvalidateState();
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "clip") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 0) {
-                                                        std::string rule("nonzero");
-                                                        canvas_native_context_clip_rule(
-                                                                this->GetContext(),
-                                                                rust::Str(rule.c_str(),
-                                                                          rule.size()));
-                                                    } else if (arguments[0].isString()) {
-                                                        auto val = arguments[0].asString(
-                                                                runtime).utf8(runtime);
-                                                        canvas_native_context_clip_rule(
-                                                                this->GetContext(),
-                                                                rust::Str(val.c_str(), val.size()));
-                                                    }
+                                                         if (count == 0) {
+                                                             std::string rule("nonzero");
+                                                             canvas_native_context_clip_rule(
+                                                                     this->GetContext(),
+                                                                     rust::Str(rule.c_str(),
+                                                                               rule.size()));
+                                                         } else if (arguments[0].isString()) {
+                                                             auto val = arguments[0].asString(
+                                                                     runtime).utf8(runtime);
+                                                             canvas_native_context_clip_rule(
+                                                                     this->GetContext(),
+                                                                     rust::Str(val.c_str(),
+                                                                               val.size()));
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "closePath") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    canvas_native_context_close_path(
-                                                            this->GetContext());
-                                                    return Value::undefined();
-                                                }
+                                                         canvas_native_context_close_path(
+                                                                 this->GetContext());
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "createImageData") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [](Runtime &runtime, const Value &thisValue,
-                                                   const Value *arguments,
-                                                   size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
 
 
-                                                    if (count == 1 && arguments[0].isObject()) {
+                                                         if (count == 1 &&
+                                                             arguments[0].isObject()) {
 
-                                                        auto object = arguments[0].asObject(
-                                                                runtime).asHostObject<ImageDataImpl>(
-                                                                runtime);
+                                                             auto object = arguments[0].asObject(
+                                                                     runtime).asHostObject<ImageDataImpl>(
+                                                                     runtime);
 
-                                                        if (object != nullptr) {
-                                                            auto width = canvas_native_image_data_get_width(
-                                                                    object->GetImageData());
-                                                            auto height = canvas_native_image_data_get_height(
-                                                                    object->GetImageData());
-                                                            auto data = std::make_shared<ImageDataImpl>(
-                                                                    canvas_native_image_data_create(
-                                                                            width, height));
-                                                            return jsi::Object::createFromHostObject(
-                                                                    runtime, data);
-                                                        }
+                                                             if (object != nullptr) {
+                                                                 auto width = canvas_native_image_data_get_width(
+                                                                         object->GetImageData());
+                                                                 auto height = canvas_native_image_data_get_height(
+                                                                         object->GetImageData());
+                                                                 auto data = std::make_shared<ImageDataImpl>(
+                                                                         canvas_native_image_data_create(
+                                                                                 width, height));
+                                                                 return jsi::Object::createFromHostObject(
+                                                                         runtime, data);
+                                                             }
 
-                                                    } else if (count > 1) {
+                                                         } else if (count > 1) {
 
-                                                        auto width = (int) arguments[0].asNumber();
-                                                        auto height = (int) arguments[1].asNumber();
-                                                        auto data = std::make_shared<ImageDataImpl>(
-                                                                canvas_native_image_data_create(
-                                                                        width, height));
-                                                        return jsi::Object::createFromHostObject(
-                                                                runtime, data);
-                                                    }
+                                                             auto width = (int) arguments[0].asNumber();
+                                                             auto height = (int) arguments[1].asNumber();
+                                                             auto data = std::make_shared<ImageDataImpl>(
+                                                                     canvas_native_image_data_create(
+                                                                             width, height));
+                                                             return jsi::Object::createFromHostObject(
+                                                                     runtime, data);
+                                                         }
 
-                                                    // todo throw ?
-                                                    return Value::undefined();
+                                                         // todo throw ?
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "createLinearGradient") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count == 4) {
-                                                        auto x0 = static_cast<float>(arguments[0].asNumber());
-                                                        auto y0 = static_cast<float>(arguments[1].asNumber());
-                                                        auto x1 = static_cast<float>(arguments[2].asNumber());
-                                                        auto y1 = static_cast<float>(arguments[3].asNumber());
+                                                         if (count == 4) {
+                                                             auto x0 = static_cast<float>(arguments[0].asNumber());
+                                                             auto y0 = static_cast<float>(arguments[1].asNumber());
+                                                             auto x1 = static_cast<float>(arguments[2].asNumber());
+                                                             auto y1 = static_cast<float>(arguments[3].asNumber());
 
-                                                        auto gradient = canvas_native_context_create_linear_gradient(
-                                                                this->GetContext(), x0, y0, x1,
-                                                                y1);
-                                                        auto ret = std::make_shared<CanvasGradient>(
-                                                                std::move(gradient));
-                                                        return jsi::Object::createFromHostObject(
-                                                                runtime,
-                                                                ret);
-                                                    }
+                                                             auto gradient = canvas_native_context_create_linear_gradient(
+                                                                     this->GetContext(), x0, y0, x1,
+                                                                     y1);
+                                                             auto ret = std::make_shared<CanvasGradient>(
+                                                                     std::move(gradient));
+                                                             return jsi::Object::createFromHostObject(
+                                                                     runtime,
+                                                                     ret);
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "createPattern") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        if (arguments[0].isNull() ||
-                                                            arguments[0].isUndefined()) { return Value::undefined(); }
+                                                         if (count > 1) {
+                                                             if (arguments[0].isNull() ||
+                                                                 arguments[0].isUndefined()) { return jsi::Value::undefined(); }
 
-                                                        auto object = arguments[0].asObject(
-                                                                runtime);
+                                                             auto object = arguments[0].asObject(
+                                                                     runtime);
 
-                                                        auto image_asset = object.asHostObject<ImageAssetImpl>(
-                                                                runtime);
+                                                             auto image_asset = object.asHostObject<ImageAssetImpl>(
+                                                                     runtime);
 
-                                                        if (image_asset != nullptr) {
-                                                            auto rep = arguments[1].asString(
-                                                                    runtime).utf8(runtime);
-                                                            rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(
-                                                                    this->GetContext(),
-                                                                    image_asset->GetImageAsset(),
-                                                                    rust::Str(rep.c_str(),
-                                                                              rep.size()));
-                                                            auto type = canvas_native_context_get_style_type(
-                                                                    *pattern);
-                                                            if (type == PaintStyleType::None) {
-                                                                return Value::undefined();
-                                                            } else {
-                                                                auto ret = std::make_shared<CanvasPattern>(
-                                                                        std::move(pattern));
-                                                                return Object::createFromHostObject(
-                                                                        runtime, ret);
-                                                            }
-                                                        }
-
-
-                                                        auto canvas_2d = object.asHostObject<CanvasRenderingContext2DImpl>(
-                                                                runtime);
-                                                        if (canvas_2d != nullptr) {
-                                                            auto rep = arguments[1].asString(
-                                                                    runtime).utf8(runtime);
-                                                            rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
-                                                                    this->GetContext(),
-                                                                    canvas_2d->GetContext(),
-                                                                    rust::Str(rep.c_str(),
-                                                                              rep.size()));
-                                                            auto type = canvas_native_context_get_style_type(
-                                                                    *pattern);
-                                                            if (type == PaintStyleType::None) {
-                                                                return Value::undefined();
-                                                            } else {
-                                                                auto ret = std::make_shared<CanvasPattern>(
-                                                                        std::move(pattern));
-                                                                return jsi::Object::createFromHostObject(
-                                                                        runtime, ret);
-                                                            }
-                                                        }
-                                                        auto webgl = object.asHostObject<WebGLRenderingContextBase>(
-                                                                runtime);
-                                                        if (webgl != nullptr) {
-                                                            auto rep = arguments[1].asString(
-                                                                    runtime).utf8(runtime);
-                                                            rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_webgl(
-                                                                    webgl->GetState(),
-                                                                    this->GetContext(),
-                                                                    rust::Str(rep.data(),
-                                                                              rep.size()));
-                                                            auto type = canvas_native_context_get_style_type(
-                                                                    *pattern);
-                                                            if (type == PaintStyleType::None) {
-                                                                return Value::undefined();
-                                                            } else {
-                                                                auto ret = std::make_shared<CanvasPattern>(
-                                                                        std::move(pattern));
-                                                                return jsi::Object::createFromHostObject(
-                                                                        runtime, ret);
-                                                            }
-                                                        }
-                                                    }
+                                                             if (image_asset != nullptr) {
+                                                                 auto rep = arguments[1].asString(
+                                                                         runtime).utf8(runtime);
+                                                                 rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(
+                                                                         this->GetContext(),
+                                                                         image_asset->GetImageAsset(),
+                                                                         rust::Str(rep.c_str(),
+                                                                                   rep.size()));
+                                                                 auto type = canvas_native_context_get_style_type(
+                                                                         *pattern);
+                                                                 if (type == PaintStyleType::None) {
+                                                                     return jsi::Value::undefined();
+                                                                 } else {
+                                                                     auto ret = std::make_shared<CanvasPattern>(
+                                                                             std::move(pattern));
+                                                                     return jsi::Object::createFromHostObject(
+                                                                             runtime, ret);
+                                                                 }
+                                                             }
 
 
-                                                    return Value::undefined();
-                                                }
+                                                             auto canvas_2d = object.asHostObject<CanvasRenderingContext2DImpl>(
+                                                                     runtime);
+                                                             if (canvas_2d != nullptr) {
+                                                                 auto rep = arguments[1].asString(
+                                                                         runtime).utf8(runtime);
+                                                                 rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
+                                                                         this->GetContext(),
+                                                                         canvas_2d->GetContext(),
+                                                                         rust::Str(rep.c_str(),
+                                                                                   rep.size()));
+                                                                 auto type = canvas_native_context_get_style_type(
+                                                                         *pattern);
+                                                                 if (type == PaintStyleType::None) {
+                                                                     return jsi::Value::undefined();
+                                                                 } else {
+                                                                     auto ret = std::make_shared<CanvasPattern>(
+                                                                             std::move(pattern));
+                                                                     return jsi::Object::createFromHostObject(
+                                                                             runtime, ret);
+                                                                 }
+                                                             }
+                                                             auto webgl = object.asHostObject<WebGLRenderingContextBase>(
+                                                                     runtime);
+                                                             if (webgl != nullptr) {
+                                                                 auto rep = arguments[1].asString(
+                                                                         runtime).utf8(runtime);
+                                                                 rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_webgl(
+                                                                         webgl->GetState(),
+                                                                         this->GetContext(),
+                                                                         rust::Str(rep.data(),
+                                                                                   rep.size()));
+                                                                 auto type = canvas_native_context_get_style_type(
+                                                                         *pattern);
+                                                                 if (type == PaintStyleType::None) {
+                                                                     return jsi::Value::undefined();
+                                                                 } else {
+                                                                     auto ret = std::make_shared<CanvasPattern>(
+                                                                             std::move(pattern));
+                                                                     return jsi::Object::createFromHostObject(
+                                                                             runtime, ret);
+                                                                 }
+                                                             }
+                                                         }
+
+
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "createRadialGradient") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count == 6) {
-                                                        auto x0 = static_cast<float>(arguments[0].asNumber());
-                                                        auto y0 = static_cast<float>(arguments[1].asNumber());
-                                                        auto r0 = static_cast<float>(arguments[2].asNumber());
-                                                        auto x1 = static_cast<float>(arguments[3].asNumber());
-                                                        auto y1 = static_cast<float>(arguments[4].asNumber());
-                                                        auto r1 = static_cast<float>(arguments[5].asNumber());
+                                                         if (count == 6) {
+                                                             auto x0 = static_cast<float>(arguments[0].asNumber());
+                                                             auto y0 = static_cast<float>(arguments[1].asNumber());
+                                                             auto r0 = static_cast<float>(arguments[2].asNumber());
+                                                             auto x1 = static_cast<float>(arguments[3].asNumber());
+                                                             auto y1 = static_cast<float>(arguments[4].asNumber());
+                                                             auto r1 = static_cast<float>(arguments[5].asNumber());
 
-                                                        auto gradient = canvas_native_context_create_radial_gradient(
-                                                                this->GetContext(), x0, y0, r0,
-                                                                x1, y1, r1);
-                                                        auto ret = std::make_shared<CanvasGradient>(
-                                                                std::move(gradient));
-                                                        return jsi::Object::createFromHostObject(
-                                                                runtime, ret);
-                                                    }
+                                                             auto gradient = canvas_native_context_create_radial_gradient(
+                                                                     this->GetContext(), x0, y0, r0,
+                                                                     x1, y1, r1);
+                                                             auto ret = std::make_shared<CanvasGradient>(
+                                                                     std::move(gradient));
+                                                             return jsi::Object::createFromHostObject(
+                                                                     runtime, ret);
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "drawFocusIfNeeded") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [](Runtime &runtime, const Value &thisValue,
-                                                   const Value *arguments,
-                                                   size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "drawImage") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 9,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     9,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count == 3) {
-                                                        auto image = arguments[0].asObject(runtime);
-                                                        auto dx = static_cast<float>(arguments[1].asNumber());
-                                                        auto dy = static_cast<float>(arguments[2].asNumber());
+                                                         if (count == 3) {
+                                                             auto image = arguments[0].asObject(
+                                                                     runtime);
+                                                             auto dx = static_cast<float>(arguments[1].asNumber());
+                                                             auto dy = static_cast<float>(arguments[2].asNumber());
 
 
-                                                        auto image_asset = image.asHostObject<ImageAssetImpl>(
-                                                                runtime);
+                                                             auto image_asset = image.asHostObject<ImageAssetImpl>(
+                                                                     runtime);
 
-                                                        if (image_asset != nullptr) {
-                                                            canvas_native_context_draw_image_dx_dy_asset(
-                                                                    this->GetContext(),
-                                                                    image_asset->GetImageAsset(),
-                                                                    dx, dy);
-                                                            this->UpdateInvalidateState();
-                                                            return Value::undefined();
-                                                        }
+                                                             if (image_asset != nullptr) {
+                                                                 canvas_native_context_draw_image_dx_dy_asset(
+                                                                         this->GetContext(),
+                                                                         image_asset->GetImageAsset(),
+                                                                         dx, dy);
+                                                                 this->UpdateInvalidateState();
+                                                                 return jsi::Value::undefined();
+                                                             }
 
-                                                        auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
-                                                                runtime);
-                                                        if (image_bitmap != nullptr) {
-                                                            canvas_native_context_draw_image_dx_dy_asset(
-                                                                    this->GetContext(),
-                                                                    image_bitmap->GetImageAsset(),
-                                                                    dx, dy);
-                                                            this->UpdateInvalidateState();
-                                                        }
-                                                    } else if (count == 5) {
-                                                        auto image = arguments[0].asObject(runtime);
-                                                        auto dx = (float) arguments[1].asNumber();
-                                                        auto dy = (float) arguments[2].asNumber();
-                                                        auto dWidth = (float) arguments[3].asNumber();
-                                                        auto dHeight = (float) arguments[4].asNumber();
+                                                             auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
+                                                                     runtime);
+                                                             if (image_bitmap != nullptr) {
+                                                                 canvas_native_context_draw_image_dx_dy_asset(
+                                                                         this->GetContext(),
+                                                                         image_bitmap->GetImageAsset(),
+                                                                         dx, dy);
+                                                                 this->UpdateInvalidateState();
+                                                             }
+                                                         } else if (count == 5) {
+                                                             auto image = arguments[0].asObject(
+                                                                     runtime);
+                                                             auto dx = (float) arguments[1].asNumber();
+                                                             auto dy = (float) arguments[2].asNumber();
+                                                             auto dWidth = (float) arguments[3].asNumber();
+                                                             auto dHeight = (float) arguments[4].asNumber();
 
-                                                        auto image_asset = image.asHostObject<ImageAssetImpl>(
-                                                                runtime);
-                                                        if (image_asset != nullptr) {
-                                                            canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-                                                                    this->GetContext(),
-                                                                    image_asset->GetImageAsset(),
-                                                                    dx, dy,
-                                                                    dWidth,
-                                                                    dHeight);
-                                                            this->UpdateInvalidateState();
-                                                            return Value::undefined();
-                                                        }
+                                                             auto image_asset = image.asHostObject<ImageAssetImpl>(
+                                                                     runtime);
+                                                             if (image_asset != nullptr) {
+                                                                 canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                                                                         this->GetContext(),
+                                                                         image_asset->GetImageAsset(),
+                                                                         dx, dy,
+                                                                         dWidth,
+                                                                         dHeight);
+                                                                 this->UpdateInvalidateState();
+                                                                 return jsi::Value::undefined();
+                                                             }
 
-                                                        auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
-                                                                runtime);
-                                                        if (image_bitmap != nullptr) {
-                                                            canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-                                                                    this->GetContext(),
-                                                                    image_bitmap->GetImageAsset(),
-                                                                    dx, dy,
-                                                                    dWidth,
-                                                                    dHeight);
-                                                            this->UpdateInvalidateState();
-                                                            return Value::undefined();
-                                                        }
-                                                    } else if (count == 9) {
-                                                        auto image = arguments[0].asObject(runtime);
-                                                        auto sx = (float) arguments[1].asNumber();
-                                                        auto sy = (float) arguments[2].asNumber();
-                                                        auto sWidth = (float) arguments[3].asNumber();
-                                                        auto sHeight = (float) arguments[4].asNumber();
-                                                        auto dx = (float) arguments[5].asNumber();
-                                                        auto dy = (float) arguments[6].asNumber();
-                                                        auto dWidth = (float) arguments[7].asNumber();
-                                                        auto dHeight = (float) arguments[8].asNumber();
+                                                             auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
+                                                                     runtime);
+                                                             if (image_bitmap != nullptr) {
+                                                                 canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                                                                         this->GetContext(),
+                                                                         image_bitmap->GetImageAsset(),
+                                                                         dx, dy,
+                                                                         dWidth,
+                                                                         dHeight);
+                                                                 this->UpdateInvalidateState();
+                                                                 return jsi::Value::undefined();
+                                                             }
+                                                         } else if (count == 9) {
+                                                             auto image = arguments[0].asObject(
+                                                                     runtime);
+                                                             auto sx = (float) arguments[1].asNumber();
+                                                             auto sy = (float) arguments[2].asNumber();
+                                                             auto sWidth = (float) arguments[3].asNumber();
+                                                             auto sHeight = (float) arguments[4].asNumber();
+                                                             auto dx = (float) arguments[5].asNumber();
+                                                             auto dy = (float) arguments[6].asNumber();
+                                                             auto dWidth = (float) arguments[7].asNumber();
+                                                             auto dHeight = (float) arguments[8].asNumber();
 
 
-                                                        auto image_asset = image.asHostObject<ImageAssetImpl>(
-                                                                runtime);
-                                                        if (image_asset != nullptr) {
-                                                            canvas_native_context_draw_image_asset(
-                                                                    this->GetContext(),
-                                                                    image_asset->GetImageAsset(),
-                                                                    sx,
-                                                                    sy, sWidth, sHeight,
-                                                                    dx,
-                                                                    dy, dWidth, dHeight);
-                                                            this->UpdateInvalidateState();
-                                                            return Value::undefined();
-                                                        }
+                                                             auto image_asset = image.asHostObject<ImageAssetImpl>(
+                                                                     runtime);
+                                                             if (image_asset != nullptr) {
+                                                                 canvas_native_context_draw_image_asset(
+                                                                         this->GetContext(),
+                                                                         image_asset->GetImageAsset(),
+                                                                         sx,
+                                                                         sy, sWidth, sHeight,
+                                                                         dx,
+                                                                         dy, dWidth, dHeight);
+                                                                 this->UpdateInvalidateState();
+                                                                 return jsi::Value::undefined();
+                                                             }
 
-                                                        auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
-                                                                runtime);
-                                                        if (image_bitmap != nullptr) {
-                                                            canvas_native_context_draw_image_asset(
-                                                                    this->GetContext(),
-                                                                    image_bitmap->GetImageAsset(),
-                                                                    sx,
-                                                                    sy, sWidth, sHeight,
-                                                                    dx,
-                                                                    dy, dWidth, dHeight);
-                                                            this->UpdateInvalidateState();
-                                                            return Value::undefined();
-                                                        }
-                                                    }
+                                                             auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
+                                                                     runtime);
+                                                             if (image_bitmap != nullptr) {
+                                                                 canvas_native_context_draw_image_asset(
+                                                                         this->GetContext(),
+                                                                         image_bitmap->GetImageAsset(),
+                                                                         sx,
+                                                                         sy, sWidth, sHeight,
+                                                                         dx,
+                                                                         dy, dWidth, dHeight);
+                                                                 this->UpdateInvalidateState();
+                                                                 return jsi::Value::undefined();
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "ellipse") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 8,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count == 8) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        auto radiusX = static_cast<float>(arguments[2].asNumber());
-                                                        auto radiusY = static_cast<float>(arguments[3].asNumber());
-                                                        auto rotation = static_cast<float>(arguments[4].asNumber());
-                                                        auto startAngle = static_cast<float>(arguments[5].asNumber());
-                                                        auto endAngle = static_cast<float>(arguments[6].asNumber());
-                                                        auto anticlockwise = false;
-                                                        if (arguments[7].isBool()) {
-                                                            anticlockwise = arguments[7].asBool();
-                                                        }
-                                                        canvas_native_context_ellipse(
-                                                                this->GetContext(), x, y, radiusX,
-                                                                radiusY, rotation,
-                                                                startAngle, endAngle,
-                                                                anticlockwise);
-                                                    }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     8,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count == 8) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             auto radiusX = static_cast<float>(arguments[2].asNumber());
+                                                             auto radiusY = static_cast<float>(arguments[3].asNumber());
+                                                             auto rotation = static_cast<float>(arguments[4].asNumber());
+                                                             auto startAngle = static_cast<float>(arguments[5].asNumber());
+                                                             auto endAngle = static_cast<float>(arguments[6].asNumber());
+                                                             auto anticlockwise = false;
+                                                             if (arguments[7].isBool()) {
+                                                                 anticlockwise = arguments[7].asBool();
+                                                             }
+                                                             canvas_native_context_ellipse(
+                                                                     this->GetContext(), x, y,
+                                                                     radiusX,
+                                                                     radiusY, rotation,
+                                                                     startAngle, endAngle,
+                                                                     anticlockwise);
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "fill") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count == 2) {
-                                                        auto object = arguments[0].asObject(
-                                                                runtime).asHostObject<Path2D>(
-                                                                runtime);
-                                                        auto rule = &arguments[1];
-                                                        if (object != nullptr) {
-                                                            auto value = rule->asString(
-                                                                    runtime).utf8(runtime);
-                                                            canvas_native_context_fill_with_path(
-                                                                    this->GetContext(),
-                                                                    object->GetPath(),
-                                                                    rust::Str(value.c_str(),
-                                                                              value.size()));
-                                                            this->UpdateInvalidateState();
-                                                        }
-                                                    } else if (count == 1) {
-                                                        if (arguments[0].isString()) {
-                                                            auto value = arguments[0].asString(
-                                                                    runtime).utf8(runtime);
-                                                            canvas_native_context_fill(
-                                                                    this->GetContext(),
-                                                                    rust::Str(value.c_str(),
-                                                                              value.size()));
-                                                            this->UpdateInvalidateState();
-                                                        } else if (arguments[0].isObject()) {
-                                                            auto object = arguments[0].asObject(
-                                                                    runtime).asHostObject<Path2D>(
-                                                                    runtime);
-                                                            if (object != nullptr) {
-                                                                std::string rule("nonzero");
-                                                                canvas_native_context_fill_with_path(
-                                                                        this->GetContext(),
-                                                                        object->GetPath(),
-                                                                        rust::Str(rule.c_str(),
-                                                                                  rule.size()));
-                                                                this->UpdateInvalidateState();
-                                                            }
-                                                        }
-                                                    } else {
-                                                        std::string rule("nonzero");
-                                                        canvas_native_context_fill(
-                                                                this->GetContext(),
-                                                                rust::Str(rule.c_str(),
-                                                                          rule.size()));
-                                                        this->UpdateInvalidateState();
-                                                    }
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count == 2) {
+                                                             auto object = getHostObject<Path2D>(runtime, arguments[0]);
+
+                                                             auto rule = &arguments[1];
+                                                             if (object != nullptr) {
+                                                                 auto value = rule->asString(
+                                                                         runtime).utf8(runtime);
+                                                                 canvas_native_context_fill_with_path(
+                                                                         this->GetContext(),
+                                                                         object->GetPath(),
+                                                                         rust::Str(value.c_str(),
+                                                                                   value.size()));
+                                                                 this->UpdateInvalidateState();
+                                                             }
+                                                         } else if (count == 1) {
+                                                             if (arguments[0].isString()) {
+                                                                 auto value = arguments[0].asString(
+                                                                         runtime).utf8(runtime);
+                                                                 canvas_native_context_fill(
+                                                                         this->GetContext(),
+                                                                         rust::Str(value.c_str(),
+                                                                                   value.size()));
+                                                                 this->UpdateInvalidateState();
+                                                             } else if (arguments[0].isObject()) {
+                                                                 auto object = arguments[0].asObject(
+                                                                         runtime).asHostObject<Path2D>(
+                                                                         runtime);
+                                                                 if (object != nullptr) {
+                                                                     std::string rule("nonzero");
+                                                                     canvas_native_context_fill_with_path(
+                                                                             this->GetContext(),
+                                                                             object->GetPath(),
+                                                                             rust::Str(rule.c_str(),
+                                                                                       rule.size()));
+                                                                     this->UpdateInvalidateState();
+                                                                 }
+                                                             }
+                                                         } else {
+                                                             std::string rule("nonzero");
+                                                             canvas_native_context_fill(
+                                                                     this->GetContext(),
+                                                                     rust::Str(rule.c_str(),
+                                                                               rule.size()));
+                                                             this->UpdateInvalidateState();
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "fillRect") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    auto x = static_cast<float>(arguments[0].asNumber());
-                                                    auto y = static_cast<float>(arguments[1].asNumber());
-                                                    auto width = static_cast<float>(arguments[2].asNumber());
-                                                    auto height = static_cast<float>(arguments[3].asNumber());
-                                                    canvas_native_context_fill_rect(
-                                                            this->GetContext(), x, y, width,
-                                                            height);
-                                                    this->UpdateInvalidateState();
+                                                         auto x = static_cast<float>(arguments[0].asNumber());
+                                                         auto y = static_cast<float>(arguments[1].asNumber());
+                                                         auto width = static_cast<float>(arguments[2].asNumber());
+                                                         auto height = static_cast<float>(arguments[3].asNumber());
+                                                         canvas_native_context_fill_rect(
+                                                                 this->GetContext(), x, y, width,
+                                                                 height);
+                                                         this->UpdateInvalidateState();
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "fillText") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    auto text = arguments[0].asString(runtime).utf8(
-                                                            runtime);
-                                                    auto x = static_cast<float>(arguments[1].asNumber());
-                                                    auto y = static_cast<float>(arguments[2].asNumber());
-                                                    float width = -1;
-                                                    if (arguments[3].isNumber()) {
-                                                        width = static_cast<float>(arguments[3].asNumber());
-                                                    }
-                                                    canvas_native_context_fill_text(
-                                                            this->GetContext(),
-                                                            rust::Str(text.data(), text.size()), x,
-                                                            y, width);
-                                                    this->UpdateInvalidateState();
+                                                         auto text = arguments[0].asString(
+                                                                 runtime).utf8(
+                                                                 runtime);
+                                                         auto x = static_cast<float>(arguments[1].asNumber());
+                                                         auto y = static_cast<float>(arguments[2].asNumber());
+                                                         float width = -1;
+                                                         if (arguments[3].isNumber()) {
+                                                             width = static_cast<float>(arguments[3].asNumber());
+                                                         }
+                                                         canvas_native_context_fill_text(
+                                                                 this->GetContext(),
+                                                                 rust::Str(text.data(),
+                                                                           text.size()), x,
+                                                                 y, width);
+                                                         this->UpdateInvalidateState();
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "getImageData") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 4) {
-                                                        auto sx = static_cast<float>(arguments[0].asNumber());
-                                                        auto sy = static_cast<float>(arguments[1].asNumber());
-                                                        auto sw = static_cast<float>(arguments[2].asNumber());
-                                                        auto sh = static_cast<float>(arguments[3].asNumber());
-                                                        auto data = canvas_native_context_get_image_data(
-                                                                this->GetContext(), sx, sy, sw, sh);
-                                                        auto object = std::make_shared<ImageDataImpl>(
-                                                                std::move(data));
-                                                        return jsi::Object::createFromHostObject(
-                                                                runtime, object);
-                                                    }
+                                                         if (count == 4) {
+                                                             auto sx = static_cast<float>(arguments[0].asNumber());
+                                                             auto sy = static_cast<float>(arguments[1].asNumber());
+                                                             auto sw = static_cast<float>(arguments[2].asNumber());
+                                                             auto sh = static_cast<float>(arguments[3].asNumber());
+                                                             auto data = canvas_native_context_get_image_data(
+                                                                     this->GetContext(), sx, sy, sw,
+                                                                     sh);
+                                                             auto object = std::make_shared<ImageDataImpl>(
+                                                                     std::move(data));
+                                                             return jsi::Object::createFromHostObject(
+                                                                     runtime, object);
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "getLineDash") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    auto dash = canvas_native_context_get_line_dash(
-                                                            this->GetContext());
-                                                    auto size = dash.size();
-                                                    auto array = jsi::Array(runtime, size);
-                                                    for (int i = 0; i < size; ++i) {
-                                                        array.setValueAtIndex(runtime, i,
-                                                                              Value((double) dash[i]));
-                                                    }
-                                                    return array;
-                                                }
+                                                         auto dash = canvas_native_context_get_line_dash(
+                                                                 this->GetContext());
+                                                         auto size = dash.size();
+                                                         auto array = jsi::Array(runtime, size);
+                                                         for (int i = 0; i < size; ++i) {
+                                                             array.setValueAtIndex(runtime, i,
+                                                                                   jsi::Value(
+                                                                                           (double) dash[i]));
+                                                         }
+                                                         return array;
+                                                     }
         );
     } else if (methodName == "isPointInPath") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 2) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        std::string rule("nonzero");
-                                                        auto ret = canvas_native_context_is_point_in_path(
-                                                                this->GetContext(), x, y,
-                                                                rust::Str(rule.data(),
-                                                                          rule.size()));
-                                                        return {ret};
-                                                    } else if (count == 3 &&
-                                                               arguments[2].isString()) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        auto rule = arguments[2].asString(
-                                                                runtime).utf8(runtime);
-                                                        auto ret = canvas_native_context_is_point_in_path(
-                                                                this->GetContext(), x, y,
-                                                                rust::Str(rule.data(),
-                                                                          rule.size()));
-                                                        return {ret};
-                                                    } else if (count == 4 &&
-                                                               arguments[0].isObject() &&
-                                                               arguments[3].isString()) {
-                                                        auto path = arguments[0].asObject(
-                                                                runtime).asHostObject<Path2D>(
-                                                                runtime);
-                                                        auto x = static_cast<float>(arguments[1].asNumber());
-                                                        auto y = static_cast<float>(arguments[2].asNumber());
-                                                        auto rule = arguments[3].asString(
-                                                                runtime).utf8(runtime);
+                                                         if (count == 2) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             std::string rule("nonzero");
+                                                             auto ret = canvas_native_context_is_point_in_path(
+                                                                     this->GetContext(), x, y,
+                                                                     rust::Str(rule.data(),
+                                                                               rule.size()));
+                                                             return {ret};
+                                                         } else if (count == 3 &&
+                                                                    arguments[2].isString()) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             auto rule = arguments[2].asString(
+                                                                     runtime).utf8(runtime);
+                                                             auto ret = canvas_native_context_is_point_in_path(
+                                                                     this->GetContext(), x, y,
+                                                                     rust::Str(rule.data(),
+                                                                               rule.size()));
+                                                             return {ret};
+                                                         } else if (count == 4 &&
+                                                                    arguments[0].isObject() &&
+                                                                    arguments[3].isString()) {
+                                                             auto path = arguments[0].asObject(
+                                                                     runtime).asHostObject<Path2D>(
+                                                                     runtime);
+                                                             auto x = static_cast<float>(arguments[1].asNumber());
+                                                             auto y = static_cast<float>(arguments[2].asNumber());
+                                                             auto rule = arguments[3].asString(
+                                                                     runtime).utf8(runtime);
 
 
-                                                        if (path != nullptr) {
-                                                            auto ret = canvas_native_context_is_point_in_path_with_path(
-                                                                    this->GetContext(),
-                                                                    path->GetPath(), x, y,
-                                                                    rust::Str(rule.data(),
-                                                                              rule.size()));
-                                                            return {ret};
-                                                        }
-                                                    }
+                                                             if (path != nullptr) {
+                                                                 auto ret = canvas_native_context_is_point_in_path_with_path(
+                                                                         this->GetContext(),
+                                                                         path->GetPath(), x, y,
+                                                                         rust::Str(rule.data(),
+                                                                                   rule.size()));
+                                                                 return {ret};
+                                                             }
+                                                         }
 
-                                                    return {false};
+                                                         return {false};
 
-                                                }
+                                                     }
         );
     } else if (methodName == "isPointInStroke") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 2) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        auto ret = canvas_native_context_is_point_in_stroke(
-                                                                this->GetContext(), x, y);
-                                                        return {ret};
-                                                    } else if (count == 3 &&
-                                                               arguments[0].isObject()) {
-                                                        auto path = arguments[0].asObject(
-                                                                runtime).asHostObject<Path2D>(
-                                                                runtime);
-                                                        auto x = static_cast<float>(arguments[1].asNumber());
-                                                        auto y = static_cast<float>(arguments[2].asNumber());
-                                                        if (path != nullptr) {
-                                                            auto ret = canvas_native_context_is_point_in_stroke_with_path(
-                                                                    this->GetContext(),
-                                                                    path->GetPath(), x,
-                                                                    y);
-                                                            return {ret};
-                                                        }
-                                                    }
+                                                         if (count == 2) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             auto ret = canvas_native_context_is_point_in_stroke(
+                                                                     this->GetContext(), x, y);
+                                                             return {ret};
+                                                         } else if (count == 3 &&
+                                                                    arguments[0].isObject()) {
+                                                             auto path = arguments[0].asObject(
+                                                                     runtime).asHostObject<Path2D>(
+                                                                     runtime);
+                                                             auto x = static_cast<float>(arguments[1].asNumber());
+                                                             auto y = static_cast<float>(arguments[2].asNumber());
+                                                             if (path != nullptr) {
+                                                                 auto ret = canvas_native_context_is_point_in_stroke_with_path(
+                                                                         this->GetContext(),
+                                                                         path->GetPath(), x,
+                                                                         y);
+                                                                 return {ret};
+                                                             }
+                                                         }
 
-                                                    return {false};
+                                                         return {false};
 
-                                                }
+                                                     }
         );
     } else if (methodName == "lineTo") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        canvas_native_context_line_to(
-                                                                this->GetContext(), x, y);
-                                                    }
+                                                         if (count > 1) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             canvas_native_context_line_to(
+                                                                     this->GetContext(), x, y);
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "measureText") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    auto text = arguments[0].asString(runtime).utf8(
-                                                            runtime);
-                                                    auto metrics = canvas_native_context_measure_text(
-                                                            this->GetContext(),
-                                                            rust::Str(text.c_str(), text.size()));
+                                                         auto text = arguments[0].asString(
+                                                                 runtime).utf8(
+                                                                 runtime);
+                                                         auto metrics = canvas_native_context_measure_text(
+                                                                 this->GetContext(),
+                                                                 rust::Str(text.c_str(),
+                                                                           text.size()));
 
-                                                    auto object = std::make_shared<TextMetricsImpl>(
-                                                            std::move(metrics));
+                                                         auto object = std::make_shared<TextMetricsImpl>(
+                                                                 std::move(metrics));
 
-                                                    return jsi::Object::createFromHostObject(
-                                                            runtime, object);
-                                                }
+                                                         return jsi::Object::createFromHostObject(
+                                                                 runtime, object);
+                                                     }
         );
     } else if (methodName == "moveTo") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        canvas_native_context_move_to(
-                                                                this->GetContext(), x, y);
-                                                    }
+                                                         if (count > 1) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             canvas_native_context_move_to(
+                                                                     this->GetContext(), x, y);
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "putImageData") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 7,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     7,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    auto imageData = arguments[0].asObject(
-                                                            runtime).asHostObject<ImageDataImpl>(
-                                                            runtime);
-                                                    if (count == 3) {
-                                                        auto dx = static_cast<float>(arguments[1].asNumber());
-                                                        auto dy = static_cast<float>(arguments[2].asNumber());
-                                                        float dirtyX = 0;
-                                                        float dirtyY = 0;
-                                                        auto dirtyWidth = (float) canvas_native_image_data_get_width(
-                                                                imageData->GetImageData());
-                                                        auto dirtyHeight = (float) canvas_native_image_data_get_height(
-                                                                imageData->GetImageData());
-                                                        canvas_native_context_put_image_data(
-                                                                this->GetContext(),
-                                                                imageData->GetImageData(), dx,
-                                                                dy, dirtyX, dirtyY,
-                                                                dirtyWidth, dirtyHeight);
-                                                        this->UpdateInvalidateState();
-                                                    } else if (count == 7) {
-                                                        auto dx = static_cast<float>(arguments[1].asNumber());
-                                                        auto dy = static_cast<float>(arguments[2].asNumber());
-                                                        auto dirtyX = static_cast<float>(arguments[3].asNumber());
-                                                        auto dirtyY = static_cast<float>(arguments[4].asNumber());
-                                                        auto dirtyWidth = static_cast<float>(arguments[5].asNumber());
-                                                        auto dirtyHeight = static_cast<float>(arguments[6].asNumber());
-                                                        canvas_native_context_put_image_data(
-                                                                this->GetContext(),
-                                                                imageData->GetImageData(), dx,
-                                                                dy, dirtyX, dirtyY,
-                                                                dirtyWidth, dirtyHeight);
-                                                        this->UpdateInvalidateState();
-                                                    }
+                                                         auto imageData = arguments[0].asObject(
+                                                                 runtime).asHostObject<ImageDataImpl>(
+                                                                 runtime);
+                                                         if (count == 3) {
+                                                             auto dx = static_cast<float>(arguments[1].asNumber());
+                                                             auto dy = static_cast<float>(arguments[2].asNumber());
+                                                             float dirtyX = 0;
+                                                             float dirtyY = 0;
+                                                             auto dirtyWidth = (float) canvas_native_image_data_get_width(
+                                                                     imageData->GetImageData());
+                                                             auto dirtyHeight = (float) canvas_native_image_data_get_height(
+                                                                     imageData->GetImageData());
+                                                             canvas_native_context_put_image_data(
+                                                                     this->GetContext(),
+                                                                     imageData->GetImageData(), dx,
+                                                                     dy, dirtyX, dirtyY,
+                                                                     dirtyWidth, dirtyHeight);
+                                                             this->UpdateInvalidateState();
+                                                         } else if (count == 7) {
+                                                             auto dx = static_cast<float>(arguments[1].asNumber());
+                                                             auto dy = static_cast<float>(arguments[2].asNumber());
+                                                             auto dirtyX = static_cast<float>(arguments[3].asNumber());
+                                                             auto dirtyY = static_cast<float>(arguments[4].asNumber());
+                                                             auto dirtyWidth = static_cast<float>(arguments[5].asNumber());
+                                                             auto dirtyHeight = static_cast<float>(arguments[6].asNumber());
+                                                             canvas_native_context_put_image_data(
+                                                                     this->GetContext(),
+                                                                     imageData->GetImageData(), dx,
+                                                                     dy, dirtyX, dirtyY,
+                                                                     dirtyWidth, dirtyHeight);
+                                                             this->UpdateInvalidateState();
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "quadraticCurveTo") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 4) {
-                                                        auto cpx = static_cast<float>(arguments[0].asNumber());
-                                                        auto cpy = static_cast<float>(arguments[1].asNumber());
-                                                        auto x = static_cast<float>(arguments[2].asNumber());
-                                                        auto y = static_cast<float>(arguments[3].asNumber());
-                                                        canvas_native_context_quadratic_curve_to(
-                                                                this->GetContext(), cpx, cpy, x, y);
-                                                    }
+                                                         if (count == 4) {
+                                                             auto cpx = static_cast<float>(arguments[0].asNumber());
+                                                             auto cpy = static_cast<float>(arguments[1].asNumber());
+                                                             auto x = static_cast<float>(arguments[2].asNumber());
+                                                             auto y = static_cast<float>(arguments[3].asNumber());
+                                                             canvas_native_context_quadratic_curve_to(
+                                                                     this->GetContext(), cpx, cpy,
+                                                                     x, y);
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "rect") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 4) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        auto width = static_cast<float>(arguments[2].asNumber());
-                                                        auto height = static_cast<float>(arguments[3].asNumber());
-                                                        canvas_native_context_rect(
-                                                                this->GetContext(), x, y, width,
-                                                                height);
-                                                    }
+                                                         if (count == 4) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             auto width = static_cast<float>(arguments[2].asNumber());
+                                                             auto height = static_cast<float>(arguments[3].asNumber());
+                                                             canvas_native_context_rect(
+                                                                     this->GetContext(), x, y,
+                                                                     width,
+                                                                     height);
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "removeHitRegion") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [](Runtime &runtime, const Value &thisValue,
-                                                   const Value *arguments,
-                                                   size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "resetTransform") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    canvas_native_context_reset_transform(
-                                                            this->GetContext());
-                                                    return Value::undefined();
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         canvas_native_context_reset_transform(
+                                                                 this->GetContext());
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "restore") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    canvas_native_context_restore(
-                                                            this->GetContext());
-                                                    return Value::undefined();
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         canvas_native_context_restore(
+                                                                 this->GetContext());
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "rotate") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 1 && arguments[0].isNumber()) {
-                                                        canvas_native_context_rotate(
-                                                                this->GetContext(),
-                                                                (float) arguments[0].asNumber());
-                                                    }
+                                                         if (count == 1 &&
+                                                             arguments[0].isNumber()) {
+                                                             canvas_native_context_rotate(
+                                                                     this->GetContext(),
+                                                                     (float) arguments[0].asNumber());
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "save") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    canvas_native_context_save(this->GetContext());
-                                                    return Value::undefined();
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         canvas_native_context_save(
+                                                                 this->GetContext());
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "scale") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 2) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        canvas_native_context_scale(
-                                                                this->GetContext(), x, y);
-                                                    }
+                                                         if (count == 2) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             canvas_native_context_scale(
+                                                                     this->GetContext(), x, y);
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "scrollPathIntoView") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [](Runtime &runtime, const Value &thisValue,
-                                                   const Value *arguments,
-                                                   size_t count) -> Value {
-                                                    return Value::undefined();
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "setLineDash") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 1) {
-                                                        auto vec = &arguments[0];
-                                                        if (vec->isObject() &&
-                                                            vec->asObject(runtime).isArray(
-                                                                    runtime)) {
-                                                            auto segments = vec->asObject(
-                                                                    runtime).asArray(runtime);
-                                                            auto len = segments.size(runtime);
-                                                            std::vector<float> data;
-                                                            for (int i = 0; i < len; ++i) {
-                                                                auto item = segments.getValueAtIndex(
-                                                                        runtime, i);
-                                                                data.push_back(
-                                                                        static_cast<float>(item.asNumber()));
-                                                            }
-                                                            rust::Slice<const float> slice{
-                                                                    data.data(), data.size()};
-                                                            canvas_native_context_set_line_dash(
-                                                                    this->GetContext(), slice);
-                                                        }
-                                                    }
-                                                    return Value::undefined();
+                                                         if (count == 1) {
+                                                             auto vec = &arguments[0];
+                                                             if (vec->isObject() &&
+                                                                 vec->asObject(runtime).isArray(
+                                                                         runtime)) {
+                                                                 auto segments = vec->asObject(
+                                                                         runtime).asArray(runtime);
+                                                                 auto len = segments.size(runtime);
+                                                                 std::vector<float> data;
+                                                                 for (int i = 0; i < len; ++i) {
+                                                                     auto item = segments.getValueAtIndex(
+                                                                             runtime, i);
+                                                                     data.push_back(
+                                                                             static_cast<float>(item.asNumber()));
+                                                                 }
+                                                                 rust::Slice<const float> slice{
+                                                                         data.data(), data.size()};
+                                                                 canvas_native_context_set_line_dash(
+                                                                         this->GetContext(), slice);
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "setTransform") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count == 1 && arguments[0].isObject()) {
-                                                        auto matrix = arguments[0].asObject(
-                                                                runtime).asHostObject<MatrixImpl>(
-                                                                runtime);
-                                                        if (matrix != nullptr) {
-                                                            canvas_native_context_set_transform_matrix(
-                                                                    this->GetContext(),
-                                                                    matrix->GetMatrix());
-                                                        }
-                                                    } else if (count == 6) {
-                                                        auto a = static_cast<float>(arguments[0].asNumber());
-                                                        auto b = static_cast<float>(arguments[1].asNumber());
-                                                        auto c = static_cast<float>(arguments[2].asNumber());
-                                                        auto d = static_cast<float>(arguments[3].asNumber());
-                                                        auto e = static_cast<float>(arguments[4].asNumber());
-                                                        auto f = static_cast<float>(arguments[5].asNumber());
-                                                        canvas_native_context_set_transform(
-                                                                this->GetContext(), a, b, c, d, e,
-                                                                f);
-                                                    }
+                                                         if (count == 1 &&
+                                                             arguments[0].isObject()) {
+                                                             auto matrix = arguments[0].asObject(
+                                                                     runtime).asHostObject<MatrixImpl>(
+                                                                     runtime);
+                                                             if (matrix != nullptr) {
+                                                                 canvas_native_context_set_transform_matrix(
+                                                                         this->GetContext(),
+                                                                         matrix->GetMatrix());
+                                                             }
+                                                         } else if (count == 6) {
+                                                             auto a = static_cast<float>(arguments[0].asNumber());
+                                                             auto b = static_cast<float>(arguments[1].asNumber());
+                                                             auto c = static_cast<float>(arguments[2].asNumber());
+                                                             auto d = static_cast<float>(arguments[3].asNumber());
+                                                             auto e = static_cast<float>(arguments[4].asNumber());
+                                                             auto f = static_cast<float>(arguments[5].asNumber());
+                                                             canvas_native_context_set_transform(
+                                                                     this->GetContext(), a, b, c, d,
+                                                                     e,
+                                                                     f);
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "stroke") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 1 && arguments[0].isObject()) {
-                                                        auto path = arguments[0].asObject(
-                                                                runtime).asHostObject<Path2D>(
-                                                                runtime);
-                                                        if (path != nullptr) {
-                                                            canvas_native_context_stroke_with_path(
-                                                                    this->GetContext(),
-                                                                    path->GetPath());
-                                                            this->UpdateInvalidateState();
-                                                        }
-                                                    } else {
-                                                        canvas_native_context_stroke(
-                                                                this->GetContext());
-                                                        this->UpdateInvalidateState();
-                                                    }
+                                                         if (count == 1 &&
+                                                             arguments[0].isObject()) {
+                                                             auto path = arguments[0].asObject(
+                                                                     runtime).asHostObject<Path2D>(
+                                                                     runtime);
+                                                             if (path != nullptr) {
+                                                                 canvas_native_context_stroke_with_path(
+                                                                         this->GetContext(),
+                                                                         path->GetPath());
+                                                                 this->UpdateInvalidateState();
+                                                             }
+                                                         } else {
+                                                             canvas_native_context_stroke(
+                                                                     this->GetContext());
+                                                             this->UpdateInvalidateState();
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "strokeRect") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 4) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        auto width = static_cast<float>(arguments[2].asNumber());
-                                                        auto height = static_cast<float>(arguments[3].asNumber());
-                                                        canvas_native_context_stroke_rect(
-                                                                this->GetContext(), x, y, width,
-                                                                height);
-                                                        this->UpdateInvalidateState();
-                                                    }
+                                                         if (count == 4) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             auto width = static_cast<float>(arguments[2].asNumber());
+                                                             auto height = static_cast<float>(arguments[3].asNumber());
+                                                             canvas_native_context_stroke_rect(
+                                                                     this->GetContext(), x, y,
+                                                                     width,
+                                                                     height);
+                                                             this->UpdateInvalidateState();
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "strokeText") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count >= 3) {
-                                                        auto text = arguments[0].asString(
-                                                                runtime).utf8(runtime);
-                                                        auto x = static_cast<float>(arguments[1].asNumber());
-                                                        auto y = static_cast<float>(arguments[2].asNumber());
-                                                        float maxWidth = -1;
+                                                         if (count >= 3) {
+                                                             auto text = arguments[0].asString(
+                                                                     runtime).utf8(runtime);
+                                                             auto x = static_cast<float>(arguments[1].asNumber());
+                                                             auto y = static_cast<float>(arguments[2].asNumber());
+                                                             float maxWidth = -1;
 
-                                                        if (count > 3) {
-                                                            maxWidth = static_cast<float>(arguments[3].asNumber());
-                                                        }
+                                                             if (count > 3) {
+                                                                 maxWidth = static_cast<float>(arguments[3].asNumber());
+                                                             }
 
-                                                        canvas_native_context_stroke_text(
-                                                                this->GetContext(),
-                                                                rust::Str(text.c_str(),
-                                                                          text.size()),
-                                                                x, y, maxWidth);
-                                                        this->UpdateInvalidateState();
-                                                    }
-                                                    return Value::undefined();
+                                                             canvas_native_context_stroke_text(
+                                                                     this->GetContext(),
+                                                                     rust::Str(text.c_str(),
+                                                                               text.size()),
+                                                                     x, y, maxWidth);
+                                                             this->UpdateInvalidateState();
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "transform") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 6) {
-                                                        auto a = static_cast<float>(arguments[0].asNumber());
-                                                        auto b = static_cast<float>(arguments[1].asNumber());
-                                                        auto c = static_cast<float>(arguments[2].asNumber());
-                                                        auto d = static_cast<float>(arguments[3].asNumber());
-                                                        auto e = static_cast<float>(arguments[4].asNumber());
-                                                        auto f = static_cast<float>(arguments[5].asNumber());
-                                                        canvas_native_context_transform(
-                                                                this->GetContext(), a, b, c, d, e,
-                                                                f);
-                                                    }
+                                                         if (count == 6) {
+                                                             auto a = static_cast<float>(arguments[0].asNumber());
+                                                             auto b = static_cast<float>(arguments[1].asNumber());
+                                                             auto c = static_cast<float>(arguments[2].asNumber());
+                                                             auto d = static_cast<float>(arguments[3].asNumber());
+                                                             auto e = static_cast<float>(arguments[4].asNumber());
+                                                             auto f = static_cast<float>(arguments[5].asNumber());
+                                                             canvas_native_context_transform(
+                                                                     this->GetContext(), a, b, c, d,
+                                                                     e,
+                                                                     f);
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "translate") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count == 2) {
-                                                        auto x = static_cast<float>(arguments[0].asNumber());
-                                                        auto y = static_cast<float>(arguments[1].asNumber());
-                                                        canvas_native_context_translate(
-                                                                this->GetContext(), x, y);
-                                                    }
+                                                         if (count == 2) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             canvas_native_context_translate(
+                                                                     this->GetContext(), x, y);
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "__toDataURL") {
 
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    std::string type("image/png");
-                                                    int quality = 92;
-                                                    if (arguments[0].isString()) {
-                                                        type = arguments[0].asString(runtime).utf8(
-                                                                runtime);
-                                                    }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         std::string type("image/png");
+                                                         int quality = 92;
+                                                         if (arguments[0].isString()) {
+                                                             type = arguments[0].asString(
+                                                                     runtime).utf8(
+                                                                     runtime);
+                                                         }
 
 
-                                                    if (arguments[1].isNumber()) {
-                                                        quality = (int) arguments[1].asNumber();
-                                                    }
+                                                         if (arguments[1].isNumber()) {
+                                                             quality = (int) arguments[1].asNumber();
+                                                         }
 
 
-                                                    auto data = canvas_native_to_data_url(
-                                                            this->GetContext(),
-                                                            rust::Str(type.c_str(), type.size()),
-                                                            quality);
-                                                    return jsi::String::createFromAscii(runtime,
-                                                                                        data.data(),
-                                                                                        data.size());
-                                                }
+                                                         auto data = canvas_native_to_data_url(
+                                                                 this->GetContext(),
+                                                                 rust::Str(type.c_str(),
+                                                                           type.size()),
+                                                                 quality);
+                                                         return jsi::String::createFromAscii(
+                                                                 runtime,
+                                                                 data.data(),
+                                                                 data.size());
+                                                     }
         );
     }
 
 
-    return Value::undefined();
+    return jsi::Value::undefined();
 }
 
 

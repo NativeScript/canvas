@@ -19,7 +19,7 @@
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArrayObject.h"
 
-using namespace facebook::jsi;
+using namespace facebook;
 
 class JSI_EXPORT WebGL2RenderingContext : public WebGLRenderingContext {
 public:
@@ -406,7 +406,7 @@ public:
 
         /* Data types */
 
-        if (methodName == "INVALID_INDEX") { return {0xFFFFFFFF}; }
+        if (methodName == "INVALID_INDEX") { return {(double)0xFFFFFFFF}; }
         if (methodName == "TIMEOUT_IGNORED") { return {-1}; }
 
         /* Vertex attributes */
@@ -417,7 +417,7 @@ public:
 
         /* Transform feedback */
 
-        return Value::undefined();
+        return jsi::Value::undefined();
     }
 
 };

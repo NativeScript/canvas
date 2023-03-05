@@ -8,13 +8,11 @@ WebGLActiveInfoImpl::WebGLActiveInfoImpl(rust::Box<WebGLActiveInfo> info) : info
         std::move(info)) {}
 
 std::vector<jsi::PropNameID> WebGLActiveInfoImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret = {
-            jsi::PropNameID::forUtf8(rt, std::string("name")),
-            jsi::PropNameID::forUtf8(rt, std::string("size")),
-            jsi::PropNameID::forUtf8(rt, std::string("type"))
-    };
+    std::vector<jsi::PropNameID> ret({jsi::PropNameID::forUtf8(rt, std::string("name")),
+                                      jsi::PropNameID::forUtf8(rt, std::string("size")),
+                                      jsi::PropNameID::forUtf8(rt, std::string("type"))});
 
-    return ret;
+            return ret;
 }
 
 jsi::Value WebGLActiveInfoImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
@@ -27,7 +25,7 @@ jsi::Value WebGLActiveInfoImpl::get(jsi::Runtime &runtime, const jsi::PropNameID
         return {size};
     } else if (methodName == "type") {
         auto type = canvas_native_webgl_active_info_get_type(this->GetWebGLActiveInfo());
-        return {type};
+        return {(int32_t)type};
     }
 
     return jsi::Value::undefined();

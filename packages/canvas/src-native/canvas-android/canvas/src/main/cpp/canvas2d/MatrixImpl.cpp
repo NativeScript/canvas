@@ -8,34 +8,38 @@
 MatrixImpl::MatrixImpl(rust::Box<Matrix> matrix) : matrix_(std::move(matrix)) {}
 
 std::vector<jsi::PropNameID> MatrixImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, "a"),
-            jsi::PropNameID::forUtf8(rt, "b"),
-            jsi::PropNameID::forUtf8(rt, "c"),
-            jsi::PropNameID::forUtf8(rt, "d"),
-            jsi::PropNameID::forUtf8(rt, "e"),
-            jsi::PropNameID::forUtf8(rt, "f"),
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(23);
+    
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("a")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("b")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("c")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("d")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("e")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("f")));
 
-            jsi::PropNameID::forUtf8(rt, "m11"),
-            jsi::PropNameID::forUtf8(rt, "m12"),
-            jsi::PropNameID::forUtf8(rt, "m13"),
-            jsi::PropNameID::forUtf8(rt, "m14"),
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m11")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m12")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m13")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m14")));
 
-            jsi::PropNameID::forUtf8(rt, "m21"),
-            jsi::PropNameID::forUtf8(rt, "m22"),
-            jsi::PropNameID::forUtf8(rt, "m23"),
-            jsi::PropNameID::forUtf8(rt, "m24"),
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m21")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m22")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m23")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m24")));
 
-            jsi::PropNameID::forUtf8(rt, "m31"),
-            jsi::PropNameID::forUtf8(rt, "m32"),
-            jsi::PropNameID::forUtf8(rt, "m33"),
-            jsi::PropNameID::forUtf8(rt, "m34"),
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m31")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m32")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m33")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m34")));
 
-            jsi::PropNameID::forUtf8(rt, "m41"),
-            jsi::PropNameID::forUtf8(rt, "m42"),
-            jsi::PropNameID::forUtf8(rt, "m43"),
-            jsi::PropNameID::forUtf8(rt, "m44")
-    };
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m41")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m42")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m43")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m44")));
+
+
+    return ret;
 }
 
 jsi::Value MatrixImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

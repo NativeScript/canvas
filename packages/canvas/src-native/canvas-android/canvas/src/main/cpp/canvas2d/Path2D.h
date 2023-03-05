@@ -3,7 +3,6 @@
 //
 
 #pragma once
-
 #include "rust/cxx.h"
 #include "canvas-cxx/src/canvas2d.rs.h"
 #include "v8runtime/V8Runtime.h"
@@ -19,7 +18,6 @@ public:
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
-
 
     Path &GetPath();
 

@@ -26,15 +26,14 @@
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
 
-using namespace facebook::jsi;
-using namespace std;
-
+#include <array>
+using namespace facebook;
 
 template<typename NativeFunc>
 static void
-createGlobalFunc(Runtime &jsiRuntime, const char *prop, int paramCount, NativeFunc &&func) {
-    auto f = Function::createFromHostFunction(jsiRuntime,
-                                              PropNameID::forAscii(jsiRuntime, prop),
+createGlobalFunc(jsi::Runtime &jsiRuntime, const char *prop, int paramCount, NativeFunc &&func) {
+    auto f = jsi::Function::createFromHostFunction(jsiRuntime,
+                                              jsi::PropNameID::forAscii(jsiRuntime, prop),
                                               paramCount,
                                               std::forward<NativeFunc>(func));
     jsiRuntime.global().setProperty(jsiRuntime, prop, std::move(f));
@@ -45,10 +44,10 @@ createGlobalFunc(Runtime &jsiRuntime, const char *prop, int paramCount, NativeFu
 
 
 template<typename NativeFunc>
-static void createFunc(Runtime &jsiRuntime, Object &object, const char *prop, int paramCount,
+static void createFunc(jsi::Runtime &jsiRuntime, jsi::Object &object, const char *prop, int paramCount,
                        NativeFunc &&func) {
-    auto f = Function::createFromHostFunction(jsiRuntime,
-                                              PropNameID::forAscii(jsiRuntime, prop),
+    auto f = jsi::Function::createFromHostFunction(jsiRuntime,
+                                              jsi::PropNameID::forAscii(jsiRuntime, prop),
                                               paramCount,
                                               std::forward<NativeFunc>(func));
     object.setProperty(jsiRuntime, prop, std::move(f));

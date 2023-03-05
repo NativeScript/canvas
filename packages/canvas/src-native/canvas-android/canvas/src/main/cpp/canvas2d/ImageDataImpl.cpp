@@ -34,10 +34,12 @@ private:
 ImageDataImpl::ImageDataImpl(rust::Box<ImageData> imageData) : imageData_(std::move(imageData)) {}
 
 std::vector<jsi::PropNameID> ImageDataImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, "width"),
-            jsi::PropNameID::forUtf8(rt, "height"),
-            jsi::PropNameID::forUtf8(rt, "data")};
+    std::vector<jsi::PropNameID> ret({
+            jsi::PropNameID::forUtf8(rt, std::string("width")),
+            jsi::PropNameID::forUtf8(rt, std::string("height")),
+            jsi::PropNameID::forUtf8(rt, std::string("data"))});
+
+    return ret;
 }
 
 jsi::Value ImageDataImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

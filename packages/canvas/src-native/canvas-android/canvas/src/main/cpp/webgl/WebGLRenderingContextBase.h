@@ -50,6 +50,6 @@ private:
 
     int invalidateState_ = static_cast<int>(InvalidateState::NONE);
 
-    std::shared_ptr<RafImpl> raf_ = nullptr;
+    std::shared_ptr<RafImpl> raf_;
 };
 

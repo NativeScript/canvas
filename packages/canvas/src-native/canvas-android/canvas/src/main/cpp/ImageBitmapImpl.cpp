@@ -15,12 +15,12 @@ jsi::Value ImageBitmapImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &na
         if (this->closed_) {
             return {0};
         }
-        return {canvas_native_image_asset_width(this->GetImageAsset())};
+        return {(int32_t)canvas_native_image_asset_width(this->GetImageAsset())};
     } else if (methodName == "height") {
         if (this->closed_) {
             return {0};
         }
-        return {canvas_native_image_asset_height(this->GetImageAsset())};
+        return {(int32_t)canvas_native_image_asset_height(this->GetImageAsset())};
     } else if (methodName == "close") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),

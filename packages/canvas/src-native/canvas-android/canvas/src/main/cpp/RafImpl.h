@@ -5,6 +5,7 @@
 #ifndef CANVAS_NATIVE_RAFIMPL_H
 #define CANVAS_NATIVE_RAFIMPL_H
 
+#include "rust/cxx.h"
 #include "OnRafCallback.h"
 #include "canvas-android/src/lib.rs.h"
 
@@ -19,7 +20,7 @@ public:
 private:
     OnRafCallback *rafCallback_;
     intptr_t callback_;
-    rust::Box<::Raf> raf_;
+    rust::Box<Raf> raf_;
 };
 
 

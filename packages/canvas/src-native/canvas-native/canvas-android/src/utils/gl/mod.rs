@@ -25,7 +25,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
     if state.is_null() {
         return JNI_FALSE;
     }
-    let mut state = &mut *state;
+    let state = &mut *state;
     if state.make_current() {
         return JNI_TRUE;
     }
@@ -45,7 +45,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetFlipYW
     if state.is_null() {
         return JNI_FALSE;
     }
-    let mut state = &mut *state;
+    let state = &mut *state;
     if state.get_flip_y() {
         return JNI_TRUE;
     }

@@ -2,7 +2,7 @@ use std::ffi::c_long;
 use std::sync::Arc;
 
 use crate::choregrapher::{
-    AChoreographer, AChoreographer_frameCallback64, AChoreographer_getInstance,
+    AChoreographer_getInstance,
     AChoreographer_postFrameCallback, AChoreographer_postFrameCallback64,
 };
 

@@ -13,7 +13,7 @@ use jni::JNIEnv;
 
 use canvas_core::image_asset::ImageAsset;
 
-use crate::{LogPriority, __log};
+
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;
@@ -152,7 +152,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -193,7 +193,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -234,7 +234,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -275,7 +275,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -316,7 +316,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -357,7 +357,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -379,7 +379,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
 ) {
     let asset: *mut ImageAsset = asset as _;
     let asset = &mut *asset;
-    if let Some(mut data) = asset.get_bytes() {
+    if let Some(data) = asset.get_bytes() {
         if flipY == JNI_TRUE {
             let mut data_array = data.to_vec();
             canvas_2d::utils::gl::flip_in_place_3d(
@@ -598,7 +598,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -641,7 +641,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -684,7 +684,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -727,7 +727,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -770,7 +770,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -813,7 +813,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
                 buf,
             );
         }
-        Err(e) => {}
+        Err(_e) => {}
     }
 }
 
@@ -895,7 +895,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
     bitmap: JObject,
     flipY: jboolean,
 ) {
-    let mut data = super::super::image::get_bytes_from_bitmap(env, bitmap);
+    let data = super::super::image::get_bytes_from_bitmap(env, bitmap);
     if let Some(mut data) = data {
         if !data.0.is_empty() {
             if flipY == JNI_TRUE {

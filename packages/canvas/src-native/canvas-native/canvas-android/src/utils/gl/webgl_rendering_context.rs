@@ -12,7 +12,7 @@ use jni::JNIEnv;
 
 use canvas_core::image_asset::ImageAsset;
 
-use crate::{LogPriority, __log};
+
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;
@@ -475,7 +475,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     flipY: jboolean,
 ) {
     if flipY == JNI_TRUE {
-        let mut data = crate::utils::image::get_bytes_from_bitmap(env, bitmap);
+        let data = crate::utils::image::get_bytes_from_bitmap(env, bitmap);
         if let Some(mut data) = data {
             if !data.0.is_empty() {
                 if flipY == JNI_TRUE {
@@ -828,7 +828,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     bitmap: JObject,
     flip_y: jboolean,
 ) {
-    let mut data = super::super::image::get_bytes_from_bitmap(env, bitmap);
+    let data = super::super::image::get_bytes_from_bitmap(env, bitmap);
     if let Some(mut data) = data {
         if !data.0.is_empty() {
             if flip_y == JNI_TRUE {

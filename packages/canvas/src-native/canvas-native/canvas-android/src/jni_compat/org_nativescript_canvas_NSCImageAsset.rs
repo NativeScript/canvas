@@ -1,6 +1,6 @@
-use std::ffi::CStr;
 
-use jni::objects::{JClass, JObject, JString, ReleaseMode};
+
+use jni::objects::{JClass, JObject};
 use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 

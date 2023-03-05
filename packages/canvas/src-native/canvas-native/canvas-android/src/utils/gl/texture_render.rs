@@ -4,7 +4,7 @@ use jni::objects::{JClass, JFloatArray, JObject, JValue, ReleaseMode};
 use jni::sys::jint;
 use jni::JNIEnv;
 
-use crate::{LogPriority, __log};
+
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFrame(

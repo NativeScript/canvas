@@ -1,8 +1,8 @@
-use std::borrow::Cow;
+
 
 use jni::objects::{JClass, JString};
-use jni::strings::JavaStr;
-use jni::sys::{jboolean, jint, jlong, jobject, jstring, JNI_TRUE};
+
+use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
@@ -78,7 +78,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurface(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _: JClass,
     surface: jobject,
     context: jlong,

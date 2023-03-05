@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+
 
 use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jstring};
@@ -6,7 +6,7 @@ use jni::JNIEnv;
 
 use canvas_2d::context::{Context, ContextWrapper};
 
-use crate::console_log;
+
 
 pub mod gl;
 pub mod image;

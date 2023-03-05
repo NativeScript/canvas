@@ -3,9 +3,9 @@ use std::os::raw::c_void;
 use jni::objects::{GlobalRef, JClass, JObject};
 use jni::sys::jlong;
 use jni::JNIEnv;
-use ndk::bitmap::{AndroidBitmap, AndroidBitmapInfo, BitmapResult};
+use ndk::bitmap::{AndroidBitmap, AndroidBitmapInfo};
 
-use canvas_2d::image_bitmap::ImageBitmapPremultiplyAlpha::Default;
+
 
 pub(crate) struct BitmapBytes {
     pub(crate) bitmap: GlobalRef,

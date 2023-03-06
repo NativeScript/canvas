@@ -114,7 +114,7 @@ impl ImageAsset {
         self.read()
             .skia_image
             .as_ref()
-            .map(|v| skia_safe::Image::from(v))
+            .map(skia_safe::Image::from)
     }
 
     fn read(&self) -> RwLockReadGuard<'_, RawRwLock, ImageAssetInner> {
@@ -355,39 +355,42 @@ impl ImageAsset {
                 let width = data.width() as i32;
                 let height = data.height() as i32;
 
-                if let Some(image) = data.as_rgba8() {
-                    let info = skia_safe::ImageInfo::new(
-                        skia_safe::ISize::new(width, height),
-                        skia_safe::ColorType::RGBA8888,
-                        skia_safe::AlphaType::Unpremul,
-                        None,
-                    );
+                #[cfg(feature = "2d")]{
+                    if let Some(image) = data.as_rgba8() {
+                        let info = skia_safe::ImageInfo::new(
+                            skia_safe::ISize::new(width, height),
+                            skia_safe::ColorType::RGBA8888,
+                            skia_safe::AlphaType::Unpremul,
+                            None,
+                        );
 
-                    let skia_image = unsafe {
-                        skia_safe::Image::from_raster_data(
-                            &info,
-                            skia_safe::Data::new_bytes(image.as_ref()),
-                            (width * 4) as usize,
-                        )
-                    };
-                    lock.skia_image = skia_image;
-                } else if let Some(image) = data.as_rgb8() {
-                    let info = skia_safe::ImageInfo::new(
-                        skia_safe::ISize::new(width, height),
-                        skia_safe::ColorType::RGB565,
-                        skia_safe::AlphaType::Unpremul,
-                        None,
-                    );
+                        let skia_image = unsafe {
+                            skia_safe::Image::from_raster_data(
+                                &info,
+                                skia_safe::Data::new_bytes(image.as_ref()),
+                                (width * 4) as usize,
+                            )
+                        };
+                        lock.skia_image = skia_image;
+                    } else if let Some(image) = data.as_rgb8() {
+                        let info = skia_safe::ImageInfo::new(
+                            skia_safe::ISize::new(width, height),
+                            skia_safe::ColorType::RGB565,
+                            skia_safe::AlphaType::Unpremul,
+                            None,
+                        );
 
-                    let skia_image = unsafe {
-                        skia_safe::Image::from_raster_data(
-                            &info,
-                            skia_safe::Data::new_bytes(image.as_ref()),
-                            (width * 4) as usize,
-                        )
-                    };
-                    lock.skia_image = skia_image;
+                        let skia_image = unsafe {
+                            skia_safe::Image::from_raster_data(
+                                &info,
+                                skia_safe::Data::new_bytes(image.as_ref()),
+                                (width * 4) as usize,
+                            )
+                        };
+                        lock.skia_image = skia_image;
+                    }
                 }
+
 
                 lock.image = Some(data);
 

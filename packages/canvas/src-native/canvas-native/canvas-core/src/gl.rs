@@ -1,11 +1,11 @@
-use std::ffi::{CStr, CString};
+use std::ffi::{CString};
 use std::num::NonZeroU32;
-use std::os::raw::c_void;
+
 use std::sync::Arc;
 
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{
-    config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
+    context::PossiblyCurrentContext, display::Display, surface::Surface,
 };
 #[cfg(any(target_os = "ios", target_os = "android"))]
 use glutin::api::egl::{
@@ -19,8 +19,8 @@ use glutin::display::GetGlDisplay;
 use glutin::display::{AsRawDisplay, DisplayApiPreference};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
-use glutin::surface::{PbufferSurface, PixmapSurface, SurfaceAttributes, WindowSurface};
-use parking_lot::{MappedRwLockReadGuard, MutexGuard, RwLock, RwLockReadGuard};
+use glutin::surface::{PbufferSurface, PixmapSurface, WindowSurface};
+use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use raw_window_handle::{
     AndroidDisplayHandle, AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
     UiKitDisplayHandle,

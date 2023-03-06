@@ -4,8 +4,6 @@
 
 #include "CanvasRenderingContext2DImpl.h"
 
-
-
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
         rust::Box<CanvasRenderingContext2D> context) : context_(
         std::move(context)) {
@@ -14,15 +12,23 @@ CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
     auto raf_callback = new OnRafCallback(ctx_ptr, 0);
     auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
     auto raf = canvas_native_raf_create(raf_callback_ptr);
-    this->raf_ = std::make_shared<RafImpl>(raf_callback, raf_callback_ptr,
-                                           std::move(raf));
+    this->SetRaf(std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf)));
 
+    auto _raf = this->GetRaf();
 
-    auto _raf = this->raf_;
     if (_raf != nullptr) {
         canvas_native_raf_start(_raf->GetRaf());
     }
 }
+
+void CanvasRenderingContext2DImpl::SetRaf(std::shared_ptr<RafImpl> raf) {
+    this->raf_ = std::move(raf);
+}
+
+RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
+    return this->raf_.get();
+}
+
 
 
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
@@ -1611,23 +1617,29 @@ void CanvasRenderingContext2DImpl::UpdateInvalidateState() {
         }
     }
 
-    this->invalidateState_ = InvalidateState::PENDING;
+    auto state = this->GetInvalidateState();
+    this->SetInvalidateState((int)state | (int) InvalidateState::PENDING);
 }
 
 InvalidateState CanvasRenderingContext2DImpl::GetInvalidateState() const {
-    return this->invalidateState_;
+    return (InvalidateState)this->invalidateState_;
 }
 
 void CanvasRenderingContext2DImpl::SetInvalidateState(InvalidateState state) {
+    this->invalidateState_ = (int)state;
+}
+
+void CanvasRenderingContext2DImpl::SetInvalidateState(int state) {
     this->invalidateState_ = state;
 }
 
+
 void CanvasRenderingContext2DImpl::Flush() {
     if (this->GetInvalidateState() == InvalidateState::PENDING) {
-        canvas_native_context_flush(*this->context_);
+        canvas_native_context_flush(this->GetContext());
         this->SetInvalidateState(InvalidateState::INVALIDATING);
-        auto current = canvas_native_context_gl_make_current(*this->context_);
-        auto swapped = canvas_native_context_gl_swap_buffers(*this->context_);
+        auto current = canvas_native_context_gl_make_current(this->GetContext());
+        auto swapped = canvas_native_context_gl_swap_buffers(this->GetContext());
         this->SetInvalidateState(InvalidateState::NONE);
     }
 }

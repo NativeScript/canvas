@@ -24,8 +24,10 @@ WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state
                             raf)));
 
     auto _raf = this->GetRaf();
-    canvas_native_raf_start(
-            _raf->GetRaf());
+
+    if (_raf != nullptr) {
+        canvas_native_raf_start(_raf->GetRaf());
+    }
 
 }
 
@@ -44,8 +46,8 @@ void WebGLRenderingContextBase::Flush() {
     auto state = this->GetInvalidateState();
     if (state == (int) InvalidateState::PENDING) {
         this->SetInvalidateState((int) InvalidateState::INVALIDATING);
-        canvas_native_webgl_make_current(*this->state_);
-        canvas_native_webgl_swap_buffers(*this->state_);
+        canvas_native_webgl_make_current(this->GetState());
+        canvas_native_webgl_swap_buffers(this->GetState());
         this->SetInvalidateState((int) InvalidateState::NONE);
     }
 }
@@ -68,6 +70,11 @@ void WebGLRenderingContextBase::SetRaf(std::shared_ptr<RafImpl> raf) {
 RafImpl *WebGLRenderingContextBase::GetRaf() {
     return this->raf_.get();
 }
+
+void WebGLRenderingContextBase::SetInvalidateState(InvalidateState state) {
+    this->invalidateState_ = (int)state;
+}
+
 
 void WebGLRenderingContextBase::SetInvalidateState(int state) {
     this->invalidateState_ = state;

@@ -8,10 +8,16 @@
 #include "v8runtime/V8Runtime.h"
 #include "rust/cxx.h"
 #include <vector>
+#include <cstdint>
+#include <memory>
 
+#include "RafImpl.h"
+#include "OnRafCallback.h"
+
+#include "canvas-android/src/lib.rs.h"
 #include "canvas-cxx/src/canvas2d.rs.h"
 #include "canvas-cxx/src/webgl.rs.h"
-#include "../Helpers.h"
+#include "Helpers.h"
 
 #include "CanvasGradient.h"
 #include "CanvasPattern.h"
@@ -20,8 +26,6 @@
 #include "ImageAssetImpl.h"
 #include "ImageBitmapImpl.h"
 #include "Path2D.h"
-#include "OnRafCallback.h"
-#include "RafImpl.h"
 #include "webgl/WebGLRenderingContextBase.h"
 
 
@@ -46,16 +50,22 @@ public:
 
     void SetInvalidateState(InvalidateState state);
 
+    void SetInvalidateState(int state);
+
     void Flush();
 
     static void Flush(intptr_t context);
+
+    void SetRaf(std::shared_ptr<RafImpl> raf);
+
+    RafImpl *GetRaf();
 
     CanvasRenderingContext2D &GetContext();
 
 private:
     rust::Box<CanvasRenderingContext2D> context_;
 
-    InvalidateState invalidateState_ = InvalidateState::NONE;
+    int invalidateState_ = static_cast<int>(InvalidateState::NONE);
 
     std::shared_ptr<RafImpl> raf_;
 

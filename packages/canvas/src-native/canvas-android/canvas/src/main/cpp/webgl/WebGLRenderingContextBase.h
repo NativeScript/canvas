@@ -5,14 +5,17 @@
 #pragma once
 #pragma process_pending_includes
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/webgl.rs.h"
 #include "v8runtime/V8Runtime.h"
-#include "Helpers.h"
-#include "RafImpl.h"
+#include "rust/cxx.h"
 #include <vector>
 #include <cstdint>
 #include <memory>
+
+#include "canvas-cxx/src/webgl.rs.h"
+
+#include "Helpers.h"
+#include "RafImpl.h"
+#include "OnRafCallback.h"
 
 enum class WebGLRenderingVersion : uint8_t {
     V1,
@@ -33,6 +36,8 @@ public:
     int GetInvalidateState() const;
 
     void SetInvalidateState(int state);
+
+    void SetInvalidateState(InvalidateState state);
 
     void Flush();
 

@@ -12,6 +12,7 @@
 #include <vector>
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT WEBGL_draw_buffersImpl : public jsi::HostObject {
 public:

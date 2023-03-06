@@ -13,6 +13,7 @@
 #include <vector>
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT OES_vertex_array_objectImpl : public jsi::HostObject {
 public:

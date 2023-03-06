@@ -121,21 +121,21 @@ impl PaintStyle {
 pub struct TextMetrics(canvas_2d::context::drawing_text::text_metrics::TextMetrics);
 
 unsafe impl ExternType for CanvasRenderingContext2D {
-    type Id = type_id!("::CanvasRenderingContext2D");
+    type Id = type_id!("::org::nativescript::canvas::CanvasRenderingContext2D");
     type Kind = cxx::kind::Trivial;
 }
 
 unsafe impl ExternType for ImageAsset {
-    type Id = type_id!("::ImageAsset");
+    type Id = type_id!("::org::nativescript::canvas::ImageAsset");
     type Kind = cxx::kind::Trivial;
 }
 
 unsafe impl ExternType for PaintStyle {
-    type Id = type_id!("::PaintStyle");
+    type Id = type_id!("::org::nativescript::canvas::PaintStyle");
     type Kind = cxx::kind::Trivial;
 }
 
-#[cxx::bridge]
+#[cxx::bridge(namespace="org::nativescript::canvas")]
 pub mod ffi {
 
     pub enum InvalidateState {

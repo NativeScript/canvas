@@ -10,6 +10,7 @@
 #include <vector>
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT ANGLE_instanced_arraysImpl : public jsi::HostObject {
 public:

@@ -11,6 +11,7 @@
 #include <vector>
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT WEBGL_lose_contextImpl : public jsi::HostObject {
 public:

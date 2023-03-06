@@ -10,6 +10,7 @@
 #include <vector>
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class WebGLShaderPrecisionFormatImpl : public jsi::HostObject {
 public:

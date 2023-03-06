@@ -9,6 +9,7 @@
 #include "Helpers.h"
 #import "v8runtime/V8Runtime.h"
 #include <vector>
+using namespace org::nativescript::canvas;
 
 struct Options {
     bool flipY = false;

@@ -59,6 +59,8 @@
 #include "gl.h"
 #include "canvas-cxx/src/constants.rs.h"
 
+using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT WebGLRenderingContext : public WebGLRenderingContextBase {
 public:

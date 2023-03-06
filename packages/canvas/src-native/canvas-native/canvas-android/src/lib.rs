@@ -2,37 +2,15 @@
 
 extern crate core;
 
-
-
-
-
 use std::ffi::{CStr, CString};
-
 use std::os::raw::{c_char, c_int, c_void};
-
-
 use std::pin::Pin;
-
-
 
 use ::jni::signature::JavaType;
 use ::jni::sys::jint;
 use ::jni::JavaVM;
-use cxx::{CxxString};
+use cxx::CxxString;
 use once_cell::sync::OnceCell;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
 
@@ -78,7 +56,7 @@ pub struct Raf(raf::Raf);
 
 pub struct BitmapBytes(utils::image::BitmapBytes);
 
-#[cxx::bridge]
+#[cxx::bridge(namespace = "org::nativescript::canvas")]
 pub(crate) mod ffi {
 
     unsafe extern "C++" {

@@ -10,26 +10,26 @@ use canvas_webgl::prelude::WebGLVersion;
 pub struct GLContext(pub(crate) canvas_core::gl::GLContext);
 
 unsafe impl ExternType for WebGLActiveInfo {
-    type Id = type_id!("::WebGLActiveInfo");
+    type Id = type_id!("::org::nativescript::canvas::WebGLActiveInfo");
     type Kind = cxx::kind::Trivial;
 }
 
 unsafe impl ExternType for ContextAttributes {
-    type Id = type_id!("::ContextAttributes");
+    type Id = type_id!("::org::nativescript::canvas::ContextAttributes");
     type Kind = cxx::kind::Trivial;
 }
 
 unsafe impl ExternType for WebGLResult {
-    type Id = type_id!("::WebGLResult");
+    type Id = type_id!("::org::nativescript::canvas::WebGLResult");
     type Kind = cxx::kind::Trivial;
 }
 
 unsafe impl ExternType for WebGLState {
-    type Id = type_id!("::WebGLState");
+    type Id = type_id!("::org::nativescript::canvas::WebGLState");
     type Kind = cxx::kind::Trivial;
 }
 
-#[cxx::bridge]
+#[cxx::bridge(namespace="org::nativescript::canvas")]
 pub(crate) mod ffi {
     #[allow(non_camel_case_types)]
     #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]

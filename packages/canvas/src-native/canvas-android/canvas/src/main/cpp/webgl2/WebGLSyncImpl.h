@@ -4,11 +4,12 @@
 
 #pragma once
 
-#include "canvas-cxx/src/webgl2.rs.h"
 #include "rust/cxx.h"
+#include "canvas-cxx/src/webgl2.rs.h"
 #include "v8runtime/V8Runtime.h"
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class WebGLSyncImpl : public jsi::HostObject {
 public:

@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <array>
-#include <array>
 #include "v8runtime/JSIV8ValueConverter.h"
 #include "canvas2d/CanvasRenderingContext2DImpl.h"
 
@@ -28,6 +27,7 @@
 #include "webgl2/WebGL2RenderingContext.h"
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 template<typename NativeFunc>
 static void

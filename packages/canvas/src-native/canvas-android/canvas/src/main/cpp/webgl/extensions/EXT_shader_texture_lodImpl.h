@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "rust/cxx.h"
 #include "v8runtime/V8Runtime.h"
 
 using namespace facebook;

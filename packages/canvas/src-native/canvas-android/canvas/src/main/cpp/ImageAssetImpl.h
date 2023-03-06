@@ -10,6 +10,7 @@
 #include <thread>
 #import "v8runtime/V8Runtime.h"
 #include <vector>
+using namespace org::nativescript::canvas;
 
 using namespace facebook;
 

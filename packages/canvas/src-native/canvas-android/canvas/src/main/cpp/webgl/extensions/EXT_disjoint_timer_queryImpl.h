@@ -11,6 +11,7 @@
 #include <vector>
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT EXT_disjoint_timer_queryImpl : public jsi::HostObject {
 public:

@@ -10,6 +10,8 @@
 #include <cstdint>
 #include "OnRafCallback.h"
 
+using namespace org::nativescript::canvas;
+
 class RafImpl {
 public:
     RafImpl(OnRafCallback *rafCallback, intptr_t callback, rust::Box<Raf> raf);

@@ -10,6 +10,7 @@
 #include <vector>
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT Path2D : public jsi::HostObject {
 public:

@@ -20,6 +20,7 @@ enum class WebGLRenderingVersion : uint8_t {
 };
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class WebGLRenderingContextBase : public jsi::HostObject {
 public:

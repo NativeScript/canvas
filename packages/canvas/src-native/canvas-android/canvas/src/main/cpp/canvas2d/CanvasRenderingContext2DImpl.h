@@ -26,6 +26,7 @@
 
 
 using namespace facebook;
+using namespace org::nativescript::canvas;
 
 class JSI_EXPORT CanvasRenderingContext2DImpl : public facebook::jsi::HostObject {
 public:

@@ -1,4 +1,4 @@
-#[cxx::bridge]
+#[cxx::bridge(namespace="org::nativescript::canvas")]
 pub(crate) mod ffi {
     #[allow(non_camel_case_types)]
     #[repr(u32)]

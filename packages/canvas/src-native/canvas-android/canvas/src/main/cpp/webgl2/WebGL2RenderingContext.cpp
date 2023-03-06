@@ -1691,12 +1691,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                          return {canvas_native_webgl_result_get_bool(
                                                                                  *ret)};
                                                                      default:
-                                                                         return Value::null();
+                                                                         return jsi::Value::null();
                                                                  }
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getActiveUniforms") {
@@ -1798,13 +1798,13 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                          return array;
                                                                      }
                                                                      default:
-                                                                         return Value::null();
+                                                                         return jsi::Value::null();
                                                                  }
                                                              }
 
 
                                                          }
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getBufferSubData") {
@@ -1884,7 +1884,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getIndexedParameter") {
@@ -1926,11 +1926,11 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                  }
                                                                      break;
                                                                  default:
-                                                                     return Value::null();
+                                                                     return jsi::Value::null();
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getInternalformatParameter") {
@@ -2010,7 +2010,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                      // noop
                                                                      break;
                                                                  default:
-                                                                     return Value::null();
+                                                                     return jsi::Value::null();
                                                              }
 
 
@@ -2041,11 +2041,11 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                  return Int32Array.callAsConstructor(
                                                                          runtime, array);
                                                              } else {
-                                                                 return Value::null();
+                                                                 return jsi::Value::null();
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getParameter") {
@@ -2075,7 +2075,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getQueryParameter") {
@@ -2110,7 +2110,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getQuery") {
@@ -2135,7 +2135,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getSamplerParameter") {
@@ -2172,12 +2172,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                          return {canvas_native_webgl_result_get_i32(
                                                                                  *ret)};
                                                                      default:
-                                                                         return Value::null();
+                                                                         return jsi::Value::null();
                                                                  }
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getSyncParameter") {
@@ -2207,11 +2207,11 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                          return {canvas_native_webgl_result_get_i32(
                                                                                  *ret)};
                                                                      default:
-                                                                         return Value::null();
+                                                                         return jsi::Value::null();
                                                                  }
                                                              }
                                                          }
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getTransformFeedbackVarying") {
@@ -2235,7 +2235,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
                                                                  if (canvas_native_webgl_active_info_get_is_empty(
                                                                          *ret)) {
-                                                                     return Value::null();
+                                                                     return jsi::Value::null();
                                                                  }
 
                                                                  auto info = std::make_shared<WebGLActiveInfoImpl>(
@@ -2246,7 +2246,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getUniformBlockIndex") {
@@ -2270,7 +2270,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
                                                                  if (canvas_native_webgl_active_info_get_is_empty(
                                                                          *ret)) {
-                                                                     return Value::null();
+                                                                     return jsi::Value::null();
                                                                  }
 
                                                                  auto info = std::make_shared<WebGLActiveInfoImpl>(
@@ -2281,7 +2281,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "getUniformIndices") {
@@ -2330,14 +2330,15 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                      auto item = ret[j];
                                                                      result.setValueAtIndex(runtime,
                                                                                             j,
-                                                                                            Value(item));
+                                                                                            jsi::Value(
+                                                                                                    item));
                                                                  }
 
                                                                  return result;
                                                              }
                                                          }
 
-                                                         return Value::null();
+                                                         return jsi::Value::null();
                                                      }
         );
     } else if (methodName == "invalidateFramebuffer") {

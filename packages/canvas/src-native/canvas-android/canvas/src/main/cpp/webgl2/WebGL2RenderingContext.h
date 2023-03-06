@@ -24,7 +24,6 @@
 #include "gl.h"
 #include "canvas-cxx/src/constants.rs.h"
 
-
 using namespace facebook;
 
 class JSI_EXPORT WebGL2RenderingContext : public WebGLRenderingContext {

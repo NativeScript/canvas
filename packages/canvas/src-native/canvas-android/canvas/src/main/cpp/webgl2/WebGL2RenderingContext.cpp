@@ -519,10 +519,10 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      2,
-                                                     [this](Runtime &runtime,
-                                                            const Value &thisValue,
-                                                            const Value *arguments,
-                                                            size_t count) -> Value {
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
                                                          if (count > 1 && arguments[0].isNumber() &&
                                                              arguments[1].isObject()) {
@@ -541,3176 +541,3414 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                  );
                                                              }
                                                          }
-                                                         return Value::undefined();
+                                                         return jsi::Value::undefined();
                                                      }
         );
     } else if (methodName == "beginTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 0 && arguments[0].isNumber()) {
-                                                        canvas_native_webgl2_begin_transform_feedback(
-                                                                (uint32_t) arguments[0].asNumber(),
-                                                                this->GetState()
-                                                        );
-                                                    }
+                                                         if (count > 0 && arguments[0].isNumber()) {
+                                                             canvas_native_webgl2_begin_transform_feedback(
+                                                                     (uint32_t) arguments[0].asNumber(),
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "bindBufferBase") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2 && arguments[2].isObject()) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto index = (uint32_t) arguments[1].asNumber();
-                                                        auto bufferObject = arguments[2].asObject(
-                                                                runtime);
-                                                        if (bufferObject.isHostObject(runtime)) {
-                                                            auto buffer = bufferObject.asHostObject<WebGLBuffer>(
-                                                                    runtime);
+                                                         if (count > 2 && arguments[2].isObject()) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto index = (uint32_t) arguments[1].asNumber();
+                                                             auto bufferObject = arguments[2].asObject(
+                                                                     runtime);
+                                                             if (bufferObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto buffer = bufferObject.asHostObject<WebGLBuffer>(
+                                                                         runtime);
 
-                                                            canvas_native_webgl2_bind_buffer_base(
-                                                                    target,
-                                                                    index,
-                                                                    buffer->GetBuffer(),
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_bind_buffer_base(
+                                                                         target,
+                                                                         index,
+                                                                         buffer->GetBuffer(),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "bindBufferRange") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 4 && arguments[2].isObject()) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto index = (uint32_t) arguments[1].asNumber();
-                                                        auto offset = arguments[3].asNumber();
-                                                        auto size = arguments[4].asNumber();
-                                                        auto bufferObject = arguments[2].asObject(
-                                                                runtime);
-                                                        if (bufferObject.isHostObject(runtime)) {
-                                                            auto buffer = bufferObject.asHostObject<WebGLBuffer>(
-                                                                    runtime);
-                                                            canvas_native_webgl2_bind_buffer_range(
-                                                                    target,
-                                                                    index,
-                                                                    buffer->GetBuffer(),
-                                                                    static_cast<ssize_t>(offset),
-                                                                    static_cast<ssize_t>(size),
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                         if (count > 4 && arguments[2].isObject()) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto index = (uint32_t) arguments[1].asNumber();
+                                                             auto offset = arguments[3].asNumber();
+                                                             auto size = arguments[4].asNumber();
+                                                             auto bufferObject = arguments[2].asObject(
+                                                                     runtime);
+                                                             if (bufferObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto buffer = bufferObject.asHostObject<WebGLBuffer>(
+                                                                         runtime);
+                                                                 canvas_native_webgl2_bind_buffer_range(
+                                                                         target,
+                                                                         index,
+                                                                         buffer->GetBuffer(),
+                                                                         static_cast<ssize_t>(offset),
+                                                                         static_cast<ssize_t>(size),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "bindSampler") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto samplerObject = arguments[1].asObject(
-                                                                runtime);
-                                                        if (samplerObject.isHostObject(runtime)) {
-                                                            auto unit = (uint32_t) arguments[0].asNumber();
-                                                            auto sampler = samplerObject.asHostObject<WebGLSampler>(
-                                                                    runtime);
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto samplerObject = arguments[1].asObject(
+                                                                     runtime);
+                                                             if (samplerObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto unit = (uint32_t) arguments[0].asNumber();
+                                                                 auto sampler = samplerObject.asHostObject<WebGLSampler>(
+                                                                         runtime);
 
-                                                            canvas_native_webgl2_bind_sampler(
-                                                                    unit,
-                                                                    sampler->GetSampler(),
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_bind_sampler(
+                                                                         unit,
+                                                                         sampler->GetSampler(),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "bindTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto transformFeedbackObject = arguments[1].asObject(
-                                                                runtime);
-                                                        if (transformFeedbackObject.isHostObject(
-                                                                runtime)) {
-                                                            auto target = (uint32_t) arguments[0].asNumber();
-                                                            auto transformFeedback = transformFeedbackObject.asHostObject<WebGLTransformFeedback>(
-                                                                    runtime);
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto transformFeedbackObject = arguments[1].asObject(
+                                                                     runtime);
+                                                             if (transformFeedbackObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+                                                                 auto transformFeedback = transformFeedbackObject.asHostObject<WebGLTransformFeedback>(
+                                                                         runtime);
 
-                                                            canvas_native_webgl2_bind_transform_feedback(
-                                                                    target,
-                                                                    transformFeedback->GetFeedback(),
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_bind_transform_feedback(
+                                                                         target,
+                                                                         transformFeedback->GetFeedback(),
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "bindVertexArray") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 0) {
-                                                        if (arguments[0].isNull()) {
-                                                            canvas_native_webgl2_bind_vertex_array(
-                                                                    0,
-                                                                    this->GetState()
-                                                            );
-                                                            return Value::undefined();
-                                                        }
+                                                         if (count > 0) {
+                                                             if (arguments[0].isNull()) {
+                                                                 canvas_native_webgl2_bind_vertex_array(
+                                                                         0,
+                                                                         this->GetState()
+                                                                 );
+                                                                 return jsi::Value::undefined();
+                                                             }
 
-                                                        if (arguments[0].isObject()) {
-                                                            auto vertexArrayObject = arguments[0].asObject(
-                                                                    runtime);
-                                                            if (vertexArrayObject.isHostObject(
-                                                                    runtime)) {
-                                                                auto vertexArray = vertexArrayObject.asHostObject<WebGLVertexArrayObject>(
-                                                                        runtime);
+                                                             if (arguments[0].isObject()) {
+                                                                 auto vertexArrayObject = arguments[0].asObject(
+                                                                         runtime);
+                                                                 if (vertexArrayObject.isHostObject(
+                                                                         runtime)) {
+                                                                     auto vertexArray = vertexArrayObject.asHostObject<WebGLVertexArrayObject>(
+                                                                             runtime);
 
-                                                                if (vertexArray != nullptr) {
+                                                                     if (vertexArray != nullptr) {
 
-                                                                    canvas_native_webgl2_bind_vertex_array(
-                                                                            vertexArray->GetVertexArrayObject(),
-                                                                            this->GetState()
-                                                                    );
-                                                                }
-                                                            }
-                                                        }
+                                                                         canvas_native_webgl2_bind_vertex_array(
+                                                                                 vertexArray->GetVertexArrayObject(),
+                                                                                 this->GetState()
+                                                                         );
+                                                                     }
+                                                                 }
+                                                             }
 
-                                                    }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "blitFramebuffer") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 10,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     10,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 9) {
-                                                        auto srcX0 = (int32_t) arguments[0].asNumber();
-                                                        auto srcY0 = (int32_t) arguments[1].asNumber();
+                                                         if (count > 9) {
+                                                             auto srcX0 = (int32_t) arguments[0].asNumber();
+                                                             auto srcY0 = (int32_t) arguments[1].asNumber();
 
-                                                        auto srcX1 = (int32_t) arguments[2].asNumber();
-                                                        auto srcY1 = (int32_t) arguments[3].asNumber();
+                                                             auto srcX1 = (int32_t) arguments[2].asNumber();
+                                                             auto srcY1 = (int32_t) arguments[3].asNumber();
 
-                                                        auto dstX0 = (int32_t) arguments[4].asNumber();
-                                                        auto dstY0 = (int32_t) arguments[5].asNumber();
+                                                             auto dstX0 = (int32_t) arguments[4].asNumber();
+                                                             auto dstY0 = (int32_t) arguments[5].asNumber();
 
-                                                        auto dstX1 = (int32_t) arguments[6].asNumber();
-                                                        auto dstY1 = (int32_t) arguments[7].asNumber();
+                                                             auto dstX1 = (int32_t) arguments[6].asNumber();
+                                                             auto dstY1 = (int32_t) arguments[7].asNumber();
 
-                                                        auto mask = (uint32_t) arguments[8].asNumber();
-                                                        auto filter = (uint32_t) arguments[9].asNumber();
-                                                        canvas_native_webgl2_blit_framebuffer(
-                                                                srcX0,
-                                                                srcY0,
-                                                                srcX1,
-                                                                srcY1,
-                                                                dstX0,
-                                                                dstY0,
-                                                                dstX1,
-                                                                dstY1,
-                                                                mask,
-                                                                filter,
-                                                                this->GetState()
-                                                        );
-                                                    }
+                                                             auto mask = (uint32_t) arguments[8].asNumber();
+                                                             auto filter = (uint32_t) arguments[9].asNumber();
+                                                             canvas_native_webgl2_blit_framebuffer(
+                                                                     srcX0,
+                                                                     srcY0,
+                                                                     srcX1,
+                                                                     srcY1,
+                                                                     dstX0,
+                                                                     dstY0,
+                                                                     dstX1,
+                                                                     dstY1,
+                                                                     mask,
+                                                                     filter,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "clearBufferfv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2 && arguments[0].isObject() &&
-                                                        arguments[1].isObject()) {
-                                                        auto bufferObject = arguments[0].asObject(
-                                                                runtime);
-                                                        auto drawbuffer = (int32_t) arguments[1].asNumber();
-                                                        auto values = arguments[2].asObject(
-                                                                runtime);
-                                                        if (bufferObject.isHostObject(runtime)) {
-                                                            auto buffer = bufferObject.asHostObject<WebGLBuffer>(
-                                                                    runtime);
-                                                            if (values.isArray(runtime)) {
-                                                                auto array = values.getArray(
-                                                                        runtime);
-                                                                auto len = array.size(runtime);
-                                                                rust::Vec<float> buf;
-                                                                buf.reserve(len);
-                                                                for (int j = 0; j < len; ++j) {
-                                                                    auto item = array.getValueAtIndex(
-                                                                            runtime, j);
-                                                                    if (!item.isNumber()) {
-                                                                        buf.push_back(
-                                                                                std::nanf(""));
-                                                                    } else {
-                                                                        buf.push_back(
-                                                                                static_cast<float>(item.asNumber())
-                                                                        );
-                                                                    }
-                                                                }
+                                                         if (count > 2 && arguments[0].isObject() &&
+                                                             arguments[1].isObject()) {
+                                                             auto bufferObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             auto drawbuffer = (int32_t) arguments[1].asNumber();
+                                                             auto values = arguments[2].asObject(
+                                                                     runtime);
+                                                             if (bufferObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto buffer = bufferObject.asHostObject<WebGLBuffer>(
+                                                                         runtime);
+                                                                 if (values.isArray(runtime)) {
+                                                                     auto array = values.getArray(
+                                                                             runtime);
+                                                                     auto len = array.size(runtime);
+                                                                     rust::Vec<float> buf;
+                                                                     buf.reserve(len);
+                                                                     for (int j = 0; j < len; ++j) {
+                                                                         auto item = array.getValueAtIndex(
+                                                                                 runtime, j);
+                                                                         if (!item.isNumber()) {
+                                                                             buf.push_back(
+                                                                                     std::nanf(""));
+                                                                         } else {
+                                                                             buf.push_back(
+                                                                                     static_cast<float>(item.asNumber())
+                                                                             );
+                                                                         }
+                                                                     }
 
-                                                                rust::Slice<const float> slice(
-                                                                        buf.data(), buf.size());
-                                                                canvas_native_webgl2_clear_bufferfv(
-                                                                        buffer->GetBuffer(),
-                                                                        drawbuffer,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
+                                                                     rust::Slice<const float> slice(
+                                                                             buf.data(),
+                                                                             buf.size());
+                                                                     canvas_native_webgl2_clear_bufferfv(
+                                                                             buffer->GetBuffer(),
+                                                                             drawbuffer,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
 
-                                                            } else if (values.isFloat32Array(
-                                                                    runtime)) {
-                                                                auto buff = values.getTypedArray(
-                                                                        runtime);
-                                                                auto slice = GetTypedArrayData<const float>(
-                                                                        runtime, buff);
-                                                                canvas_native_webgl2_clear_bufferfv(
-                                                                        buffer->GetBuffer(),
-                                                                        drawbuffer,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
+                                                                 } else if (values.isFloat32Array(
+                                                                         runtime)) {
+                                                                     auto buff = values.getTypedArray(
+                                                                             runtime);
+                                                                     auto slice = GetTypedArrayData<const float>(
+                                                                             runtime, buff);
+                                                                     canvas_native_webgl2_clear_bufferfv(
+                                                                             buffer->GetBuffer(),
+                                                                             drawbuffer,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "clearBufferiv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2 && arguments[0].isObject() &&
-                                                        arguments[1].isObject()) {
-                                                        auto bufferObject = arguments[0].asObject(
-                                                                runtime);
-                                                        auto drawbuffer = (int32_t) arguments[1].asNumber();
-                                                        auto values = arguments[2].asObject(
-                                                                runtime);
-                                                        if (bufferObject.isHostObject(runtime)) {
-                                                            auto buffer = bufferObject.asHostObject<WebGLBuffer>(
-                                                                    runtime);
-                                                            if (values.isArray(runtime)) {
-                                                                auto array = values.getArray(
-                                                                        runtime);
-                                                                auto len = array.size(runtime);
-                                                                rust::Vec<int32_t> buf;
-                                                                buf.reserve(len);
-                                                                for (int j = 0; j < len; ++j) {
-                                                                    auto item = array.getValueAtIndex(
-                                                                            runtime, j);
-                                                                    buf.push_back(
-                                                                            static_cast<int32_t>(item.asNumber())
-                                                                    );
-                                                                }
-                                                                rust::Slice<const int32_t> slice(
-                                                                        buf.data(), buf.size());
+                                                         if (count > 2 && arguments[0].isObject() &&
+                                                             arguments[1].isObject()) {
+                                                             auto bufferObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             auto drawbuffer = (int32_t) arguments[1].asNumber();
+                                                             auto values = arguments[2].asObject(
+                                                                     runtime);
+                                                             if (bufferObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto buffer = bufferObject.asHostObject<WebGLBuffer>(
+                                                                         runtime);
+                                                                 if (values.isArray(runtime)) {
+                                                                     auto array = values.getArray(
+                                                                             runtime);
+                                                                     auto len = array.size(runtime);
+                                                                     rust::Vec<int32_t> buf;
+                                                                     buf.reserve(len);
+                                                                     for (int j = 0; j < len; ++j) {
+                                                                         auto item = array.getValueAtIndex(
+                                                                                 runtime, j);
+                                                                         buf.push_back(
+                                                                                 static_cast<int32_t>(item.asNumber())
+                                                                         );
+                                                                     }
+                                                                     rust::Slice<const int32_t> slice(
+                                                                             buf.data(),
+                                                                             buf.size());
 
-                                                                canvas_native_webgl2_clear_bufferiv(
-                                                                        buffer->GetBuffer(),
-                                                                        drawbuffer,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
+                                                                     canvas_native_webgl2_clear_bufferiv(
+                                                                             buffer->GetBuffer(),
+                                                                             drawbuffer,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
 
-                                                            } else if (values.isInt32Array(
-                                                                    runtime)) {
-                                                                auto buff = values.getTypedArray(
-                                                                        runtime);
-                                                                auto slice = GetTypedArrayData<const int32_t>(
-                                                                        runtime, buff);
-                                                                canvas_native_webgl2_clear_bufferiv(
-                                                                        buffer->GetBuffer(),
-                                                                        drawbuffer,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
+                                                                 } else if (values.isInt32Array(
+                                                                         runtime)) {
+                                                                     auto buff = values.getTypedArray(
+                                                                             runtime);
+                                                                     auto slice = GetTypedArrayData<const int32_t>(
+                                                                             runtime, buff);
+                                                                     canvas_native_webgl2_clear_bufferiv(
+                                                                             buffer->GetBuffer(),
+                                                                             drawbuffer,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "clearBufferuiv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 2 && arguments[0].isObject() &&
-                                                        arguments[1].isObject()) {
-                                                        auto bufferObject = arguments[0].asObject(
-                                                                runtime);
-                                                        auto drawbuffer = (int32_t) arguments[1].asNumber();
-                                                        auto values = arguments[2].asObject(
-                                                                runtime);
-                                                        if (bufferObject.isHostObject(runtime)) {
-                                                            auto buffer = bufferObject.asHostObject<WebGLBuffer>(
-                                                                    runtime);
-                                                            if (values.isArray(runtime)) {
-                                                                auto array = values.getArray(
-                                                                        runtime);
-                                                                auto len = array.size(runtime);
-                                                                rust::Vec<uint32_t> buf;
-                                                                buf.reserve(len);
-                                                                for (int j = 0; j < len; ++j) {
-                                                                    auto item = array.getValueAtIndex(
-                                                                            runtime, j);
-                                                                    buf.push_back(
-                                                                            static_cast<uint32_t>(item.asNumber())
-                                                                    );
-                                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 2 && arguments[0].isObject() &&
+                                                             arguments[1].isObject()) {
+                                                             auto bufferObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             auto drawbuffer = (int32_t) arguments[1].asNumber();
+                                                             auto values = arguments[2].asObject(
+                                                                     runtime);
+                                                             if (bufferObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto buffer = bufferObject.asHostObject<WebGLBuffer>(
+                                                                         runtime);
+                                                                 if (values.isArray(runtime)) {
+                                                                     auto array = values.getArray(
+                                                                             runtime);
+                                                                     auto len = array.size(runtime);
+                                                                     rust::Vec<uint32_t> buf;
+                                                                     buf.reserve(len);
+                                                                     for (int j = 0; j < len; ++j) {
+                                                                         auto item = array.getValueAtIndex(
+                                                                                 runtime, j);
+                                                                         buf.push_back(
+                                                                                 static_cast<uint32_t>(item.asNumber())
+                                                                         );
+                                                                     }
 
-                                                                rust::Slice<const uint32_t> slice(
-                                                                        buf.data(), buf.size());
+                                                                     rust::Slice<const uint32_t> slice(
+                                                                             buf.data(),
+                                                                             buf.size());
 
-                                                                canvas_native_webgl2_clear_bufferuiv(
-                                                                        buffer->GetBuffer(),
-                                                                        drawbuffer,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
+                                                                     canvas_native_webgl2_clear_bufferuiv(
+                                                                             buffer->GetBuffer(),
+                                                                             drawbuffer,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
 
-                                                            } else if (values.isUint32Array(
-                                                                    runtime)) {
-                                                                auto buff = values.getTypedArray(
-                                                                        runtime);
-                                                                auto slice = GetTypedArrayData<const uint32_t>(
-                                                                        runtime, buff);
-                                                                canvas_native_webgl2_clear_bufferuiv(
-                                                                        buffer->GetBuffer(),
-                                                                        drawbuffer,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-                                                    return Value::undefined();
+                                                                 } else if (values.isUint32Array(
+                                                                         runtime)) {
+                                                                     auto buff = values.getTypedArray(
+                                                                             runtime);
+                                                                     auto slice = GetTypedArrayData<const uint32_t>(
+                                                                             runtime, buff);
+                                                                     canvas_native_webgl2_clear_bufferuiv(
+                                                                             buffer->GetBuffer(),
+                                                                             drawbuffer,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "clientWaitSync") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 2 && arguments[0].isObject()) {
-                                                        auto syncObject = arguments[0].asObject(
-                                                                runtime);
+                                                         if (count > 2 && arguments[0].isObject()) {
+                                                             auto syncObject = arguments[0].asObject(
+                                                                     runtime);
 
-                                                        if (syncObject.isHostObject(runtime)) {
-                                                            auto sync = syncObject.asHostObject<WebGLSyncImpl>(
-                                                                    runtime);
-                                                            if (sync != nullptr) {
-                                                                auto flags = (uint32_t) arguments[1].asNumber();
-                                                                auto timeout = arguments[2].asNumber();
-                                                                auto ret = canvas_native_webgl2_client_wait_sync(
-                                                                        sync->GetSync(),
-                                                                        flags,
-                                                                        static_cast<ssize_t>(timeout),
-                                                                        this->GetState()
-                                                                );
-                                                                return {ret};
-                                                            }
-                                                        }
-                                                    }
-                                                    // todo decide if WAIT_FAILED should be returned here
-                                                    return Value::undefined();
-                                                }
+                                                             if (syncObject.isHostObject(runtime)) {
+                                                                 auto sync = syncObject.asHostObject<WebGLSyncImpl>(
+                                                                         runtime);
+                                                                 if (sync != nullptr) {
+                                                                     auto flags = (uint32_t) arguments[1].asNumber();
+                                                                     auto timeout = arguments[2].asNumber();
+                                                                     auto ret = canvas_native_webgl2_client_wait_sync(
+                                                                             sync->GetSync(),
+                                                                             flags,
+                                                                             static_cast<ssize_t>(timeout),
+                                                                             this->GetState()
+                                                                     );
+                                                                     return {ret};
+                                                                 }
+                                                             }
+                                                         }
+                                                         // todo decide if WAIT_FAILED should be returned here
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "compressedTexSubImage3D") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 12,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 8) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto level = (int32_t) arguments[1].asNumber();
-                                                        auto xoffset = (int32_t) arguments[2].asNumber();
-                                                        auto yoffset = (int32_t) arguments[3].asNumber();
-                                                        auto zoffset = (int32_t) arguments[4].asNumber();
-                                                        auto width = (int32_t) arguments[5].asNumber();
-                                                        auto height = (int32_t) arguments[6].asNumber();
-                                                        auto depth = (int32_t) arguments[7].asNumber();
-                                                        auto format = (uint32_t) arguments[8].asNumber();
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     12,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 8) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto level = (int32_t) arguments[1].asNumber();
+                                                             auto xoffset = (int32_t) arguments[2].asNumber();
+                                                             auto yoffset = (int32_t) arguments[3].asNumber();
+                                                             auto zoffset = (int32_t) arguments[4].asNumber();
+                                                             auto width = (int32_t) arguments[5].asNumber();
+                                                             auto height = (int32_t) arguments[6].asNumber();
+                                                             auto depth = (int32_t) arguments[7].asNumber();
+                                                             auto format = (uint32_t) arguments[8].asNumber();
 
-                                                        if (arguments[9].isObject()) {
-                                                            auto imageSizeOrBuf = arguments[9].asObject(
-                                                                    runtime);
-                                                            if (imageSizeOrBuf.isTypedArray(
-                                                                    runtime)) {
-                                                                auto array = imageSizeOrBuf.getTypedArray(
-                                                                        runtime);
-                                                                auto slice = GetTypedArrayData<const uint8_t>(
-                                                                        runtime, array);
+                                                             if (arguments[9].isObject()) {
+                                                                 auto imageSizeOrBuf = arguments[9].asObject(
+                                                                         runtime);
+                                                                 if (imageSizeOrBuf.isTypedArray(
+                                                                         runtime)) {
+                                                                     auto array = imageSizeOrBuf.getTypedArray(
+                                                                             runtime);
+                                                                     auto slice = GetTypedArrayData<const uint8_t>(
+                                                                             runtime, array);
 
-                                                                size_t srcOffset = 0;
-                                                                if (arguments[10].isNumber()) {
-                                                                    srcOffset = static_cast<size_t>(arguments[10].asNumber());
-                                                                }
-                                                                size_t srcLengthOverride = 0;
-                                                                if (arguments[11].isNumber()) {
-                                                                    srcLengthOverride = static_cast<size_t>(arguments[11].asNumber());
-                                                                }
+                                                                     size_t srcOffset = 0;
+                                                                     if (arguments[10].isNumber()) {
+                                                                         srcOffset = static_cast<size_t>(arguments[10].asNumber());
+                                                                     }
+                                                                     size_t srcLengthOverride = 0;
+                                                                     if (arguments[11].isNumber()) {
+                                                                         srcLengthOverride = static_cast<size_t>(arguments[11].asNumber());
+                                                                     }
 
 
-                                                                canvas_native_webgl2_compressed_tex_sub_image3d(
-                                                                        target,
-                                                                        level,
-                                                                        xoffset,
-                                                                        yoffset,
-                                                                        zoffset,
-                                                                        width,
-                                                                        height,
-                                                                        depth,
-                                                                        format,
-                                                                        slice,
-                                                                        srcOffset,
-                                                                        srcLengthOverride,
-                                                                        this->GetState()
-                                                                );
-                                                            }
-                                                        } else {
-                                                            auto imageSizeOrBuf = (int32_t) arguments[0].asNumber();
-                                                            auto offset = 0;
-                                                            if (arguments[10].isNumber()) {
-                                                                offset = (int32_t) arguments[10].asNumber();
-                                                            }
-                                                            canvas_native_webgl2_compressed_tex_sub_image3d_none(
-                                                                    target,
-                                                                    level,
-                                                                    xoffset,
-                                                                    yoffset,
-                                                                    zoffset,
-                                                                    width,
-                                                                    height,
-                                                                    depth,
-                                                                    format,
-                                                                    imageSizeOrBuf,
-                                                                    offset,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                                     canvas_native_webgl2_compressed_tex_sub_image3d(
+                                                                             target,
+                                                                             level,
+                                                                             xoffset,
+                                                                             yoffset,
+                                                                             zoffset,
+                                                                             width,
+                                                                             height,
+                                                                             depth,
+                                                                             format,
+                                                                             slice,
+                                                                             srcOffset,
+                                                                             srcLengthOverride,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             } else {
+                                                                 auto imageSizeOrBuf = (int32_t) arguments[0].asNumber();
+                                                                 auto offset = 0;
+                                                                 if (arguments[10].isNumber()) {
+                                                                     offset = (int32_t) arguments[10].asNumber();
+                                                                 }
+                                                                 canvas_native_webgl2_compressed_tex_sub_image3d_none(
+                                                                         target,
+                                                                         level,
+                                                                         xoffset,
+                                                                         yoffset,
+                                                                         zoffset,
+                                                                         width,
+                                                                         height,
+                                                                         depth,
+                                                                         format,
+                                                                         imageSizeOrBuf,
+                                                                         offset,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "copyBufferSubData") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 4) {
-                                                        auto readTarget = (uint32_t) arguments[0].asNumber();
-                                                        auto writeTarget = (uint32_t) arguments[1].asNumber();
-                                                        auto readOffset = arguments[2].asNumber();
-                                                        auto writeOffset = arguments[3].asNumber();
-                                                        auto size = arguments[4].asNumber();
-                                                        canvas_native_webgl2_copy_buffer_sub_data(
-                                                                readTarget,
-                                                                writeTarget,
-                                                                static_cast<ssize_t>(readOffset),
-                                                                static_cast<ssize_t>(writeOffset),
-                                                                static_cast<ssize_t>(size),
-                                                                this->GetState()
-                                                        );
-                                                    }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 4) {
+                                                             auto readTarget = (uint32_t) arguments[0].asNumber();
+                                                             auto writeTarget = (uint32_t) arguments[1].asNumber();
+                                                             auto readOffset = arguments[2].asNumber();
+                                                             auto writeOffset = arguments[3].asNumber();
+                                                             auto size = arguments[4].asNumber();
+                                                             canvas_native_webgl2_copy_buffer_sub_data(
+                                                                     readTarget,
+                                                                     writeTarget,
+                                                                     static_cast<ssize_t>(readOffset),
+                                                                     static_cast<ssize_t>(writeOffset),
+                                                                     static_cast<ssize_t>(size),
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "copyTexSubImage3D") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 9,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     9,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 8) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto level = (int32_t) arguments[1].asNumber();
-                                                        auto xoffset = (int32_t) arguments[2].asNumber();
-                                                        auto yoffset = (int32_t) arguments[3].asNumber();
-                                                        auto zoffset = (int32_t) arguments[4].asNumber();
-                                                        auto x = (int32_t) arguments[5].asNumber();
-                                                        auto y = (int32_t) arguments[6].asNumber();
-                                                        auto width = (int32_t) arguments[7].asNumber();
-                                                        auto height = (int32_t) arguments[8].asNumber();
-                                                        canvas_native_webgl2_copy_tex_sub_image3d(
-                                                                target,
-                                                                level,
-                                                                xoffset,
-                                                                yoffset,
-                                                                zoffset,
-                                                                x,
-                                                                y,
-                                                                width,
-                                                                height,
-                                                                this->GetState()
-                                                        );
-                                                    }
+                                                         if (count > 8) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto level = (int32_t) arguments[1].asNumber();
+                                                             auto xoffset = (int32_t) arguments[2].asNumber();
+                                                             auto yoffset = (int32_t) arguments[3].asNumber();
+                                                             auto zoffset = (int32_t) arguments[4].asNumber();
+                                                             auto x = (int32_t) arguments[5].asNumber();
+                                                             auto y = (int32_t) arguments[6].asNumber();
+                                                             auto width = (int32_t) arguments[7].asNumber();
+                                                             auto height = (int32_t) arguments[8].asNumber();
+                                                             canvas_native_webgl2_copy_tex_sub_image3d(
+                                                                     target,
+                                                                     level,
+                                                                     xoffset,
+                                                                     yoffset,
+                                                                     zoffset,
+                                                                     x,
+                                                                     y,
+                                                                     width,
+                                                                     height,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "createQuery") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    auto ret = canvas_native_webgl2_create_query(
-                                                            this->GetState());
-                                                    auto query = std::make_shared<WebGLQuery>(ret);
-                                                    return jsi::Object::createFromHostObject(
-                                                            runtime, query);
-                                                }
+                                                         auto ret = canvas_native_webgl2_create_query(
+                                                                 this->GetState());
+                                                         auto query = std::make_shared<WebGLQuery>(
+                                                                 ret);
+                                                         return jsi::Object::createFromHostObject(
+                                                                 runtime, query);
+                                                     }
         );
     } else if (methodName == "createSampler") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    auto ret = canvas_native_webgl2_create_sampler(
-                                                            this->GetState());
-                                                    auto sampler = std::make_shared<WebGLSampler>(
-                                                            ret);
-                                                    return jsi::Object::createFromHostObject(
-                                                            runtime, sampler);
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto ret = canvas_native_webgl2_create_sampler(
+                                                                 this->GetState());
+                                                         auto sampler = std::make_shared<WebGLSampler>(
+                                                                 ret);
+                                                         return jsi::Object::createFromHostObject(
+                                                                 runtime, sampler);
+                                                     }
         );
     } else if (methodName == "createTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    auto ret = canvas_native_webgl2_create_transform_feedback(
-                                                            this->GetState());
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto ret = canvas_native_webgl2_create_transform_feedback(
+                                                                 this->GetState());
 
-                                                    auto feedback = std::make_shared<WebGLTransformFeedback>(
-                                                            ret);
-                                                    return jsi::Object::createFromHostObject(
-                                                            runtime, feedback);
-                                                }
+                                                         auto feedback = std::make_shared<WebGLTransformFeedback>(
+                                                                 ret);
+                                                         return jsi::Object::createFromHostObject(
+                                                                 runtime, feedback);
+                                                     }
         );
     } else if (methodName == "createVertexArray") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    auto ret = canvas_native_webgl2_create_vertex_array(
-                                                            this->GetState());
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto ret = canvas_native_webgl2_create_vertex_array(
+                                                                 this->GetState());
 
-                                                    auto vertexArrayObject = std::make_shared<WebGLVertexArrayObject>(
-                                                            ret);
-                                                    return jsi::Object::createFromHostObject(
-                                                            runtime, vertexArrayObject);
-                                                }
+                                                         auto vertexArrayObject = std::make_shared<WebGLVertexArrayObject>(
+                                                                 ret);
+                                                         return jsi::Object::createFromHostObject(
+                                                                 runtime, vertexArrayObject);
+                                                     }
         );
     } else if (methodName == "clearBufferfi") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 3 && arguments[0].isObject()) {
-                                                        auto bufferObject = arguments[0].asObject(
-                                                                runtime);
-                                                        if (bufferObject.isHostObject(runtime)) {
-                                                            auto buffer = bufferObject.asHostObject<WebGLBuffer>(
-                                                                    runtime);
-                                                            if (buffer != nullptr) {
-                                                                auto drawbuffer = (int32_t) arguments[1].asNumber();
-                                                                auto depth = arguments[2].asNumber();
-                                                                auto stencil = (int32_t) arguments[3].asNumber();
-                                                                canvas_native_webgl2_clear_bufferfi(
-                                                                        buffer->GetBuffer(),
-                                                                        drawbuffer,
-                                                                        static_cast<float>(depth),
-                                                                        stencil,
-                                                                        this->GetState()
-                                                                );
-                                                            }
+                                                         if (count > 3 && arguments[0].isObject()) {
+                                                             auto bufferObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (bufferObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto buffer = bufferObject.asHostObject<WebGLBuffer>(
+                                                                         runtime);
+                                                                 if (buffer != nullptr) {
+                                                                     auto drawbuffer = (int32_t) arguments[1].asNumber();
+                                                                     auto depth = arguments[2].asNumber();
+                                                                     auto stencil = (int32_t) arguments[3].asNumber();
+                                                                     canvas_native_webgl2_clear_bufferfi(
+                                                                             buffer->GetBuffer(),
+                                                                             drawbuffer,
+                                                                             static_cast<float>(depth),
+                                                                             stencil,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
 
-                                                        }
-                                                    }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "deleteQuery") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (arguments[0].isObject()) {
-                                                        auto queryObject = arguments[0].asObject(
-                                                                runtime);
-                                                        if (queryObject.isHostObject(runtime)) {
-                                                            auto query = queryObject.asHostObject<WebGLQuery>(
-                                                                    runtime);
+                                                         if (arguments[0].isObject()) {
+                                                             auto queryObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (queryObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto query = queryObject.asHostObject<WebGLQuery>(
+                                                                         runtime);
 
-                                                            if (query != nullptr) {
-                                                                canvas_native_webgl2_delete_query_with_query(
-                                                                        query->GetQuery(),
-                                                                        this->GetState()
-                                                                );
-                                                            }
+                                                                 if (query != nullptr) {
+                                                                     canvas_native_webgl2_delete_query_with_query(
+                                                                             query->GetQuery(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
 
-                                                        }
-                                                    }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "deleteSampler") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (arguments[0].isObject()) {
-                                                        auto samplerObject = arguments[0].asObject(
-                                                                runtime);
-                                                        if (samplerObject.isHostObject(runtime)) {
-                                                            auto sampler = samplerObject.asHostObject<WebGLSampler>(
-                                                                    runtime);
+                                                         if (arguments[0].isObject()) {
+                                                             auto samplerObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (samplerObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto sampler = samplerObject.asHostObject<WebGLSampler>(
+                                                                         runtime);
 
-                                                            if (sampler != nullptr) {
-                                                                canvas_native_webgl2_delete_sampler_with_sampler(
-                                                                        sampler->GetSampler(),
-                                                                        this->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
+                                                                 if (sampler != nullptr) {
+                                                                     canvas_native_webgl2_delete_sampler_with_sampler(
+                                                                             sampler->GetSampler(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "deleteSync") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (arguments[0].isObject()) {
-                                                        auto syncObject = arguments[0].asObject(
-                                                                runtime);
-                                                        if (syncObject.isHostObject(runtime)) {
-                                                            auto sync = syncObject.asHostObject<WebGLSyncImpl>(
-                                                                    runtime);
+                                                         if (arguments[0].isObject()) {
+                                                             auto syncObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (syncObject.isHostObject(runtime)) {
+                                                                 auto sync = syncObject.asHostObject<WebGLSyncImpl>(
+                                                                         runtime);
 
-                                                            if (sync != nullptr) {
-                                                                canvas_native_webgl2_delete_sync_with_sync(
-                                                                        sync->GetSync(),
-                                                                        this->GetState()
-                                                                );
-                                                            }
-                                                        }
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                                 if (sync != nullptr) {
+                                                                     canvas_native_webgl2_delete_sync_with_sync(
+                                                                             sync->GetSync(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "deleteTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (arguments[0].isObject()) {
-                                                        auto transformFeedbackObject = arguments[0].asObject(
-                                                                runtime);
-                                                        if (transformFeedbackObject.isHostObject(
-                                                                runtime)) {
-                                                            auto transformFeedback = transformFeedbackObject.asHostObject<WebGLTransformFeedback>(
-                                                                    runtime);
+                                                         if (arguments[0].isObject()) {
+                                                             auto transformFeedbackObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (transformFeedbackObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto transformFeedback = transformFeedbackObject.asHostObject<WebGLTransformFeedback>(
+                                                                         runtime);
 
-                                                            if (transformFeedback != nullptr) {
-                                                                canvas_native_webgl2_delete_transform_feedback(
-                                                                        transformFeedback->GetFeedback(),
-                                                                        this->GetState()
-                                                                );
-                                                            }
+                                                                 if (transformFeedback != nullptr) {
+                                                                     canvas_native_webgl2_delete_transform_feedback(
+                                                                             transformFeedback->GetFeedback(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
 
-                                                        }
-                                                    }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "deleteVertexArray") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (arguments[0].isObject()) {
-                                                        auto vertexArrayObject = arguments[0].asObject(
-                                                                runtime);
-                                                        if (vertexArrayObject.isHostObject(
-                                                                runtime)) {
-                                                            auto vertexArray = vertexArrayObject.asHostObject<WebGLVertexArrayObject>(
-                                                                    runtime);
-                                                            if (vertexArray != nullptr) {
-                                                                canvas_native_webgl2_delete_vertex_array_with_vertex_array(
-                                                                        vertexArray->GetVertexArrayObject(),
-                                                                        this->GetState()
-                                                                );
-                                                            }
+                                                         if (arguments[0].isObject()) {
+                                                             auto vertexArrayObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (vertexArrayObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto vertexArray = vertexArrayObject.asHostObject<WebGLVertexArrayObject>(
+                                                                         runtime);
+                                                                 if (vertexArray != nullptr) {
+                                                                     canvas_native_webgl2_delete_vertex_array_with_vertex_array(
+                                                                             vertexArray->GetVertexArrayObject(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
 
-                                                        }
-                                                    }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "drawArraysInstanced") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 3) {
-                                                        auto mode = (uint32_t) arguments[0].asNumber();
-                                                        auto first = (int32_t) arguments[1].asNumber();
-                                                        auto count_ = (int32_t) arguments[2].asNumber();
-                                                        auto instanceCount = (int32_t) arguments[3].asNumber();
-                                                        canvas_native_webgl2_draw_arrays_instanced(
-                                                                mode,
-                                                                first,
-                                                                count_,
-                                                                instanceCount,
-                                                                this->GetState()
-                                                        );
+                                                         if (count > 3) {
+                                                             auto mode = (uint32_t) arguments[0].asNumber();
+                                                             auto first = (int32_t) arguments[1].asNumber();
+                                                             auto count_ = (int32_t) arguments[2].asNumber();
+                                                             auto instanceCount = (int32_t) arguments[3].asNumber();
+                                                             canvas_native_webgl2_draw_arrays_instanced(
+                                                                     mode,
+                                                                     first,
+                                                                     count_,
+                                                                     instanceCount,
+                                                                     this->GetState()
+                                                             );
 
-                                                        this->UpdateInvalidateState();
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                             this->UpdateInvalidateState();
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "drawBuffers") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (arguments[0].isObject()) {
-                                                        auto buffersObject = arguments[0].asObject(
-                                                                runtime);
-                                                        if (buffersObject.isArray(runtime)) {
-                                                            auto array = buffersObject.getArray(
-                                                                    runtime);
-                                                            auto len = array.size(runtime);
-                                                            rust::Vec<uint32_t> buf;
-                                                            buf.reserve(len);
-                                                            for (int j = 0; j < len; ++j) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, j);
-                                                                buf.emplace_back(
-                                                                        (uint32_t) item.asNumber());
-                                                            }
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
-                                                            canvas_native_webgl2_draw_buffers(slice,
-                                                                                              this->GetState());
-                                                        }
-                                                    }
+                                                         if (arguments[0].isObject()) {
+                                                             auto buffersObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (buffersObject.isArray(runtime)) {
+                                                                 auto array = buffersObject.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 buf.reserve(len);
+                                                                 for (int j = 0; j < len; ++j) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, j);
+                                                                     buf.emplace_back(
+                                                                             (uint32_t) item.asNumber());
+                                                                 }
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
+                                                                 canvas_native_webgl2_draw_buffers(
+                                                                         slice,
+                                                                         this->GetState());
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "drawElementsInstanced") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 4) {
-                                                        auto mode = (uint32_t) arguments[0].asNumber();
-                                                        auto count_ = (int32_t) arguments[1].asNumber();
-                                                        auto type = (uint32_t) arguments[2].asNumber();
-                                                        auto offset = arguments[3].asNumber();
-                                                        auto instanceCount = (int32_t) arguments[4].asNumber();
-                                                        canvas_native_webgl2_draw_elements_instanced(
-                                                                mode,
-                                                                count_,
-                                                                type,
-                                                                static_cast<ssize_t>(offset),
-                                                                instanceCount,
-                                                                this->GetState()
-                                                        );
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 4) {
+                                                             auto mode = (uint32_t) arguments[0].asNumber();
+                                                             auto count_ = (int32_t) arguments[1].asNumber();
+                                                             auto type = (uint32_t) arguments[2].asNumber();
+                                                             auto offset = arguments[3].asNumber();
+                                                             auto instanceCount = (int32_t) arguments[4].asNumber();
+                                                             canvas_native_webgl2_draw_elements_instanced(
+                                                                     mode,
+                                                                     count_,
+                                                                     type,
+                                                                     static_cast<ssize_t>(offset),
+                                                                     instanceCount,
+                                                                     this->GetState()
+                                                             );
 
-                                                        this->UpdateInvalidateState();
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                             this->UpdateInvalidateState();
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "drawRangeElements") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 5) {
-                                                        auto mode = (uint32_t) arguments[0].asNumber();
-                                                        auto start = (uint32_t) arguments[1].asNumber();
-                                                        auto end = (uint32_t) arguments[2].asNumber();
-                                                        auto count_ = (int32_t) arguments[3].asNumber();
-                                                        auto type = (uint32_t) arguments[4].asNumber();
-                                                        auto offset = arguments[5].asNumber();
-                                                        canvas_native_webgl2_draw_range_elements(
-                                                                mode,
-                                                                start,
-                                                                end,
-                                                                count,
-                                                                type,
-                                                                static_cast<ssize_t>(offset),
-                                                                this->GetState()
-                                                        );
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 5) {
+                                                             auto mode = (uint32_t) arguments[0].asNumber();
+                                                             auto start = (uint32_t) arguments[1].asNumber();
+                                                             auto end = (uint32_t) arguments[2].asNumber();
+                                                             auto count_ = (int32_t) arguments[3].asNumber();
+                                                             auto type = (uint32_t) arguments[4].asNumber();
+                                                             auto offset = arguments[5].asNumber();
+                                                             canvas_native_webgl2_draw_range_elements(
+                                                                     mode,
+                                                                     start,
+                                                                     end,
+                                                                     count,
+                                                                     type,
+                                                                     static_cast<ssize_t>(offset),
+                                                                     this->GetState()
+                                                             );
 
-                                                        this->UpdateInvalidateState();
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                             this->UpdateInvalidateState();
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "endQuery") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (arguments[0].isNumber()) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        canvas_native_webgl2_end_query(target,
-                                                                                       this->GetState());
-                                                    }
+                                                         if (arguments[0].isNumber()) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             canvas_native_webgl2_end_query(target,
+                                                                                            this->GetState());
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "endTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 03,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    canvas_native_webgl2_end_transform_feedback(
-                                                            this->GetState());
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     03,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         canvas_native_webgl2_end_transform_feedback(
+                                                                 this->GetState());
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "fenceSync") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        auto condition = (uint32_t) arguments[0].asNumber();
-                                                        auto flags = (uint32_t) arguments[1].asNumber();
-                                                        canvas_native_webgl2_fence_sync(
-                                                                condition,
-                                                                flags,
-                                                                this->GetState()
-                                                        );
-                                                    }
+                                                         if (count > 1) {
+                                                             auto condition = (uint32_t) arguments[0].asNumber();
+                                                             auto flags = (uint32_t) arguments[1].asNumber();
+                                                             canvas_native_webgl2_fence_sync(
+                                                                     condition,
+                                                                     flags,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "framebufferTextureLayer") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 4 && arguments[2].isObject()) {
-                                                        auto textureObject = arguments[2].asObject(
-                                                                runtime);
-                                                        if (textureObject.isHostObject(runtime)) {
-                                                            auto target = (uint32_t) arguments[0].asNumber();
-                                                            auto attachment = (uint32_t) arguments[1].asNumber();
-                                                            auto texture = textureObject.asHostObject<WebGLTexture>(
-                                                                    runtime);
-                                                            auto level = (int32_t) arguments[3].asNumber();
-                                                            auto layer = (int32_t) arguments[4].asNumber();
-                                                            if (texture != nullptr) {
-                                                                canvas_native_webgl2_framebuffer_texture_layer(
-                                                                        target,
-                                                                        attachment,
-                                                                        texture->GetTexture(),
-                                                                        level,
-                                                                        layer,
-                                                                        this->GetState()
-                                                                );
-                                                            }
-                                                        }
+                                                         if (count > 4 && arguments[2].isObject()) {
+                                                             auto textureObject = arguments[2].asObject(
+                                                                     runtime);
+                                                             if (textureObject.isHostObject(
+                                                                     runtime)) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+                                                                 auto attachment = (uint32_t) arguments[1].asNumber();
+                                                                 auto texture = textureObject.asHostObject<WebGLTexture>(
+                                                                         runtime);
+                                                                 auto level = (int32_t) arguments[3].asNumber();
+                                                                 auto layer = (int32_t) arguments[4].asNumber();
+                                                                 if (texture != nullptr) {
+                                                                     canvas_native_webgl2_framebuffer_texture_layer(
+                                                                             target,
+                                                                             attachment,
+                                                                             texture->GetTexture(),
+                                                                             level,
+                                                                             layer,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
+                                                             }
 
-                                                    }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "getActiveUniformBlockName") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 1) {
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
-                                                        if (program != nullptr) {
-                                                            auto uniformBlockIndex = (uint32_t) arguments[1].asNumber();
-                                                            auto name = canvas_native_webgl2_get_active_uniform_block_name(
-                                                                    program->GetProgram(),
-                                                                    uniformBlockIndex,
-                                                                    this->GetState()
-                                                            );
-                                                            return jsi::String::createFromAscii(
-                                                                    runtime, name.data(),
-                                                                    name.size());
-                                                        }
+                                                         if (count > 1) {
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
+                                                             if (program != nullptr) {
+                                                                 auto uniformBlockIndex = (uint32_t) arguments[1].asNumber();
+                                                                 auto name = canvas_native_webgl2_get_active_uniform_block_name(
+                                                                         program->GetProgram(),
+                                                                         uniformBlockIndex,
+                                                                         this->GetState()
+                                                                 );
+                                                                 return jsi::String::createFromAscii(
+                                                                         runtime, name.data(),
+                                                                         name.size());
+                                                             }
 
-                                                    }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "getActiveUniformBlockParameter") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 2) {
+                                                         if (count > 2) {
 
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
 
-                                                        if (program != nullptr) {
-                                                            auto uniformBlockIndex = (uint32_t) arguments[1].asNumber();
-                                                            auto pname = (uint32_t) arguments[2].asNumber();
-                                                            auto ret = canvas_native_webgl2_get_active_uniform_block_parameter(
-                                                                    program->GetProgram(),
-                                                                    uniformBlockIndex,
-                                                                    pname,
-                                                                    this->GetState()
-                                                            );
+                                                             if (program != nullptr) {
+                                                                 auto uniformBlockIndex = (uint32_t) arguments[1].asNumber();
+                                                                 auto pname = (uint32_t) arguments[2].asNumber();
+                                                                 auto ret = canvas_native_webgl2_get_active_uniform_block_parameter(
+                                                                         program->GetProgram(),
+                                                                         uniformBlockIndex,
+                                                                         pname,
+                                                                         this->GetState()
+                                                                 );
 
-                                                            switch (pname) {
-                                                                case GL_UNIFORM_BLOCK_BINDING:
-                                                                case GL_UNIFORM_BLOCK_DATA_SIZE:
-                                                                case GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS:
-                                                                    return {canvas_native_webgl_result_get_i32(
-                                                                            *ret)};
-                                                                case GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES: {
-                                                                    auto value = canvas_native_webgl_result_get_u32_array(
-                                                                            *ret);
-                                                                    auto buffer = std::make_shared<VecMutableBuffer<uint32_t>>(
-                                                                            std::move(value));
-                                                                    auto array = jsi::ArrayBuffer(
-                                                                            runtime, buffer);
+                                                                 switch (pname) {
+                                                                     case GL_UNIFORM_BLOCK_BINDING:
+                                                                     case GL_UNIFORM_BLOCK_DATA_SIZE:
+                                                                     case GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS:
+                                                                         return {canvas_native_webgl_result_get_i32(
+                                                                                 *ret)};
+                                                                     case GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES: {
+                                                                         auto value = canvas_native_webgl_result_get_u32_array(
+                                                                                 *ret);
+                                                                         auto buffer = std::make_shared<VecMutableBuffer<uint32_t>>(
+                                                                                 std::move(value));
+                                                                         auto array = jsi::ArrayBuffer(
+                                                                                 runtime, buffer);
 
-                                                                    auto Uint32Array = runtime.global()
-                                                                            .getProperty(runtime,
+                                                                         auto Uint32Array = runtime.global()
+                                                                                 .getProperty(
+                                                                                         runtime,
                                                                                          "Uint32Array")
-                                                                            .asObject(runtime)
-                                                                            .asFunction(runtime);
+                                                                                 .asObject(runtime)
+                                                                                 .asFunction(
+                                                                                         runtime);
 
 
-                                                                    return Uint32Array.callAsConstructor(
-                                                                            runtime, array);
-                                                                }
-                                                                case GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER:
-                                                                case GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER:
-                                                                    return {canvas_native_webgl_result_get_bool(
-                                                                            *ret)};
-                                                                default:
-                                                                    return Value::null();
-                                                            }
-                                                        }
-                                                    }
+                                                                         return Uint32Array.callAsConstructor(
+                                                                                 runtime, array);
+                                                                     }
+                                                                     case GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER:
+                                                                     case GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER:
+                                                                         return {canvas_native_webgl_result_get_bool(
+                                                                                 *ret)};
+                                                                     default:
+                                                                         return Value::null();
+                                                                 }
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getActiveUniforms") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 2 && arguments[1].isObject()) {
+                                                         if (count > 2 && arguments[1].isObject()) {
 
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
-                                                        auto uniformIndicesObject = arguments[1].asObject(
-                                                                runtime);
-                                                        auto pname = (uint32_t) arguments[2].asNumber();
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
+                                                             auto uniformIndicesObject = arguments[1].asObject(
+                                                                     runtime);
+                                                             auto pname = (uint32_t) arguments[2].asNumber();
 
-                                                        if (uniformIndicesObject.isArray(runtime)) {
-                                                            auto uniformIndices = uniformIndicesObject.asArray(
-                                                                    runtime);
-                                                            auto size = uniformIndices.size(
-                                                                    runtime);
-                                                            rust::Vec<uint32_t> buf;
-                                                            buf.reserve(size);
-                                                            for (int j = 0; j < size; j++) {
-                                                                auto item = (uint32_t) uniformIndices.getValueAtIndex(
-                                                                        runtime, j).asNumber();
-                                                                buf.emplace_back(item);
-                                                            }
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
-                                                            auto ret = canvas_native_webgl2_get_active_uniforms(
-                                                                    program->GetProgram(),
-                                                                    slice,
-                                                                    pname,
-                                                                    this->GetState()
-                                                            );
+                                                             if (uniformIndicesObject.isArray(
+                                                                     runtime)) {
+                                                                 auto uniformIndices = uniformIndicesObject.asArray(
+                                                                         runtime);
+                                                                 auto size = uniformIndices.size(
+                                                                         runtime);
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 buf.reserve(size);
+                                                                 for (int j = 0; j < size; j++) {
+                                                                     auto item = (uint32_t) uniformIndices.getValueAtIndex(
+                                                                             runtime, j).asNumber();
+                                                                     buf.emplace_back(item);
+                                                                 }
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
+                                                                 auto ret = canvas_native_webgl2_get_active_uniforms(
+                                                                         program->GetProgram(),
+                                                                         slice,
+                                                                         pname,
+                                                                         this->GetState()
+                                                                 );
 
-                                                            switch (pname) {
-                                                                case GL_UNIFORM_TYPE:
-                                                                case GL_UNIFORM_SIZE: {
-                                                                    auto value = canvas_native_webgl_result_get_u32_array(
-                                                                            *ret);
-                                                                    auto array = jsi::Array(runtime,
-                                                                                            value.size());
-                                                                    auto len = value.size();
-                                                                    for (int j = 0; j < len; ++j) {
-                                                                        auto item = value[j];
-                                                                        array.setValueAtIndex(
-                                                                                runtime, j,
-                                                                                jsi::Value(
-                                                                                        (int32_t) item));
-                                                                    }
-                                                                    return array;
-                                                                }
-                                                                    break;
-                                                                case GL_UNIFORM_BLOCK_INDEX:
-                                                                case GL_UNIFORM_OFFSET:
-                                                                case GL_UNIFORM_ARRAY_STRIDE:
-                                                                case GL_UNIFORM_MATRIX_STRIDE: {
-                                                                    auto value = canvas_native_webgl_result_get_i32_array(
-                                                                            *ret);
-                                                                    auto array = jsi::Array(runtime,
-                                                                                            value.size());
-                                                                    auto len = value.size();
-                                                                    for (int j = 0; j < len; ++j) {
-                                                                        auto item = value[j];
-                                                                        array.setValueAtIndex(
-                                                                                runtime, j,
-                                                                                jsi::Value(item));
-                                                                    }
-                                                                    return array;
-                                                                }
-                                                                case GL_UNIFORM_IS_ROW_MAJOR: {
-                                                                    auto value = canvas_native_webgl_result_get_bool_array(
-                                                                            *ret);
-                                                                    auto len = value.size();
-                                                                    auto array = jsi::Array(runtime,
-                                                                                            len);
-                                                                    for (int j = 0; j < len; ++j) {
-                                                                        bool item = value[j] == 1;
-                                                                        array.setValueAtIndex(
-                                                                                runtime, j,
-                                                                                jsi::Value(item));
-                                                                    }
-                                                                    return array;
-                                                                }
-                                                                default:
-                                                                    return Value::null();
-                                                            }
-                                                        }
+                                                                 switch (pname) {
+                                                                     case GL_UNIFORM_TYPE:
+                                                                     case GL_UNIFORM_SIZE: {
+                                                                         auto value = canvas_native_webgl_result_get_u32_array(
+                                                                                 *ret);
+                                                                         auto array = jsi::Array(
+                                                                                 runtime,
+                                                                                 value.size());
+                                                                         auto len = value.size();
+                                                                         for (int j = 0;
+                                                                              j < len; ++j) {
+                                                                             auto item = value[j];
+                                                                             array.setValueAtIndex(
+                                                                                     runtime, j,
+                                                                                     jsi::Value(
+                                                                                             (int32_t) item));
+                                                                         }
+                                                                         return array;
+                                                                     }
+                                                                         break;
+                                                                     case GL_UNIFORM_BLOCK_INDEX:
+                                                                     case GL_UNIFORM_OFFSET:
+                                                                     case GL_UNIFORM_ARRAY_STRIDE:
+                                                                     case GL_UNIFORM_MATRIX_STRIDE: {
+                                                                         auto value = canvas_native_webgl_result_get_i32_array(
+                                                                                 *ret);
+                                                                         auto array = jsi::Array(
+                                                                                 runtime,
+                                                                                 value.size());
+                                                                         auto len = value.size();
+                                                                         for (int j = 0;
+                                                                              j < len; ++j) {
+                                                                             auto item = value[j];
+                                                                             array.setValueAtIndex(
+                                                                                     runtime, j,
+                                                                                     jsi::Value(
+                                                                                             item));
+                                                                         }
+                                                                         return array;
+                                                                     }
+                                                                     case GL_UNIFORM_IS_ROW_MAJOR: {
+                                                                         auto value = canvas_native_webgl_result_get_bool_array(
+                                                                                 *ret);
+                                                                         auto len = value.size();
+                                                                         auto array = jsi::Array(
+                                                                                 runtime,
+                                                                                 len);
+                                                                         for (int j = 0;
+                                                                              j < len; ++j) {
+                                                                             bool item =
+                                                                                     value[j] == 1;
+                                                                             array.setValueAtIndex(
+                                                                                     runtime, j,
+                                                                                     jsi::Value(
+                                                                                             item));
+                                                                         }
+                                                                         return array;
+                                                                     }
+                                                                     default:
+                                                                         return Value::null();
+                                                                 }
+                                                             }
 
 
-                                                    }
-                                                    return Value::null();
-                                                }
+                                                         }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getBufferSubData") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count >= 3 && arguments[2].isObject()) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto srcByteOffset = arguments[1].asNumber();
-                                                        auto dstDataObject = arguments[2].asObject(
-                                                                runtime);
+                                                         if (count >= 3 &&
+                                                             arguments[2].isObject()) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto srcByteOffset = arguments[1].asNumber();
+                                                             auto dstDataObject = arguments[2].asObject(
+                                                                     runtime);
 
-                                                        if (dstDataObject.isTypedArray(runtime)) {
-                                                            ssize_t dstOffsetValue = 0;
-                                                            if (arguments[3].isNumber()) {
-                                                                dstOffsetValue = static_cast<ssize_t>(arguments[3].asNumber());
-                                                            }
+                                                             if (dstDataObject.isTypedArray(
+                                                                     runtime)) {
+                                                                 ssize_t dstOffsetValue = 0;
+                                                                 if (arguments[3].isNumber()) {
+                                                                     dstOffsetValue = static_cast<ssize_t>(arguments[3].asNumber());
+                                                                 }
 
-                                                            ssize_t lengthValue = 0;
-                                                            if (arguments[4].isNumber()) {
-                                                                lengthValue = static_cast<ssize_t>(arguments[4].asNumber());
-                                                            }
+                                                                 ssize_t lengthValue = 0;
+                                                                 if (arguments[4].isNumber()) {
+                                                                     lengthValue = static_cast<ssize_t>(arguments[4].asNumber());
+                                                                 }
 
-                                                            auto array = dstDataObject.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<uint8_t>(
-                                                                    runtime, array);
+                                                                 auto array = dstDataObject.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<uint8_t>(
+                                                                         runtime, array);
 
-                                                            canvas_native_webgl2_get_buffer_sub_data(
-                                                                    target,
-                                                                    static_cast<ssize_t>(srcByteOffset),
-                                                                    slice,
-                                                                    dstOffsetValue,
-                                                                    lengthValue,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_get_buffer_sub_data(
+                                                                         target,
+                                                                         static_cast<ssize_t>(srcByteOffset),
+                                                                         slice,
+                                                                         dstOffsetValue,
+                                                                         lengthValue,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "getFragDataLocation") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 1 && arguments[1].isString()) {
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
+                                                         if (count > 1 && arguments[1].isString()) {
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
 
-                                                        if (program != nullptr) {
-                                                            auto name = arguments[1].asString(
-                                                                    runtime).utf8(runtime);
+                                                             if (program != nullptr) {
+                                                                 auto name = arguments[1].asString(
+                                                                         runtime).utf8(runtime);
 
-                                                            auto ret = canvas_native_webgl2_get_frag_data_location(
-                                                                    program->GetProgram(),
-                                                                    rust::Str(name.data(),
-                                                                              name.size()),
-                                                                    this->GetState()
-                                                            );
+                                                                 auto ret = canvas_native_webgl2_get_frag_data_location(
+                                                                         program->GetProgram(),
+                                                                         rust::Str(name.data(),
+                                                                                   name.size()),
+                                                                         this->GetState()
+                                                                 );
 
-                                                            return {ret};
-                                                        }
-                                                    }
+                                                                 return {ret};
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getIndexedParameter") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto index = (uint32_t) arguments[1].asNumber();
-                                                        auto ret = canvas_native_webgl2_get_indexed_parameter(
-                                                                target,
-                                                                index,
-                                                                this->GetState()
-                                                        );
+                                                         if (count > 1) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto index = (uint32_t) arguments[1].asNumber();
+                                                             auto ret = canvas_native_webgl2_get_indexed_parameter(
+                                                                     target,
+                                                                     index,
+                                                                     this->GetState()
+                                                             );
 
-                                                        switch (target) {
-                                                            case GL_UNIFORM_BUFFER_BINDING:
-                                                            case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING: {
-                                                                auto buffer = canvas_native_webgl2_indexed_parameter_get_buffer_value(
-                                                                        *ret);
-                                                                return jsi::Object::createFromHostObject(
-                                                                        runtime,
-                                                                        std::make_shared<WebGLBuffer>(
-                                                                                buffer));
-                                                            }
-                                                                break;
-                                                            case GL_TRANSFORM_FEEDBACK_BUFFER_SIZE:
-                                                            case GL_TRANSFORM_FEEDBACK_BUFFER_START:
-                                                            case GL_UNIFORM_BUFFER_SIZE:
-                                                            case GL_UNIFORM_BUFFER_START: {
-                                                                auto value = canvas_native_webgl2_indexed_parameter_get_value(
-                                                                        *ret);
-                                                                return {static_cast<double>(value)};
-                                                            }
-                                                                break;
-                                                            default:
-                                                                return Value::null();
-                                                        }
-                                                    }
+                                                             switch (target) {
+                                                                 case GL_UNIFORM_BUFFER_BINDING:
+                                                                 case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING: {
+                                                                     auto buffer = canvas_native_webgl2_indexed_parameter_get_buffer_value(
+                                                                             *ret);
+                                                                     return jsi::Object::createFromHostObject(
+                                                                             runtime,
+                                                                             std::make_shared<WebGLBuffer>(
+                                                                                     buffer));
+                                                                 }
+                                                                     break;
+                                                                 case GL_TRANSFORM_FEEDBACK_BUFFER_SIZE:
+                                                                 case GL_TRANSFORM_FEEDBACK_BUFFER_START:
+                                                                 case GL_UNIFORM_BUFFER_SIZE:
+                                                                 case GL_UNIFORM_BUFFER_START: {
+                                                                     auto value = canvas_native_webgl2_indexed_parameter_get_value(
+                                                                             *ret);
+                                                                     return {static_cast<double>(value)};
+                                                                 }
+                                                                     break;
+                                                                 default:
+                                                                     return Value::null();
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getInternalformatParameter") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 2) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto internalformat = (uint32_t) arguments[1].asNumber();
-                                                        auto pname = (uint32_t) arguments[2].asNumber();
-                                                        switch (internalformat) {
-                                                            case GL_RGB:
-                                                            case GL_RGBA:
-                                                            case GL_R8UI:
-                                                            case GL_R8I:
-                                                            case GL_R16UI:
-                                                            case GL_R16I:
-                                                            case GL_R32UI:
-                                                            case GL_R32I:
-                                                            case GL_RG8UI:
-                                                            case GL_RG8I:
-                                                            case GL_RG16UI:
-                                                            case GL_RG16I:
-                                                            case GL_RG32UI:
-                                                            case GL_RG32I:
-                                                            case GL_RGBA8UI:
-                                                            case GL_RGBA8I:
-                                                            case GL_RGB10_A2UI:
-                                                            case GL_RGBA16UI:
-                                                            case GL_RGBA16I:
-                                                            case GL_RGBA32UI:
-                                                            case GL_RGBA32I: {
-                                                                // empty
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 2) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto internalformat = (uint32_t) arguments[1].asNumber();
+                                                             auto pname = (uint32_t) arguments[2].asNumber();
+                                                             switch (internalformat) {
+                                                                 case GL_RGB:
+                                                                 case GL_RGBA:
+                                                                 case GL_R8UI:
+                                                                 case GL_R8I:
+                                                                 case GL_R16UI:
+                                                                 case GL_R16I:
+                                                                 case GL_R32UI:
+                                                                 case GL_R32I:
+                                                                 case GL_RG8UI:
+                                                                 case GL_RG8I:
+                                                                 case GL_RG16UI:
+                                                                 case GL_RG16I:
+                                                                 case GL_RG32UI:
+                                                                 case GL_RG32I:
+                                                                 case GL_RGBA8UI:
+                                                                 case GL_RGBA8I:
+                                                                 case GL_RGB10_A2UI:
+                                                                 case GL_RGBA16UI:
+                                                                 case GL_RGBA16I:
+                                                                 case GL_RGBA32UI:
+                                                                 case GL_RGBA32I: {
+                                                                     // empty
 
-                                                                auto value = rust::Vec<int32_t>();
-                                                                auto buffer = std::make_shared<VecMutableBuffer<int32_t>>(
-                                                                        std::move(value));
-                                                                auto array = jsi::ArrayBuffer(
-                                                                        runtime, buffer);
+                                                                     auto value = rust::Vec<int32_t>();
+                                                                     auto buffer = std::make_shared<VecMutableBuffer<int32_t>>(
+                                                                             std::move(value));
+                                                                     auto array = jsi::ArrayBuffer(
+                                                                             runtime, buffer);
 
-                                                                auto Int32Array = runtime.global()
-                                                                        .getProperty(runtime,
-                                                                                     "Int32Array")
-                                                                        .asObject(runtime)
-                                                                        .asFunction(runtime);
-
-
-                                                                return Int32Array.callAsConstructor(
-                                                                        runtime, array);
-                                                            }
-                                                            case GL_R8:
-                                                            case GL_RG8:
-                                                            case GL_RGB565:
-                                                            case GL_RGBA8:
-                                                            case GL_SRGB8_ALPHA8:
-                                                            case GL_RGB5_A1:
-                                                            case GL_RGBA4:
-                                                            case GL_RGB10_A2:
-                                                            case GL_DEPTH_COMPONENT16:
-                                                            case GL_DEPTH_COMPONENT24:
-                                                            case GL_DEPTH_COMPONENT32F:
-                                                            case GL_DEPTH24_STENCIL8:
-                                                            case GL_DEPTH32F_STENCIL8:
-                                                            case GL_STENCIL_INDEX8:
-                                                                // noop
-                                                                break;
-                                                            case GL_R16F:
-                                                            case GL_RG16F:
-                                                            case GL_R32F:
-                                                            case GL_RG32F:
-                                                            case GL_RGBA32F:
-                                                            case GL_R11F_G11F_B10F:
-                                                                // noop
-                                                                break;
-                                                            default:
-                                                                return Value::null();
-                                                        }
+                                                                     auto Int32Array = runtime.global()
+                                                                             .getProperty(runtime,
+                                                                                          "Int32Array")
+                                                                             .asObject(runtime)
+                                                                             .asFunction(runtime);
 
 
-                                                        auto ret = canvas_native_webgl2_get_internalformat_parameter(
-                                                                target,
-                                                                internalformat,
-                                                                pname,
-                                                                this->GetState()
-                                                        );
+                                                                     return Int32Array.callAsConstructor(
+                                                                             runtime, array);
+                                                                 }
+                                                                 case GL_R8:
+                                                                 case GL_RG8:
+                                                                 case GL_RGB565:
+                                                                 case GL_RGBA8:
+                                                                 case GL_SRGB8_ALPHA8:
+                                                                 case GL_RGB5_A1:
+                                                                 case GL_RGBA4:
+                                                                 case GL_RGB10_A2:
+                                                                 case GL_DEPTH_COMPONENT16:
+                                                                 case GL_DEPTH_COMPONENT24:
+                                                                 case GL_DEPTH_COMPONENT32F:
+                                                                 case GL_DEPTH24_STENCIL8:
+                                                                 case GL_DEPTH32F_STENCIL8:
+                                                                 case GL_STENCIL_INDEX8:
+                                                                     // noop
+                                                                     break;
+                                                                 case GL_R16F:
+                                                                 case GL_RG16F:
+                                                                 case GL_R32F:
+                                                                 case GL_RG32F:
+                                                                 case GL_RGBA32F:
+                                                                 case GL_R11F_G11F_B10F:
+                                                                     // noop
+                                                                     break;
+                                                                 default:
+                                                                     return Value::null();
+                                                             }
 
-                                                        if (pname == GL_SAMPLES) {
-                                                            auto value = canvas_native_webgl_result_get_i32_array(
-                                                                    *ret);
 
-                                                            auto buffer = std::make_shared<VecMutableBuffer<int32_t>>(
-                                                                    std::move(value));
-                                                            auto array = jsi::ArrayBuffer(runtime,
-                                                                                          buffer);
+                                                             auto ret = canvas_native_webgl2_get_internalformat_parameter(
+                                                                     target,
+                                                                     internalformat,
+                                                                     pname,
+                                                                     this->GetState()
+                                                             );
 
-                                                            auto Int32Array = runtime.global()
-                                                                    .getProperty(runtime,
-                                                                                 "Int32Array")
-                                                                    .asObject(runtime)
-                                                                    .asFunction(runtime);
+                                                             if (pname == GL_SAMPLES) {
+                                                                 auto value = canvas_native_webgl_result_get_i32_array(
+                                                                         *ret);
+
+                                                                 auto buffer = std::make_shared<VecMutableBuffer<int32_t>>(
+                                                                         std::move(value));
+                                                                 auto array = jsi::ArrayBuffer(
+                                                                         runtime,
+                                                                         buffer);
+
+                                                                 auto Int32Array = runtime.global()
+                                                                         .getProperty(runtime,
+                                                                                      "Int32Array")
+                                                                         .asObject(runtime)
+                                                                         .asFunction(runtime);
 
 
-                                                            return Int32Array.callAsConstructor(
-                                                                    runtime, array);
-                                                        } else {
-                                                            return Value::null();
-                                                        }
-                                                    }
+                                                                 return Int32Array.callAsConstructor(
+                                                                         runtime, array);
+                                                             } else {
+                                                                 return Value::null();
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getParameter") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 0) {
-                                                        auto pname = (uint32_t) arguments[0].asNumber();
-                                                        auto result = canvas_native_webgl2_get_parameter(
-                                                                pname,
-                                                                this->GetState());
-                                                        switch (pname) {
-                                                            case GL_COPY_READ_BUFFER_BINDING:
-                                                            case GL_COPY_WRITE_BUFFER_BINDING:
-                                                            case GL_DRAW_FRAMEBUFFER_BINDING:
-                                                                return {canvas_native_webgl_result_get_i32(
-                                                                        *result)};
-                                                            default:
-                                                                return this->GetParameterInternal(
-                                                                        runtime, pname,
-                                                                        std::move(result));
-                                                        }
-                                                    }
+                                                         if (count > 0) {
+                                                             auto pname = (uint32_t) arguments[0].asNumber();
+                                                             auto result = canvas_native_webgl2_get_parameter(
+                                                                     pname,
+                                                                     this->GetState());
+                                                             switch (pname) {
+                                                                 case GL_COPY_READ_BUFFER_BINDING:
+                                                                 case GL_COPY_WRITE_BUFFER_BINDING:
+                                                                 case GL_DRAW_FRAMEBUFFER_BINDING:
+                                                                     return {canvas_native_webgl_result_get_i32(
+                                                                             *result)};
+                                                                 default:
+                                                                     return this->GetParameterInternal(
+                                                                             runtime, pname,
+                                                                             std::move(result));
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getQueryParameter") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 1) {
-                                                        auto query = getHostObject<WebGLQuery>(
-                                                                runtime, arguments[0]);
-                                                        if (query != nullptr) {
-                                                            auto pname = (uint32_t) arguments[1].asNumber();
+                                                         if (count > 1) {
+                                                             auto query = getHostObject<WebGLQuery>(
+                                                                     runtime, arguments[0]);
+                                                             if (query != nullptr) {
+                                                                 auto pname = (uint32_t) arguments[1].asNumber();
 
 
-                                                            auto ret = canvas_native_webgl2_get_query_parameter(
-                                                                    query->GetQuery(),
-                                                                    pname,
-                                                                    this->GetState());
-                                                            if (pname == GL_QUERY_RESULT) {
-                                                                return {canvas_native_webgl_result_get_bool(
-                                                                        *ret)};
-                                                            } else if (pname ==
-                                                                       GL_QUERY_RESULT_AVAILABLE) {
-                                                                return {canvas_native_webgl_result_get_u32(
-                                                                        *ret)};
-                                                            }
-                                                        }
-                                                    }
+                                                                 auto ret = canvas_native_webgl2_get_query_parameter(
+                                                                         query->GetQuery(),
+                                                                         pname,
+                                                                         this->GetState());
+                                                                 if (pname == GL_QUERY_RESULT) {
+                                                                     return {canvas_native_webgl_result_get_bool(
+                                                                             *ret)};
+                                                                 } else if (pname ==
+                                                                            GL_QUERY_RESULT_AVAILABLE) {
+                                                                     return {canvas_native_webgl_result_get_u32(
+                                                                             *ret)};
+                                                                 }
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getQuery") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto pname = (uint32_t) arguments[1].asNumber();
-                                                        auto ret = canvas_native_webgl2_get_query(
-                                                                target,
-                                                                pname,
-                                                                this->GetState());
-                                                        if (pname == GL_CURRENT_QUERY) {
-                                                            return {canvas_native_webgl_result_get_i32(
-                                                                    *ret)};
-                                                        }
-                                                    }
+                                                         if (count > 1) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto pname = (uint32_t) arguments[1].asNumber();
+                                                             auto ret = canvas_native_webgl2_get_query(
+                                                                     target,
+                                                                     pname,
+                                                                     this->GetState());
+                                                             if (pname == GL_CURRENT_QUERY) {
+                                                                 return {canvas_native_webgl_result_get_i32(
+                                                                         *ret)};
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getSamplerParameter") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        auto sampler = getHostObject<WebGLSampler>(
-                                                                runtime, arguments[0]);
-                                                        if (sampler != nullptr) {
-                                                            auto pname = (uint32_t) arguments[1].asNumber();
-                                                            auto ret = canvas_native_webgl2_get_sampler_parameter(
-                                                                    sampler->GetSampler(), pname,
-                                                                    this->GetState());
+                                                         if (count > 1) {
+                                                             auto sampler = getHostObject<WebGLSampler>(
+                                                                     runtime, arguments[0]);
+                                                             if (sampler != nullptr) {
+                                                                 auto pname = (uint32_t) arguments[1].asNumber();
+                                                                 auto ret = canvas_native_webgl2_get_sampler_parameter(
+                                                                         sampler->GetSampler(),
+                                                                         pname,
+                                                                         this->GetState());
 
-                                                            switch (pname) {
-                                                                case GL_TEXTURE_MAX_LOD:
-                                                                case GL_TEXTURE_MIN_LOD:
-                                                                    return {static_cast<double>(canvas_native_webgl_result_get_f32(
-                                                                            *ret))};
-                                                                case GL_TEXTURE_COMPARE_FUNC:
-                                                                case GL_TEXTURE_COMPARE_MODE:
-                                                                case GL_TEXTURE_MAG_FILTER:
-                                                                case GL_TEXTURE_MIN_FILTER:
-                                                                case GL_TEXTURE_WRAP_R:
-                                                                case GL_TEXTURE_WRAP_S:
-                                                                case GL_TEXTURE_WRAP_T:
-                                                                    return {canvas_native_webgl_result_get_i32(
-                                                                            *ret)};
-                                                                default:
-                                                                    return Value::null();
-                                                            }
-                                                        }
-                                                    }
+                                                                 switch (pname) {
+                                                                     case GL_TEXTURE_MAX_LOD:
+                                                                     case GL_TEXTURE_MIN_LOD:
+                                                                         return {static_cast<double>(canvas_native_webgl_result_get_f32(
+                                                                                 *ret))};
+                                                                     case GL_TEXTURE_COMPARE_FUNC:
+                                                                     case GL_TEXTURE_COMPARE_MODE:
+                                                                     case GL_TEXTURE_MAG_FILTER:
+                                                                     case GL_TEXTURE_MIN_FILTER:
+                                                                     case GL_TEXTURE_WRAP_R:
+                                                                     case GL_TEXTURE_WRAP_S:
+                                                                     case GL_TEXTURE_WRAP_T:
+                                                                         return {canvas_native_webgl_result_get_i32(
+                                                                                 *ret)};
+                                                                     default:
+                                                                         return Value::null();
+                                                                 }
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getSyncParameter") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1) {
-                                                        auto sync = getHostObject<WebGLSyncImpl>(
-                                                                runtime, arguments[0]);
-                                                        if (sync != nullptr) {
-                                                            auto pname = (uint32_t) arguments[1].asNumber();
-                                                            auto ret = canvas_native_webgl2_get_sync_parameter(
-                                                                    sync->GetSync(),
-                                                                    pname,
-                                                                    this->GetState());
+                                                         if (count > 1) {
+                                                             auto sync = getHostObject<WebGLSyncImpl>(
+                                                                     runtime, arguments[0]);
+                                                             if (sync != nullptr) {
+                                                                 auto pname = (uint32_t) arguments[1].asNumber();
+                                                                 auto ret = canvas_native_webgl2_get_sync_parameter(
+                                                                         sync->GetSync(),
+                                                                         pname,
+                                                                         this->GetState());
 
-                                                            switch (pname) {
-                                                                case GL_OBJECT_TYPE:
-                                                                case GL_SYNC_STATUS:
-                                                                case GL_SYNC_CONDITION:
-                                                                case GL_SYNC_FLAGS:
-                                                                    return {canvas_native_webgl_result_get_i32(
-                                                                            *ret)};
-                                                                default:
-                                                                    return Value::null();
-                                                            }
-                                                        }
-                                                    }
-                                                    return Value::null();
-                                                }
+                                                                 switch (pname) {
+                                                                     case GL_OBJECT_TYPE:
+                                                                     case GL_SYNC_STATUS:
+                                                                     case GL_SYNC_CONDITION:
+                                                                     case GL_SYNC_FLAGS:
+                                                                         return {canvas_native_webgl_result_get_i32(
+                                                                                 *ret)};
+                                                                     default:
+                                                                         return Value::null();
+                                                                 }
+                                                             }
+                                                         }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getTransformFeedbackVarying") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 1) {
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
-                                                        auto index = (uint32_t) arguments[1].asNumber();
-                                                        if (program != nullptr) {
-                                                            auto ret = canvas_native_webgl2_get_transform_feedback_varying(
-                                                                    program->GetProgram(),
-                                                                    index,
-                                                                    this->GetState()
-                                                            );
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 1) {
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
+                                                             auto index = (uint32_t) arguments[1].asNumber();
+                                                             if (program != nullptr) {
+                                                                 auto ret = canvas_native_webgl2_get_transform_feedback_varying(
+                                                                         program->GetProgram(),
+                                                                         index,
+                                                                         this->GetState()
+                                                                 );
 
-                                                            if (canvas_native_webgl_active_info_get_is_empty(
-                                                                    *ret)) {
-                                                                return Value::null();
-                                                            }
+                                                                 if (canvas_native_webgl_active_info_get_is_empty(
+                                                                         *ret)) {
+                                                                     return Value::null();
+                                                                 }
 
-                                                            auto info = std::make_shared<WebGLActiveInfoImpl>(
-                                                                    std::move(ret));
+                                                                 auto info = std::make_shared<WebGLActiveInfoImpl>(
+                                                                         std::move(ret));
 
-                                                            return jsi::Object::createFromHostObject(
-                                                                    runtime, info);
-                                                        }
-                                                    }
+                                                                 return jsi::Object::createFromHostObject(
+                                                                         runtime, info);
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getUniformBlockIndex") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 1) {
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
-                                                        auto index = (uint32_t) arguments[1].asNumber();
-                                                        if (program != nullptr) {
-                                                            auto ret = canvas_native_webgl2_get_transform_feedback_varying(
-                                                                    program->GetProgram(),
-                                                                    index,
-                                                                    this->GetState()
-                                                            );
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 1) {
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
+                                                             auto index = (uint32_t) arguments[1].asNumber();
+                                                             if (program != nullptr) {
+                                                                 auto ret = canvas_native_webgl2_get_transform_feedback_varying(
+                                                                         program->GetProgram(),
+                                                                         index,
+                                                                         this->GetState()
+                                                                 );
 
-                                                            if (canvas_native_webgl_active_info_get_is_empty(
-                                                                    *ret)) {
-                                                                return Value::null();
-                                                            }
+                                                                 if (canvas_native_webgl_active_info_get_is_empty(
+                                                                         *ret)) {
+                                                                     return Value::null();
+                                                                 }
 
-                                                            auto info = std::make_shared<WebGLActiveInfoImpl>(
-                                                                    std::move(ret));
+                                                                 auto info = std::make_shared<WebGLActiveInfoImpl>(
+                                                                         std::move(ret));
 
-                                                            return jsi::Object::createFromHostObject(
-                                                                    runtime, info);
-                                                        }
-                                                    }
+                                                                 return jsi::Object::createFromHostObject(
+                                                                         runtime, info);
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "getUniformIndices") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
-                                                        auto uniformNamesObject = arguments[1].asObject(
-                                                                runtime);
-                                                        if (program != nullptr &&
-                                                            uniformNamesObject.isArray(runtime)) {
-                                                            auto uniformNames = uniformNamesObject.getArray(
-                                                                    runtime);
-                                                            auto len = uniformNames.size(runtime);
-                                                            rust::Vec<rust::Str> store;
-                                                            store.reserve(len);
-                                                            for (int j = 0; j < len; ++j) {
-                                                                auto name = uniformNames.getValueAtIndex(
-                                                                        runtime, j).asString(
-                                                                        runtime).utf8(runtime);
-                                                                rust::Str val(name.data(),
-                                                                              name.size());
-                                                                store.push_back(val);
-                                                            }
-                                                            rust::Slice<const rust::Str> slice(
-                                                                    store.data(), store.size());
-                                                            auto ret = canvas_native_webgl2_get_uniform_indices(
-                                                                    program->GetProgram(), slice,
-                                                                    this->GetState());
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
+                                                             auto uniformNamesObject = arguments[1].asObject(
+                                                                     runtime);
+                                                             if (program != nullptr &&
+                                                                 uniformNamesObject.isArray(
+                                                                         runtime)) {
+                                                                 auto uniformNames = uniformNamesObject.getArray(
+                                                                         runtime);
+                                                                 auto len = uniformNames.size(
+                                                                         runtime);
+                                                                 rust::Vec<rust::Str> store;
+                                                                 store.reserve(len);
+                                                                 for (int j = 0; j < len; ++j) {
+                                                                     auto name = uniformNames.getValueAtIndex(
+                                                                             runtime, j).asString(
+                                                                             runtime).utf8(runtime);
+                                                                     rust::Str val(name.data(),
+                                                                                   name.size());
+                                                                     store.push_back(val);
+                                                                 }
+                                                                 rust::Slice<const rust::Str> slice(
+                                                                         store.data(),
+                                                                         store.size());
+                                                                 auto ret = canvas_native_webgl2_get_uniform_indices(
+                                                                         program->GetProgram(),
+                                                                         slice,
+                                                                         this->GetState());
 
-                                                            auto retSize = ret.size();
-                                                            auto result = jsi::Array(runtime,
-                                                                                     retSize);
-                                                            for (int j = 0; j < retSize; ++j) {
-                                                                auto item = ret[j];
-                                                                result.setValueAtIndex(runtime, j,
-                                                                                       Value(item));
-                                                            }
+                                                                 auto retSize = ret.size();
+                                                                 auto result = jsi::Array(runtime,
+                                                                                          retSize);
+                                                                 for (int j = 0; j < retSize; ++j) {
+                                                                     auto item = ret[j];
+                                                                     result.setValueAtIndex(runtime,
+                                                                                            j,
+                                                                                            Value(item));
+                                                                 }
 
-                                                            return result;
-                                                        }
-                                                    }
+                                                                 return result;
+                                                             }
+                                                         }
 
-                                                    return Value::null();
-                                                }
+                                                         return Value::null();
+                                                     }
         );
     } else if (methodName == "invalidateFramebuffer") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto attachments = arguments[1].asObject(
-                                                                runtime);
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto attachments = arguments[1].asObject(
+                                                                     runtime);
 
-                                                        if (attachments.isArray(runtime)) {
-                                                            auto array = attachments.getArray(
-                                                                    runtime);
-                                                            auto len = array.size(runtime);
-                                                            rust::Vec<uint32_t> buf;
-                                                            buf.reserve(len);
-                                                            for (int j = 0; j < len; ++j) {
-                                                                auto item = (uint32_t) array.getValueAtIndex(
-                                                                        runtime, j).asNumber();
-                                                                buf.push_back(item);
-                                                            }
+                                                             if (attachments.isArray(runtime)) {
+                                                                 auto array = attachments.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 buf.reserve(len);
+                                                                 for (int j = 0; j < len; ++j) {
+                                                                     auto item = (uint32_t) array.getValueAtIndex(
+                                                                             runtime, j).asNumber();
+                                                                     buf.push_back(item);
+                                                                 }
 
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
-                                                            canvas_native_webgl2_invalidate_framebuffer(
-                                                                    target, slice,
-                                                                    this->GetState());
-                                                        }
-                                                    }
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
+                                                                 canvas_native_webgl2_invalidate_framebuffer(
+                                                                         target, slice,
+                                                                         this->GetState());
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "invalidateSubFramebuffer") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 5 && arguments[1].isObject()) {
-                                                        auto attachments = arguments[1].asObject(
-                                                                runtime);
-                                                        if (attachments.isArray(runtime)) {
-                                                            auto target = (uint32_t) arguments[0].asNumber();
-                                                            auto x = (int32_t) arguments[2].asNumber();
-                                                            auto y = (int32_t) arguments[3].asNumber();
-                                                            auto width = (int32_t) arguments[4].asNumber();
-                                                            auto height = (int32_t) arguments[5].asNumber();
+                                                         if (count > 5 && arguments[1].isObject()) {
+                                                             auto attachments = arguments[1].asObject(
+                                                                     runtime);
+                                                             if (attachments.isArray(runtime)) {
+                                                                 auto target = (uint32_t) arguments[0].asNumber();
+                                                                 auto x = (int32_t) arguments[2].asNumber();
+                                                                 auto y = (int32_t) arguments[3].asNumber();
+                                                                 auto width = (int32_t) arguments[4].asNumber();
+                                                                 auto height = (int32_t) arguments[5].asNumber();
 
-                                                            auto array = attachments.getArray(
-                                                                    runtime);
-                                                            auto len = array.size(runtime);
-                                                            rust::Vec<uint32_t> buf;
-                                                            buf.reserve(len);
-                                                            for (int j = 0; j < len; ++j) {
-                                                                auto item = (uint) array.getValueAtIndex(
-                                                                        runtime, j).asNumber();
-                                                                buf.push_back(item);
-                                                            }
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
+                                                                 auto array = attachments.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 buf.reserve(len);
+                                                                 for (int j = 0; j < len; ++j) {
+                                                                     auto item = (uint) array.getValueAtIndex(
+                                                                             runtime, j).asNumber();
+                                                                     buf.push_back(item);
+                                                                 }
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_invalidate_sub_framebuffer(
-                                                                    target,
-                                                                    slice,
-                                                                    x,
-                                                                    y,
-                                                                    width,
-                                                                    height,
-                                                                    this->GetState());
-                                                        }
+                                                                 canvas_native_webgl2_invalidate_sub_framebuffer(
+                                                                         target,
+                                                                         slice,
+                                                                         x,
+                                                                         y,
+                                                                         width,
+                                                                         height,
+                                                                         this->GetState());
+                                                             }
 
 
-                                                    }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "isQuery") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 0) {
-                                                        auto query = getHostObject<WebGLQuery>(
-                                                                runtime, arguments[0]);
-                                                        if (query != nullptr) {
-                                                            auto ret = canvas_native_webgl2_is_query(
-                                                                    query->GetQuery(),
-                                                                    this->GetState());
-                                                            return {ret};
-                                                        }
-                                                    }
-                                                    // todo check return
-                                                    return {false};
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 0) {
+                                                             auto query = getHostObject<WebGLQuery>(
+                                                                     runtime, arguments[0]);
+                                                             if (query != nullptr) {
+                                                                 auto ret = canvas_native_webgl2_is_query(
+                                                                         query->GetQuery(),
+                                                                         this->GetState());
+                                                                 return {ret};
+                                                             }
+                                                         }
+                                                         // todo check return
+                                                         return {false};
+                                                     }
         );
     } else if (methodName == "isSampler") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 0) {
-                                                        auto sampler = getHostObject<WebGLSampler>(
-                                                                runtime, arguments[0]);
-                                                        if (sampler != nullptr) {
-                                                            auto ret = canvas_native_webgl2_is_sampler(
-                                                                    sampler->GetSampler(),
-                                                                    this->GetState());
-                                                            return {ret};
-                                                        }
-                                                    }
-                                                    // todo check return
-                                                    return {false};
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 0) {
+                                                             auto sampler = getHostObject<WebGLSampler>(
+                                                                     runtime, arguments[0]);
+                                                             if (sampler != nullptr) {
+                                                                 auto ret = canvas_native_webgl2_is_sampler(
+                                                                         sampler->GetSampler(),
+                                                                         this->GetState());
+                                                                 return {ret};
+                                                             }
+                                                         }
+                                                         // todo check return
+                                                         return {false};
+                                                     }
         );
     } else if (methodName == "isSync") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 0) {
-                                                        auto sync = getHostObject<WebGLSyncImpl>(
-                                                                runtime, arguments[0]);
-                                                        if (sync != nullptr) {
-                                                            auto ret = canvas_native_webgl2_is_sync(
-                                                                    sync->GetSync(),
-                                                                    this->GetState());
-                                                            return {ret};
-                                                        }
-                                                    }
-                                                    // todo check return
-                                                    return {false};
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 0) {
+                                                             auto sync = getHostObject<WebGLSyncImpl>(
+                                                                     runtime, arguments[0]);
+                                                             if (sync != nullptr) {
+                                                                 auto ret = canvas_native_webgl2_is_sync(
+                                                                         sync->GetSync(),
+                                                                         this->GetState());
+                                                                 return {ret};
+                                                             }
+                                                         }
+                                                         // todo check return
+                                                         return {false};
+                                                     }
         );
     } else if (methodName == "isTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 0) {
-                                                        auto transformFeedback = getHostObject<WebGLTransformFeedback>(
-                                                                runtime, arguments[0]);
-                                                        if (transformFeedback != nullptr) {
-                                                            auto ret = canvas_native_webgl2_is_transform_feedback(
-                                                                    transformFeedback->GetFeedback(),
-                                                                    this->GetState());
-                                                            return {ret};
-                                                        }
-                                                    }
-                                                    // todo check return
-                                                    return {false};
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 0) {
+                                                             auto transformFeedback = getHostObject<WebGLTransformFeedback>(
+                                                                     runtime, arguments[0]);
+                                                             if (transformFeedback != nullptr) {
+                                                                 auto ret = canvas_native_webgl2_is_transform_feedback(
+                                                                         transformFeedback->GetFeedback(),
+                                                                         this->GetState());
+                                                                 return {ret};
+                                                             }
+                                                         }
+                                                         // todo check return
+                                                         return {false};
+                                                     }
         );
     } else if (methodName == "isVertexArray") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 0) {
-                                                        auto vertexArray = getHostObject<WebGLVertexArrayObject>(
-                                                                runtime, arguments[0]);
-                                                        if (vertexArray != nullptr) {
-                                                            auto ret = canvas_native_webgl2_is_vertex_array(
-                                                                    vertexArray->GetVertexArrayObject(),
-                                                                    this->GetState());
-                                                            return {ret};
-                                                        }
-                                                    }
-                                                    // todo check return
-                                                    return {false};
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 0) {
+                                                             auto vertexArray = getHostObject<WebGLVertexArrayObject>(
+                                                                     runtime, arguments[0]);
+                                                             if (vertexArray != nullptr) {
+                                                                 auto ret = canvas_native_webgl2_is_vertex_array(
+                                                                         vertexArray->GetVertexArrayObject(),
+                                                                         this->GetState());
+                                                                 return {ret};
+                                                             }
+                                                         }
+                                                         // todo check return
+                                                         return {false};
 
 
-                                                }
+                                                     }
         );
     } else if (methodName == "pauseTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    canvas_native_webgl2_pause_transform_feedback(
-                                                            this->GetState());
+                                                         canvas_native_webgl2_pause_transform_feedback(
+                                                                 this->GetState());
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "readBuffer") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 0) {
-                                                        auto src = (uint32_t) arguments[0].asNumber();
-                                                        canvas_native_webgl2_read_buffer(
-                                                                src,
-                                                                this->GetState()
-                                                        );
-                                                    }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 0) {
+                                                             auto src = (uint32_t) arguments[0].asNumber();
+                                                             canvas_native_webgl2_read_buffer(
+                                                                     src,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "renderbufferStorageMultisample") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 4) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto samples = (int32_t) arguments[1].asNumber();
-                                                        auto internalFormat = (uint32_t) arguments[2].asNumber();
-                                                        auto width = (int32_t) arguments[3].asNumber();
-                                                        auto height = (int32_t) arguments[4].asNumber();
-                                                        canvas_native_webgl2_renderbuffer_storage_multisample(
-                                                                target,
-                                                                samples,
-                                                                internalFormat,
-                                                                width,
-                                                                height,
-                                                                this->GetState()
-                                                        );
-                                                    }
+                                                         if (count > 4) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto samples = (int32_t) arguments[1].asNumber();
+                                                             auto internalFormat = (uint32_t) arguments[2].asNumber();
+                                                             auto width = (int32_t) arguments[3].asNumber();
+                                                             auto height = (int32_t) arguments[4].asNumber();
+                                                             canvas_native_webgl2_renderbuffer_storage_multisample(
+                                                                     target,
+                                                                     samples,
+                                                                     internalFormat,
+                                                                     width,
+                                                                     height,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "resumeTransformFeedback") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 0,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    canvas_native_webgl2_resume_transform_feedback(
-                                                            this->GetState());
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         canvas_native_webgl2_resume_transform_feedback(
+                                                                 this->GetState());
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "samplerParameterf") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2) {
-                                                        auto sampler = getHostObject<WebGLSampler>(
-                                                                runtime, arguments[0]);
-                                                        auto pname = (uint32_t) arguments[1].asNumber();
-                                                        auto param = arguments[2].asNumber();
-                                                        if (sampler != nullptr) {
-                                                            canvas_native_webgl2_sampler_parameterf(
-                                                                    sampler->GetSampler(),
-                                                                    pname,
-                                                                    static_cast<float>(param),
-                                                                    this->GetState());
-                                                        }
-                                                    }
+                                                         if (count > 2) {
+                                                             auto sampler = getHostObject<WebGLSampler>(
+                                                                     runtime, arguments[0]);
+                                                             auto pname = (uint32_t) arguments[1].asNumber();
+                                                             auto param = arguments[2].asNumber();
+                                                             if (sampler != nullptr) {
+                                                                 canvas_native_webgl2_sampler_parameterf(
+                                                                         sampler->GetSampler(),
+                                                                         pname,
+                                                                         static_cast<float>(param),
+                                                                         this->GetState());
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "samplerParameteri") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2) {
-                                                        auto sampler = getHostObject<WebGLSampler>(
-                                                                runtime, arguments[0]);
-                                                        auto pname = (uint32_t) arguments[1].asNumber();
-                                                        auto param = (int32_t) arguments[2].asNumber();
-                                                        if (sampler != nullptr) {
-                                                            canvas_native_webgl2_sampler_parameteri(
-                                                                    sampler->GetSampler(),
-                                                                    pname,
-                                                                    param,
-                                                                    this->GetState());
-                                                        }
-                                                    }
+                                                         if (count > 2) {
+                                                             auto sampler = getHostObject<WebGLSampler>(
+                                                                     runtime, arguments[0]);
+                                                             auto pname = (uint32_t) arguments[1].asNumber();
+                                                             auto param = (int32_t) arguments[2].asNumber();
+                                                             if (sampler != nullptr) {
+                                                                 canvas_native_webgl2_sampler_parameteri(
+                                                                         sampler->GetSampler(),
+                                                                         pname,
+                                                                         param,
+                                                                         this->GetState());
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "texImage3D") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    // target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: any
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         // target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: any
 // target, level, internalformat, width, height, depth, border, format, type, srcData, srcOffset
 // target, level, internalformat, width, height, depth, border, format, type, source
 
 
 
-                                                    if (count == 10) {
-                                                        auto target = (int32_t) arguments[0].asNumber();
-                                                        auto level = (int32_t) arguments[1].asNumber();
-                                                        auto internalformat = (int32_t) arguments[2].asNumber();
-                                                        auto width = (int32_t) arguments[3].asNumber();
-                                                        auto height = (int32_t) arguments[4].asNumber();
-                                                        auto depth = (int32_t) arguments[5].asNumber();
-                                                        auto border = (int32_t) arguments[6].asNumber();
-                                                        auto format = (int32_t) arguments[7].asNumber();
-                                                        auto type = (uint32_t) arguments[8].asNumber();
+                                                         if (count == 10) {
+                                                             auto target = (int32_t) arguments[0].asNumber();
+                                                             auto level = (int32_t) arguments[1].asNumber();
+                                                             auto internalformat = (int32_t) arguments[2].asNumber();
+                                                             auto width = (int32_t) arguments[3].asNumber();
+                                                             auto height = (int32_t) arguments[4].asNumber();
+                                                             auto depth = (int32_t) arguments[5].asNumber();
+                                                             auto border = (int32_t) arguments[6].asNumber();
+                                                             auto format = (int32_t) arguments[7].asNumber();
+                                                             auto type = (uint32_t) arguments[8].asNumber();
 
 
-                                                        if (arguments[9].isNumber()) {
-                                                            auto imageOrPixelsOrOffset = arguments[9].asNumber();
-                                                            canvas_native_webgl2_tex_image3d_none(
-                                                                    target,
-                                                                    level,
-                                                                    internalformat,
-                                                                    width,
-                                                                    height,
-                                                                    depth,
-                                                                    border,
-                                                                    format,
-                                                                    type,
-                                                                    static_cast<ssize_t>(imageOrPixelsOrOffset),
-                                                                    this->GetState()
-                                                            );
-                                                            return jsi::Value::undefined();
-                                                        }
+                                                             if (arguments[9].isNumber()) {
+                                                                 auto imageOrPixelsOrOffset = arguments[9].asNumber();
+                                                                 canvas_native_webgl2_tex_image3d_none(
+                                                                         target,
+                                                                         level,
+                                                                         internalformat,
+                                                                         width,
+                                                                         height,
+                                                                         depth,
+                                                                         border,
+                                                                         format,
+                                                                         type,
+                                                                         static_cast<ssize_t>(imageOrPixelsOrOffset),
+                                                                         this->GetState()
+                                                                 );
+                                                                 return jsi::Value::undefined();
+                                                             }
 
-                                                        if (arguments[9].isObject()) {
-                                                            auto imageOrPixelsOrOffsetObject = arguments[9].asObject(
-                                                                    runtime);
+                                                             if (arguments[9].isObject()) {
+                                                                 auto imageOrPixelsOrOffsetObject = arguments[9].asObject(
+                                                                         runtime);
 
-                                                            if (imageOrPixelsOrOffsetObject.isTypedArray(
-                                                                    runtime)) {
-                                                                auto buf = imageOrPixelsOrOffsetObject.getTypedArray(
-                                                                        runtime);
-                                                                auto slice = GetTypedArrayData<const uint8_t>(
-                                                                        runtime, buf);
-
-
-                                                                canvas_native_webgl2_tex_image3d(
-                                                                        target,
-                                                                        level,
-                                                                        internalformat,
-                                                                        width,
-                                                                        height,
-                                                                        depth,
-                                                                        border,
-                                                                        format,
-                                                                        type,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
-                                                                return Value::undefined();
-                                                            }
+                                                                 if (imageOrPixelsOrOffsetObject.isTypedArray(
+                                                                         runtime)) {
+                                                                     auto buf = imageOrPixelsOrOffsetObject.getTypedArray(
+                                                                             runtime);
+                                                                     auto slice = GetTypedArrayData<const uint8_t>(
+                                                                             runtime, buf);
 
 
-                                                            auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                    runtime, arguments[9]);
-                                                            if (image_asset != nullptr) {
-                                                                canvas_native_webgl2_tex_image3d_asset(
-                                                                        target,
-                                                                        level,
-                                                                        internalformat,
-                                                                        width,
-                                                                        height,
-                                                                        depth,
-                                                                        border,
-                                                                        format,
-                                                                        type,
-                                                                        image_asset->GetImageAsset(),
-                                                                        this->GetState()
-                                                                );
-                                                                return Value::undefined();
-                                                            }
-                                                        }
-                                                    } else if (count > 10) {
+                                                                     canvas_native_webgl2_tex_image3d(
+                                                                             target,
+                                                                             level,
+                                                                             internalformat,
+                                                                             width,
+                                                                             height,
+                                                                             depth,
+                                                                             border,
+                                                                             format,
+                                                                             type,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
+                                                                     return jsi::Value::undefined();
+                                                                 }
 
-                                                        auto target = (int32_t) arguments[0].asNumber();
-                                                        auto level = (int32_t) arguments[1].asNumber();
-                                                        auto internalformat = (int32_t) arguments[2].asNumber();
-                                                        auto width = (int32_t) arguments[3].asNumber();
-                                                        auto height = (int32_t) arguments[4].asNumber();
-                                                        auto depth = (int32_t) arguments[5].asNumber();
-                                                        auto border = (int32_t) arguments[6].asNumber();
-                                                        auto format = (int32_t) arguments[7].asNumber();
-                                                        auto type = (uint32_t) arguments[8].asNumber();
-                                                        if (arguments[9].isObject()) {
-                                                            auto imageOrPixelsOrOffset = arguments[9].asObject(
-                                                                    runtime);
-                                                            size_t srcOffsetValue = 0;
-                                                            if (arguments[9].isNumber()) {
-                                                                srcOffsetValue = static_cast<size_t>(arguments[9].asNumber());
-                                                            }
 
-                                                            if (imageOrPixelsOrOffset.isTypedArray(
-                                                                    runtime)) {
-                                                                auto buf = imageOrPixelsOrOffset.getTypedArray(
-                                                                        runtime);
-                                                                auto size = buf.size(runtime);
-                                                                auto array = GetTypedArrayData<const uint8_t>(
-                                                                        runtime, buf);
+                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                         runtime, arguments[9]);
+                                                                 if (image_asset != nullptr) {
+                                                                     canvas_native_webgl2_tex_image3d_asset(
+                                                                             target,
+                                                                             level,
+                                                                             internalformat,
+                                                                             width,
+                                                                             height,
+                                                                             depth,
+                                                                             border,
+                                                                             format,
+                                                                             type,
+                                                                             image_asset->GetImageAsset(),
+                                                                             this->GetState()
+                                                                     );
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             }
+                                                         } else if (count > 10) {
 
-                                                                srcOffsetValue =
-                                                                        srcOffsetValue * size;
-                                                                if (srcOffsetValue >
-                                                                    size) {
-                                                                    return Value::undefined();
-                                                                }
+                                                             auto target = (int32_t) arguments[0].asNumber();
+                                                             auto level = (int32_t) arguments[1].asNumber();
+                                                             auto internalformat = (int32_t) arguments[2].asNumber();
+                                                             auto width = (int32_t) arguments[3].asNumber();
+                                                             auto height = (int32_t) arguments[4].asNumber();
+                                                             auto depth = (int32_t) arguments[5].asNumber();
+                                                             auto border = (int32_t) arguments[6].asNumber();
+                                                             auto format = (int32_t) arguments[7].asNumber();
+                                                             auto type = (uint32_t) arguments[8].asNumber();
+                                                             if (arguments[9].isObject()) {
+                                                                 auto imageOrPixelsOrOffset = arguments[9].asObject(
+                                                                         runtime);
+                                                                 size_t srcOffsetValue = 0;
+                                                                 if (arguments[9].isNumber()) {
+                                                                     srcOffsetValue = static_cast<size_t>(arguments[9].asNumber());
+                                                                 }
 
-                                                                canvas_native_webgl2_tex_image3d_offset(
-                                                                        target,
-                                                                        level,
-                                                                        internalformat,
-                                                                        width,
-                                                                        height,
-                                                                        depth,
-                                                                        border,
-                                                                        format,
-                                                                        type,
-                                                                        array,
-                                                                        srcOffsetValue,
-                                                                        this->GetState()
-                                                                );
-                                                                return Value::undefined();
-                                                            }
-                                                        }
+                                                                 if (imageOrPixelsOrOffset.isTypedArray(
+                                                                         runtime)) {
+                                                                     auto buf = imageOrPixelsOrOffset.getTypedArray(
+                                                                             runtime);
+                                                                     auto size = buf.size(runtime);
+                                                                     auto array = GetTypedArrayData<const uint8_t>(
+                                                                             runtime, buf);
 
-                                                    }
+                                                                     srcOffsetValue =
+                                                                             srcOffsetValue * size;
+                                                                     if (srcOffsetValue >
+                                                                         size) {
+                                                                         return jsi::Value::undefined();
+                                                                     }
 
-                                                    return Value::undefined();
-                                                }
+                                                                     canvas_native_webgl2_tex_image3d_offset(
+                                                                             target,
+                                                                             level,
+                                                                             internalformat,
+                                                                             width,
+                                                                             height,
+                                                                             depth,
+                                                                             border,
+                                                                             format,
+                                                                             type,
+                                                                             array,
+                                                                             srcOffsetValue,
+                                                                             this->GetState()
+                                                                     );
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             }
+
+                                                         }
+
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "texStorage2D") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 4) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto levels = (int32_t) arguments[1].asNumber();
-                                                        auto internalFormat = (uint32_t) arguments[2].asNumber();
-                                                        auto width = (int32_t) arguments[3].asNumber();
-                                                        auto height = (int32_t) arguments[4].asNumber();
-                                                        canvas_native_webgl2_tex_storage2d(
-                                                                target,
-                                                                levels,
-                                                                internalFormat,
-                                                                width,
-                                                                height,
-                                                                this->GetState()
-                                                        );
-                                                    }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 4) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto levels = (int32_t) arguments[1].asNumber();
+                                                             auto internalFormat = (uint32_t) arguments[2].asNumber();
+                                                             auto width = (int32_t) arguments[3].asNumber();
+                                                             auto height = (int32_t) arguments[4].asNumber();
+                                                             canvas_native_webgl2_tex_storage2d(
+                                                                     target,
+                                                                     levels,
+                                                                     internalFormat,
+                                                                     width,
+                                                                     height,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "texStorage3D") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 6,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     6,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 5) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto levels = (int32_t) arguments[1].asNumber();
-                                                        auto internalFormat = (uint32_t) arguments[2].asNumber();
-                                                        auto width = (int32_t) arguments[3].asNumber();
-                                                        auto height = (int32_t) arguments[4].asNumber();
-                                                        auto depth = (int32_t) arguments[5].asNumber();
-                                                        canvas_native_webgl2_tex_storage3d(
-                                                                target,
-                                                                levels,
-                                                                internalFormat,
-                                                                width,
-                                                                height,
-                                                                depth,
-                                                                this->GetState()
-                                                        );
-                                                    }
+                                                         if (count > 5) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto levels = (int32_t) arguments[1].asNumber();
+                                                             auto internalFormat = (uint32_t) arguments[2].asNumber();
+                                                             auto width = (int32_t) arguments[3].asNumber();
+                                                             auto height = (int32_t) arguments[4].asNumber();
+                                                             auto depth = (int32_t) arguments[5].asNumber();
+                                                             canvas_native_webgl2_tex_storage3d(
+                                                                     target,
+                                                                     levels,
+                                                                     internalFormat,
+                                                                     width,
+                                                                     height,
+                                                                     depth,
+                                                                     this->GetState()
+                                                             );
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "texSubImage3D") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 12,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count == 11) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto level = (int32_t) arguments[1].asNumber();
-                                                        auto xoffset = (int32_t) arguments[2].asNumber();
-                                                        auto yoffset = (int32_t) arguments[3].asNumber();
-                                                        auto zoffset = (int32_t) arguments[4].asNumber();
-                                                        auto width = (int32_t) arguments[5].asNumber();
-                                                        auto height = (int32_t) arguments[6].asNumber();
-                                                        auto depth = (int32_t) arguments[7].asNumber();
-                                                        auto format = (uint32_t) arguments[8].asNumber();
-                                                        auto type = (int32_t) arguments[9].asNumber();
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     12,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count == 11) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto level = (int32_t) arguments[1].asNumber();
+                                                             auto xoffset = (int32_t) arguments[2].asNumber();
+                                                             auto yoffset = (int32_t) arguments[3].asNumber();
+                                                             auto zoffset = (int32_t) arguments[4].asNumber();
+                                                             auto width = (int32_t) arguments[5].asNumber();
+                                                             auto height = (int32_t) arguments[6].asNumber();
+                                                             auto depth = (int32_t) arguments[7].asNumber();
+                                                             auto format = (uint32_t) arguments[8].asNumber();
+                                                             auto type = (int32_t) arguments[9].asNumber();
 
-                                                        if (arguments[10].isNumber()) {
-                                                            auto imageOrPixelsOrOffset = arguments[10].asNumber();
-                                                            canvas_native_webgl2_tex_sub_image3d_none(
-                                                                    target,
-                                                                    level,
-                                                                    xoffset,
-                                                                    yoffset,
-                                                                    zoffset,
-                                                                    width,
-                                                                    height,
-                                                                    depth,
-                                                                    format,
-                                                                    type,
-                                                                    static_cast<ssize_t>(imageOrPixelsOrOffset),
-                                                                    this->GetState()
-                                                            );
-                                                            return Value::undefined();
-                                                        }
+                                                             if (arguments[10].isNumber()) {
+                                                                 auto imageOrPixelsOrOffset = arguments[10].asNumber();
+                                                                 canvas_native_webgl2_tex_sub_image3d_none(
+                                                                         target,
+                                                                         level,
+                                                                         xoffset,
+                                                                         yoffset,
+                                                                         zoffset,
+                                                                         width,
+                                                                         height,
+                                                                         depth,
+                                                                         format,
+                                                                         type,
+                                                                         static_cast<ssize_t>(imageOrPixelsOrOffset),
+                                                                         this->GetState()
+                                                                 );
+                                                                 return jsi::Value::undefined();
+                                                             }
 
-                                                        if (arguments[10].isObject()) {
-                                                            auto imageOrPixelsOrOffsetObject = arguments[10].asObject(
-                                                                    runtime);
-                                                            if (imageOrPixelsOrOffsetObject.isTypedArray(
-                                                                    runtime)) {
-                                                                auto array = imageOrPixelsOrOffsetObject.getTypedArray(
-                                                                        runtime);
-                                                                auto slice = GetTypedArrayData<const uint8_t>(
-                                                                        runtime, array);
+                                                             if (arguments[10].isObject()) {
+                                                                 auto imageOrPixelsOrOffsetObject = arguments[10].asObject(
+                                                                         runtime);
+                                                                 if (imageOrPixelsOrOffsetObject.isTypedArray(
+                                                                         runtime)) {
+                                                                     auto array = imageOrPixelsOrOffsetObject.getTypedArray(
+                                                                             runtime);
+                                                                     auto slice = GetTypedArrayData<const uint8_t>(
+                                                                             runtime, array);
 
-                                                                canvas_native_webgl2_tex_sub_image3d(
-                                                                        target,
-                                                                        level,
-                                                                        xoffset,
-                                                                        yoffset,
-                                                                        zoffset,
-                                                                        width,
-                                                                        height,
-                                                                        depth,
-                                                                        format,
-                                                                        type,
-                                                                        slice,
-                                                                        this->GetState()
-                                                                );
+                                                                     canvas_native_webgl2_tex_sub_image3d(
+                                                                             target,
+                                                                             level,
+                                                                             xoffset,
+                                                                             yoffset,
+                                                                             zoffset,
+                                                                             width,
+                                                                             height,
+                                                                             depth,
+                                                                             format,
+                                                                             type,
+                                                                             slice,
+                                                                             this->GetState()
+                                                                     );
 
-                                                                return Value::undefined();
-                                                            }
+                                                                     return jsi::Value::undefined();
+                                                                 }
 
-                                                            auto asset = getHostObject<ImageAssetImpl>(
-                                                                    runtime, arguments[10]);
-                                                            if (asset != nullptr) {
+                                                                 auto asset = getHostObject<ImageAssetImpl>(
+                                                                         runtime, arguments[10]);
+                                                                 if (asset != nullptr) {
 
-                                                                canvas_native_webgl2_tex_sub_image3d_asset(
-                                                                        target,
-                                                                        level,
-                                                                        xoffset,
-                                                                        yoffset,
-                                                                        zoffset,
-                                                                        width,
-                                                                        height,
-                                                                        depth,
-                                                                        format,
-                                                                        type,
-                                                                        asset->GetImageAsset(),
-                                                                        this->GetState()
-                                                                );
-                                                            }
+                                                                     canvas_native_webgl2_tex_sub_image3d_asset(
+                                                                             target,
+                                                                             level,
+                                                                             xoffset,
+                                                                             yoffset,
+                                                                             zoffset,
+                                                                             width,
+                                                                             height,
+                                                                             depth,
+                                                                             format,
+                                                                             type,
+                                                                             asset->GetImageAsset(),
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
 
-                                                        }
+                                                             }
 
-                                                    } else if (count > 11) {
-                                                        auto target = (uint32_t) arguments[0].asNumber();
-                                                        auto level = (int32_t) arguments[1].asNumber();
-                                                        auto xoffset = (int32_t) arguments[2].asNumber();
-                                                        auto yoffset = (int32_t) arguments[3].asNumber();
-                                                        auto zoffset = (int32_t) arguments[4].asNumber();
-                                                        auto width = (int32_t) arguments[5].asNumber();
-                                                        auto height = (int32_t) arguments[6].asNumber();
-                                                        auto depth = (int32_t) arguments[7].asNumber();
-                                                        auto format = (uint32_t) arguments[8].asNumber();
-                                                        auto type = (uint32_t) arguments[9].asNumber();
+                                                         } else if (count > 11) {
+                                                             auto target = (uint32_t) arguments[0].asNumber();
+                                                             auto level = (int32_t) arguments[1].asNumber();
+                                                             auto xoffset = (int32_t) arguments[2].asNumber();
+                                                             auto yoffset = (int32_t) arguments[3].asNumber();
+                                                             auto zoffset = (int32_t) arguments[4].asNumber();
+                                                             auto width = (int32_t) arguments[5].asNumber();
+                                                             auto height = (int32_t) arguments[6].asNumber();
+                                                             auto depth = (int32_t) arguments[7].asNumber();
+                                                             auto format = (uint32_t) arguments[8].asNumber();
+                                                             auto type = (uint32_t) arguments[9].asNumber();
 
-                                                        size_t srcOffsetValue = 0;
-                                                        if (arguments[11].isNumber()) {
-                                                            srcOffsetValue = static_cast<size_t>(arguments[11].asNumber());
-                                                        }
+                                                             size_t srcOffsetValue = 0;
+                                                             if (arguments[11].isNumber()) {
+                                                                 srcOffsetValue = static_cast<size_t>(arguments[11].asNumber());
+                                                             }
 
-                                                        if (arguments[10].isObject()) {
-                                                            auto imageOrPixelsOrOffsetObject = arguments[10].asObject(
-                                                                    runtime);
+                                                             if (arguments[10].isObject()) {
+                                                                 auto imageOrPixelsOrOffsetObject = arguments[10].asObject(
+                                                                         runtime);
 
-                                                            if (imageOrPixelsOrOffsetObject.isTypedArray(
-                                                                    runtime)) {
-                                                                auto array = imageOrPixelsOrOffsetObject.getTypedArray(
-                                                                        runtime);
-                                                                auto buf = GetTypedArrayData<uint8_t>(
-                                                                        runtime, array);
-                                                                auto size = array.size(runtime);
-                                                                srcOffsetValue =
-                                                                        srcOffsetValue * size;
-                                                                if (srcOffsetValue > size) {
-                                                                    return Value::undefined();
-                                                                }
+                                                                 if (imageOrPixelsOrOffsetObject.isTypedArray(
+                                                                         runtime)) {
+                                                                     auto array = imageOrPixelsOrOffsetObject.getTypedArray(
+                                                                             runtime);
+                                                                     auto buf = GetTypedArrayData<uint8_t>(
+                                                                             runtime, array);
+                                                                     auto size = array.size(
+                                                                             runtime);
+                                                                     srcOffsetValue =
+                                                                             srcOffsetValue * size;
+                                                                     if (srcOffsetValue > size) {
+                                                                         return jsi::Value::undefined();
+                                                                     }
 
-                                                                rust::Slice<const uint8_t> slice(
-                                                                        buf.data(), buf.size());
+                                                                     rust::Slice<const uint8_t> slice(
+                                                                             buf.data(),
+                                                                             buf.size());
 
-                                                                canvas_native_webgl2_tex_sub_image3d_offset(
-                                                                        target,
-                                                                        level,
-                                                                        xoffset,
-                                                                        yoffset,
-                                                                        zoffset,
-                                                                        width,
-                                                                        height,
-                                                                        depth,
-                                                                        format,
-                                                                        type,
-                                                                        slice,
-                                                                        srcOffsetValue,
-                                                                        this->GetState()
-                                                                );
-                                                            }
+                                                                     canvas_native_webgl2_tex_sub_image3d_offset(
+                                                                             target,
+                                                                             level,
+                                                                             xoffset,
+                                                                             yoffset,
+                                                                             zoffset,
+                                                                             width,
+                                                                             height,
+                                                                             depth,
+                                                                             format,
+                                                                             type,
+                                                                             slice,
+                                                                             srcOffsetValue,
+                                                                             this->GetState()
+                                                                     );
+                                                                 }
 
-                                                        }
-                                                    }
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "transformFeedbackVaryings") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 2 && arguments[1].isObject()) {
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
-                                                        auto varyingsObject = arguments[1].asObject(
-                                                                runtime);
-                                                        auto bufferMode = (uint32_t) arguments[2].asNumber();
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 2 && arguments[1].isObject()) {
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
+                                                             auto varyingsObject = arguments[1].asObject(
+                                                                     runtime);
+                                                             auto bufferMode = (uint32_t) arguments[2].asNumber();
 
-                                                        if (program != nullptr &&
-                                                            varyingsObject.isArray(runtime)) {
-                                                            auto varyings = varyingsObject.getArray(
-                                                                    runtime);
-                                                            auto len = varyings.size(runtime);
-                                                            rust::Vec<rust::Str> buf;
-                                                            buf.reserve(len);
-                                                            for (int j = 0; j < len; ++j) {
-                                                                auto name = varyings.getValueAtIndex(
-                                                                        runtime, j).asString(
-                                                                        runtime).utf8(runtime);
-                                                                rust::Str val(name.data(),
-                                                                              name.size());
-                                                                buf.emplace_back(val);
-                                                            }
+                                                             if (program != nullptr &&
+                                                                 varyingsObject.isArray(runtime)) {
+                                                                 auto varyings = varyingsObject.getArray(
+                                                                         runtime);
+                                                                 auto len = varyings.size(runtime);
+                                                                 rust::Vec<rust::Str> buf;
+                                                                 buf.reserve(len);
+                                                                 for (int j = 0; j < len; ++j) {
+                                                                     auto name = varyings.getValueAtIndex(
+                                                                             runtime, j).asString(
+                                                                             runtime).utf8(runtime);
+                                                                     rust::Str val(name.data(),
+                                                                                   name.size());
+                                                                     buf.emplace_back(val);
+                                                                 }
 
-                                                            rust::Slice<const rust::Str> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const rust::Str> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_transform_feedback_varyings(
-                                                                    program->GetProgram(),
-                                                                    slice,
-                                                                    bufferMode,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                                 canvas_native_webgl2_transform_feedback_varyings(
+                                                                         program->GetProgram(),
+                                                                         slice,
+                                                                         bufferMode,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniform1ui") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isNumber()) {
+                                                         if (count > 1 && arguments[1].isNumber()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto v0 = (uint32_t) arguments[1].asNumber();
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto v0 = (uint32_t) arguments[1].asNumber();
 
-                                                        if (location != nullptr) {
-                                                            canvas_native_webgl2_uniform1ui(
-                                                                    location->GetUniformLocation(),
-                                                                    v0,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                             if (location != nullptr) {
+                                                                 canvas_native_webgl2_uniform1ui(
+                                                                         location->GetUniformLocation(),
+                                                                         v0,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniform1uiv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto data = arguments[1].asObject(runtime);
-                                                        if (location != nullptr &&
-                                                            data.isUint32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const uint32_t>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform1uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else {
-                                                            rust::Vec<uint32_t> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            buf.reserve(len);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = (uint32_t) array.getValueAtIndex(
-                                                                        runtime, i).asNumber();
-                                                                buf.push_back(item);
-                                                            }
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
-                                                            canvas_native_webgl2_uniform1uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto data = arguments[1].asObject(
+                                                                     runtime);
+                                                             if (location != nullptr &&
+                                                                 data.isUint32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const uint32_t>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform1uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else {
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 buf.reserve(len);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = (uint32_t) array.getValueAtIndex(
+                                                                             runtime, i).asNumber();
+                                                                     buf.push_back(item);
+                                                                 }
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
+                                                                 canvas_native_webgl2_uniform1uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
 
 
-                                                    }
-                                                    return Value::undefined();
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "uniform2ui") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2) {
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto v0 = (uint32_t) arguments[1].asNumber();
-                                                        auto v1 = (uint32_t) arguments[2].asNumber();
+                                                         if (count > 2) {
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto v0 = (uint32_t) arguments[1].asNumber();
+                                                             auto v1 = (uint32_t) arguments[2].asNumber();
 
-                                                        if (location != nullptr) {
-                                                            canvas_native_webgl2_uniform2ui(
-                                                                    location->GetUniformLocation(),
-                                                                    v0,
-                                                                    v1,
-                                                                    this->GetState()
-                                                            );
-                                                        }
+                                                             if (location != nullptr) {
+                                                                 canvas_native_webgl2_uniform2ui(
+                                                                         location->GetUniformLocation(),
+                                                                         v0,
+                                                                         v1,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
 
 
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "Uniform2uiv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 1,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isObject()) {
+                                                         if (count > 1 && arguments[1].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto data = arguments[1].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto data = arguments[1].asObject(
+                                                                     runtime);
 
-                                                        if (data.isUint32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const uint32_t>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform2uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else {
-                                                            rust::Vec<uint32_t> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            buf.reserve(len);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = (uint32_t) array.getValueAtIndex(
-                                                                        runtime, i).asNumber();
-                                                                buf.push_back(item);
-                                                            }
+                                                             if (data.isUint32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const uint32_t>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform2uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else {
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 buf.reserve(len);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = (uint32_t) array.getValueAtIndex(
+                                                                             runtime, i).asNumber();
+                                                                     buf.push_back(item);
+                                                                 }
 
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
-                                                            canvas_native_webgl2_uniform2uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
+                                                                 canvas_native_webgl2_uniform2uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "uniform3ui") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 4,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 3) {
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto v0 = (uint32_t) arguments[1].asNumber();
-                                                        auto v1 = (uint32_t) arguments[2].asNumber();
-                                                        auto v2 = (uint32_t) arguments[3].asNumber();
-                                                        if (location != nullptr) {
-                                                            canvas_native_webgl2_uniform3ui(
-                                                                    location->GetUniformLocation(),
-                                                                    v0,
-                                                                    v1,
-                                                                    v2,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 3) {
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto v0 = (uint32_t) arguments[1].asNumber();
+                                                             auto v1 = (uint32_t) arguments[2].asNumber();
+                                                             auto v2 = (uint32_t) arguments[3].asNumber();
+                                                             if (location != nullptr) {
+                                                                 canvas_native_webgl2_uniform3ui(
+                                                                         location->GetUniformLocation(),
+                                                                         v0,
+                                                                         v1,
+                                                                         v2,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniform3uiv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto data = arguments[1].asObject(runtime);
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto data = arguments[1].asObject(
+                                                                     runtime);
 
-                                                        if (data.isUint32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const uint32_t>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform3uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else {
-                                                            rust::Vec<uint32_t> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            buf.reserve(len);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i).asNumber();
-                                                                buf.push_back((uint32_t) item);
-                                                            }
+                                                             if (data.isUint32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const uint32_t>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform3uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else {
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 buf.reserve(len);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i).asNumber();
+                                                                     buf.push_back((uint32_t) item);
+                                                                 }
 
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform3uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
+                                                                 canvas_native_webgl2_uniform3uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "uniform4ui") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 4) {
+                                                         if (count > 4) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto v0 = (uint32_t) arguments[1].asNumber();
-                                                        auto v1 = (uint32_t) arguments[2].asNumber();
-                                                        auto v2 = (uint32_t) arguments[3].asNumber();
-                                                        auto v3 = (uint32_t) arguments[4].asNumber();
-                                                        if (location != nullptr) {
-                                                            canvas_native_webgl2_uniform4ui(
-                                                                    location->GetUniformLocation(),
-                                                                    v0,
-                                                                    v1,
-                                                                    v2,
-                                                                    v3,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto v0 = (uint32_t) arguments[1].asNumber();
+                                                             auto v1 = (uint32_t) arguments[2].asNumber();
+                                                             auto v2 = (uint32_t) arguments[3].asNumber();
+                                                             auto v3 = (uint32_t) arguments[4].asNumber();
+                                                             if (location != nullptr) {
+                                                                 canvas_native_webgl2_uniform4ui(
+                                                                         location->GetUniformLocation(),
+                                                                         v0,
+                                                                         v1,
+                                                                         v2,
+                                                                         v3,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniform4uiv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 1 && arguments[1].isObject()) {
+                                                         if (count > 1 && arguments[1].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto data = arguments[1].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto data = arguments[1].asObject(
+                                                                     runtime);
 
-                                                        if (data.isUint32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const uint32_t>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform4uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else {
-                                                            rust::Vec<uint32_t> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            buf.reserve(len);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i).asNumber();
-                                                                buf.push_back((uint32_t) item);
-                                                            }
+                                                             if (data.isUint32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const uint32_t>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform4uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else {
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 buf.reserve(len);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i).asNumber();
+                                                                     buf.push_back((uint32_t) item);
+                                                                 }
 
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform4uiv(
-                                                                    location->GetUniformLocation(),
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_uniform4uiv(
+                                                                         location->GetUniformLocation(),
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "uniformBlockBinding") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 2) {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 2) {
 
-                                                        auto program = getHostObject<WebGLProgram>(
-                                                                runtime, arguments[0]);
-                                                        auto uniformBlockIndex = arguments[1].asNumber();
-                                                        auto uniformBlockBinding = arguments[2].asNumber();
+                                                             auto program = getHostObject<WebGLProgram>(
+                                                                     runtime, arguments[0]);
+                                                             auto uniformBlockIndex = arguments[1].asNumber();
+                                                             auto uniformBlockBinding = arguments[2].asNumber();
 
-                                                        if (program != nullptr) {
-                                                            canvas_native_webgl2_uniform_block_binding(
-                                                                    program->GetProgram(),
-                                                                    (uint32_t) uniformBlockIndex,
-                                                                    (uint32_t) uniformBlockBinding,
-                                                                    this->GetState()
-                                                            );
-                                                        }
+                                                             if (program != nullptr) {
+                                                                 canvas_native_webgl2_uniform_block_binding(
+                                                                         program->GetProgram(),
+                                                                         (uint32_t) uniformBlockIndex,
+                                                                         (uint32_t) uniformBlockBinding,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
 
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniformMatrix2x3fv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2 && arguments[2].isObject()) {
+                                                         if (count > 2 && arguments[2].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto transpose = arguments[1].asBool();
-                                                        auto data = arguments[2].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto transpose = arguments[1].asBool();
+                                                             auto data = arguments[2].asObject(
+                                                                     runtime);
 
-                                                        if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const float>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform_matrix2x3fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (data.isArray(runtime)) {
-                                                            rust::Vec<float> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i);
-                                                                if (item.isNumber()) {
-                                                                    buf.push_back(
-                                                                            static_cast<float>(item.asNumber()));
-                                                                } else {
-                                                                    buf.push_back(std::nanf(""));
-                                                                }
-                                                            }
+                                                             if (data.isFloat32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const float>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform_matrix2x3fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (data.isArray(runtime)) {
+                                                                 rust::Vec<float> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i);
+                                                                     if (item.isNumber()) {
+                                                                         buf.push_back(
+                                                                                 static_cast<float>(item.asNumber()));
+                                                                     } else {
+                                                                         buf.push_back(
+                                                                                 std::nanf(""));
+                                                                     }
+                                                                 }
 
-                                                            rust::Slice<const float> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const float> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform_matrix2x3fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
+                                                                 canvas_native_webgl2_uniform_matrix2x3fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "uniformMatrix2x4fv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2 && arguments[2].isObject()) {
+                                                         if (count > 2 && arguments[2].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto transpose = arguments[1].asBool();
-                                                        auto data = arguments[2].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto transpose = arguments[1].asBool();
+                                                             auto data = arguments[2].asObject(
+                                                                     runtime);
 
-                                                        if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const float>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform_matrix2x4fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (data.isArray(runtime)) {
-                                                            rust::Vec<float> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i);
-                                                                if (item.isNumber()) {
-                                                                    buf.push_back(
-                                                                            static_cast<float>(item.asNumber()));
-                                                                } else {
-                                                                    buf.push_back(std::nanf(""));
-                                                                }
-                                                            }
-                                                            rust::Slice<const float> slice(
-                                                                    buf.data(), buf.size());
+                                                             if (data.isFloat32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const float>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform_matrix2x4fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (data.isArray(runtime)) {
+                                                                 rust::Vec<float> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i);
+                                                                     if (item.isNumber()) {
+                                                                         buf.push_back(
+                                                                                 static_cast<float>(item.asNumber()));
+                                                                     } else {
+                                                                         buf.push_back(
+                                                                                 std::nanf(""));
+                                                                     }
+                                                                 }
+                                                                 rust::Slice<const float> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform_matrix2x4fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_uniform_matrix2x4fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniformMatrix3x2fv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 2 && arguments[2].isObject()) {
+                                                         if (count > 2 && arguments[2].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto transpose = arguments[1].asBool();
-                                                        auto data = arguments[2].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto transpose = arguments[1].asBool();
+                                                             auto data = arguments[2].asObject(
+                                                                     runtime);
 
-                                                        if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const float>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform_matrix3x2fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (data.isArray(runtime)) {
-                                                            rust::Vec<float> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i);
-                                                                if (item.isNumber()) {
-                                                                    buf.push_back(
-                                                                            static_cast<float>(item.asNumber()));
-                                                                } else {
-                                                                    buf.push_back(std::nanf(""));
-                                                                }
-                                                            }
+                                                             if (data.isFloat32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const float>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform_matrix3x2fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (data.isArray(runtime)) {
+                                                                 rust::Vec<float> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i);
+                                                                     if (item.isNumber()) {
+                                                                         buf.push_back(
+                                                                                 static_cast<float>(item.asNumber()));
+                                                                     } else {
+                                                                         buf.push_back(
+                                                                                 std::nanf(""));
+                                                                     }
+                                                                 }
 
-                                                            rust::Slice<const float> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const float> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform_matrix3x2fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_uniform_matrix3x2fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniformMatrix3x4fv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 2 && arguments[2].isObject()) {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 2 && arguments[2].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto transpose = arguments[1].asBool();
-                                                        auto data = arguments[2].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto transpose = arguments[1].asBool();
+                                                             auto data = arguments[2].asObject(
+                                                                     runtime);
 
-                                                        if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const float>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform_matrix3x4fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (data.isArray(runtime)) {
-                                                            rust::Vec<float> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i);
-                                                                if (item.isNumber()) {
-                                                                    buf.push_back(
-                                                                            static_cast<float>(item.asNumber()));
-                                                                } else {
-                                                                    buf.push_back(std::nanf(""));
-                                                                }
-                                                            }
+                                                             if (data.isFloat32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const float>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform_matrix3x4fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (data.isArray(runtime)) {
+                                                                 rust::Vec<float> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i);
+                                                                     if (item.isNumber()) {
+                                                                         buf.push_back(
+                                                                                 static_cast<float>(item.asNumber()));
+                                                                     } else {
+                                                                         buf.push_back(
+                                                                                 std::nanf(""));
+                                                                     }
+                                                                 }
 
-                                                            rust::Slice<const float> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const float> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform_matrix3x4fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_uniform_matrix3x4fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "uniformMatrix4x2fv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 2 && arguments[2].isObject()) {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 2 && arguments[2].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto transpose = arguments[1].asBool();
-                                                        auto data = arguments[2].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto transpose = arguments[1].asBool();
+                                                             auto data = arguments[2].asObject(
+                                                                     runtime);
 
-                                                        if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const float>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform_matrix4x2fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (data.isArray(runtime)) {
-                                                            rust::Vec<float> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i);
-                                                                if (item.isNumber()) {
-                                                                    buf.push_back(
-                                                                            static_cast<float>(item.asNumber()));
-                                                                } else {
-                                                                    buf.push_back(std::nanf(""));
-                                                                }
-                                                            }
+                                                             if (data.isFloat32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const float>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform_matrix4x2fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (data.isArray(runtime)) {
+                                                                 rust::Vec<float> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i);
+                                                                     if (item.isNumber()) {
+                                                                         buf.push_back(
+                                                                                 static_cast<float>(item.asNumber()));
+                                                                     } else {
+                                                                         buf.push_back(
+                                                                                 std::nanf(""));
+                                                                     }
+                                                                 }
 
-                                                            rust::Slice<const float> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const float> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform_matrix4x2fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
+                                                                 canvas_native_webgl2_uniform_matrix4x2fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
 
-                                                }
+                                                     }
         );
     } else if (methodName == "uniformMatrix4x3fv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 3,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 2 && arguments[2].isObject()) {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     3,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 2 && arguments[2].isObject()) {
 
-                                                        auto location = getHostObject<WebGLUniformLocation>(
-                                                                runtime, arguments[0]);
-                                                        auto transpose = arguments[1].asBool();
-                                                        auto data = arguments[2].asObject(runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             auto transpose = arguments[1].asBool();
+                                                             auto data = arguments[2].asObject(
+                                                                     runtime);
 
-                                                        if (data.isFloat32Array(runtime)) {
-                                                            auto array = data.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const float>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_uniform_matrix4x3fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (data.isArray(runtime)) {
-                                                            rust::Vec<float> buf;
-                                                            auto array = data.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = array.getValueAtIndex(
-                                                                        runtime, i);
-                                                                if (item.isNumber()) {
-                                                                    buf.push_back(
-                                                                            static_cast<float>(item.asNumber()));
-                                                                } else {
-                                                                    buf.push_back(std::nanf(""));
-                                                                }
-                                                            }
+                                                             if (data.isFloat32Array(runtime)) {
+                                                                 auto array = data.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const float>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_uniform_matrix4x3fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (data.isArray(runtime)) {
+                                                                 rust::Vec<float> buf;
+                                                                 auto array = data.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = array.getValueAtIndex(
+                                                                             runtime, i);
+                                                                     if (item.isNumber()) {
+                                                                         buf.push_back(
+                                                                                 static_cast<float>(item.asNumber()));
+                                                                     } else {
+                                                                         buf.push_back(
+                                                                                 std::nanf(""));
+                                                                     }
+                                                                 }
 
-                                                            rust::Slice<const float> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const float> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_uniform_matrix4x3fv(
-                                                                    location->GetUniformLocation(),
-                                                                    transpose,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_uniform_matrix4x3fv(
+                                                                         location->GetUniformLocation(),
+                                                                         transpose,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "vertexAttribDivisor") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
-                                                    if (count > 1) {
-                                                        auto index = arguments[0].asNumber();
-                                                        auto divisor = arguments[1].asNumber();
-                                                        canvas_native_webgl2_vertex_attrib_divisor(
-                                                                (uint32_t) index,
-                                                                (uint32_t) divisor,
-                                                                this->GetState()
-                                                        );
-                                                    }
-                                                    return Value::undefined();
-                                                }
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         if (count > 1) {
+                                                             auto index = arguments[0].asNumber();
+                                                             auto divisor = arguments[1].asNumber();
+                                                             canvas_native_webgl2_vertex_attrib_divisor(
+                                                                     (uint32_t) index,
+                                                                     (uint32_t) divisor,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "vertexAttribI4i") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 4) {
-                                                        auto index = arguments[0].asNumber();
-                                                        auto v0 = arguments[1].asNumber();
-                                                        auto v1 = arguments[2].asNumber();
-                                                        auto v2 = arguments[3].asNumber();
-                                                        auto v3 = arguments[4].asNumber();
-                                                        canvas_native_webgl2_vertex_attrib_i4i(
-                                                                (uint32_t) index,
-                                                                (int32_t) v0,
-                                                                (int32_t) v1,
-                                                                (int32_t) v2,
-                                                                (int32_t) v3,
-                                                                this->GetState()
-                                                        );
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                         if (count > 4) {
+                                                             auto index = arguments[0].asNumber();
+                                                             auto v0 = arguments[1].asNumber();
+                                                             auto v1 = arguments[2].asNumber();
+                                                             auto v2 = arguments[3].asNumber();
+                                                             auto v3 = arguments[4].asNumber();
+                                                             canvas_native_webgl2_vertex_attrib_i4i(
+                                                                     (uint32_t) index,
+                                                                     (int32_t) v0,
+                                                                     (int32_t) v1,
+                                                                     (int32_t) v2,
+                                                                     (int32_t) v3,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "vertexAttribI4iv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto index = (uint32_t) arguments[0].asNumber();
-                                                        auto value = arguments[1].asObject(runtime);
-                                                        if (value.isInt32Array(runtime)) {
-                                                            auto array = value.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const int32_t>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_vertex_attrib_i4iv(
-                                                                    index,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (value.isArray(runtime)) {
-                                                            auto array = value.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            rust::Vec<int32_t> buf;
-                                                            buf.reserve(len);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = (int32_t) array.getValueAtIndex(
-                                                                        runtime, i).asNumber();
-                                                                buf.push_back(item);
-                                                            }
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto index = (uint32_t) arguments[0].asNumber();
+                                                             auto value = arguments[1].asObject(
+                                                                     runtime);
+                                                             if (value.isInt32Array(runtime)) {
+                                                                 auto array = value.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const int32_t>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_vertex_attrib_i4iv(
+                                                                         index,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (value.isArray(runtime)) {
+                                                                 auto array = value.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 rust::Vec<int32_t> buf;
+                                                                 buf.reserve(len);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = (int32_t) array.getValueAtIndex(
+                                                                             runtime, i).asNumber();
+                                                                     buf.push_back(item);
+                                                                 }
 
-                                                            rust::Slice<const int32_t> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const int32_t> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_vertex_attrib_i4iv(
-                                                                    index,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
+                                                                 canvas_native_webgl2_vertex_attrib_i4iv(
+                                                                         index,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
 
-                                                    return Value::undefined();
-                                                }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "vertexAttribI4ui") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 5,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-                                                    if (count > 4) {
-                                                        auto index = (uint32_t) arguments[0].asNumber();
-                                                        auto v0 = (uint32_t) arguments[1].asNumber();
-                                                        auto v1 = (uint32_t) arguments[2].asNumber();
-                                                        auto v2 = (uint32_t) arguments[3].asNumber();
-                                                        auto v3 = (uint32_t) arguments[4].asNumber();
+                                                         if (count > 4) {
+                                                             auto index = (uint32_t) arguments[0].asNumber();
+                                                             auto v0 = (uint32_t) arguments[1].asNumber();
+                                                             auto v1 = (uint32_t) arguments[2].asNumber();
+                                                             auto v2 = (uint32_t) arguments[3].asNumber();
+                                                             auto v3 = (uint32_t) arguments[4].asNumber();
 
-                                                        canvas_native_webgl2_vertex_attrib_i4ui(
-                                                                index,
-                                                                v0,
-                                                                v1,
-                                                                v2,
-                                                                v3,
-                                                                this->GetState()
-                                                        );
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                             canvas_native_webgl2_vertex_attrib_i4ui(
+                                                                     index,
+                                                                     v0,
+                                                                     v1,
+                                                                     v2,
+                                                                     v3,
+                                                                     this->GetState()
+                                                             );
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     } else if (methodName == "vertexAttribI4uiv") {
-        return Function::createFromHostFunction(runtime,
-                                                jsi::PropNameID::forAscii(runtime, methodName), 2,
-                                                [this](Runtime &runtime, const Value &thisValue,
-                                                       const Value *arguments,
-                                                       size_t count) -> Value {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
 
-                                                    if (count > 1 && arguments[1].isObject()) {
-                                                        auto index = (uint32_t) arguments[0].asNumber();
-                                                        auto value = arguments[1].asObject(runtime);
-                                                        if (value.isUint32Array(runtime)) {
-                                                            auto array = value.getTypedArray(
-                                                                    runtime);
-                                                            auto slice = GetTypedArrayData<const uint32_t>(
-                                                                    runtime, array);
-                                                            canvas_native_webgl2_vertex_attrib_i4uiv(
-                                                                    index,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        } else if (value.isArray(runtime)) {
-                                                            auto array = value.getArray(runtime);
-                                                            auto len = array.size(runtime);
-                                                            rust::Vec<uint32_t> buf;
-                                                            buf.reserve(len);
-                                                            for (int i = 0; i < len; i++) {
-                                                                auto item = (uint32_t) array.getValueAtIndex(
-                                                                        runtime, i).asNumber();
-                                                                buf.push_back(item);
-                                                            }
+                                                         if (count > 1 && arguments[1].isObject()) {
+                                                             auto index = (uint32_t) arguments[0].asNumber();
+                                                             auto value = arguments[1].asObject(
+                                                                     runtime);
+                                                             if (value.isUint32Array(runtime)) {
+                                                                 auto array = value.getTypedArray(
+                                                                         runtime);
+                                                                 auto slice = GetTypedArrayData<const uint32_t>(
+                                                                         runtime, array);
+                                                                 canvas_native_webgl2_vertex_attrib_i4uiv(
+                                                                         index,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             } else if (value.isArray(runtime)) {
+                                                                 auto array = value.getArray(
+                                                                         runtime);
+                                                                 auto len = array.size(runtime);
+                                                                 rust::Vec<uint32_t> buf;
+                                                                 buf.reserve(len);
+                                                                 for (int i = 0; i < len; i++) {
+                                                                     auto item = (uint32_t) array.getValueAtIndex(
+                                                                             runtime, i).asNumber();
+                                                                     buf.push_back(item);
+                                                                 }
 
-                                                            rust::Slice<const uint32_t> slice(
-                                                                    buf.data(), buf.size());
+                                                                 rust::Slice<const uint32_t> slice(
+                                                                         buf.data(), buf.size());
 
-                                                            canvas_native_webgl2_vertex_attrib_i4uiv(
-                                                                    index,
-                                                                    slice,
-                                                                    this->GetState()
-                                                            );
-                                                        }
-                                                    }
-                                                    return Value::undefined();
-                                                }
+                                                                 canvas_native_webgl2_vertex_attrib_i4uiv(
+                                                                         index,
+                                                                         slice,
+                                                                         this->GetState()
+                                                                 );
+                                                             }
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
         );
     }
 

@@ -535,8 +535,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                         std::move(ctx));
 
                                 return jsi::Object::createFromHostObject(
-                                        runtime,
-                                        (const std::shared_ptr<jsi::HostObject> &) renderingContext);
+                                        runtime, renderingContext);
 
                             } else {
                                 auto width = (int32_t) arguments[1].asNumber();

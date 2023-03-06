@@ -57,9 +57,7 @@
 #include "extensions/WEBGL_lose_contextImpl.h"
 #include "extensions/ANGLE_instanced_arraysImpl.h"
 #include "extensions/WEBGL_draw_buffersImpl.h"
-
 #include "gl.h"
-
 #include "canvas-cxx/src/constants.rs.h"
 
 

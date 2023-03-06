@@ -1,6 +1,6 @@
 use std::os::raw::{c_float, c_int};
 
-use skia_safe::{AlphaType, ColorType, ImageInfo, IPoint, ISize, IVector, Rect};
+use skia_safe::{AlphaType, ColorType, IPoint, ISize, IVector, ImageInfo, Rect};
 
 pub use image_data::*;
 

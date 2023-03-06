@@ -5,8 +5,7 @@ use jni::sys::jlong;
 use jni::JNIEnv;
 use ndk::bitmap::{AndroidBitmap, AndroidBitmapInfo};
 
-
-
+#[allow(dead_code)]
 pub(crate) struct BitmapBytes {
     pub(crate) bitmap: GlobalRef,
     native_bitmap: AndroidBitmap,

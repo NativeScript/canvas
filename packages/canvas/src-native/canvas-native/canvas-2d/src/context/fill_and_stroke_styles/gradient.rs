@@ -1,7 +1,9 @@
+#![allow(dead_code)]
+
 use std::os::raw::c_float;
 
-use skia_safe::{Color, Point, Shader, TileMode};
 use skia_safe::gradient_shader::GradientShaderColors;
+use skia_safe::{Color, Point, Shader, TileMode};
 
 use crate::context::matrix::Matrix;
 
@@ -164,10 +166,7 @@ impl Gradient {
     pub fn add_color_stop_str(&mut self, offset: c_float, color: &str) {
         if let Ok(color) = color.parse::<csscolorparser::Color>() {
             let color = color.rgba_u8();
-            self.add_color_stop(
-                offset,
-                Color::from_argb(color.3, color.0, color.1, color.2),
-            )
+            self.add_color_stop(offset, Color::from_argb(color.3, color.0, color.1, color.2))
         }
     }
 

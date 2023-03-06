@@ -1,4 +1,4 @@
-use crate::{context::Context, context::fill_and_stroke_styles::paint::PaintStyle};
+use crate::{context::fill_and_stroke_styles::paint::PaintStyle, context::Context};
 
 pub mod gradient;
 pub mod paint;

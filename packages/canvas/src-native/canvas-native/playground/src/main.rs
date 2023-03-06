@@ -13,16 +13,18 @@ use glutin::prelude::*;
 use glutin::surface::{SurfaceAttributesBuilder, WindowSurface};
 use glutin_winit::DisplayBuilder;
 use rand::Rng;
-use raw_window_handle::{AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle};
+use raw_window_handle::{
+    AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
+};
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
@@ -32,10 +34,10 @@ fn main() {
     let event_loop = EventLoop::new();
     let window_builder = WindowBuilder::new();
 
-
     let window = window_builder
         .with_title("CanvasNative Demo")
-        .build(&event_loop).unwrap();
+        .build(&event_loop)
+        .unwrap();
 
     let raw_window_handle = window.raw_window_handle();
 
@@ -44,34 +46,35 @@ fn main() {
     let size = window.inner_size();
 
     let context = GLContext::create_window_surface(
-        &mut attrs, size.width as i32, size.height as i32, raw_window_handle,
+        &mut attrs,
+        size.width as i32,
+        size.height as i32,
+        raw_window_handle,
     );
 
     let webgl = context.unwrap();
 
-    let mut gl_state = WebGLState::new_with_context(
-        webgl,
-        WebGLVersion::V2,
-    );
+    let mut gl_state = WebGLState::new_with_context(webgl, WebGLVersion::V2);
 
-    let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(
-        36006, &mut gl_state,
-    ) {
-        WebGLResult::U32(value) => { value as i32 }
-        WebGLResult::I32(value) => { value }
-        _ => { 0 }
+    let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state) {
+        WebGLResult::U32(value) => value as i32,
+        WebGLResult::I32(value) => value,
+        _ => 0,
     };
 
     let mut done = false;
 
-
-    let mut ctx_2d = ContextWrapper::new(
-        Context::new_gl(
-            size.width as f32, size.height as f32, 1.,
-            value, 0, true, value, 0., canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
-        )
-    );
-
+    let mut ctx_2d = ContextWrapper::new(Context::new_gl(
+        size.width as f32,
+        size.height as f32,
+        1.,
+        value,
+        0,
+        true,
+        value,
+        0.,
+        canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
+    ));
 
     // {
     //     let mut ctx = ctx_2d.get_context_mut();
@@ -80,60 +83,58 @@ fn main() {
     // }
 
     /* let h = (*ctx_2d.get_context().device()).height;
-     let total = (*ctx_2d.get_context().device()).width / 2.;
+    let total = (*ctx_2d.get_context().device()).width / 2.;
 
-     let mut colors = Vec::with_capacity(total as usize);
-     let mut dots = vec![h; total as usize];
-     let mut dots_vel = vec![10f32; total as usize];
+    let mut colors = Vec::with_capacity(total as usize);
+    let mut dots = vec![h; total as usize];
+    let mut dots_vel = vec![10f32; total as usize];
 
 
-     let particle_count = 1000;
-     let mut particles = Vec::<Particle>::with_capacity(particle_count as usize);
+    let particle_count = 1000;
+    let mut particles = Vec::<Particle>::with_capacity(particle_count as usize);
 
-     */
-
+    */
 
     /*
 
-    let sun = reqwest::blocking::get("https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png")
-        .map(|mut v| {
-            let mut asset = ImageAsset::new();
-            let mut buf = Vec::new();
-            let _ = v.read_to_end(&mut buf);
-            asset.load_from_bytes(buf.as_slice());
-            asset
-        })
-        .ok();
+        let sun = reqwest::blocking::get("https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png")
+            .map(|mut v| {
+                let mut asset = ImageAsset::new();
+                let mut buf = Vec::new();
+                let _ = v.read_to_end(&mut buf);
+                asset.load_from_bytes(buf.as_slice());
+                asset
+            })
+            .ok();
 
-    let moon = reqwest::blocking::get("https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png")
-        .map(|mut v| {
-            let mut asset = ImageAsset::new();
-            let mut buf = Vec::new();
-            let _ = v.read_to_end(&mut buf);
-            asset.load_from_bytes(buf.as_slice());
-            asset
-        })
-        .ok();
+        let moon = reqwest::blocking::get("https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png")
+            .map(|mut v| {
+                let mut asset = ImageAsset::new();
+                let mut buf = Vec::new();
+                let _ = v.read_to_end(&mut buf);
+                asset.load_from_bytes(buf.as_slice());
+                asset
+            })
+            .ok();
 
-    let earth = reqwest::blocking::get("https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png")
-        .map(|mut v| {
-            let mut asset = ImageAsset::new();
-            let mut buf = Vec::new();
-            let _ = v.read_to_end(&mut buf);
-            asset.load_from_bytes(buf.as_slice());
-            asset
-        })
-        .ok();
+        let earth = reqwest::blocking::get("https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png")
+            .map(|mut v| {
+                let mut asset = ImageAsset::new();
+                let mut buf = Vec::new();
+                let _ = v.read_to_end(&mut buf);
+                asset.load_from_bytes(buf.as_slice());
+                asset
+            })
+            .ok();
 
-    let fill = PaintStyle::new_color_str("rgba(0, 0, 0, 0.4)").unwrap();
-    let stroke = PaintStyle::new_color_str("rgba(0, 153, 255, 0.4)").unwrap();
+        let fill = PaintStyle::new_color_str("rgba(0, 0, 0, 0.4)").unwrap();
+        let stroke = PaintStyle::new_color_str("rgba(0, 153, 255, 0.4)").unwrap();
 
-*/
+    */
 
     //  let mut ro = RainbowOctopus::new();
 
     //  textures(&mut gl_state);
-
 
     //  triangle(&mut gl_state);
 
@@ -160,18 +161,17 @@ fn main() {
             }
             Event::RedrawEventsCleared => {
                 /*  canvas_webgl::webgl::canvas_native_webgl_clear_color(
-                      1., 0.2, 0.3, 1., &mut gl_state,
-                  );
+                     1., 0.2, 0.3, 1., &mut gl_state,
+                 );
 
 
-                  canvas_webgl::webgl::canvas_native_webgl_clear(
-                      16384, &mut gl_state,
-                  );
+                 canvas_webgl::webgl::canvas_native_webgl_clear(
+                     16384, &mut gl_state,
+                 );
 
-                 */
+                */
 
                 window.request_redraw();
-
 
                 //  rainbow_octopus(&mut ctx_2d, &mut ro);
 
@@ -201,7 +201,6 @@ fn main() {
 
                 //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::TRIANGLES, 0, 3, &mut gl_state);
 
-
                 //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::POINTS, 0, 1, &mut gl_state);
 
                 gl_state.swap_buffers();
@@ -210,7 +209,6 @@ fn main() {
             _ => {}
         }
     });
-
 
     /*
 
@@ -291,7 +289,6 @@ fn main() {
     */
 }
 
-
 const VERTEX_SHADER_SRC: &str = "
   #version 330
   precision highp float;
@@ -321,11 +318,15 @@ fn textures(state: &mut WebGLState) {
     let drawing_buffer_width = state.drawing_buffer_width();
     let drawing_buffer_height = state.get_drawing_buffer_height();
 
-    canvas_webgl::webgl::canvas_native_webgl_viewport(0, 0,
-                                                      drawing_buffer_width, drawing_buffer_height, state);
+    canvas_webgl::webgl::canvas_native_webgl_viewport(
+        0,
+        0,
+        drawing_buffer_width,
+        drawing_buffer_height,
+        state,
+    );
     canvas_webgl::webgl::canvas_native_webgl_clear_color(1.0, 1.0, 1.0, 1.0, state);
     canvas_webgl::webgl::canvas_native_webgl_clear(canvas_webgl::webgl::COLOR_BUFFER_BIT, state);
-
 
     let mut buffer = 0;
     let mut program = 0;
@@ -335,9 +336,26 @@ fn textures(state: &mut WebGLState) {
         {
             *buffer = canvas_webgl::webgl::canvas_native_webgl_create_buffer(state);
         }
-        canvas_webgl::webgl::canvas_native_webgl_bind_buffer(canvas_webgl::webgl::ARRAY_BUFFER, *buffer, state);
-        canvas_webgl::webgl::canvas_native_webgl_buffer_data(canvas_webgl::webgl::ARRAY_BUFFER, &[0u8, 0u8], canvas_webgl::webgl::STATIC_DRAW, state);
-        canvas_webgl::webgl::canvas_native_webgl_vertex_attrib_pointer(0, 2, canvas_webgl::webgl::FLOAT, false, 0, 0, state);
+        canvas_webgl::webgl::canvas_native_webgl_bind_buffer(
+            canvas_webgl::webgl::ARRAY_BUFFER,
+            *buffer,
+            state,
+        );
+        canvas_webgl::webgl::canvas_native_webgl_buffer_data(
+            canvas_webgl::webgl::ARRAY_BUFFER,
+            &[0u8, 0u8],
+            canvas_webgl::webgl::STATIC_DRAW,
+            state,
+        );
+        canvas_webgl::webgl::canvas_native_webgl_vertex_attrib_pointer(
+            0,
+            2,
+            canvas_webgl::webgl::FLOAT,
+            false,
+            0,
+            0,
+            state,
+        );
     };
 
     let cleanup = |buffer: u32, program: u32, state: &mut WebGLState| {
@@ -351,26 +369,31 @@ fn textures(state: &mut WebGLState) {
         }
     };
 
-
     let vertex_shader = canvas_webgl::webgl::canvas_native_webgl_create_shader(
-        canvas_webgl::webgl::VERTEX_SHADER, state,
+        canvas_webgl::webgl::VERTEX_SHADER,
+        state,
     );
     canvas_webgl::webgl::canvas_native_webgl_shader_source(vertex_shader, VERTEX_SHADER_SRC, state);
     canvas_webgl::webgl::canvas_native_webgl_compile_shader(vertex_shader, state);
 
-    let fragment_shader = canvas_webgl::webgl::canvas_native_webgl_create_shader(canvas_webgl::webgl::FRAGMENT_SHADER, state);
+    let fragment_shader = canvas_webgl::webgl::canvas_native_webgl_create_shader(
+        canvas_webgl::webgl::FRAGMENT_SHADER,
+        state,
+    );
 
-    canvas_webgl::webgl::canvas_native_webgl_shader_source(fragment_shader, FRAGMENT_SHADER_SRC, state);
+    canvas_webgl::webgl::canvas_native_webgl_shader_source(
+        fragment_shader,
+        FRAGMENT_SHADER_SRC,
+        state,
+    );
     canvas_webgl::webgl::canvas_native_webgl_compile_shader(fragment_shader, state);
 
-
     let vs_log = canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(vertex_shader, state);
-    let fs_log = canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(fragment_shader, state);
-
+    let fs_log =
+        canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(fragment_shader, state);
 
     let vs_src = canvas_webgl::webgl::canvas_native_webgl_get_shader_source(vertex_shader, state);
     let fs_src = canvas_webgl::webgl::canvas_native_webgl_get_shader_source(fragment_shader, state);
-
 
     println!("{vs_src}");
     println!("{fs_src}");
@@ -383,7 +406,6 @@ fn textures(state: &mut WebGLState) {
         println!("fs log {fs_log}");
     }
 
-
     program = canvas_webgl::webgl::canvas_native_webgl_create_program(state);
 
     canvas_webgl::webgl::canvas_native_webgl_attach_shader(program, vertex_shader, state);
@@ -391,13 +413,17 @@ fn textures(state: &mut WebGLState) {
     canvas_webgl::webgl::canvas_native_webgl_link_program(program, state);
     canvas_webgl::webgl::canvas_native_webgl_detach_shader(program, vertex_shader, state);
     canvas_webgl::webgl::canvas_native_webgl_detach_shader(program, fragment_shader, state);
-    match canvas_webgl::webgl::canvas_native_webgl_get_program_parameter(program, canvas_webgl::webgl::LINK_STATUS, state) {
+    match canvas_webgl::webgl::canvas_native_webgl_get_program_parameter(
+        program,
+        canvas_webgl::webgl::LINK_STATUS,
+        state,
+    ) {
         WebGLResult::Boolean(result) => {
             if !result {
-                let link_err_log = canvas_webgl::webgl::canvas_native_webgl_get_program_info_log(program, state);
+                let link_err_log =
+                    canvas_webgl::webgl::canvas_native_webgl_get_program_info_log(program, state);
                 cleanup(buffer, program, state);
-                println!(
-                    "Shader program did not link successfully. Error log: {link_err_log}");
+                println!("Shader program did not link successfully. Error log: {link_err_log}");
                 return;
             }
         }
@@ -411,12 +437,7 @@ fn textures(state: &mut WebGLState) {
 }
 
 fn triangle(state: &mut WebGLState) {
-    let vertex: [f32; 9] = [
-        -1., 1., 0.,
-        -1., -1., 0.,
-        1., -1., 0.,
-    ];
-
+    let vertex: [f32; 9] = [-1., 1., 0., -1., -1., 0., 1., -1., 0.];
 
     let vs_source = "
     #version 400
@@ -435,22 +456,24 @@ fn triangle(state: &mut WebGLState) {
 	}
     ";
 
-
     let program = canvas_webgl::webgl::canvas_native_webgl_create_program(state);
-    let vs = canvas_webgl::webgl::canvas_native_webgl_create_shader(canvas_webgl::webgl::VERTEX_SHADER, state);
+    let vs = canvas_webgl::webgl::canvas_native_webgl_create_shader(
+        canvas_webgl::webgl::VERTEX_SHADER,
+        state,
+    );
     canvas_webgl::webgl::canvas_native_webgl_shader_source(vs, vs_source, state);
 
-
-    let fs = canvas_webgl::webgl::canvas_native_webgl_create_shader(canvas_webgl::webgl::FRAGMENT_SHADER, state);
+    let fs = canvas_webgl::webgl::canvas_native_webgl_create_shader(
+        canvas_webgl::webgl::FRAGMENT_SHADER,
+        state,
+    );
     canvas_webgl::webgl::canvas_native_webgl_shader_source(fs, fs_source, state);
 
     canvas_webgl::webgl::canvas_native_webgl_compile_shader(vs, state);
     canvas_webgl::webgl::canvas_native_webgl_compile_shader(fs, state);
 
-
     let vs_log = canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(vs, state);
     let fs_log = canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(fs, state);
-
 
     if !vs_log.is_empty() {
         println!("vs log {vs_log}");
@@ -463,7 +486,6 @@ fn triangle(state: &mut WebGLState) {
     canvas_webgl::webgl::canvas_native_webgl_attach_shader(program, vs, state);
     canvas_webgl::webgl::canvas_native_webgl_attach_shader(program, fs, state);
 
-
     canvas_webgl::webgl::canvas_native_webgl_link_program(program, state);
 
     let program_log = canvas_webgl::webgl::canvas_native_webgl_get_program_info_log(program, state);
@@ -474,19 +496,18 @@ fn triangle(state: &mut WebGLState) {
 
     let error = canvas_webgl::webgl::canvas_native_webgl_get_error(state);
 
-
     let attr = canvas_webgl::webgl::canvas_native_webgl_get_attrib_location(program, "aPos", state);
-
 
     let vbo = canvas_webgl::webgl::canvas_native_webgl_create_buffer(state);
 
-
-    canvas_webgl::webgl::canvas_native_webgl_bind_buffer(canvas_webgl::webgl::ARRAY_BUFFER, vbo, state);
+    canvas_webgl::webgl::canvas_native_webgl_bind_buffer(
+        canvas_webgl::webgl::ARRAY_BUFFER,
+        vbo,
+        state,
+    );
 
     let slice: &[u8] = unsafe {
-        std::slice::from_raw_parts_mut(
-            std::mem::transmute(vertex.as_ptr()), vertex.len() * 4,
-        )
+        std::slice::from_raw_parts_mut(std::mem::transmute(vertex.as_ptr()), vertex.len() * 4)
     };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data(
         canvas_webgl::webgl::ARRAY_BUFFER,
@@ -495,7 +516,6 @@ fn triangle(state: &mut WebGLState) {
         state,
     );
 
-
     // canvas_webgl::webgl::canvas_native_webgl_buffer_data_f32(
     //     canvas_webgl::webgl::ARRAY_BUFFER,
     //     &vertex,
@@ -503,14 +523,21 @@ fn triangle(state: &mut WebGLState) {
     //      state,
     // );
 
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib_pointer(attr as _, 3, canvas_webgl::webgl::FLOAT, false, 3 * 4, 0, state);
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib_pointer(
+        attr as _,
+        3,
+        canvas_webgl::webgl::FLOAT,
+        false,
+        3 * 4,
+        0,
+        state,
+    );
     canvas_webgl::webgl::canvas_native_webgl_enable_vertex_attrib_array(0, state);
     canvas_webgl::webgl::canvas_native_webgl_use_program(program, state);
 
     //	canvas_webgl::webgl::canvas_native_webgl_DrawArrays(canvas_webgl::webgl::TRIANGLES, 0, 3)
     //canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::TRIANGLES, 0, 3, state);
 }
-
 
 #[derive(Debug)]
 struct RainbowOctopus {
@@ -546,7 +573,6 @@ fn rainbow_octopus(ctx: &ContextWrapper, ro: &mut RainbowOctopus) {
     let w = device.width;
     let h = device.height;
 
-
     let pi = std::f32::consts::PI;
 
     /* spiral vars */
@@ -572,9 +598,7 @@ fn rainbow_octopus(ctx: &ContextWrapper, ro: &mut RainbowOctopus) {
         /* only need to set the fillstyle once up here now */
 
         ctx.set_fill_style(
-            PaintStyle::new_color_str(
-                &format!("hsl({},100%,65%)", ro.hue)
-            ).unwrap()
+            PaintStyle::new_color_str(&format!("hsl({},100%,65%)", ro.hue)).unwrap(),
         );
         for j in 0..p as i32 {
             let j = j as f32;
@@ -589,9 +613,8 @@ fn rainbow_octopus(ctx: &ContextWrapper, ro: &mut RainbowOctopus) {
             /* change of coordinates */
             ro.x1 = ro.x0 * f32::cos(ro.beta) - ro.y0 * f32::sin(ro.beta);
             ro.y1 = ro.x0 * f32::sin(ro.beta) + ro.y0 * f32::cos(ro.beta);
-
             /* move it to the position of the arc */
-            /* (remove this for a cool effect) */;
+            /* (remove this for a cool effect) */
             ctx.move_to(ro.x1, ro.y1);
             /* setup the arc path here */
             ctx.arc(ro.x1, ro.y1, ro.r, 0., 2. * pi, false);
@@ -613,24 +636,27 @@ fn rainbow_octopus(ctx: &ContextWrapper, ro: &mut RainbowOctopus) {
     ro.t += t_step as f32;
 }
 
-
-fn colorRain(ctx: &mut ContextWrapper, colors: &mut Vec<f32>, dots: &mut Vec<f32>, dots_vel: &mut Vec<f32>) {
-//initial
+fn colorRain(
+    ctx: &mut ContextWrapper,
+    colors: &mut Vec<f32>,
+    dots: &mut Vec<f32>,
+    dots_vel: &mut Vec<f32>,
+) {
+    //initial
     let device = *ctx.get_context().device();
     let mut ctx = ctx.get_context_mut();
     let w = device.width;
     let h = device.height;
 
-//parameters
+    //parameters
     let total = w / 2.;
 
     let accelleration: f32 = 0.05;
-//afterinitial calculations
+    //afterinitial calculations
     let size = w / total;
 
     let occupation = w / total;
     let repaint_color = PaintStyle::black();
-
 
     let portion = 360f32 / total;
     if colors.is_empty() {
@@ -639,7 +665,6 @@ fn colorRain(ctx: &mut ContextWrapper, colors: &mut Vec<f32>, dots: &mut Vec<f32
             colors.push(portion * i as f32);
         }
     }
-
 
     let mut animate = || {
         ctx.set_fill_style(repaint_color);
@@ -654,10 +679,15 @@ fn colorRain(ctx: &mut ContextWrapper, colors: &mut Vec<f32>, dots: &mut Vec<f32
 
             dots_vel[i] += accelleration;
 
-
-            ctx.set_fill_style(PaintStyle::new_color_str(&format!("hsl({}, 80%, 50%)", colors[i])).unwrap());
-            ctx.fill_rect_xywh((occupation * i as f32), current_y as f32, size as f32, dots_vel[i] + 1 as f32);
-
+            ctx.set_fill_style(
+                PaintStyle::new_color_str(&format!("hsl({}, 80%, 50%)", colors[i])).unwrap(),
+            );
+            ctx.fill_rect_xywh(
+                (occupation * i as f32),
+                current_y as f32,
+                size as f32,
+                dots_vel[i] + 1 as f32,
+            );
 
             let mut rng = rand::thread_rng();
             let random: f32 = rng.gen_range(0f32..1f32);
@@ -671,7 +701,6 @@ fn colorRain(ctx: &mut ContextWrapper, colors: &mut Vec<f32>, dots: &mut Vec<f32
     animate()
 }
 
-
 struct Particle {
     context: ContextWrapper,
     x: f32,
@@ -683,7 +712,11 @@ struct Particle {
 
 impl std::fmt::Display for Particle {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {}, {}, {}, {})", self.x, self.y, self.vx, self.vy, self.radius)
+        write!(
+            f,
+            "({}, {}, {}, {}, {})",
+            self.x, self.y, self.vx, self.vy, self.radius
+        )
     }
 }
 
@@ -691,7 +724,6 @@ fn math_random() -> f32 {
     let mut rng = rand::thread_rng();
     rng.gen_range(0f32..1f32)
 }
-
 
 impl Particle {
     pub fn new(context: &ContextWrapper, width: f32, height: f32) -> Self {
@@ -709,13 +741,19 @@ impl Particle {
         context.set_fill_style(PaintStyle::white());
         context.begin_path();
 
-        context.arc(self.x, self.y, self.radius, 0., std::f32::consts::PI * 2., false);
+        context.arc(
+            self.x,
+            self.y,
+            self.radius,
+            0.,
+            std::f32::consts::PI * 2.,
+            false,
+        );
 
         // Fill the color to the arc that we just created
         context.fill(None);
     }
 }
-
 
 fn distance(ctx: &ContextWrapper, chunk: &mut [Particle]) {
     let p1 = &chunk[0];
@@ -730,7 +768,10 @@ fn distance(ctx: &ContextWrapper, chunk: &mut [Particle]) {
         ctx.begin_path();
         let alpha = (1.2 - dist / MIN_DIST);
         ctx.set_stroke_style(PaintStyle::new_color_rgba(
-            255, 255, 255, (alpha * 255.) as u8,
+            255,
+            255,
+            255,
+            (alpha * 255.) as u8,
         ));
         ctx.move_to(p1.x, p1.y);
         ctx.line_to(p2.x, p2.y);
@@ -753,7 +794,6 @@ fn distance(ctx: &ContextWrapper, chunk: &mut [Particle]) {
     }
 }
 
-
 fn update(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Particle]) {
     for chunk in particles.chunks_mut(2).into_iter() {
         let mut p = chunk.get_mut(0).unwrap();
@@ -766,7 +806,6 @@ fn update(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Partic
             p.x = width - p.radius;
         }
 
-
         if p.y + p.radius > height {
             p.y = p.radius;
         } else if p.y - p.radius < 0. {
@@ -776,7 +815,6 @@ fn update(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Partic
         distance(ctx, chunk);
     }
 }
-
 
 fn draw(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Particle]) {
     paint_canvas(ctx, width, height);
@@ -795,7 +833,6 @@ fn paint_canvas(ctx: &ContextWrapper, width: f32, height: f32) {
     ctx.fill_rect_xywh(0., 0., width, height);
 }
 
-
 const MIN_DIST: f32 = 50f32;
 
 fn swarm(ctx: &mut ContextWrapper, particles: &mut Vec<Particle>, particle_count: i32) {
@@ -810,7 +847,6 @@ fn swarm(ctx: &mut ContextWrapper, particles: &mut Vec<Particle>, particle_count
             H = device.height;
         }
 
-
         let dist = 0.;
 
         if particles.len() != particle_count as usize {
@@ -819,9 +855,7 @@ fn swarm(ctx: &mut ContextWrapper, particles: &mut Vec<Particle>, particle_count
             }
         }
 
-
         //  let mut p = Particle::new(ctx, W, H);
-
 
         let mut animloop = || {
             draw(ctx, W, H, particles.as_mut_slice());
@@ -847,7 +881,7 @@ fn clock(ctx: &mut ContextWrapper) {
     ctx.set_line_width(8.);
     ctx.set_line_cap(LineCap::CapRound);
 
-// Hour marks
+    // Hour marks
     ctx.save();
     for i in 0..12 {
         ctx.begin_path();
@@ -859,7 +893,7 @@ fn clock(ctx: &mut ContextWrapper) {
 
     ctx.restore();
 
-// Minute marks
+    // Minute marks
     ctx.save();
     ctx.set_line_width(5.);
     for i in 0..60 {
@@ -876,11 +910,13 @@ fn clock(ctx: &mut ContextWrapper) {
     let sec = now.second();
     let min = now.minute();
     let mut hr = now.hour();
-    if hr >= 12 { hr = hr - 12; };
+    if hr >= 12 {
+        hr = hr - 12;
+    };
 
     ctx.set_fill_style(PaintStyle::black());
 
-// write Hours
+    // write Hours
     ctx.save();
     ctx.rotate(hr as f32 * (pi / 6.) + (pi / 360.) * min as f32 + (pi / 21600.) * sec as f32);
     ctx.set_line_width(14.);
@@ -890,7 +926,7 @@ fn clock(ctx: &mut ContextWrapper) {
     ctx.stroke(None);
     ctx.restore();
 
-// write Minutes
+    // write Minutes
     ctx.save();
     ctx.rotate((pi / 30.) * min as f32 + (pi / 1800.) * sec as f32);
     ctx.set_line_width(10.);
@@ -900,16 +936,12 @@ fn clock(ctx: &mut ContextWrapper) {
     ctx.stroke(None);
     ctx.restore();
 
-// Write seconds
+    // Write seconds
     ctx.save();
     ctx.rotate((sec as f32 * pi) / 30.);
 
-    ctx.set_stroke_style(
-        PaintStyle::new_color_str("#D40000").unwrap()
-    );
-    ctx.set_fill_style(
-        PaintStyle::new_color_str("#D40000").unwrap()
-    );
+    ctx.set_stroke_style(PaintStyle::new_color_str("#D40000").unwrap());
+    ctx.set_fill_style(PaintStyle::new_color_str("#D40000").unwrap());
 
     ctx.set_line_width(6.);
     ctx.begin_path();
@@ -936,14 +968,18 @@ fn clock(ctx: &mut ContextWrapper) {
     ctx.restore();
 }
 
-
-fn solar(ctx: &ContextWrapper, earth: &ImageAsset, moon: &ImageAsset, sun: &ImageAsset, fill: PaintStyle, stroke: PaintStyle) {
+fn solar(
+    ctx: &ContextWrapper,
+    earth: &ImageAsset,
+    moon: &ImageAsset,
+    sun: &ImageAsset,
+    fill: PaintStyle,
+    stroke: PaintStyle,
+) {
     let mut ctx = ctx.get_context_mut();
 
     let device = *ctx.device();
-    ctx.set_global_composite_operation(
-        CompositeOperationType::DestinationOver
-    );
+    ctx.set_global_composite_operation(CompositeOperationType::DestinationOver);
     ctx.clear_rect(0., 0., device.width, device.height); // clear canvas
     ctx.set_fill_style(fill);
     ctx.set_stroke_style(stroke);
@@ -952,7 +988,7 @@ fn solar(ctx: &ContextWrapper, earth: &ImageAsset, moon: &ImageAsset, sun: &Imag
 
     let pi = std::f32::consts::PI;
 
-// Earth
+    // Earth
     let time = chrono::offset::Local::now();
     let seconds = time.second();
     let milliseconds = seconds * 1000;
@@ -961,7 +997,7 @@ fn solar(ctx: &ContextWrapper, earth: &ImageAsset, moon: &ImageAsset, sun: &Imag
     ctx.fill_rect_xywh(0., -12., 40., 24.); // Shadow
     ctx.draw_image_asset_dx_dy(earth, -12., -12.);
 
-// Moon
+    // Moon
     ctx.save();
     ctx.rotate(((2. * pi) / 6.) * seconds as f32 + ((2. * pi) / 6000.) * milliseconds as f32);
     ctx.translate(0., 28.5);

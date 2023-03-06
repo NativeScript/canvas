@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::ffi::CStr;
 use std::io::Read;
-use std::os::raw::{c_char, c_int, c_uint, c_void};
+use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 
 use cxx::{type_id, ExternType};
@@ -30,7 +30,7 @@ use canvas_core::image_asset::OutputFormat;
 
 /* Utils */
 
-pub fn console_log(text: &str) {}
+pub fn console_log(_text: &str) {}
 
 pub fn str_to_buf(value: &str) -> Vec<u8> {
     value.as_bytes().to_vec()
@@ -50,6 +50,7 @@ pub struct TextDecoder(canvas_2d::context::text_decoder::TextDecoder);
 
 /* CanvasRenderingContext2D */
 
+#[allow(dead_code)]
 pub struct CanvasRenderingContext2D {
     context: ContextWrapper,
     pub(crate) gl_context: GLContext,
@@ -84,7 +85,9 @@ impl CanvasRenderingContext2D {
 }
 
 #[derive(Clone)]
-pub struct PaintStyle(pub(crate) Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>);
+pub struct PaintStyle(
+    pub(crate) Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>,
+);
 
 impl PaintStyle {
     pub fn new(
@@ -135,7 +138,7 @@ unsafe impl ExternType for PaintStyle {
     type Kind = cxx::kind::Trivial;
 }
 
-#[cxx::bridge(namespace="org::nativescript::canvas")]
+#[cxx::bridge(namespace = "org::nativescript::canvas")]
 pub mod ffi {
 
     pub enum InvalidateState {
@@ -1211,12 +1214,12 @@ fn canvas_native_context_create_with_wrapper(
     context: i64,
     gl_context: i64,
 ) -> Box<CanvasRenderingContext2D> {
-    let mut wrapper: *mut ContextWrapper = unsafe { context as _ };
-    let mut wrapper = unsafe { &mut *wrapper };
+    let wrapper = context as *mut ContextWrapper;
+    let wrapper = unsafe { &mut *wrapper };
 
-    let gl_context: *const RwLock<canvas_core::gl::GLContextInner> = unsafe { gl_context as _ };
-    let mut gl_context = GLContext::from_raw_inner(gl_context);
-    let mut alpha = false;
+    let gl_context =  gl_context as  *const RwLock<canvas_core::gl::GLContextInner>;
+    let gl_context = GLContext::from_raw_inner(gl_context);
+    let alpha;
     {
         let lock = wrapper.get_context();
         alpha = lock.device().alpha;
@@ -1268,8 +1271,8 @@ pub fn canvas_native_context_create_gl(
     ppi: f32,
     direction: u32,
 ) -> Box<CanvasRenderingContext2D> {
-    let gl_context: *const RwLock<canvas_core::gl::GLContextInner> = unsafe { gl_context as _ };
-    let mut gl_context = GLContext::from_raw_inner(gl_context);
+    let gl_context =  gl_context as  *const RwLock<canvas_core::gl::GLContextInner>;
+    let gl_context = GLContext::from_raw_inner(gl_context);
     gl_context.make_current();
     let mut frame_buffers = [0];
     unsafe {
@@ -1563,14 +1566,6 @@ pub fn canvas_native_paint_style_set_fill_color_with_string(
     paint_style_set_color_with_string(&mut context.context, true, color);
 }
 
-fn canvas_native_paint_style_set_fill_color_with_utf16(
-    context: &mut CanvasRenderingContext2D,
-    color: &[u16],
-) {
-    if let Ok(color) = String::from_utf16(color) {
-        paint_style_set_color_with_string(&mut context.context, true, color.as_str());
-    }
-}
 
 #[inline]
 pub fn canvas_native_paint_style_set_fill_color_with_c_str(
@@ -1606,14 +1601,6 @@ pub fn canvas_native_paint_style_set_stroke_color_with_string(
     paint_style_set_color_with_string(&mut context.context, false, color);
 }
 
-fn canvas_native_paint_style_set_stroke_color_with_utf16(
-    context: &mut CanvasRenderingContext2D,
-    color: &[u16],
-) {
-    if let Ok(color) = String::from_utf16(color) {
-        paint_style_set_color_with_string(&mut context.context, false, color.as_str());
-    }
-}
 
 #[inline]
 pub fn canvas_native_paint_style_set_stroke_color_with_rgba(
@@ -2066,10 +2053,10 @@ pub fn canvas_native_context_create_pattern_canvas2d(
         None,
         |repetition| {
             context.remove_if_current();
-            let mut width = 0i32;
-            let mut height = 0i32;
-            let mut source_non_gpu = false;
-            let mut non_gpu = false;
+            let width;
+            let height;
+            let source_non_gpu;
+            let non_gpu;
             {
                 let ctx = source.get_context();
                 let device = ctx.device();
@@ -2079,7 +2066,7 @@ pub fn canvas_native_context_create_pattern_canvas2d(
             }
 
             let mut source_ctx = source.get_context_mut();
-            let mut buf;
+            let buf;
             if !source_non_gpu {
                 source.make_current();
                 // source.get_context_mut().flush();
@@ -2957,7 +2944,7 @@ pub fn canvas_native_matrix_update(matrix: &mut Matrix, slice: &[f32]) {
 }
 
 pub fn canvas_native_matrix_update_3d(matrix: &mut Matrix, slice: &[f32; 16]) {
-    let mut matrix = matrix.inner_mut();
+    let matrix = matrix.inner_mut();
     matrix.set_m11(slice[0]);
     matrix.set_m12(slice[1]);
     matrix.set_m13(slice[2]);
@@ -3306,7 +3293,7 @@ pub(crate) fn canvas_native_image_asset_load_from_url_internal(
             return false;
         }
         assert!(res.has("Content-Length"));
-        let mut len: usize = 0;
+        let len: usize;
         if let Ok(length) = res.header("Content-Length").unwrap().parse::<usize>() {
             len = length;
         } else {
@@ -3364,6 +3351,7 @@ pub fn canvas_native_image_asset_save_path(
     asset.save_path(path, OutputFormat::from(format))
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct ThreadCallbackData {
     id: i64,
@@ -3371,6 +3359,7 @@ struct ThreadCallbackData {
 }
 
 impl ThreadCallbackData {
+    #[allow(dead_code)]
     pub fn new(id: i64, done: bool) -> Self {
         Self { id, done }
     }

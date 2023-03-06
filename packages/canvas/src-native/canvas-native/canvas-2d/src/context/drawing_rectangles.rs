@@ -1,7 +1,7 @@
 use std::os::raw::c_float;
 
-use skia_safe::{BlendMode, Paint, Rect};
 use skia_safe::paint::Style;
+use skia_safe::{BlendMode, Paint, Rect};
 
 use crate::context::Context;
 

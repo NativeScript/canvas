@@ -1,14 +1,16 @@
+#![allow(dead_code)]
+
 use std::collections::VecDeque;
 
 use skia_safe::{
     font_style::{Slant, Weight, Width},
-    FontMetrics,
-    FontMgr, FontStyle, typeface::Typeface,
+    typeface::Typeface,
+    FontMetrics, FontMgr, FontStyle,
 };
 
 use crate::context::{
-    Device, text_styles::text_align::TextAlign,
-    text_styles::text_baseline::TextBaseLine, text_styles::text_direction::TextDirection,
+    text_styles::text_align::TextAlign, text_styles::text_baseline::TextBaseLine,
+    text_styles::text_direction::TextDirection, Device,
 };
 use crate::utils::dimensions::parse_size;
 
@@ -263,7 +265,8 @@ pub fn parse_font(font: &str) -> ParsedFont {
 
     for _ in 0..res.len() {
         if let Some(part) = res.pop_front() {
-            if part.eq("normal") {} else if part.eq("small-caps") {
+            if part.eq("normal") {
+            } else if part.eq("small-caps") {
                 parsed_font.font_variant = part.into();
             } else if ParsedFontStyle::is_supported(part) {
                 match part {

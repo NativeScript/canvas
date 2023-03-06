@@ -1,12 +1,8 @@
-
-
 use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jstring};
 use jni::JNIEnv;
 
 use canvas_2d::context::{Context, ContextWrapper};
-
-
 
 pub mod gl;
 pub mod image;

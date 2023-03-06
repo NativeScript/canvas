@@ -411,7 +411,6 @@ impl GLContext {
         }
     }
 
-
     #[cfg(target_os = "android")]
     pub fn set_window_surface(
         &mut self,
@@ -419,7 +418,7 @@ impl GLContext {
         width: i32,
         height: i32,
         window: RawWindowHandle,
-    )  {
+    ) {
         unsafe {
             if let Some(display) = self.display() {
                 gl_bindings::load_with(|symbol| {
@@ -452,18 +451,16 @@ impl GLContext {
 
                 if let Some(config) = config {
                     let surface_attr =
-                        glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
-                            .build(
-                                window,
-                                NonZeroU32::try_from(width as u32).unwrap(),
-                                NonZeroU32::try_from(height as u32).unwrap(),
-                            );
+                        glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
+                            window,
+                            NonZeroU32::try_from(width as u32).unwrap(),
+                            NonZeroU32::try_from(height as u32).unwrap(),
+                        );
 
                     let surface = display
                         .create_window_surface(&config, &surface_attr)
                         .map(SurfaceHelper::Window)
                         .ok();
-
 
                     let mut lock = self.inner.write();
                     lock.surface = surface;

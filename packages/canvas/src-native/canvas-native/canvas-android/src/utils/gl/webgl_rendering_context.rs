@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
+#![allow(dead_code)]
 
 use std::os::raw::c_void;
 
@@ -11,8 +12,6 @@ use jni::sys::{jboolean, jint, jlong, JNI_TRUE};
 use jni::JNIEnv;
 
 use canvas_core::image_asset::ImageAsset;
-
-
 
 const RGBA: u32 = 0x1908;
 const RGBA_INTEGER: u32 = 0x8D99;

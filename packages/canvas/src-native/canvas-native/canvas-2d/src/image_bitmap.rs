@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use core::convert::{From, Into};
 
 use skia_safe::EncodedImageFormat;
@@ -188,7 +190,6 @@ pub(crate) fn create_image_bitmap_raw(
         resize_height,
     ))) as i64
 }
-
 
 pub(crate) fn create_image_bitmap_internal(
     image: skia_safe::Image,
@@ -474,7 +475,6 @@ pub fn create_image_asset_encoded(
     }
 }
 
-
 pub fn create_image_asset_encoded_raw(
     buf: &[u8],
     rect: Option<(f32, f32, f32, f32)>,
@@ -485,9 +485,14 @@ pub fn create_image_asset_encoded_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    Box::into_raw(
-        Box::new(
-            create_image_asset_encoded(buf, rect, flip_y, premultiply_alpha, color_space_conversion, resize_quality, resize_height, resize_width)
-        )
-    ) as i64
+    Box::into_raw(Box::new(create_image_asset_encoded(
+        buf,
+        rect,
+        flip_y,
+        premultiply_alpha,
+        color_space_conversion,
+        resize_quality,
+        resize_height,
+        resize_width,
+    ))) as i64
 }

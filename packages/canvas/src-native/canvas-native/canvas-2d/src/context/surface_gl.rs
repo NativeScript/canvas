@@ -1,12 +1,12 @@
-use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, ImageInfo, ISize, PixelGeometry, Rect, Surface,
-};
 use skia_safe::gpu::gl::Interface;
 use skia_safe::image::CachingHint;
+use skia_safe::{
+    AlphaType, Color, ColorType, EncodedImageFormat, ISize, ImageInfo, PixelGeometry, Rect, Surface,
+};
 
-use crate::context::{Context, Device, State};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
+use crate::context::{Context, Device, State};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;

@@ -21,7 +21,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
         return JNI_FALSE;
     }
 
-    let state = unsafe { state as *mut WebGLState };
+    let state = state as *mut WebGLState;
     if state.is_null() {
         return JNI_FALSE;
     }
@@ -41,7 +41,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetFlipYW
     if state == 0 {
         return JNI_FALSE;
     }
-    let state = unsafe { state as *mut WebGLState };
+    let state = state as *mut WebGLState;
     if state.is_null() {
         return JNI_FALSE;
     }

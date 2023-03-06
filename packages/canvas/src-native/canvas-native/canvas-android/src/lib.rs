@@ -102,39 +102,37 @@ fn canvas_native_context_create_pattern_bytes(
     bm: i64,
     repetition: &str,
 ) -> Box<ffi::PaintStyle> {
-    unsafe {
-        canvas_2d::context::fill_and_stroke_styles::pattern::Repetition::try_from(repetition)
-            .map_or(ffi::canvas_native_paint_style_empty(), |repetition| {
-                if bm == 0 {
-                    return ffi::canvas_native_paint_style_empty();
+    canvas_2d::context::fill_and_stroke_styles::pattern::Repetition::try_from(repetition)
+        .map_or(ffi::canvas_native_paint_style_empty(), |repetition| {
+            if bm == 0 {
+                return ffi::canvas_native_paint_style_empty();
+            }
+            let bm = bm as *mut BitmapBytes;
+            let mut bm = unsafe { *Box::from_raw(bm) };
+            let mut width = 0;
+            let mut height = 0;
+            {
+                if let Some(info) = bm.0.info() {
+                    width = info.width();
+                    height = info.height();
                 }
-                let bm = unsafe { bm as *mut BitmapBytes };
-                let mut bm = unsafe { *Box::from_raw(bm) };
-                let mut width = 0;
-                let mut height = 0;
-                {
-                    if let Some(info) = bm.0.info() {
-                        width = info.width();
-                        height = info.height();
-                    }
-                }
-                if let Some(bytes) = bm.0.data_mut() {
-                    return ffi::canvas_native_paint_style_from_bytes(
-                        context,
-                        repetition.into(),
-                        width as i32,
-                        height as i32,
-                        bytes,
-                    );
-                }
-                ffi::canvas_native_paint_style_empty()
-            })
-    }
+            }
+            if let Some(bytes) = bm.0.data_mut() {
+                return ffi::canvas_native_paint_style_from_bytes(
+                    context,
+                    repetition.into(),
+                    width as i32,
+                    height as i32,
+                    bytes,
+                );
+            }
+            ffi::canvas_native_paint_style_empty()
+        })
 }
 
 /* Raf */
 pub fn canvas_native_raf_create(callback: isize) -> Box<Raf> {
-    Box::new(Raf(raf::Raf::new(Some(Box::new(move |ts| unsafe {
+    Box::new(Raf(raf::Raf::new(Some(Box::new(move |ts| {
         ffi::OnRafCallbackOnFrame(callback, ts);
     })))))
 }

@@ -1,13 +1,13 @@
+#![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
-use std::borrow::Cow;
 use std::ffi::CString;
-use std::os::raw::{c_long, c_void};
+use std::os::raw::{ c_void};
 use std::sync::Arc;
 
-use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
-use parking_lot::{RawMutex, RawRwLock};
+use parking_lot::lock_api::{ RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{ RawRwLock};
 
 use canvas_core::gl::GLContext;
 
@@ -137,7 +137,7 @@ impl WebGLState {
     }
 
     pub fn new_with_context(context: GLContext, version: WebGLVersion) -> Self {
-        let mut ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
+        let ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
             version,
             alpha: true,
             antialias: true,
@@ -185,7 +185,7 @@ impl WebGLState {
         xr_compatible: bool,
         is_canvas: bool,
     ) -> Self {
-        let mut ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
+        let ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
             version,
             alpha,
             antialias,
@@ -411,7 +411,7 @@ impl Clone for WebGLState {
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.0 = Arc::clone(&self.0)
+        self.0 = Arc::clone(&source.0)
     }
 }
 
@@ -686,8 +686,8 @@ pub struct EXT_blend_minmax {
 
 impl EXT_blend_minmax {
     pub fn new() -> Self {
-        let min_ext = unsafe { gl_bindings::MIN };
-        let max_ext = unsafe { gl_bindings::MAX };
+        let min_ext = gl_bindings::MIN;
+        let max_ext = gl_bindings::MAX;
         Self { min_ext, max_ext }
     }
     pub fn get_min_ext(&self) -> u32 {
@@ -714,11 +714,11 @@ pub struct EXT_color_buffer_half_float {
 
 impl EXT_color_buffer_half_float {
     pub fn new() -> Self {
-        let rgba16f_ext = unsafe { gl_bindings::RGBA16F };
-        let rgb16f_ext = unsafe { gl_bindings::RGB16F };
+        let rgba16f_ext = gl_bindings::RGBA16F;
+        let rgb16f_ext = gl_bindings::RGB16F ;
         let framebuffer_attachment_component_type_ext =
-            unsafe { gl_bindings::FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE };
-        let unsigned_normalized_ext = unsafe { gl_bindings::UNSIGNED_NORMALIZED };
+            gl_bindings::FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE ;
+        let unsigned_normalized_ext = gl_bindings::UNSIGNED_NORMALIZED;
         Self {
             rgba16f_ext,
             rgb16f_ext,
@@ -812,7 +812,7 @@ impl EXT_disjoint_timer_query {
         unsafe { gl_bindings::EndQuery(target) }
     }
 
-    pub fn query_counter_ext(&self, query: u32, target: u32) {
+    pub fn query_counter_ext(&self, _query: u32, _target: u32) {
         // noop
     }
 

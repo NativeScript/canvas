@@ -1,5 +1,3 @@
-
-
 use jni::objects::{JClass, JObject};
 use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
@@ -17,7 +15,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFrom
         return JNI_FALSE;
     }
 
-    let asset: *mut ImageAsset = asset as _;
+    let asset = asset as *mut ImageAsset;
     let asset = unsafe { &mut *asset };
 
     let mut bm = crate::utils::image::BitmapBytes::new(env, bitmap);

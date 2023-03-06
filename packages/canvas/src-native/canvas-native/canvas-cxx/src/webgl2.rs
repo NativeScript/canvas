@@ -2,7 +2,7 @@
 
 use std::os::raw::c_ulong;
 
-#[cxx::bridge(namespace="org::nativescript::canvas")]
+#[cxx::bridge(namespace = "org::nativescript::canvas")]
 pub mod ffi {
     extern "C++" {
         include!("canvas-cxx/src/canvas2d.rs.h");

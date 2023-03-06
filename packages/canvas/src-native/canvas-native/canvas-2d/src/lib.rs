@@ -3,13 +3,13 @@ extern crate core;
 use std::os::raw::c_int;
 
 use base64::Engine;
-use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, ImageInfo, IPoint, ISize, Point, Surface,
-};
 use skia_safe::image::CachingHint;
+use skia_safe::{
+    AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface,
+};
 
-use context::{Context, ContextWrapper};
 use context::filter_quality::FilterQuality;
+use context::{Context, ContextWrapper};
 
 pub mod context;
 pub mod ffi;
@@ -139,7 +139,8 @@ pub fn bytes_to_data_url(
         );
         return match data {
             Some(data) => {
-                let encoded_data = base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
+                let encoded_data =
+                    base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
                 let mut encoded = String::new();
                 encoded.push_str(&encoded_prefix);
                 encoded.push_str(&encoded_data);

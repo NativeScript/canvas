@@ -29,7 +29,7 @@ unsafe impl ExternType for WebGLState {
     type Kind = cxx::kind::Trivial;
 }
 
-#[cxx::bridge(namespace="org::nativescript::canvas")]
+#[cxx::bridge(namespace = "org::nativescript::canvas")]
 pub(crate) mod ffi {
     #[allow(non_camel_case_types)]
     #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -115,7 +115,6 @@ pub(crate) mod ffi {
         type ANGLE_instanced_arrays;
         type WEBGL_depth_texture;
         type WEBGL_draw_buffers;
-
 
         pub fn canvas_native_context_create_pattern_webgl(
             source: &mut WebGLState,
@@ -1209,20 +1208,17 @@ impl Into<ffi::WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType
     }
 }
 
-
-
 pub fn canvas_native_context_create_pattern_webgl(
     source: &mut WebGLState,
     context: &mut crate::canvas2d::CanvasRenderingContext2D,
     repetition: &str,
 ) -> Box<crate::canvas2d::PaintStyle> {
-    Box::new(crate::canvas2d::PaintStyle(crate::canvas2d::Repetition::try_from(repetition).map_or(
-        None,
-        |repetition| {
+    Box::new(crate::canvas2d::PaintStyle(
+        crate::canvas2d::Repetition::try_from(repetition).map_or(None, |repetition| {
             let state = source.get_inner();
             state.make_current();
-            let mut width = state.get_drawing_buffer_width();
-            let mut height = state.get_drawing_buffer_height();
+            let width = state.get_drawing_buffer_width();
+            let height = state.get_drawing_buffer_height();
 
             let mut buf = vec![0u8; (width * height * 4) as usize];
 
@@ -1245,10 +1241,9 @@ pub fn canvas_native_context_create_pattern_webgl(
                     context.get_context().create_pattern(image, repetition),
                 )
             })
-        },
-    )))
+        }),
+    ))
 }
-
 
 /* GL */
 
@@ -1263,8 +1258,8 @@ pub fn canvas_native_webgl_swap_buffers(state: &mut WebGLState) -> bool {
 
 /* WebGL */
 
-fn canvas_native_webgl_resized(state: &mut WebGLState) {
-    // state.get_inner_mut().resized();
+fn canvas_native_webgl_resized(_state: &mut WebGLState) {
+     //state.get_inner_mut().resized();
 }
 
 fn canvas_native_webgl_to_data_url(state: &mut WebGLState, format: &str, quality: i32) -> String {
@@ -1763,7 +1758,7 @@ fn canvas_native_webgl_result_get_f32(result: &WebGLResult) -> f32 {
 }
 
 fn canvas_native_webgl_result_get_string(result: &WebGLResult) -> String {
-    let mut ret;
+    let ret;
     match result.0 {
         canvas_webgl::prelude::WebGLResult::String(ref result) => {
             let val = result.to_string_lossy();
@@ -1986,8 +1981,8 @@ pub fn canvas_native_webgl_create(
         WebGLVersion::NONE
     };
 
-    let gl_context: *const RwLock<canvas_core::gl::GLContextInner> = unsafe { gl_context as _ };
-    let mut gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+    let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
 
     let inner = WebGLState::new_with_context(
         gl_context,
@@ -2813,7 +2808,7 @@ pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> V
 }
 
 pub fn canvas_native_webgl_get_supported_extensions_to_string(state: &mut WebGLState) -> String {
-    let mut ret =
+    let ret =
         canvas_webgl::webgl::canvas_native_webgl_get_supported_extensions(state.get_inner_mut());
     ret.join(",").to_string()
 }
@@ -3120,12 +3115,12 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas: &mut crate::canvas2d::CanvasRenderingContext2D,
     state: &mut WebGLState,
 ) {
-    let mut context = &mut state.0;
+    let context = &mut state.0;
 
     context.remove_if_current();
-    let mut width = 0f32;
-    let mut height = 0f32;
-    let mut source_non_gpu = false;
+    let width;
+    let height;
+    let source_non_gpu;
     {
         let ctx = canvas.get_context();
         let device = ctx.device();

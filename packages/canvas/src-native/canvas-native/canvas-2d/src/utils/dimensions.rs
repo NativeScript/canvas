@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::context::Device;
 
 const SIZE_CM: f32 = 1.0;

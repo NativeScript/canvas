@@ -2,8 +2,8 @@ use std::ffi::CStr;
 use std::os::raw::{c_char, c_float, c_longlong};
 
 use canvas_core::context::matrix::Matrix;
-pub use canvas_core::context::paths::path::*;
 use canvas_core::context::paths::path::Path;
+pub use canvas_core::context::paths::path::*;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_create() -> *mut Path {

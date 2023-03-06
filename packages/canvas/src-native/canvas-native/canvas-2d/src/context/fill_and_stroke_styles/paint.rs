@@ -1,17 +1,20 @@
+#![allow(dead_code)]
+#![allow(non_upper_case_globals)]
+
 use std::os::raw::c_float;
 
 use csscolorparser::parse;
-use skia_safe::{BlendMode, Point};
-pub use skia_safe::Color;
 use skia_safe::paint::{Cap, Style};
+pub use skia_safe::Color;
+use skia_safe::{BlendMode, Point};
 
-use crate::context::Context;
 use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::Pattern;
 use crate::context::filter_quality::FilterQuality;
 use crate::context::image_smoothing::ImageSmoothingQuality;
-use crate::ContextWrapper;
+use crate::context::Context;
 use crate::utils::color::to_parsed_color;
+use crate::ContextWrapper;
 
 #[derive(Clone)]
 pub enum PaintStyle {
@@ -51,11 +54,16 @@ impl PaintStyle {
     }
 
     pub fn new_color_str(color: &str) -> Option<Self> {
-        parse(color).map(|color| {
-            Self::Color(
-                Color::from_argb((color.a * 255.) as u8, (color.r * 255.) as u8, (color.g * 255.) as u8, (color.b * 255.) as u8)
-            )
-        }).ok()
+        parse(color)
+            .map(|color| {
+                Self::Color(Color::from_argb(
+                    (color.a * 255.) as u8,
+                    (color.r * 255.) as u8,
+                    (color.g * 255.) as u8,
+                    (color.b * 255.) as u8,
+                ))
+            })
+            .ok()
     }
 
     pub fn new_color(color: u32) -> Self {
@@ -185,13 +193,8 @@ impl Paint {
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
         let sigma = blur / 2.0;
-        let filter = skia_safe::image_filters::drop_shadow_only(
-            offset,
-            (sigma, sigma),
-            color,
-            None,
-            None,
-        );
+        let filter =
+            skia_safe::image_filters::drop_shadow_only(offset, (sigma, sigma), color, None, None);
         paint.set_image_filter(filter);
         return Some(paint);
     }

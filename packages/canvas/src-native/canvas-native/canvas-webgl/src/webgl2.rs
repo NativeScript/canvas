@@ -1,5 +1,8 @@
+#![allow(dead_code)]
+#![allow(non_upper_case_globals)]
+
 use std::ffi::{c_ulong, CStr, CString};
-use std::os::raw::{c_char, c_long, c_longlong, c_uchar, c_void};
+use std::os::raw::{c_char, c_longlong, c_void};
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -583,7 +586,7 @@ pub fn canvas_native_webgl2_get_buffer_sub_data(
 ) {
     state.make_current();
 
-    let mut len = dst_data.len();
+    let len = dst_data.len();
 
     if dst_offset > len {
         // todo log error
@@ -607,7 +610,7 @@ pub fn canvas_native_webgl2_get_buffer_sub_data(
         unsafe { ptr = ptr.offset(dst_offset as isize) }
     }
 
-    let mut new_buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
+    let new_buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
 
     unsafe {
         gl_bindings::BufferSubData(
@@ -1414,8 +1417,6 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     asset.height() as usize,
                     depth as usize,
                 );
-
-                unsafe {
                     gl_bindings::TexSubImage3D(
                         target,
                         level,
@@ -1429,7 +1430,6 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                         type_,
                         buffer.as_ptr() as *const c_void,
                     );
-                }
 
                 return;
             }

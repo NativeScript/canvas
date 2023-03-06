@@ -2,8 +2,8 @@ use std::ffi::c_long;
 use std::sync::Arc;
 
 use crate::choregrapher::{
-    AChoreographer_getInstance,
-    AChoreographer_postFrameCallback, AChoreographer_postFrameCallback64,
+    AChoreographer_getInstance, AChoreographer_postFrameCallback,
+    AChoreographer_postFrameCallback64,
 };
 
 type RafCallback = Option<Box<dyn Fn(i64)>>;
@@ -85,12 +85,8 @@ impl Raf {
     }
 
     pub fn started(&self) -> bool {
-        let mut started = false;
-        {
-            let lock = self.inner.lock();
-            started = lock.started;
-        }
-        started
+        let lock = self.inner.lock();
+        lock.started
     }
 }
 

@@ -1,9 +1,7 @@
 extern crate cbindgen;
 
-use std::{env, fmt};
-use std::borrow::Borrow;
-use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
+use std::{env, fmt};
 
 use cbindgen::{Config, Language, ParseConfig, ParseExpandConfig};
 

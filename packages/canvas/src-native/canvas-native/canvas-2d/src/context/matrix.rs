@@ -1,10 +1,12 @@
+#![allow(dead_code)]
+
 use std::ops::{Index, IndexMut};
 use std::os::raw::c_float;
 
 use skia_safe::M44;
 
 #[derive(Clone, Debug)]
-pub struct Matrix(skia_safe::M44);
+pub struct Matrix(M44);
 
 impl Default for Matrix {
     fn default() -> Self {

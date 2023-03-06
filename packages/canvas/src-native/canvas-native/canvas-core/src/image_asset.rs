@@ -5,8 +5,8 @@ use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::{null, null_mut};
 use std::sync::Arc;
 
-use image::{DynamicImage, EncodableLayout, ImageFormat, RgbaImage, RgbImage};
 use image::imageops::FilterType;
+use image::{DynamicImage, EncodableLayout, ImageFormat, RgbImage, RgbaImage};
 use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::RawRwLock;
 
@@ -109,12 +109,12 @@ impl ImageAsset {
         })))
     }
 
-
     #[cfg(feature = "2d")]
     pub fn skia_image(&self) -> Option<skia_safe::Image> {
-        self.read().skia_image.as_ref().map(|v| {
-            skia_safe::Image::from(v)
-        })
+        self.read()
+            .skia_image
+            .as_ref()
+            .map(|v| skia_safe::Image::from(v))
     }
 
     fn read(&self) -> RwLockReadGuard<'_, RawRwLock, ImageAssetInner> {
@@ -186,15 +186,14 @@ impl ImageAsset {
     }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
-        where
-            R: Read + Seek + BufRead,
+    where
+        R: Read + Seek + BufRead,
     {
         let mut lock = self.get_lock();
         if !lock.error.is_empty() {
             lock.error.clear()
         }
         lock.image = None;
-
 
         let mut bytes = [0; 16];
         let position = reader.stream_position();
@@ -222,8 +221,13 @@ impl ImageAsset {
                                     None,
                                 );
 
-
-                                let skia_image = unsafe { skia_safe::Image::from_raster_data(&info, skia_safe::Data::new_bytes(image.as_ref()), (width * 4) as usize) };
+                                let skia_image = unsafe {
+                                    skia_safe::Image::from_raster_data(
+                                        &info,
+                                        skia_safe::Data::new_bytes(image.as_ref()),
+                                        (width * 4) as usize,
+                                    )
+                                };
                                 lock.skia_image = skia_image;
                             } else if let Some(image) = result.as_rgb8() {
                                 let info = skia_safe::ImageInfo::new(
@@ -233,8 +237,13 @@ impl ImageAsset {
                                     None,
                                 );
 
-
-                                let skia_image = unsafe { skia_safe::Image::from_raster_data(&info, skia_safe::Data::new_bytes(image.as_ref()), (width * 4) as usize) };
+                                let skia_image = unsafe {
+                                    skia_safe::Image::from_raster_data(
+                                        &info,
+                                        skia_safe::Data::new_bytes(image.as_ref()),
+                                        (width * 4) as usize,
+                                    )
+                                };
                                 lock.skia_image = skia_image;
                             }
 
@@ -299,13 +308,11 @@ impl ImageAsset {
                 let mut lock = self.get_lock();
                 lock.image = Some(match data {
                     DynamicImage::ImageRgba8(_) => data,
-                    _ => {
-                        DynamicImage::ImageRgba8(data.into_rgba8())
-                    }
+                    _ => DynamicImage::ImageRgba8(data.into_rgba8()),
                 });
 
-
-                #[cfg(feature = "2d")] {
+                #[cfg(feature = "2d")]
+                {
                     if let Some(image) = lock.image.as_ref() {
                         let width = image.width() as i32;
                         let height = image.height() as i32;
@@ -316,7 +323,13 @@ impl ImageAsset {
                             skia_safe::AlphaType::Unpremul,
                             None,
                         );
-                        let skia_image = unsafe { skia_safe::Image::from_raster_data(&info, skia_safe::Data::new_bytes(image.as_bytes()), (width * 4) as usize) };
+                        let skia_image = unsafe {
+                            skia_safe::Image::from_raster_data(
+                                &info,
+                                skia_safe::Data::new_bytes(image.as_bytes()),
+                                (width * 4) as usize,
+                            )
+                        };
                         lock.skia_image = skia_image;
                     }
                 }
@@ -350,8 +363,13 @@ impl ImageAsset {
                         None,
                     );
 
-
-                    let skia_image = unsafe { skia_safe::Image::from_raster_data(&info, skia_safe::Data::new_bytes(image.as_ref()), (width * 4) as usize) };
+                    let skia_image = unsafe {
+                        skia_safe::Image::from_raster_data(
+                            &info,
+                            skia_safe::Data::new_bytes(image.as_ref()),
+                            (width * 4) as usize,
+                        )
+                    };
                     lock.skia_image = skia_image;
                 } else if let Some(image) = data.as_rgb8() {
                     let info = skia_safe::ImageInfo::new(
@@ -361,13 +379,17 @@ impl ImageAsset {
                         None,
                     );
 
-
-                    let skia_image = unsafe { skia_safe::Image::from_raster_data(&info, skia_safe::Data::new_bytes(image.as_ref()), (width * 4) as usize) };
+                    let skia_image = unsafe {
+                        skia_safe::Image::from_raster_data(
+                            &info,
+                            skia_safe::Data::new_bytes(image.as_ref()),
+                            (width * 4) as usize,
+                        )
+                    };
                     lock.skia_image = skia_image;
                 }
 
                 lock.image = Some(data);
-
 
                 true
             }
@@ -382,16 +404,10 @@ impl ImageAsset {
         let lock = self.get_lock();
         match lock.image.as_ref() {
             Some(image) => match image.as_rgb8() {
-                Some(image) => {
-                    block(Some(image.as_ref()))
-                }
-                None => {
-                    block(None)
-                }
-            }
-            None => {
-                block(None)
-            }
+                Some(image) => block(Some(image.as_ref())),
+                None => block(None),
+            },
+            None => block(None),
         }
     }
 
@@ -399,16 +415,10 @@ impl ImageAsset {
         let lock = self.get_lock();
         match lock.image.as_ref() {
             Some(image) => match image.as_rgba8() {
-                Some(image) => {
-                    block(Some(image.as_ref()))
-                }
-                None => {
-                    block(None)
-                }
-            }
-            None => {
-                block(None)
-            }
+                Some(image) => block(Some(image.as_ref())),
+                None => block(None),
+            },
+            None => block(None),
         }
     }
 

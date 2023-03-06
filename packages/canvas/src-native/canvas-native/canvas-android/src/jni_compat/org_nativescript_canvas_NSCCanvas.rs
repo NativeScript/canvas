@@ -1,7 +1,4 @@
-
-
 use jni::objects::{JClass, JString};
-
 use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
@@ -11,6 +8,7 @@ use raw_window_handle::HasRawWindowHandle;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 
+#[allow(dead_code)]
 struct AndroidGLContext {
     contextAttributes: ContextAttributes,
     gl_context: GLContext,
@@ -109,7 +107,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGL(
     if context == 0 {
         return;
     }
-    let context: *mut GLContext = unsafe { context as _ };
+    let context = context as *mut GLContext;
     let _ = unsafe { Box::from_raw(context) };
 }
 
@@ -122,7 +120,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGetGLPointer
     if gl_context == 0 {
         return 0;
     }
-    let gl_context: *mut AndroidGLContext = unsafe { gl_context as _ };
+    let gl_context = gl_context as *mut AndroidGLContext;
     let gl_context = unsafe { &*gl_context };
     gl_context.gl_context.as_raw_inner() as jlong
 }
@@ -136,6 +134,6 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPoi
     if gl_context == 0 {
         return;
     }
-    let gl_context: *const RwLock<canvas_core::gl::GLContextInner> = unsafe { gl_context as _ };
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let _ = GLContext::from_raw_inner(gl_context);
 }

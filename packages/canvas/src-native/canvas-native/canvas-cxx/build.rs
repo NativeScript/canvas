@@ -14,7 +14,6 @@ fn main() {
     bridges.push("src/constants.rs");
 
     if !bridges.is_empty() {
-        let _ = cxx_build::bridges(bridges.as_slice())
-            .flag_if_supported("-std=c++17");
+        let _ = cxx_build::bridges(bridges.as_slice()).flag_if_supported("-std=c++17");
     }
 }

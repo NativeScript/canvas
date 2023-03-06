@@ -1,5 +1,5 @@
-use skia_safe::{Image, Rect};
 use skia_safe::canvas::SrcRectConstraint;
+use skia_safe::{Image, Rect};
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -22,19 +22,10 @@ impl Context {
 
         if let Some(image) = image {
             self.draw_image_src_xywh_dst_xywh(
-                &image,
-                src_x,
-                src_y,
-                src_width,
-                src_height,
-                dst_x,
-                dst_y,
-                dst_width,
-                dst_height,
+                &image, src_x, src_y, src_width, src_height, dst_x, dst_y, dst_width, dst_height,
             )
         }
     }
-
 
     pub fn draw_image_asset(
         &mut self,
@@ -45,28 +36,18 @@ impl Context {
         let image = image.skia_image();
 
         if let Some(image) = image {
-            self.draw_image(
-                &image, src_rect, dst_rect,
-            )
+            self.draw_image(&image, src_rect, dst_rect)
         }
     }
 
-    pub fn draw_image_asset_dx_dy(
-        &mut self,
-        image: &ImageAsset,
-        x: f32,
-        y: f32,
-    ) {
+    pub fn draw_image_asset_dx_dy(&mut self, image: &ImageAsset, x: f32, y: f32) {
         let image = image.skia_image();
-
 
         if let Some(image) = image {
             let width = image.width() as f32;
             let height = image.height() as f32;
 
-            self.draw_image_src_xywh_dst_xywh(
-                &image, 0., 0., width, height, x, y, width, height,
-            )
+            self.draw_image_src_xywh_dst_xywh(&image, 0., 0., width, height, x, y, width, height)
         }
     }
 
@@ -84,20 +65,15 @@ impl Context {
             let w = image.width() as f32;
             let h = image.height() as f32;
 
-            self.draw_image_src_xywh_dst_xywh(
-                &image, 0., 0., w, h, x, y, width, height,
-            )
+            self.draw_image_src_xywh_dst_xywh(&image, 0., 0., w, h, x, y, width, height)
         }
     }
-
 
     pub fn draw_image_asset_with_rect(&mut self, image: &ImageAsset, dst_rect: impl Into<Rect>) {
         let image = image.skia_image();
 
         if let Some(image) = image {
-            self.draw_image_with_rect(
-                &image, dst_rect,
-            )
+            self.draw_image_with_rect(&image, dst_rect)
         }
     }
 

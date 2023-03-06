@@ -1,10 +1,10 @@
 use std::os::raw::c_void;
 
-use skia_safe::{Color, ColorType, gpu, PixelGeometry, Surface, SurfaceProps, SurfacePropsFlags};
+use skia_safe::{gpu, Color, ColorType, PixelGeometry, Surface, SurfaceProps, SurfacePropsFlags};
 
-use crate::context::{Context, Device, State};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
+use crate::context::{Context, Device, State};
 
 #[cfg(feature = "metal")]
 impl Context {

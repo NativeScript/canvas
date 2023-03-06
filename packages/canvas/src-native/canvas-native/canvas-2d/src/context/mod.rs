@@ -1,8 +1,8 @@
 use std::os::raw::c_float;
 use std::sync::{Arc, RwLock};
 
-use parking_lot::{Mutex, RawMutex, RawRwLock};
 use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{Mutex, RawMutex, RawRwLock};
 use skia_safe::{Color, Image, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
@@ -296,10 +296,7 @@ impl Context {
 
     pub fn read_pixels_to_encoded_data(&mut self) -> Option<skia_safe::Data> {
         let image = self.surface.image_snapshot();
-        image.encode_to_data_with_quality(
-            skia_safe::EncodedImageFormat::PNG,
-            100,
-        )
+        image.encode_to_data_with_quality(skia_safe::EncodedImageFormat::PNG, 100)
     }
 
     pub fn snapshot(&mut self) -> Image {

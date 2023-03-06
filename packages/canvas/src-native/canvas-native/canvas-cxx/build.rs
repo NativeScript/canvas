@@ -15,6 +15,6 @@ fn main() {
 
     if !bridges.is_empty() {
         let _ = cxx_build::bridges(bridges.as_slice())
-            .flag_if_supported("-frtti");
+            .flag_if_supported("-std=c++17");
     }
 }

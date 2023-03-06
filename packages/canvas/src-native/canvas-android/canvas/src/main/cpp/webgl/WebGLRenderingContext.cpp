@@ -2663,7 +2663,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          auto ret = canvas_native_webgl_get_error(
                                                                  this->GetState());
 
-                                                         return {(int32_t)ret};
+                                                         return {(int32_t) ret};
                                                      }
         );
     } else if (methodName == "getExtension") {
@@ -3417,7 +3417,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                              return {canvas_native_webgl_result_get_i32(
                                                                                      *val)};
                                                                          case WebGLResultType::U32:
-                                                                             return {(int32_t)canvas_native_webgl_result_get_u32(
+                                                                             return {(int32_t) canvas_native_webgl_result_get_u32(
                                                                                      *val)};
                                                                      }
                                                                  }

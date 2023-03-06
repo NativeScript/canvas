@@ -16,7 +16,6 @@
 #include <cmath>
 #include "Helpers.h"
 
-
 #include "ImageAssetImpl.h"
 #include "ImageBitmapImpl.h"
 #include "RafImpl.h"
@@ -74,7 +73,6 @@ public:
 
     jsi::Value GetParameterInternal(jsi::Runtime &runtime, uint32_t pnameValue,
                                     rust::Box<WebGLResult> result);
-
 
     static inline jsi::Value GetProperty(const std::string &methodName) {
         if (methodName == "DEPTH_BUFFER_BIT") { return {0x00000100}; }

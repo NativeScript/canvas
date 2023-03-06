@@ -5,6 +5,7 @@
 #pragma once
 #pragma process_pending_includes
 
+#include "v8runtime/V8Runtime.h"
 #include "rust/cxx.h"
 #include <vector>
 
@@ -16,12 +17,13 @@
 #include "CanvasPattern.h"
 #include "ImageDataImpl.h"
 #include "TextMetricsImpl.h"
-#include "../ImageAssetImpl.h"
-#include "../ImageBitmapImpl.h"
+#include "ImageAssetImpl.h"
+#include "ImageBitmapImpl.h"
 #include "Path2D.h"
+#include "OnRafCallback.h"
 #include "RafImpl.h"
+#include "webgl/WebGLRenderingContextBase.h"
 
-#include "v8runtime/V8Runtime.h"
 
 using namespace facebook;
 

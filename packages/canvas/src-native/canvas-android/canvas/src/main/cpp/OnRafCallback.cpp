@@ -16,3 +16,8 @@ void OnRafCallback::OnFrame(int64_t ts) const {
         WebGLRenderingContextBase::Flush(this->context_);
     }
 }
+
+void OnRafCallbackOnFrame(intptr_t callback, int64_t ts) {
+    auto ptr = reinterpret_cast<OnRafCallback *>(reinterpret_cast<intptr_t *>(callback));
+    ptr->OnFrame(ts);
+}

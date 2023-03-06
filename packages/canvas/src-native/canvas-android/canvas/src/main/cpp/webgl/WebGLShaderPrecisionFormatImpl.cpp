@@ -9,11 +9,12 @@ WebGLShaderPrecisionFormatImpl::WebGLShaderPrecisionFormatImpl(
         std::move(shader)) {}
 
 std::vector<jsi::PropNameID> WebGLShaderPrecisionFormatImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("rangeMin")),
-            jsi::PropNameID::forUtf8(rt, std::string("rangeMax")),
-            jsi::PropNameID::forUtf8(rt, std::string("precision"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(3);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("rangeMin")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("rangeMax")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("precision")));
+    return ret;
 }
 
 jsi::Value WebGLShaderPrecisionFormatImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

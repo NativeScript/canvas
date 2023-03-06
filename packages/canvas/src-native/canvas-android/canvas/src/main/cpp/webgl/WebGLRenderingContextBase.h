@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#pragma process_pending_includes
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/webgl.rs.h"
@@ -36,13 +37,14 @@ public:
 
     static void Flush(intptr_t context);
 
-    virtual WebGLState &GetState();
+    WebGLState &GetState();
 
     void SetRaf(std::shared_ptr<RafImpl> raf);
 
     RafImpl *GetRaf();
 
     WebGLRenderingVersion GetVersion() const;
+
 
 private:
     rust::Box<WebGLState> state_;

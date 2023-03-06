@@ -18,8 +18,9 @@ EXT_texture_filter_anisotropicImpl::get(jsi::Runtime &runtime, const jsi::PropNa
 
 std::vector<jsi::PropNameID>
 EXT_texture_filter_anisotropicImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("MAX_TEXTURE_MAX_ANISOTROPY_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("TEXTURE_MAX_ANISOTROPY_EXT"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(2);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("MAX_TEXTURE_MAX_ANISOTROPY_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("TEXTURE_MAX_ANISOTROPY_EXT")));
+    return ret;
 }

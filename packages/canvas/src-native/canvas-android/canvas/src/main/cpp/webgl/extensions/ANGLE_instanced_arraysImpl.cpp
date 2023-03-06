@@ -9,12 +9,14 @@ ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(rust::Box<ANGLE_instanced
         std::move(arrays)) {}
 
 std::vector<jsi::PropNameID> ANGLE_instanced_arraysImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("drawArraysInstancedANGLE")),
-            jsi::PropNameID::forUtf8(rt, std::string("drawElementsInstancedANGLE")),
-            jsi::PropNameID::forUtf8(rt, std::string("vertexAttribDivisorANGLE")),
-            jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("drawArraysInstancedANGLE")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("drawElementsInstancedANGLE")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttribDivisorANGLE")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE")));
+    return ret;
 }
 
 jsi::Value ANGLE_instanced_arraysImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

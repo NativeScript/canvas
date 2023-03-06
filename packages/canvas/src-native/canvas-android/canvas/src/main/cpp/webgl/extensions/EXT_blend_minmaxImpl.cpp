@@ -5,10 +5,11 @@
 #include "EXT_blend_minmaxImpl.h"
 
 std::vector<jsi::PropNameID> EXT_blend_minmaxImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("MIN_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("MAX_EXT"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(2);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("MIN_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("MAX_EXT")));
+    return ret;
 }
 
 jsi::Value EXT_blend_minmaxImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

@@ -41,8 +41,8 @@ set(CARGO_MANIFEST ${PROJECT_NATIVE_ROOT_DIR}/Cargo.toml)
 set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
-set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs)
-set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs.cc)
+set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/constants.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs)
+set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/constants.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs.cc)
 
 set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -frtti -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
 
@@ -75,17 +75,10 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/main/cpp/webgl22
         ${PROJECT_SOURCE_DIR}/src/main/jsi
         ${PROJECT_SOURCE_DIR}/src/main/v8runtime
-)
-
-include_directories(
-        canvasnativev8
-        PUBLIC
         ${CARGO_TARGET_DIR}/cxxbridge
 )
 
-
 set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
-
 
 # Add a custom command that builds the rust crate and generates C++ bridge code
 add_custom_command(

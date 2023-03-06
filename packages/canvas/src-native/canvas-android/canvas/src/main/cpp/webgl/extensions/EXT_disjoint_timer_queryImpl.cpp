@@ -9,23 +9,24 @@ EXT_disjoint_timer_queryImpl::EXT_disjoint_timer_queryImpl(
         std::move(query)) {}
 
 std::vector<jsi::PropNameID> EXT_disjoint_timer_queryImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("QUERY_COUNTER_BITS_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("CURRENT_QUERY_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("QUERY_RESULT_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("QUERY_RESULT_AVAILABLE_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("TIME_ELAPSED_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("TIMESTAMP_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("GPU_DISJOINT_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("createQueryExt")),
-            jsi::PropNameID::forUtf8(rt, std::string("deleteQueryExt")),
-            jsi::PropNameID::forUtf8(rt, std::string("isQueryExt")),
-            jsi::PropNameID::forUtf8(rt, std::string("beginQueryExt")),
-            jsi::PropNameID::forUtf8(rt, std::string("endQueryExt")),
-            jsi::PropNameID::forUtf8(rt, std::string("queryCounterExt")),
-            jsi::PropNameID::forUtf8(rt, std::string("getQueryExt")),
-            jsi::PropNameID::forUtf8(rt, std::string("getQueryObjectExt")),
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(15);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("QUERY_COUNTER_BITS_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("CURRENT_QUERY_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("QUERY_RESULT_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("QUERY_RESULT_AVAILABLE_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("TIME_ELAPSED_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("TIMESTAMP_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("GPU_DISJOINT_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("createQueryExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("deleteQueryExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("isQueryExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("beginQueryExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("endQueryExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("queryCounterExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("getQueryExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("getQueryObjectExt")));
+    return ret;
 }
 
 

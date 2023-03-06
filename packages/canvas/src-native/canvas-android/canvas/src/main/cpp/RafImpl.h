@@ -3,11 +3,12 @@
 //
 
 #pragma once
+#pragma process_pending_includes
 
-#include <cstdint>
 #include "rust/cxx.h"
-#include "OnRafCallback.h"
 #include "canvas-android/src/lib.rs.h"
+#include <cstdint>
+#include "OnRafCallback.h"
 
 class RafImpl {
 public:

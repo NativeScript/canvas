@@ -15,7 +15,8 @@ WEBGL_compressed_texture_etc1Impl::get(jsi::Runtime &runtime, const jsi::PropNam
 }
 
 std::vector<jsi::PropNameID> WEBGL_compressed_texture_etc1Impl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_ETC1_WEBGL"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_ETC1_WEBGL")));
+    return ret;
 }

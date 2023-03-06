@@ -6,12 +6,14 @@
 
 
 std::vector<jsi::PropNameID> EXT_color_buffer_half_floatImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("RGBA16F_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("RGB16F_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("UNSIGNED_NORMALIZED_EXT")),
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("RGBA16F_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("RGB16F_EXT")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("UNSIGNED_NORMALIZED_EXT")));
+    return ret;
 }
 
 jsi::Value

@@ -100,11 +100,19 @@ jsi::Value OES_vertex_array_objectImpl::get(jsi::Runtime &runtime, const jsi::Pr
 }
 
 std::vector<jsi::PropNameID> OES_vertex_array_objectImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ARRAY_BINDING_OES")),
-            jsi::PropNameID::forUtf8(rt, std::string("createVertexArrayOES")),
-            jsi::PropNameID::forUtf8(rt, std::string("deleteVertexArrayOES")),
-            jsi::PropNameID::forUtf8(rt, std::string("isVertexArrayOES")),
-            jsi::PropNameID::forUtf8(rt, std::string("bindVertexArrayOES")),
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(5);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ARRAY_BINDING_OES")));
+
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("createVertexArrayOES")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("deleteVertexArrayOES")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("isVertexArrayOES")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("bindVertexArrayOES")));
+
+    return ret;
 }

@@ -14,8 +14,9 @@ jsi::Value OES_standard_derivativesImpl::get(jsi::Runtime &runtime, const jsi::P
 }
 
 std::vector<jsi::PropNameID> OES_standard_derivativesImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("FRAGMENT_SHADER_DERIVATIVE_HINT_OES"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("FRAGMENT_SHADER_DERIVATIVE_HINT_OES")));
+    return ret;
 }
 

@@ -20,10 +20,12 @@ jsi::Value EXT_sRGBImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name)
 }
 
 std::vector<jsi::PropNameID> EXT_sRGBImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("SRGB_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("SRGB_ALPHA_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("SRGB8_ALPHA8_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("SRGB_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("SRGB_ALPHA_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("SRGB8_ALPHA8_EXT")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT")));
+    return ret;
 }

@@ -3,8 +3,7 @@
 //
 
 #include "CanvasRenderingContext2DImpl.h"
-#include "../webgl/WebGLRenderingContextBase.h"
-#include "RafImpl.h"
+
 
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(

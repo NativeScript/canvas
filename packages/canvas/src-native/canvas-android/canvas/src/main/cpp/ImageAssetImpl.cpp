@@ -22,6 +22,7 @@ std::vector<jsi::PropNameID> ImageAssetImpl::getPropertyNames(jsi::Runtime &rt) 
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fromBytesCb")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("saveSync")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("saveCb")));
+    return ret;
 }
 
 jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

@@ -14,7 +14,7 @@ jsi::Value OES_element_index_uintImpl::get(jsi::Runtime &runtime, const jsi::Pro
 }
 
 std::vector<jsi::PropNameID> OES_element_index_uintImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("UNSIGNED_INT"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("UNSIGNED_INT")));
+    return ret;
 }

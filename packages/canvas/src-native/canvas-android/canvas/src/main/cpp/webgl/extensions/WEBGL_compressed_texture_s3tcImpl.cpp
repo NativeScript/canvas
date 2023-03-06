@@ -21,10 +21,18 @@ WEBGL_compressed_texture_s3tcImpl::get(jsi::Runtime &runtime, const jsi::PropNam
 }
 
 std::vector<jsi::PropNameID> WEBGL_compressed_texture_s3tcImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_S3TC_DXT1_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_S3TC_DXT1_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_S3TC_DXT3_EXT")),
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_S3TC_DXT5_EXT"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_S3TC_DXT1_EXT")));
+
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_S3TC_DXT1_EXT")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt,
+                                     std::string("COMPRESSED_RGBA_S3TC_DXT3_EXT")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt,
+                                     std::string("COMPRESSED_RGBA_S3TC_DXT5_EXT")));
+    return ret;
 }

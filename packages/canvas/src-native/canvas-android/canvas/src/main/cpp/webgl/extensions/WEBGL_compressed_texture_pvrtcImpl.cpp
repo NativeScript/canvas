@@ -22,10 +22,18 @@ WEBGL_compressed_texture_pvrtcImpl::get(jsi::Runtime &runtime, const jsi::PropNa
 
 std::vector<jsi::PropNameID>
 WEBGL_compressed_texture_pvrtcImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_PVRTC_4BPPV1_IMG")),
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_PVRTC_4BPPV1_IMG")),
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_PVRTC_2BPPV1_IMG")),
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_PVRTC_2BPPV1_IMG"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_PVRTC_4BPPV1_IMG")));
+
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_PVRTC_4BPPV1_IMG")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt,
+                                     std::string("COMPRESSED_RGB_PVRTC_2BPPV1_IMG")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt,
+                                     std::string("COMPRESSED_RGBA_PVRTC_2BPPV1_IMG")));
+    return ret;
 }

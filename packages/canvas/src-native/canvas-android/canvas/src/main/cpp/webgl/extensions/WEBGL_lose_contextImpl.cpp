@@ -44,8 +44,11 @@ jsi::Value WEBGL_lose_contextImpl::get(jsi::Runtime &runtime, const jsi::PropNam
 }
 
 std::vector<jsi::PropNameID> WEBGL_lose_contextImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("loseContext")),
-            jsi::PropNameID::forUtf8(rt, std::string("restoreContext"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(2);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("loseContext")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("restoreContext")));
+    return ret;
 }

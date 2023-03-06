@@ -129,42 +129,43 @@ jsi::Value WEBGL_draw_buffersImpl::get(jsi::Runtime &runtime, const jsi::PropNam
 }
 
 std::vector<jsi::PropNameID> WEBGL_draw_buffersImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("drawBuffersWEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT0_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT1_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT2_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT3_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT4_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT5_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT6_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT7_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT8_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT9_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT10_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT11_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT12_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT13_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT14_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT15_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER0_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER1_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER2_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER3_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER4_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER5_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER6_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER7_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER8_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER9_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER10_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER11_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER12_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER13_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER14_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER15_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("MAX_COLOR_ATTACHMENTS_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("MAX_DRAW_BUFFERS_WEBGL")),
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(35);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("drawBuffersWEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT0_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT1_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT2_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT3_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT4_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT5_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT6_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT7_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT8_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT9_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT10_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT11_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT12_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT13_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT14_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("COLOR_ATTACHMENT15_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER0_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER1_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER2_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER3_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER4_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER5_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER6_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER7_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER8_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER9_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER10_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER11_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER12_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER13_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER14_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("DRAW_BUFFER15_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("MAX_COLOR_ATTACHMENTS_WEBGL")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("MAX_DRAW_BUFFERS_WEBGL")));
+    return ret;
 }
 

@@ -13,7 +13,8 @@ jsi::Value OES_texture_half_floatImpl::get(jsi::Runtime &runtime, const jsi::Pro
 }
 
 std::vector<jsi::PropNameID> OES_texture_half_floatImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("HALF_FLOAT_OES"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("HALF_FLOAT_OES")));
+    return ret;
 }

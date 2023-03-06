@@ -19,11 +19,17 @@ WEBGL_compressed_texture_atcImpl::get(jsi::Runtime &runtime, const jsi::PropName
 }
 
 std::vector<jsi::PropNameID> WEBGL_compressed_texture_atcImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_ATC_WEBGL")),
-            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL")),
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(3);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_ATC_WEBGL")));
+
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL")));
+    ret.emplace_back(
             jsi::PropNameID::forUtf8(rt,
-                                     std::string("COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL"))
-    };
+                                     std::string("COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL")));
+
+    return ret;
 }
 

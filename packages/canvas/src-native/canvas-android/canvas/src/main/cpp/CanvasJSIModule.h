@@ -2,9 +2,10 @@
 // Created by Osei Fortune on 25/02/2023.
 //
 
-#ifndef CANVAS_ANDROID_CANVASJSIMODULE_H
-#define CANVAS_ANDROID_CANVASJSIMODULE_H
+#pragma once
 
+#include <memory>
+#include <array>
 #include <array>
 #include "v8runtime/JSIV8ValueConverter.h"
 #include "canvas2d/CanvasRenderingContext2DImpl.h"
@@ -26,16 +27,15 @@
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
 
-#include <array>
 using namespace facebook;
 
 template<typename NativeFunc>
 static void
 createGlobalFunc(jsi::Runtime &jsiRuntime, const char *prop, int paramCount, NativeFunc &&func) {
     auto f = jsi::Function::createFromHostFunction(jsiRuntime,
-                                              jsi::PropNameID::forAscii(jsiRuntime, prop),
-                                              paramCount,
-                                              std::forward<NativeFunc>(func));
+                                                   jsi::PropNameID::forAscii(jsiRuntime, prop),
+                                                   paramCount,
+                                                   std::forward<NativeFunc>(func));
     jsiRuntime.global().setProperty(jsiRuntime, prop, std::move(f));
 }
 
@@ -44,12 +44,13 @@ createGlobalFunc(jsi::Runtime &jsiRuntime, const char *prop, int paramCount, Nat
 
 
 template<typename NativeFunc>
-static void createFunc(jsi::Runtime &jsiRuntime, jsi::Object &object, const char *prop, int paramCount,
-                       NativeFunc &&func) {
+static void
+createFunc(jsi::Runtime &jsiRuntime, jsi::Object &object, const char *prop, int paramCount,
+           NativeFunc &&func) {
     auto f = jsi::Function::createFromHostFunction(jsiRuntime,
-                                              jsi::PropNameID::forAscii(jsiRuntime, prop),
-                                              paramCount,
-                                              std::forward<NativeFunc>(func));
+                                                   jsi::PropNameID::forAscii(jsiRuntime, prop),
+                                                   paramCount,
+                                                   std::forward<NativeFunc>(func));
     object.setProperty(jsiRuntime, prop, std::move(f));
 }
 
@@ -61,4 +62,3 @@ public:
     static void install(facebook::jsi::Runtime &rt);
 };
 
-#endif //CANVAS_ANDROID_CANVASJSIMODULE_H

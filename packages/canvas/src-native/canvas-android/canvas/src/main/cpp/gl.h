@@ -2,8 +2,7 @@
 // Created by Osei Fortune on 04/03/2023.
 //
 
-#ifndef CANVAS_ANDROID_GL_H
-#define CANVAS_ANDROID_GL_H
+#pragma once
 
 #include "canvas-cxx/src/constants.rs.h"
 
@@ -20,4 +19,3 @@
 #include <OpenGLES/ES3/gl.h>
 #endif
 
-#endif //CANVAS_ANDROID_GL_H

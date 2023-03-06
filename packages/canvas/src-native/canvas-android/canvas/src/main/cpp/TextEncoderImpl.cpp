@@ -10,10 +10,11 @@
 TextEncoderImpl::TextEncoderImpl(rust::Box<TextEncoder> encoder) : encoder_(std::move(encoder)) {}
 
 std::vector<jsi::PropNameID> TextEncoderImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("encoding")),
-            jsi::PropNameID::forUtf8(rt, std::string("encode"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(2);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("encoding")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("encode")));
+    return ret;
 }
 
 jsi::Value TextEncoderImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

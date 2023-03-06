@@ -2,8 +2,6 @@
 // Created by Osei Fortune on 19/04/2022.
 //
 
-#pragma once
-
 #include "OnRafCallback.h"
 
 OnRafCallback::OnRafCallback(intptr_t context, uint32_t version) : context_(context),

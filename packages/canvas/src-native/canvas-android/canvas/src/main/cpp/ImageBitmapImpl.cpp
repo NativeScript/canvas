@@ -15,12 +15,12 @@ jsi::Value ImageBitmapImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &na
         if (this->closed_) {
             return {0};
         }
-        return {(int32_t)canvas_native_image_asset_width(this->GetImageAsset())};
+        return {(int32_t) canvas_native_image_asset_width(this->GetImageAsset())};
     } else if (methodName == "height") {
         if (this->closed_) {
             return {0};
         }
-        return {(int32_t)canvas_native_image_asset_height(this->GetImageAsset())};
+        return {(int32_t) canvas_native_image_asset_height(this->GetImageAsset())};
     } else if (methodName == "close") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
@@ -39,11 +39,12 @@ jsi::Value ImageBitmapImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &na
 
 
 std::vector<jsi::PropNameID> ImageBitmapImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("width")),
-            jsi::PropNameID::forUtf8(rt, std::string("height")),
-            jsi::PropNameID::forUtf8(rt, std::string("close"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(3);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("width")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("height")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("close")));
+    return ret;
 }
 
 

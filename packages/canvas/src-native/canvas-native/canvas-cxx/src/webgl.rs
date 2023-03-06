@@ -80,6 +80,7 @@ pub(crate) mod ffi {
         include!("canvas-cxx/src/canvas2d.rs.h");
         type CanvasRenderingContext2D = crate::canvas2d::CanvasRenderingContext2D;
         type ImageAsset = crate::canvas2d::ImageAsset;
+        type PaintStyle = crate::canvas2d::PaintStyle;
     }
 
     extern "Rust" {
@@ -115,7 +116,15 @@ pub(crate) mod ffi {
         type WEBGL_depth_texture;
         type WEBGL_draw_buffers;
 
+
+        pub fn canvas_native_context_create_pattern_webgl(
+            source: &mut WebGLState,
+            context: &mut CanvasRenderingContext2D,
+            repetition: &str,
+        ) -> Box<PaintStyle>;
+
         /* GL */
+
         fn canvas_native_webgl_make_current(state: &mut WebGLState) -> bool;
         fn canvas_native_webgl_swap_buffers(state: &mut WebGLState) -> bool;
 
@@ -1199,6 +1208,47 @@ impl Into<ffi::WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType
         }
     }
 }
+
+
+
+pub fn canvas_native_context_create_pattern_webgl(
+    source: &mut WebGLState,
+    context: &mut crate::canvas2d::CanvasRenderingContext2D,
+    repetition: &str,
+) -> Box<crate::canvas2d::PaintStyle> {
+    Box::new(crate::canvas2d::PaintStyle(crate::canvas2d::Repetition::try_from(repetition).map_or(
+        None,
+        |repetition| {
+            let state = source.get_inner();
+            state.make_current();
+            let mut width = state.get_drawing_buffer_width();
+            let mut height = state.get_drawing_buffer_height();
+
+            let mut buf = vec![0u8; (width * height * 4) as usize];
+
+            unsafe {
+                gl_bindings::Finish();
+                gl_bindings::ReadPixels(
+                    0,
+                    0,
+                    width,
+                    height,
+                    gl_bindings::RGBA,
+                    gl_bindings::UNSIGNED_BYTE,
+                    buf.as_mut_ptr() as *mut c_void,
+                );
+            }
+
+            context.make_current();
+            canvas_2d::utils::image::from_image_slice(buf.as_slice(), width, height).map(|image| {
+                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                    context.get_context().create_pattern(image, repetition),
+                )
+            })
+        },
+    )))
+}
+
 
 /* GL */
 

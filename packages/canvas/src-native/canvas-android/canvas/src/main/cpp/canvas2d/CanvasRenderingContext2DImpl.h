@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "canvas-cxx/src/canvas2d.rs.h"
+#include "canvas-cxx/src/webgl.rs.h"
 #include "../Helpers.h"
 
 #include "CanvasGradient.h"

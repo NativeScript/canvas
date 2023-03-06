@@ -8,20 +8,20 @@ ImageAssetImpl::ImageAssetImpl(rust::Box<ImageAsset> asset)
         : asset_(std::move(asset)) {}
 
 std::vector<jsi::PropNameID> ImageAssetImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("width")),
-            jsi::PropNameID::forUtf8(rt, std::string("height")),
-            jsi::PropNameID::forUtf8(rt, std::string("error")),
-            jsi::PropNameID::forUtf8(rt, std::string("scale")),
-            jsi::PropNameID::forUtf8(rt, std::string("fromUrlSync")),
-            jsi::PropNameID::forUtf8(rt, std::string("fromUrlCb")),
-            jsi::PropNameID::forUtf8(rt, std::string("fromFileSync")),
-            jsi::PropNameID::forUtf8(rt, std::string("fromFileCb")),
-            jsi::PropNameID::forUtf8(rt, std::string("fromBytesSync")),
-            jsi::PropNameID::forUtf8(rt, std::string("fromBytesCb")),
-            jsi::PropNameID::forUtf8(rt, std::string("saveSync")),
-            jsi::PropNameID::forUtf8(rt, std::string("saveCb")),
-    };
+    std::vector<jsi::PropNameID> ret ;
+    ret.reserve(12);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("width")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("height")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("error")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("scale")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fromUrlSync")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fromUrlCb")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fromFileSync")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fromFileCb")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fromBytesSync")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fromBytesCb")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("saveSync")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("saveCb")));
 }
 
 jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

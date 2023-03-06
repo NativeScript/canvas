@@ -10,7 +10,8 @@
 #include "Helpers.h"
 #include "RafImpl.h"
 #include <vector>
-
+#include <cstdint>
+#include <memory>
 
 enum class WebGLRenderingVersion : uint8_t {
     V1,

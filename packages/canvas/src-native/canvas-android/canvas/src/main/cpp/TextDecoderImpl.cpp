@@ -7,10 +7,11 @@
 TextDecoderImpl::TextDecoderImpl(rust::Box<TextDecoder> decoder) : decoder_(std::move(decoder)) {}
 
 std::vector<jsi::PropNameID> TextDecoderImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("encoding")),
-            jsi::PropNameID::forUtf8(rt, std::string("decode"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(2);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("encoding")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("decode")));
+    return ret;
 }
 
 jsi::Value TextDecoderImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {

@@ -4,7 +4,6 @@
 
 #include "CanvasGradient.h"
 
-
 CanvasGradient::CanvasGradient(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 
 

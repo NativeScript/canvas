@@ -2,9 +2,10 @@
 // Created by Osei Fortune on 25/02/2023.
 //
 
-#ifndef CANVAS_ANDROID_HELPERS_H
-#define CANVAS_ANDROID_HELPERS_H
+#pragma once
 
+#include <memory>
+#include "rust/cxx.h"
 #include "v8runtime/V8Runtime.h"
 
 using namespace facebook;
@@ -39,5 +40,12 @@ getHostObject(jsi::Runtime &runtime, const facebook::jsi::Value &value) {
     return nullptr;
 }
 
+template<typename T>
+inline static std::shared_ptr<T>
+getHostObject(jsi::Runtime &runtime, const facebook::jsi::Object &value) {
+    if (value.template isHostObject(runtime)) {
+        return value.template asHostObject<T>(runtime);
+    }
+    return nullptr;
+}
 
-#endif //CANVAS_ANDROID_HELPERS_H

@@ -70,10 +70,6 @@ public:
 
     WebGLRenderingContext(rust::Box<WebGLState> state, WebGLRenderingVersion version);
 
-    ~WebGLRenderingContext() {
-
-    }
-
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;

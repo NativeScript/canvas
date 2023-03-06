@@ -9,20 +9,19 @@ Path2D::Path2D(rust::Box<Path> path)
         : path_(std::move(path)) {}
 
 std::vector<jsi::PropNameID> Path2D::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret({
-            jsi::PropNameID::forUtf8(rt, std::string("addPath")),
-            jsi::PropNameID::forUtf8(rt, std::string("arc")),
-            jsi::PropNameID::forUtf8(rt, std::string("arcTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("closePath")),
-            jsi::PropNameID::forUtf8(rt, std::string("ellipse")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("moveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("rect")),
-            jsi::PropNameID::forUtf8(rt, std::string("__toSVG"))
-    });
-
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(11);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("addPath")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arc")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arcTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("closePath")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("ellipse")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("moveTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rect")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__toSVG")));
     return ret;
 }
 

@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "canvas2d/CanvasRenderingContext2DImpl.h"
+#include "RafImpl.h"
+#include <vector>
 #include "rust/cxx.h"
 #include "canvas-cxx/src/webgl.rs.h"
 #include "v8runtime/V8Runtime.h"
@@ -18,6 +21,9 @@
 #include "WebGLSyncImpl.h"
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArrayObject.h"
+#include "gl.h"
+#include "canvas-cxx/src/constants.rs.h"
+
 
 using namespace facebook;
 
@@ -406,7 +412,7 @@ public:
 
         /* Data types */
 
-        if (methodName == "INVALID_INDEX") { return {(double)0xFFFFFFFF}; }
+        if (methodName == "INVALID_INDEX") { return {(double) 0xFFFFFFFF}; }
         if (methodName == "TIMEOUT_IGNORED") { return {-1}; }
 
         /* Vertex attributes */

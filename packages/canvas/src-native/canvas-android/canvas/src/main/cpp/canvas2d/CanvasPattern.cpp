@@ -3,7 +3,7 @@
 //
 
 #include "CanvasPattern.h"
-
+#include "canvas-cxx/src/canvas2d.rs.h"
 
 CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 

@@ -27,69 +27,70 @@ CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
 
 
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
-    return {
-            jsi::PropNameID::forUtf8(rt, std::string("__resize")),
-            jsi::PropNameID::forUtf8(rt, std::string("font")),
-            jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")),
-            jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingEnabled")),
-            jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingQuality")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineDashOffset")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineJoin")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineCap")),
-            jsi::PropNameID::forUtf8(rt, std::string("miterLimit")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowColor")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowBlur")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetX")),
-            jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetY")),
-            jsi::PropNameID::forUtf8(rt, std::string("textAlign")),
-            jsi::PropNameID::forUtf8(rt, std::string("globalCompositeOperation")),
-            jsi::PropNameID::forUtf8(rt, std::string("fillStyle")),
-            jsi::PropNameID::forUtf8(rt, std::string("strokeStyle")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineWidth")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineDash")),
-            jsi::PropNameID::forUtf8(rt, std::string("addHitRegion")),
-            jsi::PropNameID::forUtf8(rt, std::string("arc")),
-            jsi::PropNameID::forUtf8(rt, std::string("arcTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("beginPath")),
-            jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("clearHitRegions")),
-            jsi::PropNameID::forUtf8(rt, std::string("clearRect")),
-            jsi::PropNameID::forUtf8(rt, std::string("clip")),
-            jsi::PropNameID::forUtf8(rt, std::string("closePath")),
-            jsi::PropNameID::forUtf8(rt, std::string("createImageData")),
-            jsi::PropNameID::forUtf8(rt, std::string("createLinearGradient")),
-            jsi::PropNameID::forUtf8(rt, std::string("createPattern")),
-            jsi::PropNameID::forUtf8(rt, std::string("drawImage")),
-            jsi::PropNameID::forUtf8(rt, std::string("ellipse")),
-            jsi::PropNameID::forUtf8(rt, std::string("fill")),
-            jsi::PropNameID::forUtf8(rt, std::string("fillRect")),
-            jsi::PropNameID::forUtf8(rt, std::string("fillText")),
-            jsi::PropNameID::forUtf8(rt, std::string("getImageData")),
-            jsi::PropNameID::forUtf8(rt, std::string("getLineDash")),
-            jsi::PropNameID::forUtf8(rt, std::string("isPointInPath")),
-            jsi::PropNameID::forUtf8(rt, std::string("isPointInStroke")),
-            jsi::PropNameID::forUtf8(rt, std::string("lineTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("measureText")),
-            jsi::PropNameID::forUtf8(rt, std::string("moveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("putImageData")),
-            jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")),
-            jsi::PropNameID::forUtf8(rt, std::string("rect")),
-            jsi::PropNameID::forUtf8(rt, std::string("removeHitRegion")),
-            jsi::PropNameID::forUtf8(rt, std::string("resetTransform")),
-            jsi::PropNameID::forUtf8(rt, std::string("restore")),
-            jsi::PropNameID::forUtf8(rt, std::string("rotate")),
-            jsi::PropNameID::forUtf8(rt, std::string("save")),
-            jsi::PropNameID::forUtf8(rt, std::string("scale")),
-            jsi::PropNameID::forUtf8(rt, std::string("scrollPathIntoView")),
-            jsi::PropNameID::forUtf8(rt, std::string("setLineDash")),
-            jsi::PropNameID::forUtf8(rt, std::string("setTransform")),
-            jsi::PropNameID::forUtf8(rt, std::string("stroke")),
-            jsi::PropNameID::forUtf8(rt, std::string("strokeRect")),
-            jsi::PropNameID::forUtf8(rt, std::string("strokeText")),
-            jsi::PropNameID::forUtf8(rt, std::string("transform")),
-            jsi::PropNameID::forUtf8(rt, std::string("translate")),
-            jsi::PropNameID::forUtf8(rt, std::string("__toDataURL"))
-    };
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(61);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__resize")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("font")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingEnabled")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingQuality")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineDashOffset")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineJoin")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineCap")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("miterLimit")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowColor")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowBlur")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetX")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetY")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("textAlign")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("globalCompositeOperation")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fillStyle")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("strokeStyle")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineWidth")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineDash")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("addHitRegion")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arc")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arcTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("beginPath")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearHitRegions")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearRect")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clip")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("closePath")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createImageData")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createLinearGradient")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createPattern")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawImage")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("ellipse")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fill")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fillRect")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fillText")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getImageData")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getLineDash")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isPointInPath")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isPointInStroke")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("measureText")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("moveTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("putImageData")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rect")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("removeHitRegion")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("resetTransform")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("restore")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rotate")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("save")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("scale")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("scrollPathIntoView")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("setLineDash")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("setTransform")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stroke")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("strokeRect")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("strokeText")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("transform")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("translate")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__toDataURL")));
+    return ret;
 }
 
 
@@ -154,13 +155,13 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
                                                                  rust::Str(style.c_str(),
                                                                            style.size()));
         } else if (!value.isNull() && !value.isUndefined() && value.isObject()) {
-            auto gradient = value.asObject(runtime).asHostObject<CanvasGradient>(runtime);
+            auto gradient = getHostObject<CanvasGradient>(runtime, value);
             if (gradient != nullptr) {
                 canvas_native_context_set_fill_style(this->GetContext(), gradient->GetPaintStyle());
                 return;
             }
 
-            auto pattern = value.asObject(runtime).asHostObject<CanvasPattern>(runtime);
+            auto pattern = getHostObject<CanvasPattern>(runtime, value);
 
             if (pattern != nullptr) {
                 canvas_native_context_set_fill_style(this->GetContext(), pattern->GetPaintStyle());
@@ -174,14 +175,14 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
                                                                    rust::Str(style.c_str(),
                                                                              style.size()));
         } else if (!value.isNull() && !value.isUndefined() && value.isObject()) {
-            auto gradient = value.asObject(runtime).asHostObject<CanvasGradient>(runtime);
+            auto gradient = getHostObject<CanvasGradient>(runtime, value);
             if (gradient != nullptr) {
                 canvas_native_context_set_stroke_style(this->GetContext(),
                                                        gradient->GetPaintStyle());
                 return;
             }
 
-            auto pattern = value.asObject(runtime).asHostObject<CanvasPattern>(runtime);
+            auto pattern = getHostObject<CanvasPattern>(runtime, value);
 
             if (pattern != nullptr) {
                 canvas_native_context_set_stroke_style(this->GetContext(),
@@ -514,9 +515,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                          if (count == 1 &&
                                                              arguments[0].isObject()) {
 
-                                                             auto object = arguments[0].asObject(
-                                                                     runtime).asHostObject<ImageDataImpl>(
-                                                                     runtime);
+                                                             auto object = getHostObject<ImageDataImpl>(
+                                                                     runtime, arguments[0]);
 
                                                              if (object != nullptr) {
                                                                  auto width = canvas_native_image_data_get_width(
@@ -591,8 +591,9 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto object = arguments[0].asObject(
                                                                      runtime);
 
-                                                             auto image_asset = object.asHostObject<ImageAssetImpl>(
-                                                                     runtime);
+                                                             auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                     runtime, object);
+
 
                                                              if (image_asset != nullptr) {
                                                                  auto rep = arguments[1].asString(
@@ -615,8 +616,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              }
 
 
-                                                             auto canvas_2d = object.asHostObject<CanvasRenderingContext2DImpl>(
-                                                                     runtime);
+                                                             auto canvas_2d = getHostObject<CanvasRenderingContext2DImpl>(
+                                                                     runtime, object);
                                                              if (canvas_2d != nullptr) {
                                                                  auto rep = arguments[1].asString(
                                                                          runtime).utf8(runtime);
@@ -636,12 +637,12 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                              runtime, ret);
                                                                  }
                                                              }
-                                                             auto webgl = object.asHostObject<WebGLRenderingContextBase>(
-                                                                     runtime);
+                                                             auto webgl = getHostObject<WebGLRenderingContextBase>(
+                                                                     runtime, object);
                                                              if (webgl != nullptr) {
                                                                  auto rep = arguments[1].asString(
                                                                          runtime).utf8(runtime);
-                                                                 rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_webgl(
+                                                                 auto pattern = canvas_native_context_create_pattern_webgl(
                                                                          webgl->GetState(),
                                                                          this->GetContext(),
                                                                          rust::Str(rep.data(),
@@ -722,8 +723,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto dy = static_cast<float>(arguments[2].asNumber());
 
 
-                                                             auto image_asset = image.asHostObject<ImageAssetImpl>(
-                                                                     runtime);
+                                                             auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                     runtime, image);
 
                                                              if (image_asset != nullptr) {
                                                                  canvas_native_context_draw_image_dx_dy_asset(
@@ -734,8 +735,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  return jsi::Value::undefined();
                                                              }
 
-                                                             auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
-                                                                     runtime);
+                                                             auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                                                                     runtime, image);
                                                              if (image_bitmap != nullptr) {
                                                                  canvas_native_context_draw_image_dx_dy_asset(
                                                                          this->GetContext(),
@@ -751,8 +752,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto dWidth = (float) arguments[3].asNumber();
                                                              auto dHeight = (float) arguments[4].asNumber();
 
-                                                             auto image_asset = image.asHostObject<ImageAssetImpl>(
-                                                                     runtime);
+                                                             auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                     runtime, image);
                                                              if (image_asset != nullptr) {
                                                                  canvas_native_context_draw_image_dx_dy_dw_dh_asset(
                                                                          this->GetContext(),
@@ -764,8 +765,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  return jsi::Value::undefined();
                                                              }
 
-                                                             auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
-                                                                     runtime);
+                                                             auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                                                                     runtime, image);
                                                              if (image_bitmap != nullptr) {
                                                                  canvas_native_context_draw_image_dx_dy_dw_dh_asset(
                                                                          this->GetContext(),
@@ -789,8 +790,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto dHeight = (float) arguments[8].asNumber();
 
 
-                                                             auto image_asset = image.asHostObject<ImageAssetImpl>(
-                                                                     runtime);
+                                                             auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                     runtime, image);
                                                              if (image_asset != nullptr) {
                                                                  canvas_native_context_draw_image_asset(
                                                                          this->GetContext(),
@@ -803,8 +804,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  return jsi::Value::undefined();
                                                              }
 
-                                                             auto image_bitmap = image.asHostObject<ImageBitmapImpl>(
-                                                                     runtime);
+                                                             auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                                                                     runtime, image);
                                                              if (image_bitmap != nullptr) {
                                                                  canvas_native_context_draw_image_asset(
                                                                          this->GetContext(),
@@ -861,11 +862,11 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
                                                          if (count == 2) {
-                                                             auto object = getHostObject<Path2D>(runtime, arguments[0]);
+                                                             auto object = getHostObject<Path2D>(
+                                                                     runtime, arguments[0]);
 
-                                                             auto rule = &arguments[1];
                                                              if (object != nullptr) {
-                                                                 auto value = rule->asString(
+                                                                 auto value = arguments[1].asString(
                                                                          runtime).utf8(runtime);
                                                                  canvas_native_context_fill_with_path(
                                                                          this->GetContext(),
@@ -884,9 +885,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                                    value.size()));
                                                                  this->UpdateInvalidateState();
                                                              } else if (arguments[0].isObject()) {
-                                                                 auto object = arguments[0].asObject(
-                                                                         runtime).asHostObject<Path2D>(
-                                                                         runtime);
+                                                                 auto object = getHostObject<Path2D>(
+                                                                         runtime, arguments[0]);
                                                                  if (object != nullptr) {
                                                                      std::string rule("nonzero");
                                                                      canvas_native_context_fill_with_path(
@@ -1036,9 +1036,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                          } else if (count == 4 &&
                                                                     arguments[0].isObject() &&
                                                                     arguments[3].isString()) {
-                                                             auto path = arguments[0].asObject(
-                                                                     runtime).asHostObject<Path2D>(
-                                                                     runtime);
+                                                             auto path = getHostObject<Path2D>(
+                                                                     runtime, arguments[0]);
                                                              auto x = static_cast<float>(arguments[1].asNumber());
                                                              auto y = static_cast<float>(arguments[2].asNumber());
                                                              auto rule = arguments[3].asString(
@@ -1076,9 +1075,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              return {ret};
                                                          } else if (count == 3 &&
                                                                     arguments[0].isObject()) {
-                                                             auto path = arguments[0].asObject(
-                                                                     runtime).asHostObject<Path2D>(
-                                                                     runtime);
+                                                             auto path = getHostObject<Path2D>(
+                                                                     runtime, arguments[0]);
                                                              auto x = static_cast<float>(arguments[1].asNumber());
                                                              auto y = static_cast<float>(arguments[2].asNumber());
                                                              if (path != nullptr) {
@@ -1167,9 +1165,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         auto imageData = arguments[0].asObject(
-                                                                 runtime).asHostObject<ImageDataImpl>(
-                                                                 runtime);
+                                                         auto imageData = getHostObject<ImageDataImpl>(
+                                                                 runtime, arguments[0]);
                                                          if (count == 3) {
                                                              auto dx = static_cast<float>(arguments[1].asNumber());
                                                              auto dy = static_cast<float>(arguments[2].asNumber());
@@ -1366,13 +1363,14 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         if (count == 1) {
-                                                             auto vec = &arguments[0];
-                                                             if (vec->isObject() &&
-                                                                 vec->asObject(runtime).isArray(
-                                                                         runtime)) {
-                                                                 auto segments = vec->asObject(
-                                                                         runtime).asArray(runtime);
+                                                         if (count == 1 &&
+                                                             arguments[0].isObject()) {
+                                                             auto vecObject = arguments[0].asObject(
+                                                                     runtime);
+                                                             if (vecObject.isArray(
+                                                                     runtime)) {
+                                                                 auto segments = vecObject.getArray(
+                                                                         runtime);
                                                                  auto len = segments.size(runtime);
                                                                  std::vector<float> data;
                                                                  for (int i = 0; i < len; ++i) {
@@ -1403,9 +1401,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
 
                                                          if (count == 1 &&
                                                              arguments[0].isObject()) {
-                                                             auto matrix = arguments[0].asObject(
-                                                                     runtime).asHostObject<MatrixImpl>(
-                                                                     runtime);
+                                                             auto matrix = getHostObject<MatrixImpl>(
+                                                                     runtime, arguments[0]);
                                                              if (matrix != nullptr) {
                                                                  canvas_native_context_set_transform_matrix(
                                                                          this->GetContext(),
@@ -1439,9 +1436,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
 
                                                          if (count == 1 &&
                                                              arguments[0].isObject()) {
-                                                             auto path = arguments[0].asObject(
-                                                                     runtime).asHostObject<Path2D>(
-                                                                     runtime);
+                                                             auto path = getHostObject<Path2D>(
+                                                                     runtime, arguments[0]);
                                                              if (path != nullptr) {
                                                                  canvas_native_context_stroke_with_path(
                                                                          this->GetContext(),

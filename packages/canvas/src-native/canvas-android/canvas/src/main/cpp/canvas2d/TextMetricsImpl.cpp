@@ -3,25 +3,25 @@
 //
 
 #include "TextMetricsImpl.h"
-
+#include "canvas-cxx/src/canvas2d.rs.h"
 
 TextMetricsImpl::TextMetricsImpl(rust::Box<TextMetrics> metrics) : metrics_(std::move(metrics)) {}
 
 std::vector<jsi::PropNameID> TextMetricsImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret({
-            jsi::PropNameID::forUtf8(rt, std::string("width")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxLeft")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxRight")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxAscent")),
-            jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxDescent")),
-            jsi::PropNameID::forUtf8(rt, std::string("fontBoundingBoxAscent")),
-            jsi::PropNameID::forUtf8(rt, std::string("fontBoundingBoxDescent")),
-            jsi::PropNameID::forUtf8(rt, std::string("emHeightAscent")),
-            jsi::PropNameID::forUtf8(rt, std::string("emHeightDescent")),
-            jsi::PropNameID::forUtf8(rt, std::string("hangingBaseline")),
-            jsi::PropNameID::forUtf8(rt, std::string("alphabeticBaseline")),
-            jsi::PropNameID::forUtf8(rt, std::string("ideographicBaseline"))
-    });
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(12);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("width")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxLeft")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxRight")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxAscent")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("actualBoundingBoxDescent")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fontBoundingBoxAscent")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fontBoundingBoxDescent")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("emHeightAscent")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("emHeightDescent")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("hangingBaseline")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("alphabeticBaseline")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("ideographicBaseline")));
     return ret;
 }
 

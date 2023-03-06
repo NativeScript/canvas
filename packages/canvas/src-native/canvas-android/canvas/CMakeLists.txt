@@ -71,6 +71,8 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
         ${PROJECT_SOURCE_DIR}/src/main/cpp
         ${PROJECT_SOURCE_DIR}/src/main/cpp/canvas2d
+        ${PROJECT_SOURCE_DIR}/src/main/cpp/webgl
+        ${PROJECT_SOURCE_DIR}/src/main/cpp/webgl22
         ${PROJECT_SOURCE_DIR}/src/main/jsi
         ${PROJECT_SOURCE_DIR}/src/main/v8runtime
 )
@@ -113,9 +115,9 @@ add_library(
         src/main/cpp/v8runtime/V8Runtime.cpp
         src/main/cpp/v8runtime/V8RuntimeFactory.cpp
 
-        src/main/cpp/CanvasJSIModule.cpp
+        src/main/cpp/OnRafCallback.cpp
 
-        src/main/cpp/JSIRuntime.cpp
+        src/main/cpp/RafImpl.cpp
 
         src/main/cpp/canvas2d/CanvasRenderingContext2DImpl.cpp
         src/main/cpp/canvas2d/CanvasGradient.cpp
@@ -134,9 +136,6 @@ add_library(
         src/main/cpp/TextDecoderImpl.cpp
         src/main/cpp/TextEncoderImpl.cpp
 
-        src/main/cpp/RafImpl.cpp
-
-        src/main/cpp/OnRafCallback.cpp
 
         src/main/cpp/webgl/WebGLActiveInfoImpl.cpp
         src/main/cpp/webgl/WebGLShaderPrecisionFormatImpl.cpp
@@ -168,6 +167,8 @@ add_library(
         src/main/cpp/webgl/WebGLRenderingContext.cpp
 
         src/main/cpp/webgl2/WebGL2RenderingContext.cpp
+
+        src/main/cpp/CanvasJSIModule.cpp
 
         src/main/cpp/JSIRuntime.cpp
 

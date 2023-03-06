@@ -13,7 +13,7 @@ use parking_lot::{RawRwLock, RwLock};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
-use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
+pub use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
@@ -84,7 +84,7 @@ impl CanvasRenderingContext2D {
 }
 
 #[derive(Clone)]
-pub struct PaintStyle(Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>);
+pub struct PaintStyle(pub(crate) Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>);
 
 impl PaintStyle {
     pub fn new(
@@ -177,7 +177,7 @@ pub mod ffi {
 
     extern "C++" {
         include!("canvas-cxx/src/webgl.rs.h");
-        type WebGLState = crate::webgl::WebGLState;
+        pub type WebGLState = crate::webgl::WebGLState;
     }
 
     extern "Rust" {
@@ -886,13 +886,6 @@ pub mod ffi {
 
         pub fn canvas_native_context_create_pattern_canvas2d(
             source: &mut CanvasRenderingContext2D,
-            context: &mut CanvasRenderingContext2D,
-            repetition: &str,
-        ) -> Box<PaintStyle>;
-
-        #[cfg(feature = "webgl")]
-        pub fn canvas_native_context_create_pattern_webgl(
-            source: &mut WebGLState,
             context: &mut CanvasRenderingContext2D,
             repetition: &str,
         ) -> Box<PaintStyle>;
@@ -2134,45 +2127,6 @@ pub fn canvas_native_context_create_pattern_canvas2d(
             }
 
             from_image_slice(buf.as_slice(), width as i32, height as i32).map(|image| {
-                canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
-                    context.get_context().create_pattern(image, repetition),
-                )
-            })
-        },
-    )))
-}
-
-#[cfg(feature = "webgl")]
-pub fn canvas_native_context_create_pattern_webgl(
-    source: &mut crate::webgl::WebGLState,
-    context: &mut CanvasRenderingContext2D,
-    repetition: &str,
-) -> Box<PaintStyle> {
-    Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
-        None,
-        |repetition| {
-            let state = source.get_inner();
-            state.make_current();
-            let mut width = state.get_drawing_buffer_width();
-            let mut height = state.get_drawing_buffer_height();
-
-            let mut buf = vec![0u8; (width * height * 4) as usize];
-
-            unsafe {
-                gl_bindings::Finish();
-                gl_bindings::ReadPixels(
-                    0,
-                    0,
-                    width,
-                    height,
-                    gl_bindings::RGBA,
-                    gl_bindings::UNSIGNED_BYTE,
-                    buf.as_mut_ptr() as *mut c_void,
-                );
-            }
-
-            context.make_current();
-            from_image_slice(buf.as_slice(), width, height).map(|image| {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )

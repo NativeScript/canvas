@@ -50,22 +50,32 @@ class NSCCanvas : FrameLayout {
 	private lateinit var surfaceView: GLViewSV
 
 	constructor(context: Context) : super(context, null) {
-		init(context, SurfaceType.Texture)
+		init(context, null, SurfaceType.Texture)
 	}
 
 	constructor(context: Context, type: SurfaceType) : super(context, null) {
-		init(context, type)
+		init(context, null, type)
 	}
 
 	constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-		init(context, SurfaceType.Texture)
-		textureView = GLView(context, attrs)
-		surfaceView = GLViewSV(context, attrs)
+		init(context, attrs, SurfaceType.Texture)
 	}
 
-	private fun init(context: Context, type: SurfaceType) {
+	private fun init(context: Context, attrs: AttributeSet?, type: SurfaceType) {
+		textureView = GLView(context, attrs)
+		textureView.canvas = this
+		surfaceView = GLViewSV(context, attrs)
+		surfaceView.canvas = this
 		surfaceType = type
 		setBackgroundColor(Color.TRANSPARENT)
+		when (type) {
+			SurfaceType.Texture -> {
+				addView(textureView)
+			}
+			SurfaceType.Surface -> {
+				addView(surfaceView)
+			}
+		}
 	}
 
 	val drawingBufferWidth: Int

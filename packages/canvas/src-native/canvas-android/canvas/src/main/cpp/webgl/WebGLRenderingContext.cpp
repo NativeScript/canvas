@@ -889,8 +889,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                  canvas_native_webgl_bind_attrib_location(
                                                                          program->GetProgram(),
                                                                          index,
-                                                                         rust::Str(name.data(),
-                                                                                   name.size()),
+                                                                         rust::Str(name.c_str()),
                                                                          this->GetState()
                                                                  );
                                                              }
@@ -2533,8 +2532,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                  if (program != nullptr) {
                                                                      auto location = canvas_native_webgl_get_attrib_location(
                                                                              program->GetProgram(),
-                                                                             rust::Str(name.data(),
-                                                                                       name.size()),
+                                                                             rust::Str(name.c_str()),
                                                                              this->GetState()
                                                                      );
                                                                      return {location};
@@ -2689,8 +2687,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                  runtime).utf8(runtime);
 
                                                          auto ext = canvas_native_webgl_get_extension(
-                                                                 rust::Str(name.c_str(),
-                                                                           name.size()),
+                                                                 rust::Str(name.c_str()),
                                                                  this->GetState());
 
                                                          if (canvas_native_webgl_context_extension_is_none(
@@ -3256,8 +3253,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
                                                                      auto ret = canvas_native_webgl_get_uniform_location(
                                                                              program->GetProgram(),
-                                                                             rust::Str(name.c_str(),
-                                                                                       name.size()),
+                                                                             rust::Str(name.c_str()),
                                                                              this->GetState()
                                                                      );
 
@@ -3967,8 +3963,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                      canvas_native_webgl_shader_source(
                                                                              shader->GetShader(),
                                                                              rust::Str(
-                                                                                     source.data(),
-                                                                                     source.size()),
+                                                                                     source.c_str()),
                                                                              this->GetState());
                                                                  }
                                                              }
@@ -5861,8 +5856,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
                                                          auto data = canvas_native_webgl_to_data_url(
                                                                  this->GetState(),
-                                                                 rust::Str(type.data(),
-                                                                           type.size()),
+                                                                 rust::Str(type.c_str()),
                                                                  quality);
                                                          return jsi::String::createFromAscii(
                                                                  runtime,

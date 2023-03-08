@@ -1,7 +1,9 @@
-import {ImageDataBase} from './common';
+import { ImageDataBase } from './common';
 
 export declare class ImageData extends ImageDataBase {
-	protected constructor(nativeInstance: any);
+	constructor(width: number, height: number);
+
+	constructor(arrayData: Uint8ClampedArray, width: number, height?: number);
 
 	static fromNative(nativeInstance: any): ImageData;
 

@@ -9,7 +9,7 @@ MatrixImpl::MatrixImpl(rust::Box<Matrix> matrix) : matrix_(std::move(matrix)) {}
 
 std::vector<jsi::PropNameID> MatrixImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(23);
+    ret.reserve(22);
 
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("a")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("b")));

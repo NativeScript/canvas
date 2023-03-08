@@ -1,4 +1,4 @@
-import {DOMMatrixBase} from './common';
+import { DOMMatrixBase } from './common';
 
 export declare class DOMMatrix extends DOMMatrixBase {
 	a: number;
@@ -25,5 +25,6 @@ export declare class DOMMatrix extends DOMMatrixBase {
 	m43: number;
 	m44: number;
 
-	constructor(instance: any);
+	constructor(init: number[]);
+	constructor();
 }

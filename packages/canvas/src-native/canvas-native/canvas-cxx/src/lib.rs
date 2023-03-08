@@ -934,6 +934,8 @@ pub mod ffi {
 
         fn canvas_native_context_create_image_data(width: i32, height: i32) -> Box<ImageData>;
 
+        fn canvas_native_context_create_image_data_with_data(width: i32, height: i32, data: &[u8]) -> Box<ImageData>;
+
         fn canvas_native_context_create_linear_gradient(
             context: &mut CanvasRenderingContext2D,
             x0: f32,
@@ -3851,6 +3853,12 @@ pub fn canvas_native_context_create_image_data(width: i32, height: i32) -> Box<I
     Box::new(ImageData::new(Context::create_image_data(width, height)))
 }
 
+
+pub fn canvas_native_context_create_image_data_with_data(width: i32, height: i32, data: &[u8]) -> Box<ImageData> {
+    Box::new(ImageData::new(canvas_2d::context::pixel_manipulation::image_data::ImageData::new_with_data(width, height, data.to_vec())))
+}
+
+
 pub fn canvas_native_context_create_linear_gradient(
     context: &mut CanvasRenderingContext2D,
     x0: f32,
@@ -5350,6 +5358,7 @@ pub fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, 
     if let Some(style) = style.0.as_mut() {
         match style {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
+               log::info!(target: "JS", "canvas_native_gradient_add_color_stop: {stop} {color}");
                 gradient.add_color_stop_str(stop, color)
             }
             _ => {}

@@ -30,7 +30,6 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
 }
 
 
-
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
     ret.reserve(61);
@@ -105,7 +104,7 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
     auto methodName = name.utf8(runtime);
     if (methodName == "font") {
         auto val = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_font(this->GetContext(), rust::Str(val.c_str(), val.size()));
+        canvas_native_context_set_font(this->GetContext(), rust::Str(val.c_str()));
     } else if (methodName == "globalAlpha") {
         auto alpha = (float) value.asNumber();
         canvas_native_context_set_global_alpha(this->GetContext(), alpha);
@@ -123,18 +122,18 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
     } else if (methodName == "lineJoin") {
         auto join = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_line_join(this->GetContext(),
-                                            rust::Str(join.c_str(), join.size()));
+                                            rust::Str(join.c_str()));
     } else if (methodName == "lineCap") {
         auto cap = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_line_cap(this->GetContext(),
-                                           rust::Str(cap.c_str(), cap.size()));
+                                           rust::Str(cap.c_str()));
     } else if (methodName == "miterLimit") {
         auto miterLimit = (float) value.asNumber();
         canvas_native_context_set_miter_limit(this->GetContext(), miterLimit);
     } else if (methodName == "shadowColor") {
         auto shadowColor = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_shadow_color(this->GetContext(),
-                                               rust::Str(shadowColor.c_str(), shadowColor.size()));
+                                               rust::Str(shadowColor.c_str()));
     } else if (methodName == "shadowBlur") {
         auto shadowBlur = (float) value.asNumber();
         canvas_native_context_set_shadow_blur(this->GetContext(), shadowBlur);
@@ -147,18 +146,16 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
     } else if (methodName == "textAlign") {
         auto textAlign = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_text_align(this->GetContext(),
-                                             rust::Str(textAlign.c_str(), textAlign.size()));
+                                             rust::Str(textAlign.c_str()));
     } else if (methodName == "globalCompositeOperation") {
         auto globalCompositeOperation = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_global_composition(this->GetContext(),
-                                                     rust::Str(globalCompositeOperation.c_str(),
-                                                               globalCompositeOperation.size()));
+                                                     rust::Str(globalCompositeOperation.c_str()));
     } else if (methodName == "fillStyle") {
         if (value.isString()) {
             auto style = value.asString(runtime).utf8(runtime);
             canvas_native_paint_style_set_fill_color_with_string(this->GetContext(),
-                                                                 rust::Str(style.c_str(),
-                                                                           style.size()));
+                                                                 rust::Str(style.c_str()));
         } else if (!value.isNull() && !value.isUndefined() && value.isObject()) {
             auto gradient = getHostObject<CanvasGradient>(runtime, value);
             if (gradient != nullptr) {
@@ -177,8 +174,7 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
         if (value.isString()) {
             auto style = value.asString(runtime).utf8(runtime);
             canvas_native_paint_style_set_stroke_color_with_string(this->GetContext(),
-                                                                   rust::Str(style.c_str(),
-                                                                             style.size()));
+                                                                   rust::Str(style.c_str()));
         } else if (!value.isNull() && !value.isUndefined() && value.isObject()) {
             auto gradient = getHostObject<CanvasGradient>(runtime, value);
             if (gradient != nullptr) {
@@ -479,15 +475,13 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              std::string rule("nonzero");
                                                              canvas_native_context_clip_rule(
                                                                      this->GetContext(),
-                                                                     rust::Str(rule.c_str(),
-                                                                               rule.size()));
+                                                                     rust::Str(rule.c_str()));
                                                          } else if (arguments[0].isString()) {
                                                              auto val = arguments[0].asString(
                                                                      runtime).utf8(runtime);
                                                              canvas_native_context_clip_rule(
                                                                      this->GetContext(),
-                                                                     rust::Str(val.c_str(),
-                                                                               val.size()));
+                                                                     rust::Str(val.c_str()));
                                                          }
 
                                                          return jsi::Value::undefined();
@@ -606,8 +600,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(
                                                                          this->GetContext(),
                                                                          image_asset->GetImageAsset(),
-                                                                         rust::Str(rep.c_str(),
-                                                                                   rep.size()));
+                                                                         rust::Str(rep.c_str()));
                                                                  auto type = canvas_native_context_get_style_type(
                                                                          *pattern);
                                                                  if (type == PaintStyleType::None) {
@@ -629,8 +622,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
                                                                          this->GetContext(),
                                                                          canvas_2d->GetContext(),
-                                                                         rust::Str(rep.c_str(),
-                                                                                   rep.size()));
+                                                                         rust::Str(rep.c_str()));
                                                                  auto type = canvas_native_context_get_style_type(
                                                                          *pattern);
                                                                  if (type == PaintStyleType::None) {
@@ -650,8 +642,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  auto pattern = canvas_native_context_create_pattern_webgl(
                                                                          webgl->GetState(),
                                                                          this->GetContext(),
-                                                                         rust::Str(rep.data(),
-                                                                                   rep.size()));
+                                                                         rust::Str(rep.c_str()));
                                                                  auto type = canvas_native_context_get_style_type(
                                                                          *pattern);
                                                                  if (type == PaintStyleType::None) {
@@ -876,8 +867,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  canvas_native_context_fill_with_path(
                                                                          this->GetContext(),
                                                                          object->GetPath(),
-                                                                         rust::Str(value.c_str(),
-                                                                                   value.size()));
+                                                                         rust::Str(value.c_str()));
                                                                  this->UpdateInvalidateState();
                                                              }
                                                          } else if (count == 1) {
@@ -886,8 +876,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                          runtime).utf8(runtime);
                                                                  canvas_native_context_fill(
                                                                          this->GetContext(),
-                                                                         rust::Str(value.c_str(),
-                                                                                   value.size()));
+                                                                         rust::Str(value.c_str()));
                                                                  this->UpdateInvalidateState();
                                                              } else if (arguments[0].isObject()) {
                                                                  auto object = getHostObject<Path2D>(
@@ -897,8 +886,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                      canvas_native_context_fill_with_path(
                                                                              this->GetContext(),
                                                                              object->GetPath(),
-                                                                             rust::Str(rule.c_str(),
-                                                                                       rule.size()));
+                                                                             rust::Str(
+                                                                                     rule.c_str()));
                                                                      this->UpdateInvalidateState();
                                                                  }
                                                              }
@@ -906,8 +895,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              std::string rule("nonzero");
                                                              canvas_native_context_fill(
                                                                      this->GetContext(),
-                                                                     rust::Str(rule.c_str(),
-                                                                               rule.size()));
+                                                                     rust::Str(rule.c_str()));
                                                              this->UpdateInvalidateState();
                                                          }
                                                          return jsi::Value::undefined();
@@ -954,8 +942,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                          }
                                                          canvas_native_context_fill_text(
                                                                  this->GetContext(),
-                                                                 rust::Str(text.data(),
-                                                                           text.size()), x,
+                                                                 rust::Str(text.c_str()), x,
                                                                  y, width);
                                                          this->UpdateInvalidateState();
 
@@ -1024,8 +1011,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              std::string rule("nonzero");
                                                              auto ret = canvas_native_context_is_point_in_path(
                                                                      this->GetContext(), x, y,
-                                                                     rust::Str(rule.data(),
-                                                                               rule.size()));
+                                                                     rust::Str(rule.c_str()));
                                                              return {ret};
                                                          } else if (count == 3 &&
                                                                     arguments[2].isString()) {
@@ -1035,8 +1021,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                      runtime).utf8(runtime);
                                                              auto ret = canvas_native_context_is_point_in_path(
                                                                      this->GetContext(), x, y,
-                                                                     rust::Str(rule.data(),
-                                                                               rule.size()));
+                                                                     rust::Str(rule.c_str()));
                                                              return {ret};
                                                          } else if (count == 4 &&
                                                                     arguments[0].isObject() &&
@@ -1053,8 +1038,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  auto ret = canvas_native_context_is_point_in_path_with_path(
                                                                          this->GetContext(),
                                                                          path->GetPath(), x, y,
-                                                                         rust::Str(rule.data(),
-                                                                                   rule.size()));
+                                                                         rust::Str(rule.c_str()));
                                                                  return {ret};
                                                              }
                                                          }
@@ -1131,8 +1115,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  runtime);
                                                          auto metrics = canvas_native_context_measure_text(
                                                                  this->GetContext(),
-                                                                 rust::Str(text.c_str(),
-                                                                           text.size()));
+                                                                 rust::Str(text.c_str()));
 
                                                          auto object = std::make_shared<TextMetricsImpl>(
                                                                  std::move(metrics));
@@ -1506,8 +1489,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
 
                                                              canvas_native_context_stroke_text(
                                                                      this->GetContext(),
-                                                                     rust::Str(text.c_str(),
-                                                                               text.size()),
+                                                                     rust::Str(text.c_str()),
                                                                      x, y, maxWidth);
                                                              this->UpdateInvalidateState();
                                                          }
@@ -1584,10 +1566,10 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                          }
 
 
+                                                         rust::Str str(type);
+
                                                          auto data = canvas_native_to_data_url(
-                                                                 this->GetContext(),
-                                                                 rust::Str(type.c_str(),
-                                                                           type.size()),
+                                                                 this->GetContext(), str,
                                                                  quality);
                                                          return jsi::String::createFromAscii(
                                                                  runtime,
@@ -1618,15 +1600,15 @@ void CanvasRenderingContext2DImpl::UpdateInvalidateState() {
     }
 
     auto state = this->GetInvalidateState();
-    this->SetInvalidateState((int)state | (int) InvalidateState::PENDING);
+    this->SetInvalidateState((int) state | (int) InvalidateState::PENDING);
 }
 
 InvalidateState CanvasRenderingContext2DImpl::GetInvalidateState() const {
-    return (InvalidateState)this->invalidateState_;
+    return (InvalidateState) this->invalidateState_;
 }
 
 void CanvasRenderingContext2DImpl::SetInvalidateState(InvalidateState state) {
-    this->invalidateState_ = (int)state;
+    this->invalidateState_ = (int) state;
 }
 
 void CanvasRenderingContext2DImpl::SetInvalidateState(int state) {

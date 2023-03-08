@@ -467,6 +467,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	draw() {
+		//const ctx = this.canvas.getContext('2d');
+
 		//this.urlTests();
 		//const str = new java.lang.String()
 		// ctx.font = '50px serif';
@@ -508,8 +510,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// worker.onerror = msg => {
 		//     console.log('error', msg);
 		// }
-		// swarm(canvas);
-		// touchParticles(canvas);
+		// swarm(this.canvas);
+		// touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -577,12 +579,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.chartJS(this.canvas);
 		//clear(null)
 		//points(this.canvas)
-		textures(this.canvas);
+		//textures(this.canvas);
 		//scaleTriangle(this.canvas);
 		//setTimeout(()=>{
 		//colorRain(this.canvas);
 		//particlesLarge(this.canvas);
-		//rainbowOctopus(this.canvas);
+		rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);

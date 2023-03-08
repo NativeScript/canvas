@@ -1,101 +1,78 @@
 import { ImageAssetBase, ImageAssetSaveFormat } from './common';
 import { knownFolders, path as filePath } from '@nativescript/core';
+import { Helpers } from '../helpers';
 
+let ctor;
 export class ImageAsset extends ImageAssetBase {
-    constructor(native?: org.nativescript.canvas.TNSImageAsset) {
-        super(native || new org.nativescript.canvas.TNSImageAsset());
-    }
+	static {
+		Helpers.initialize();
+		ctor = global.CanvasJSIModule.ImageAsset;
+	}
 
-    get width() {
-        return this.native.getWidth();
-    }
+	constructor(native) {
+		super(native || ctor());
+	}
 
-    get height() {
-        return this.native.getHeight();
-    }
+	get width() {
+		return this.native.width;
+	}
 
-    get error(): string {
-        return this.native.getError();
-    }
+	get height() {
+		return this.native.height;
+	}
 
-    static toPrimitive(value): any {
-        if (value instanceof java.lang.Integer) {
-            return value.intValue();
-        } else if (value instanceof java.lang.Long) {
-            return value.longValue();
-        } else if (value instanceof java.lang.Short) {
-            return value.shortValue();
-        } else if (value instanceof java.lang.Byte) {
-            return value.byteValue();
-        } else if (value instanceof java.lang.Boolean) {
-            return value.booleanValue();
-        } else if (value instanceof java.lang.String) {
-            return value.toString();
-        } else if (value instanceof java.lang.Float) {
-            return value.floatValue();
-        } else if (value instanceof java.lang.Double) {
-            return value.doubleValue();
-        }
-        return value;
-    }
+	get error(): string {
+		return this.native.error;
+	}
 
-    loadFromUrl(url: string): boolean {
-        return this.native.loadImageFromUrl(url);
-    }
+	fromUrlSync(url: string): boolean {
+		return this.native.loadImageFromUrl(url);
+	}
 
-    loadFromUrlAsync(path: string) {
-        return new Promise((resolve, reject) => {
-            this.native.loadImageFromUrlAsync(
-                path,
-                new org.nativescript.canvas.TNSImageAsset.Callback({
-                    onError(error) {
-                        reject(error);
-                    },
-                    onSuccess(success) {
-                        resolve(ImageAsset.toPrimitive(success));
-                    },
-                })
-            );
-        });
-    }
+	fromUrlAsync(url: string) {
+		return new Promise((resolve, reject) => {
+			this.native.fromUrlCb(url, (success, error) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve(success);
+				}
+			});
+		});
+	}
 
+	fromFileSync(path: string): boolean {
+		let realPath = path;
+		if (typeof realPath === 'string') {
+			if (realPath.startsWith('~/')) {
+				realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
+			}
+		}
 
-    loadFile(path: string): boolean {
-        let realPath = path;
-        if (typeof realPath === 'string') {
-            if (realPath.startsWith('~/')) {
-                realPath = filePath.join(
-                    knownFolders.currentApp().path,
-                    realPath.replace('~/', '')
-                );
-            }
-        }
-        return this.native.loadImageFromPath(realPath);
-    }
+        console.log(typeof realPath);
 
-    loadFileAsync(path: string) {
-        return new Promise((resolve, reject) => {
-            if (typeof path === 'string') {
-                if (path.startsWith('~/')) {
-                    path = filePath.join(
-                        knownFolders.currentApp().path,
-                        path.replace('~/', '')
-                    );
-                }
-            }
-            this.native.loadImageFromPathAsync(
-                path,
-                new org.nativescript.canvas.TNSImageAsset.Callback({
-                    onError(error) {
-                        reject(error);
-                    },
-                    onSuccess(success) {
-                        resolve(ImageAsset.toPrimitive(success));
-                    },
-                })
-            );
-        });
-    }
+		return false;//this.native.fromFileSync(realPath);
+	}
+
+	fromFile(path: string) {
+		return new Promise((resolve, reject) => {
+			if (typeof path === 'string') {
+				if (path.startsWith('~/')) {
+					path = filePath.join(knownFolders.currentApp().path, path.replace('~/', ''));
+				}
+			}
+
+			this.native.fromFileCb(path, (success, error) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve(success);
+				}
+			});
+		});
+	}
+
+	/*
 
     loadFromNative(image: any): boolean {
         return this.native.loadImageFromImage(image);
@@ -110,104 +87,79 @@ export class ImageAsset extends ImageAssetBase {
                         reject(error);
                     },
                     onSuccess(success) {
-                        resolve(ImageAsset.toPrimitive(success));
+                        resolve(success);
                     },
                 })
             );
         });
     }
 
-    loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
-        if (bytes instanceof Uint8Array || bytes instanceof Uint8ClampedArray) {
-            return this.native.loadImageFromBytes(Array.from(bytes));
-        }
-        return this.native.loadImageFromBytes(bytes as any);
-    }
+    */
 
-    loadFromBytesAsync(bytes: Uint8Array | Uint8ClampedArray) {
-        return new Promise((resolve, reject) => {
-            const callback = new org.nativescript.canvas.TNSImageAsset.Callback({
-                onError(error) {
-                    reject(error);
-                },
-                onSuccess(success) {
-                    resolve(ImageAsset.toPrimitive(success));
-                },
-            });
-            if (bytes instanceof Uint8Array || bytes instanceof Uint8ClampedArray) {
-                this.native.loadImageFromBytesAsync(Array.from(bytes), callback);
-            } else {
-                this.native.loadImageFromBytesAsync(bytes as any, callback);
-            }
-        });
-    }
+	loadFromBytesSync(bytes: Uint8Array | Uint8ClampedArray) {
+		return this.native.loadImageFromBytes(bytes);
+	}
 
-    scale(x: number, y: number) {
-        this.native.scale(x, y);
-    }
+	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
+		return new Promise((resolve, reject) => {
+			const callback = new org.nativescript.canvas.TNSImageAsset.Callback({
+				onError(error) {
+					reject(error);
+				},
+				onSuccess(success) {
+					resolve(success);
+				},
+			});
 
-    save(path: string, format: ImageAssetSaveFormat): boolean {
-        let realFormat;
-        switch (format) {
-            case ImageAssetSaveFormat.PNG:
-                realFormat = org.nativescript.canvas.TNSImageAssetFormat.PNG;
-                break;
-            case ImageAssetSaveFormat.ICO:
-                realFormat = org.nativescript.canvas.TNSImageAssetFormat.ICO;
-                break;
-            case ImageAssetSaveFormat.BMP:
-                realFormat = org.nativescript.canvas.TNSImageAssetFormat.BMP;
-                break;
-            case ImageAssetSaveFormat.TIFF:
-                realFormat = org.nativescript.canvas.TNSImageAssetFormat.TIFF;
-                break;
-            default:
-                realFormat = org.nativescript.canvas.TNSImageAssetFormat.JPG;
-                break;
-        }
-        return this.native.save(path, realFormat);
-    }
+			this.native.fromBytesCb(bytes, (success, error) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve(success);
+				}
+			});
+		});
+	}
 
-    saveAsync(path: string, format: ImageAssetSaveFormat): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            let realFormat;
-            switch (format) {
-                case ImageAssetSaveFormat.PNG:
-                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.PNG;
-                    break;
-                case ImageAssetSaveFormat.ICO:
-                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.ICO;
-                    break;
-                case ImageAssetSaveFormat.BMP:
-                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.BMP;
-                    break;
-                case ImageAssetSaveFormat.TIFF:
-                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.TIFF;
-                    break;
-                default:
-                    realFormat = org.nativescript.canvas.TNSImageAssetFormat.JPG;
-                    break;
-            }
-            (this.native as org.nativescript.canvas.TNSImageAsset).saveAsync(
-                path,
-                realFormat,
-                new org.nativescript.canvas.TNSImageAsset.Callback({
-                    onError(error) {
-                        reject(error);
-                    },
-                    onSuccess(success) {
-                        resolve(ImageAsset.toPrimitive(success));
-                    },
-                })
-            );
-        });
-    }
+	scale(x: number, y: number) {
+		this.native.scale(x, y);
+	}
 
-    flipX() {
-        this.native.flipX();
-    }
+	saveSync(path: string, format: ImageAssetSaveFormat): boolean {
+		let realFormat;
+		switch (format) {
+			case ImageAssetSaveFormat.PNG:
+				realFormat = org.nativescript.canvas.TNSImageAssetFormat.PNG;
+				break;
+			case ImageAssetSaveFormat.ICO:
+				realFormat = org.nativescript.canvas.TNSImageAssetFormat.ICO;
+				break;
+			case ImageAssetSaveFormat.BMP:
+				realFormat = org.nativescript.canvas.TNSImageAssetFormat.BMP;
+				break;
+			case ImageAssetSaveFormat.TIFF:
+				realFormat = org.nativescript.canvas.TNSImageAssetFormat.TIFF;
+				break;
+			default:
+				realFormat = org.nativescript.canvas.TNSImageAssetFormat.JPG;
+				break;
+		}
+		return this.native.saveSync(path, realFormat);
+	}
 
-    flipY() {
-        this.native.flipY();
-    }
+	saveAsync(path: string, format: ImageAssetSaveFormat): Promise<boolean> {
+		return new Promise((resolve, reject) => {
+			this.native.saveCb(path, format, (success, error) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve(success);
+				}
+			});
+		});
+	}
+
+	flipX() {}
+
+	flipY() {}
 }

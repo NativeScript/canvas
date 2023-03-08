@@ -175,7 +175,7 @@ impl ImageAsset {
         match file {
             Ok(file) => {
                 let mut reader = std::io::BufReader::new(file);
-                return self.load_from_reader(&mut reader);
+                self.load_from_reader(&mut reader)
             }
             Err(e) => {
                 let error = e.to_string();

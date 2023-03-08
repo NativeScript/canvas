@@ -28,8 +28,7 @@ jsi::Value CanvasGradient::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                                  runtime).utf8(runtime);
                                                          canvas_native_gradient_add_color_stop(
                                                                  this->GetPaintStyle(), stop,
-                                                                 rust::Str(color.c_str(),
-                                                                           color.size()));
+                                                                 rust::Str(color.c_str()));
 
                                                          return jsi::Value::undefined();
                                                      });

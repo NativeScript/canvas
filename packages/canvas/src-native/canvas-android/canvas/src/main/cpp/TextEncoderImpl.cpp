@@ -34,8 +34,7 @@ jsi::Value TextEncoderImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &na
 
                                                          auto data = canvas_native_text_encoder_encode(
                                                                  this->GetTextEncoder(),
-                                                                 rust::Str(text.c_str(),
-                                                                           text.size()));
+                                                                 rust::Str(text.c_str()));
 
                                                          auto buf = std::make_shared<VecMutableBuffer<uint8_t>>(
                                                                  std::move(data));

@@ -51,7 +51,18 @@ jsi::Value ImageDataImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name
     } else if (methodName == "data") {
         auto buf = std::make_shared<ImageDataBuffer>(
                 canvas_native_image_data_get_shared_instance(this->GetImageData()));
-        return jsi::ArrayBuffer(runtime, buf);
+
+        auto ab = jsi::ArrayBuffer(runtime, buf);
+
+
+        auto Uint8ClampedArray = runtime.global()
+                .getProperty(runtime,
+                             "Uint8ClampedArray")
+                .asObject(runtime)
+                .asFunction(runtime);
+
+        return Uint8ClampedArray.callAsConstructor(
+                runtime, ab);
     }
     return jsi::Value::undefined();
 }

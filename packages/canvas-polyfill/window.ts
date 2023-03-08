@@ -5,7 +5,7 @@ import { HTMLCanvasElement } from './DOM/HTMLCanvasElement';
 import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { Device, fromObject, View } from '@nativescript/core';
-//import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
+import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
@@ -70,13 +70,11 @@ function checkEmitter() {
 	}
 };
 
-import {DOMParser as Parser} from 'xmldom';
+import { DOMParser as Parser } from 'xmldom';
 
 export class DOMParser extends Parser {
-	parseFromString(string, mimeType){
-		return XMLDocument.fromParser(
-			super.parseFromString(string, mimeType)
-		)
+	parseFromString(string, mimeType) {
+		return XMLDocument.fromParser(super.parseFromString(string, mimeType));
 	}
 }
 

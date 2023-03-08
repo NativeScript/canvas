@@ -1883,8 +1883,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
                                                                  auto ret = canvas_native_webgl2_get_frag_data_location(
                                                                          program->GetProgram(),
-                                                                         rust::Str(name.data(),
-                                                                                   name.size()),
+                                                                         rust::Str(name.c_str()),
                                                                          this->GetState()
                                                                  );
 

@@ -3,6 +3,7 @@
 //
 
 #include "ImageAssetImpl.h"
+#include <string>
 
 ImageAssetImpl::ImageAssetImpl(rust::Box<ImageAsset> asset)
         : asset_(std::move(asset)) {}
@@ -69,8 +70,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                                  runtime).utf8(runtime);
                                                          auto done = canvas_native_image_asset_load_from_url(
                                                                  this->GetImageAsset(),
-                                                                 rust::Str(url.c_str(),
-                                                                           url.size()));
+                                                                 rust::Str(url.c_str()));
                                                          return {done};
                                                      }
         );
@@ -104,8 +104,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                                      auto done = canvas_native_image_asset_load_from_url(
                                                                              *asset,
-                                                                             rust::Str(url.c_str(),
-                                                                                       url.size()));
+                                                                             rust::Str(url.c_str()));
                                                                      cb.call(runtime,
                                                                              jsi::Value(done));
 
@@ -130,8 +129,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                                  runtime).utf8(runtime);
                                                          auto done = canvas_native_image_asset_load_from_path(
                                                                  this->GetImageAsset(),
-                                                                 rust::Str(path.c_str(),
-                                                                           path.size()));
+                                                                 rust::Str(path.c_str()));
 
                                                          return {done};
                                                      }
@@ -159,8 +157,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                                      auto done = canvas_native_image_asset_load_from_path(
                                                                              *asset,
-                                                                             rust::Str(path.c_str(),
-                                                                                       path.size()));
+                                                                             rust::Str(path));
                                                                      cb.call(runtime,
                                                                              jsi::Value(done));
 
@@ -257,8 +254,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                          auto format = (uint32_t) arguments[1].asNumber();
                                                          auto done = canvas_native_image_asset_save_path(
                                                                  this->GetImageAsset(),
-                                                                 rust::Str(path.c_str(),
-                                                                           path.size()), format);
+                                                                 rust::Str(path.c_str()), format);
 
                                                          return {done};
                                                      }
@@ -290,8 +286,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                                      auto done = canvas_native_image_asset_save_path(
                                                                              *asset,
-                                                                             rust::Str(path.c_str(),
-                                                                                       path.size()),
+                                                                             rust::Str(path.c_str()),
                                                                              format);
                                                                      cb.call(runtime,
                                                                              jsi::Value(done));

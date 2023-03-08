@@ -19,3 +19,6 @@ opt-level = "z"
 debug = false
 incremental = false
 strip = true
+
+[build]
+rustflags = ["-Cpanic=abort", "-C target-cpu=native"]

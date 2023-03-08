@@ -809,6 +809,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          // width->NumberValue(context).FromMaybe(1))
                                                          canvas_native_webgl_resized(
                                                                  this->GetState());
+
+                                                         return jsi::Value::undefined();
                                                      }
         );
     }

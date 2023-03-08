@@ -5,8 +5,9 @@
 #pragma once
 
 #include "rust/cxx.h"
-#include "canvas-cxx/src/canvas2d.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #import "v8runtime/V8Runtime.h"
+#include "VecMutableBuffer.h"
 #include <vector>
 
 using namespace facebook;

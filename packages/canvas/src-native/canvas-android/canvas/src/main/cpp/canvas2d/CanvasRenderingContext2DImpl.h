@@ -14,9 +14,7 @@
 #include "RafImpl.h"
 #include "OnRafCallback.h"
 
-#include "canvas-android/src/lib.rs.h"
-#include "canvas-cxx/src/canvas2d.rs.h"
-#include "canvas-cxx/src/webgl.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 
 #include "CanvasGradient.h"

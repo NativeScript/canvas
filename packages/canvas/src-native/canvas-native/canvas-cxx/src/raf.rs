@@ -42,6 +42,7 @@ impl Raf {
                     AChoreographer_postFrameCallback(instance, Some(Raf::callback), data_ptr);
                     return;
                 } else {
+                    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                     AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data_ptr);
                 }
             }
@@ -67,6 +68,7 @@ impl Raf {
             if lock.use_deprecated {
                 AChoreographer_postFrameCallback(instance, Some(Raf::callback), data.cast());
             } else {
+                #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                 AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data.cast());
             }
         }

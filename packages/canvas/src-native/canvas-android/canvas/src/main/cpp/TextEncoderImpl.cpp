@@ -3,9 +3,6 @@
 //
 
 #include "TextEncoderImpl.h"
-#include "VecMutableBuffer.h"
-#include "rust/cxx.h"
-#include "canvas-android/src/lib.rs.h"
 
 TextEncoderImpl::TextEncoderImpl(rust::Box<TextEncoder> encoder) : encoder_(std::move(encoder)) {}
 

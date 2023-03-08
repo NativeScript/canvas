@@ -29,30 +29,58 @@ jsi::Value TextDecoderImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &na
                                                             size_t count) -> jsi::Value {
 
                                                          if (count == 1) {
-                                                             auto buf = &arguments[0];
-                                                             if (buf->isNull() ||
-                                                                 buf->isUndefined() ||
-                                                                 !buf->isObject() || !buf->asObject(
-                                                                     runtime).isArrayBuffer(
-                                                                     runtime)) {
+                                                             if (arguments[0].isNull() ||
+                                                                 arguments[0].isUndefined() ||
+                                                                 !arguments[0].isObject()) {
 
                                                                  throw jsi::JSINativeException(
                                                                          "Failed to execute 'decode' on 'TextDecoder': The provided value is not of type '(ArrayBuffer or ArrayBufferView)'");
                                                              }
 
-                                                             auto buffer = buf->asObject(
-                                                                     runtime).getArrayBuffer(
+                                                             auto buf = arguments[0].asObject(
                                                                      runtime);
 
-                                                             auto data = buffer.data(runtime);
-                                                             auto size = buffer.size(runtime);
-                                                             rust::Slice<const uint8_t> slice{data,
-                                                                                              size};
-                                                             auto decoded = canvas_native_text_decoder_decode(
-                                                                     this->GetTextDecoder(), slice);
-                                                             return jsi::String::createFromAscii(
-                                                                     runtime, decoded.data(),
-                                                                     decoded.size());
+                                                             if (buf.isArrayBuffer(runtime)) {
+
+                                                                 auto buffer = buf.getArrayBuffer(
+                                                                         runtime);
+
+                                                                 auto data = buffer.data(runtime);
+                                                                 auto size = buffer.size(runtime);
+                                                                 rust::Slice<const uint8_t> slice{
+                                                                         data,
+                                                                         size};
+                                                                 auto decoded = canvas_native_text_decoder_decode(
+                                                                         this->GetTextDecoder(),
+                                                                         slice);
+                                                                 return jsi::String::createFromAscii(
+                                                                         runtime, decoded.data(),
+                                                                         decoded.size());
+                                                             }
+
+
+                                                             if (buf.isTypedArray(runtime)) {
+
+                                                                 auto buffer = buf.getTypedArray(
+                                                                         runtime);
+
+                                                                 auto data = GetTypedArrayData<const uint8_t>(
+                                                                         runtime, buffer);
+
+                                                                 auto decoded = canvas_native_text_decoder_decode(
+                                                                         this->GetTextDecoder(),
+                                                                         data);
+
+                                                                 return jsi::String::createFromAscii(
+                                                                         runtime, decoded.data(),
+                                                                         decoded.size());
+                                                             }
+
+
+                                                             throw jsi::JSINativeException(
+                                                                     "Failed to execute 'decode' on 'TextDecoder': The provided value is not of type '(ArrayBuffer or ArrayBufferView)'");
+
+
                                                          }
 
                                                          return jsi::String::createFromUtf8(runtime,

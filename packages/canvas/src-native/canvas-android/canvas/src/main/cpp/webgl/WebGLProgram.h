@@ -5,7 +5,7 @@
 #pragma
 
 #include "rust/cxx.h"
-#include "canvas-cxx/src/webgl.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #include "v8runtime/V8Runtime.h"
 
 using namespace facebook;

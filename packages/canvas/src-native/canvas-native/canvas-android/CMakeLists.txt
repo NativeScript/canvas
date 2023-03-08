@@ -26,33 +26,7 @@ include_directories(
 )
 
 add_custom_command(
-        OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-android/src/lib.rs.cc"
-        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS= "${RUST_FLAGS}" ${CARGO_CMD}
-        WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
-)
-
-add_custom_command(
-        OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-cxx/src/canvas2d.rs.cc"
-        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS= "${RUST_FLAGS}" ${CARGO_CMD}
-        WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
-)
-
-add_custom_command(
-        OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-cxx/src/constants.rs.cc"
-        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS= "${RUST_FLAGS}" ${CARGO_CMD}
-        WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
-)
-
-
-add_custom_command(
-        OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-cxx/src/webgl.rs.cc"
-        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS= "${RUST_FLAGS}" ${CARGO_CMD}
-        WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
-)
-
-
-add_custom_command(
-        OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-cxx/src/webgl2.rs.cc"
+        OUTPUT "${PROJECT_NATIVE_ROOT_DIR}/target/${RUST_BUILD_TARGET}/cxxbridge/canvas-cxx/src/lib.rs.cc"
         COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} RUSTFLAGS= "${RUST_FLAGS}" ${CARGO_CMD}
         WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
 )

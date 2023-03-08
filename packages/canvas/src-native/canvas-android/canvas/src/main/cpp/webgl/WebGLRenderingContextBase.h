@@ -10,8 +10,7 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
-
-#include "canvas-cxx/src/webgl.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 
 #include "Helpers.h"
 #include "RafImpl.h"

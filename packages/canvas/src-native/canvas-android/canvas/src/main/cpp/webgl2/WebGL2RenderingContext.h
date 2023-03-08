@@ -11,21 +11,19 @@
 #include "canvas2d/CanvasRenderingContext2DImpl.h"
 #include "RafImpl.h"
 
-#include "canvas-cxx/src/webgl.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #include "v8runtime/V8Runtime.h"
 #include "VecMutableBuffer.h"
-#include "canvas-cxx/src/webgl2.rs.h"
 #include <cmath>
 #include "Helpers.h"
-#include "WebGLRenderingContextBase.h"
-#include "WebGLRenderingContext.h"
+#include "webgl/WebGLRenderingContextBase.h"
+#include "webgl/WebGLRenderingContext.h"
 #include "WebGLQuery.h"
 #include "WebGLSampler.h"
 #include "WebGLSyncImpl.h"
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArrayObject.h"
 #include "gl.h"
-#include "canvas-cxx/src/constants.rs.h"
 
 
 using namespace facebook;

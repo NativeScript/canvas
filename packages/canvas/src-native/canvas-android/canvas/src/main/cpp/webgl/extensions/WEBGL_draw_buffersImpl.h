@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "canvas-cxx/src/webgl.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 
 #include "rust/cxx.h"
 #include "v8runtime/V8Runtime.h"

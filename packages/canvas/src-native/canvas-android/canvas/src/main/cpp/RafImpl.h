@@ -6,7 +6,7 @@
 #pragma process_pending_includes
 
 #include "rust/cxx.h"
-#include "canvas-android/src/lib.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #include <cstdint>
 #include "OnRafCallback.h"
 

@@ -3,11 +3,9 @@
 //
 
 #pragma once
+#pragma process_pending_includes
 
 #include <cstdint>
-#include "canvas2d/CanvasRenderingContext2DImpl.h"
-#include "webgl/WebGLRenderingContextBase.h"
-#include "canvas-android/src/lib.rs.h"
 
 class OnRafCallback {
     // 0 2d

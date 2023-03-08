@@ -12,6 +12,7 @@
 #include "JSIV8ValueConverter.h"
 #include "V8PointerValue.h"
 #include "jsi/jsilib.h"
+#include <memory>
 
 namespace jsi = facebook::jsi;
 
@@ -79,7 +80,6 @@ namespace rnv8 {
             // V8 didn't provide any extra information about this error; just
             // print the exception.
             throw jsi::JSError(const_cast<V8Runtime &>(*this), exception);
-            return;
         } else {
             std::ostringstream ss;
             v8::Local<v8::Context> context(isolate->GetCurrentContext());
@@ -647,13 +647,15 @@ namespace rnv8 {
             delete static_cast<std::shared_ptr<jsi::MutableBuffer> *>(ctx);
         };
 
-        auto store = v8::ArrayBuffer::NewBackingStore(data, size, finalize, ctx);
+        std::unique_ptr<v8::BackingStore> store = v8::ArrayBuffer::NewBackingStore(data, size, finalize, ctx);
         auto arrayBuffer = v8::ArrayBuffer::New(isolate_, std::move(store));
 
 
         return make<jsi::Object>(new V8PointerValue(isolate_, arrayBuffer))
                 .getArrayBuffer(*this);
     }
+
+
 
     uint64_t V8Runtime::uint64Value(const jsi::BigInt &bigInt, bool *lossless) const {
         v8::Locker locker(isolate_);

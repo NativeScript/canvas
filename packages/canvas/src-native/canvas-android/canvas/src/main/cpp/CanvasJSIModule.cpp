@@ -384,16 +384,16 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                     }
 
 
-                                }, std::move(asset), data,
-                                sx_or_options->asNumber(),
-                                sy->asNumber(),
-                                sw->asNumber(),
-                                sh->asNumber(), std::move(asset));
+                                }, std::move(asset),
+                                (float )sx_or_options->asNumber(),
+                                (float )sy->asNumber(),
+                                (float )sw->asNumber(),
+                                (float )sh->asNumber());
 
                         return jsi::Value::undefined();
                     }
 
-
+                    return jsi::Value::undefined();
                 }
 
     );
@@ -736,4 +736,6 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                 }
 
     );
+
+    jsiRuntime.global().setProperty(jsiRuntime, "CanvasJSIModule", canvas_module);
 }

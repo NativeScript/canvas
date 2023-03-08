@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "canvas-cxx/src/constants.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 
 #ifdef __ANDROID__
 

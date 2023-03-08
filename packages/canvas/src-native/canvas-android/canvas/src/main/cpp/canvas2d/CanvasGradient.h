@@ -5,12 +5,12 @@
 #pragma once
 
 #include "rust/cxx.h"
-#include "canvas-cxx/src/canvas2d.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #include "v8runtime/V8Runtime.h"
 #include <vector>
 
 using namespace facebook;
-using namespace org::nativescript::canvas;
+using namespace ::org::nativescript::canvas;
 
 class JSI_EXPORT CanvasGradient : public jsi::HostObject {
 public:

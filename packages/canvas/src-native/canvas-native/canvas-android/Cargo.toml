@@ -9,7 +9,6 @@ name = "canvasandroid"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-cxx-build = "1.0.73"
 bindgen = "0.64.0"
 
 [dependencies]
@@ -19,7 +18,6 @@ canvas-webgl = { path = "../canvas-webgl" }
 canvas-cxx = { path = "../canvas-cxx", features = ["2d", "webgl"] }
 gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.5.0"
-cxx = "1.0.73"
 ureq = "2.5.0"
 parking_lot = "0.12.0"
 jni = "0.21.0"

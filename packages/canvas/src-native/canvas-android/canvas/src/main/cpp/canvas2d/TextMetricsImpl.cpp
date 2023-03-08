@@ -3,7 +3,7 @@
 //
 
 #include "TextMetricsImpl.h"
-#include "canvas-cxx/src/canvas2d.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 
 TextMetricsImpl::TextMetricsImpl(rust::Box<TextMetrics> metrics) : metrics_(std::move(metrics)) {}
 

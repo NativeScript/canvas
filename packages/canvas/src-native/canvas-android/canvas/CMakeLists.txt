@@ -41,10 +41,14 @@ set(CARGO_MANIFEST ${PROJECT_NATIVE_ROOT_DIR}/Cargo.toml)
 set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
-set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/constants.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs)
-set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-android/src/lib.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/canvas2d.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/constants.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl.rs.cc ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/webgl2.rs.cc)
 
-set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -frtti -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
+set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/lib.rs)
+set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-cxx/src/lib.rs.cc)
+
+#set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
+
+set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH")
+
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RUST_BUILD_TYPE)
@@ -66,16 +70,16 @@ endif ()
 
 include_directories(
         canvasnativev8
+
         PUBLIC
+
+        ${CARGO_TARGET_DIR}/cxxbridge
+
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
         ${PROJECT_SOURCE_DIR}/src/main/cpp
-        ${PROJECT_SOURCE_DIR}/src/main/cpp/canvas2d
-        ${PROJECT_SOURCE_DIR}/src/main/cpp/webgl
-        ${PROJECT_SOURCE_DIR}/src/main/cpp/webgl22
         ${PROJECT_SOURCE_DIR}/src/main/jsi
         ${PROJECT_SOURCE_DIR}/src/main/v8runtime
-        ${CARGO_TARGET_DIR}/cxxbridge
 )
 
 set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
@@ -83,7 +87,8 @@ set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
 # Add a custom command that builds the rust crate and generates C++ bridge code
 add_custom_command(
         OUTPUT ${CANVAS_ANDROID_BRIDGE_CPP} ${CANVAS_ANDROID_LIB}
-        COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+       # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
         USES_TERMINAL
 )
@@ -188,6 +193,13 @@ MESSAGE("# CMAKE_C_COMPILER_ID: " ${CMAKE_C_COMPILER_ID})
 MESSAGE("# CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID})
 MESSAGE("# CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS})
 MESSAGE("# CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS})
+
+MESSAGE("# CARGO_MANIFEST: " ${CARGO_MANIFEST})
+MESSAGE("# CARGO_TARGET_DIR: " ${CARGO_TARGET_DIR})
+MESSAGE("# CURRENT_TARGET_DIR: " ${CURRENT_TARGET_DIR})
+MESSAGE("# CANVAS_ANDROID_SOURCE_FILE: " ${CANVAS_ANDROID_SOURCE_FILE})
+MESSAGE("# CANVAS_ANDROID_BRIDGE_CPP: " ${CANVAS_ANDROID_BRIDGE_CPP})
+MESSAGE("# ANDROID_NDK_ROOT: " ${ANDROID_NDK_ROOT})
 
 find_library(system-log log)
 find_library(system-z z)

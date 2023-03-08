@@ -5,9 +5,10 @@
 #pragma once
 
 #include "rust/cxx.h"
-#include "canvas-cxx/src/canvas2d.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #import "v8runtime/V8Runtime.h"
 #include <vector>
+#include "Helpers.h"
 
 using namespace facebook;
 using namespace org::nativescript::canvas;

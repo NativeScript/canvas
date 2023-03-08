@@ -3,6 +3,8 @@
 //
 
 #include "OnRafCallback.h"
+#include "canvas2d/CanvasRenderingContext2DImpl.h"
+#include "webgl/WebGLRenderingContextBase.h"
 
 OnRafCallback::OnRafCallback(intptr_t context, uint32_t version) : context_(context),
                                                                    version_(version) {}

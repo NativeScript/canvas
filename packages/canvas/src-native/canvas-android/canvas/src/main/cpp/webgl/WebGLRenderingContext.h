@@ -7,7 +7,7 @@
 
 #include <vector>
 #include "rust/cxx.h"
-#include "canvas-cxx/src/webgl.rs.h"
+#include "canvas-cxx/src/lib.rs.h"
 #include "v8runtime/V8Runtime.h"
 #include "VecMutableBuffer.h"
 
@@ -57,7 +57,6 @@
 #include "extensions/ANGLE_instanced_arraysImpl.h"
 #include "extensions/WEBGL_draw_buffersImpl.h"
 #include "gl.h"
-#include "canvas-cxx/src/constants.rs.h"
 
 using namespace facebook;
 using namespace org::nativescript::canvas;

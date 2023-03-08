@@ -21,7 +21,55 @@ const ppi = (Utils.ad.getApplicationContext() as android.content.Context).getRes
 
 __non_webpack_require__('system_lib://libcanvasnativev8.so');
 
-__initAppConfiguration({ appBase: knownFolders.currentApp().path });
+const module = global.CanvasJSIModule;
+
+try {
+	const matrix = module.DOMMatrix();
+	console.dir(matrix);
+
+	console.time('Path2D');
+	const path = module.Path2D() as Path2D;
+	console.timeEnd('Path2D');
+
+	console.time('Path2D:loop');
+	const rect = path.rect;
+	for (let i = 0; i < 1000; i++) {
+		rect(0, 0, 100, 100);
+	}
+	console.timeEnd('Path2D:loop');
+
+	const encoder = module.TextEncoder();
+
+	console.time('encode:1');
+	const encode = encoder.encode;
+	const encoded = encode('Hi Osei!!!');
+	console.timeEnd('encode:1');
+
+	console.time('encode:2');
+	encode('Hi Osei!!!');
+	console.timeEnd('encode:2');
+
+	console.log(encoded);
+
+	console.log(typeof encoded);
+
+	const decoder = module.TextDecoder();
+
+	console.time('decode:1');
+	const decode = decoder.decode;
+	const decoded = decode(encoded);
+	console.timeEnd('decode:1');
+
+	console.time('decode:2');
+	decode(encoded);
+	console.timeEnd('decode:2');
+
+	console.log(decoded);
+} catch (error) {
+	console.log(error);
+}
+
+//__initAppConfiguration({ appBase: knownFolders.currentApp().path });
 
 const handlePath = function (path) {
 	if (typeof path === 'string' && path.startsWith('~/')) {
@@ -31,6 +79,8 @@ const handlePath = function (path) {
 };
 
 //java.lang.System.loadLibrary('canvasnativev8');
+
+/*
 
 global.WebGLRenderingContext.prototype.getSupportedExtensions = function () {
 	const string = this.__getSupportedExtensions();
@@ -176,10 +226,11 @@ global.ImageAsset.prototype.saveAsync = function (path) {
 		});
 	});
 };
+*/
 
 (global as any).__debug_browser_polyfill_image = false;
 
-require('@nativescript/canvas-polyfill');
+//require('@nativescript/canvas-polyfill');
 
 // console.log('loadUrlAsync');
 

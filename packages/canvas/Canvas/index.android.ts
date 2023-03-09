@@ -5,13 +5,12 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, profile, Device, Screen, knownFolders } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
-	return new DOMMatrix(org.nativescript.canvas.TNSCanvas.createSVGMatrix());
+	return new DOMMatrix();
 }
 
 export * from './common';
 
-declare const __non_webpack_require__, __initAppConfiguration;
-
+declare const org;
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContextJni: CanvasRenderingContext2D;
@@ -26,17 +25,13 @@ export class Canvas extends CanvasBase {
 	constructor(useCpu = false) {
 		super();
 
-	//	__non_webpack_require__('system_lib://libcanvasnativev8.so');
-
-//		__initAppConfiguration({ appBase: knownFolders.currentApp().path });
-
 		if (arguments.length === 1) {
 			if (typeof arguments[0] === 'boolean') {
 				useCpu = arguments[0];
 			}
 		}
 		const activity = Application.android.foregroundActivity || Application.android.startActivity;
-		this._canvas = new org.nativescript.canvas.TNSCanvas(activity, useCpu);
+		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 		(global as any).__canvasLoaded = true;
 	}
 
@@ -137,21 +132,20 @@ export class Canvas extends CanvasBase {
 			}
 		});
 		this._canvas.setListener(
-			new org.nativescript.canvas.TNSCanvas.Listener({
+			new org.nativescript.canvas.NSCCanvas.Listener({
 				contextReady() {
 					const owner = ref.get() as any;
 					if (owner && !owner._ready) {
 						owner._ready = true;
 						owner._readyEvent();
-						console.log('_readyEvent');
 					}
 				},
-				surfaceResize(width, height){
-					console.log('adasdas', width, height);
-					if(this._webglContext || this._webgl2Context){
-						(this._webglContext || this._webgl2Context)?.resize();
-					}
-				}
+				surfaceResize(width, height) {
+					console.log('surfaceResize', width, height);
+					// if(this._webglContext || this._webgl2Context){
+					// 	(this._webglContext || this._webgl2Context)?.resize();
+					// }
+				},
 			})
 		);
 	}
@@ -175,26 +169,16 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
-	flush() {
-		if (this._didPause) {
-			return;
-		}
-		if (this._canvas) {
-			this._canvas.flush();
-		}
-	}
-
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
 		super.disposeNativeView();
 	}
 
 	toDataURL(type = 'png', encoderOptions = 0.92) {
-		console.log(this._2dContext, this._webglContext, this._webgl2Context);
-		if(this._2dContext){
-			return (this._2dContext as any).__toDataURL(type, encoderOptions)
+		if (this._2dContext) {
+			return (this._2dContext as any).__toDataURL(type, encoderOptions);
 		}
-		return (this._webglContext || this._webgl2Context as any).__toDataURL(type, encoderOptions);
+		return (this._webglContext || (this._webgl2Context as any)).__toDataURL(type, encoderOptions);
 	}
 
 	_layoutNative() {
@@ -227,28 +211,51 @@ export class Canvas extends CanvasBase {
 			return JSON.stringify(this._handleContextOptions(type, options));
 		};
 
-		let direction = 0;
-		if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
-			direction = 1;
-		}
+		// let direction = 0;
+		// if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
+		// 	direction = 1;
+		// }
 
 		if (typeof type === 'string') {
 			if (type === '2d') {
 				if (this._webglContext || this._webgl2Context) {
 					return null;
 				}
+
 				if (!this._2dContext) {
-					this._2dContextJni = this._canvas.getContext(type, getNativeOptions(options));
-					//const ptr = String(this._canvas.getNativeContext());
+					/*
+					type: String,
+		alpha: Boolean,
+		antialias: Boolean,
+		depth: Boolean,
+		failIfMajorPerformanceCaveat: Boolean,
+		powerPreference: String,
+		premultipliedAlpha: Boolean,
+		preserveDrawingBuffer: Boolean,
+		stencil: Boolean,
+		desynchronized: Boolean,
+		xrCompatible: Boolean
+					*/
+					const opts = this._handleContextOptions(type, options);
 
-					this._2dContext = global.__getCanvasRenderingContext2DImpl(this.width, this.height, Screen.mainScreen.scale, this.parent?.style?.color?.android || -16777216, Screen.mainScreen.scale * 160, direction, true, this._isCustom ? true : false);
+					this._canvas.initContext(type);
 
-					(this._2dContext as any).__contextAttributes = (this._canvas as any).getContextAttributesJson();
+					//this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
-					//this._2dContext = global.__getCanvasRenderingContext2DImpl(ptr);
+				
+					this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
 
-					// @ts-ignore
-					this._2dContext.canvas = this;
+					// this._2dContextJni = this._canvas.getContext(type, getNativeOptions(options));
+					// //const ptr = String(this._canvas.getNativeContext());
+
+					// this._2dContext = global.__getCanvasRenderingContext2DImpl(this.width, this.height, Screen.mainScreen.scale, this.parent?.style?.color?.android || -16777216, Screen.mainScreen.scale * 160, direction, true, this._isCustom ? true : false);
+
+					// (this._2dContext as any).__contextAttributes = (this._canvas as any).getContextAttributesJson();
+
+					// //this._2dContext = global.__getCanvasRenderingContext2DImpl(ptr);
+
+					// // @ts-ignore
+					 (this._2dContext as any)._canvas = this;
 				} else {
 					//this._canvas.getContext(type, getNativeOptions(options));
 				}

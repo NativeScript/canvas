@@ -8,20 +8,18 @@ name = "canvasffi"
 crate-type = ["staticlib"]
 
 [features]
-gl = ["canvas-core/gl"]
+2d = ["dep:canvas-2d"]
+webgl = ["dep:canvas-webgl"]
 
-[build]
-rustc-wrapper = "sccache"
 
 [build-dependencies]
-bindgen = "0.59.2"
-cmake = "0.1.44"
-cc = "1.0.73"
 cbindgen = "0.24.3"
 
 [dependencies]
 gl-bindings = { path = "../gl-bindings" }
 canvas-core = { path = "../canvas-core" }
-skia-bindings = { version ="0.54.0",  features = ["gl"] }
-skia-safe = { version ="0.54.0", features = ["gl"] }
+canvas-2d = { path = "../canvas-2d", optional = true }
+canvas-webgl = { path = "../canvas-webgl", optional = true }
+skia-bindings = { version = "0.58.0", features = ["gl"] }
+skia-safe = { version = "0.58.0", features = ["gl"] }
 css-color-parser = "0.1.2"

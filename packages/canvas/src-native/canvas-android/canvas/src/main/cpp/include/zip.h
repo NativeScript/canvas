@@ -20,7 +20,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,7 +34,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #ifndef ZIP_EXTERN
 #ifdef _WIN32
@@ -126,7 +126,7 @@ extern "C" {
 #define ZIP_ER_REMOVE        22  /* S Can't remove file */
 #define ZIP_ER_DELETED       23  /* N Entry has been deleted */
 #define ZIP_ER_ENCRNOTSUPP   24  /* N Encryption method not supported */
-#define ZIP_ER_RDONLY        25  /* N Read-only archive */ 
+#define ZIP_ER_RDONLY        25  /* N Read-only archive */
 #define ZIP_ER_NOPASSWD      26  /* N No password provided */
 #define ZIP_ER_WRONGPASSWD   27  /* N Wrong password provided */
 
@@ -200,7 +200,7 @@ extern "C" {
 
 #define ZIP_OPSYS_DEFAULT	ZIP_OPSYS_UNIX
 
-
+
 
 enum zip_source_cmd {
     ZIP_SOURCE_OPEN,	/* prepare for reading */
@@ -240,12 +240,12 @@ struct zip;
 struct zip_file;
 struct zip_source;
 
-typedef zip_uint32_t zip_flags_t;    
+typedef zip_uint32_t zip_flags_t;
 
 typedef zip_int64_t (*zip_source_callback)(void *, void *, zip_uint64_t,
-					   enum zip_source_cmd);
+                                           enum zip_source_cmd);
 
-
+
 
 #ifndef ZIP_DISABLE_DEPRECATED
 ZIP_EXTERN zip_int64_t zip_add(struct zip *, const char *, struct zip_source *); /* use zip_file_add */

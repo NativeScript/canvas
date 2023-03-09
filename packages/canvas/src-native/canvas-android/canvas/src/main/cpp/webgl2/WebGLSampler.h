@@ -3,19 +3,19 @@
 //
 
 #pragma once
+#include "v8runtime/V8Runtime.h"
 
-#include "../Common.h"
-#include "../Caches.h"
-#include "../Helpers.h"
+using namespace facebook;
 
-class WebGLSampler {
+class WebGLSampler : public jsi::HostObject {
 public:
-    static void Init(v8::Isolate *isolate);
+    WebGLSampler(uint32_t sampler) : sampler_(sampler) {}
 
-    static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
+    uint32_t GetSampler() {
+        return this->sampler_;
+    }
 
-    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
-
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, uint32_t sampler);
+private:
+    uint32_t sampler_;
 };
 

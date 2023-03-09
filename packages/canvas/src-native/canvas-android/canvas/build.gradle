@@ -42,7 +42,6 @@ println "Runtime using NDK_PATH: " + NDK_PATH
 
 android {
 	compileSdkVersion 33
-	ndkVersion "20.0.5594570"
 	defaultConfig {
 		minSdkVersion 21
 		targetSdkVersion 33
@@ -52,6 +51,7 @@ android {
 
 		externalNativeBuild {
 			cmake {
+				cppFlags "-std=c++17"
 				arguments "-DANDROID_TOOLCHAIN=clang",
 					"-DANDROID_STL=c++_static",
 					"-DANDROID_NDK_ROOT=${System.getenv("ANDROID_NDK_ROOT")}"
@@ -83,6 +83,10 @@ android {
 			path "CMakeLists.txt"
 		}
 	}
+
+	ndkVersion '21.1.6352462'
+//	ndkVersion '22.1.7171670'
+
 }
 
 dependencies {

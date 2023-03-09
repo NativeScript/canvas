@@ -4,15 +4,16 @@
 
 #pragma
 
-#include "../../Common.h"
-#include "../../Caches.h"
-#include "../../Helpers.h"
+#include "rust/cxx.h"
+#include "v8runtime/V8Runtime.h"
+#include "gl.h"
+#include <vector>
+
+using namespace facebook;
 
 
-class WEBGL_depth_textureImpl {
-public:
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate);
+class JSI_EXPORT WEBGL_depth_textureImpl : public jsi::HostObject {
+    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 
-private:
-    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 };

@@ -3,33 +3,29 @@
 //
 
 #include "EXT_sRGBImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-v8::Local <v8::FunctionTemplate> EXT_sRGBImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->EXT_sRGBImplTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
+jsi::Value EXT_sRGBImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "SRGB_EXT") {
+        return {GL_SRGB_EXT};
+    } else if (methodName == "SRGB_ALPHA_EXT") {
+        return {GL_SRGB_ALPHA_EXT};
+    } else if (methodName == "SRGB8_ALPHA8_EXT") {
+        return {GL_SRGB8_ALPHA8_EXT};
+    } else if (methodName == "FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT") {
+        return {GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT};
     }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
 
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "EXT_sRGB"));
-
-    cache->EXT_sRGBImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
+    return jsi::Value::undefined();
 }
 
-v8::Local<v8::Object> EXT_sRGBImpl::NewInstance(v8::Isolate *isolate) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::EXT_sRGB);
-
-    result->Set(context, Helpers::ConvertToV8String(isolate, "SRGB_EXT"), v8::Int32::New(isolate, GL_SRGB_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "SRGB_ALPHA_EXT"), v8::Int32::New(isolate, GL_SRGB_ALPHA_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "SRGB8_ALPHA8_EXT"), v8::Int32::New(isolate, GL_SRGB8_ALPHA8_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT"), v8::Int32::New(isolate, GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT));
-    return handle_scope.Escape(result);
+std::vector<jsi::PropNameID> EXT_sRGBImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("SRGB_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("SRGB_ALPHA_EXT")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("SRGB8_ALPHA8_EXT")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT")));
+    return ret;
 }

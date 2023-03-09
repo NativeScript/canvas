@@ -3,28 +3,18 @@
 //
 
 #include "OES_texture_half_floatImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-v8::Local<v8::FunctionTemplate> OES_texture_half_floatImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->OES_texture_half_floatImplTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
+jsi::Value OES_texture_half_floatImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "HALF_FLOAT_OES") {
+        return {GL_HALF_FLOAT_OES};
     }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "OES_texture_half_float"));
-    cache->OES_texture_half_floatImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
+    return jsi::Value::undefined();
 }
 
-v8::Local<v8::Object> OES_texture_half_floatImpl::NewInstance(v8::Isolate *isolate) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::OES_texture_half_float);
-    result->Set(context, Helpers::ConvertToV8String(isolate, "HALF_FLOAT_OES"),
-                v8::Int32::New(isolate, GL_HALF_FLOAT_OES));
-    return handle_scope.Escape(result);
+std::vector<jsi::PropNameID> OES_texture_half_floatImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("HALF_FLOAT_OES")));
+    return ret;
 }

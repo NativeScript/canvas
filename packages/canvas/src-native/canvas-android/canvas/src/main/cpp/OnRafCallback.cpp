@@ -3,11 +3,11 @@
 //
 
 #include "OnRafCallback.h"
-#include "canvas-android/src/lib.rs.h"
-#include "./canvas2d/CanvasRenderingContext2DImpl.h"
-#include "./webgl/WebGLRenderingContextBase.h"
+#include "canvas2d/CanvasRenderingContext2DImpl.h"
+#include "webgl/WebGLRenderingContextBase.h"
 
-OnRafCallback::OnRafCallback(intptr_t context, uint32_t version) : context_(context), version_(version) {}
+OnRafCallback::OnRafCallback(intptr_t context, uint32_t version) : context_(context),
+                                                                   version_(version) {}
 
 void OnRafCallback::OnFrame(int64_t ts) const {
     if (this->version_ == 0) {
@@ -17,7 +17,6 @@ void OnRafCallback::OnFrame(int64_t ts) const {
     if (this->version_ == 1 || this->version_ == 2) {
         WebGLRenderingContextBase::Flush(this->context_);
     }
-
 }
 
 void OnRafCallbackOnFrame(intptr_t callback, int64_t ts) {

@@ -1,14 +1,32 @@
 import { TextEncoderBase } from './common';
-
-declare var com;
+import { Helpers } from '../helpers';
+let ctor;
 
 export class TextEncoder extends TextEncoderBase {
+	static {
+		Helpers.initialize();
+		ctor = global.CanvasJSIModule.TextEncoder;
+	}
+
+	_encode;
+
+	_getMethod(name: string) {
+		if (this._encode === undefined) {
+			const ret = this.native[name];
+			this._encode = ret;
+			return ret;
+		}
+
+		return this._encode;
+	}
+
 	constructor(encoding: string = 'utf8') {
-		super(new org.nativescript.canvas.TNSTextEncoder(encoding));
+		super(ctor(encoding));
+		this._getMethod('encode');
 	}
 
 	get encoding(): string {
-		return this.native.getEncoding();
+		return this.native.encoding;
 	}
 
 	encode(text?: string): Uint8Array {
@@ -17,7 +35,7 @@ export class TextEncoder extends TextEncoderBase {
 		} else if (text === null) {
 			text = 'null';
 		}
-		const buf = (ArrayBuffer as any).from(this.native.encode(text));
-		return new Uint8Array(buf);
+
+		return this._encode(text);
 	}
 }

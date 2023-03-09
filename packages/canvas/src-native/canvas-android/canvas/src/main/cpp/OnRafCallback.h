@@ -3,7 +3,9 @@
 //
 
 #pragma once
-#include "Common.h"
+#pragma process_pending_includes
+
+#include <cstdint>
 
 class OnRafCallback {
     // 0 2d
@@ -11,7 +13,9 @@ class OnRafCallback {
     // 2 gl2
 public:
     OnRafCallback(intptr_t context, uint32_t version);
+
     void OnFrame(int64_t ts) const;
+
 private:
     intptr_t context_;
     uint32_t version_;

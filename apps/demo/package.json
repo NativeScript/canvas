@@ -18,7 +18,6 @@
 		"babylonjs-materials": "file:../../node_modules/babylonjs-materials",
 		"chart.js": "file:../../node_modules/chart.js",
 		"d3": "file:../../node_modules/d3",
-		"leaflet": "file:../../node_modules/leaflet",
 		"matter-js": "file:../../node_modules/matter-js",
 		"phaser": "file:../../node_modules/phaser",
 		"phaser-ce": "file:../../node_modules/phaser-ce",
@@ -28,7 +27,7 @@
 		"zen-3d": "file:../../node_modules/zen-3d"
 	},
 	"devDependencies": {
-		"@nativescript/android": "file:../../../android-runtime/dist/nativescript-android-8.4.0-alpha.6.tgz",
+		"@nativescript/android": "beta",
 		"@nativescript/ios": "~8.2.0"
 	}
 }

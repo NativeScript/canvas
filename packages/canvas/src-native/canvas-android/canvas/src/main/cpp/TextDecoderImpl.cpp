@@ -3,148 +3,95 @@
 //
 
 #include "TextDecoderImpl.h"
-#include "rust/cxx.h"
-#include "OneByteStringResource.h"
 
-TextDecoderImpl::TextDecoderImpl(rust::Box<TextDecoder> decoder) : decoder_(std::move(decoder)) {
+TextDecoderImpl::TextDecoderImpl(rust::Box<TextDecoder> decoder) : decoder_(std::move(decoder)) {}
 
+std::vector<jsi::PropNameID> TextDecoderImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(2);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("encoding")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("decode")));
+    return ret;
 }
 
-void TextDecoderImpl::Init(v8::Isolate *isolate) {
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::HandleScope handle_scope(isolate);
-    auto ctor = GetCtor(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "TextDecoder"),
-                ctor->GetFunction(context).ToLocalChecked());
-}
+jsi::Value TextDecoderImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "encoding") {
+        auto encoding = canvas_native_text_decoder_get_encoding(this->GetTextDecoder());
+        return jsi::String::createFromAscii(runtime, encoding.data(), encoding.size());
+    } else if (methodName == "decode") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-void TextDecoderImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::HandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
+                                                         if (count == 1) {
+                                                             if (arguments[0].isNull() ||
+                                                                 arguments[0].isUndefined() ||
+                                                                 !arguments[0].isObject()) {
 
-    if (!args.IsConstructCall()) {
-        auto err = v8::Exception::Error(
-                Helpers::ConvertToV8String(
-                        isolate,
-                        "Please use the 'new' operator, this object constructor cannot be called as a function."
-                )
+                                                                 throw jsi::JSINativeException(
+                                                                         "Failed to execute 'decode' on 'TextDecoder': The provided value is not of type '(ArrayBuffer or ArrayBufferView)'");
+                                                             }
+
+                                                             auto buf = arguments[0].asObject(
+                                                                     runtime);
+
+                                                             if (buf.isArrayBuffer(runtime)) {
+
+                                                                 auto buffer = buf.getArrayBuffer(
+                                                                         runtime);
+
+                                                                 auto data = buffer.data(runtime);
+                                                                 auto size = buffer.size(runtime);
+                                                                 rust::Slice<const uint8_t> slice{
+                                                                         data,
+                                                                         size};
+                                                                 auto decoded = canvas_native_text_decoder_decode(
+                                                                         this->GetTextDecoder(),
+                                                                         slice);
+                                                                 return jsi::String::createFromAscii(
+                                                                         runtime, decoded.data(),
+                                                                         decoded.size());
+                                                             }
+
+
+                                                             if (buf.isTypedArray(runtime)) {
+
+                                                                 auto buffer = buf.getTypedArray(
+                                                                         runtime);
+
+                                                                 auto data = GetTypedArrayData<const uint8_t>(
+                                                                         runtime, buffer);
+
+                                                                 auto decoded = canvas_native_text_decoder_decode(
+                                                                         this->GetTextDecoder(),
+                                                                         data);
+
+                                                                 return jsi::String::createFromAscii(
+                                                                         runtime, decoded.data(),
+                                                                         decoded.size());
+                                                             }
+
+
+                                                             throw jsi::JSINativeException(
+                                                                     "Failed to execute 'decode' on 'TextDecoder': The provided value is not of type '(ArrayBuffer or ArrayBufferView)'");
+
+
+                                                         }
+
+                                                         return jsi::String::createFromUtf8(runtime,
+                                                                                            "");
+                                                     }
         );
-        isolate->ThrowException(err);
-        return;
-    } else {
-        if (args.Length() == 1 && !args[0]->IsString()) {
-            auto err = v8::Exception::RangeError(
-                    Helpers::ConvertToV8String(
-                            isolate,
-                            "Failed to construct 'TextDecoder': The encoding label provided ('" +
-                            std::string(Helpers::ConvertFromV8String(isolate,
-                                                                     args[0]->ToString(context).ToLocalChecked())) +
-                            "') is invalid"
-                    )
-            );
-            isolate->ThrowException(err);
-            return;
-        }
-        std::string decoding("utf-8");
-        if (args.Length() == 1 && Helpers::IsString(args[0])) {
-            decoding = Helpers::GetString(isolate, args[0]);
-        }
-
-        auto ret = args.This();
-        Helpers::SetInstanceType(isolate, ret, ObjectType::TextDecoder);
-        auto decoder = canvas_native_text_decoder_create(rust::Str(decoding.c_str(), decoding.size()));
-        TextDecoderImpl *impl = new TextDecoderImpl(std::move(decoder));
-        AddWeakListener(isolate, ret, impl);
-        args.GetReturnValue().Set(ret);
-    }
-}
-
-TextDecoderImpl *TextDecoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-    if (ptr == nullptr) {
-        return nullptr;
-    }
-    return static_cast<TextDecoderImpl *>(ptr);
-}
-
-void TextDecoderImpl::GetEncoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto isolate = info.GetIsolate();
-    auto ptr = GetPointer(info.This());
-    auto encoding = canvas_native_text_decoder_get_encoding(*ptr->decoder_);
-    info.GetReturnValue().Set(
-            Helpers::ConvertToV8String(isolate, encoding.c_str())
-    );
-}
-
-
-v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->TextDecoderTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
     }
 
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "TextDecoder"));
-
-    auto tmpl = ctorTmpl->PrototypeTemplate();
-
-    tmpl->Set(
-            Helpers::ConvertToV8String(isolate, "decode"), v8::FunctionTemplate::New(isolate, &Decode)
-    );
-
-    tmpl->SetAccessor(
-            Helpers::ConvertToV8String(isolate, "encoding"),
-            &GetEncoding
-    );
-
-    cache->TextDecoderTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
+    return jsi::Value::undefined();
 }
 
-
-void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto ptr = GetPointer(args.This());
-    if (args.Length() == 1) {
-        auto buf = args[0];
-        if (!buf->IsArrayBuffer() && !buf->IsArrayBufferView() && !buf->IsTypedArray()) {
-
-            auto err = v8::Exception::TypeError(
-                    Helpers::ConvertToV8String(
-                            isolate,
-                            "Failed to execute 'decode' on 'TextDecoder': The provided value is not of type '(ArrayBuffer or ArrayBufferView)'"
-                    )
-            );
-            isolate->ThrowException(err);
-            return;
-        }
-        if (buf->IsArrayBuffer()) {
-            auto buffer = buf.As<v8::ArrayBuffer>();
-            auto store = buffer->GetBackingStore();
-            auto data = static_cast<std::uint8_t *>(store->Data());
-            auto size = store->ByteLength();
-            rust::Slice<const uint8_t> slice{data, size};
-            auto decoded = canvas_native_text_decoder_decode(*ptr->decoder_, slice);
-            args.GetReturnValue().Set(
-                    Helpers::ConvertToV8String(isolate, std::string(decoded.data(), decoded.length())));
-        } else if (buf->IsArrayBufferView() || buf->IsTypedArray()) {
-            auto buffer = buf.As<v8::TypedArray>();
-            auto slice = Helpers::GetTypedArrayData<const uint8_t>(buffer);
-            auto decoded = canvas_native_text_decoder_decode(*ptr->decoder_, slice);
-            args.GetReturnValue().Set(
-                    Helpers::ConvertToV8String(isolate, std::string(decoded.data(), decoded.length())));
-        }
-
-        return;
-    }
-    args.GetReturnValue().SetEmptyString();
+TextDecoder &TextDecoderImpl::GetTextDecoder() {
+    return *this->decoder_;
 }

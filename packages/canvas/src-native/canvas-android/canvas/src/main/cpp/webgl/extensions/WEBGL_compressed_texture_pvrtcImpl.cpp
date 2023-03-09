@@ -3,36 +3,37 @@
 //
 
 #include "WEBGL_compressed_texture_pvrtcImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-v8::Local<v8::FunctionTemplate> WEBGL_compressed_texture_pvrtcImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_compressed_texture_pvrtcImplTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
+jsi::Value
+WEBGL_compressed_texture_pvrtcImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "COMPRESSED_RGB_PVRTC_4BPPV1_IMG") {
+        return {GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG};
+    } else if (methodName == "COMPRESSED_RGBA_PVRTC_4BPPV1_IMG") {
+        return {GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG};
+    } else if (methodName == "COMPRESSED_RGB_PVRTC_2BPPV1_IMG") {
+        return {GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG};
+    } else if (methodName == "COMPRESSED_RGBA_PVRTC_2BPPV1_IMG") {
+        return {GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG};
     }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_compressed_texture_pvrtc"));
-    cache->WEBGL_compressed_texture_pvrtcImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate,
-                                                                                                           ctorTmpl);
-    return ctorTmpl;
+
+    return jsi::Value::undefined();
 }
 
-v8::Local<v8::Object> WEBGL_compressed_texture_pvrtcImpl::NewInstance(v8::Isolate *isolate) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_compressed_texture_pvrtc);
+std::vector<jsi::PropNameID>
+WEBGL_compressed_texture_pvrtcImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGB_PVRTC_4BPPV1_IMG")));
 
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_RGB_PVRTC_4BPPV1_IMG"),
-                v8::Int32::New(isolate, GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_RGBA_PVRTC_4BPPV1_IMG"),
-                v8::Int32::New(isolate, GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_RGB_PVRTC_2BPPV1_IMG"),
-                v8::Int32::New(isolate, GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "COMPRESSED_RGBA_PVRTC_2BPPV1_IMG"),
-                v8::Int32::New(isolate, GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG));
-    return handle_scope.Escape(result);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("COMPRESSED_RGBA_PVRTC_4BPPV1_IMG")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt,
+                                     std::string("COMPRESSED_RGB_PVRTC_2BPPV1_IMG")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt,
+                                     std::string("COMPRESSED_RGBA_PVRTC_2BPPV1_IMG")));
+    return ret;
 }

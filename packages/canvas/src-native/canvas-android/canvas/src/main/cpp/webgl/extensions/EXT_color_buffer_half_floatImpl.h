@@ -3,15 +3,15 @@
 //
 
 #pragma once
-#include "../../Common.h"
-#include "../../Caches.h"
-#include "../../Helpers.h"
 
-class EXT_color_buffer_half_floatImpl {
-public:
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate);
+#include "v8runtime/V8Runtime.h"
+#include <vector>
 
-private:
-    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+using namespace facebook;
+
+class JSI_EXPORT EXT_color_buffer_half_floatImpl : public jsi::HostObject {
+    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
+
+    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 };
 

@@ -3,87 +3,38 @@
 //
 
 #include "WebGLShaderPrecisionFormatImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-WebGLShaderPrecisionFormatImpl::WebGLShaderPrecisionFormatImpl(rust::Box<WebGLShaderPrecisionFormat> shader) : shader_(
-        std::move(shader)) {
+WebGLShaderPrecisionFormatImpl::WebGLShaderPrecisionFormatImpl(
+        rust::Box<WebGLShaderPrecisionFormat> shader) : shader_(
+        std::move(shader)) {}
 
+std::vector<jsi::PropNameID> WebGLShaderPrecisionFormatImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(3);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("rangeMin")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("rangeMax")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("precision")));
+    return ret;
 }
 
+jsi::Value WebGLShaderPrecisionFormatImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
 
-void WebGLShaderPrecisionFormatImpl::Init(v8::Isolate *isolate) {
-    auto ctor = GetCtor(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto global = context->Global();
-    global->Set(context, Helpers::ConvertToV8String(isolate, "WebGLShaderPrecisionFormat"),
-                ctor->GetFunction(context).ToLocalChecked());
-}
-
-WebGLShaderPrecisionFormatImpl *WebGLShaderPrecisionFormatImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-    if (ptr == nullptr) {
-        return nullptr;
-    }
-    return static_cast<WebGLShaderPrecisionFormatImpl *>(ptr);
-}
-
-void WebGLShaderPrecisionFormatImpl::Create(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    Helpers::ThrowIllegalConstructor(args.GetIsolate());
-}
-
-v8::Local<v8::Object>
-WebGLShaderPrecisionFormatImpl::NewInstance(v8::Isolate *isolate, rust::Box<WebGLShaderPrecisionFormat> shader) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto ctorFunc = GetCtor(isolate);
-    WebGLShaderPrecisionFormatImpl *format = new WebGLShaderPrecisionFormatImpl(std::move(shader));
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::WebGLShaderPrecisionFormat);
-    AddWeakListener(isolate, result, format);
-    return handle_scope.Escape(result);
-}
-
-void WebGLShaderPrecisionFormatImpl::GetRangeMin(v8::Local<v8::String> name,
-                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
-    info.GetReturnValue().Set(
-            canvas_native_webgl_shader_precision_format_get_range_min(*ptr->shader_)
-    );
-}
-
-void WebGLShaderPrecisionFormatImpl::GetRangeMax(v8::Local<v8::String> name,
-                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
-    info.GetReturnValue().Set(
-            canvas_native_webgl_shader_precision_format_get_range_max(*ptr->shader_));
-}
-
-void WebGLShaderPrecisionFormatImpl::GetPrecision(v8::Local<v8::String> name,
-                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
-    info.GetReturnValue().Set(
-            canvas_native_webgl_shader_precision_format_get_precision(*ptr->shader_));
-}
-
-v8::Local<v8::FunctionTemplate> WebGLShaderPrecisionFormatImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->WebGLShaderPrecisionFormatTmpl.get();
-
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
+    if (methodName == "rangeMin") {
+        return {canvas_native_webgl_shader_precision_format_get_range_min(
+                this->GetShaderPrecisionFormat())};
+    } else if (methodName == "rangeMax") {
+        return {canvas_native_webgl_shader_precision_format_get_range_max(
+                this->GetShaderPrecisionFormat())};
+    } else if (methodName == "precision") {
+        return {canvas_native_webgl_shader_precision_format_get_precision(
+                this->GetShaderPrecisionFormat())};
     }
 
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, &Create);
-
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WebGLShaderPrecisionFormat"));
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
-    auto tmpl = ctorTmpl->PrototypeTemplate();
-
-    tmpl->SetAccessor(Helpers::ConvertToV8String(isolate, "rangeMin"), &GetRangeMin);
-    tmpl->SetAccessor(Helpers::ConvertToV8String(isolate, "rangeMax"), &GetRangeMax);
-    tmpl->SetAccessor(Helpers::ConvertToV8String(isolate, "precision"), &GetPrecision);
+    return jsi::Value::undefined();
+}
 
 
-    cache->WebGLShaderPrecisionFormatTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
+WebGLShaderPrecisionFormat &WebGLShaderPrecisionFormatImpl::GetShaderPrecisionFormat() {
+    return *this->shader_;
 }

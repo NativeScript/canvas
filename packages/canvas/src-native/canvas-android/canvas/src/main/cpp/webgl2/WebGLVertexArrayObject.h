@@ -4,17 +4,18 @@
 
 #pragma once
 
-#include "../Common.h"
-#include "../Caches.h"
-#include "../Helpers.h"
+#include "v8runtime/V8Runtime.h"
 
-class WebGLVertexArrayObject {
+using namespace facebook;
+
+class JSI_EXPORT WebGLVertexArrayObject : public jsi::HostObject {
 public:
-    static void Init(v8::Isolate *isolate);
+    WebGLVertexArrayObject(uint32_t vertexArrayObject) : vertexArrayObject_(vertexArrayObject) {}
 
-    static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
+    uint32_t GetVertexArrayObject() {
+        return this->vertexArrayObject_;
+    }
 
-    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
-
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, uint32_t object);
+private:
+    uint32_t vertexArrayObject_;
 };

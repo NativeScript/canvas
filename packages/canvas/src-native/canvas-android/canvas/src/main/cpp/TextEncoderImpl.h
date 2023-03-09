@@ -4,51 +4,26 @@
 
 #pragma once
 
-#include "Common.h"
-#include "Caches.h"
-#include "Helpers.h"
+#include "rust/cxx.h"
+#include "canvas-cxx/src/lib.rs.h"
+#import "v8runtime/V8Runtime.h"
+#include "VecMutableBuffer.h"
+#include <vector>
 
-class TextEncoderImpl {
+using namespace facebook;
+using namespace org::nativescript::canvas;
+
+class JSI_EXPORT TextEncoderImpl : public jsi::HostObject {
+
 public:
     TextEncoderImpl(rust::Box<TextEncoder> encoder);
 
-    static void Init(v8::Isolate *isolate);
+    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 
-    static void Create(const v8::FunctionCallbackInfo <v8::Value> &args);
+    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
-    static TextEncoderImpl *GetPointer(const v8::Local <v8::Object> &object);
-
-    static void
-    GetEncoding(v8::Local <v8::String> name, const v8::PropertyCallbackInfo <v8::Value> &info);
-
-    static void Encode(const v8::FunctionCallbackInfo <v8::Value> &args);
-
-    template<typename T>
-    static void
-    AddWeakListener(v8::Isolate *isolate, const v8::Local <v8::Object> &object, T *data) {
-        auto ext = v8::External::New(isolate, data);
-        object->SetInternalField(0, ext);
-        auto persistent = new v8::Persistent<v8::Object>(isolate, object);
-        auto entry = new ObjectCacheEntry(static_cast<void *>(data), persistent);
-        auto callback = [](const v8::WeakCallbackInfo <ObjectCacheEntry> &cacheEntry) {
-            auto value = cacheEntry.GetParameter();
-            auto ptr = static_cast<T *>(value->data);
-            if (ptr != nullptr) {
-                delete ptr;
-            }
-            auto persistent_ptr = value->object;
-            if (persistent_ptr != nullptr) {
-                if (!persistent_ptr->IsEmpty()) {
-                    persistent_ptr->Reset();
-                }
-            }
-            delete value;
-        };
-        persistent->SetWeak(entry, callback, v8::WeakCallbackType::kFinalizer);
-    }
+    TextEncoder &GetTextEncoder();
 
 private:
     rust::Box<TextEncoder> encoder_;
-
-    static v8::Local <v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 };

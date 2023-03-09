@@ -3,33 +3,34 @@
 //
 
 #include "WEBGL_color_buffer_floatImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-v8::Local<v8::FunctionTemplate> WEBGL_color_buffer_floatImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->WEBGL_color_buffer_floatImplTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
+jsi::Value WEBGL_color_buffer_floatImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "RGBA32F_EXT") {
+        return {GL_RGBA32F_EXT};
+    } else if (methodName == "RGB32F_EXT") {
+        return {GL_RGB32F_EXT};
+    } else if (methodName == "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT") {
+        return {GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT};
+    } else if (methodName == "UNSIGNED_NORMALIZED_EXT") {
+        return {GL_UNSIGNED_NORMALIZED_EXT};
     }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "WEBGL_color_buffer_float"));
-    cache->WEBGL_color_buffer_floatImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
+
+    return jsi::Value::undefined();
 }
 
-v8::Local<v8::Object> WEBGL_color_buffer_floatImpl::NewInstance(v8::Isolate *isolate) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto ctorFunc = GetCtor(isolate);
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(context).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::WEBGL_color_buffer_float);
+std::vector<jsi::PropNameID> WEBGL_color_buffer_floatImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("RGBA32F_EXT")));
 
-    result->Set(context, Helpers::ConvertToV8String(isolate, "RGBA32F_EXT"), v8::Int32::New(isolate, GL_RGBA32F_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "RGB32F_EXT"), v8::Int32::New(isolate, GL_RGB32F_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT"),
-                v8::Int32::New(isolate, GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT));
-    result->Set(context, Helpers::ConvertToV8String(isolate, "UNSIGNED_NORMALIZED_EXT"),
-                v8::Int32::New(isolate, GL_UNSIGNED_NORMALIZED_EXT));
-    return handle_scope.Escape(result);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("RGB32F_EXT")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("UNSIGNED_NORMALIZED_EXT")));
+
+    return ret;
 }

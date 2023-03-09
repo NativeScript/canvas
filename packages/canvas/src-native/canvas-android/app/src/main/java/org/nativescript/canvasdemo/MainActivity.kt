@@ -16,8 +16,8 @@ import java.util.concurrent.Executors
 
 
 class MainActivity : AppCompatActivity() {
-	var canvas: TNSCanvas? = null
-	var svg: TNSSVG? = null
+	var canvas: NSCCanvas? = null
+	var svg: NSCSVG? = null
 	val executor = Executors.newSingleThreadExecutor()
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
 //		System.loadLibrary("canvasnative")
 		canvas?.ignorePixelScaling = false
 
-		canvas?.listener = object : TNSCanvas.Listener {
+		canvas?.listener = object : NSCCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
 				val params = canvas!!.layoutParams

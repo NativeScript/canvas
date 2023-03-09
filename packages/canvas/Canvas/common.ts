@@ -112,6 +112,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			if (type === '2d') {
 				return {
 					alpha: true,
+					antialias: true,
+					depth: true,
+					failIfMajorPerformanceCaveat: false,
+					powerPreference: 'default',
+					premultipliedAlpha: true,
+					preserveDrawingBuffer: false,
+					stencil: false,
+					desynchronized: false,
+					xrCompatible: false,
 				};
 			}
 			if (type.indexOf('webgl') > -1) {

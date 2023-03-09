@@ -4,18 +4,21 @@
 
 #pragma once
 
-#include "../Common.h"
-#include "../Caches.h"
-#include "../Helpers.h"
+#include "rust/cxx.h"
+#include "canvas-cxx/src/lib.rs.h"
+#include "v8runtime/V8Runtime.h"
 
-class WebGLBuffer {
+using namespace facebook;
+
+class JSI_EXPORT WebGLBuffer : public jsi::HostObject {
 public:
-    static void Init(v8::Isolate *isolate);
+    WebGLBuffer(uint32_t buffer) : buffer_(buffer) {}
 
-    static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
+    uint32_t GetBuffer() {
+        return this->buffer_;
+    }
 
-    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
-
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, uint32_t buffer);
+private:
+    uint32_t buffer_;
 };
 

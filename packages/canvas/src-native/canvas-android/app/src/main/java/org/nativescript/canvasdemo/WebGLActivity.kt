@@ -1,24 +1,14 @@
 package org.nativescript.canvasdemo
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.opengl.GLES20
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import org.nativescript.canvas.*
-import java.io.File
-import java.io.FileOutputStream
-import java.net.URL
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.concurrent.Executors
 
 class WebGLActivity : AppCompatActivity() {
-	var canvas: TNSCanvas? = null
+	var canvas: NSCCanvas? = null
 	var executor = Executors.newSingleThreadExecutor()
 	var contentView: ViewGroup? = null
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +16,7 @@ class WebGLActivity : AppCompatActivity() {
 		setContentView(R.layout.activity_web_g_l)
 		contentView = findViewById(android.R.id.content)
 		canvas = findViewById(R.id.canvasView)
-		canvas?.listener = object : TNSCanvas.Listener {
+		canvas?.listener = object : NSCCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
 				//drawTriangle()

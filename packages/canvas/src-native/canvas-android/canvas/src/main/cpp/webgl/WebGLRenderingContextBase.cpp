@@ -4,12 +4,32 @@
 
 #include "WebGLRenderingContextBase.h"
 
-#include <utility>
-#include "canvas-android/src/lib.rs.h"
-
 WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state,
                                                      WebGLRenderingVersion version)
-        : state_(std::move(state)), version_(version) {}
+        : state_(std::move(state)), version_(version) {
+
+
+    auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
+    auto raf_callback = new OnRafCallback(
+            ctx_ptr,
+            version == WebGLRenderingVersion::V2 ? 2 : 1);
+    auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
+    auto raf = canvas_native_raf_create(
+            raf_callback_ptr);
+    this->SetRaf(
+            std::make_shared<RafImpl>(
+                    raf_callback,
+                    raf_callback_ptr,
+                    std::move(
+                            raf)));
+
+    auto _raf = this->GetRaf();
+
+    if (_raf != nullptr) {
+        canvas_native_raf_start(_raf->GetRaf());
+    }
+
+}
 
 void WebGLRenderingContextBase::UpdateInvalidateState() {
     auto raf = this->GetRaf();
@@ -26,8 +46,8 @@ void WebGLRenderingContextBase::Flush() {
     auto state = this->GetInvalidateState();
     if (state == (int) InvalidateState::PENDING) {
         this->SetInvalidateState((int) InvalidateState::INVALIDATING);
-        canvas_native_webgl_make_current(*this->state_);
-        canvas_native_webgl_swap_buffers(*this->state_);
+        canvas_native_webgl_make_current(this->GetState());
+        canvas_native_webgl_swap_buffers(this->GetState());
         this->SetInvalidateState((int) InvalidateState::NONE);
     }
 }
@@ -51,6 +71,11 @@ RafImpl *WebGLRenderingContextBase::GetRaf() {
     return this->raf_.get();
 }
 
+void WebGLRenderingContextBase::SetInvalidateState(InvalidateState state) {
+    this->invalidateState_ = (int)state;
+}
+
+
 void WebGLRenderingContextBase::SetInvalidateState(int state) {
     this->invalidateState_ = state;
 }
@@ -64,5 +89,9 @@ WebGLRenderingVersion WebGLRenderingContextBase::GetVersion() const {
 }
 
 WebGLRenderingContextBase::~WebGLRenderingContextBase() {
-
+    auto _raf = this->GetRaf();
+    if (_raf != nullptr) {
+        canvas_native_raf_start(
+                _raf->GetRaf());
+    }
 }

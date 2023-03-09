@@ -677,6 +677,10 @@
       <sourceFolder url="file://$MODULE_DIR$/canvas-ios/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/stb/stb-sys/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/stb/stb/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/canvas-2d/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/canvas-webgl/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/playground/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/canvas-cxx/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/stb/stb/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

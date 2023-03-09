@@ -4,18 +4,20 @@
 
 #pragma once
 
-#include "../Common.h"
-#include "../Caches.h"
-#include "../Helpers.h"
+#include "rust/cxx.h"
+#include "canvas-cxx/src/lib.rs.h"
+#include "v8runtime/V8Runtime.h"
 
+using namespace facebook;
 
-class WebGLTexture {
+class JSI_EXPORT WebGLTexture : public jsi::HostObject {
 public:
-    static void Init(v8::Isolate *isolate);
+    WebGLTexture(uint32_t texture) : texture_(texture) {}
 
-    static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
+    uint32_t GetTexture() {
+        return this->texture_;
+    }
 
-    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
-
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, uint32_t texture);
+private:
+    uint32_t texture_;
 };

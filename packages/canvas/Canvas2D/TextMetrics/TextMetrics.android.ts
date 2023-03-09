@@ -6,50 +6,50 @@ export class TextMetrics extends TextMetricsBase {
 	}
 
 	get width(): number {
-		return this.nativeInstance.getWidth();
+		return this.nativeInstance.width;
 	}
 
 	get actualBoundingBoxLeft(): number {
-		return this.nativeInstance.getActualBoundingBoxLeft();
+		return this.nativeInstance.actualBoundingBoxLeft;
 	}
 
 	get actualBoundingBoxRight(): number {
-		return this.nativeInstance.getActualBoundingBoxRight();
+		return this.nativeInstance.actualBoundingBoxRight;
 	}
 
 	get actualBoundingBoxAscent(): number {
-		return this.nativeInstance.getActualBoundingBoxAscent();
+		return this.nativeInstance.actualBoundingBoxAscent;
 	}
 
 	get actualBoundingBoxDescent(): number {
-		return this.nativeInstance.getActualBoundingBoxDescent();
+		return this.nativeInstance.actualBoundingBoxDescent;
 	}
 
 	get fontBoundingBoxAscent(): number {
-		return this.nativeInstance.getFontBoundingBoxAscent();
+		return this.nativeInstance.fontBoundingBoxAscent;
 	}
 
 	get fontBoundingBoxDescent(): number {
-		return this.nativeInstance.getFontBoundingBoxDescent();
+		return this.nativeInstance.fontBoundingBoxDescent;
 	}
 
 	get emHeightAscent(): number {
-		return this.nativeInstance.getEmHeightAscent();
+		return this.nativeInstance.emHeightAscent;
 	}
 
 	get emHeightDescent(): number {
-		return this.nativeInstance.getEmHeightDescent();
+		return this.nativeInstance.emHeightDescent;
 	}
 
 	get hangingBaseline(): number {
-		return this.nativeInstance.getHangingBaseline();
+		return this.nativeInstance.hangingBaseline;
 	}
 
 	get alphabeticBaseline(): number {
-		return this.nativeInstance.getAlphabeticBaseline();
+		return this.nativeInstance.alphabeticBaseline;
 	}
 
 	get ideographicBaseline(): number {
-		return this.nativeInstance.getIdeographicBaseline();
+		return this.nativeInstance.ideographicBaseline;
 	}
 }

@@ -11,8 +11,4 @@ export abstract class TextEncoderBase {
 	}
 
 	abstract encode(text: string): Uint8Array;
-
-	static [Symbol.hasInstance](obj) {
-		if (obj?.native && obj.constructor.name === 'TextEncoder') return true;
-	}
 }

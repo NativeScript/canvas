@@ -4,18 +4,25 @@
 
 #pragma once
 
-#include "../Common.h"
-#include "../Caches.h"
-#include "../Helpers.h"
+#include "rust/cxx.h"
+#include "canvas-cxx/src/lib.rs.h"
+#include "v8runtime/V8Runtime.h"
+
+using namespace facebook;
 
 
-class WebGLUniformLocation {
+class JSI_EXPORT WebGLUniformLocation
+
+        : public jsi::HostObject {
 public:
-    static void Init(v8::Isolate *isolate);
+    WebGLUniformLocation(int32_t
+                         uniformLocation) :
+            uniformLocation_(uniformLocation) {}
 
-    static void Create(const v8::FunctionCallbackInfo<v8::Value> &args);
+    int32_t GetUniformLocation() {
+        return this->uniformLocation_;
+    }
 
-    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
-
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, int32_t location);
+private:
+    int32_t uniformLocation_;
 };

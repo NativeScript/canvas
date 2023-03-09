@@ -3,115 +3,101 @@
 //
 
 #include "ANGLE_instanced_arraysImpl.h"
-#include "canvas-android/src/lib.rs.h"
 
-ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(rust::Box<ANGLE_instanced_arrays> arrays) : arrays_(
-        std::move(arrays)) {
+ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(rust::Box<ANGLE_instanced_arrays> arrays)
+        : arrays_(
+        std::move(arrays)) {}
 
+std::vector<jsi::PropNameID> ANGLE_instanced_arraysImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(4);
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("drawArraysInstancedANGLE")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("drawElementsInstancedANGLE")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttribDivisorANGLE")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE")));
+    return ret;
 }
 
-
-ANGLE_instanced_arraysImpl *ANGLE_instanced_arraysImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
-    if (ptr == nullptr) {
-        return nullptr;
+jsi::Value ANGLE_instanced_arraysImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
+    auto methodName = name.utf8(runtime);
+    if (methodName == "VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE") {
+        return {0x88FE};
     }
-    return static_cast<ANGLE_instanced_arraysImpl *>(ptr);
-}
+    if (methodName == "drawArraysInstancedANGLE") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto mode = (uint32_t) arguments[0].asNumber();
+                                                         auto first = (int32_t) arguments[1].asNumber();
+                                                         auto count_ = (int32_t) arguments[2].asNumber();
+                                                         auto primcount = (int32_t) arguments[3].asNumber();
 
-v8::Local<v8::Object>
-ANGLE_instanced_arraysImpl::NewInstance(v8::Isolate *isolate, rust::Box<ANGLE_instanced_arrays> arrays) {
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::EscapableHandleScope handle_scope(isolate);
-    auto context = isolate->GetCurrentContext();
-    auto ctorFunc = GetCtor(isolate);
-    ANGLE_instanced_arraysImpl *arraysImpl = new ANGLE_instanced_arraysImpl(std::move(arrays));
-    auto result = ctorFunc->InstanceTemplate()->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Helpers::SetInstanceType(isolate, result, ObjectType::ANGLE_instanced_arrays);
-    AddWeakListener(isolate, result, arraysImpl);
+                                                         canvas_native_webgl_angle_instanced_arrays_draw_arrays_instanced_angle(
+                                                                 mode,
+                                                                 first,
+                                                                 count_,
+                                                                 primcount,
+                                                                 this->GetArrays()
+                                                         );
 
-    result->Set(context, Helpers::ConvertToV8String(isolate, "VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE"),
-                v8::Uint32::New(isolate, GL_VERTEX_ATTRIB_ARRAY_DIVISOR_EXT));
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "drawElementsInstancedANGLE") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     5,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-    return handle_scope.Escape(result);
-}
+                                                         auto mode = (uint32_t) arguments[0].asNumber();
+                                                         auto count_ = (int32_t) arguments[1].asNumber();
+                                                         auto type = (uint32_t) arguments[2].asNumber();
+                                                         auto offset = (int32_t) arguments[3].asNumber();
+                                                         auto primcount = (int32_t) arguments[4].asNumber();
+                                                         canvas_native_webgl_angle_instanced_arrays_draw_elements_instanced_angle(
+                                                                 mode,
+                                                                 count_,
+                                                                 type,
+                                                                 offset,
+                                                                 primcount,
+                                                                 this->GetArrays()
+                                                         );
 
-v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->ANGLE_instanced_arraysImplTmpl.get();
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "vertexAttribDivisorANGLE") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
 
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
+                                                         auto index = (u_int32_t) arguments[0].asNumber();
+                                                         auto divisor = (u_int32_t) arguments[1].asNumber();
+                                                         canvas_native_webgl_angle_instanced_arrays_vertex_attrib_divisor_angle(
+                                                                 index,
+                                                                 divisor,
+                                                                 this->GetArrays()
+                                                         );
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
     }
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-
-    ctorTmpl->SetClassName(Helpers::ConvertToV8String(isolate, "ANGLE_instanced_arrays"));
-
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-    auto tmpl = ctorTmpl->PrototypeTemplate();
-
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "drawArraysInstancedANGLE"),
-              v8::FunctionTemplate::New(isolate, &DrawArraysInstancedANGLE));
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "drawElementsInstancedANGLE"),
-              v8::FunctionTemplate::New(isolate, &DrawElementsInstancedANGLE));
-    tmpl->Set(Helpers::ConvertToV8String(isolate, "vertexAttribDivisorANGLE"),
-              v8::FunctionTemplate::New(isolate, &VertexAttribDivisorANGLE));
-
-    cache->ANGLE_instanced_arraysImplTmpl = std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
+    return jsi::Value::undefined();
 }
 
-void ANGLE_instanced_arraysImpl::DrawArraysInstancedANGLE(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.This());
-    auto mode = args[0];
-    auto first = args[1];
-    auto count = args[2];
-    auto primcount = args[3];
-
-    canvas_native_webgl_angle_instanced_arrays_draw_arrays_instanced_angle(
-            mode->Uint32Value(context).ToChecked(),
-            first->Int32Value(context).ToChecked(),
-            count->Int32Value(context).ToChecked(),
-            primcount->Int32Value(context).ToChecked(),
-            *ptr->arrays_
-    );
-}
-
-
-void ANGLE_instanced_arraysImpl::DrawElementsInstancedANGLE(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.This());
-
-    auto mode = args[0];
-    auto count = args[1];
-    auto type = args[2];
-    auto offset = args[3];
-    auto primcount = args[4];
-    canvas_native_webgl_angle_instanced_arrays_draw_elements_instanced_angle(
-            mode->Uint32Value(context).ToChecked(),
-            count->Int32Value(context).ToChecked(),
-            type->Uint32Value(context).ToChecked(),
-            offset->Int32Value(context).ToChecked(),
-            primcount->Int32Value(context).ToChecked(),
-            *ptr->arrays_
-    );
-}
-
-
-void ANGLE_instanced_arraysImpl::VertexAttribDivisorANGLE(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    auto ptr = GetPointer(args.This());
-
-    auto index = args[0];
-    auto divisor = args[1];
-    canvas_native_webgl_angle_instanced_arrays_vertex_attrib_divisor_angle(
-            index->Uint32Value(context).ToChecked(),
-            divisor->Uint32Value(context).ToChecked(),
-            *ptr->arrays_
-    );
+ANGLE_instanced_arrays &ANGLE_instanced_arraysImpl::GetArrays() {
+    return *this->arrays_;
 }

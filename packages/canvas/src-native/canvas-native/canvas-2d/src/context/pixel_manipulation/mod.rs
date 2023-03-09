@@ -27,7 +27,7 @@ impl Context {
             None,
         );
         let row_bytes = info.width() * 4;
-        let mut slice = vec![255u8; (row_bytes * info.height()) as usize];
+        let mut slice = vec![0u8; (row_bytes * info.height()) as usize];
         let _ = self.surface.canvas().read_pixels(
             &info,
             slice.as_mut_slice(),

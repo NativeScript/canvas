@@ -171,7 +171,6 @@ jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
 
             return Int32Array.callAsConstructor(
                     runtime, array);
-
         }
             break;
         case GL_DEPTH_CLEAR_VALUE:
@@ -1995,11 +1994,11 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          if (count > 0) {
                                                              if (arguments[0].isObject()) {
                                                                  auto shader = arguments[0].asObject(
-                                                                         runtime).asHostObject<WebGLRenderbuffer>(
+                                                                         runtime).asHostObject<WebGLShader>(
                                                                          runtime);
                                                                  if (shader != nullptr) {
                                                                      canvas_native_webgl_delete_shader(
-                                                                             shader->GetRenderBuffer(),
+                                                                             shader->GetShader(),
                                                                              this->GetState()
                                                                      );
                                                                  }
@@ -2056,7 +2055,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "DepthMask") {
+    } else if (methodName == "depthMask") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,
@@ -2532,7 +2531,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                  if (program != nullptr) {
                                                                      auto location = canvas_native_webgl_get_attrib_location(
                                                                              program->GetProgram(),
-                                                                             rust::Str(name.c_str()),
+                                                                             rust::Str(
+                                                                                     name.c_str()),
                                                                              this->GetState()
                                                                      );
                                                                      return {location};
@@ -2573,7 +2573,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
     } else if (methodName == "getContextAttributes") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     0,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
@@ -2700,120 +2700,272 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          switch (type) {
                                                              case WebGLExtensionType::EXT_blend_minmax: {
                                                                  auto ret = std::make_shared<EXT_blend_minmaxImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "EXT_blend_minmax"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::EXT_color_buffer_half_float: {
                                                                  auto ret = std::make_shared<EXT_color_buffer_half_floatImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "EXT_color_buffer_half_float"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::EXT_disjoint_timer_query: {
                                                                  auto ret = canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(
                                                                          std::move(ext));
                                                                  auto query = std::make_shared<EXT_disjoint_timer_queryImpl>(
                                                                          std::move(ret));
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, query);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "EXT_disjoint_timer_query"));
+                                                                 return object;
 
                                                              }
                                                                  break;
                                                              case WebGLExtensionType::EXT_sRGB: {
                                                                  auto ret = std::make_shared<EXT_sRGBImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "EXT_sRGB"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::EXT_shader_texture_lod: {
                                                                  auto ret = std::make_shared<EXT_shader_texture_lodImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "EXT_shader_texture_lod"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::EXT_texture_filter_anisotropic: {
                                                                  auto ret = std::make_shared<EXT_texture_filter_anisotropicImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "EXT_texture_filter_anisotropic"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::OES_element_index_uint: {
                                                                  auto ret = std::make_shared<OES_element_index_uintImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "OES_element_index_uint"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::OES_standard_derivatives: {
                                                                  auto ret = std::make_shared<OES_standard_derivativesImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "OES_standard_derivatives"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::OES_texture_float: {
                                                                  auto ret = std::make_shared<OES_texture_floatImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "OES_texture_float"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::OES_texture_float_linear: {
                                                                  auto ret = std::make_shared<OES_texture_float_linearImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "OES_texture_float_linearImpl"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::OES_texture_half_float: {
                                                                  auto ret = std::make_shared<OES_texture_half_floatImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "OES_texture_half_float"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::OES_texture_half_float_linear: {
                                                                  auto ret = std::make_shared<OES_texture_half_float_linearImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "OES_texture_half_float_linear"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::OES_vertex_array_object: {
                                                                  auto ret = canvas_native_webgl_context_extension_to_oes_vertex_array_object(
                                                                          std::move(ext));
                                                                  auto array = std::make_shared<OES_vertex_array_objectImpl>(
                                                                          std::move(ret));
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, array);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "OES_vertex_array_object"));
+                                                                 return object;
                                                              }
                                                                  break;
                                                              case WebGLExtensionType::WEBGL_color_buffer_float: {
                                                                  auto ret = std::make_shared<WEBGL_color_buffer_floatImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_color_buffer_float"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_compressed_texture_atc: {
                                                                  auto ret = std::make_shared<WEBGL_compressed_texture_atcImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_compressed_texture_atc"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_compressed_texture_etc1: {
                                                                  auto ret = std::make_shared<WEBGL_compressed_texture_etc1Impl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_compressed_texture_etc1"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_compressed_texture_s3tc: {
                                                                  auto ret = std::make_shared<WEBGL_compressed_texture_s3tcImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_compressed_texture_s3tc"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb: {
                                                                  auto ret = std::make_shared<WEBGL_compressed_texture_s3tc_srgbImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_compressed_texture_s3tc_srgb"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_compressed_texture_etc: {
                                                                  auto ret = std::make_shared<WEBGL_compressed_texture_etcImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_compressed_texture_etc"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_compressed_texture_pvrtc: {
                                                                  auto ret = std::make_shared<WEBGL_compressed_texture_pvrtcImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_compressed_texture_pvrtc"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_lose_context: {
                                                                  auto ret = canvas_native_webgl_context_extension_to_lose_context(
                                                                          std::move(ext));
                                                                  auto context = std::make_shared<WEBGL_lose_contextImpl>(
                                                                          std::move(ret));
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, context);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_lose_context"));
+                                                                 return object;
                                                              }
                                                                  break;
                                                              case WebGLExtensionType::ANGLE_instanced_arrays: {
@@ -2821,14 +2973,30 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                          std::move(ext));
                                                                  auto instance = std::make_shared<ANGLE_instanced_arraysImpl>(
                                                                          std::move(ret));
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, instance);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "ANGLE_instanced_arrays"));
+                                                                 return object;
+
                                                              }
                                                                  break;
                                                              case WebGLExtensionType::WEBGL_depth_texture: {
                                                                  auto ret = std::make_shared<WEBGL_depth_textureImpl>();
-                                                                 return jsi::Object::createFromHostObject(
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, ret);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_depth_texture"));
+                                                                 return object;
                                                              }
                                                              case WebGLExtensionType::WEBGL_draw_buffers: {
                                                                  auto ret = canvas_native_webgl_context_extension_to_draw_buffers(
@@ -2836,8 +3004,18 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
                                                                  auto buffers = std::make_shared<WEBGL_draw_buffersImpl>(
                                                                          std::move(ret));
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, buffers);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "ext_name",
+                                                                                    jsi::String::createFromAscii(
+                                                                                            runtime,
+                                                                                            "WEBGL_draw_buffers"));
+                                                                 return object;
+
+
                                                              }
                                                                  break;
                                                              case WebGLExtensionType::None:
@@ -2882,8 +3060,17 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                          *ret);
                                                                  auto buffer = std::make_shared<WebGLRenderbuffer>(
                                                                          value);
-                                                                 return jsi::Object::createFromHostObject(
+
+                                                                 auto object = jsi::Object::createFromHostObject(
                                                                          runtime, buffer);
+
+                                                                 object.setProperty(runtime,
+                                                                                    "isRenderbuffer",
+                                                                                    jsi::Value(
+                                                                                            true));
+
+                                                                 return object;
+
                                                              }
 
                                                              return {canvas_native_webgl_framebuffer_attachment_parameter_get_value(
@@ -3253,7 +3440,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
                                                                      auto ret = canvas_native_webgl_get_uniform_location(
                                                                              program->GetProgram(),
-                                                                             rust::Str(name.c_str()),
+                                                                             rust::Str(
+                                                                                     name.c_str()),
                                                                              this->GetState()
                                                                      );
 
@@ -4158,7 +4346,6 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                              runtime);
 
                                                                      if (image_asset != nullptr) {
-                                                                         auto asset = image_asset.get();
 
                                                                          canvas_native_webgl_tex_image2d_image_asset(
                                                                                  target,
@@ -4166,7 +4353,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                                  internalformat,
                                                                                  format,
                                                                                  type,
-                                                                                 asset->GetImageAsset(),
+                                                                                 image_asset->GetImageAsset(),
                                                                                  this->GetState()
                                                                          );
 
@@ -5694,58 +5881,53 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
                                                          if (count > 2 && arguments[0].isObject() &&
                                                              arguments[2].isObject()) {
-                                                             auto locationObject = arguments[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
+                                                             auto location = getHostObject<WebGLUniformLocation>(
+                                                                     runtime, arguments[0]);
+                                                             if (location != nullptr) {
                                                                  auto transpose = arguments[1].asBool();
                                                                  auto value = arguments[2].asObject(
                                                                          runtime);
 
-                                                                 if (location != nullptr) {
-                                                                     if (value.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = value.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform_matrix4fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 transpose, buf,
-                                                                                 this->GetState());
-                                                                     } else if (value.isArray(
-                                                                             runtime)) {
-                                                                         auto array = value.getArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-                                                                         std::vector<float> buf;
-                                                                         buf.reserve(len);
+                                                                 if (value.isFloat32Array(
+                                                                         runtime)) {
+                                                                     auto array = value.getTypedArray(
+                                                                             runtime);
+                                                                     auto buf = GetTypedArrayData<const float>(
+                                                                             runtime, array);
+                                                                     canvas_native_webgl_uniform_matrix4fv(
+                                                                             location->GetUniformLocation(),
+                                                                             transpose, buf,
+                                                                             this->GetState());
+                                                                 } else if (value.isArray(
+                                                                         runtime)) {
+                                                                     auto array = value.getArray(
+                                                                             runtime);
+                                                                     auto len = array.size(
+                                                                             runtime);
+                                                                     std::vector<float> buf;
+                                                                     buf.reserve(len);
 
-                                                                         for (int i = 0;
-                                                                              i < len; i++) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime, i);
-                                                                             if (item.isNumber()) {
-                                                                                 buf.push_back(
-                                                                                         static_cast<float>(item.asNumber()));
-                                                                             } else {
-                                                                                 buf.push_back(
-                                                                                         std::nanf(
-                                                                                                 ""));
-                                                                             }
+                                                                     for (int i = 0;
+                                                                          i < len; i++) {
+                                                                         auto item = array.getValueAtIndex(
+                                                                                 runtime, i);
+                                                                         if (item.isNumber()) {
+                                                                             buf.push_back(
+                                                                                     static_cast<float>(item.asNumber()));
+                                                                         } else {
+                                                                             buf.push_back(
+                                                                                     std::nanf(
+                                                                                             ""));
                                                                          }
-
-                                                                         rust::Slice<const float> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform_matrix4fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 transpose, slice,
-                                                                                 this->GetState());
                                                                      }
+
+                                                                     rust::Slice<const float> slice(
+                                                                             buf.data(),
+                                                                             buf.size());
+                                                                     canvas_native_webgl_uniform_matrix4fv(
+                                                                             location->GetUniformLocation(),
+                                                                             transpose, slice,
+                                                                             this->GetState());
                                                                  }
                                                              }
                                                          }
@@ -5761,18 +5943,27 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         if (count > 0 && arguments[0].isObject()) {
-                                                             auto programObject = arguments[0].asObject(
-                                                                     runtime);
-                                                             if (programObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto program = programObject.asHostObject<WebGLProgram>(
+                                                         if (count > 0) {
+                                                             if (arguments[0].isNull()) {
+                                                                 canvas_native_webgl_use_program(0,
+                                                                                                 this->GetState());
+
+                                                                 return jsi::Value::undefined();
+                                                             }
+
+                                                             if (arguments[0].isObject()) {
+                                                                 auto programObject = arguments[0].asObject(
                                                                          runtime);
-                                                                 if (program != nullptr) {
-                                                                     canvas_native_webgl_use_program(
-                                                                             program->GetProgram(),
-                                                                             this->GetState()
-                                                                     );
+                                                                 if (programObject.isHostObject(
+                                                                         runtime)) {
+                                                                     auto program = programObject.asHostObject<WebGLProgram>(
+                                                                             runtime);
+                                                                     if (program != nullptr) {
+                                                                         canvas_native_webgl_use_program(
+                                                                                 program->GetProgram(),
+                                                                                 this->GetState()
+                                                                         );
+                                                                     }
                                                                  }
                                                              }
                                                          }
@@ -5834,7 +6025,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
     } else if (methodName == "__toDataURL") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,

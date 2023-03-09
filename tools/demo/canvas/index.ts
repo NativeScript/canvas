@@ -584,7 +584,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//setTimeout(()=>{
 		//colorRain(this.canvas);
 		//particlesLarge(this.canvas);
-		rainbowOctopus(this.canvas);
+		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
@@ -604,7 +604,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
-		//interactiveCube(this.canvas);
+		interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
@@ -612,7 +612,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// }, 1000);
 		//cubeRotation(this.canvas);
 		//},3000)
-		// drawModes(this.canvas,'triangles')
+		 //drawModes(this.canvas,'triangles');
 		//cubeRotation(this.canvas);
 		//main(this.canvas)
 		//this.pointStyle(this.canvas);

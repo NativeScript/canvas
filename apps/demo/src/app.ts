@@ -20,9 +20,10 @@ const asset = new ImageAsset();
 
 console.log(asset.width, asset.height, asset.error);
 
-const success = asset.fromFileSync('~/assets/file-assets/webgl/svh.jpeg');
+// const success = asset.fromFileSync('~/assets/file-assets/webgl/svh.jpeg');
 
-console.log(success, asset.width, asset.height, asset.error);
+// console.log(success, asset.width, asset.height, asset.error);
+
 
 // success.then(value =>{
 // 	console.log(success, asset.width, asset.height, asset.error);
@@ -41,10 +42,10 @@ const handlePath = function (path) {
 declare const jp;
 
 Application.on('launch', (args) => {
-	require('@nativescript/canvas-polyfill');
-	if (global.isAndroid) {
-		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
-	}
+	//require('@nativescript/canvas-polyfill');
+	// if (global.isAndroid) {
+	// 	jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
+	// }
 });
 
 Application.run({ moduleName: 'app-root' });

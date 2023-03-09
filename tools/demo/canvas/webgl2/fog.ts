@@ -1,6 +1,7 @@
 import { createProgramFromScripts } from '../webgl/utils';
 import { ImageSource } from '@nativescript/core';
 import * as m4 from '../webgl/m4';
+import { ImageAsset } from '@nativescript/canvas';
 
 let LAF = 0;
 
@@ -52,13 +53,11 @@ void main() {
 			return;
 		}
 
-
 		// Use our boilerplate utils to compile the shaders and link into a program
 		var program = createProgramFromScripts(gl, [
 			{ type: 'vertex', src: vertexShaderSource },
 			{ type: 'fragment', src: fragmentShaderSource },
 		]);
-
 
 		// look up where the vertex data needs to go.
 		var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
@@ -121,17 +120,19 @@ void main() {
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
 		// Asynchronously load an image
 
-		const asset = new global.ImageAsset();
+		const asset = new ImageAsset();
 
-		asset.loadUrlAsync("https://webgl2fundamentals.org/webgl/resources/f-texture.png")
-		  .then(done => {
-		    // Now that the image has loaded make copy it to the texture.
-		    gl.bindTexture(gl.TEXTURE_2D, texture);
-		    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
-		    gl.generateMipmap(gl.TEXTURE_2D);
-		  }).catch(e => {
-		  console.log('image failed: ', e);
-		});
+		asset
+			.fromUrl('https://webgl2fundamentals.org/webgl/resources/f-texture.png')
+			.then((done) => {
+				// Now that the image has loaded make copy it to the texture.
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
+				gl.generateMipmap(gl.TEXTURE_2D);
+			})
+			.catch((e) => {
+				console.log('image failed: ', e);
+			});
 
 		// asset.loadUrlAsync('https://webgl2fundamentals.org/webgl/resources/f-texture.png').then((done) => {
 		// 	if (done) {
@@ -183,6 +184,8 @@ void main() {
 
 		requestAnimationFrame(drawScene);
 
+		const { drawingBufferWidth, drawingBufferHeight } = gl;
+
 		// Draw the scene.
 		function drawScene(time) {
 			// convert to seconds
@@ -194,7 +197,7 @@ void main() {
 
 			// webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 			// Tell WebGL how to convert from clip space to pixels
-			gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+			gl.viewport(0, 0, drawingBufferWidth, drawingBufferHeight);
 
 			gl.enable(gl.CULL_FACE);
 			gl.enable(gl.DEPTH_TEST);
@@ -204,7 +207,7 @@ void main() {
 			modelXRotationRadians += -0.4 * deltaTime;
 
 			// Clear the canvas AND the depth buffer.
-			gl.clearColor(...fogColor);
+			gl.clearColor(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 			// Tell it to use our program (pair of shaders)
@@ -214,7 +217,7 @@ void main() {
 			gl.bindVertexArray(vao);
 
 			// Compute the projection matrix
-			var aspect = gl.drawingBufferWidth / gl.drawingBufferHeight;
+			var aspect = drawingBufferWidth / drawingBufferHeight;
 
 			var projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 40);
 

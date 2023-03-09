@@ -17,507 +17,1069 @@ WebGL2RenderingContext::WebGL2RenderingContext(rust::Box<WebGLState> state,
 
 
 std::vector<jsi::PropNameID> WebGL2RenderingContext::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> names = WebGLRenderingContext::getPropertyNames(rt);
+    std::vector<jsi::PropNameID> ret;
 
-    std::vector<jsi::PropNameID> props;
+    // gl2 + gl1 props
+    ret.reserve(351 + 434);
+
     // 351
+    ret.push_back(jsi::PropNameID::forAscii(rt, "beginQuery"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "beginTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "bindBufferBase"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "bindBufferRange"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "bindSampler"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "bindTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "bindVertexArray"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "blitFramebuffer"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "clearBufferfi"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "clearBufferfv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "clearBufferiv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "clearBufferuiv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "clientWaitSync"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "compressedTexSubImage3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "copyBufferSubData"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "copyTexSubImage3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "createQuery"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "createSampler"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "createTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "createVertexArray"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "deleteQuery"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "deleteSampler"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "deleteSync"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "deleteTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "deleteVertexArray"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "drawArraysInstanced"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "drawBuffers"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "drawElementsInstanced"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "drawRangeElements"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "endQuery"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "endTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "fenceSync"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "framebufferTextureLayer"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform1ui"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform1uiv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform2ui"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform2uiv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform3ui"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform3uiv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform4ui"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniform4uiv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniformBlockBinding"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix2x3fv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix2x4fv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix3x2fv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix3x4fv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix4x2fv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix4x3fv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribDivisor"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4i"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4iv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4ui"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4uiv"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getActiveUniformBlockName"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getActiveUniformBlockParameter"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getActiveUniforms"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getBufferSubData"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getFragDataLocation"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getIndexedParameter"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getInternalformatParameter"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getParameter"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getQueryParameter"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getQuery"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getSamplerParameter"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getSyncParameter"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getTransformFeedbackVarying"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getUniformBlockIndex"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "getUniformIndices"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "invalidateFramebuffer"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "invalidateSubFramebuffer"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "isQuery"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "isSampler"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "isSync"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "isTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "isVertexArray"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "pauseTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "readBuffer"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "renderbufferStorageMultisample"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "resumeTransformFeedback"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "samplerParameterf"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "samplerParameteri"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "texImage3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "texStorage2D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "texStorage3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "texSubImage3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "transformFeedbackVaryings"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "beginQuery"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "beginTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "bindBufferBase"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "bindBufferRange"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "bindSampler"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "bindTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "bindVertexArray"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "blitFramebuffer"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "clearBufferfi"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "clearBufferfv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "clearBufferiv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "clearBufferuiv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "clientWaitSync"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "compressedTexSubImage3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "copyBufferSubData"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "copyTexSubImage3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "createQuery"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "createSampler"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "createTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "createVertexArray"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "deleteQuery"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "deleteSampler"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "deleteSync"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "deleteTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "deleteVertexArray"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "drawArraysInstanced"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "drawBuffers"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "drawElementsInstanced"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "drawRangeElements"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "endQuery"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "endTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "fenceSync"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "framebufferTextureLayer"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform1ui"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform1uiv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform2ui"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform2uiv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform3ui"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform3uiv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform4ui"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniform4uiv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniformBlockBinding"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix2x3fv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix2x4fv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix3x2fv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix3x4fv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix4x2fv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "uniformMatrix4x3fv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribDivisor"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4i"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4iv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4ui"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "vertexAttribI4uiv"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getActiveUniformBlockName"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getActiveUniformBlockParameter"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getActiveUniforms"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getBufferSubData"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getFragDataLocation"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getIndexedParameter"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getInternalformatParameter"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getParameter"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getQueryParameter"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getQuery"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getSamplerParameter"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getSyncParameter"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getTransformFeedbackVarying"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getUniformBlockIndex"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "getUniformIndices"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "invalidateFramebuffer"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "invalidateSubFramebuffer"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "isQuery"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "isSampler"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "isSync"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "isTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "isVertexArray"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "pauseTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "readBuffer"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "renderbufferStorageMultisample"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "resumeTransformFeedback"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "samplerParameterf"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "samplerParameteri"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "texImage3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "texStorage2D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "texStorage3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "texSubImage3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "transformFeedbackVaryings"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "READ_BUFFER"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_ROW_LENGTH"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_SKIP_ROWS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_SKIP_PIXELS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "PACK_ROW_LENGTH"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "PACK_SKIP_ROWS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "PACK_SKIP_PIXELS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_BINDING_3D"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_SKIP_IMAGES"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_IMAGE_HEIGHT"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_3D_TEXTURE_SIZE"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_ELEMENTS_VERTICES"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_ELEMENTS_INDICES"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_TEXTURE_LOD_BIAS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_FRAGMENT_UNIFORM_COMPONENTS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_VERTEX_UNIFORM_COMPONENTS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_ARRAY_TEXTURE_LAYERS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MIN_PROGRAM_TEXEL_OFFSET"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_PROGRAM_TEXEL_OFFSET"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_VARYING_COMPONENTS"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAGMENT_SHADER_DERIVATIVE_HINT"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RASTERIZER_DISCARD"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "VERTEX_ARRAY_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_VERTEX_OUTPUT_COMPONENTS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_FRAGMENT_INPUT_COMPONENTS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_SERVER_WAIT_TIMEOUT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_ELEMENT_INDEX"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB10_A2"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_3D"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_WRAP_R"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_MIN_LOD"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_MAX_LOD"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_BASE_LEVEL"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_MAX_LEVEL"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "READ_BUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_COMPARE_MODE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_COMPARE_FUNC"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SRGB"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SRGB8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SRGB8_ALPHA8"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_ROW_LENGTH"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COMPARE_REF_TO_TEXTURE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA32F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB32F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA16F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB16F"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_SKIP_ROWS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_SKIP_PIXELS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "PACK_ROW_LENGTH"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "PACK_SKIP_ROWS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "PACK_SKIP_PIXELS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_BINDING_3D"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_SKIP_IMAGES"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNPACK_IMAGE_HEIGHT"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_3D_TEXTURE_SIZE"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_ELEMENTS_VERTICES"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_ELEMENTS_INDICES"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_TEXTURE_LOD_BIAS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_FRAGMENT_UNIFORM_COMPONENTS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_VERTEX_UNIFORM_COMPONENTS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_ARRAY_TEXTURE_LAYERS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MIN_PROGRAM_TEXEL_OFFSET"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_PROGRAM_TEXEL_OFFSET"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_VARYING_COMPONENTS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAGMENT_SHADER_DERIVATIVE_HINT"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "RASTERIZER_DISCARD"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "VERTEX_ARRAY_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_VERTEX_OUTPUT_COMPONENTS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_FRAGMENT_INPUT_COMPONENTS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_SERVER_WAIT_TIMEOUT"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_ELEMENT_INDEX"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "RED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB10_A2"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_3D"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_WRAP_R"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_MIN_LOD"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_MAX_LOD"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_BASE_LEVEL"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_MAX_LEVEL"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_2D_ARRAY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_BINDING_2D_ARRAY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R11F_G11F_B10F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB9_E5"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA32UI"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_COMPARE_MODE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_COMPARE_FUNC"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SRGB"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SRGB8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SRGB8_ALPHA8"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "COMPARE_REF_TO_TEXTURE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA32F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB32F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA16F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB16F"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_2D_ARRAY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_BINDING_2D_ARRAY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R11F_G11F_B10F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB9_E5"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA32UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB32UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA16UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB16UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA8UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB8UI"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB32UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA16UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB16UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA8UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB8UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA32I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB32I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA16I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB16I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA8I"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA32I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB32I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA16I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB16I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA8I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB8I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RED_INTEGER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB_INTEGER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA_INTEGER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R8"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB8I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RED_INTEGER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB_INTEGER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA_INTEGER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R16F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R32F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG16F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG32F"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R16F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R32F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG16F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG32F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R8I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R8UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R16I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R16UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R32I"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "R8I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R8UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R16I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R16UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R32I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R32UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG8I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG8UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG16I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG16UI"));
+
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG32I"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG32UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "R8_SNORM"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG8_SNORM"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB8_SNORM"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "R32UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG8I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG8UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG16I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG16UI"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG32I"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG32UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "R8_SNORM"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG8_SNORM"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB8_SNORM"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGBA8_SNORM"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RGB10_A2UI"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_IMMUTABLE_FORMAT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_IMMUTABLE_LEVELS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_2_10_10_10_REV"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGBA8_SNORM"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RGB10_A2UI"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_IMMUTABLE_FORMAT"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TEXTURE_IMMUTABLE_LEVELS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_2_10_10_10_REV"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_10F_11F_11F_REV"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_5_9_9_9_REV"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_32_UNSIGNED_INT_24_8_REV"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_24_8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "HALF_FLOAT"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_10F_11F_11F_REV"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_5_9_9_9_REV"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_32_UNSIGNED_INT_24_8_REV"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_24_8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "HALF_FLOAT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RG_INTEGER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "INT_2_10_10_10_REV"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "QUERY_RESULT_AVAILABLE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "QUERY_RESULT"));
 
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RG_INTEGER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "INT_2_10_10_10_REV"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "QUERY_RESULT_AVAILABLE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "QUERY_RESULT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "CURRENT_QUERY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "ANY_SAMPLES_PASSED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "ANY_SAMPLES_PASSED_CONSERVATIVE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_DRAW_BUFFERS"));
 
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "CURRENT_QUERY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "ANY_SAMPLES_PASSED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "ANY_SAMPLES_PASSED_CONSERVATIVE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_DRAW_BUFFERS"));
-
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER0"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER1"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER2"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER3)"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER4"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER5"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER6"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER7"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER9"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER10"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER0"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER1"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER2"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER3)"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER4"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER5"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER6"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER7"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER9"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER10"));
 
     /* Getting GL parameter information */
 
     /* Textures */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER11"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER12"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER13"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER14"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER15"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER11"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER12"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER13"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER14"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_BUFFER15"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_COLOR_ATTACHMENTS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT1"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT2"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT3"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT4"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT5"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT6"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT7"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT9"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT10"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT11"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT12"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT13"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT14"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT15"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_COLOR_ATTACHMENTS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT1"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT2"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT3"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT4"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT5"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT6"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT7"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT9"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT10"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT11"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT12"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT13"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT14"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR_ATTACHMENT15"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_2D_SHADOW"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_2D_ARRAY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_2D_ARRAY_SHADOW"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_CUBE_SHADOW"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_2D_SHADOW"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_2D_ARRAY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_2D_ARRAY_SHADOW"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_CUBE_SHADOW"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_2D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_CUBE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_2D_ARRAY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_2D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_2D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_CUBE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "INT_SAMPLER_2D_ARRAY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_2D"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_3D"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_CUBE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_2D_ARRAY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_SAMPLES"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_3D"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_CUBE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_SAMPLER_2D_ARRAY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_SAMPLES"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SAMPLER_BINDING"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_PACK_BUFFER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_UNPACK_BUFFER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_PACK_BUFFER_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_UNPACK_BUFFER_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COPY_READ_BUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_PACK_BUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_UNPACK_BUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_PACK_BUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "PIXEL_UNPACK_BUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COPY_READ_BUFFER"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "COPY_WRITE_BUFFER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COPY_READ_BUFFER_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "COPY_WRITE_BUFFER_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT2x3"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT2x4"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COPY_WRITE_BUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COPY_READ_BUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COPY_WRITE_BUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT2x3"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT2x4"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT3x2"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT3x4"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT4x2"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT4x3"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_VEC2"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT3x2"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT3x4"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT4x2"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FLOAT_MAT4x3"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_VEC2"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_VEC3"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_VEC4"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_NORMALIZED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SIGNED_NORMALIZED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_VEC3"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_INT_VEC4"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNED_NORMALIZED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SIGNED_NORMALIZED"));
 
     /* Vertex attributes */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "VERTEX_ATTRIB_ARRAY_INTEGER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "VERTEX_ATTRIB_ARRAY_DIVISOR"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_MODE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_VARYINGS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "VERTEX_ATTRIB_ARRAY_INTEGER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "VERTEX_ATTRIB_ARRAY_DIVISOR"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_MODE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_VARYINGS"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_START"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_START"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS"));
 
     /* Textures */
 
     /* Pixel types */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "INTERLEAVED_ATTRIBS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SEPARATE_ATTRIBS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "INTERLEAVED_ATTRIBS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SEPARATE_ATTRIBS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BUFFER_BINDING"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_PAUSED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_ACTIVE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_PAUSED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_ACTIVE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TRANSFORM_FEEDBACK_BINDING"));
 
     /* Pixel types */
 
     /* Queries */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_RED_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_GREEN_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_BLUE_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_RED_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_GREEN_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_BLUE_SIZE"));
 
     /* Queries */
 
     /* Draw buffers */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_DEFAULT"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_STENCIL_ATTACHMENT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_DEFAULT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_STENCIL_ATTACHMENT"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_STENCIL"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DEPTH24_STENCIL8"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_FRAMEBUFFER_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "READ_FRAMEBUFFER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DRAW_FRAMEBUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_STENCIL"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DEPTH24_STENCIL8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_FRAMEBUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "READ_FRAMEBUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DRAW_FRAMEBUFFER"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "READ_FRAMEBUFFER_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "RENDERBUFFER_SAMPLES"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "READ_FRAMEBUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "RENDERBUFFER_SAMPLES"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_START"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_VERTEX_UNIFORM_BLOCKS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_FRAGMENT_UNIFORM_BLOCKS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_START"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_VERTEX_UNIFORM_BLOCKS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_FRAGMENT_UNIFORM_BLOCKS"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_COMBINED_UNIFORM_BLOCKS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_UNIFORM_BUFFER_BINDINGS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_UNIFORM_BLOCK_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_COMBINED_UNIFORM_BLOCKS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_UNIFORM_BUFFER_BINDINGS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_UNIFORM_BLOCK_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_OFFSET_ALIGNMENT"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "ACTIVE_UNIFORM_BLOCKS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_TYPE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_INDEX"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BUFFER_OFFSET_ALIGNMENT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "ACTIVE_UNIFORM_BLOCKS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_TYPE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_INDEX"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_OFFSET"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_ARRAY_STRIDE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_MATRIX_STRIDE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_OFFSET"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_ARRAY_STRIDE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_MATRIX_STRIDE"));
 
     /* Draw buffers */
 
     /* Samplers */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_IS_ROW_MAJOR"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_BINDING"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_DATA_SIZE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_ACTIVE_UNIFORMS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_IS_ROW_MAJOR"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_BINDING"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_DATA_SIZE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_ACTIVE_UNIFORMS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "OBJECT_TYPE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SYNC_CONDITION"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SYNC_STATUS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "OBJECT_TYPE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SYNC_CONDITION"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SYNC_STATUS"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "SYNC_FLAGS"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SYNC_FENCE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SYNC_GPU_COMMANDS_COMPLETE"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNALED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SIGNALED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SYNC_FLAGS"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SYNC_FENCE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SYNC_GPU_COMMANDS_COMPLETE"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "UNSIGNALED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SIGNALED"));
 
     /* Samplers */
 
     /* Buffers */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "ALREADY_SIGNALED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TIMEOUT_EXPIRED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "CONDITION_SATISFIED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "WAIT_FAILED"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "SYNC_FLUSH_COMMANDS_BIT"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "ALREADY_SIGNALED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TIMEOUT_EXPIRED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "CONDITION_SATISFIED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "WAIT_FAILED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "SYNC_FLUSH_COMMANDS_BIT"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "COLOR"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DEPTH"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "STENCIL"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "COLOR"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DEPTH"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "STENCIL"));
 
     /* Buffers */
 
     /* Data types */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "MIN"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_COMPONENT24"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "STREAM_READ"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "STREAM_COPY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MIN"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_COMPONENT24"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "STREAM_READ"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "STREAM_COPY"));
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "STATIC_READ"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "STATIC_COPY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DYNAMIC_READ"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DYNAMIC_COPY"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_COMPONENT32F"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "DEPTH32F_STENCIL8"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "STATIC_READ"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "STATIC_COPY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DYNAMIC_READ"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DYNAMIC_COPY"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DEPTH_COMPONENT32F"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "DEPTH32F_STENCIL8"));
 
     /* Data types */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "INVALID_INDEX"));
-    props.push_back(jsi::PropNameID::forAscii(rt, "TIMEOUT_IGNORED"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "INVALID_INDEX"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "TIMEOUT_IGNORED"));
 
     /* Vertex attributes */
 
     /* Transform feedback */
 
-    props.push_back(jsi::PropNameID::forAscii(rt, "MAX_CLIENT_WAIT_TIMEOUT_WEBGL"));
+    ret.push_back(jsi::PropNameID::forAscii(rt, "MAX_CLIENT_WAIT_TIMEOUT_WEBGL"));
 
     /* Transform feedback */
 
 
+    /* GL 1 */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__resized"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("activeTexture")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("attachShader")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindAttribLocation")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindBuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindFramebuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindRenderbuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindTexture")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendColor")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendEquationSeparate")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendEquation")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendFuncSeparate")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendFunc")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bufferData")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bufferSubData")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("checkFramebufferStatus")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearColor")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearDepth")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearStencil")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clear")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("colorMask")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("commit")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("compileShader")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("compressedTexImage2D")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("compressedTexSubImage2D")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("copyTexImage2D")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("copyTexSubImage2D")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createBuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createFramebuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createProgram")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createRenderbuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createShader")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createTexture")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("cullFace")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteBuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteFramebuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteProgram")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteRenderbuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteShader")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteTexture")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("depthFunc")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("depthMask")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("depthRange")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("detachShader")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("disableVertexAttribArray")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("disable")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawArrays")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawElements")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("enableVertexAttribArray")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("enable")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("finish")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("flush")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("framebufferRenderbuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("framebufferTexture2D")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("frontFace")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("generateMipmap")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getActiveAttrib")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getActiveUniform")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getAttachedShaders")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getAttribLocation")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getBufferParameter")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getContextAttributes")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getError")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getExtension")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getFramebufferAttachmentParameter")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getParameter")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getProgramInfoLog")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getProgramParameter")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getRenderbufferParameter")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderInfoLog")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderParameter")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderPrecisionFormat")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderSource")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getSupportedExtensions")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getTexParameter")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getUniformLocation")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getUniform")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getVertexAttribOffset")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getVertexAttrib")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("hint")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isBuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isContextLost")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isEnabled")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isFramebuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isProgram")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isRenderbuffer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isShader")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isTexture")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineWidth")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("linkProgram")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("pixelStorei")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("polygonOffset")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("readPixels")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("renderbufferStorage")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("sampleCoverage")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("scissor")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shaderSource")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilFuncSeparate")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilFunc")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilMaskSeparate")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilMask")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilOpSeparate")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilOp")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texImage2D")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texParameterf")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texParameteri")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texSubImage2D")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1iv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1i")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2iv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2i")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3iv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3i")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4iv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4i")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix2fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix3fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix4fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("useProgram")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("validateProgram")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib1f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib1fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib2f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib2fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib3f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib3fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib4f")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib4fv")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttribPointer")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("viewport")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__toDataURL")));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_BUFFER_BIT"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BUFFER_BIT"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_BUFFER_BIT"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "POINTS"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINES"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINE_LOOP"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINE_STRIP"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TRIANGLES"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TRIANGLE_STRIP"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TRIANGLE_FAN"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ZERO"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SRC_COLOR"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_SRC_COLOR"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SRC_ALPHA"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_SRC_ALPHA"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DST_ALPHA"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_DST_ALPHA"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DST_COLOR"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_DST_COLOR"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SRC_ALPHA_SATURATE"));
 
 
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CONSTANT_COLOR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_CONSTANT_COLOR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CONSTANT_ALPHA"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_CONSTANT_ALPHA"));
 
 
+    /* Blending equations */
 
-    names.reserve(names.size() + props.size());
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FUNC_ADD"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FUNC_SUBTRACT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FUNC_REVERSE_SUBTRACT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_EQUATION"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_EQUATION_RGB"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_EQUATION_ALPHA"));
 
-    names.insert(
-            names.end(),
-            std::make_move_iterator(props.begin()),
-            std::make_move_iterator(props.end())
-    );
 
-    return names;
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_DST_RGB"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_SRC_RGB"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_DST_ALPHA"));
+
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_SRC_ALPHA"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_COLOR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ARRAY_BUFFER_BINDING"));
+
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ELEMENT_ARRAY_BUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINE_WIDTH"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALIASED_POINT_SIZE_RANGE"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALIASED_LINE_WIDTH_RANGE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CULL_FACE_MODE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRONT_FACE"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_RANGE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_WRITEMASK"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_CLEAR_VALUE"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_FUNC"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_CLEAR_VALUE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_FUNC"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_FAIL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_PASS_DEPTH_FAIL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_PASS_DEPTH_PASS"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_REF"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_VALUE_MASK"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_WRITEMASK"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_FUNC"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_FAIL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_PASS_DEPTH_FAIL"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_PASS_DEPTH_PASS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_REF"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_VALUE_MASK"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_WRITEMASK"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VIEWPORT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SCISSOR_BOX"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_CLEAR_VALUE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_WRITEMASK"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_ALIGNMENT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "PACK_ALIGNMENT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_TEXTURE_SIZE"));
+
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VIEWPORT_DIMS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SUBPIXEL_BITS"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RED_BITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "GREEN_BITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLUE_BITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALPHA_BITS"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "POLYGON_OFFSET_UNITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "POLYGON_OFFSET_FACTOR"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_BINDING_2D"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_BUFFERS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLES"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_COVERAGE_VALUE"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_COVERAGE_INVERT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "COMPRESSED_TEXTURE_FORMATS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VENDOR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERER"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERSION"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "IMPLEMENTATION_COLOR_READ_TYPE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "IMPLEMENTATION_COLOR_READ_FORMAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BROWSER_DEFAULT_WEBGL"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STATIC_DRAW"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STREAM_DRAW"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DYNAMIC_DRAW"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ARRAY_BUFFER"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ELEMENT_ARRAY_BUFFER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BUFFER_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BUFFER_USAGE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CURRENT_VERTEX_ATTRIB"));
+
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_ENABLED"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_STRIDE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_TYPE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_NORMALIZED"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_POINTER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_BUFFER_BINDING"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CULL_FACE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRONT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BACK"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRONT_AND_BACK"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_TEST"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DITHER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "POLYGON_OFFSET_FILL"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_ALPHA_TO_COVERAGE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_COVERAGE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SCISSOR_TEST"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_TEST"));
+
+
+    /* Errors */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NO_ERROR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_ENUM"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_VALUE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_OPERATION"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "OUT_OF_MEMORY"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CONTEXT_LOST_WEBGL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CW"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CCW"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DONT_CARE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FASTEST"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NICEST"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "GENERATE_MIPMAP_HINT"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BYTE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_BYTE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SHORT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_INT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_COMPONENT"));
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALPHA"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGB"));
+
+    /* Clearing buffers */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGBA"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LUMINANCE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LUMINANCE_ALPHA"));
+
+    /* Clearing buffers */
+
+    /* Rendering primitives */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT_4_4_4_4"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT_5_5_5_1"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT_5_6_5"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAGMENT_SHADER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_SHADER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "COMPILE_STATUS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DELETE_STATUS"));
+
+    /* Rendering primitives */
+
+    /* Blending modes */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINK_STATUS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "VALIDATE_STATUS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ATTACHED_SHADERS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ACTIVE_ATTRIBUTES"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ACTIVE_UNIFORMS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VERTEX_ATTRIBS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VERTEX_UNIFORM_VECTORS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VARYING_VECTORS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_COMBINED_TEXTURE_IMAGE_UNITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VERTEX_TEXTURE_IMAGE_UNITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_TEXTURE_IMAGE_UNITS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_FRAGMENT_UNIFORM_VECTORS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SHADER_TYPE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SHADING_LANGUAGE_VERSION"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CURRENT_PROGRAM"));
+
+    /* Blending modes */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEVER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LESS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "EQUAL"));
+
+    /* Blending equations */
+
+    /* Getting GL parameter information */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LEQUAL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "GREATER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NOTEQUAL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "GEQUAL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALWAYS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "KEEP"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "REPLACE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INCR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DECR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVERT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INCR_WRAP"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DECR_WRAP"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEAREST"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINEAR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEAREST_MIPMAP_NEAREST"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINEAR_MIPMAP_NEAREST"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEAREST_MIPMAP_LINEAR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINEAR_MIPMAP_LINEAR"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_MAG_FILTER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_MIN_FILTER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_WRAP_S"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_WRAP_T"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_2D"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_BINDING_CUBE_MAP"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_POSITIVE_X"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_NEGATIVE_X"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_POSITIVE_Y"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_NEGATIVE_Y"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_POSITIVE_Z"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_NEGATIVE_Z"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_CUBE_MAP_TEXTURE_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE0"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE1"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE2"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE3"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE4"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE5"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE6"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE7"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE8"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE9"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE10"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE11"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE12"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE13"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE14"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE15"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE16"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE17"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE18"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE19"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE20"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE21"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE22"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE23"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE24"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE25"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE26"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE27"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE28"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE29"));
+
+    /* Getting GL parameter information */
+
+    /* Buffers */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE30"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE31"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "ACTIVE_TEXTURE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "REPEAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "CLAMP_TO_EDGE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MIRRORED_REPEAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_VEC2"));
+
+    /* Buffers */
+
+    /* Vertex attributes */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_VEC3"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_VEC4"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT_VEC2"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT_VEC3"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT_VEC4"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL_VEC2"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL_VEC3"));
+
+    /* Vertex attributes */
+
+    /* Culling */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL_VEC4"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_MAT2"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_MAT3"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_MAT4"));
+
+    /* Culling */
+
+    /* Enabling and disabling */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLER_2D"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLER_CUBE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LOW_FLOAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MEDIUM_FLOAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "HIGH_FLOAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "LOW_INT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MEDIUM_INT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "HIGH_INT"));
+
+    /* Enabling and disabling */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGBA4"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGB5_A1"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGB565"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_COMPONENT16"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_INDEX8"));
+
+    /* Errors */
+
+    /* Front face directions */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_STENCIL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_WIDTH"));
+
+    /* Front face directions */
+
+    /* Hints */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_HEIGHT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_INTERNAL_FORMAT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_RED_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_GREEN_SIZE"));
+
+    /* Hints */
+
+    /* Data types */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_BLUE_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_ALPHA_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_DEPTH_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_STENCIL_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_OBJECT_NAME"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL"));
+
+    /* Data types */
+
+    /* Pixel formats */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_ATTACHMENT0"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_ATTACHMENT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_ATTACHMENT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_STENCIL_ATTACHMENT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "NONE"));
+
+    /* Pixel formats */
+
+    /* Pixel types */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_COMPLETE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_INCOMPLETE_ATTACHMENT"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"));
+
+    /* Pixel types */
+
+    /* Shaders */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_INCOMPLETE_DIMENSIONS"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_UNSUPPORTED"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_BINDING"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_RENDERBUFFER_SIZE"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_FRAMEBUFFER_OPERATION"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_FLIP_Y_WEBGL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_PREMULTIPLY_ALPHA_WEBGL"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_COLORSPACE_CONVERSION_WEBGL"));
+
+
+    /* GL 1 */
+
+
+    return ret;
 }
 
 jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto gl_return = WebGLRenderingContext::get(runtime, name);
-    if (!gl_return.isNull()) {
-        return gl_return;
-    }
-
     auto methodName = name.utf8(runtime);
 
     auto prop = GetProperty(methodName);
@@ -3960,5 +4522,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     }
 
-    return prop;
+    if(!prop.isUndefined()){
+        return prop;
+    }
+    auto gl_return = WebGLRenderingContext::get(runtime, name);
+    if (!gl_return.isUndefined()) {
+        return gl_return;
+    }
+    return jsi::Value::undefined();
 }

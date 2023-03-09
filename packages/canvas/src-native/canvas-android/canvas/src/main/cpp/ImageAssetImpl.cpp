@@ -9,7 +9,7 @@ ImageAssetImpl::ImageAssetImpl(rust::Box<ImageAsset> asset)
         : asset_(std::move(asset)) {}
 
 std::vector<jsi::PropNameID> ImageAssetImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret ;
+    std::vector<jsi::PropNameID> ret;
     ret.reserve(12);
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("width")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("height")));
@@ -91,24 +91,33 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                          auto url = arguments[0].asString(
                                                                  runtime).utf8(runtime);
-                                                         auto cb = arguments[1].asObject(
-                                                                 runtime).asFunction(runtime);
-
 
                                                          auto asset = canvas_native_image_asset_shared_clone(
                                                                  this->GetImageAsset());
 
-                                                         std::thread thread(
-                                                                 [&asset, &url, &cb, &runtime] {
+                                                         auto cb = std::make_shared<jsi::Value>(
+                                                                 runtime, arguments[1]);
 
+                                                         std::thread thread(
+                                                                 [&runtime, cb](
+                                                                         const std::string &url,
+                                                                         rust::Box<ImageAsset> asset) {
 
                                                                      auto done = canvas_native_image_asset_load_from_url(
                                                                              *asset,
-                                                                             rust::Str(url.c_str()));
-                                                                     cb.call(runtime,
-                                                                             jsi::Value(done));
+                                                                             rust::Str(
+                                                                                     url.c_str()));
 
-                                                                 });
+                                                                     auto func = cb->asObject(
+                                                                             runtime).asFunction(
+                                                                             runtime);
+
+                                                                     func.call(runtime,
+                                                                               jsi::Value(done));
+
+                                                                 }, std::move(url),
+                                                                 std::move(asset));
+
 
                                                          thread.detach();
 
@@ -146,24 +155,37 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                          auto path = arguments[0].asString(
                                                                  runtime).utf8(runtime);
-                                                         auto cb = arguments[1].asObject(
-                                                                 runtime).asFunction(runtime);
 
                                                          auto asset = canvas_native_image_asset_shared_clone(
                                                                  this->GetImageAsset());
 
+
+                                                         auto cb = std::make_shared<jsi::Value>(
+                                                                 runtime, arguments[1]);
+
                                                          std::thread thread(
-                                                                 [&asset, &path, &cb, &runtime] {
+                                                                 [&runtime, cb](
+                                                                         const std::string &path,
+                                                                         rust::Box<ImageAsset> asset) {
 
                                                                      auto done = canvas_native_image_asset_load_from_path(
                                                                              *asset,
-                                                                             rust::Str(path));
-                                                                     cb.call(runtime,
-                                                                             jsi::Value(done));
+                                                                             rust::Str(
+                                                                                     path.c_str()));
 
-                                                                 });
+                                                                     auto func = cb->asObject(
+                                                                             runtime).asFunction(
+                                                                             runtime);
+
+                                                                     func.call(runtime,
+                                                                               jsi::Value(done));
+
+                                                                 }, std::move(path),
+                                                                 std::move(asset));
+
 
                                                          thread.detach();
+
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -211,8 +233,6 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                          auto bytes = arguments[0].asObject(
                                                                  runtime).getArrayBuffer(runtime);
-                                                         auto cb = arguments[1].asObject(
-                                                                 runtime).asFunction(runtime);
 
                                                          auto size = bytes.size(runtime);
                                                          auto data = bytes.data(runtime);
@@ -222,16 +242,29 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                          auto asset = canvas_native_image_asset_shared_clone(
                                                                  this->GetImageAsset());
 
+
+                                                         auto cb = std::make_shared<jsi::Value>(
+                                                                 runtime, arguments[1]);
+
                                                          std::thread thread(
-                                                                 [&asset, &buf, &cb, &runtime] {
+                                                                 [&runtime, &buf, cb](
+                                                                         rust::Box<ImageAsset> asset) {
 
                                                                      auto done = canvas_native_image_asset_load_from_raw(
                                                                              *asset, buf);
-                                                                     cb.call(runtime,
-                                                                             jsi::Value(done));
-                                                                 });
+
+                                                                     auto func = cb->asObject(
+                                                                             runtime).asFunction(
+                                                                             runtime);
+
+                                                                     func.call(runtime,
+                                                                               jsi::Value(done));
+
+                                                                 }, std::move(asset));
+
 
                                                          thread.detach();
+
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -274,23 +307,36 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                          auto format = (uint32_t) arguments[1].asNumber();
 
-                                                         auto cb = arguments[2].asObject(
-                                                                 runtime).asFunction(runtime);
-
 
                                                          auto asset = canvas_native_image_asset_shared_clone(
                                                                  this->GetImageAsset());
 
+
+                                                         auto cb = std::make_shared<jsi::Value>(
+                                                                 runtime, arguments[1]);
+
                                                          std::thread thread(
-                                                                 [&asset, &path, &format, &cb, &runtime] {
+                                                                 [&runtime, cb](
+                                                                         const std::string &path,
+                                                                         std::uint32_t format,
+                                                                         rust::Box<ImageAsset> asset) {
 
                                                                      auto done = canvas_native_image_asset_save_path(
                                                                              *asset,
-                                                                             rust::Str(path.c_str()),
+                                                                             rust::Str(
+                                                                                     path.c_str()),
                                                                              format);
-                                                                     cb.call(runtime,
-                                                                             jsi::Value(done));
-                                                                 });
+
+                                                                     auto func = cb->asObject(
+                                                                             runtime).asFunction(
+                                                                             runtime);
+
+                                                                     func.call(runtime,
+                                                                               jsi::Value(done));
+
+                                                                 }, std::move(path), format,
+                                                                 std::move(asset));
+
 
                                                          thread.detach();
 

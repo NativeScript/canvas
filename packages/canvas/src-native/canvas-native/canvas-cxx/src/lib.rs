@@ -5358,7 +5358,6 @@ pub fn canvas_native_gradient_add_color_stop(style: &mut PaintStyle, stop: f32, 
     if let Some(style) = style.0.as_mut() {
         match style {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
-               log::info!(target: "JS", "canvas_native_gradient_add_color_stop: {stop} {color}");
                 gradient.add_color_stop_str(stop, color)
             }
             _ => {}

@@ -13,6 +13,7 @@ std::vector<jsi::PropNameID> WebGLActiveInfoImpl::getPropertyNames(jsi::Runtime 
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("name")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("size")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("type")));
+
     return ret;
 }
 

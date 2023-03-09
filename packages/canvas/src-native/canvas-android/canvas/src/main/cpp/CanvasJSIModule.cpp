@@ -340,10 +340,11 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                         auto asset = canvas_native_image_asset_create();
 
-                        auto cbFunc = cb->asObject(runtime).asFunction(runtime);
+                        auto cbFunc = std::make_shared<jsi::Value>(
+                                runtime, arguments[count - 1]);
 
                         std::thread thread(
-                                [&data, &runtime, &options, &cbFunc](rust::Box<ImageAsset> asset) {
+                                [&data, &runtime, &options, cbFunc](rust::Box<ImageAsset> asset) {
 
 
                                     auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
@@ -360,7 +361,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                     if (!done) {
                                         auto error = jsi::String::createFromAscii(runtime,
                                                                                   "Failed to load image");
-                                        cbFunc.call(runtime,
+                                        cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
                                                     {std::move(error), jsi::Value::undefined()});
                                     } else {
                                         auto ret = std::make_shared<ImageBitmapImpl>(
@@ -369,15 +370,18 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                         auto object = jsi::Object::createFromHostObject(runtime,
                                                                                         std::move(
                                                                                                 ret));
-                                        cbFunc.call(runtime,
+                                        cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
                                                     {jsi::Value::undefined(), std::move(object)});
                                     }
                                 }, std::move(asset));
 
+                        thread.detach();
+
                         return jsi::Value::undefined();
                     } else if (len == 5 || len == 6) {
 
-                        auto cbFunc = cb->asObject(runtime).asFunction(runtime);
+                        auto cbFunc = std::make_shared<jsi::Value>(
+                                runtime, arguments[count - 1]);
 
                         if (len == 6) {
                             options = ImageBitmapImpl::HandleOptions(runtime, arguments[5]);
@@ -387,7 +391,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
 
                         std::thread thread(
-                                [&data, &runtime, &options, &cbFunc](rust::Box<ImageAsset> asset,
+                                [&data, &runtime, &options, cbFunc](rust::Box<ImageAsset> asset,
                                                                      float sx_or_options,
                                                                      float sy,
                                                                      float sw,
@@ -410,7 +414,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                     if (!done) {
                                         auto error = jsi::String::createFromAscii(runtime,
                                                                                   "Failed to load image");
-                                        cbFunc.call(runtime,
+                                        cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
                                                     {std::move(error), jsi::Value::undefined()});
                                     } else {
                                         auto ret = std::make_shared<ImageBitmapImpl>(
@@ -418,7 +422,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                         auto object = jsi::Object::createFromHostObject(runtime,
                                                                                         std::move(
                                                                                                 ret));
-                                        cbFunc.call(runtime,
+                                        cbFunc->asObject(runtime).getFunction(runtime).call(runtime,
                                                     {jsi::Value::undefined(), std::move(object)});
                                     }
 
@@ -428,6 +432,8 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                 (float) sy->asNumber(),
                                 (float) sw->asNumber(),
                                 (float) sh->asNumber());
+
+                        thread.detach();
 
                         return jsi::Value::undefined();
                     }
@@ -440,10 +446,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     CREATE_FUNC("create2DContext", canvas_module, 9,
                 [](jsi::Runtime &runtime, const jsi::Value &thisValue,
                    const jsi::Value *arguments, size_t count) -> jsi::Value {
-                    auto width = (float) arguments[0].asNumber();
-                    auto height = (float) arguments[1].asNumber();
-                    auto density = (float) arguments[2].asNumber();
-                    auto context = getPointerValue(runtime, arguments[3]);
+                    auto context = getPointerValue(runtime, arguments[0]);
+                    auto width = (float) arguments[1].asNumber();
+                    auto height = (float) arguments[2].asNumber();
+                    auto density = (float) arguments[3].asNumber();
                     auto samples = (int) arguments[4].asNumber();
                     auto alpha = (bool) arguments[5].asBool();
                     auto font_color = (int) arguments[6].asNumber();
@@ -537,12 +543,39 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         }
 
                         if (version !=
-                            "v1" &&
-                            version !=
-                            "v2") {
+                            "v1") {
                             return jsi::Value::undefined();
                         } else {
-                            if (count == 7) {
+                            if (count == 6) {
+                                auto context = getPointerValue(runtime, arguments[1]);
+                                auto density = arguments[2].asNumber();
+                                auto fontColor = arguments[3].asNumber();
+                                auto ppi = arguments[4].asNumber();
+                                auto direction = arguments[5].asNumber();
+                                auto ctx = canvas_native_webgl_create(
+                                        context,
+                                        rust::Str(
+                                                version.c_str()),
+                                        alpha,
+                                        antialias,
+                                        depth,
+                                        fail_if_major_performance_caveat,
+                                        rust::Str(
+                                                power_preference.c_str()),
+                                        premultiplied_alpha,
+                                        preserve_drawing_buffer,
+                                        stencil,
+                                        desynchronized,
+                                        xr_compatible
+                                );
+
+                                auto renderingContext = std::make_shared<WebGLRenderingContext>(
+                                        std::move(ctx));
+
+                                return jsi::Object::createFromHostObject(
+                                        runtime, renderingContext);
+
+                            } else if (count == 7) {
                                 auto width = arguments[1].asNumber();
                                 auto height = arguments[2].asNumber();
                                 auto density = arguments[3].asNumber();
@@ -616,7 +649,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
     );
 
-    CREATE_FUNC("createWebGL2Context", canvas_module, 3,
+    CREATE_FUNC("createWebGL2Context", canvas_module, 7,
                 [](jsi::Runtime &runtime, const jsi::Value &thisValue,
                    const jsi::Value *arguments, size_t count) -> jsi::Value {
 
@@ -691,13 +724,40 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         }
 
                         if (version !=
-                            "v1" &&
-                            version !=
                             "v2") {
                             return jsi::Value::undefined();
                         } else {
-                            if (count ==
-                                7) {
+                            if (count == 6) {
+                                auto context = getPointerValue(runtime, arguments[1]);
+                                auto density = arguments[2].asNumber();
+                                auto fontColor = arguments[3].asNumber();
+                                auto ppi = arguments[4].asNumber();
+                                auto direction = arguments[5].asNumber();
+                                auto ctx = canvas_native_webgl_create(
+                                        context,
+                                        rust::Str(
+                                                version.c_str()),
+                                        alpha,
+                                        antialias,
+                                        depth,
+                                        fail_if_major_performance_caveat,
+                                        rust::Str(
+                                                power_preference.c_str()),
+                                        premultiplied_alpha,
+                                        preserve_drawing_buffer,
+                                        stencil,
+                                        desynchronized,
+                                        xr_compatible
+                                );
+
+                                auto renderingContext = std::make_shared<WebGL2RenderingContext>(
+                                        std::move(ctx), WebGLRenderingVersion::V2);
+
+                                return jsi::Object::createFromHostObject(
+                                        runtime, renderingContext);
+
+                            } else if (count ==
+                                       7) {
                                 auto width = arguments[1].asNumber();
                                 auto height = arguments[2].asNumber();
                                 auto density = arguments[3].asNumber();
@@ -724,7 +784,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                 );
                                 auto renderingContext = std::make_shared<WebGL2RenderingContext>(
                                         std::move(
-                                                ctx));
+                                                ctx), WebGLRenderingVersion::V2);
 
                                 return jsi::Object::createFromHostObject(
                                         runtime,

@@ -24,7 +24,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	constructor(context: any, contextOptions) {
 		super();
-		this.context = context;
 
 		const width = context.getDrawingBufferWidth(); // can use  getMeasuredWidth/ getMeasuredHeight
 		const height = context.getDrawingBufferHeight();
@@ -35,7 +34,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			direction = 1;
 		}
 
-		this.context = ctor(width, height, Screen.mainScreen.scale, ctx, 1, contextOptions.alpha, 0, 1, direction);
+		this.context = ctor(ctx, width, height, Screen.mainScreen.scale, 1, contextOptions.alpha, 0, 1, direction);
 	}
 
 	get native() {
@@ -296,6 +295,12 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 		return cached;
 	}
+
+	__toDataURL() {
+		const __toDataURL = this._getMethod('__toDataURL');
+		return __toDataURL(arguments[0], arguments[1]);
+	}
+
 
 	addHitRegion(region: any): void {}
 

@@ -189,11 +189,13 @@ impl ImageAsset {
     where
         R: Read + Seek + BufRead,
     {
-        let mut lock = self.get_lock();
-        if !lock.error.is_empty() {
-            lock.error.clear()
+        {
+            let mut lock = self.get_lock();
+            if !lock.error.is_empty() {
+                lock.error.clear()
+            }
+            lock.image = None;
         }
-        lock.image = None;
 
         let mut bytes = [0; 16];
         let position = reader.stream_position();
@@ -334,7 +336,7 @@ impl ImageAsset {
                     }
                 }
 
-                return true;
+                true
             }
         }
     }

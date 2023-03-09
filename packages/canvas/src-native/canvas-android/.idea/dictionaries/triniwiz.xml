@@ -2,6 +2,10 @@
   <dictionary name="triniwiz">
     <words>
       <w>attrib</w>
+      <w>bufferfi</w>
+      <w>bufferfv</w>
+      <w>bufferiv</w>
+      <w>bufferuiv</w>
       <w>canvasnative</w>
       <w>coord</w>
       <w>coords</w>

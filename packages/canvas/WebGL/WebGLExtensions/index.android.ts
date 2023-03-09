@@ -1,5 +1,5 @@
-import {WebGLVertexArrayObject, WebGLQuery} from '../../WebGL2';
-import {WebGLRenderingContext} from '../../WebGL/WebGLRenderingContext';
+import { WebGLVertexArrayObject, WebGLQuery } from '../../WebGL2';
+import { WebGLRenderingContext } from '../../WebGL/WebGLRenderingContext';
 
 export class EXT_blend_minmax {
 	MAX_EXT: number;
@@ -69,8 +69,7 @@ export class EXT_color_buffer_half_float {
 	UNSIGNED_NORMALIZED_EXT: number;
 
 	constructor(nativeInstance) {
-		this.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT =
-			nativeInstance.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT;
+		this.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT = nativeInstance.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT;
 		this.RGB16F_EXT = nativeInstance.RGB16F_EXT;
 		this.RGBA16F_EXT = nativeInstance.RGBA16F_EXT;
 		this.UNSIGNED_NORMALIZED_EXT = nativeInstance.UNSIGNED_NORMALIZED_EXT;
@@ -87,8 +86,7 @@ export class EXT_sRGB {
 	SRGB_EXT: number;
 
 	constructor(nativeInstance) {
-		this.FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT =
-			nativeInstance.FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT;
+		this.FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT = nativeInstance.FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT;
 		this.SRGB8_ALPHA8_EXT = nativeInstance.SRGB8_ALPHA8_EXT;
 		this.SRGB_ALPHA_EXT = nativeInstance.SRGB_ALPHA_EXT;
 		this.SRGB_EXT = nativeInstance.SRGB_EXT;
@@ -96,8 +94,7 @@ export class EXT_sRGB {
 }
 
 export class EXT_shader_texture_lod {
-	constructor(nativeInstance) {
-	}
+	constructor(nativeInstance) {}
 }
 
 export class EXT_texture_filter_anisotropic {
@@ -106,8 +103,7 @@ export class EXT_texture_filter_anisotropic {
 	TEXTURE_MAX_ANISOTROPY_EXT: number;
 
 	constructor(nativeInstance) {
-		this.MAX_TEXTURE_MAX_ANISOTROPY_EXT =
-			nativeInstance.MAX_TEXTURE_MAX_ANISOTROPY_EXT;
+		this.MAX_TEXTURE_MAX_ANISOTROPY_EXT = nativeInstance.MAX_TEXTURE_MAX_ANISOTROPY_EXT;
 		this.TEXTURE_MAX_ANISOTROPY_EXT = nativeInstance.TEXTURE_MAX_ANISOTROPY_EXT;
 	}
 }
@@ -121,23 +117,19 @@ export class OES_element_index_uint {
 }
 
 export class OES_fbo_render_mipmap {
-	constructor(nativeInstance) {
-	}
+	constructor(nativeInstance) {}
 }
 
 export class OES_standard_derivatives {
-	constructor(nativeInstance) {
-	}
+	constructor(nativeInstance) {}
 }
 
 export class OES_texture_float {
-	constructor(nativeInstance) {
-	}
+	constructor(nativeInstance) {}
 }
 
 export class OES_texture_float_linear {
-	constructor(nativeInstance) {
-	}
+	constructor(nativeInstance) {}
 }
 
 export class OES_texture_half_float {
@@ -149,8 +141,7 @@ export class OES_texture_half_float {
 }
 
 export class OES_texture_half_float_linear {
-	constructor(nativeInstance) {
-	}
+	constructor(nativeInstance) {}
 }
 
 export class OES_vertex_array_object {
@@ -180,7 +171,6 @@ export class OES_vertex_array_object {
 		const value = arrayObject ? arrayObject.native : 0;
 		this.nativeInstance.deleteVertexArrayOES(value);
 	}
-
 }
 
 export class WEBGL_color_buffer_float {
@@ -193,8 +183,7 @@ export class WEBGL_color_buffer_float {
 	UNSIGNED_NORMALIZED_EXT: number;
 
 	constructor(nativeInstance) {
-		this.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT =
-			nativeInstance.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT;
+		this.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT = nativeInstance.FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT;
 		this.RGB32F_EXT = nativeInstance.RGB32F_EXT;
 		this.RGBA32F_EXT = nativeInstance.RGBA32F_EXT;
 		this.UNSIGNED_NORMALIZED_EXT = nativeInstance.UNSIGNED_NORMALIZED_EXT;
@@ -226,16 +215,13 @@ export class WEBGL_compressed_texture_etc {
 		this.COMPRESSED_R11_EAC = nativeInstance.COMPRESSED_R11_EAC;
 		this.COMPRESSED_RG11_EAC = nativeInstance.COMPRESSED_RG11_EAC;
 		this.COMPRESSED_RGB8_ETC2 = nativeInstance.COMPRESSED_RGB8_ETC2;
-		this.COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 =
-			nativeInstance.COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2;
+		this.COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 = nativeInstance.COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2;
 		this.COMPRESSED_RGBA8_ETC2_EAC = nativeInstance.COMPRESSED_RGBA8_ETC2_EAC;
 		this.COMPRESSED_SIGNED_R11_EAC = nativeInstance.COMPRESSED_SIGNED_R11_EAC;
 		this.COMPRESSED_SIGNED_RG11_EAC = nativeInstance.COMPRESSED_SIGNED_RG11_EAC;
-		this.COMPRESSED_SRGB8_ALPHA8_ETC2_EAC =
-			nativeInstance.COMPRESSED_SRGB8_ALPHA8_ETC2_EAC;
+		this.COMPRESSED_SRGB8_ALPHA8_ETC2_EAC = nativeInstance.COMPRESSED_SRGB8_ALPHA8_ETC2_EAC;
 		this.COMPRESSED_SRGB8_ETC2 = nativeInstance.COMPRESSED_SRGB8_ETC2;
-		this.COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 =
-			nativeInstance.COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2;
+		this.COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 = nativeInstance.COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2;
 	}
 }
 
@@ -257,14 +243,10 @@ export class WEBGL_compressed_texture_pvrtc {
 	COMPRESSED_RGB_PVRTC_4BPPV1_IMG: number;
 
 	constructor(nativeInstance) {
-		this.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG =
-			nativeInstance.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
-		this.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG =
-			nativeInstance.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
-		this.COMPRESSED_RGB_PVRTC_2BPPV1_IMG =
-			nativeInstance.COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
-		this.COMPRESSED_RGB_PVRTC_4BPPV1_IMG =
-			nativeInstance.COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
+		this.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG = nativeInstance.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
+		this.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG = nativeInstance.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
+		this.COMPRESSED_RGB_PVRTC_2BPPV1_IMG = nativeInstance.COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
+		this.COMPRESSED_RGB_PVRTC_4BPPV1_IMG = nativeInstance.COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
 	}
 }
 
@@ -364,7 +346,6 @@ export class EXT_disjoint_timer_query {
 	}
 }
 
-
 export class WEBGL_compressed_texture_atc {
 	COMPRESSED_RGB_ATC_WEBGL;
 	COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL;
@@ -377,7 +358,6 @@ export class WEBGL_compressed_texture_atc {
 		this.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL = nativeInstance.COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL;
 	}
 }
-
 
 export class WEBGL_compressed_texture_s3tc {
 	COMPRESSED_RGB_S3TC_DXT1_EXT;
@@ -488,5 +468,4 @@ export class WEBGL_draw_buffers {
 	public drawBuffersWEBGL(buffers: number[]) {
 		this.nativeInstance.drawBuffersWEBGL(buffers);
 	}
-
 }

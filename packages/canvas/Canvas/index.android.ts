@@ -239,26 +239,16 @@ export class Canvas extends CanvasBase {
 					const opts = this._handleContextOptions(type, options);
 
 					this._canvas.initContext(type);
+					// this.parent?.style?.color?.android || -16777216
 
 					//this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
-				
 					this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
 
-					// this._2dContextJni = this._canvas.getContext(type, getNativeOptions(options));
-					// //const ptr = String(this._canvas.getNativeContext());
-
-					// this._2dContext = global.__getCanvasRenderingContext2DImpl(this.width, this.height, Screen.mainScreen.scale, this.parent?.style?.color?.android || -16777216, Screen.mainScreen.scale * 160, direction, true, this._isCustom ? true : false);
-
-					// (this._2dContext as any).__contextAttributes = (this._canvas as any).getContextAttributesJson();
-
-					// //this._2dContext = global.__getCanvasRenderingContext2DImpl(ptr);
-
 					// // @ts-ignore
-					 (this._2dContext as any)._canvas = this;
-				} else {
-					//this._canvas.getContext(type, getNativeOptions(options));
+					(this._2dContext as any)._canvas = this;
 				}
+
 				// @ts-ignore
 				this._2dContext._type = '2d';
 				return this._2dContext;
@@ -267,19 +257,14 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					// setup env;
-					this._webGLContextJni = this._canvas.getContext('webgl', getNativeOptions(options));
+					const opts = Object.assign({ version: 'v1' }, this._handleContextOptions(type, options));
 
-					const ctxOpts = Object.assign({ version: 'v1' }, this._handleContextOptions(type, options));
-					const ctx = global.__getWebGLRenderingContext(ctxOpts, this.width, this.height, Screen.mainScreen.scale, this.parent?.style?.color?.android || -16777216, Screen.mainScreen.scale * 160, direction);
-					this._webglContext = ctx;
-					//this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl', getNativeOptions(options)));
-					(this._webglContext as any).canvas = this;
+					this._canvas.initContext(type);
 
-					(this._webglContext as any).__contextAttributes = (this._canvas as any).getContextAttributesJson();
-				} else {
-					//this._canvas.getContext('webgl', getNativeOptions(options));
+					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
+					(this._webglContext as any)._canvas = this;
 				}
+
 				this._webglContext._type = 'webgl';
 				return this._webglContext;
 			} else if (type && (type === 'webgl2' || type === 'experimental-webgl2')) {
@@ -287,18 +272,12 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webgl2Context) {
-					// setup env
-					this._webGL2ContextJni = this._canvas.getContext('webgl2', getNativeOptions(options));
+					const opts = Object.assign({ version: 'v2' }, this._handleContextOptions(type, options));
 
-					const ctxOpts = Object.assign({ version: 'v2' }, this._handleContextOptions(type, options));
-					const ctx = global.__getWebGL2RenderingContext(ctxOpts, this.width, this.height, Screen.mainScreen.scale, this.parent?.style?.color?.android || -16777216, Screen.mainScreen.scale * 160, direction) as WebGL2RenderingContext;
+					this._canvas.initContext(type);
 
-					this._webgl2Context = ctx;
-					//this._webgl2Context = new WebGL2RenderingContext(this.android.getContext('webgl2', getNativeOptions(options)));
-					(this._webgl2Context as any).canvas = this;
-					(this._webgl2Context as any).__contextAttributes = (this._canvas as any).getContextAttributesJson();
-				} else {
-					//this._canvas.getContext('webgl2', getNativeOptions(options));
+					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
+					(this._webgl2Context as any)._canvas = this;
 				}
 				(this._webgl2Context as any)._type = 'webgl2';
 				return this._webgl2Context;

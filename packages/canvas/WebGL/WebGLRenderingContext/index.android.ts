@@ -10,7 +10,7 @@ import { WebGLRenderbuffer } from '../WebGLRenderbuffer';
 import { WebGLShaderPrecisionFormat } from '../WebGLShaderPrecisionFormat';
 import { WebGLBuffer } from '../WebGLBuffer';
 
-import { ImageSource } from '@nativescript/core';
+import { ImageSource, Screen } from '@nativescript/core';
 import {
 	ANGLE_instanced_arrays,
 	EXT_blend_minmax,
@@ -39,14 +39,35 @@ import {
 import { ImageAsset } from '../../ImageAsset';
 import { Canvas } from '../../Canvas';
 import { ImageBitmap } from '../../ImageBitmap';
-import { Utils } from '../../utils';
+
+import { Helpers } from '../../helpers';
+
+let ctor;
+
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
-	private context: org.nativescript.canvas.TNSWebGLRenderingContext;
-	constructor(context) {
+	private context;
+
+	static {
+		Helpers.initialize();
+		ctor = global.CanvasJSIModule.createWebGLContext;
+	}
+
+	constructor(context, contextOptions) {
 		super(context);
-		this.context = context;
+		if (contextOptions) {
+			const ctx = BigInt(context.getNativeContext().toString());
+
+			let direction = 0;
+			if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
+				direction = 1;
+			}
+
+			this.context = ctor(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
+		} else {
+			this.context = context;
+		}
 	}
 
 	get native() {
@@ -54,183 +75,120 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	}
 
 	get drawingBufferHeight() {
-		return this.context.getDrawingBufferHeight();
+		return this.context.drawingBufferHeight;
 	}
 
 	get drawingBufferWidth() {
-		return this.context.getDrawingBufferWidth();
+		return this.context.drawingBufferWidth;
 	}
 
-	static toPrimitive(value): any {
-		if (value instanceof java.lang.Integer) {
-			return value.intValue();
-		} else if (value instanceof java.lang.Long) {
-			return value.longValue();
-		} else if (value instanceof java.lang.Short) {
-			return value.shortValue();
-		} else if (value instanceof java.lang.Byte) {
-			return value.byteValue();
-		} else if (value instanceof java.lang.Boolean) {
-			return value.booleanValue();
-		} else if (value instanceof java.lang.String) {
-			return value.toString();
-		} else if (value instanceof java.lang.Float) {
-			return value.floatValue();
-		} else if (value instanceof java.lang.Double) {
-			return value.doubleValue();
+	_methodCache = new Map();
+
+	_getMethod(name: string) {
+		const cached = this._methodCache.get(name);
+		if (cached === undefined) {
+			const ret = this.context[name];
+			this._methodCache.set(name, ret);
+			return ret;
 		}
-		return value;
+
+		return cached;
 	}
 
-	getJSArray(value): any[] {
-		const count = value.length;
-		const array: number[] = [];
-		for (let i = 0; i < count; i++) {
-			array.push(value[i]);
-		}
-		return array as any;
+	__toDataURL() {
+		const __toDataURL = this._getMethod('__toDataURL');
+		return __toDataURL(arguments[0], arguments[1]);
 	}
 
 	activeTexture(texture: number): void {
 		this._glCheckError('activeTexture');
 		this._checkArgs('activeTexture', arguments);
-		this.context.activeTexture(texture);
+		const activeTexture = this._getMethod('activeTexture');
+		activeTexture(texture);
 	}
 
 	attachShader(program: WebGLProgram, shader: WebGLShader): void {
 		this._glCheckError('attachShader');
 		this._checkArgs('attachShader', arguments);
-		const value = program ? program.native : 0;
-		const value2 = shader ? shader.native : 0;
-		this.context.attachShader(value, value2);
+		const value = program.native;
+		const value2 = shader.native;
+		const attachShader = this._getMethod('attachShader');
+		attachShader(value, value2);
 	}
 
 	bindAttribLocation(program: WebGLProgram, index: number, name: string): void {
 		this._glCheckError('bindAttribLocation');
 		this._checkArgs('bindAttribLocation', arguments);
-		const value = program ? program.native : 0;
-		this.context.bindAttribLocation(value, index, name);
+		const bindAttribLocation = this._getMethod('bindAttribLocation');
+		const value = program.native;
+		bindAttribLocation(value, index, name);
 	}
 
 	bindBuffer(target: number, buffer: WebGLBuffer): void {
 		this._glCheckError('bindBuffer');
 		this._checkArgs('bindBuffer', arguments);
-		let value = buffer ? buffer.native : 0;
-		this.context.bindBuffer(target, value);
+		const value = buffer ? buffer.native: null;
+		const bindBuffer = this._getMethod('bindBuffer');
+		bindBuffer(target, value);
 	}
 
 	bindFramebuffer(target: number, framebuffer: WebGLFramebuffer): void {
 		this._glCheckError('bindFramebuffer');
 		this._checkArgs('bindFramebuffer', arguments);
-		const value = framebuffer ? framebuffer.native : 0;
-		this.context.bindFramebuffer(target, value);
+		const value = framebuffer ? framebuffer.native : null;
+		const bindFramebuffer = this._getMethod('bindFramebuffer');
+		bindFramebuffer(target, value);
 	}
 
 	bindRenderbuffer(target: number, renderbuffer: WebGLRenderbuffer): void {
 		this._glCheckError('bindRenderbuffer');
 		this._checkArgs('bindRenderbuffer', arguments);
-		const value = renderbuffer ? renderbuffer.native : 0;
-		this.context.bindRenderbuffer(target, value);
+		const value = renderbuffer ? renderbuffer.native : null;
+		const bindRenderbuffer = this._getMethod('bindRenderbuffer');
+		bindRenderbuffer(target, value);
 	}
 
-	_lastTexture: {
-		target: number;
-		texture: number;
-	} = { target: 0, texture: 0 };
 	bindTexture(target: number, texture: WebGLTexture): void {
 		this._glCheckError('bindTexture');
 		this._checkArgs('bindTexture', arguments);
-		const value = texture ? texture.native : 0;
-		if (value > 0) {
-			this._lastTexture = {
-				target,
-				texture: value,
-			};
-		}
-
-		this.context.bindTexture(target, value);
+		const value = texture ? texture.native : null;
+		const bindTexture = this._getMethod('bindTexture');
+		bindTexture(target, value);
 	}
 
 	blendColor(red: number, green: number, blue: number, alpha: number): void {
 		this._glCheckError('blendColor');
 		this._checkArgs('blendColor', arguments);
-		this.context.blendColor(red, green, blue, alpha);
+		const blendColor = this._getMethod('blendColor');
+		blendColor(red, green, blue, alpha);
 	}
 
 	blendEquationSeparate(modeRGB: number, modeAlpha: number): void {
 		this._glCheckError('blendEquationSeparate');
 		this._checkArgs('blendEquationSeparate', arguments);
-		this.context.blendEquationSeparate(modeRGB, modeAlpha);
+		const blendEquationSeparate = this._getMethod('blendEquationSeparate');
+		blendEquationSeparate(modeRGB, modeAlpha);
 	}
 
 	blendEquation(mode: number): void {
 		this._glCheckError('blendEquation');
 		this._checkArgs('blendEquation', arguments);
-		this.context.blendEquation(mode);
+		const blendEquation = this._getMethod('blendEquation');
+		blendEquation(mode);
 	}
 
 	blendFuncSeparate(srcRGB: number = this.ONE, dstRGB: number = this.ZERO, srcAlpha: number = this.ONE, dstAlpha: number = this.ZERO): void {
 		this._glCheckError('blendFuncSeparate');
 		this._checkArgs('blendFuncSeparate', arguments);
-		this.context.blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+		const blendFuncSeparate = this._getMethod('blendFuncSeparate');
+		blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
 	}
 
 	blendFunc(sfactor: number = this.ONE, dfactor: number = this.ZERO): void {
 		this._glCheckError('blendFunc');
 		this._checkArgs('blendFunc', arguments);
-		this.context.blendFunc(sfactor, dfactor);
-	}
-
-	toNativeArray(value: any, type: string): any {
-		// if (value && value.length && typeof type === 'string') {
-		//     const size = value.length;
-		//     const nativeArray = Array.create(type, size);
-		//     for (let i = 0; i < size; i++) {
-		//         nativeArray[i] = value[i];
-		//     }
-		//     return nativeArray;
-		// }
-
-		let length = 0;
-		if (value instanceof Int8Array || value instanceof Uint8Array || value instanceof Uint8ClampedArray || value instanceof Int16Array || value instanceof Uint16Array || value instanceof Int32Array || value instanceof Uint32Array || value instanceof Float32Array || value instanceof Float64Array) {
-			length = value.length;
-		} else if (Array.isArray(value)) {
-			length = value.length;
-		}
-
-		if (typeof type === 'string') {
-			const array = Array.from(value as any) as any;
-			let nativeArray;
-			switch (type) {
-				case 'byte':
-					nativeArray = java.nio.ByteBuffer.wrap(array).array();
-					break;
-				case 'short':
-					nativeArray = java.nio.ShortBuffer.wrap(array).array();
-					break;
-				case 'float':
-					nativeArray = java.nio.FloatBuffer.wrap(array).array();
-					break;
-				case 'int':
-					nativeArray = java.nio.IntBuffer.wrap(array).array();
-					break;
-				case 'double':
-					nativeArray = java.nio.DoubleBuffer.wrap(array).array();
-					break;
-				case 'long':
-					nativeArray = java.nio.LongBuffer.wrap(array).array();
-					break;
-				default:
-					nativeArray = array;
-					break;
-			}
-			return nativeArray as any;
-		}
-		return [] as any;
-	}
-
-	get _isSupported() {
-		return Utils.IS_SUPPORTED_TYPED_ARRAYS_VERSION;
+		const blendFunc = this._getMethod('blendFunc');
+		blendFunc(sfactor, dfactor);
 	}
 
 	bufferData(target: number, size: number, usage: number): void;
@@ -240,471 +198,361 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	bufferData(target: any, srcData: any, usage: any) {
 		this._glCheckError('bufferData');
 		this._checkArgs('bufferData', arguments);
-		if (typeof srcData === 'number') {
-			this.context.bufferData(target, srcData, usage);
-		} else if (srcData instanceof ArrayBuffer) {
-			// @ts-ignore
-			if (srcData.nativeObject) {
-				// @ts-ignore
-				this.context.bufferData(target, srcData.nativeObject, usage);
-			} else {
-				if (this._isSupported) {
-					this.context.bufferDataByteBuffer(target, srcData as any, usage);
-				} else {
-					this.context.bufferDataByte(target, Array.from(new Uint8Array(srcData as any)), usage);
-				}
-			}
-			//this.context.bufferData(target, this.toNativeArray(new Uint8Array(srcData as any) as any, 'byte'), usage);
-		} else if (srcData && srcData.buffer instanceof ArrayBuffer) {
-			// @ts-ignore
-			if (srcData.buffer.nativeObject) {
-				// @ts-ignore
-				this.context.bufferData(target, offset, srcData.buffer.nativeObject);
-			} else {
-				if (srcData instanceof Uint8Array || srcData instanceof Uint8ClampedArray) {
-					if (this._isSupported) {
-						this.context.bufferDataByteBuffer(target, srcData as any, usage);
-					} else {
-						this.context.bufferDataByte(target, Array.from(srcData), usage);
-					}
-				} else if (srcData instanceof Uint16Array || srcData instanceof Int16Array) {
-					if (this._isSupported) {
-						this.context.bufferDataShortBuffer(target, srcData as any, usage);
-					} else {
-						this.context.bufferDataShort(target, Array.from(srcData), usage);
-					}
-				} else if (srcData instanceof Uint32Array || srcData instanceof Int32Array) {
-					if (this._isSupported) {
-						this.context.bufferDataIntBuffer(target, srcData as any, usage);
-					} else {
-						this.context.bufferDataInt(target, Array.from(srcData), usage);
-					}
-				} else if (srcData instanceof Float32Array) {
-					if (this._isSupported) {
-						this.context.bufferDataFloatBuffer(target, srcData as any, usage);
-					} else {
-						this.context.bufferDataFloat(target, Array.from(srcData), usage);
-					}
-				}
-			}
-		} else if (arguments.length === 3 && !srcData) {
-			this.context.bufferData(target, 0, usage);
-		}
+		const bufferData = this._getMethod('bufferData');
+		bufferData(target, srcData, usage);
 	}
 
 	bufferSubData(target: number, offset: number, srcData: ArrayBuffer | ArrayBufferView): void {
 		this._glCheckError('bufferSubData');
 		this._checkArgs('bufferSubData', arguments);
-		if (srcData instanceof ArrayBuffer) {
-			//this.context.bufferSubData(target, offset, this.toNativeArray(new Uint8Array(srcData as any) as any, 'byte'));
-			// @ts-ignore
-			if (srcData.nativeObject) {
-				// @ts-ignore
-				this.context.bufferSubData(target, offset, srcData.nativeObject);
-			} else {
-				if (this._isSupported) {
-					this.context.bufferSubDataByteBuffer(target, offset, srcData as any);
-				} else {
-					this.context.bufferSubDataByte(target, offset, Array.from(new Uint8Array(srcData as any)));
-				}
-			}
-		} else if (srcData && srcData.buffer instanceof ArrayBuffer) {
-			// @ts-ignore
-			if (srcData.buffer.nativeObject) {
-				// @ts-ignore
-				this.context.bufferSubData(target, offset, srcData.buffer.nativeObject);
-			} else {
-				if (srcData instanceof Uint8Array || srcData instanceof Uint8ClampedArray) {
-					if (this._isSupported) {
-						this.context.bufferSubDataByteBuffer(target, offset, srcData as any);
-					} else {
-						this.context.bufferSubDataByte(target, offset, Array.from(srcData));
-					}
-				} else if (srcData instanceof Uint16Array || srcData instanceof Int16Array) {
-					if (this._isSupported) {
-						this.context.bufferSubDataShortBuffer(target, offset, srcData as any);
-					} else {
-						this.context.bufferSubDataShort(target, offset, Array.from(srcData));
-					}
-				} else if (srcData instanceof Uint32Array || srcData instanceof Int32Array) {
-					if (this._isSupported) {
-						this.context.bufferSubDataIntBuffer(target, offset, srcData as any);
-					} else {
-						this.context.bufferSubDataInt(target, offset, Array.from(srcData));
-					}
-				} else if (srcData instanceof Float32Array) {
-					if (this._isSupported) {
-						this.context.bufferSubDataFloatBuffer(target, offset, srcData as any);
-					} else {
-						this.context.bufferSubDataFloat(target, offset, Array.from(srcData));
-					}
-				}
-			}
-		}
+		const bufferSubData = this._getMethod('bufferSubData');
+		bufferSubData(target, offset, srcData);
 	}
 
 	checkFramebufferStatus(target: number): number {
 		this._glCheckError('checkFramebufferStatus');
 		this._checkArgs('checkFramebufferStatus', arguments);
-		return this.context.checkFramebufferStatus(target);
+		const checkFramebufferStatus = this._getMethod('checkFramebufferStatus');
+		return checkFramebufferStatus(target);
 	}
 
 	clearColor(red: number, green: number, blue: number, alpha: number): void {
 		this._glCheckError('clearColor');
 		this._checkArgs('clearColor', arguments);
-		this.context.clearColor(red, green, blue, alpha);
+		const clearColor = this._getMethod('clearColor');
+		clearColor(red, green, blue, alpha);
 	}
 
 	clearDepth(depth: number): void {
 		this._glCheckError('clearDepth');
 		this._checkArgs('clearDepth', arguments);
-		this.context.clearDepth(depth);
+		const clearDepth = this._getMethod('clearDepth');
+		clearDepth(depth);
 	}
 
 	clearStencil(stencil: number): void {
 		this._glCheckError('clearStencil');
 		this._checkArgs('clearStencil', arguments);
-		this.context.clearStencil(stencil);
+		const clearStencil = this._getMethod('clearStencil');
+		clearStencil(stencil);
 	}
 
 	clear(mask: number): void {
 		this._glCheckError('clear');
 		this._checkArgs('clear', arguments);
-		this.context.clear(mask);
+		const clear = this._getMethod('clear');
+		clear(mask);
 	}
 
 	colorMask(red: boolean, green: boolean, blue: boolean, alpha: boolean): void {
 		this._glCheckError('colorMask');
 		this._checkArgs('colorMask', arguments);
-		this.context.colorMask(red, green, blue, alpha);
+		const colorMask = this._getMethod('colorMask');
+		colorMask(red, green, blue, alpha);
 	}
 
 	commit(): void {
 		// NOOP
-		this.context.commit();
+		const commit = this._getMethod('commit');
+		commit();
 	}
 
 	compileShader(shader: WebGLShader): void {
 		this._glCheckError('compileShader');
 		this._checkArgs('compileShader', arguments);
-		const value = shader ? shader.native : 0;
-		this.context.compileShader(value);
+		const compileShader = this._getMethod('compileShader');
+		const value = shader.native;
+		compileShader(value);
 	}
 
 	compressedTexImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, pixels: ArrayBuffer | ArrayBufferView): void {
 		this._glCheckError('compressedTexImage2D');
 		this._checkArgs('compressedTexImage2D', arguments);
-
-		// @ts-ignore
-		if (pixels && pixels.buffer instanceof ArrayBuffer) {
-			// @ts-ignore
-			if (pixels.buffer.nativeObject) {
-				// @ts-ignore
-				this.context.compressedTexImage2D(target, level, internalformat, width, height, border, pixels.buffer.nativeObject);
-			} else {
-				if (pixels instanceof Uint8Array) {
-					// this.context.compressedTexImage2D(target, level, internalformat, width, height, border, this.toNativeArray(pixels as any, 'byte'));
-					this.context.compressedTexImage2DByte(target, level, internalformat, width, height, border, Array.from(pixels));
-				} else if (pixels instanceof Uint16Array || pixels instanceof Int16Array) {
-					// this.context.compressedTexImage2D(target, level, internalformat, width, height, border, this.toNativeArray(pixels as any, 'short'));
-					this.context.compressedTexImage2DShort(target, level, internalformat, width, height, border, Array.from(pixels));
-				} else if (pixels instanceof Uint32Array || pixels instanceof Int32Array) {
-					// this.context.compressedTexImage2D(target, level, internalformat, width, height, border, this.toNativeArray(pixels as any, 'int'));
-					this.context.compressedTexImage2DInt(target, level, internalformat, width, height, border, Array.from(pixels));
-				} else if (pixels instanceof Float32Array) {
-					// this.context.compressedTexImage2D(target, level, internalformat, width, height, border, this.toNativeArray(pixels as any, 'float'));
-					this.context.compressedTexImage2DFloat(target, level, internalformat, width, height, border, Array.from(pixels));
-				}
-			}
-		} else if (pixels instanceof ArrayBuffer) {
-			// this.context.compressedTexImage2D(target, level, internalformat, width, height, border, this.toNativeArray(new Uint8Array(pixels as any) as any, 'byte'));
-			// @ts-ignore
-			if (pixels.nativeObject) {
-				// @ts-ignore
-				this.context.compressedTexImage2D(target, level, internalformat, width, height, border, pixels.nativeObject);
-			} else {
-				this.context.compressedTexImage2DByte(target, level, internalformat, width, height, border, Array.from(new Uint8Array(pixels)));
-			}
-		}
+		const compressedTexImage2D = this._getMethod('compressedTexImage2D');
+		compressedTexImage2D(target, level, internalformat, width, height, border, pixels);
 	}
 
 	compressedTexSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, pixels: ArrayBufferView): void {
 		this._glCheckError('compressedTexSubImage2D');
 		this._checkArgs('compressedTexSubImage2D', arguments);
-		if (pixels && pixels.buffer instanceof ArrayBuffer) {
-			if (pixels instanceof Uint8Array) {
-				// this.context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, this.toNativeArray(pixels as any, 'byte'));
-				this.context.compressedTexSubImage2DByte(target, level, xoffset, yoffset, width, height, format, Array.from(pixels));
-			} else if (pixels instanceof Uint16Array || pixels instanceof Int16Array) {
-				// this.context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, this.toNativeArray(pixels as any, 'short'));
-				this.context.compressedTexSubImage2DShort(target, level, xoffset, yoffset, width, height, format, Array.from(pixels));
-			} else if (pixels instanceof Uint32Array || pixels instanceof Int32Array) {
-				// this.context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, this.toNativeArray(pixels as any, 'int'));
-				this.context.compressedTexSubImage2DInt(target, level, xoffset, yoffset, width, height, format, Array.from(pixels));
-			} else if (pixels instanceof Float32Array) {
-				// this.context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, this.toNativeArray(pixels as any, 'float'));
-				this.context.compressedTexSubImage2DFloat(target, level, xoffset, yoffset, width, height, format, Array.from(pixels));
-			}
-		} else if (pixels instanceof ArrayBuffer) {
-			// this.context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, this.toNativeArray(new Uint8Array(pixels as any) as any, 'byte'));
-			// @ts-ignore
-			if (pixels.nativeObject) {
-				// @ts-ignore
-				this.context.compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels.nativeObject);
-			} else {
-				this.context.compressedTexSubImage2DByte(target, level, xoffset, yoffset, width, height, format, Array.from(new Uint8Array(pixels as any)));
-			}
-		}
+		const compressedTexSubImage2D = this._getMethod('compressedTexSubImage2D');
+		compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels);
 	}
 
 	copyTexImage2D(target: number, level: number, internalformat: number, x: number, y: number, width: number, height: number, border: number): void {
 		this._glCheckError('copyTexImage2D');
 		this._checkArgs('copyTexImage2D', arguments);
-		this.context.copyTexImage2D(target, level, internalformat, x, y, width, height, border);
+		const copyTexImage2D = this._getMethod('copyTexImage2D');
+		copyTexImage2D(target, level, internalformat, x, y, width, height, border);
 	}
 
 	copyTexSubImage2D(target: number, level: number, xoffset: number, yoffset: number, x: number, y: number, width: number, height: number): void {
 		this._glCheckError('copyTexSubImage2D');
 		this._checkArgs('copyTexSubImage2D', arguments);
-		this.context.copyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
+		const copyTexSubImage2D = this._getMethod('copyTexSubImage2D');
+		copyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
 	}
 
 	createBuffer(): WebGLBuffer {
 		this._glCheckError('createBuffer');
 		this._checkArgs('createBuffer', arguments);
-		const id = this.context.createBuffer();
+		const createBuffer = this._getMethod('createBuffer');
+		const id = createBuffer();
 		return new WebGLBuffer(id);
 	}
 
 	createFramebuffer(): WebGLFramebuffer {
 		this._glCheckError('createFramebuffer');
 		this._checkArgs('createFramebuffer', arguments);
-		return new WebGLFramebuffer(this.context.createFramebuffer());
+		const createFramebuffer = this._getMethod('createFramebuffer');
+		return new WebGLFramebuffer(createFramebuffer());
 	}
 
 	createProgram(): WebGLProgram {
 		this._glCheckError('createProgram');
 		this._checkArgs('createProgram', arguments);
-		return new WebGLProgram(this.context.createProgram());
+		const createProgram = this._getMethod('createProgram');
+		return new WebGLProgram(createProgram());
 	}
 
 	createRenderbuffer(): WebGLRenderbuffer {
 		this._glCheckError('createRenderbuffer');
 		this._checkArgs('createRenderbuffer', arguments);
-		return new WebGLRenderbuffer(this.context.createRenderbuffer());
+		const createRenderbuffer = this._getMethod('createRenderbuffer');
+		return new WebGLRenderbuffer(createRenderbuffer());
 	}
 
 	createShader(type: number): WebGLShader {
 		this._glCheckError('createShader');
 		this._checkArgs('createShader', arguments);
-		return new WebGLShader(this.context.createShader(type));
+		const createShader = this._getMethod('createShader');
+		return new WebGLShader(createShader(type));
 	}
 
 	createTexture(): WebGLTexture {
 		this._glCheckError('createTexture');
 		this._checkArgs('createTexture', arguments);
-		return new WebGLTexture(this.context.createTexture());
+		const createTexture = this._getMethod('createTexture');
+		return new WebGLTexture(createTexture());
 	}
 
 	cullFace(mode: number): void {
 		this._glCheckError('cullFace');
 		this._checkArgs('cullFace', arguments);
-		this.context.cullFace(mode);
+		const cullFace = this._getMethod('cullFace');
+		cullFace(mode);
 	}
 
 	deleteBuffer(buffer: WebGLBuffer): void {
 		this._glCheckError('deleteBuffer');
 		this._checkArgs('deleteBuffer', arguments);
-		const value = buffer ? buffer.native : 0;
-		this.context.deleteBuffer(value);
+		const value = buffer.native;
+		const deleteBuffer = this._getMethod('deleteBuffer');
+		deleteBuffer(value);
 	}
 
 	deleteFramebuffer(frameBuffer: WebGLFramebuffer): void {
 		this._glCheckError('deleteFramebuffer');
 		this._checkArgs('deleteFramebuffer', arguments);
-		const value = frameBuffer ? frameBuffer.native : 0;
-		this.context.deleteFramebuffer(value);
+		const value = frameBuffer.native;
+		const deleteFramebuffer = this._getMethod('deleteFramebuffer');
+		deleteFramebuffer(value);
 	}
 
 	deleteProgram(program: WebGLProgram): void {
 		this._glCheckError('deleteProgram');
 		this._checkArgs('deleteProgram', arguments);
-		const value = program ? program.native : 0;
-		this.context.deleteProgram(value);
+		const value = program.native;
+		const deleteProgram = this._getMethod('deleteProgram');
+		deleteProgram(value);
 	}
 
 	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void {
 		this._glCheckError('deleteRenderbuffer');
 		this._checkArgs('deleteRenderbuffer', arguments);
-		const value = renderBuffer ? renderBuffer.native : 0;
-		this.context.deleteRenderbuffer(value);
+		const value = renderBuffer.native;
+		const deleteRenderbuffer = this._getMethod('deleteRenderbuffer');
+		deleteRenderbuffer(value);
 	}
 
 	deleteShader(shader: WebGLRenderbuffer): void {
 		this._glCheckError('deleteShader');
 		this._checkArgs('deleteShader', arguments);
-		const value = shader ? shader.native : 0;
-		this.context.deleteShader(value);
+		const deleteShader = this._getMethod('deleteShader');
+		deleteShader(shader.native);
 	}
 
 	deleteTexture(texture: WebGLTexture): void {
 		this._glCheckError('deleteTexture');
 		this._checkArgs('deleteTexture', arguments);
-		const value = texture ? texture.native : 0;
-		this.context.deleteTexture(value);
+		const value = texture.native;
+		const deleteTexture = this._getMethod('deleteTexture');
+		deleteTexture(value);
 	}
 
 	depthFunc(func: number): void {
 		this._glCheckError('depthFunc');
 		this._checkArgs('depthFunc', arguments);
-		this.context.depthFunc(func);
+		const depthFunc = this._getMethod('depthFunc');
+		depthFunc(func);
 	}
 
 	depthMask(flag: boolean): void {
 		this._glCheckError('depthMask');
 		this._checkArgs('depthMask', arguments);
-		this.context.depthMask(flag);
+		const depthMask = this._getMethod('depthMask');
+		depthMask(flag);
 	}
 
 	depthRange(zNear: number, zFar: number): void {
 		this._glCheckError('depthRange');
 		this._checkArgs('depthRange', arguments);
-		this.context.depthRange(zNear, zFar);
+		const depthRange = this._getMethod('depthRange');
+		depthRange(zNear, zFar);
 	}
 
 	detachShader(program: WebGLProgram, shader: WebGLShader): void {
 		this._glCheckError('detachShader');
 		this._checkArgs('detachShader', arguments);
-		const value = program ? program.native : 0;
-		const value2 = shader ? shader.native : 0;
-		this.context.detachShader(value, value2);
+		const value = program.native;
+		const value2 = shader.native;
+		const detachShader = this._getMethod('detachShader');
+		detachShader(value, value2);
 	}
 
 	disableVertexAttribArray(index: number): void {
 		this._glCheckError('disableVertexAttribArray');
 		this._checkArgs('disableVertexAttribArray', arguments);
-		this.context.disableVertexAttribArray(index);
+		const disableVertexAttribArray = this._getMethod('disableVertexAttribArray');
+		disableVertexAttribArray(index);
 	}
 
 	disable(cap: number): void {
 		this._glCheckError('disable');
 		this._checkArgs('disable', arguments);
-		this.context.disable(cap);
+		const disable = this._getMethod('disable');
+		disable(cap);
 	}
 
 	drawArrays(mode: number, first: number, count: number): void {
 		this._glCheckError('drawArrays');
 		this._checkArgs('drawArrays', arguments);
-		this.context.drawArrays(mode, first, count);
+		const drawArrays = this._getMethod('drawArrays');
+		drawArrays(mode, first, count);
 	}
 
 	drawElements(mode: number, count: number, type: number, offset: number): void {
 		this._glCheckError('drawElements');
 		this._checkArgs('drawElements', arguments);
-		this.context.drawElements(mode, count, type, offset);
+		const drawElements = this._getMethod('drawElements');
+		drawElements(mode, count, type, offset);
 	}
 
 	enableVertexAttribArray(index: number): void {
 		this._glCheckError('enableVertexAttribArray');
 		this._checkArgs('enableVertexAttribArray', arguments);
-		this.context.enableVertexAttribArray(index);
+		const enableVertexAttribArray = this._getMethod('enableVertexAttribArray');
+		enableVertexAttribArray(index);
 	}
 
 	enable(cap: number): void {
 		this._glCheckError('enable');
 		this._checkArgs('enable', arguments);
-		this.context.enable(cap);
+		const enable = this._getMethod('enable');
+		enable(cap);
 	}
 
 	finish(): void {
 		this._glCheckError('finish');
-		this.context.finish();
+		const finish = this._getMethod('finish');
+		finish();
 	}
 
 	flush(): void {
 		this._glCheckError('flush');
-		this.context.flush();
+		const flush = this._getMethod('flush');
+		flush();
 	}
 
 	framebufferRenderbuffer(target: number, attachment: number, renderbuffertarget: number, renderbuffer: WebGLRenderbuffer): void {
 		this._glCheckError('framebufferRenderbuffer');
 		this._checkArgs('framebufferRenderbuffer', arguments);
-		const value = renderbuffer ? renderbuffer.native : 0;
-		this.context.framebufferRenderbuffer(target, attachment, renderbuffertarget, value);
+		const value = renderbuffer.native;
+		const framebufferRenderbuffer = this._getMethod('framebufferRenderbuffer');
+		framebufferRenderbuffer(target, attachment, renderbuffertarget, value);
 	}
 
 	framebufferTexture2D(target: number, attachment: number, textarget: number, texture: WebGLTexture, level: number): void {
 		this._glCheckError('framebufferTexture2D');
-		this._checkArgs('activeTexture', arguments);
-		const value = texture ? texture.native : 0;
-		this.context.framebufferTexture2D(target, attachment, textarget, value, level);
+		this._checkArgs('framebufferTexture2D', arguments);
+		const value = texture.native;
+		const framebufferTexture2D = this._getMethod('framebufferTexture2D');
+		framebufferTexture2D(target, attachment, textarget, value, level);
 	}
 
 	frontFace(mode: number): void {
 		this._checkArgs('activeTexture', arguments);
-		this._glCheckError('activeTexture');
-		this.context.frontFace(mode);
+		this._glCheckError('frontFace');
+		const frontFace = this._getMethod('frontFace');
+		frontFace(mode);
 	}
 
 	generateMipmap(target: number): void {
-		this._checkArgs('activeTexture', arguments);
-		this._glCheckError('activeTexture');
-		this.context.generateMipmap(target);
+		this._checkArgs('generateMipmap', arguments);
+		this._glCheckError('generateMipmap');
+		const generateMipmap = this._getMethod('generateMipmap');
+		generateMipmap(target);
 	}
 
 	getActiveAttrib(program: WebGLProgram, index: number): WebGLActiveInfo {
 		this._glCheckError('getActiveAttrib');
 		this._checkArgs('getActiveAttrib', arguments);
-		const value = program ? program.native : 0;
-		const attrib = this.context.getActiveAttrib(value, index);
-		return new WebGLActiveInfo(attrib.getName(), attrib.getSize(), attrib.getType());
+		const value = program.native;
+		const getActiveAttrib = this._getMethod('getActiveAttrib');
+		const attrib = getActiveAttrib(value, index);
+		return new WebGLActiveInfo(attrib);
 	}
 
 	getActiveUniform(program: WebGLProgram, index: number): WebGLActiveInfo {
 		this._glCheckError('getActiveUniform');
 		this._checkArgs('getActiveUniform', arguments);
-		const value = program ? program.native : 0;
-		const uniform = this.context.getActiveUniform(value, index);
-		return new WebGLActiveInfo(uniform.getName(), uniform.getSize(), uniform.getType());
+		const value = program.native;
+		const getActiveUniform = this._getMethod('getActiveUniform');
+		const uniform = getActiveUniform(value, index);
+		return new WebGLActiveInfo(uniform);
 	}
 
 	getAttachedShaders(program: WebGLProgram): WebGLShader[] {
 		this._glCheckError('getAttachedShaders');
 		this._checkArgs('getAttachedShaders', arguments);
-		const value = program ? program.native : 0;
-		return this.getJSArray(this.context.getAttachedShaders(value)).map((shader) => new WebGLShader(shader));
+		const getAttachedShaders = this._getMethod('getAttachedShaders');
+		const value = program.native;
+		return getAttachedShaders(value).map((shader) => new WebGLShader(shader));
 	}
 
 	getAttribLocation(program: WebGLProgram, name: string): number {
 		this._glCheckError('getAttribLocation');
 		this._checkArgs('getAttribLocation', arguments);
-		const value = program ? program.native : 0;
-		return this.context.getAttribLocation(value, name);
+		const getAttribLocation = this._getMethod('getAttribLocation');
+		const value = program.native;
+		return getAttribLocation(value, name);
 	}
 
 	getBufferParameter(target: number, pname: number): number {
 		this._glCheckError('getBufferParameter');
 		this._checkArgs('getBufferParameter', arguments);
-		return this.context.getBufferParameter(target, pname);
+		const getBufferParameter = this._getMethod('getBufferParameter');
+		return getBufferParameter(target, pname);
 	}
 
 	getContextAttributes(): any {
-		const attributes = this.context.getContextAttributes();
-		if (!attributes) {
-			return null;
-		}
-		const keys = attributes.keySet().toArray();
-		const length = keys.length;
-		const contextAttributes = {};
-		for (let i = 0; i < length; i++) {
-			const key = keys[i];
-			contextAttributes[key] = attributes.get(key);
-		}
-		return contextAttributes;
+		const getContextAttributes = this._getMethod('getContextAttributes');
+		return getContextAttributes();
 	}
 
 	getError(): number {
-		return this.context.getError();
+		const getError = this._getMethod('getError');
+		return getError();
 	}
 
 	getExtension(name: string) {
@@ -713,56 +561,57 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (name === 'EXT_disjoint_timer_query_webgl2') {
 			return null;
 		}
-		const ext = this.context.getExtension(name);
+		const getExtension = this._getMethod('getExtension');
+
+		const ext = getExtension(name);
 		if (ext) {
-			const clazz = ext && ext.getClass();
-			const classObjName = clazz && clazz.getName();
-			switch (classObjName) {
-				case 'org.nativescript.canvas.extensions.ANGLE_instanced_arrays':
+			const ext_name = ext.ext_name;
+			switch (ext_name) {
+				case 'ANGLE_instanced_arrays':
 					return new ANGLE_instanced_arrays(ext);
-				case 'org.nativescript.canvas.extensions.EXT_blend_minmax':
+				case 'EXT_blend_minmax':
 					return new EXT_blend_minmax(ext);
-				case 'org.nativescript.canvas.extensions.EXT_color_buffer_half_float':
+				case 'EXT_color_buffer_half_float':
 					return new EXT_color_buffer_half_float(ext);
-				case 'org.nativescript.canvas.extensions.EXT_disjoint_timer_query':
+				case 'EXT_disjoint_timer_query':
 					return new EXT_disjoint_timer_query(ext);
-				case 'org.nativescript.canvas.extensions.EXT_sRGB':
+				case 'EXT_sRGB':
 					return new EXT_sRGB(ext);
-				case 'org.nativescript.canvas.extensions.EXT_shader_texture_lod':
+				case 'EXT_shader_texture_lod':
 					return new EXT_shader_texture_lod(ext);
-				case 'org.nativescript.canvas.extensions.EXT_texture_filter_anisotropic':
+				case 'EXT_texture_filter_anisotropic':
 					return new EXT_texture_filter_anisotropic(ext);
-				case 'org.nativescript.canvas.extensions.OES_element_index_uint':
+				case 'OES_element_index_uint':
 					return new OES_element_index_uint(ext);
-				case 'org.nativescript.canvas.extensions.OES_standard_derivatives':
+				case 'OES_standard_derivatives':
 					return new OES_standard_derivatives(ext);
-				case 'org.nativescript.canvas.extensions.OES_texture_float':
+				case 'OES_texture_float':
 					return new OES_texture_float(ext);
-				case 'org.nativescript.canvas.extensions.OES_texture_float_linear':
+				case 'OES_texture_float_linear':
 					return new OES_texture_float_linear(ext);
-				case 'org.nativescript.canvas.extensions.OES_texture_half_float':
+				case 'OES_texture_half_float':
 					return new OES_texture_half_float(ext);
-				case 'org.nativescript.canvas.extensions.OES_texture_half_float_linear':
+				case 'OES_texture_half_float_linear':
 					return new OES_texture_half_float_linear(ext);
-				case 'org.nativescript.canvas.extensions.OES_vertex_array_object':
+				case 'OES_vertex_array_object':
 					return new OES_vertex_array_object(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_color_buffer_float':
+				case 'WEBGL_color_buffer_float':
 					return new WEBGL_color_buffer_float(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_atc':
+				case 'WEBGL_compressed_texture_atc':
 					return new WEBGL_compressed_texture_atc(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_etc':
+				case 'WEBGL_compressed_texture_etc':
 					return new WEBGL_compressed_texture_etc(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_etc1':
+				case 'WEBGL_compressed_texture_etc1':
 					return new WEBGL_compressed_texture_etc1(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_pvrtc':
+				case 'WEBGL_compressed_texture_pvrtc':
 					return new WEBGL_compressed_texture_pvrtc(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_compressed_texture_s3tc':
+				case 'WEBGL_compressed_texture_s3tc':
 					return new WEBGL_compressed_texture_s3tc(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_lose_context':
+				case 'WEBGL_lose_context':
 					return new WEBGL_lose_context(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_depth_texture':
+				case 'WEBGL_depth_texture':
 					return new WEBGL_depth_texture(ext);
-				case 'org.nativescript.canvas.extensions.WEBGL_draw_buffers':
+				case 'WEBGL_draw_buffers':
 					return new WEBGL_draw_buffers(ext);
 			}
 		}
@@ -772,19 +621,21 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	getFramebufferAttachmentParameter(target: number, attachment: number, pname: number): number | WebGLRenderbuffer | WebGLTexture {
 		this._glCheckError('getFramebufferAttachmentParameter');
 		this._checkArgs('getFramebufferAttachmentParameter', arguments);
-		const param = this.context.getFramebufferAttachmentParameter(target, attachment, pname);
-		if (param.isRenderbuffer()) {
-			return new WebGLRenderbuffer(param.getValue());
-		} else if (param.isTexture()) {
-			return new WebGLTexture(param.getValue());
+
+		const getFramebufferAttachmentParameter = this._getMethod('getFramebufferAttachmentParameter');
+
+		const param = getFramebufferAttachmentParameter(target, attachment, pname);
+		if (typeof param === 'object') {
+			if (param.isRenderbuffer) {
+				return new WebGLRenderbuffer(param);
+			} else if (param.isTexture()) {
+				return new WebGLTexture(param);
+			}
 		}
-		return WebGLRenderingContext.toPrimitive(param.getValue());
+		return param;
 	}
 
-	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
-		this._glCheckError('getParameter');
-		this._checkArgs('activeTexture', arguments);
-		const value = this.context.getParameter(pname);
+	_handleGetParameter(pname, value) {
 		switch (pname) {
 			case this.COLOR_WRITEMASK:
 			case this.COLOR_CLEAR_VALUE:
@@ -792,38 +643,38 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			case this.ALIASED_LINE_WIDTH_RANGE:
 			case this.ALIASED_POINT_SIZE_RANGE:
 			case this.DEPTH_RANGE:
-				return new Float32Array(this.getJSArray(value));
+				return value;
 			case this.ARRAY_BUFFER_BINDING:
 			case this.ELEMENT_ARRAY_BUFFER_BINDING:
 				if (value) {
-					new WebGLBuffer(WebGLRenderingContext.toPrimitive(value));
+					new WebGLBuffer(value);
 				}
 				return null;
 			case this.CURRENT_PROGRAM:
 				if (value) {
-					return new WebGLProgram(WebGLRenderingContext.toPrimitive(value));
+					return new WebGLProgram(value);
 				}
 				return null;
 			case this.COMPRESSED_TEXTURE_FORMATS:
-				return new Uint32Array(this.getJSArray(value));
+				return value;
 			case this.RENDERBUFFER_BINDING:
 				if (value) {
-					return new WebGLRenderbuffer(WebGLRenderingContext.toPrimitive(value));
+					return new WebGLRenderbuffer(value);
 				}
 				return null;
 			case this.FRAMEBUFFER_BINDING:
 				if (value) {
-					return new WebGLFramebuffer(WebGLRenderingContext.toPrimitive(value));
+					return new WebGLFramebuffer(value);
 				}
 				return null;
 			case this.VIEWPORT:
 			case this.SCISSOR_BOX:
 			case this.MAX_VIEWPORT_DIMS:
-				return new Int32Array(this.getJSArray(value));
+				return value;
 			case this.TEXTURE_BINDING_CUBE_MAP:
 			case this.TEXTURE_BINDING_2D:
 				if (value) {
-					return new WebGLTexture(WebGLRenderingContext.toPrimitive(value));
+					return new WebGLTexture(value);
 				}
 				return null;
 			case this.VERSION:
@@ -833,76 +684,94 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 					return 'WebGL 1.0 (OpenGL ES 2.0 NativeScript)';
 				}
 			default:
-				return WebGLRenderingContext.toPrimitive(value);
+				return value;
 		}
+	}
+
+	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
+		this._glCheckError('getParameter');
+		this._checkArgs('getParameter', arguments);
+		const getParameter = this._getMethod('getParameter');
+		const value = getParameter(pname);
+		return this._handleGetParameter(pname, value);
 	}
 
 	getProgramInfoLog(program: WebGLProgram): string {
 		this._glCheckError('getProgramInfoLog');
 		this._checkArgs('getProgramInfoLog', arguments);
-		const value = program ? program.native : 0;
-		return this.context.getProgramInfoLog(value);
+		const getProgramInfoLog = this._getMethod('getProgramInfoLog');
+		const value = program.native;
+		return getProgramInfoLog(value);
 	}
 
 	getProgramParameter(program: WebGLProgram, pname: number): number | boolean {
 		this._glCheckError('getProgramParameter');
 		this._checkArgs('getProgramParameter', arguments);
-		const value = program ? program.native : 0;
-		const result = this.context.getProgramParameter(value, pname);
-		return WebGLRenderingContext.toPrimitive(result);
+		const getProgramParameter = this._getMethod('getProgramParameter');
+		const value = program.native;
+		const result = getProgramParameter(value, pname);
+		return result;
 	}
 
 	getRenderbufferParameter(target: number, pname: number): number {
 		this._glCheckError('getRenderbufferParameter');
 		this._checkArgs('getRenderbufferParameter', arguments);
-		return this.context.getRenderbufferParameter(target, pname);
+		const getRenderbufferParameter = this._getMethod('getRenderbufferParameter');
+		return getRenderbufferParameter(target, pname);
 	}
 
 	getShaderInfoLog(shader: WebGLShader): string {
 		this._glCheckError('getShaderInfoLog');
 		this._checkArgs('getShaderInfoLog', arguments);
-		const value = shader ? shader.native : 0;
-		return this.context.getShaderInfoLog(value);
+		const getShaderInfoLog = this._getMethod('getShaderInfoLog');
+		const value = shader.native;
+		return getShaderInfoLog(value);
 	}
 
 	getShaderParameter(shader: WebGLShader, pname: number): boolean | number {
 		this._glCheckError('getShaderParameter');
 		this._checkArgs('getShaderParameter', arguments);
-		const value = shader ? shader.native : 0;
-		const result = this.context.getShaderParameter(value, pname);
-		return WebGLRenderingContext.toPrimitive(result);
+		const getShaderParameter = this._getMethod('getShaderParameter');
+		const value = shader.native;
+		const result = getShaderParameter(value, pname);
+		return result;
 	}
 
 	getShaderPrecisionFormat(shaderType: number, precisionType: number): WebGLShaderPrecisionFormat {
 		this._glCheckError('getShaderPrecisionFormat');
 		this._checkArgs('getShaderPrecisionFormat', arguments);
-		const precision = this.context.getShaderPrecisionFormat(shaderType, precisionType);
+		const getShaderPrecisionFormat = this._getMethod('getShaderPrecisionFormat');
+		const precision = getShaderPrecisionFormat(shaderType, precisionType);
 		return new WebGLShaderPrecisionFormat(precision);
 	}
 
 	getShaderSource(shader: WebGLShader): string {
 		this._glCheckError('getShaderSource');
 		this._checkArgs('getShaderSource', arguments);
+		const getShaderSource = this._getMethod('getShaderSource');
 		const value = shader ? shader.native : 0;
-		return this.context.getShaderSource(value);
+		return getShaderSource(value);
 	}
 
 	getSupportedExtensions(): string[] {
 		this._glCheckError('getSupportedExtensions');
-		return this.getJSArray(this.context.getSupportedExtensions());
+		const getSupportedExtensions = this._getMethod('getSupportedExtensions');
+		return getSupportedExtensions();
 	}
 
 	getTexParameter(target: number, pname: number): number {
 		this._glCheckError('getTexParameter');
 		this._checkArgs('getTexParameter', arguments);
-		return this.context.getTexParameter(target, pname);
+		const getTexParameter = this._getMethod('getTexParameter');
+		return getTexParameter(target, pname);
 	}
 
 	getUniformLocation(program: WebGLProgram, name: string): WebGLUniformLocation {
 		this._glCheckError('getUniformLocation');
 		this._checkArgs('getUniformLocation', arguments);
-		const value = program ? program.native : 0;
-		const id = this.context.getUniformLocation(value, name);
+		const getUniformLocation = this._getMethod('getUniformLocation');
+		const value = program.native;
+		const id = getUniformLocation(value, name);
 		if (id === -1) {
 			return null;
 		}
@@ -912,241 +781,223 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	getUniform(program: WebGLProgram, location: WebGLUniformLocation): any {
 		this._glCheckError('getUniform');
 		this._checkArgs('getUniform', arguments);
-		const value = program ? program.native : 0;
-		const value2 = location ? location.native : 0;
-		const uniform = this.context.getUniform(value, value2);
+		const getUniform = this._getMethod('getUniform');
+		const value = program.native;
+		const value2 = location.native;
+		const uniform = getUniform(value, value2);
 		if (uniform && uniform.length) {
-			return this.getJSArray(uniform);
+			return uniform;
 		}
-		return WebGLRenderingContext.toPrimitive(uniform);
+		return uniform;
 	}
 
 	getVertexAttribOffset(index: number, pname: number): number {
 		this._glCheckError('getVertexAttribOffset');
 		this._checkArgs('getVertexAttribOffset', arguments);
-		return this.context.getVertexAttribOffset(index, pname);
+		const getVertexAttribOffset = this._getMethod('getVertexAttribOffset');
+		return getVertexAttribOffset(index, pname);
 	}
 
 	getVertexAttrib(index: number, pname: number): number[] | boolean | number | Float32Array {
 		this._glCheckError('getVertexAttrib');
 		this._checkArgs('getVertexAttrib', arguments);
-		const value = this.context.getVertexAttrib(index, pname);
+		const getVertexAttrib = this._getMethod('getVertexAttrib');
+		const value = getVertexAttrib(index, pname);
 		if (pname === this.CURRENT_VERTEX_ATTRIB) {
-			return new Float32Array(this.getJSArray(value));
+			return value;
 		}
-		return WebGLRenderingContext.toPrimitive(value);
+		return value;
 	}
 
 	hint(target: number, mode: number): void {
 		this._glCheckError('hint');
 		this._checkArgs('hint', arguments);
-		this.context.hint(target, mode);
+		const hint = this._getMethod('hint');
+		hint(target, mode);
 	}
 
 	isBuffer(buffer: WebGLBuffer): boolean {
 		this._glCheckError('isBuffer');
 		this._checkArgs('isBuffer', arguments);
-		const value = buffer ? buffer.native : 0;
-		return this.context.isBuffer(value);
+		const isBuffer = this._getMethod('isBuffer');
+		const value = buffer.native;
+		return isBuffer(value);
 	}
 
 	isContextLost(): boolean {
 		this._glCheckError('isContextLost');
-		return this.context.isContextLost();
+		const isContextLost = this._getMethod('isContextLost');
+		return isContextLost();
 	}
 
 	isEnabled(cap: number): boolean {
 		this._glCheckError('isEnabled');
 		this._checkArgs('isEnabled', arguments);
-		return this.context.isEnabled(cap);
+		const isEnabled = this._getMethod('isEnabled');
+		return isEnabled(cap);
 	}
 
 	isFramebuffer(framebuffer: WebGLFramebuffer): boolean {
 		this._glCheckError('isFramebuffer');
 		this._checkArgs('isFramebuffer', arguments);
+		const isFramebuffer = this._getMethod('isFramebuffer');
 		const value = framebuffer ? framebuffer.native : 0;
-		return this.context.isFramebuffer(value);
+		return isFramebuffer(value);
 	}
 
 	isProgram(program: WebGLProgram): boolean {
 		this._glCheckError('isProgram');
 		this._checkArgs('isProgram', arguments);
-		const value = program ? program.native : 0;
-		return this.context.isProgram(value);
+		const isProgram = this._getMethod('isProgram');
+		const value = program.native;
+		return isProgram(value);
 	}
 
 	isRenderbuffer(renderbuffer: WebGLRenderbuffer): boolean {
 		this._glCheckError('isRenderbuffer');
 		this._checkArgs('isRenderbuffer', arguments);
-		const value = renderbuffer ? renderbuffer.native : 0;
-		return this.context.isRenderbuffer(value);
+		const isRenderbuffer = this._getMethod('isRenderbuffer');
+		const value = renderbuffer.native;
+		return isRenderbuffer(value);
 	}
 
 	isShader(shader: WebGLShader): boolean {
 		this._glCheckError('isShader');
 		this._checkArgs('isShader', arguments);
-		const value = shader ? shader.native : 0;
-		return this.context.isShader(value);
+		const isShader = this._getMethod('isShader');
+		const value = shader.native;
+		return isShader(value);
 	}
 
 	isTexture(texture: WebGLTexture): boolean {
 		this._glCheckError('isTexture');
 		this._checkArgs('isTexture', arguments);
-		const value = texture ? texture.native : 0;
-		return this.context.isTexture(value);
+		const isTexture = this._getMethod('isTexture');
+		const value = texture.native;
+		return isTexture(value);
 	}
 
 	lineWidth(width: number): void {
 		this._glCheckError('lineWidth');
 		this._checkArgs('lineWidth', arguments);
-		this.context.lineWidth(width);
+		const lineWidth = this._getMethod('lineWidth');
+		lineWidth(width);
 	}
 
 	linkProgram(program: WebGLProgram): void {
 		this._glCheckError('linkProgram');
 		this._checkArgs('linkProgram', arguments);
+		const linkProgram = this._getMethod('linkProgram');
 		const value = program ? program.native : 0;
-		this.context.linkProgram(value);
+		linkProgram(value);
 	}
 
 	pixelStorei(pname: number, param: any): void {
 		this._glCheckError('pixelStorei');
 		this._checkArgs('pixelStorei', arguments);
+		const pixelStorei = this._getMethod('pixelStorei');
 		if (pname === this.UNPACK_FLIP_Y_WEBGL || pname === this.UNPACK_PREMULTIPLY_ALPHA_WEBGL) {
-			this.context.pixelStorei(pname, java.lang.Boolean.valueOf(!!param));
+			pixelStorei(pname, param);
 		} else if (pname === this.PACK_ALIGNMENT || pname === this.UNPACK_ALIGNMENT || pname === this.UNPACK_COLORSPACE_CONVERSION_WEBGL) {
 			if (pname === this.UNPACK_COLORSPACE_CONVERSION_WEBGL) {
 				param = 0x9244;
 			} else if (pname === this.PACK_ALIGNMENT || pname === this.UNPACK_ALIGNMENT) {
 				param = 4;
 			}
-			this.context.pixelStorei(pname, java.lang.Integer.valueOf(param));
+			pixelStorei(pname, param);
 		} else {
-			this.context.pixelStorei(pname, param);
+			pixelStorei(pname, param);
 		}
 	}
 
 	polygonOffset(factor: number, units: number): void {
 		this._glCheckError('polygonOffset');
 		this._checkArgs('polygonOffset', arguments);
-		this.context.polygonOffset(factor, units);
+		const polygonOffset = this._getMethod('polygonOffset');
+		polygonOffset(factor, units);
 	}
 
 	readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBuffer | ArrayBufferView): void {
 		this._glCheckError('readPixels');
 		this._checkArgs('readPixels', arguments);
-		// @ts-ignore
-		if (pixels && pixels.buffer instanceof ArrayBuffer) {
-			// @ts-ignore
-			if (pixels.buffer.nativeObject) {
-				// @ts-ignore
-				this.context.readPixels(x, y, width, height, format, type, pixels.buffer.nativeObject);
-			} else {
-				if (pixels instanceof Uint8Array) {
-					if (this._isSupported) {
-						this.context.readPixelsByteBuffer(x, y, width, height, format, type, pixels as any);
-					} else {
-						this.context.readPixelsByte(x, y, width, height, format, type, Array.from(pixels));
-					}
-				} else if (pixels instanceof Uint16Array || pixels instanceof Int16Array) {
-					if (this._isSupported) {
-						this.context.readPixelsShortBuffer(x, y, width, height, format, type, pixels as any);
-					} else {
-						this.context.readPixelsShort(x, y, width, height, format, type, Array.from(pixels));
-					}
-				} else if (pixels instanceof Uint32Array || pixels instanceof Int32Array) {
-					if (this._isSupported) {
-						this.context.readPixelsIntBuffer(x, y, width, height, format, type, pixels as any);
-					} else {
-						this.context.readPixelsInt(x, y, width, height, format, type, Array.from(pixels));
-					}
-				} else if (pixels instanceof Float32Array) {
-					if (this._isSupported) {
-						this.context.readPixelsFloatBuffer(x, y, width, height, format, type, pixels as any);
-					} else {
-						this.context.readPixelsFloat(x, y, width, height, format, type, Array.from(pixels));
-					}
-				}
-			}
-		} else if (pixels instanceof ArrayBuffer) {
-			// @ts-ignore
-			if (pixels.nativeObject) {
-				// @ts-ignore
-				this.context.readPixels(x, y, width, height, format, type, pixels.nativeObject);
-			} else {
-				if (this._isSupported) {
-					this.context.readPixelsByteBuffer(x, y, width, height, format, type, pixels as any);
-				} else {
-					this.context.readPixelsByte(x, y, width, height, format, type, Array.from(new Uint8Array(pixels as any)));
-				}
-			}
-		}
+		const readPixels = this._getMethod('readPixels');
+		readPixels(x, y, width, height, format, type, pixels);
 	}
 
 	renderbufferStorage(target: number, internalFormat: number, width: number, height: number): void {
 		this._glCheckError('renderbufferStorage');
 		this._checkArgs('renderbufferStorage', arguments);
+		const renderbufferStorage = this._getMethod('renderbufferStorage');
 		if (internalFormat === this.DEPTH_STENCIL) {
 			// DEPTH24_STENCIL8 = 35056
 			// DEPTH24_STENCIL8_OES = 0x88F0
 			internalFormat = 0x88f0;
 		}
-		this.context.renderbufferStorage(target, internalFormat, width, height);
+		renderbufferStorage(target, internalFormat, width, height);
 	}
 
 	sampleCoverage(value: number, invert: boolean): void {
 		this._glCheckError('sampleCoverage');
 		this._checkArgs('sampleCoverage', arguments);
-		this.context.sampleCoverage(value, invert);
+		const sampleCoverage = this._getMethod('sampleCoverage');
+		sampleCoverage(value, invert);
 	}
 
 	scissor(x: number, y: number, width: number, height: number): void {
 		this._glCheckError('scissor');
 		this._checkArgs('scissor', arguments);
-		this.context.scissor(x, y, width, height);
+		const scissor = this._getMethod('scissor');
+		scissor(x, y, width, height);
 	}
 
 	shaderSource(shader: WebGLShader, source: string): void {
 		this._glCheckError('shaderSource');
 		this._checkArgs('shaderSource', arguments);
+		const shaderSource = this._getMethod('shaderSource');
 		const value = shader ? shader.native : 0;
-		this.context.shaderSource(value, source);
+		shaderSource(value, source);
 	}
 
 	stencilFuncSeparate(face: number, func: number, ref: number, mask: number): void {
 		this._glCheckError('stencilFuncSeparate');
 		this._checkArgs('stencilFuncSeparate', arguments);
-		this.context.stencilFuncSeparate(face, func, ref, mask);
+		const stencilFuncSeparate = this._getMethod('stencilFuncSeparate');
+		stencilFuncSeparate(face, func, ref, mask);
 	}
 
 	stencilFunc(func: number, ref: number, mask: number): void {
 		this._glCheckError('stencilFunc');
 		this._checkArgs('stencilFunc', arguments);
-		this.context.stencilFunc(func, ref, mask);
+		const stencilFunc = this._getMethod('stencilFunc');
+		stencilFunc(func, ref, mask);
 	}
 
 	stencilMaskSeparate(face: number, mask: number): void {
 		this._glCheckError('stencilMaskSeparate');
 		this._checkArgs('stencilMaskSeparate', arguments);
-		this.context.stencilMaskSeparate(face, mask);
+		const stencilMaskSeparate = this._getMethod('stencilMaskSeparate');
+		stencilMaskSeparate(face, mask);
 	}
 
 	stencilMask(mask: number): void {
 		this._glCheckError('stencilMask');
 		this._checkArgs('stencilMask', arguments);
-		this.context.stencilMask(mask);
+		const stencilMask = this._getMethod('stencilMask');
+		stencilMask(mask);
 	}
 
 	stencilOpSeparate(face: number, fail: number, zfail: number, zpass: number): void {
 		this._glCheckError('stencilOpSeparate');
 		this._checkArgs('stencilOpSeparate', arguments);
-		this.context.stencilOpSeparate(face, fail, zfail, zpass);
+		const stencilOpSeparate = this._getMethod('stencilOpSeparate');
+		stencilOpSeparate(face, fail, zfail, zpass);
 	}
 
 	stencilOp(fail: number, zfail: number, zpass: number): void {
 		this._glCheckError('stencilOp');
 		this._checkArgs('stencilOp', arguments);
-		this.context.stencilOp(fail, zfail, zpass);
+		const stencilOp = this._getMethod('stencilOp');
+		stencilOp(fail, zfail, zpass);
 	}
 
 	texImage2D(target: number, level: number, internalformat: number, format: number, type: number, pixels: any): void;
@@ -1156,78 +1007,36 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	texImage2D(target: any, level: any, internalformat: any, width: any, height: any, border: any, format?: any, type?: any, pixels?: any) {
 		this._glCheckError('texImage2D');
 		this._checkArgs('texImage2D', arguments);
+		const texImage2D = this._getMethod('texImage2D');
+
 		if (arguments.length === 9) {
-			if (pixels && pixels.buffer instanceof ArrayBuffer) {
-				if (pixels.buffer.nativeObject) {
-					// @ts-ignore
-					this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels.buffer.nativeObject);
-				} else {
-					if (pixels instanceof Uint8Array) {
-						if (this._isSupported) {
-							this.context.texImage2DByteBuffer(target, level, internalformat, width, height, border, format, type, pixels as any);
-						} else {
-							this.context.texImage2DByte(target, level, internalformat, width, height, border, format, type, Array.from(pixels));
-						}
-					} else if (pixels instanceof Uint16Array || pixels instanceof Int16Array) {
-						if (this._isSupported) {
-							this.context.texSubImage2DShortBuffer(target, level, internalformat, width, height, border, format, type, pixels as any);
-						} else {
-							this.context.texSubImage2DShort(target, level, internalformat, width, height, border, format, type, Array.from(pixels));
-						}
-					} else if (pixels instanceof Uint32Array || pixels instanceof Int32Array) {
-						if (this._isSupported) {
-							this.context.texImage2DIntBuffer(target, level, internalformat, width, height, border, format, type, pixels as any);
-						} else {
-							this.context.texImage2DInt(target, level, internalformat, width, height, border, format, type, Array.from(pixels));
-						}
-					} else if (pixels instanceof Float32Array) {
-						if (this._isSupported) {
-							this.context.texImage2DFloatBuffer(target, level, internalformat, width, height, border, format, type, pixels as any);
-						} else {
-							this.context.texImage2DFloat(target, level, internalformat, width, height, border, format, type, Array.from(pixels));
-						}
-					}
-				}
-			} else if (pixels instanceof ArrayBuffer) {
-				// @ts-ignore // ArrayBuffer backed by nio buffer
-				if (pixels.nativeObject) {
-					// @ts-ignore
-					this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels.nativeObject);
-				} else {
-					if (this._isSupported) {
-						this.context.texImage2DByteBuffer(target, level, internalformat, width, height, border, format, type, pixels as any);
-					} else {
-						this.context.texImage2DByte(target, level, internalformat, width, height, border, format, type, Array.from(new Uint8Array(pixels)));
-					}
-				}
-			} else {
-				this.context.texImage2D(target, level, internalformat, width, height, border, format, type, pixels as any);
-			}
+			texImage2D(target, level, internalformat, width, height, border, format, type, pixels);
 		} else if (arguments.length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
 				border._video.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
-				this.context.texImage2D(target, level, internalformat, width, height, border.native);
-			} else if (border instanceof ImageBitmap || border?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
-				this.context.texImage2D(target, level, internalformat, width, height, border.native);
+				console.log(target, level, internalformat, width, height, border.native.width, border.native.height);
+				texImage2D(target, level, internalformat, width, height, border.native);
+			} else if (border instanceof ImageBitmap) {
+				texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof android.graphics.Bitmap) {
-				this.context.texImage2D(target, level, internalformat, width, height, border);
+				texImage2D(target, level, internalformat, width, height, border);
 			} else if (border instanceof ImageSource) {
-				this.context.texImage2D(target, level, internalformat, width, height, border.android);
+				texImage2D(target, level, internalformat, width, height, border.android);
 			} else if (border && typeof border.tagName === 'string' && (border.tagName === 'IMG' || border.tagName === 'IMAGE')) {
 				if (border._asset instanceof ImageAsset) {
-					this.context.texImage2D(target, level, internalformat, width, height, border._asset.native);
+					texImage2D(target, level, internalformat, width, height, border._asset.native);
 				} else if (border._imageSource instanceof ImageSource) {
-					this.context.texImage2D(target, level, internalformat, width, height, border._imageSource.android);
+					texImage2D(target, level, internalformat, width, height, border._imageSource.android);
 				} else if (border._image instanceof android.graphics.Bitmap) {
-					this.context.texImage2D(target, level, internalformat, width, height, border._image);
+					texImage2D(target, level, internalformat, width, height, border._image);
 				} else if (typeof border.src === 'string') {
-					this.context.texImage2D(target, level, internalformat, width, height, ImageSource.fromFileSync(border.src).android);
+					texImage2D(target, level, internalformat, width, height, ImageSource.fromFileSync(border.src).android);
 				}
 			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
-				this.context.texImage2D(target, level, internalformat, width, height, border._canvas.android);
+				texImage2D(target, level, internalformat, width, height, border._canvas.android);
 			}
 		}
 	}
@@ -1235,13 +1044,15 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	texParameterf(target: number, pname: number, param: number): void {
 		this._glCheckError('texParameterf');
 		this._checkArgs('texParameterf', arguments);
-		this.context.texParameterf(target, pname, param);
+		const texParameterf = this._getMethod('texParameterf');
+		texParameterf(target, pname, param);
 	}
 
 	texParameteri(target: number, pname: number, param: number): void {
 		this._glCheckError('texParameteri');
 		this._checkArgs('texParameteri', arguments);
-		this.context.texParameteri(target, pname, param);
+		const texParameteri = this._getMethod('texParameteri');
+		texParameteri(target, pname, param);
 	}
 
 	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, type: number, pixels: ArrayBufferView): void;
@@ -1251,71 +1062,30 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	texSubImage2D(target: any, level: any, xoffset: any, yoffset: any, width: any, height: any, format: any, type?: any, pixels?: any) {
 		this._glCheckError('texSubImage2D');
 		this._checkArgs('texSubImage2D', arguments);
+		const texSubImage2D = this._getMethod('texSubImage2D');
 		if (arguments.length === 9) {
-			if (pixels && pixels.buffer) {
-				if (pixels.buffer.nativeObject) {
-					this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels.buffer.nativeObject);
-				} else {
-					if (pixels instanceof Uint8Array) {
-						if (this._isSupported) {
-							this.context.texSubImage2DByteBuffer(target, level, xoffset, yoffset, width, height, format, type, pixels as any);
-						} else {
-							this.context.texSubImage2DByte(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels));
-						}
-					} else if (pixels instanceof Uint16Array || pixels instanceof Int16Array) {
-						if (this._isSupported) {
-							this.context.texSubImage2DShortBuffer(target, level, xoffset, yoffset, width, height, format, type, pixels as any);
-						} else {
-							this.context.texSubImage2DShort(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels));
-						}
-					} else if (pixels instanceof Uint32Array || pixels instanceof Int32Array) {
-						if (this._isSupported) {
-							this.context.texSubImage2DIntBuffer(target, level, xoffset, yoffset, width, height, format, type, pixels as any);
-						} else {
-							this.context.texSubImage2DInt(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels));
-						}
-					} else if (pixels instanceof Float32Array) {
-						if (this._isSupported) {
-							this.context.texSubImage2DByte(target, level, xoffset, yoffset, width, height, format, type, pixels as any);
-						} else {
-							this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, Array.from(pixels));
-						}
-					}
-				}
-			} else if (pixels instanceof ArrayBuffer) {
-				// @ts-ignore
-				if (pixels.nativeObject) {
-					// @ts-ignore
-					this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels.nativeObject);
-				} else {
-					if (this._isSupported) {
-						this.context.texSubImage2DByteBuffer(target, level, xoffset, yoffset, width, height, format, type, pixels as any);
-					} else {
-						this.context.texSubImage2DByte(target, level, xoffset, yoffset, width, height, format, type, Array.from(new Uint8Array(pixels)));
-					}
-				}
-			}
+			texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
 		} else if (arguments.length === 7) {
 			if (format instanceof android.graphics.Bitmap) {
-				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format);
+				texSubImage2D(target, level, xoffset, yoffset, width, height, format);
 			} else if (format instanceof ImageSource) {
-				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format.android);
+				texSubImage2D(target, level, xoffset, yoffset, width, height, format.android);
 			} else if (format instanceof ImageAsset) {
-				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
+				texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format instanceof ImageBitmap || format?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
-				this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
+				texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
 				if (format._imageSource instanceof ImageSource) {
-					this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format._imageSource.android);
+					texSubImage2D(target, level, xoffset, yoffset, width, height, format._imageSource.android);
 				} else if (format._image instanceof android.graphics.Bitmap) {
-					this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format._image);
+					texSubImage2D(target, level, xoffset, yoffset, width, height, format._image);
 				} else if (format._asset instanceof ImageAsset) {
-					this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format._asset.native);
+					texSubImage2D(target, level, xoffset, yoffset, width, height, format._asset.native);
 				} else if (typeof format.src === 'string') {
 					const result = ImageSource.fromFileSync(format.src);
-					this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, result ? result.android : null);
+					texSubImage2D(target, level, xoffset, yoffset, width, height, result ? result.android : null);
 				} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {
-					this.context.texSubImage2D(target, level, xoffset, yoffset, width, height, format._canvas.android);
+					texSubImage2D(target, level, xoffset, yoffset, width, height, format._canvas.android);
 				}
 			}
 		}
@@ -1324,388 +1094,252 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	uniform1f(location: WebGLUniformLocation, v0: number): void {
 		this._glCheckError('uniform1f');
 		this._checkArgs('uniform1f', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform1f(loc, v0);
+		const uniform1f = this._getMethod('uniform1f');
+		const loc = location.native;
+		uniform1f(loc, v0);
 	}
 
 	uniform1iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform1iv');
 		this._checkArgs('uniform1iv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform1ivBuffer(loc, value);
-			} else {
-				this.context.uniform1iv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform1iv(loc, Array.from(value));
-			} else {
-				this.context.uniform1iv(loc, value);
-			}
-		}
+		const loc = location.native;
+		const uniform1iv = this._getMethod('uniform1iv');
+		uniform1iv(loc, value);
 	}
 
 	uniform1fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform1fv');
 		this._checkArgs('uniform1fv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform1fvBuffer(loc, value);
-			} else {
-				this.context.uniform1fv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform1fv(loc, Array.from(value));
-			} else {
-				this.context.uniform1fv(loc, value);
-			}
-		}
+		const loc = location.native;
+		const uniform1fv = this._getMethod('uniform1fv');
+		uniform1fv(loc, value);
 	}
 
 	uniform1i(location: WebGLUniformLocation, v0: number): void {
 		this._glCheckError('uniform1i');
 		this._checkArgs('uniform1i', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform1i(loc, Number(v0));
+		const uniform1i = this._getMethod('uniform1i');
+		const loc = location.native;
+		uniform1i(loc, Number(v0));
 	}
 
 	uniform2f(location: WebGLUniformLocation, v0: number, v1: number): void {
 		this._glCheckError('uniform2f');
 		this._checkArgs('uniform2f', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform2f(loc, v0, v1);
+		const uniform2f = this._getMethod('uniform2f');
+		const loc = location.native;
+		uniform2f(loc, v0, v1);
 	}
 
 	uniform2iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform2iv');
 		this._checkArgs('uniform2iv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform2ivBuffer(loc, value);
-			} else {
-				this.context.uniform2iv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform2iv(loc, Array.from(value));
-			} else {
-				this.context.uniform2iv(loc, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniform2iv = this._getMethod('uniform2iv');
+		uniform2iv(loc, value);
 	}
 
 	uniform2fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform2fv');
 		this._checkArgs('uniform2fv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform2fvBuffer(loc, value);
-			} else {
-				this.context.uniform2fv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform2fv(loc, Array.from(value));
-			} else {
-				this.context.uniform2fv(loc, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniform2fv = this._getMethod('uniform2fv');
+		uniform2fv(loc, value);
 	}
 
 	uniform2i(location: WebGLUniformLocation, v0: number, v1: number): void {
 		this._glCheckError('uniform2i');
 		this._checkArgs('uniform2i', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform2i(loc, v0, v1);
+		const uniform2i = this._getMethod('uniform2i');
+		const loc = location.native;
+		uniform2i(loc, v0, v1);
 	}
 
 	uniform3f(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
 		this._glCheckError('uniform3f');
 		this._checkArgs('uniform3f', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform3f(loc, v0, v1, v2);
+		const uniform3f = this._getMethod('uniform3f');
+		const loc = location.native;
+		uniform3f(loc, v0, v1, v2);
 	}
 
 	uniform3iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform3iv');
 		this._checkArgs('uniform3iv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform3ivBuffer(loc, value);
-			} else {
-				this.context.uniform3iv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform3iv(loc, Array.from(value));
-			} else {
-				this.context.uniform3iv(loc, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniform3iv = this._getMethod('uniform3iv');
+		uniform3iv(loc, value);
 	}
 
 	uniform3fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform3fv');
 		this._checkArgs('uniform3fv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform3fvBuffer(loc, value);
-			} else {
-				this.context.uniform3fv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform3fv(loc, Array.from(value));
-			} else {
-				this.context.uniform3fv(loc, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniform3fv = this._getMethod('uniform3fv');
+		uniform3fv(loc, value);
 	}
 
 	uniform3i(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
 		this._glCheckError('uniform3i');
 		this._checkArgs('uniform3i', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform3i(loc, v0, v1, v2);
+		const uniform3i = this._getMethod('uniform3i');
+		const loc = location.native;
+		uniform3i(loc, v0, v1, v2);
 	}
 
 	uniform4f(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('uniform4f');
 		this._checkArgs('uniform4f', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform4f(loc, v0, v1, v2, v3);
+		const uniform4f = this._getMethod('uniform4f');
+		const loc = location.native;
+		uniform4f(loc, v0, v1, v2, v3);
 	}
 
 	uniform4iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform4iv');
 		this._checkArgs('uniform4iv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform4ivBuffer(loc, value);
-			} else {
-				this.context.uniform4iv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform4iv(loc, Array.from(value));
-			} else {
-				this.context.uniform4iv(loc, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniform4iv = this._getMethod('uniform4iv');
+		uniform4iv(loc, value);
 	}
 
 	uniform4fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform4fv');
 		this._checkArgs('uniform4fv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniform4fvBuffer(loc, value);
-			} else {
-				this.context.uniform4fv(loc, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniform4fv(loc, Array.from(value));
-			} else {
-				this.context.uniform4fv(loc, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniform4fv = this._getMethod('uniform4fv');
+		uniform4fv(loc, value);
 	}
 
 	uniform4i(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('uniform4i');
 		this._checkArgs('uniform4i', arguments);
-		const loc = location ? location.native : 0;
-		this.context.uniform4i(loc, v0, v1, v2, v3);
+		const uniform4i = this._getMethod('uniform4i');
+		const loc = location.native;
+		uniform4i(loc, v0, v1, v2, v3);
 	}
 
 	uniformMatrix2fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix2fv');
 		this._checkArgs('uniformMatrix2fv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniformMatrix2fvBuffer(loc, transpose, value);
-			} else {
-				this.context.uniformMatrix2fv(loc, transpose, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniformMatrix2fv(loc, transpose, Array.from(value));
-			} else {
-				this.context.uniformMatrix2fv(loc, transpose, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniformMatrix2fv = this._getMethod('uniformMatrix2fv');
+		uniformMatrix2fv(loc, transpose, value);
 	}
 
 	uniformMatrix3fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix3fv');
 		this._checkArgs('uniformMatrix3fv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniformMatrix3fvBuffer(loc, transpose, value);
-			} else {
-				this.context.uniformMatrix3fv(loc, transpose, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniformMatrix3fv(loc, transpose, Array.from(value));
-			} else {
-				this.context.uniformMatrix3fv(loc, transpose, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniformMatrix3fv = this._getMethod('uniformMatrix3fv');
+		uniformMatrix3fv(loc, transpose, value);
 	}
 
 	uniformMatrix4fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix4fv');
 		this._checkArgs('uniformMatrix4fv', arguments);
-		const loc = location ? location.native : 0;
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.uniformMatrix4fvBuffer(loc, transpose, value);
-			} else {
-				this.context.uniformMatrix4fv(loc, transpose, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.uniformMatrix4fv(loc, transpose, Array.from(value));
-			} else {
-				this.context.uniformMatrix4fv(loc, transpose, value);
-			}
-		}
+
+		const loc = location.native;
+		const uniformMatrix4fv = this._getMethod('uniformMatrix4fv');
+		uniformMatrix4fv(loc, transpose, value);
 	}
 
 	useProgram(program: WebGLProgram): void {
 		this._glCheckError('useProgram');
 		this._checkArgs('useProgram', arguments);
-		const value = program ? program.native : 0;
-		this.context.useProgram(value);
+		const useProgram = this._getMethod('useProgram');
+		const value = program ? program.native : null;
+		useProgram(value);
 	}
 
 	validateProgram(program: WebGLProgram): void {
 		this._glCheckError('validateProgram');
 		this._checkArgs('validateProgram', arguments);
-		const value = program ? program.native : 0;
-		this.context.validateProgram(value);
+		const validateProgram = this._getMethod('validateProgram');
+		const value = program.native;
+		validateProgram(value);
 	}
 
 	vertexAttrib1f(index: number, v0: number): void {
 		this._glCheckError('vertexAttrib1f');
 		this._checkArgs('vertexAttrib1f', arguments);
-		this.context.vertexAttrib1f(index, v0);
+		const vertexAttrib1f = this._getMethod('vertexAttrib1f');
+		vertexAttrib1f(index, v0);
 	}
 
 	vertexAttrib1fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib1fv');
 		this._checkArgs('vertexAttrib1fv', arguments);
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib1fvBuffer(index, value);
-			} else {
-				this.context.vertexAttrib1fv(index, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib1fv(index, Array.from(value));
-			} else {
-				this.context.vertexAttrib1fv(index, value);
-			}
-		}
+
+		const vertexAttrib1fv = this._getMethod('vertexAttrib1fv');
+		vertexAttrib1fv(index, value);
 	}
 
 	vertexAttrib2f(index: number, v0: number, v1: number): void {
 		this._glCheckError('vertexAttrib2f');
 		this._checkArgs('vertexAttrib2f', arguments);
-		this.context.vertexAttrib2f(index, v0, v1);
+		const vertexAttrib2f = this._getMethod('vertexAttrib2f');
+		vertexAttrib2f(index, v0, v1);
 	}
 
 	vertexAttrib2fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib2fv');
 		this._checkArgs('vertexAttrib2fv', arguments);
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib2fvBuffer(index, value);
-			} else {
-				this.context.vertexAttrib2fv(index, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib2fv(index, Array.from(value));
-			} else {
-				this.context.vertexAttrib2fv(index, value);
-			}
-		}
+
+		const vertexAttrib2fv = this._getMethod('vertexAttrib2fv');
+		vertexAttrib2fv(index, value);
 	}
 
 	vertexAttrib3f(index: number, v0: number, v1: number, v2: number): void {
 		this._glCheckError('vertexAttrib3f');
 		this._checkArgs('vertexAttrib3f', arguments);
-		this.context.vertexAttrib3f(index, v0, v1, v2);
+		const vertexAttrib3f = this._getMethod('vertexAttrib3f');
+		vertexAttrib3f(index, v0, v1, v2);
 	}
 
 	vertexAttrib3fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib3fv');
 		this._checkArgs('vertexAttrib3fv', arguments);
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib3fvBuffer(index, value);
-			} else {
-				this.context.vertexAttrib3fv(index, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib3fv(index, Array.from(value));
-			} else {
-				this.context.vertexAttrib3fv(index, value);
-			}
-		}
+
+		const vertexAttrib3fv = this._getMethod('vertexAttrib3fv');
+		vertexAttrib3fv(index, value);
 	}
 
 	vertexAttrib4f(index: number, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('vertexAttrib4f');
 		this._checkArgs('vertexAttrib4f', arguments);
-		this.context.vertexAttrib4f(index, v0, v1, v2, v3);
+		const vertexAttrib4f = this._getMethod('vertexAttrib4f');
+		vertexAttrib4f(index, v0, v1, v2, v3);
 	}
 
 	vertexAttrib4fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib4fv');
 		this._checkArgs('vertexAttrib4fv', arguments);
-		if (this._isSupported) {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib4fvBuffer(index, value);
-			} else {
-				this.context.vertexAttrib4fv(index, value);
-			}
-		} else {
-			if (!Array.isArray(value)) {
-				this.context.vertexAttrib4fv(index, Array.from(value));
-			} else {
-				this.context.vertexAttrib4fv(index, value);
-			}
-		}
+
+		const vertexAttrib4fv = this._getMethod('vertexAttrib4fv');
+		vertexAttrib4fv(index, value);
 	}
 
 	vertexAttribPointer(index: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void {
 		this._glCheckError('vertexAttribPointer');
 		this._checkArgs('vertexAttribPointer', arguments);
-		this.context.vertexAttribPointer(index, size, type, normalized, stride, offset);
+		const vertexAttribPointer = this._getMethod('vertexAttribPointer');
+		vertexAttribPointer(index, size, type, normalized, stride, offset);
 	}
 
 	viewport(x: number, y: number, width: number, height: number): void {
 		this._glCheckError('viewport');
 		this._checkArgs('viewport', arguments);
-		this.context.viewport(x, y, width, height);
+		const viewport = this._getMethod('viewport');
+		viewport(x, y, width, height);
 	}
 
 	protected _glCheckError(message: string) {

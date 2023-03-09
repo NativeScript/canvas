@@ -1,16 +1,24 @@
 export class WebGLActiveInfo {
-	readonly name: string;
-	readonly size: number;
-	readonly type: number;
 	[Symbol.toStringTag] = 'WebGLActiveInfo';
 
-	constructor(name: string, size: number, type: number) {
-		this.name = name;
-		this.size = size;
-		this.type = type;
+	native;
+	constructor(native) {
+		this.native = native;
 	}
 
 	public toString() {
 		return '[object WebGLActiveInfo]';
+	}
+
+	get name() {
+		return this.native.name;
+	}
+
+	get size() {
+		return this.native.size;
+	}
+
+	get type() {
+		return this.native.type;
 	}
 }

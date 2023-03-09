@@ -9,7 +9,7 @@ export declare class ImageAsset extends ImageAssetBase {
 
 	fromUrlSync(url: string): boolean;
 
-	fromUrlAsync(url: string): Promise<boolean>;
+	fromUrl(url: string): Promise<boolean>;
 
 	fromFileSync(path: string): boolean;
 

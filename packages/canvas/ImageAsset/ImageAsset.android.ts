@@ -1,5 +1,5 @@
 import { ImageAssetBase, ImageAssetSaveFormat } from './common';
-import { knownFolders, path as filePath } from '@nativescript/core';
+import { File, knownFolders, path as filePath } from '@nativescript/core';
 import { Helpers } from '../helpers';
 
 let ctor;
@@ -26,10 +26,10 @@ export class ImageAsset extends ImageAssetBase {
 	}
 
 	fromUrlSync(url: string): boolean {
-		return this.native.loadImageFromUrl(url);
+		return this.native.fromUrlSync(url);
 	}
 
-	fromUrlAsync(url: string) {
+	fromUrl(url: string) {
 		return new Promise((resolve, reject) => {
 			this.native.fromUrlCb(url, (success, error) => {
 				if (error) {
@@ -49,9 +49,13 @@ export class ImageAsset extends ImageAssetBase {
 			}
 		}
 
-        console.log(typeof realPath);
+		console.log('realPath', realPath);
 
-		return false;//this.native.fromFileSync(realPath);
+		const f = File.fromPath('/data/data/org.nativescript.plugindemo/files/app/assets/file-assets/webgl/cubetexture.png');
+
+		console.log(f.name);
+
+		return this.native.fromFileSync(realPath);
 	}
 
 	fromFile(path: string) {
@@ -97,7 +101,7 @@ export class ImageAsset extends ImageAssetBase {
     */
 
 	loadFromBytesSync(bytes: Uint8Array | Uint8ClampedArray) {
-		return this.native.loadImageFromBytes(bytes);
+		return this.native.fromBytesSync(bytes);
 	}
 
 	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {

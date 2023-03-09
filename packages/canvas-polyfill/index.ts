@@ -13,7 +13,7 @@ import { Document } from './DOM/Document';
 import './window';
 import './resize';
 import './process';
-import { TextDecoder, TextEncoder, ImageBitmap} from '@nativescript/canvas';
+import { TextDecoder, TextEncoder, ImageBitmap } from '@nativescript/canvas';
 import { URL } from './URL';
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 
@@ -65,21 +65,21 @@ Object.defineProperty(global, 'FileReader', {
 	writable: true,
 });
 
-// if (!((global as any).TextDecoder instanceof TextDecoder)) {
-// 	Object.defineProperty(global, 'TextDecoder', {
-// 		value: TextDecoder,
-// 		configurable: true,
-// 		writable: true,
-// 	});
-// }
+if (!((global as any).TextDecoder instanceof TextDecoder)) {
+	Object.defineProperty(global, 'TextDecoder', {
+		value: TextDecoder,
+		configurable: true,
+		writable: true,
+	});
+}
 
-// if (!((global as any).TextEncoder instanceof TextEncoder)) {
-// 	Object.defineProperty(global, 'TextEncoder', {
-// 		value: TextEncoder,
-// 		configurable: true,
-// 		writable: true,
-// 	});
-// }
+if (!((global as any).TextEncoder instanceof TextEncoder)) {
+	Object.defineProperty(global, 'TextEncoder', {
+		value: TextEncoder,
+		configurable: true,
+		writable: true,
+	});
+}
 
 if (!((global as any).URL instanceof URL)) {
 	Object.defineProperty(global, 'URL', {

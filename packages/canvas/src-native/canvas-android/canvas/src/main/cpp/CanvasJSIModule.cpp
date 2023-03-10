@@ -7,6 +7,63 @@
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
 
+    CREATE_FUNC("readFile", canvas_module, 1,
+                ([](jsi::Runtime &runtime, const jsi::Value &thisValue,
+                    const jsi::Value *arguments, size_t count) -> jsi::Value {
+
+                    auto file = arguments[0].asString(runtime).utf8(runtime);
+
+                    jsi::Value promise = runtime.global().getPropertyAsFunction(runtime,
+                                                                                "Promise").callAsConstructor(
+                            runtime,
+                            jsi::Function::createFromHostFunction(
+                                    runtime,
+                                    jsi::PropNameID::forAscii(runtime, "executor"),
+                                    2,
+                                    [file](jsi::Runtime &rt, const jsi::Value &thisValue,
+                                           const jsi::Value *args,
+                                           size_t) -> jsi::Value {
+
+                                        std::thread thread([&rt, &file, resolve{
+                                                std::make_shared<jsi::Value>(rt, args[0])}, reject{
+                                                std::make_shared<jsi::Value>(rt, args[1])}] {
+
+                                            auto ret = canvas_native_helper_read_file(
+                                                    rust::Str(file.c_str()));
+
+                                            if (!canvas_native_helper_read_file_has_error(*ret)) {
+                                                auto buf = canvas_native_helper_read_file_get_data(
+                                                        std::move(ret));
+                                                auto vec_buffer = std::make_shared<VecMutableBuffer<uint8_t>>(
+                                                        std::move(buf));
+                                                auto arrayBuffer = jsi::ArrayBuffer(rt, vec_buffer);
+                                                resolve->asObject(rt).asFunction(rt).call(rt,
+                                                                                          std::move(
+                                                                                                  arrayBuffer));
+                                            } else {
+                                                auto error = canvas_native_helper_read_file_get_error(
+                                                        *ret);
+                                                reject->asObject(rt).asFunction(rt).call(rt,
+                                                                                         jsi::String::createFromAscii(
+                                                                                                 rt,
+                                                                                                 error.c_str()));
+                                            }
+                                        });
+
+                                        thread.detach();
+
+
+                                        return {};
+                                    }));
+
+                    return promise;
+                }
+
+                )
+
+    );
+
+
     CREATE_FUNC("ImageData", canvas_module, 4,
                 ([](jsi::Runtime &runtime, const jsi::Value &thisValue,
                     const jsi::Value *arguments, size_t count) -> jsi::Value {
@@ -362,7 +419,9 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                         auto error = jsi::String::createFromAscii(runtime,
                                                                                   "Failed to load image");
                                         cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
-                                                    {std::move(error), jsi::Value::undefined()});
+                                                                                           {std::move(
+                                                                                                   error),
+                                                                                            jsi::Value::undefined()});
                                     } else {
                                         auto ret = std::make_shared<ImageBitmapImpl>(
                                                 std::move(asset));
@@ -371,7 +430,9 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                                                                         std::move(
                                                                                                 ret));
                                         cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
-                                                    {jsi::Value::undefined(), std::move(object)});
+                                                                                           {jsi::Value::undefined(),
+                                                                                            std::move(
+                                                                                                    object)});
                                     }
                                 }, std::move(asset));
 
@@ -392,10 +453,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                         std::thread thread(
                                 [&data, &runtime, &options, cbFunc](rust::Box<ImageAsset> asset,
-                                                                     float sx_or_options,
-                                                                     float sy,
-                                                                     float sw,
-                                                                     float sh) {
+                                                                    float sx_or_options,
+                                                                    float sy,
+                                                                    float sw,
+                                                                    float sh) {
 
                                     auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
                                             data,
@@ -415,7 +476,9 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                         auto error = jsi::String::createFromAscii(runtime,
                                                                                   "Failed to load image");
                                         cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
-                                                    {std::move(error), jsi::Value::undefined()});
+                                                                                           {std::move(
+                                                                                                   error),
+                                                                                            jsi::Value::undefined()});
                                     } else {
                                         auto ret = std::make_shared<ImageBitmapImpl>(
                                                 std::move(asset));
@@ -423,7 +486,9 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                                                                         std::move(
                                                                                                 ret));
                                         cbFunc->asObject(runtime).getFunction(runtime).call(runtime,
-                                                    {jsi::Value::undefined(), std::move(object)});
+                                                                                            {jsi::Value::undefined(),
+                                                                                             std::move(
+                                                                                                     object)});
                                     }
 
 
@@ -828,7 +893,19 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
     );
 
-    if (!jsiRuntime.global().hasProperty(jsiRuntime, "CanvasJSIModule")) {
-        jsiRuntime.global().setProperty(jsiRuntime, "CanvasJSIModule", canvas_module);
+    if (!jsiRuntime.
+
+                    global()
+
+            .
+                    hasProperty(jsiRuntime,
+                                "CanvasJSIModule")) {
+        jsiRuntime.
+
+                        global()
+
+                .
+                        setProperty(jsiRuntime,
+                                    "CanvasJSIModule", canvas_module);
     }
 }

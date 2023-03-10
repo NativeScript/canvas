@@ -48,7 +48,7 @@ void main()
 	gl.bindVertexArray(null);
 	const asset = new global.ImageAsset();
 
-	asset.loadFileAsync('~/assets/file-assets/webgl2/Di-3d.png').then((done) => {
+	asset.fromFile('~/assets/file-assets/webgl2/Di-3d.png').then((done) => {
 		if (done) {
 			var texture = gl.createTexture();
 			gl.activeTexture(gl.TEXTURE0);

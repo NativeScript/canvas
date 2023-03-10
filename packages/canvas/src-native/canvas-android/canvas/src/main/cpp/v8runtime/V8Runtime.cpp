@@ -643,18 +643,18 @@ namespace rnv8 {
         auto size = buffer->size();
         auto *data = buffer->data();
         auto *ctx = new std::shared_ptr<jsi::MutableBuffer>(std::move(buffer));
-        auto finalize = [](void*ctx, size_t, void*) {
+        auto finalize = [](void *, size_t, void *ctx) {
             delete static_cast<std::shared_ptr<jsi::MutableBuffer> *>(ctx);
         };
 
-        std::unique_ptr<v8::BackingStore> store = v8::ArrayBuffer::NewBackingStore(data, size, finalize, ctx);
+        std::unique_ptr<v8::BackingStore> store = v8::ArrayBuffer::NewBackingStore(data, size,
+                                                                                   finalize, ctx);
         auto arrayBuffer = v8::ArrayBuffer::New(isolate_, std::move(store));
 
 
         return make<jsi::Object>(new V8PointerValue(isolate_, arrayBuffer))
                 .getArrayBuffer(*this);
     }
-
 
 
     uint64_t V8Runtime::uint64Value(const jsi::BigInt &bigInt, bool *lossless) const {

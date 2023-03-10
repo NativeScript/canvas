@@ -565,7 +565,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
-		//this.solar(this.canvas);
+		this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -604,7 +604,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		// imageFilter(this.canvas);
-		interactiveCube(this.canvas);
+		//interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
@@ -612,7 +612,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// }, 1000);
 		//cubeRotation(this.canvas);
 		//},3000)
-		 //drawModes(this.canvas,'triangles');
+		//drawModes(this.canvas,'triangles');
 		//cubeRotation(this.canvas);
 		//main(this.canvas)
 		//this.pointStyle(this.canvas);
@@ -1698,7 +1698,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-		await Promise.all([sun.loadUrlAsync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.loadUrlAsync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.loadUrlAsync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
+	//	await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
+
+		 sun.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png');
+		 moon.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png');
+		 earth.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
 
 		// sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png')
 		// .then(done =>{
@@ -1713,9 +1717,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		//console.log(sun.width, moon.width, earth.width);
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+
 		//ctx.scale(3, 3);
 		function init() {
-			window.requestAnimationFrame(draw);
+			requestAnimationFrame(draw);
 		}
 
 		let didScale = false;
@@ -1755,7 +1761,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			// //     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
 			// //     didScale = true;
 			// // }
-			window.requestAnimationFrame(draw);
+			requestAnimationFrame(draw);
 		}
 
 		init();

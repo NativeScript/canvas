@@ -10,7 +10,7 @@ EXT_disjoint_timer_queryImpl::EXT_disjoint_timer_queryImpl(
 
 std::vector<jsi::PropNameID> EXT_disjoint_timer_queryImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(15);
+    ret.reserve(16);
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("QUERY_COUNTER_BITS_EXT")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("CURRENT_QUERY_EXT")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("QUERY_RESULT_EXT")));
@@ -26,12 +26,19 @@ std::vector<jsi::PropNameID> EXT_disjoint_timer_queryImpl::getPropertyNames(jsi:
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("queryCounterExt")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("getQueryExt")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("getQueryObjectExt")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
     return ret;
 }
 
 
 jsi::Value EXT_disjoint_timer_queryImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
+
+    if (methodName == "ext_name") {
+        return jsi::String::createFromAscii(runtime,"EXT_disjoint_timer_query");
+    }
+
     if (methodName == "QUERY_COUNTER_BITS_EXT") {
         return {0x8864};
     } else if (methodName == "CURRENT_QUERY_EXT") {

@@ -1,5 +1,5 @@
 import { Element } from './Element';
-import { knownFolders, path, File } from '@nativescript/core';
+import { knownFolders, path, File, Utils } from '@nativescript/core';
 // import { ImageAsset } from '@nativescript/canvas';
 declare const qos_class_t;
 const background_queue = global.isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
@@ -69,11 +69,13 @@ export class HTMLImageElement extends Element {
 	}
 
 	set complete(value) {
-		this._complete = value;
-		if (value) {
-			this.emitter.emit('load', this);
-			this.onload();
-		}
+		Utils.executeOnMainThread(() => {
+			this._complete = value;
+			if (value) {
+				this.emitter.emit('load', this);
+				this.onload();
+			}
+		});
 	}
 
 	constructor(props?) {
@@ -187,7 +189,7 @@ export class HTMLImageElement extends Element {
 					if (!this.width || !this.height) {
 						this.complete = false;
 						if (!async) {
-							const loaded = this._asset.loadFileSync(this.src);
+							const loaded = this._asset.fromFileSync(this.src);
 							if (loaded) {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
@@ -197,8 +199,9 @@ export class HTMLImageElement extends Element {
 							}
 						} else {
 							this._asset
-								.loadFileAsync(this.src)
+								.fromFile(this.src)
 								.then((done) => {
+									console.log();
 									this.width = this._asset.width;
 									this.height = this._asset.height;
 									this.complete = true;

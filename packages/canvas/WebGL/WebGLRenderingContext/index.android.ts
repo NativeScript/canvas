@@ -45,7 +45,7 @@ import { Helpers } from '../../helpers';
 let ctor;
 
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
-	public static isDebug = false;
+	public static isDebug = true;
 	public static filter: 'both' | 'error' | 'args' = 'both';
 	private context;
 
@@ -127,7 +127,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	bindBuffer(target: number, buffer: WebGLBuffer): void {
 		this._glCheckError('bindBuffer');
 		this._checkArgs('bindBuffer', arguments);
-		const value = buffer ? buffer.native: null;
+		const value = buffer ? buffer.native : null;
 		const bindBuffer = this._getMethod('bindBuffer');
 		bindBuffer(target, value);
 	}
@@ -491,7 +491,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	}
 
 	frontFace(mode: number): void {
-		this._checkArgs('activeTexture', arguments);
+		this._checkArgs('frontFace', arguments);
 		this._glCheckError('frontFace');
 		const frontFace = this._getMethod('frontFace');
 		frontFace(mode);
@@ -1017,7 +1017,6 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			} else if (border && typeof border.getCurrentFrame === 'function') {
 				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
-				console.log(target, level, internalformat, width, height, border.native.width, border.native.height);
 				texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {
 				texImage2D(target, level, internalformat, width, height, border.native);

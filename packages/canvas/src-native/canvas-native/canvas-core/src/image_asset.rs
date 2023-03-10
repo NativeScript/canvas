@@ -24,9 +24,7 @@ pub struct ImageAsset(Arc<parking_lot::RwLock<ImageAssetInner>>);
 
 impl Clone for ImageAsset {
     fn clone(&self) -> Self {
-        Self {
-            0: Arc::clone(&self.0),
-        }
+        Self(Arc::clone(&self.0))
     }
 
     fn clone_from(&mut self, source: &Self) {
@@ -140,7 +138,7 @@ impl ImageAsset {
     }
 
     pub fn error_cstr(&self) -> *const c_char {
-        let lock = self.get_lock();
+        let lock = self.read();
         if lock.error.is_empty() {
             return null();
         }
@@ -148,7 +146,7 @@ impl ImageAsset {
     }
 
     pub fn width(&self) -> c_uint {
-        self.get_lock()
+        self.read()
             .image
             .as_ref()
             .map(|v| v.width())
@@ -156,21 +154,25 @@ impl ImageAsset {
     }
 
     pub fn height(&self) -> c_uint {
-        self.get_lock()
+        self.read()
             .image
             .as_ref()
             .map(|v| v.height())
             .unwrap_or_default()
     }
 
-    pub fn load_from_path(&mut self, path: &str) -> bool {
-        {
-            let mut lock = self.get_lock();
-            if !lock.error.is_empty() {
-                lock.error.clear()
-            }
-            lock.image = None;
+    #[cfg(any(unix))]
+    pub fn load_from_fd(&mut self, fd: c_int) -> bool {
+        if fd == 0 {
+            return false
         }
+        use std::os::fd::FromRawFd;
+        let file =  unsafe { std::fs::File::from_raw_fd(fd) };
+        let mut reader = std::io::BufReader::new(file);
+        self.load_from_reader(&mut reader)
+    }
+
+    pub fn load_from_path(&mut self, path: &str) -> bool {
         let file = std::fs::File::open(path);
         match file {
             Ok(file) => {
@@ -178,8 +180,13 @@ impl ImageAsset {
                 self.load_from_reader(&mut reader)
             }
             Err(e) => {
+                let mut lock = self.get_lock();
+                if !lock.error.is_empty() {
+                    lock.error.clear()
+                }
+                lock.image = None;
                 let error = e.to_string();
-                self.get_lock().error.push_str(error.as_str());
+                lock.error.push_str(error.as_str());
                 false
             }
         }
@@ -189,8 +196,9 @@ impl ImageAsset {
     where
         R: Read + Seek + BufRead,
     {
+        let mut lock = self.get_lock();
         {
-            let mut lock = self.get_lock();
+
             if !lock.error.is_empty() {
                 lock.error.clear()
             }
@@ -200,8 +208,7 @@ impl ImageAsset {
         let mut bytes = [0; 16];
         let position = reader.stream_position();
 
-        let result = reader.read(&mut bytes);
-        match result {
+        match reader.read(&mut bytes) {
             Ok(_) => {
                 if let Ok(position) = position {
                     let _ = reader.seek(SeekFrom::Start(position));
@@ -210,43 +217,44 @@ impl ImageAsset {
                 match image::guess_format(&bytes) {
                     Ok(mime) => match image::load(reader, mime) {
                         Ok(result) => {
-                            let mut lock = self.get_lock();
 
-                            let width = result.width() as i32;
-                            let height = result.height() as i32;
+                            #[cfg(feature = "2d")] {
+                                let width = result.width() as i32;
+                                let height = result.height() as i32;
 
-                            if let Some(image) = result.as_rgba8() {
-                                let info = skia_safe::ImageInfo::new(
-                                    skia_safe::ISize::new(width, height),
-                                    skia_safe::ColorType::RGBA8888,
-                                    skia_safe::AlphaType::Unpremul,
-                                    None,
-                                );
+                                if let Some(image) = result.as_rgba8() {
+                                    let info = skia_safe::ImageInfo::new(
+                                        skia_safe::ISize::new(width, height),
+                                        skia_safe::ColorType::RGBA8888,
+                                        skia_safe::AlphaType::Unpremul,
+                                        None,
+                                    );
 
-                                let skia_image = unsafe {
-                                    skia_safe::Image::from_raster_data(
-                                        &info,
-                                        skia_safe::Data::new_bytes(image.as_ref()),
-                                        (width * 4) as usize,
-                                    )
-                                };
-                                lock.skia_image = skia_image;
-                            } else if let Some(image) = result.as_rgb8() {
-                                let info = skia_safe::ImageInfo::new(
-                                    skia_safe::ISize::new(width, height),
-                                    skia_safe::ColorType::RGB565,
-                                    skia_safe::AlphaType::Unpremul,
-                                    None,
-                                );
+                                    let skia_image = unsafe {
+                                        skia_safe::Image::from_raster_data(
+                                            &info,
+                                            skia_safe::Data::new_bytes(image.as_ref()),
+                                            (width * 4) as usize,
+                                        )
+                                    };
+                                    lock.skia_image = skia_image;
+                                } else if let Some(image) = result.as_rgb8() {
+                                    let info = skia_safe::ImageInfo::new(
+                                        skia_safe::ISize::new(width, height),
+                                        skia_safe::ColorType::RGB565,
+                                        skia_safe::AlphaType::Unpremul,
+                                        None,
+                                    );
 
-                                let skia_image = unsafe {
-                                    skia_safe::Image::from_raster_data(
-                                        &info,
-                                        skia_safe::Data::new_bytes(image.as_ref()),
-                                        (width * 4) as usize,
-                                    )
-                                };
-                                lock.skia_image = skia_image;
+                                    let skia_image = unsafe {
+                                        skia_safe::Image::from_raster_data(
+                                            &info,
+                                            skia_safe::Data::new_bytes(image.as_ref()),
+                                            (width * 4) as usize,
+                                        )
+                                    };
+                                    lock.skia_image = skia_image;
+                                }
                             }
 
                             lock.image = Some(result);
@@ -255,7 +263,6 @@ impl ImageAsset {
                         }
                         Err(e) => {
                             let error = e.to_string();
-                            let mut lock = self.get_lock();
                             lock.error.clear();
                             lock.error.push_str(error.as_str());
                             false
@@ -263,7 +270,6 @@ impl ImageAsset {
                     },
                     Err(e) => {
                         let error = e.to_string();
-                        let mut lock = self.get_lock();
                         lock.error.clear();
                         lock.error.push_str(error.as_str());
                         false
@@ -272,7 +278,6 @@ impl ImageAsset {
             }
             Err(e) => {
                 let error = e.to_string();
-                let mut lock = self.get_lock();
                 lock.error.clear();
                 lock.error.push_str(error.as_str());
                 false
@@ -290,8 +295,8 @@ impl ImageAsset {
     }
 
     pub fn load_from_bytes(&mut self, buf: &[u8]) -> bool {
+        let mut lock = self.get_lock();
         {
-            let mut lock = self.get_lock();
             if !lock.error.is_empty() {
                 lock.error.clear()
             }
@@ -301,13 +306,11 @@ impl ImageAsset {
         match image::load_from_memory(buf) {
             Err(e) => {
                 let error = e.to_string();
-                let mut lock = self.get_lock();
                 lock.error.clear();
                 lock.error.push_str(error.as_str());
                 false
             }
             Ok(data) => {
-                let mut lock = self.get_lock();
                 lock.image = Some(match data {
                     DynamicImage::ImageRgba8(_) => data,
                     _ => DynamicImage::ImageRgba8(data.into_rgba8()),
@@ -434,6 +437,12 @@ impl ImageAsset {
         })
     }
 
+    pub fn copy_bytes(&self) -> Option<Vec<u8>> {
+        self.get_lock().image.as_ref().map(|d| {
+            d.as_bytes().to_vec()
+        })
+    }
+
     pub fn save_path_raw(&mut self, path: *const c_char, format: OutputFormat) -> bool {
         let real_path = unsafe { CStr::from_ptr(path) };
         self.save_path(real_path.to_string_lossy().as_ref(), format)
@@ -446,13 +455,13 @@ impl ImageAsset {
         }
         match lock.image.as_ref() {
             Some(image) => {
-                return match format {
+               match format {
                     OutputFormat::PNG => image.save_with_format(path, ImageFormat::Png).is_ok(),
                     OutputFormat::ICO => image.save_with_format(path, ImageFormat::Ico).is_ok(),
                     OutputFormat::BMP => image.save_with_format(path, ImageFormat::Bmp).is_ok(),
                     OutputFormat::TIFF => image.save_with_format(path, ImageFormat::Tiff).is_ok(),
                     _ => image.save_with_format(path, ImageFormat::Jpeg).is_ok(),
-                };
+                }
             }
             _ => {
                 lock.error.push_str("No Image loaded");

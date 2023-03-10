@@ -69,6 +69,7 @@ export class Canvas extends CanvasBase {
 
 	set width(value) {
 		this.style.width = value;
+		this._didLayout = false;
 		if (this._isCustom) {
 			this._layoutNative();
 		}
@@ -91,15 +92,16 @@ export class Canvas extends CanvasBase {
 
 	set height(value) {
 		this.style.height = value;
+		this._didLayout = false;
 		if (this._isCustom) {
 			this._layoutNative();
 		}
 	}
 
-	static createCustomView(useCpu = false) {
-		const canvas = new Canvas(useCpu);
-		canvas.width = 300;
+	static createCustomView() {
+		const canvas = new Canvas();
 		canvas._isCustom = true;
+		canvas.width = 300;
 		canvas.height = 150;
 		return canvas;
 	}
@@ -182,6 +184,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative() {
+		if (this._didLayout) {
+			return;
+		}
 		if (!this.parent) {
 			if ((typeof this.width === 'string' && this.width.indexOf('%')) || (typeof this.height === 'string' && this.height.indexOf('%'))) {
 				return;
@@ -189,13 +194,13 @@ export class Canvas extends CanvasBase {
 			if (!this._isCustom) {
 				return;
 			}
-
 			const size = this._realSize;
-			org.nativescript.canvas.TNSCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
+			org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 
 			if (this._2dContext) {
-				(this._2dContext as any).__resize(size.width, size.height);
+				(this._2dContext as any).native.__resize(size.width, size.height);
 			}
+			this._didLayout = true;
 		}
 	}
 
@@ -203,14 +208,12 @@ export class Canvas extends CanvasBase {
 		return this._2dContext && this._webglContext && this._webgl2Context;
 	}
 
+	_didLayout = false;
+
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null {
 		if (!this._canvas) {
 			return null;
 		}
-		const getNativeOptions = (options) => {
-			return JSON.stringify(this._handleContextOptions(type, options));
-		};
-
 		// let direction = 0;
 		// if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
 		// 	direction = 1;
@@ -236,9 +239,18 @@ export class Canvas extends CanvasBase {
 		desynchronized: Boolean,
 		xrCompatible: Boolean
 					*/
+
+					this._didLayout = false;
+					this._layoutNative();
+
 					const opts = this._handleContextOptions(type, options);
 
 					this._canvas.initContext(type);
+
+					// todo fix for offscreen rendering 
+					// returns zero for native context
+
+					
 					// this.parent?.style?.color?.android || -16777216
 
 					//this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
@@ -248,6 +260,8 @@ export class Canvas extends CanvasBase {
 					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;
 				}
+
+				console.log('here');
 
 				// @ts-ignore
 				this._2dContext._type = '2d';

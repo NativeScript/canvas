@@ -10,17 +10,22 @@ ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(rust::Box<ANGLE_instanced
 
 std::vector<jsi::PropNameID> ANGLE_instanced_arraysImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(4);
+    ret.reserve(5);
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("drawArraysInstancedANGLE")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("drawElementsInstancedANGLE")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttribDivisorANGLE")));
     ret.emplace_back(
             jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
     return ret;
 }
 
 jsi::Value ANGLE_instanced_arraysImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
+    if (methodName == "ext_name") {
+        return jsi::String::createFromAscii(runtime, "ANGLE_instanced_arrays");
+    }
     if (methodName == "VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE") {
         return {0x88FE};
     }

@@ -7,15 +7,15 @@ export class WebGLShaderPrecisionFormat {
 	}
 
 	get rangeMin() {
-		return this.native.getRangeMin();
+		return this.native.rangeMin;
 	}
 
 	get rangeMax(): number {
-		return this.native.getRangeMax();
+		return this.native.rangeMax;
 	}
 
 	get precision(): number {
-		return this.native.getPrecision();
+		return this.native.precision;
 	}
 
 	public toString() {

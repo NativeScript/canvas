@@ -4522,7 +4522,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
         );
     }
 
-    if(!prop.isUndefined()){
+    if (!prop.isUndefined()) {
         return prop;
     }
     auto gl_return = WebGLRenderingContext::get(runtime, name);

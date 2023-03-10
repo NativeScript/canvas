@@ -33,9 +33,8 @@ export class TextEncoder extends TextEncoderBase {
 		if (text === undefined) {
 			return new Uint8Array(0);
 		} else if (text === null) {
-			text = 'null';
+			text = this._encode('null');
 		}
-
 		return this._encode(text);
 	}
 }

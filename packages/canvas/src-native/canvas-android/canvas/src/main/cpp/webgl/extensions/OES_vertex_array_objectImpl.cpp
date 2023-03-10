@@ -11,8 +11,35 @@ OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(rust::Box<OES_vertex_ar
 
 }
 
+std::vector<jsi::PropNameID> OES_vertex_array_objectImpl::getPropertyNames(jsi::Runtime &rt) {
+    std::vector<jsi::PropNameID> ret;
+    ret.reserve(6);
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ARRAY_BINDING_OES")));
+
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("createVertexArrayOES")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("deleteVertexArrayOES")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("isVertexArrayOES")));
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("bindVertexArrayOES")));
+
+    ret.emplace_back(
+            jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
+
+    return ret;
+}
+
+
 jsi::Value OES_vertex_array_objectImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
+
+    if (methodName == "ext_name") {
+        return jsi::String::createFromAscii(runtime, "OES_vertex_array_object");
+    }
+
     if (methodName == "VERTEX_ARRAY_BINDING_OES") {
         return {GL_VERTEX_ARRAY_BINDING_OES};
     } else if (methodName == "createVertexArrayOES") {
@@ -97,22 +124,4 @@ jsi::Value OES_vertex_array_objectImpl::get(jsi::Runtime &runtime, const jsi::Pr
         );
     }
     return jsi::Value::undefined();
-}
-
-std::vector<jsi::PropNameID> OES_vertex_array_objectImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(5);
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("VERTEX_ARRAY_BINDING_OES")));
-
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("createVertexArrayOES")));
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("deleteVertexArrayOES")));
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("isVertexArrayOES")));
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("bindVertexArrayOES")));
-
-    return ret;
 }

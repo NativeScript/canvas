@@ -1,5 +1,5 @@
 import { ImageAssetBase, ImageAssetSaveFormat } from './common';
-import { File, knownFolders, path as filePath } from '@nativescript/core';
+import { File, knownFolders, path as filePath, Utils } from '@nativescript/core';
 import { Helpers } from '../helpers';
 
 let ctor;
@@ -48,12 +48,6 @@ export class ImageAsset extends ImageAssetBase {
 				realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
 			}
 		}
-
-		console.log('realPath', realPath);
-
-		const f = File.fromPath('/data/data/org.nativescript.plugindemo/files/app/assets/file-assets/webgl/cubetexture.png');
-
-		console.log(f.name);
 
 		return this.native.fromFileSync(realPath);
 	}

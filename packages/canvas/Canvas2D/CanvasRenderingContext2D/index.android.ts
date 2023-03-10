@@ -13,7 +13,7 @@ import { Helpers } from '../../helpers';
 let ctor;
 
 export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
-	public static isDebug = false;
+	public static isDebug = true;
 	static colorCache = {};
 	private context;
 

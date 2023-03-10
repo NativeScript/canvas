@@ -54,11 +54,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeKeyframes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		//this.gtlfLoader(this.canvas);
+		this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
-		this.gtlfTonemapping(this.canvas);
+		//this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
 		//this.renderVideo();
@@ -100,6 +100,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const light = new THREE.SpotLight();
 			light.position.set(-1.8, 0.6, 2.7 * 1.2);
 			scene.add(light);
+
 			new RGBELoader()
 				.setDataType(THREE.UnsignedByteType)
 				.setPath(this.root + '/textures/equirectangular/')

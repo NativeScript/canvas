@@ -113,6 +113,7 @@ export class ImageBitmap extends ImageBitmapBase {
 	}
 
 	static createFrom(source: any, options: any) {
+		console.log('Bitmap:createFrom');
 		return new Promise((resolve, reject) => {
 			const opts = new org.nativescript.canvas.TNSImageBitmap.Options();
 			ImageBitmap.handleOptions(options, opts);
@@ -243,6 +244,7 @@ export class ImageBitmap extends ImageBitmapBase {
 	}
 
 	static createFromRect(source: any, sx: number, sy: number, sWidth: number, sHeight: number, options: any) {
+		console.log('Bitmap:createFromRect');
 		return new Promise((resolve, reject) => {
 			const opts = new org.nativescript.canvas.TNSImageBitmap.Options();
 			ImageBitmap.handleOptions(options, opts);

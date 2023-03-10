@@ -189,7 +189,7 @@ void main() {
 
       // Asynchronously load an image
       const asset = new global.ImageAsset();
-      asset.loadFileAsync(url).then(() => {
+      asset.fromFile(url).then(() => {
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
         gl.texImage2D(target, level, internalFormat, format, type, asset);
         gl.generateMipmap(gl.TEXTURE_CUBE_MAP);

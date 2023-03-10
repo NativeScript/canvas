@@ -15,21 +15,37 @@ export class ANGLE_instanced_arrays {
 	VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE: number;
 	private nativeInstance;
 
+	_methodCache = new Map();
+
+	_getMethod(name: string) {
+		const cached = this._methodCache.get(name);
+		if (cached === undefined) {
+			const ret = this.nativeInstance[name];
+			this._methodCache.set(name, ret);
+			return ret;
+		}
+
+		return cached;
+	}
+
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 		this.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE = nativeInstance.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE;
 	}
 
 	public drawArraysInstancedANGLE(mode: number, first: number, count: number, primcount: number) {
-		this.nativeInstance.drawArraysInstancedANGLE(mode, first, count, primcount);
+		const drawArraysInstancedANGLE = this._getMethod('drawArraysInstancedANGLE');
+		drawArraysInstancedANGLE(mode, first, count, primcount);
 	}
 
 	public drawElementsInstancedANGLE(mode: number, count: number, type: number, offset: number, primcount: number) {
-		this.nativeInstance.drawElementsInstancedANGLE(mode, count, type, offset, primcount);
+		const drawElementsInstancedANGLE = this._getMethod('drawElementsInstancedANGLE');
+		drawElementsInstancedANGLE(mode, count, type, offset, primcount);
 	}
 
 	public vertexAttribDivisorANGLE(index: number, divisor: number) {
-		this.nativeInstance.vertexAttribDivisorANGLE(index, divisor);
+		const vertexAttribDivisorANGLE = this._getMethod('vertexAttribDivisorANGLE');
+		vertexAttribDivisorANGLE(index, divisor);
 	}
 }
 
@@ -148,28 +164,45 @@ export class OES_vertex_array_object {
 	VERTEX_ARRAY_BINDING_OES;
 	private nativeInstance;
 
+	_methodCache = new Map();
+
+	_getMethod(name: string) {
+		const cached = this._methodCache.get(name);
+		if (cached === undefined) {
+			const ret = this.nativeInstance[name];
+			this._methodCache.set(name, ret);
+			return ret;
+		}
+
+		return cached;
+	}
+
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 		this.VERTEX_ARRAY_BINDING_OES = nativeInstance.VERTEX_ARRAY_BINDING_OES;
 	}
 
 	createVertexArrayOES(): WebGLVertexArrayObject {
-		return new WebGLVertexArrayObject(this.nativeInstance.createVertexArrayOES());
+		const createVertexArrayOES = this._getMethod('createVertexArrayOES');
+		return new WebGLVertexArrayObject(createVertexArrayOES());
 	}
 
 	deleteVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
+		const deleteVertexArrayOES = this._getMethod('deleteVertexArrayOES');
 		const value = arrayObject ? arrayObject.native : 0;
-		this.nativeInstance.deleteVertexArrayOES(value);
+		deleteVertexArrayOES(value);
 	}
 
 	isVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
+		const isVertexArrayOES = this._getMethod('isVertexArrayOES');
 		const value = arrayObject ? arrayObject.native : 0;
-		return this.nativeInstance.isVertexArrayOES(value);
+		return isVertexArrayOES(value);
 	}
 
 	bindVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
-		const value = arrayObject ? arrayObject.native : 0;
-		this.nativeInstance.deleteVertexArrayOES(value);
+		const bindVertexArrayOES = this._getMethod('bindVertexArrayOES');
+		const value = arrayObject ? arrayObject.native : null;
+		bindVertexArrayOES(value);
 	}
 }
 
@@ -261,16 +294,31 @@ export class WEBGL_depth_texture {
 export class WEBGL_lose_context {
 	private nativeInstance: any;
 
+	_methodCache = new Map();
+
+	_getMethod(name: string) {
+		const cached = this._methodCache.get(name);
+		if (cached === undefined) {
+			const ret = this.nativeInstance[name];
+			this._methodCache.set(name, ret);
+			return ret;
+		}
+
+		return cached;
+	}
+
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 	}
 
 	public loseContext() {
-		this.nativeInstance.loseContext();
+		const loseContext = this._getMethod('loseContext');
+		loseContext();
 	}
 
 	public restoreContext() {
-		this.nativeInstance.restoreContext();
+		const restoreContext = this._getMethod('restoreContext');
+		restoreContext();
 	}
 }
 
@@ -284,6 +332,19 @@ export class EXT_disjoint_timer_query {
 	GPU_DISJOINT_EXT;
 	private nativeInstance: any;
 
+	_methodCache = new Map();
+
+	_getMethod(name: string) {
+		const cached = this._methodCache.get(name);
+		if (cached === undefined) {
+			const ret = this.nativeInstance[name];
+			this._methodCache.set(name, ret);
+			return ret;
+		}
+
+		return cached;
+	}
+
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 		this.QUERY_COUNTER_BITS_EXT = nativeInstance.QUERY_COUNTER_BITS_EXT;
@@ -296,35 +357,42 @@ export class EXT_disjoint_timer_query {
 	}
 
 	public createQueryEXT(): WebGLQuery {
-		return new WebGLQuery(this.nativeInstance.createQueryEXT());
+		const createQueryEXT = this._getMethod('createQueryEXT');
+		return new WebGLQuery(createQueryEXT());
 	}
 
 	public deleteQueryEXT(query: WebGLQuery) {
+		const deleteQueryEXT = this._getMethod('deleteQueryEXT');
 		const value = query ? query.native : 0;
-		this.nativeInstance.deleteQueryEXT(value);
+		deleteQueryEXT(value);
 	}
 
 	public isQueryEXT(query: WebGLQuery): boolean {
+		const isQueryEXT = this._getMethod('isQueryEXT');
 		const value = query ? query.native : 0;
-		return this.nativeInstance.isQueryEXT(value);
+		return isQueryEXT(value);
 	}
 
 	public beginQueryEXT(target: number, query: WebGLQuery) {
-		const value = query ? query.native : 0;
-		this.nativeInstance.beginQueryEXT(target, value);
+		const beginQueryEXT = this._getMethod('beginQueryEXT');
+		const value = query ? query.native : null;
+		beginQueryEXT(target, value);
 	}
 
 	public endQueryEXT(target: number) {
-		this.nativeInstance.endQueryEXT(target);
+		const endQueryEXT = this._getMethod('endQueryEXT');
+		endQueryEXT(target);
 	}
 
 	public queryCounterEXT(query: WebGLQuery, target: number) {
 		const value = query ? query.native : 0;
+		//const queryCounterEXT = this._getMethod('queryCounterEXT');
 		// NOOP
 	}
 
 	public getQueryEXT(target: number, pname: number) {
-		const value = this.nativeInstance.getQueryEXT(target, pname);
+		const getQueryEXT = this._getMethod('getQueryEXT');
+		const value = getQueryEXT(target, pname);
 		if (!!value) {
 			return null;
 		}
@@ -337,11 +405,9 @@ export class EXT_disjoint_timer_query {
 	}
 
 	public getQueryObjectEXT(query: WebGLQuery, pname: number) {
+		const getQueryObjectEXT = this._getMethod('getQueryObjectEXT');
 		const id = query ? query.native : 0;
-		const value = this.nativeInstance.getQueryObjectEXT(id, pname);
-		if (value instanceof java.lang.Object) {
-			return (WebGLRenderingContext as any).toPrimitive(value);
-		}
+		const value = getQueryObjectEXT(id, pname);
 		return value;
 	}
 }
@@ -427,6 +493,7 @@ export class WEBGL_draw_buffers {
 
 	private nativeInstance: any;
 
+	_drawBuffersWEBGL;
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 		this.COLOR_ATTACHMENT0_WEBGL = nativeInstance.COLOR_ATTACHMENT0_EXT;
@@ -463,9 +530,10 @@ export class WEBGL_draw_buffers {
 		this.DRAW_BUFFER15_WEBGL = nativeInstance.DRAW_BUFFER15_EXT;
 		this.MAX_COLOR_ATTACHMENTS_WEBGL = nativeInstance.MAX_COLOR_ATTACHMENTS_EXT;
 		this.MAX_DRAW_BUFFERS_WEBGL = nativeInstance.MAX_DRAW_BUFFERS_EXT;
+		this._drawBuffersWEBGL = nativeInstance.drawBuffersWEBGL;
 	}
 
 	public drawBuffersWEBGL(buffers: number[]) {
-		this.nativeInstance.drawBuffersWEBGL(buffers);
+		this._drawBuffersWEBGL(buffers);
 	}
 }

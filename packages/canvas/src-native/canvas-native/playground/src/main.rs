@@ -33,6 +33,8 @@ use canvas_webgl::prelude::{WebGLResult, WebGLState, WebGLVersion};
 fn main() {
     let event_loop = EventLoop::new();
     let window_builder = WindowBuilder::new();
+    let mut asset = ImageAsset::new();
+
 
     let window = window_builder
         .with_title("CanvasNative Demo")

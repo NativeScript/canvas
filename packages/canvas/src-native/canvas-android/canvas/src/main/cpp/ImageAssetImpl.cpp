@@ -136,6 +136,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                          auto path = arguments[0].asString(
                                                                  runtime).utf8(runtime);
+
                                                          auto done = canvas_native_image_asset_load_from_path(
                                                                  this->GetImageAsset(),
                                                                  rust::Str(path.c_str()));
@@ -200,9 +201,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                             size_t count) -> jsi::Value {
 
 
-                                                         if (!arguments[0].isNull() &&
-                                                             !arguments[0].isNull() &&
-                                                             arguments[0].isObject()) {
+                                                         if (arguments[0].isObject()) {
                                                              auto object = arguments[0].asObject(
                                                                      runtime);
                                                              if (!object.isArrayBuffer(

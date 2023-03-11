@@ -25,13 +25,28 @@ export class ImageAsset extends ImageAssetBase {
 		return this.native.error;
 	}
 
+	_methodCache = new Map();
+
+	_getMethod(name: string) {
+		const cached = this._methodCache.get(name);
+		if (cached === undefined) {
+			const ret = this.native[name];
+			this._methodCache.set(name, ret);
+			return ret;
+		}
+
+		return cached;
+	}
+
 	fromUrlSync(url: string): boolean {
-		return this.native.fromUrlSync(url);
+		const fromUrlSync = this._getMethod('fromUrlSync');
+		return fromUrlSync(url);
 	}
 
 	fromUrl(url: string) {
+		const fromUrlCb = this._getMethod('fromUrlCb');
 		return new Promise((resolve, reject) => {
-			this.native.fromUrlCb(url, (success, error) => {
+			fromUrlCb(url, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
@@ -42,6 +57,7 @@ export class ImageAsset extends ImageAssetBase {
 	}
 
 	fromFileSync(path: string): boolean {
+		const fromFileSync = this._getMethod('fromFileSync');
 		let realPath = path;
 		if (typeof realPath === 'string') {
 			if (realPath.startsWith('~/')) {
@@ -49,10 +65,11 @@ export class ImageAsset extends ImageAssetBase {
 			}
 		}
 
-		return this.native.fromFileSync(realPath);
+		return fromFileSync(realPath);
 	}
 
 	fromFile(path: string) {
+		const fromFileCb = this._getMethod('fromFileCb');
 		return new Promise((resolve, reject) => {
 			if (typeof path === 'string') {
 				if (path.startsWith('~/')) {
@@ -60,7 +77,7 @@ export class ImageAsset extends ImageAssetBase {
 				}
 			}
 
-			this.native.fromFileCb(path, (success, error) => {
+			fromFileCb(path, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
@@ -76,9 +93,9 @@ export class ImageAsset extends ImageAssetBase {
         return this.native.loadImageFromImage(image);
     }
 
-    loadFromNativeAsync(image: any) {
+    loadFromNative(image: any) {
         return new Promise((resolve, reject) => {
-            this.native.loadImageFromImageAsync(
+            this.native.loadImageFromImage(
                 image,
                 new org.nativescript.canvas.TNSImageAsset.Callback({
                     onError(error) {
@@ -95,10 +112,12 @@ export class ImageAsset extends ImageAssetBase {
     */
 
 	loadFromBytesSync(bytes: Uint8Array | Uint8ClampedArray) {
-		return this.native.fromBytesSync(bytes);
+		const fromBytesSync = this._getMethod('fromBytesSync');
+		return fromBytesSync(bytes);
 	}
 
 	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
+		const fromBytesCb = this._getMethod('fromBytesCb');
 		return new Promise((resolve, reject) => {
 			const callback = new org.nativescript.canvas.TNSImageAsset.Callback({
 				onError(error) {
@@ -109,7 +128,7 @@ export class ImageAsset extends ImageAssetBase {
 				},
 			});
 
-			this.native.fromBytesCb(bytes, (success, error) => {
+			fromBytesCb(bytes, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
@@ -120,34 +139,19 @@ export class ImageAsset extends ImageAssetBase {
 	}
 
 	scale(x: number, y: number) {
-		this.native.scale(x, y);
+		const scale = this._getMethod('scale');
+		scale(x, y);
 	}
 
 	saveSync(path: string, format: ImageAssetSaveFormat): boolean {
-		let realFormat;
-		switch (format) {
-			case ImageAssetSaveFormat.PNG:
-				realFormat = org.nativescript.canvas.TNSImageAssetFormat.PNG;
-				break;
-			case ImageAssetSaveFormat.ICO:
-				realFormat = org.nativescript.canvas.TNSImageAssetFormat.ICO;
-				break;
-			case ImageAssetSaveFormat.BMP:
-				realFormat = org.nativescript.canvas.TNSImageAssetFormat.BMP;
-				break;
-			case ImageAssetSaveFormat.TIFF:
-				realFormat = org.nativescript.canvas.TNSImageAssetFormat.TIFF;
-				break;
-			default:
-				realFormat = org.nativescript.canvas.TNSImageAssetFormat.JPG;
-				break;
-		}
-		return this.native.saveSync(path, realFormat);
+		const saveSync = this._getMethod('saveSync');
+		return saveSync(path, format);
 	}
 
-	saveAsync(path: string, format: ImageAssetSaveFormat): Promise<boolean> {
+	save(path: string, format: ImageAssetSaveFormat): Promise<boolean> {
+		const saveCb = this._getMethod('saveCb');
 		return new Promise((resolve, reject) => {
-			this.native.saveCb(path, format, (success, error) => {
+			saveCb(path, format, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {

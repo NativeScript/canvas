@@ -14,7 +14,7 @@ pub(crate) struct BitmapBytes {
 }
 
 impl BitmapBytes {
-    pub fn new(env: JNIEnv, bitmap: JObject) -> Self {
+    pub fn new(env: &JNIEnv, bitmap: JObject) -> Self {
         let bitmap_ref = env.new_global_ref(bitmap).unwrap();
         let native_interface = env.get_native_interface();
         let bitmap = bitmap_ref.as_obj().as_raw();
@@ -90,7 +90,7 @@ impl Drop for BitmapBytes {
     }
 }
 
-pub fn get_bytes_from_bitmap(env: JNIEnv, bitmap: JObject) -> Option<(Vec<u8>, AndroidBitmapInfo)> {
+pub fn get_bytes_from_bitmap(env: &JNIEnv, bitmap: JObject) -> Option<(Vec<u8>, AndroidBitmapInfo)> {
     let native_interface = env.get_native_interface();
     let bitmap = bitmap.as_raw();
     let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
@@ -136,7 +136,7 @@ pub fn bitmap_handler(
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_Bitmap_nativeLockBitmap(
-    env: JNIEnv,
+    env: &JNIEnv,
     _: JClass,
     bitmap: JObject,
 ) -> jlong {

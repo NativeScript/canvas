@@ -10,26 +10,30 @@ export function createSVGMatrix(): DOMMatrix {
 
 export * from './common';
 
+const defaultOpts = {
+	alpha: true,
+	antialias: true,
+	depth: true,
+	failIfMajorPerformanceCaveat: false,
+	powerPreference: 'default',
+	premultipliedAlpha: true,
+	preserveDrawingBuffer: false,
+	stencil: false,
+	desynchronized: false,
+	xrCompatible: false,
+};
+
 declare const org;
 export class Canvas extends CanvasBase {
 	_ready = false;
-	private _2dContextJni: CanvasRenderingContext2D;
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
-	private _webGLContextJni;
 	private _webgl2Context: WebGL2RenderingContext;
-	private _webGL2ContextJni;
 	private _canvas;
 	private _didPause: boolean = false;
 
-	constructor(useCpu = false) {
+	constructor() {
 		super();
-
-		if (arguments.length === 1) {
-			if (typeof arguments[0] === 'boolean') {
-				useCpu = arguments[0];
-			}
-		}
 		const activity = Application.android.foregroundActivity || Application.android.startActivity;
 		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 		(global as any).__canvasLoaded = true;
@@ -205,7 +209,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	get __native__context() {
-		return this._2dContext && this._webglContext && this._webgl2Context;
+		return this._2dContext?.native ?? this._webglContext?.native ?? this._webgl2Context?.native;
+	}
+
+	get native() {
+		return this.__native__context;
 	}
 
 	_didLayout = false;
@@ -226,42 +234,19 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._2dContext) {
-					/*
-					type: String,
-		alpha: Boolean,
-		antialias: Boolean,
-		depth: Boolean,
-		failIfMajorPerformanceCaveat: Boolean,
-		powerPreference: String,
-		premultipliedAlpha: Boolean,
-		preserveDrawingBuffer: Boolean,
-		stencil: Boolean,
-		desynchronized: Boolean,
-		xrCompatible: Boolean
-					*/
-
 					this._didLayout = false;
 					this._layoutNative();
 
-					const opts = this._handleContextOptions(type, options);
+					const opts = Object.assign(defaultOpts, this._handleContextOptions(type, options));
 
-					this._canvas.initContext(type);
-
-					// todo fix for offscreen rendering 
-					// returns zero for native context
-
-					
 					// this.parent?.style?.color?.android || -16777216
-
-					//this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
 					this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
 
 					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;
 				}
-
-				console.log('here');
 
 				// @ts-ignore
 				this._2dContext._type = '2d';
@@ -271,9 +256,9 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					const opts = Object.assign({ version: 'v1' }, this._handleContextOptions(type, options));
+					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -286,9 +271,9 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webgl2Context) {
-					const opts = Object.assign({ version: 'v2' }, this._handleContextOptions(type, options));
+					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;

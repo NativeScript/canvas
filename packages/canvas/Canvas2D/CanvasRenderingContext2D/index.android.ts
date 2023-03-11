@@ -13,8 +13,7 @@ import { Helpers } from '../../helpers';
 let ctor;
 
 export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
-	public static isDebug = true;
-	static colorCache = {};
+	public static isDebug = false;
 	private context;
 
 	static {
@@ -301,7 +300,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		return __toDataURL(arguments[0], arguments[1]);
 	}
 
-
 	addHitRegion(region: any): void {}
 
 	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
@@ -404,15 +402,17 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		if (image instanceof ImageSource) {
 			img = image.android;
 		} else if (image instanceof android.graphics.Bitmap) {
-			img = image;
+			const ptr = this._getMethod('__getPointer');
+			const createPattern = this._getMethod('__createPatternWithNative');
+			const pattern = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.createPattern(long(ptr), image, repetition);
+
+			return new CanvasPattern(createPattern(pattern));
 		} else if (image instanceof ImageAsset) {
 			img = image.native;
 		} else if (image instanceof Canvas) {
-			img = image.android;
+			img = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
-			if (image._imageSource instanceof ImageSource) {
-				img = image._imageSource.android;
-			} else if (image._image instanceof android.graphics.Bitmap) {
+			if (image._image instanceof android.graphics.Bitmap) {
 				img = image._image;
 			} else if (image._asset instanceof ImageAsset) {
 				img = image._asset.native;
@@ -420,9 +420,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 				img = ImageSource.fromFileSync(image.src).android;
 			}
 		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
-			img = image._canvas.android;
-		} else if (image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap) {
-			img = image.native;
+			img = image._canvas.native;
+		} else if (image instanceof ImageBitmap) {
+			img = (image as any).native;
 		}
 		if (!img) {
 			return null;
@@ -462,7 +462,7 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		} else if (image instanceof android.graphics.Bitmap) {
 			image = image;
 		} else if (image instanceof Canvas) {
-			image = image.android;
+			image = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (image._imageSource instanceof ImageSource) {
 				image = image._imageSource.android;
@@ -475,8 +475,8 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			}
 		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
 			image = image._canvas.android;
-		} else if (image instanceof ImageBitmap || image?.nativeInstance instanceof org.nativescript.canvas.TNSImageBitmap) {
-			image = image.native;
+		} else if (image instanceof ImageBitmap) {
+			image = (image as any).native;
 		}
 
 		if (args.length === 3) {

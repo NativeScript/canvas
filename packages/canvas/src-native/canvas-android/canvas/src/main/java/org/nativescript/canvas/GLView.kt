@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
+import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
@@ -14,9 +15,10 @@ import java.lang.ref.WeakReference
  */
 internal class GLView : TextureView, SurfaceTextureListener {
 	internal var isCreated = false
-	private var isCreatedWithZeroSized = false
+	internal var isCreatedWithZeroSized = false
 	internal var canvas: NSCCanvas? = null
 	internal var surface: Surface? = null
+	internal var st: SurfaceTexture? = null
 
 	constructor(context: Context) : super(context) {
 		init()
@@ -37,7 +39,7 @@ internal class GLView : TextureView, SurfaceTextureListener {
 			setScaling()
 		}
 
-	private var isReady = false
+	internal var isReady = false
 
 	constructor(context: Context, attrs: AttributeSet?) : super(
 		context, attrs
@@ -50,15 +52,18 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		surfaceTextureListener = this
 	}
 
+
 	@Synchronized
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+		if (isReady) {
+			return
+		}
 		if (!isCreated) {
 			if (width == 0 || height == 0) {
 				isCreatedWithZeroSized = true
 			}
 			if (!isCreatedWithZeroSized) {
-				this.surface = Surface(surfaceTexture)
-
+				this.surface = Surface(surface)
 				canvas?.let {
 					if (!isReady) {
 						it.listener?.contextReady()
@@ -72,11 +77,17 @@ internal class GLView : TextureView, SurfaceTextureListener {
 
 	@Synchronized
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+		if (isReady) {
+			return
+		}
 		if (!isCreatedWithZeroSized) {
 			// resize
 		}
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-			this.surface = Surface(surfaceTexture)
+			if (surface == st) {
+				return
+			}
+			this.surface = Surface(surface)
 			isCreatedWithZeroSized = false
 			canvas?.let {
 				if (!isReady) {
@@ -87,11 +98,12 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		}
 	}
 
+	@Synchronized
 	override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-		//mGLContext.destroy();
 		isCreated = false
 		return true
 	}
 
+	@Synchronized
 	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
 }

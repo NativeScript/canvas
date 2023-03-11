@@ -201,7 +201,6 @@ export class HTMLImageElement extends Element {
 							this._asset
 								.fromFile(this.src)
 								.then((done) => {
-									console.log();
 									this.width = this._asset.width;
 									this.height = this._asset.height;
 									this.complete = true;

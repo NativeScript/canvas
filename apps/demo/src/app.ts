@@ -14,6 +14,10 @@ if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Lo
 	direction = 1;
 }
 
+Application.on('discardedError', args =>{
+	console.log(args.error);
+})
+
 const ppi = (Utils.ad.getApplicationContext() as android.content.Context).getResources().getDisplayMetrics().density * 160;
 
 const asset = new ImageAsset();

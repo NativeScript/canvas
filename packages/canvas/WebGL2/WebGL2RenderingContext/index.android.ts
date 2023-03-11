@@ -519,7 +519,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.android);
 		} else if (source instanceof ImageAsset) {
 			texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
-		} else if (source instanceof ImageBitmap || source?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
+		} else if (source instanceof ImageBitmap) {
 			texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 			if (source._imageSource instanceof ImageSource) {
@@ -533,7 +533,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				texImage3D(target, level, internalformat, width, height, depth, border, format, type, result ? result.android : null);
 			}
 		} else if (source && typeof source.tagName === 'string' && source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
-			texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._canvas.android);
+			texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._canvas.native);
 		}
 	}
 
@@ -566,7 +566,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.android);
 		} else if (srcData instanceof ImageAsset) {
 			texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
-		} else if (srcData instanceof ImageBitmap || srcData?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
+		} else if (srcData instanceof ImageBitmap) {
 			texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData && typeof srcData.tagName === 'string' && (srcData.tagName === 'IMG' || srcData.tagName === 'IMAGE')) {
 			if (srcData._imageSource instanceof ImageSource) {
@@ -580,7 +580,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, result ? result.android : null);
 			}
 		} else if (srcData && typeof srcData.tagName === 'string' && srcData.tagName === 'CANVAS' && srcData._canvas instanceof TNSCanvas) {
-			texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._canvas.android);
+			texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._canvas.native);
 		}
 	}
 

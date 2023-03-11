@@ -23,8 +23,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		// const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 		// const canvas2 = document.createElement('canvas');
 		// const ctx2 = canvas2.getContext('2d') as CanvasRenderingContext2D;
-		
-	
+
 		// ctx.font = 'normal normal normal 150px times';
 		// ctx2.font = 'normal normal normal 150px times';
 		// ctx.shadowBlur = 10;
@@ -41,7 +40,6 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		// ctx2.fillText('Help2!!!', 0, 300);
 		// ctx.drawImage(canvas2, 0, 0);
 
-
 		//this.text(canvas);
 		//this.drawPatternWithCanvas(canvas);
 		//this.simple(canvas);
@@ -54,7 +52,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
-		//this.starWarp(canvas)
+		this.starWarp(canvas);
 		// this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
 		//this.multiPassShaderGenMesh(canvas);

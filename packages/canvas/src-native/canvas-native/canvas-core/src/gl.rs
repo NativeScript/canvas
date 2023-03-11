@@ -1,12 +1,9 @@
-use std::ffi::{CString};
+use std::ffi::CString;
 use std::num::NonZeroU32;
-
 use std::sync::Arc;
 
 #[cfg(target_os = "macos")]
-use glutin::api::cgl::{
-    context::PossiblyCurrentContext, display::Display, surface::Surface,
-};
+use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
 #[cfg(any(target_os = "ios", target_os = "android"))]
 use glutin::api::egl::{
     config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
@@ -15,8 +12,8 @@ use glutin::config::{
     Api, AsRawConfig, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig,
 };
 use glutin::context::{ContextApi, GlContext, Version};
-use glutin::display::GetGlDisplay;
 use glutin::display::{AsRawDisplay, DisplayApiPreference};
+use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, WindowSurface};
@@ -555,7 +552,7 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::UiKit(UiKitDisplayHandle::empty())) } {
             Ok(display) => unsafe {
                 gl_bindings::load_with(|symbol| {
                     let symbol = CString::new(symbol).unwrap();
@@ -635,7 +632,7 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::UiKit(UiKitDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
             Ok(display) => unsafe {
                 gl_bindings::load_with(|symbol| {
                     let symbol = CString::new(symbol).unwrap();
@@ -794,7 +791,23 @@ impl GLContext {
     }
 
     pub fn remove_if_current(&self) {
-        if let Some(context) = self.inner.write().context.as_ref() {}
+        #[cfg(any(target_os = "android", target_os = "ios"))]
+        {
+            let display = self
+                .display()
+                .map(|display| match display.raw_display() {
+                    RawDisplay::Egl(display) => display,
+                    _ => 0 as _,
+                })
+                .unwrap_or(egl::EGL_NO_DISPLAY as _);
+
+            egl::make_current(
+                display as _,
+                egl::EGL_NO_SURFACE,
+                egl::EGL_NO_SURFACE,
+                egl::EGL_NO_CONTEXT,
+            );
+        }
     }
 
     pub fn swap_buffers(&self) -> bool {

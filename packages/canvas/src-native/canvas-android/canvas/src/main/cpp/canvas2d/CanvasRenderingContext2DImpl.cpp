@@ -32,7 +32,8 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
 
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(61);
+    ret.reserve(64);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__getPointer")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__resize")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("font")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")));
@@ -63,7 +64,9 @@ std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi:
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("closePath")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createImageData")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createLinearGradient")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createRadialGradient")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createPattern")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__createPatternWithNative")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawImage")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("ellipse")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fill")));
@@ -102,6 +105,7 @@ void
 CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &name,
                                   const jsi::Value &value) {
     auto methodName = name.utf8(runtime);
+
     if (methodName == "font") {
         auto val = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_font(this->GetContext(), rust::Str(val.c_str()));
@@ -219,6 +223,13 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
 
 jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
+
+    if (methodName == "__getPointer") {
+        auto ptr = (intptr_t *) &this->GetContext();
+        auto ret = std::to_string((intptr_t) ptr);
+        return jsi::String::createFromAscii(runtime, ret);
+    }
+
     if (methodName == "__resize") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
@@ -577,7 +588,7 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
     } else if (methodName == "createPattern") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
+                                                     2,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
@@ -590,76 +601,113 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto object = arguments[0].asObject(
                                                                      runtime);
 
-                                                             auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                     runtime, object);
 
+                                                             try {
+                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                         runtime, object);
 
-                                                             if (image_asset != nullptr) {
-                                                                 auto rep = arguments[1].asString(
-                                                                         runtime).utf8(runtime);
-                                                                 rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(
-                                                                         this->GetContext(),
-                                                                         image_asset->GetImageAsset(),
-                                                                         rust::Str(rep.c_str()));
-                                                                 auto type = canvas_native_context_get_style_type(
-                                                                         *pattern);
-                                                                 if (type == PaintStyleType::None) {
-                                                                     return jsi::Value::undefined();
-                                                                 } else {
-                                                                     auto ret = std::make_shared<CanvasPattern>(
-                                                                             std::move(pattern));
-                                                                     return jsi::Object::createFromHostObject(
-                                                                             runtime, ret);
+                                                                 if (image_asset != nullptr) {
+                                                                     auto rep = arguments[1].asString(
+                                                                             runtime).utf8(runtime);
+                                                                     rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(
+                                                                             this->GetContext(),
+                                                                             image_asset->GetImageAsset(),
+                                                                             rust::Str(rep.c_str()));
+                                                                     auto type = canvas_native_context_get_style_type(
+                                                                             *pattern);
+                                                                     if (type == PaintStyleType::None) {
+                                                                         return jsi::Value::undefined();
+                                                                     } else {
+                                                                         auto ret = std::make_shared<CanvasPattern>(
+                                                                                 std::move(pattern));
+                                                                         return jsi::Object::createFromHostObject(
+                                                                                 runtime, ret);
+                                                                     }
                                                                  }
-                                                             }
+                                                             }catch(...){}
+
+                                                             try {
+                                                                 auto canvas_2d = getHostObject<CanvasRenderingContext2DImpl>(
+                                                                         runtime, object);
+                                                                 if (canvas_2d != nullptr) {
+                                                                     auto rep = arguments[1].asString(
+                                                                             runtime).utf8(runtime);
+                                                                     rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
+                                                                             this->GetContext(),
+                                                                             canvas_2d->GetContext(),
+                                                                             rust::Str(rep.c_str()));
+                                                                     auto type = canvas_native_context_get_style_type(
+                                                                             *pattern);
+                                                                     if (type == PaintStyleType::None) {
+                                                                         return jsi::Value::undefined();
+                                                                     } else {
+                                                                         auto ret = std::make_shared<CanvasPattern>(
+                                                                                 std::move(pattern));
+                                                                         return jsi::Object::createFromHostObject(
+                                                                                 runtime, ret);
+                                                                     }
+                                                                 }
+                                                             }catch(...){}
+
+                                                             try {
+                                                                 auto webgl = getHostObject<WebGLRenderingContextBase>(
+                                                                         runtime, object);
+                                                                 if (webgl != nullptr) {
+                                                                     auto rep = arguments[1].asString(
+                                                                             runtime).utf8(runtime);
+                                                                     auto pattern = canvas_native_context_create_pattern_webgl(
+                                                                             webgl->GetState(),
+                                                                             this->GetContext(),
+                                                                             rust::Str(rep.c_str()));
+                                                                     auto type = canvas_native_context_get_style_type(
+                                                                             *pattern);
+                                                                     if (type == PaintStyleType::None) {
+                                                                         return jsi::Value::undefined();
+                                                                     } else {
+                                                                         auto ret = std::make_shared<CanvasPattern>(
+                                                                                 std::move(pattern));
+                                                                         return jsi::Object::createFromHostObject(
+                                                                                 runtime, ret);
+                                                                     }
+                                                                 }
+                                                             }catch(...){}
 
 
-                                                             auto canvas_2d = getHostObject<CanvasRenderingContext2DImpl>(
-                                                                     runtime, object);
-                                                             if (canvas_2d != nullptr) {
-                                                                 auto rep = arguments[1].asString(
-                                                                         runtime).utf8(runtime);
-                                                                 rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
-                                                                         this->GetContext(),
-                                                                         canvas_2d->GetContext(),
-                                                                         rust::Str(rep.c_str()));
-                                                                 auto type = canvas_native_context_get_style_type(
-                                                                         *pattern);
-                                                                 if (type == PaintStyleType::None) {
-                                                                     return jsi::Value::undefined();
-                                                                 } else {
-                                                                     auto ret = std::make_shared<CanvasPattern>(
-                                                                             std::move(pattern));
-                                                                     return jsi::Object::createFromHostObject(
-                                                                             runtime, ret);
-                                                                 }
-                                                             }
-                                                             auto webgl = getHostObject<WebGLRenderingContextBase>(
-                                                                     runtime, object);
-                                                             if (webgl != nullptr) {
-                                                                 auto rep = arguments[1].asString(
-                                                                         runtime).utf8(runtime);
-                                                                 auto pattern = canvas_native_context_create_pattern_webgl(
-                                                                         webgl->GetState(),
-                                                                         this->GetContext(),
-                                                                         rust::Str(rep.c_str()));
-                                                                 auto type = canvas_native_context_get_style_type(
-                                                                         *pattern);
-                                                                 if (type == PaintStyleType::None) {
-                                                                     return jsi::Value::undefined();
-                                                                 } else {
-                                                                     auto ret = std::make_shared<CanvasPattern>(
-                                                                             std::move(pattern));
-                                                                     return jsi::Object::createFromHostObject(
-                                                                             runtime, ret);
-                                                                 }
-                                                             }
                                                          }
 
 
                                                          return jsi::Value::undefined();
                                                      }
         );
+
+    } else if (methodName == "__createPatternWithNative") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [](jsi::Runtime &runtime,
+                                                        const jsi::Value &thisValue,
+                                                        const jsi::Value *arguments,
+                                                        size_t count) -> jsi::Value {
+
+                                                         auto ptr = getPointerValue(runtime,
+                                                                                    arguments[0]);
+
+                                                         auto pattern = canvas_native_pattern_from_ptr(
+                                                                 ptr);
+                                                         auto type = canvas_native_context_get_style_type(
+                                                                 *pattern);
+                                                         if (type == PaintStyleType::None) {
+                                                             return jsi::Value::undefined();
+                                                         } else {
+                                                             auto ret = std::make_shared<CanvasPattern>(
+                                                                     std::move(pattern));
+                                                             return jsi::Object::createFromHostObject(
+                                                                     runtime, ret);
+                                                         }
+
+                                                     }
+        );
+
     } else if (methodName == "createRadialGradient") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
@@ -719,27 +767,34 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto dy = static_cast<float>(arguments[2].asNumber());
 
 
-                                                             auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                     runtime, image);
+                                                             try {
+                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                         runtime, image);
 
-                                                             if (image_asset != nullptr) {
-                                                                 canvas_native_context_draw_image_dx_dy_asset(
-                                                                         this->GetContext(),
-                                                                         image_asset->GetImageAsset(),
-                                                                         dx, dy);
-                                                                 this->UpdateInvalidateState();
-                                                                 return jsi::Value::undefined();
-                                                             }
+                                                                 if (image_asset != nullptr) {
+                                                                     canvas_native_context_draw_image_dx_dy_asset(
+                                                                             this->GetContext(),
+                                                                             image_asset->GetImageAsset(),
+                                                                             dx, dy);
+                                                                     this->UpdateInvalidateState();
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             }catch (...){}
 
-                                                             auto image_bitmap = getHostObject<ImageBitmapImpl>(
-                                                                     runtime, image);
-                                                             if (image_bitmap != nullptr) {
-                                                                 canvas_native_context_draw_image_dx_dy_asset(
-                                                                         this->GetContext(),
-                                                                         image_bitmap->GetImageAsset(),
-                                                                         dx, dy);
-                                                                 this->UpdateInvalidateState();
-                                                             }
+
+                                                             try {
+                                                                 auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                                                                         runtime, image);
+                                                                 if (image_bitmap != nullptr) {
+                                                                     canvas_native_context_draw_image_dx_dy_asset(
+                                                                             this->GetContext(),
+                                                                             image_bitmap->GetImageAsset(),
+                                                                             dx, dy);
+                                                                     this->UpdateInvalidateState();
+                                                                 }
+                                                             }catch (...){}
+
+
                                                          } else if (count == 5) {
                                                              auto image = arguments[0].asObject(
                                                                      runtime);
@@ -748,31 +803,39 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto dWidth = (float) arguments[3].asNumber();
                                                              auto dHeight = (float) arguments[4].asNumber();
 
-                                                             auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                     runtime, image);
-                                                             if (image_asset != nullptr) {
-                                                                 canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-                                                                         this->GetContext(),
-                                                                         image_asset->GetImageAsset(),
-                                                                         dx, dy,
-                                                                         dWidth,
-                                                                         dHeight);
-                                                                 this->UpdateInvalidateState();
-                                                                 return jsi::Value::undefined();
-                                                             }
+                                                             try {
+                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                         runtime, image);
+                                                                 if (image_asset != nullptr) {
+                                                                     canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                                                                             this->GetContext(),
+                                                                             image_asset->GetImageAsset(),
+                                                                             dx, dy,
+                                                                             dWidth,
+                                                                             dHeight);
+                                                                     this->UpdateInvalidateState();
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             }catch (...){}
 
-                                                             auto image_bitmap = getHostObject<ImageBitmapImpl>(
-                                                                     runtime, image);
-                                                             if (image_bitmap != nullptr) {
-                                                                 canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-                                                                         this->GetContext(),
-                                                                         image_bitmap->GetImageAsset(),
-                                                                         dx, dy,
-                                                                         dWidth,
-                                                                         dHeight);
-                                                                 this->UpdateInvalidateState();
-                                                                 return jsi::Value::undefined();
-                                                             }
+                                                             try {
+                                                                 auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                                                                         runtime, image);
+                                                                 if (image_bitmap != nullptr) {
+                                                                     canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                                                                             this->GetContext(),
+                                                                             image_bitmap->GetImageAsset(),
+                                                                             dx, dy,
+                                                                             dWidth,
+                                                                             dHeight);
+                                                                     this->UpdateInvalidateState();
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             }catch (...){}
+
+
+
+
                                                          } else if (count == 9) {
                                                              auto image = arguments[0].asObject(
                                                                      runtime);
@@ -785,34 +848,39 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              auto dWidth = (float) arguments[7].asNumber();
                                                              auto dHeight = (float) arguments[8].asNumber();
 
+                                                             try {
+                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                         runtime, image);
+                                                                 if (image_asset != nullptr) {
+                                                                     canvas_native_context_draw_image_asset(
+                                                                             this->GetContext(),
+                                                                             image_asset->GetImageAsset(),
+                                                                             sx,
+                                                                             sy, sWidth, sHeight,
+                                                                             dx,
+                                                                             dy, dWidth, dHeight);
+                                                                     this->UpdateInvalidateState();
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             }catch (...){}
 
-                                                             auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                     runtime, image);
-                                                             if (image_asset != nullptr) {
-                                                                 canvas_native_context_draw_image_asset(
-                                                                         this->GetContext(),
-                                                                         image_asset->GetImageAsset(),
-                                                                         sx,
-                                                                         sy, sWidth, sHeight,
-                                                                         dx,
-                                                                         dy, dWidth, dHeight);
-                                                                 this->UpdateInvalidateState();
-                                                                 return jsi::Value::undefined();
-                                                             }
+                                                             try {
+                                                                 auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                                                                         runtime, image);
+                                                                 if (image_bitmap != nullptr) {
+                                                                     canvas_native_context_draw_image_asset(
+                                                                             this->GetContext(),
+                                                                             image_bitmap->GetImageAsset(),
+                                                                             sx,
+                                                                             sy, sWidth, sHeight,
+                                                                             dx,
+                                                                             dy, dWidth, dHeight);
+                                                                     this->UpdateInvalidateState();
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             }catch (...){}
 
-                                                             auto image_bitmap = getHostObject<ImageBitmapImpl>(
-                                                                     runtime, image);
-                                                             if (image_bitmap != nullptr) {
-                                                                 canvas_native_context_draw_image_asset(
-                                                                         this->GetContext(),
-                                                                         image_bitmap->GetImageAsset(),
-                                                                         sx,
-                                                                         sy, sWidth, sHeight,
-                                                                         dx,
-                                                                         dy, dWidth, dHeight);
-                                                                 this->UpdateInvalidateState();
-                                                                 return jsi::Value::undefined();
-                                                             }
+
                                                          }
 
                                                          return jsi::Value::undefined();

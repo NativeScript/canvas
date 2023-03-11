@@ -1,5 +1,6 @@
 import { DemoSharedBase } from '../utils';
 import * as THREE from 'three';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { TDSLoader } from 'three/examples/jsm/loaders/TDSLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -51,10 +52,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
-		//this.threeKeyframes(this.canvas);
+		this.threeKeyframes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		this.gtlfLoader(this.canvas);
+		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
@@ -1040,7 +1041,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene = new THREE.Scene();
 			scene.background = new THREE.Color(0xf0f0f0);
 
-			var loader = new THREE.FontLoader();
+			var loader = new FontLoader();
 			loader.load(this.root + '/fonts/helvetiker_regular.typeface.json', function (font) {
 				var xMid, text;
 

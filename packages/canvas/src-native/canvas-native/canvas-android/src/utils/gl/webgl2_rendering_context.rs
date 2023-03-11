@@ -421,7 +421,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexImage3DBitmap(
-    env: JNIEnv,
+    env: &JNIEnv,
     _: JClass,
     target: jint,
     level: jint,
@@ -879,7 +879,7 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingCon
 
 #[no_mangle]
 pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGL2RenderingContext_nativeTexSubImage3DBitmap(
-    env: JNIEnv,
+    env: &JNIEnv,
     _: JClass,
     target: jint,
     level: jint,

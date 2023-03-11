@@ -3244,11 +3244,6 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
-                                                         // target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: any
-// target, level, internalformat, width, height, depth, border, format, type, srcData, srcOffset
-// target, level, internalformat, width, height, depth, border, format, type, source
-
-
 
                                                          if (count == 10) {
                                                              auto target = (int32_t) arguments[0].asNumber();
@@ -3308,25 +3303,51 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                      return jsi::Value::undefined();
                                                                  }
 
+                                                                 try {
+                                                                     auto image_asset = getHostObject<ImageAssetImpl>(
+                                                                             runtime, arguments[9]);
+                                                                     if (image_asset != nullptr) {
+                                                                         canvas_native_webgl2_tex_image3d_asset(
+                                                                                 target,
+                                                                                 level,
+                                                                                 internalformat,
+                                                                                 width,
+                                                                                 height,
+                                                                                 depth,
+                                                                                 border,
+                                                                                 format,
+                                                                                 type,
+                                                                                 image_asset->GetImageAsset(),
+                                                                                 this->GetState()
+                                                                         );
 
-                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                         runtime, arguments[9]);
-                                                                 if (image_asset != nullptr) {
-                                                                     canvas_native_webgl2_tex_image3d_asset(
-                                                                             target,
-                                                                             level,
-                                                                             internalformat,
-                                                                             width,
-                                                                             height,
-                                                                             depth,
-                                                                             border,
-                                                                             format,
-                                                                             type,
-                                                                             image_asset->GetImageAsset(),
-                                                                             this->GetState()
-                                                                     );
-                                                                     return jsi::Value::undefined();
-                                                                 }
+                                                                         return jsi::Value::undefined();
+                                                                     }
+                                                                 } catch (...) {}
+
+                                                                 try {
+                                                                     auto image_bitmap = getHostObject<ImageBitmapImpl>(
+                                                                             runtime, arguments[9]);
+                                                                     if (image_bitmap != nullptr) {
+                                                                         canvas_native_webgl2_tex_image3d_asset(
+                                                                                 target,
+                                                                                 level,
+                                                                                 internalformat,
+                                                                                 width,
+                                                                                 height,
+                                                                                 depth,
+                                                                                 border,
+                                                                                 format,
+                                                                                 type,
+                                                                                 image_bitmap->GetImageAsset(),
+                                                                                 this->GetState()
+                                                                         );
+
+                                                                         return jsi::Value::undefined();
+                                                                     }
+                                                                 } catch (...) {}
+
+
                                                              }
                                                          } else if (count > 10) {
 
@@ -3747,7 +3768,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                          return jsi::Value::undefined();
                                                      }
         );
-    } else if (methodName == "Uniform2uiv") {
+    } else if (methodName == "uniform2uiv") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      1,

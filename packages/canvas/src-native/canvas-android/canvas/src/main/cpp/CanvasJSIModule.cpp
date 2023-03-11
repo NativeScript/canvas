@@ -3,6 +3,9 @@
 //
 
 #include "CanvasJSIModule.h"
+#include "JSICallback.h"
+#include "JSIRuntime.h"
+#include "Helpers.h"
 
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
@@ -254,7 +257,6 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                     Options options;
 
-
                     if (len == 0) {
                         throw jsi::JSINativeException("Illegal constructor");
                     }
@@ -287,6 +289,309 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         cb->asObject(runtime).asFunction(runtime).call(runtime, {std::move(error),
                                                                                  jsi::Value::undefined()});
                         return jsi::Value::undefined();
+                    }
+
+
+                    if (arguments[0].isObject()) {
+                        auto imageObject = arguments[0].asObject(runtime);
+                        auto isArrayBuffer = imageObject.isArrayBuffer(runtime);
+                        auto isTypedArray = imageObject.isTypedArray(runtime);
+                        if (isArrayBuffer || isTypedArray) {
+
+                            if (len == 1 || len == 2) {
+                                if (len == 2) {
+                                    options = ImageBitmapImpl::HandleOptions(runtime, arguments[1]);
+                                }
+
+                                auto asset = canvas_native_image_asset_create();
+
+
+                                auto ret = std::make_shared<ImageBitmapImpl>(
+                                        std::move(canvas_native_image_asset_shared_clone(*asset)));
+
+                                auto cbFunc = std::make_shared<jsi::Value>(
+                                        runtime, arguments[count - 1]);
+
+                                auto jsi_callback = new JSICallback(
+                                        std::shared_ptr<jsi::Value>(
+                                                cbFunc));
+
+                                jsi_callback->data_ = std::move(ret);
+
+
+                                ALooper_addFd(jsi_callback->looper_,
+                                              jsi_callback->fd_[0],
+                                              ALOOPER_POLL_CALLBACK,
+                                              ALOOPER_EVENT_INPUT,
+                                              [](int fd, int events,
+                                                 void *data) {
+                                                  auto cb = static_cast<JSICallback *>(data);
+                                                  bool done;
+                                                  read(fd, &done,
+                                                       sizeof(bool));
+
+                                                  jsi::Runtime &rt = *jsi_runtime;
+
+                                                  auto func = cb->value_->asObject(
+                                                          rt).asFunction(
+                                                          rt);
+
+                                                  if (done) {
+
+                                                      func.call(rt, {jsi::Value::null(),
+                                                                     jsi::Object::createFromHostObject(
+                                                                             rt,
+                                                                             std::move(
+                                                                                     cb->data_))});
+
+                                                  } else {
+
+                                                      auto error = jsi::String::createFromAscii(rt,
+                                                                                                "Failed to load image");
+                                                      func.call(rt,
+                                                                {std::move(
+                                                                        error),
+                                                                 jsi::Value::null()});
+
+                                                  }
+
+                                                  delete static_cast<JSICallback *>(data);
+                                                  return 0;
+                                              }, jsi_callback);
+
+                                ALooper_wake(jsi_callback->looper_);
+
+                                auto ab = std::make_shared<jsi::Value>(runtime,
+                                                                       std::move(arguments[0]));
+
+                                if (isArrayBuffer) {
+
+
+                                    std::thread thread(
+                                            [&runtime, ab, jsi_callback, &options, cbFunc](
+                                                    rust::Box<ImageAsset> asset) {
+
+                                                auto arrayBuffer = ab->asObject(
+                                                        runtime).getArrayBuffer(runtime);
+
+                                                auto data = arrayBuffer.data(runtime);
+                                                auto size = arrayBuffer.size(runtime);
+
+                                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+                                                        rust::Slice<const uint8_t>(data, size),
+                                                        options.flipY,
+                                                        options.premultiplyAlpha,
+                                                        options.colorSpaceConversion,
+                                                        options.resizeQuality,
+                                                        options.resizeWidth,
+                                                        options.resizeHeight,
+                                                        *asset);
+
+                                                write(jsi_callback->fd_[1],
+                                                      &done,
+                                                      sizeof(bool));
+
+
+                                            }, std::move(asset));
+
+                                    thread.detach();
+                                    return jsi::Value::undefined();
+                                }
+
+                                if (isTypedArray) {
+
+                                    std::thread thread(
+                                            [&runtime, ab, jsi_callback, &options, cbFunc](
+                                                    rust::Box<ImageAsset> asset) {
+
+                                                auto array = ab->asObject(runtime).getTypedArray(
+                                                        runtime);
+                                                auto data = GetTypedArrayData<const uint8_t>(
+                                                        runtime, array);
+
+                                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+                                                        data,
+                                                        options.flipY,
+                                                        options.premultiplyAlpha,
+                                                        options.colorSpaceConversion,
+                                                        options.resizeQuality,
+                                                        options.resizeWidth,
+                                                        options.resizeHeight,
+                                                        *asset);
+
+                                                write(jsi_callback->fd_[1],
+                                                      &done,
+                                                      sizeof(bool));
+
+
+                                            }, std::move(asset));
+
+                                    thread.detach();
+
+                                }
+
+
+                                return jsi::Value::undefined();
+                            } else if (len == 5 || len == 6) {
+
+                                auto cbFunc = std::make_shared<jsi::Value>(
+                                        runtime, arguments[count - 1]);
+
+                                if (len == 6) {
+                                    options = ImageBitmapImpl::HandleOptions(runtime, arguments[5]);
+                                }
+
+                                auto asset = canvas_native_image_asset_create();
+
+                                auto asset_clone = canvas_native_image_asset_shared_clone(*asset);
+
+                                auto ret = std::make_shared<ImageBitmapImpl>(
+                                        std::move(asset_clone));
+
+                                auto jsi_callback = new JSICallback(
+                                        std::shared_ptr<jsi::Value>(
+                                                cbFunc));
+
+                                jsi_callback->data_ = std::move(ret);
+
+
+                                ALooper_addFd(jsi_callback->looper_,
+                                              jsi_callback->fd_[0],
+                                              ALOOPER_POLL_CALLBACK,
+                                              ALOOPER_EVENT_INPUT,
+                                              [](int fd, int events,
+                                                 void *data) {
+                                                  auto cb = static_cast<JSICallback *>(data);
+                                                  bool done;
+                                                  read(fd, &done,
+                                                       sizeof(bool));
+
+                                                  jsi::Runtime &rt = *jsi_runtime;
+
+                                                  auto func = cb->value_->asObject(
+                                                          rt).asFunction(
+                                                          rt);
+
+                                                  if (done) {
+
+                                                      func.call(rt, {jsi::Value::null(),
+                                                                     jsi::Object::createFromHostObject(
+                                                                             rt,
+                                                                             std::move(
+                                                                                     cb->data_))});
+
+                                                  } else {
+
+                                                      auto error = jsi::String::createFromAscii(rt,
+                                                                                                "Failed to load image");
+                                                      func.call(rt,
+                                                                {std::move(
+                                                                        error),
+                                                                 jsi::Value::null()});
+
+                                                  }
+
+                                                  delete static_cast<JSICallback *>(data);
+                                                  return 0;
+                                              }, jsi_callback);
+
+                                ALooper_wake(jsi_callback->looper_);
+
+                                auto ab = std::make_shared<jsi::Value>(runtime,
+                                                                       std::move(arguments[0]));
+
+
+                                if (isArrayBuffer) {
+                                    std::thread thread(
+                                            [&runtime, ab, jsi_callback, &options, cbFunc](
+                                                    rust::Box<ImageAsset> asset,
+                                                    float sx_or_options,
+                                                    float sy,
+                                                    float sw,
+                                                    float sh) {
+
+                                                auto arrayBuffer = ab->asObject(
+                                                        runtime).getArrayBuffer(runtime);
+
+                                                auto data = arrayBuffer.data(runtime);
+                                                auto size = arrayBuffer.size(runtime);
+
+                                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+                                                        rust::Slice<const uint8_t>(data, size),
+                                                        sx_or_options,
+                                                        sy,
+                                                        sw,
+                                                        sh,
+                                                        options.flipY,
+                                                        options.premultiplyAlpha,
+                                                        options.colorSpaceConversion,
+                                                        options.resizeQuality,
+                                                        options.resizeWidth,
+                                                        options.resizeHeight, *asset);
+
+
+                                                write(jsi_callback->fd_[1],
+                                                      &done,
+                                                      sizeof(bool));
+
+                                            }, std::move(asset),
+                                            (float) sx_or_options->asNumber(),
+                                            (float) sy->asNumber(),
+                                            (float) sw->asNumber(),
+                                            (float) sh->asNumber());
+
+                                    thread.detach();
+
+                                    return jsi::Value::undefined();
+                                }
+
+                                if (isTypedArray) {
+
+                                    std::thread thread(
+                                            [&runtime, ab, jsi_callback, &options, cbFunc](
+                                                    rust::Box<ImageAsset> asset,
+                                                    float sx_or_options,
+                                                    float sy,
+                                                    float sw,
+                                                    float sh) {
+
+                                                auto array = ab->asObject(runtime).getTypedArray(
+                                                        runtime);
+                                                auto data = GetTypedArrayData<const uint8_t>(
+                                                        runtime, array);
+
+                                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+                                                        data,
+                                                        sx_or_options,
+                                                        sy,
+                                                        sw,
+                                                        sh,
+                                                        options.flipY,
+                                                        options.premultiplyAlpha,
+                                                        options.colorSpaceConversion,
+                                                        options.resizeQuality,
+                                                        options.resizeWidth,
+                                                        options.resizeHeight, *asset);
+
+
+                                                write(jsi_callback->fd_[1],
+                                                      &done,
+                                                      sizeof(bool));
+
+                                            }, std::move(asset),
+                                            (float) sx_or_options->asNumber(),
+                                            (float) sy->asNumber(),
+                                            (float) sw->asNumber(),
+                                            (float) sh->asNumber());
+
+                                    thread.detach();
+
+                                }
+
+
+                                return jsi::Value::undefined();
+                            }
+                        }
                     }
 
 
@@ -353,155 +658,6 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         return jsi::Value::undefined();
                     }
 
-                    auto object = image->asObject(runtime);
-
-                    // NS Blob
-                    auto nsBuffer = object.getProperty(runtime, "_buffer");
-
-
-                    if (nsBuffer.isNull() || nsBuffer.isUndefined()) {
-                        auto error = jsi::String::createFromAscii(runtime, "Failed to load image");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, {std::move(error),
-                                                                                 jsi::Value::undefined()});
-                        return jsi::Value::undefined();
-
-                    }
-
-                    if (!nsBuffer.asObject(runtime).isArrayBuffer(runtime)) {
-
-                    }
-
-                    auto ab = nsBuffer.asObject(runtime).getArrayBuffer(runtime);
-                    auto data = rust::Slice<const uint8_t>(ab.data(runtime), ab.size(runtime));
-
-                    if (len >= 4 && (sw->isNumber() && sw->asNumber() == 0)) {
-                        auto error = jsi::String::createFromAscii(runtime,
-                                                                  "Failed to execute 'createImageBitmap' : The crop rect width is 0");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, {std::move(error),
-                                                                                 jsi::Value::undefined()});
-                        return jsi::Value::undefined();
-                    }
-                    if (len >= 5 && (sh->isNumber() && sh->asNumber() == 0)) {
-                        auto error = jsi::String::createFromAscii(runtime,
-                                                                  "Failed to execute 'createImageBitmap' : The crop rect height is 0");
-                        cb->asObject(runtime).asFunction(runtime).call(runtime, {std::move(error),
-                                                                                 jsi::Value::undefined()});
-                        return jsi::Value::undefined();
-                    }
-
-
-                    if (len == 1 || len == 2) {
-                        if (len == 2) {
-                            options = ImageBitmapImpl::HandleOptions(runtime, arguments[1]);
-                        }
-
-                        auto asset = canvas_native_image_asset_create();
-
-                        auto cbFunc = std::make_shared<jsi::Value>(
-                                runtime, arguments[count - 1]);
-
-                        std::thread thread(
-                                [&data, &runtime, &options, cbFunc](rust::Box<ImageAsset> asset) {
-
-
-                                    auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
-                                            data,
-                                            options.flipY,
-                                            options.premultiplyAlpha,
-                                            options.colorSpaceConversion,
-                                            options.resizeQuality,
-                                            options.resizeWidth,
-                                            options.resizeHeight,
-                                            *asset);
-
-
-                                    if (!done) {
-                                        auto error = jsi::String::createFromAscii(runtime,
-                                                                                  "Failed to load image");
-                                        cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
-                                                                                           {std::move(
-                                                                                                   error),
-                                                                                            jsi::Value::undefined()});
-                                    } else {
-                                        auto ret = std::make_shared<ImageBitmapImpl>(
-                                                std::move(asset));
-
-                                        auto object = jsi::Object::createFromHostObject(runtime,
-                                                                                        std::move(
-                                                                                                ret));
-                                        cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
-                                                                                           {jsi::Value::undefined(),
-                                                                                            std::move(
-                                                                                                    object)});
-                                    }
-                                }, std::move(asset));
-
-                        thread.detach();
-
-                        return jsi::Value::undefined();
-                    } else if (len == 5 || len == 6) {
-
-                        auto cbFunc = std::make_shared<jsi::Value>(
-                                runtime, arguments[count - 1]);
-
-                        if (len == 6) {
-                            options = ImageBitmapImpl::HandleOptions(runtime, arguments[5]);
-                        }
-
-                        auto asset = canvas_native_image_asset_create();
-
-
-                        std::thread thread(
-                                [&data, &runtime, &options, cbFunc](rust::Box<ImageAsset> asset,
-                                                                    float sx_or_options,
-                                                                    float sy,
-                                                                    float sw,
-                                                                    float sh) {
-
-                                    auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
-                                            data,
-                                            sx_or_options,
-                                            sy,
-                                            sw,
-                                            sh,
-                                            options.flipY,
-                                            options.premultiplyAlpha,
-                                            options.colorSpaceConversion,
-                                            options.resizeQuality,
-                                            options.resizeWidth,
-                                            options.resizeHeight, *asset);
-
-
-                                    if (!done) {
-                                        auto error = jsi::String::createFromAscii(runtime,
-                                                                                  "Failed to load image");
-                                        cbFunc->asObject(runtime).asFunction(runtime).call(runtime,
-                                                                                           {std::move(
-                                                                                                   error),
-                                                                                            jsi::Value::undefined()});
-                                    } else {
-                                        auto ret = std::make_shared<ImageBitmapImpl>(
-                                                std::move(asset));
-                                        auto object = jsi::Object::createFromHostObject(runtime,
-                                                                                        std::move(
-                                                                                                ret));
-                                        cbFunc->asObject(runtime).getFunction(runtime).call(runtime,
-                                                                                            {jsi::Value::undefined(),
-                                                                                             std::move(
-                                                                                                     object)});
-                                    }
-
-
-                                }, std::move(asset),
-                                (float) sx_or_options->asNumber(),
-                                (float) sy->asNumber(),
-                                (float) sw->asNumber(),
-                                (float) sh->asNumber());
-
-                        thread.detach();
-
-                        return jsi::Value::undefined();
-                    }
 
                     return jsi::Value::undefined();
                 }
@@ -893,19 +1049,13 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
     );
 
-    if (!jsiRuntime.
+    auto global = jsiRuntime.global();
 
-                    global()
-
-            .
-                    hasProperty(jsiRuntime,
-                                "CanvasJSIModule")) {
-        jsiRuntime.
-
-                        global()
-
-                .
-                        setProperty(jsiRuntime,
-                                    "CanvasJSIModule", canvas_module);
+    if (!global.
+            hasProperty(jsiRuntime,
+                        "CanvasJSIModule")) {
+        global.
+                setProperty(jsiRuntime,
+                            "CanvasJSIModule", canvas_module);
     }
 }

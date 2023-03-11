@@ -45,7 +45,7 @@ import { Helpers } from '../../helpers';
 let ctor;
 
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
-	public static isDebug = true;
+	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
 	private context;
 
@@ -1008,7 +1008,6 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._glCheckError('texImage2D');
 		this._checkArgs('texImage2D', arguments);
 		const texImage2D = this._getMethod('texImage2D');
-
 		if (arguments.length === 9) {
 			texImage2D(target, level, internalformat, width, height, border, format, type, pixels);
 		} else if (arguments.length === 6) {
@@ -1035,7 +1034,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 					texImage2D(target, level, internalformat, width, height, ImageSource.fromFileSync(border.src).android);
 				}
 			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
-				texImage2D(target, level, internalformat, width, height, border._canvas.android);
+				texImage2D(target, level, internalformat, width, height, border._canvas.native);
 			}
 		}
 	}
@@ -1071,7 +1070,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				texSubImage2D(target, level, xoffset, yoffset, width, height, format.android);
 			} else if (format instanceof ImageAsset) {
 				texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
-			} else if (format instanceof ImageBitmap || format?.native instanceof org.nativescript.canvas.TNSImageBitmap) {
+			} else if (format instanceof ImageBitmap) {
 				texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
 				if (format._imageSource instanceof ImageSource) {
@@ -1084,7 +1083,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 					const result = ImageSource.fromFileSync(format.src);
 					texSubImage2D(target, level, xoffset, yoffset, width, height, result ? result.android : null);
 				} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {
-					texSubImage2D(target, level, xoffset, yoffset, width, height, format._canvas.android);
+					texSubImage2D(target, level, xoffset, yoffset, width, height, format._canvas.native);
 				}
 			}
 		}

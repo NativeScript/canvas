@@ -216,48 +216,35 @@ impl ImageAsset {
 
                 match image::guess_format(&bytes) {
                     Ok(mime) => match image::load(reader, mime) {
-                        Ok(result) => {
+                        Ok(data) => {
 
-                            #[cfg(feature = "2d")] {
-                                let width = result.width() as i32;
-                                let height = result.height() as i32;
+                            lock.image = Some(match data {
+                                DynamicImage::ImageRgba8(_) => data,
+                                _ => DynamicImage::ImageRgba8(data.into_rgba8()),
+                            });
 
-                                if let Some(image) = result.as_rgba8() {
+                            #[cfg(feature = "2d")]
+                            {
+                                if let Some(image) = lock.image.as_ref() {
+                                    let width = image.width() as i32;
+                                    let height = image.height() as i32;
+
                                     let info = skia_safe::ImageInfo::new(
                                         skia_safe::ISize::new(width, height),
                                         skia_safe::ColorType::RGBA8888,
                                         skia_safe::AlphaType::Unpremul,
                                         None,
                                     );
-
                                     let skia_image = unsafe {
                                         skia_safe::Image::from_raster_data(
                                             &info,
-                                            skia_safe::Data::new_bytes(image.as_ref()),
-                                            (width * 4) as usize,
-                                        )
-                                    };
-                                    lock.skia_image = skia_image;
-                                } else if let Some(image) = result.as_rgb8() {
-                                    let info = skia_safe::ImageInfo::new(
-                                        skia_safe::ISize::new(width, height),
-                                        skia_safe::ColorType::RGB565,
-                                        skia_safe::AlphaType::Unpremul,
-                                        None,
-                                    );
-
-                                    let skia_image = unsafe {
-                                        skia_safe::Image::from_raster_data(
-                                            &info,
-                                            skia_safe::Data::new_bytes(image.as_ref()),
+                                            skia_safe::Data::new_bytes(image.as_bytes()),
                                             (width * 4) as usize,
                                         )
                                     };
                                     lock.skia_image = skia_image;
                                 }
                             }
-
-                            lock.image = Some(result);
 
                             true
                         }

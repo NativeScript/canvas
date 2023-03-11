@@ -17,19 +17,18 @@ project.ext {
 }
 
 
-
 def NDK_PATH = ""
 def hasNdkDirectory = project.hasProperty("ndkDirectory")
-if(!hasNdkDirectory){
+if (!hasNdkDirectory) {
 	println "No ndkDirectory set, checking environment \$ANDROID_NDK..."
 
 	NDK_PATH = "$System.env.ANDROID_NDK"
-	if (NDK_PATH == null || NDK_PATH == "null"){
+	if (NDK_PATH == null || NDK_PATH == "null") {
 		println "No ndkDirectory set, checking environment \$ANDROID_NDK_ROOT..."
 		NDK_PATH = "$System.env.ANDROID_NDK_ROOT"
 	}
 
-	if (NDK_PATH == null || NDK_PATH == "null"){
+	if (NDK_PATH == null || NDK_PATH == "null") {
 		println "No ndkDirectory set, checking environment \$ANDROID_NDK_HOME..."
 		NDK_PATH = "$System.env.ANDROID_NDK_HOME"
 	}
@@ -37,7 +36,6 @@ if(!hasNdkDirectory){
 	NDK_PATH = ndkDirectory
 }
 println "Runtime using NDK_PATH: " + NDK_PATH
-
 
 
 android {
@@ -58,7 +56,7 @@ android {
 			}
 		}
 		ndk {
-			abiFilters 'x86','x86_64', 'armeabi-v7a', 'arm64-v8a'
+			abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
 		}
 	}
 
@@ -84,8 +82,7 @@ android {
 		}
 	}
 
-	ndkVersion '21.1.6352462'
-//	ndkVersion '22.1.7171670'
+	ndkVersion '22.1.7171670'
 
 }
 
@@ -111,4 +108,4 @@ repositories {
 	mavenCentral()
 }
 
-apply from: 'publish.gradle'
+//apply from: 'publish.gradle'

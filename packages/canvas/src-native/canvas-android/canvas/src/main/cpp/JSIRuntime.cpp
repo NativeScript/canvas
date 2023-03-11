@@ -3,12 +3,11 @@
 //
 
 #include "CanvasJSIModule.h"
+#include "JSIRuntime.h"
 #include <android/log.h>
 
 
-std::shared_ptr <rnv8::V8Runtime> runtime;
-
-extern "C" void NSMain(const v8::FunctionCallbackInfo <v8::Value> &args) {
+extern "C" void NSMain(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto len = args.Length();
 
@@ -21,5 +20,5 @@ extern "C" void NSMain(const v8::FunctionCallbackInfo <v8::Value> &args) {
 
     auto rt = std::make_shared<rnv8::V8Runtime>(isolate);
     CanvasJSIModule::install(*rt);
-    runtime = std::move(rt);
+    jsi_runtime = std::move(rt);
 }

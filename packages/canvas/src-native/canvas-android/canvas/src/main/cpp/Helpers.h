@@ -16,6 +16,16 @@ inline static int64_t getPointerValue(jsi::Runtime &runtime, const facebook::jsi
 
 template<typename T>
 inline static rust::Slice<T>
+GetArrayBufferData(jsi::Runtime &runtime, facebook::jsi::ArrayBuffer &array) {
+    auto buf = array.data(runtime);
+    auto size = array.size(runtime);
+
+    rust::Slice<T> slice(reinterpret_cast<T *>(buf), size);
+    return std::move(slice);
+}
+
+template<typename T>
+inline static rust::Slice<T>
 GetTypedArrayData(jsi::Runtime &runtime, facebook::jsi::TypedArray &array) {
     auto buf = array.data(runtime);
     auto offset = array.offset(runtime);

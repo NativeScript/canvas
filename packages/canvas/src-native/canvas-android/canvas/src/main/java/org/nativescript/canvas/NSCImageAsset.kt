@@ -8,33 +8,33 @@ import java.util.concurrent.Executors
  */
 class NSCImageAsset {
 
-	interface Callback {
-		fun onComplete(done: Boolean)
-	}
+    interface Callback {
+        fun onComplete(done: Boolean)
+    }
 
-	companion object {
+    companion object {
 
-		init {
-			NSCCanvas.loadLib()
-		}
+        init {
+            NSCCanvas.loadLib()
+        }
 
-		@JvmStatic
-		fun loadImageFromBitmap(asset: Long, bitmap: Bitmap): Boolean {
-			return nativeLoadFromBitmap(asset, bitmap)
-		}
+        @JvmStatic
+        fun loadImageFromBitmap(asset: Long, bitmap: Bitmap): Boolean {
+            return nativeLoadFromBitmap(asset, bitmap)
+        }
 
-		@JvmStatic
-		fun loadImageFromBitmapAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
-			executorService.execute {
-				val done = nativeLoadFromBitmap(asset, bitmap)
-				callback.onComplete(done)
-			}
-		}
+        @JvmStatic
+        fun loadImageFromBitmapAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
+            executorService.execute {
+                val done = nativeLoadFromBitmap(asset, bitmap)
+                callback.onComplete(done)
+            }
+        }
 
-		@JvmStatic
-		private external fun nativeLoadFromBitmap(asset: Long, bitmap: Bitmap): Boolean
+        @JvmStatic
+        private external fun nativeLoadFromBitmap(asset: Long, bitmap: Bitmap): Boolean
 
-		private val executorService = Executors.newFixedThreadPool(10)
-	}
+        private val executorService = Executors.newFixedThreadPool(10)
+    }
 
 }

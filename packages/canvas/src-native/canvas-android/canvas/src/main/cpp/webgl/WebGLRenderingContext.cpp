@@ -3567,7 +3567,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          return {false};
                                                      }
         );
-    } else if (methodName == "IsContextLost") {
+    } else if (methodName == "isContextLost") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      0,
@@ -4182,122 +4182,89 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
 
                                                                  if (pixels.isHostObject(runtime)) {
-                                                                     auto image_asset = pixels.asHostObject<ImageAssetImpl>(
-                                                                             runtime);
+                                                                     try {
+                                                                         auto image_asset = pixels.asHostObject<ImageAssetImpl>(
+                                                                                 runtime);
 
-                                                                     if (image_asset != nullptr) {
+                                                                         if (image_asset !=
+                                                                             nullptr) {
 
-                                                                         canvas_native_webgl_tex_image2d_image_asset(
-                                                                                 target,
-                                                                                 level,
-                                                                                 internalformat,
-                                                                                 format,
-                                                                                 type,
-                                                                                 image_asset->GetImageAsset(),
-                                                                                 this->GetState()
-                                                                         );
+                                                                             canvas_native_webgl_tex_image2d_image_asset(
+                                                                                     target,
+                                                                                     level,
+                                                                                     internalformat,
+                                                                                     format,
+                                                                                     type,
+                                                                                     image_asset->GetImageAsset(),
+                                                                                     this->GetState()
+                                                                             );
 
 
-                                                                         return jsi::Value::undefined();
-                                                                     }
-
-                                                                     auto image_bitmap = pixels.asHostObject<ImageBitmapImpl>(
-                                                                             runtime);
-
-                                                                     if (image_bitmap != nullptr) {
-                                                                         canvas_native_webgl_tex_image2d_image_asset(
-                                                                                 target,
-                                                                                 level,
-                                                                                 internalformat,
-                                                                                 format,
-                                                                                 type,
-                                                                                 image_bitmap->GetImageAsset(),
-                                                                                 this->GetState()
-                                                                         );
-                                                                     }
-
-                                                                 } else {
-                                                                     auto is_canvas = pixels.hasProperty(
-                                                                             runtime,
-                                                                             "__native__context");
-                                                                     auto is_asset = pixels.hasProperty(
-                                                                             runtime, "_asset");
-                                                                     auto is_video = pixels.hasProperty(
-                                                                             runtime, "_video");
-
-                                                                     if (is_canvas) {
-                                                                         auto ctx = pixels.getProperty(
-                                                                                 runtime,
-                                                                                 "__native__context");
-                                                                         if (ctx.isObject()) {
-                                                                             auto gl_object = ctx.asObject(
-                                                                                     runtime);
-                                                                             if (gl_object.isHostObject(
-                                                                                     runtime)) {
-                                                                                 auto canvas_2d = gl_object.asHostObject<CanvasRenderingContext2DImpl>(
-                                                                                         runtime);
-                                                                                 if (canvas_2d !=
-                                                                                     nullptr) {
-
-                                                                                     canvas_native_webgl_tex_image2d_canvas2d(
-                                                                                             target,
-                                                                                             level,
-                                                                                             internalformat,
-                                                                                             format,
-                                                                                             type,
-                                                                                             canvas_2d->GetContext(),
-                                                                                             this->GetState()
-                                                                                     );
-
-                                                                                     return jsi::Value::undefined();
-                                                                                 }
-
-                                                                                 auto gl_context = gl_object.asHostObject<WebGLRenderingContextBase>(
-                                                                                         runtime);
-
-                                                                                 if (gl_context !=
-                                                                                     nullptr) {
-
-                                                                                     canvas_native_webgl_tex_image2d_webgl(
-                                                                                             target,
-                                                                                             level,
-                                                                                             internalformat,
-                                                                                             format,
-                                                                                             type,
-                                                                                             gl_context->GetState(),
-                                                                                             this->GetState()
-                                                                                     );
-
-                                                                                     return jsi::Value::undefined();
-                                                                                 }
-                                                                             }
+                                                                             return jsi::Value::undefined();
                                                                          }
-                                                                     } else if (is_asset) {
-                                                                         auto asset = pixels.getProperty(
-                                                                                 runtime, "_asset");
-                                                                         if (asset.isObject()) {
-                                                                             auto val = asset.asObject(
-                                                                                     runtime);
-                                                                             if (val.isHostObject(
-                                                                                     runtime)) {
-                                                                                 auto image_asset = val.asHostObject<ImageAssetImpl>(
-                                                                                         runtime);
-                                                                                 if (image_asset !=
-                                                                                     nullptr) {
-                                                                                     canvas_native_webgl_tex_image2d_image_asset(
-                                                                                             target,
-                                                                                             level,
-                                                                                             internalformat,
-                                                                                             format,
-                                                                                             type,
-                                                                                             image_asset->GetImageAsset(),
-                                                                                             this->GetState()
-                                                                                     );
-                                                                                 }
+                                                                     } catch (...) {}
 
-                                                                             }
+
+                                                                     try {
+                                                                         // try ImageBitmapImpl
+                                                                         auto image_bitmap = pixels.asHostObject<ImageBitmapImpl>(
+                                                                                 runtime);
+
+                                                                         if (image_bitmap !=
+                                                                             nullptr) {
+                                                                             canvas_native_webgl_tex_image2d_image_asset(
+                                                                                     target,
+                                                                                     level,
+                                                                                     internalformat,
+                                                                                     format,
+                                                                                     type,
+                                                                                     image_bitmap->GetImageAsset(),
+                                                                                     this->GetState()
+                                                                             );
                                                                          }
-                                                                     }
+
+                                                                     } catch (...) {}
+
+
+                                                                     try {
+                                                                         auto canvas_2d = pixels.asHostObject<CanvasRenderingContext2DImpl>(
+                                                                                 runtime);
+
+                                                                         if (canvas_2d != nullptr) {
+                                                                             canvas_native_webgl_tex_image2d_canvas2d(
+                                                                                     target,
+                                                                                     level,
+                                                                                     internalformat,
+                                                                                     format,
+                                                                                     type,
+                                                                                     canvas_2d->GetContext(),
+                                                                                     this->GetState()
+                                                                             );
+                                                                             return jsi::Value::undefined();
+                                                                         }
+                                                                     } catch (...) {}
+
+
+                                                                     try {
+                                                                         auto gl = pixels.asHostObject<WebGLRenderingContext>(
+                                                                                 runtime);
+
+                                                                         if (gl != nullptr) {
+                                                                             canvas_native_webgl_tex_image2d_webgl(
+                                                                                     target,
+                                                                                     level,
+                                                                                     internalformat,
+                                                                                     format,
+                                                                                     type,
+                                                                                     gl->GetState(),
+                                                                                     this->GetState()
+                                                                             );
+
+                                                                             return jsi::Value::undefined();
+                                                                         }
+                                                                     } catch (...) {}
+
+
                                                                  }
 
                                                              }
@@ -4467,39 +4434,43 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                  auto pixels = arguments[6].asObject(
                                                                          runtime);
                                                                  if (pixels.isHostObject(runtime)) {
-                                                                     auto asset = pixels.asHostObject<ImageAssetImpl>(
-                                                                             runtime);
-                                                                     if (asset != nullptr) {
-                                                                         canvas_native_webgl_tex_sub_image2d_asset(
-                                                                                 target,
-                                                                                 level,
-                                                                                 xoffset,
-                                                                                 yoffset,
-                                                                                 format,
-                                                                                 type,
-                                                                                 asset->GetImageAsset(),
-                                                                                 this->GetState()
-                                                                         );
-                                                                         return jsi::Value::undefined();
-                                                                     }
+                                                                     try {
+                                                                         auto asset = pixels.asHostObject<ImageAssetImpl>(
+                                                                                 runtime);
+                                                                         if (asset != nullptr) {
+                                                                             canvas_native_webgl_tex_sub_image2d_asset(
+                                                                                     target,
+                                                                                     level,
+                                                                                     xoffset,
+                                                                                     yoffset,
+                                                                                     format,
+                                                                                     type,
+                                                                                     asset->GetImageAsset(),
+                                                                                     this->GetState()
+                                                                             );
+                                                                             return jsi::Value::undefined();
+                                                                         }
+                                                                     } catch (...) {}
 
-                                                                     auto bitmap = pixels.asHostObject<ImageBitmapImpl>(
-                                                                             runtime);
+                                                                     try {
+                                                                         auto bitmap = pixels.asHostObject<ImageBitmapImpl>(
+                                                                                 runtime);
 
-                                                                     if (bitmap != nullptr) {
-                                                                         canvas_native_webgl_tex_sub_image2d_asset(
-                                                                                 target,
-                                                                                 level,
-                                                                                 xoffset,
-                                                                                 yoffset,
-                                                                                 format,
-                                                                                 type,
-                                                                                 bitmap->GetImageAsset(),
-                                                                                 this->GetState()
-                                                                         );
+                                                                         if (bitmap != nullptr) {
+                                                                             canvas_native_webgl_tex_sub_image2d_asset(
+                                                                                     target,
+                                                                                     level,
+                                                                                     xoffset,
+                                                                                     yoffset,
+                                                                                     format,
+                                                                                     type,
+                                                                                     bitmap->GetImageAsset(),
+                                                                                     this->GetState()
+                                                                             );
 
-                                                                         return jsi::Value::undefined();
-                                                                     }
+                                                                             return jsi::Value::undefined();
+                                                                         }
+                                                                     } catch (...) {}
 
                                                                  }
                                                              }

@@ -160,7 +160,9 @@ pub fn canvas_native_webgl2_client_wait_sync(
     state: &mut WebGLState,
 ) -> u32 {
     state.make_current();
-    unsafe { gl_bindings::ClientWaitSync(sync.0, flags, timeout.into()) }
+    let ret = unsafe { gl_bindings::ClientWaitSync(sync.0, flags, timeout.into()) };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_compressed_tex_sub_image3d_none(
@@ -289,6 +291,7 @@ pub fn canvas_native_webgl2_create_query(state: &mut WebGLState) -> u32 {
     state.make_current();
     let mut queries = [0u32; 1];
     unsafe { gl_bindings::GenQueries(1, queries.as_mut_ptr()) }
+
     queries[0]
 }
 
@@ -296,6 +299,7 @@ pub fn canvas_native_webgl2_create_sampler(state: &mut WebGLState) -> u32 {
     state.make_current();
     let mut samplers = [0u32; 1];
     unsafe { gl_bindings::GenSamplers(1, samplers.as_mut_ptr()) }
+
     samplers[0]
 }
 
@@ -303,6 +307,7 @@ pub fn canvas_native_webgl2_create_transform_feedback(state: &mut WebGLState) ->
     state.make_current();
     let mut feedbacks = [0u32; 1];
     unsafe { gl_bindings::GenTransformFeedbacks(1, feedbacks.as_mut_ptr()) }
+
     feedbacks[0]
 }
 
@@ -310,6 +315,7 @@ pub fn canvas_native_webgl2_create_vertex_array(state: &mut WebGLState) -> u32 {
     state.make_current();
     let mut arrays = [0u32; 1];
     unsafe { gl_bindings::GenVertexArrays(1, arrays.as_mut_ptr()) }
+
     arrays[0]
 }
 
@@ -433,7 +439,9 @@ pub fn canvas_native_webgl2_fence_sync(
     state: &mut WebGLState,
 ) -> GLSync {
     state.make_current();
-    unsafe { GLSync(gl_bindings::FenceSync(condition, flags)) }
+    let ret = unsafe { GLSync(gl_bindings::FenceSync(condition, flags)) };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_framebuffer_texture_layer(
@@ -476,6 +484,7 @@ pub fn canvas_native_webgl2_get_active_uniform_block_name(
             name.as_mut_ptr() as *mut c_char,
         )
     }
+
     name.shrink_to(length as usize);
     let c_str = unsafe { CStr::from_ptr(name.as_ptr()) };
     c_str.to_string_lossy().to_string()
@@ -488,7 +497,7 @@ pub fn canvas_native_webgl2_get_active_uniform_block_parameter(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-    match pname {
+    let ret = match pname {
         gl_bindings::UNIFORM_BLOCK_BINDING
         | gl_bindings::UNIFORM_BLOCK_DATA_SIZE
         | gl_bindings::UNIFORM_BLOCK_ACTIVE_UNIFORMS => {
@@ -539,7 +548,9 @@ pub fn canvas_native_webgl2_get_active_uniform_block_parameter(
             return WebGLResult::Boolean(bool_value[0] == 1);
         }
         _ => WebGLResult::None,
-    }
+    };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_active_uniforms(
@@ -561,7 +572,7 @@ pub fn canvas_native_webgl2_get_active_uniforms(
         )
     }
 
-    match pname {
+    let ret = match pname {
         gl_bindings::UNIFORM_TYPE | gl_bindings::UNIFORM_SIZE => WebGLResult::U32Array(unsafe {
             std::slice::from_raw_parts(params.as_ptr() as *const u32, params.len()).to_vec()
         }),
@@ -573,7 +584,9 @@ pub fn canvas_native_webgl2_get_active_uniforms(
             std::slice::from_raw_parts(params.as_ptr() as *const bool, params.len()).to_vec()
         }),
         _ => WebGLResult::None,
-    }
+    };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_buffer_sub_data(
@@ -629,7 +642,9 @@ pub fn canvas_native_webgl2_get_frag_data_location(
 ) -> i32 {
     state.make_current();
     let name = CString::new(name).unwrap();
-    unsafe { gl_bindings::GetFragDataLocation(program, name.as_ptr()) }
+    let ret = unsafe { gl_bindings::GetFragDataLocation(program, name.as_ptr()) };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_indexed_parameter(
@@ -640,7 +655,7 @@ pub fn canvas_native_webgl2_get_indexed_parameter(
     state.make_current();
     let mut binding = WebGLIndexedParameter::default();
 
-    match target {
+    let ret = match target {
         gl_bindings::UNIFORM_BUFFER_BINDING | gl_bindings::TRANSFORM_FEEDBACK_BUFFER_BINDING => {
             let mut new_target = [0i32];
             unsafe { gl_bindings::GetIntegerv(target, new_target.as_mut_ptr()) }
@@ -671,7 +686,9 @@ pub fn canvas_native_webgl2_get_indexed_parameter(
             return binding;
         }
         _ => binding, // return null
-    }
+    };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_internalformat_parameter(
@@ -680,7 +697,6 @@ pub fn canvas_native_webgl2_get_internalformat_parameter(
     pname: u32,
     state: &mut WebGLState,
 ) -> WebGLResult {
-    state.make_current();
     let mut result: Option<WebGLResult> = None;
     match internalformat {
         gl_bindings::RGB
@@ -734,7 +750,8 @@ pub fn canvas_native_webgl2_get_internalformat_parameter(
     if result.is_some() {
         return result.unwrap();
     }
-    return if pname == gl_bindings::SAMPLES {
+    state.make_current();
+    let ret = if pname == gl_bindings::SAMPLES {
         let mut length = [0i32];
         unsafe {
             gl_bindings::GetInternalformativ(
@@ -762,6 +779,10 @@ pub fn canvas_native_webgl2_get_internalformat_parameter(
     } else {
         WebGLResult::None
     };
+
+    state.make_current();
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_parameter(pname: u32, state: &mut WebGLState) -> WebGLResult {
@@ -787,13 +808,13 @@ pub fn canvas_native_webgl2_get_query_parameter(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-    let mut params = 0u32;
+    let mut params = [0u32];
 
-    unsafe { gl_bindings::GetQueryObjectuiv(query, pname, &mut params) }
+    unsafe { gl_bindings::GetQueryObjectuiv(query, pname, params.as_mut_ptr()) }
 
     match pname {
-        gl_bindings::QUERY_RESULT => WebGLResult::Boolean(params == 1),
-        gl_bindings::QUERY_RESULT_AVAILABLE => WebGLResult::U32(params),
+        gl_bindings::QUERY_RESULT => WebGLResult::Boolean(params[0] == 1),
+        gl_bindings::QUERY_RESULT_AVAILABLE => WebGLResult::U32(params[0]),
         _ => WebGLResult::None,
     }
 }
@@ -804,13 +825,15 @@ pub fn canvas_native_webgl2_get_query(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-    if pname == gl_bindings::CURRENT_QUERY {
+    let ret = if pname == gl_bindings::CURRENT_QUERY {
         let mut params = [0i32];
         unsafe { gl_bindings::GetQueryiv(target, pname, params.as_mut_ptr()) }
         WebGLResult::I32(params[0])
     } else {
         WebGLResult::None
-    }
+    };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_sampler_parameter(
@@ -819,7 +842,7 @@ pub fn canvas_native_webgl2_get_sampler_parameter(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-    match pname {
+    let ret = match pname {
         gl_bindings::TEXTURE_MAX_LOD | gl_bindings::TEXTURE_MIN_LOD => {
             let mut float_value = [0f32];
             unsafe { gl_bindings::GetSamplerParameterfv(sampler, pname, float_value.as_mut_ptr()) }
@@ -837,7 +860,9 @@ pub fn canvas_native_webgl2_get_sampler_parameter(
             return WebGLResult::I32(int_value[0]);
         }
         _ => WebGLResult::None,
-    }
+    };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_sync_parameter(
@@ -846,7 +871,7 @@ pub fn canvas_native_webgl2_get_sync_parameter(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-    match pname {
+    let ret = match pname {
         gl_bindings::OBJECT_TYPE
         | gl_bindings::SYNC_STATUS
         | gl_bindings::SYNC_CONDITION
@@ -859,7 +884,9 @@ pub fn canvas_native_webgl2_get_sync_parameter(
             return WebGLResult::I32(value[0]);
         }
         _ => WebGLResult::None,
-    }
+    };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_transform_feedback_varying(
@@ -906,6 +933,7 @@ pub fn canvas_native_webgl2_get_transform_feedback_varying(
             name.as_mut_ptr() as *mut c_char,
         )
     }
+
     if length[0] == 0 || size[0] == 0 || type_[0] == 0 {
         return WebGLActiveInfo::empty();
     }
@@ -922,7 +950,9 @@ pub fn canvas_native_webgl2_get_uniform_block_index(
 ) -> u32 {
     state.make_current();
     let name = CString::new(uniform_block_name).unwrap();
-    unsafe { gl_bindings::GetUniformBlockIndex(program, name.as_ptr()) }
+    let ret = unsafe { gl_bindings::GetUniformBlockIndex(program, name.as_ptr()) };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_get_uniform_indices(
@@ -992,17 +1022,23 @@ pub fn canvas_native_webgl2_invalidate_sub_framebuffer(
 
 pub fn canvas_native_webgl2_is_query(query: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsQuery(query) == 1 }
+    let ret = unsafe { gl_bindings::IsQuery(query) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_is_sampler(sampler: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsSampler(sampler) == 1 }
+    let ret = unsafe { gl_bindings::IsSampler(sampler) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_is_sync(sync: &GLSync, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsSync(sync.0) == 1 }
+    let ret = unsafe { gl_bindings::IsSync(sync.0) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_is_transform_feedback(
@@ -1010,12 +1046,16 @@ pub fn canvas_native_webgl2_is_transform_feedback(
     state: &mut WebGLState,
 ) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsTransformFeedback(transform_feedback) == 1 }
+    let ret = unsafe { gl_bindings::IsTransformFeedback(transform_feedback) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_is_vertex_array(vertex_array: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsVertexArray(vertex_array) == 1 }
+    let ret = unsafe { gl_bindings::IsVertexArray(vertex_array) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl2_pause_transform_feedback(state: &mut WebGLState) {
@@ -1402,8 +1442,6 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
     asset: &ImageAsset,
     state: &mut WebGLState,
 ) {
-    state.make_current();
-
     if let Some(bytes) = asset.get_bytes() {
         state.make_current();
         unsafe {
@@ -1417,19 +1455,19 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     asset.height() as usize,
                     depth as usize,
                 );
-                    gl_bindings::TexSubImage3D(
-                        target,
-                        level,
-                        xoffset,
-                        yoffset,
-                        zoffset,
-                        width,
-                        height,
-                        depth,
-                        format,
-                        type_,
-                        buffer.as_ptr() as *const c_void,
-                    );
+                gl_bindings::TexSubImage3D(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    zoffset,
+                    width,
+                    height,
+                    depth,
+                    format,
+                    type_,
+                    buffer.as_ptr() as *const c_void,
+                );
 
                 return;
             }

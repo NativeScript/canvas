@@ -19,7 +19,7 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		const gl = this.canvas.getContext('webgl2', {antialias: false});
+		const gl = this.canvas.getContext('webgl2', { antialias: false });
 
 		const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
 		var engine: BABYLON.Engine = null;
@@ -33,9 +33,9 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		// You must at least define a camera
 		engine = createDefaultEngine();
 		if (!engine) throw 'engine should not be null.';
-		 //this.createMDN(engine)
+		//this.createMDN(engine)
 
-		 sceneToRender = this.createChart(engine);
+		sceneToRender = this.createChart(engine);
 		//sceneToRender = this.createWaterScene(engine);
 		//sceneToRender = this.createScene(engine);
 		//sceneToRender = this.createSkullScene(engine);

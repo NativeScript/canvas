@@ -39,11 +39,6 @@ export class HTMLCanvasElement extends Element {
 	}
 
 	getContext(contextType, contextOptions) {
-		const ctx = this._canvas.getContext(contextType, contextOptions);
-		ctx.canvas = this;
-		console.log('test');
-		(this as any).__native__context = ctx;
-		return ctx;
+		return this._canvas.getContext(contextType, contextOptions);
 	}
-
 }

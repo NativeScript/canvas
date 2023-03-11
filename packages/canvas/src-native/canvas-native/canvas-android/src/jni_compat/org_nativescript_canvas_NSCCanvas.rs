@@ -12,7 +12,7 @@ use canvas_core::gl::GLContext;
 struct AndroidGLContext {
     contextAttributes: ContextAttributes,
     gl_context: GLContext,
-    android_window: NativeWindow,
+    android_window: Option<NativeWindow>,
 }
 
 #[no_mangle]
@@ -64,13 +64,66 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
             ) {
                 gl_context.make_current();
                 return Box::into_raw(Box::new(AndroidGLContext {
-                    android_window: window,
+                    android_window: Some(window),
                     gl_context,
                     contextAttributes: attrs,
                 })) as jlong;
             }
         }
     }
+    0
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGLNoSurface(
+    mut env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    alpha: jboolean,
+    antialias: jboolean,
+    depth: jboolean,
+    fail_if_major_performance_caveat: jboolean,
+    power_preference: JString,
+    premultiplied_alpha: jboolean,
+    preserve_drawing_buffer: jboolean,
+    stencil: jboolean,
+    desynchronized: jboolean,
+    xr_compatible: jboolean,
+    version: jint,
+    is_canvas: jboolean,
+) -> jlong {
+    if version == 1 && !GLContext::has_gl2support() {
+        return 0;
+    }
+    let power_preference = match env.get_string(&power_preference) {
+        Ok(value) => value.to_string_lossy().to_string(),
+        Err(_) => "default".to_string(),
+    };
+
+    let mut attrs = ContextAttributes::new(
+        alpha == JNI_TRUE,
+        antialias == JNI_TRUE,
+        depth == JNI_TRUE,
+        fail_if_major_performance_caveat == JNI_TRUE,
+        power_preference.as_ref(),
+        premultiplied_alpha == JNI_TRUE,
+        preserve_drawing_buffer == JNI_TRUE,
+        stencil == JNI_TRUE,
+        desynchronized == JNI_TRUE,
+        xr_compatible == JNI_TRUE,
+        is_canvas == JNI_TRUE,
+    );
+
+    if let Some(gl_context) = GLContext::create_pbuffer(&mut attrs, width, height) {
+        gl_context.make_current();
+        return Box::into_raw(Box::new(AndroidGLContext {
+            android_window: None,
+            gl_context,
+            contextAttributes: attrs,
+        })) as jlong;
+    }
+
     0
 }
 
@@ -94,6 +147,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurf
                 window.height(),
                 window.raw_window_handle(),
             );
+            context.android_window = Some(window);
         }
     }
 }

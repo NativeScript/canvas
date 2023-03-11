@@ -1,12 +1,15 @@
 package org.nativescript.canvasdemo
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 
 import org.nativescript.canvas.*
@@ -35,25 +38,39 @@ class MainActivity : AppCompatActivity() {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
 				val params = canvas!!.layoutParams
-				canvas?.getContext("webgl")
-
-				Log.d("com.test", " params " + params.width)
-
+				canvas?.initContext("webgl")
 				params.width = 300
 
 				canvas?.layoutParams = params
 				canvas?.requestLayout()
-
-				Log.d("com.test", " params " + params.width)
 			//	draw2D()
 				//drawPatterWithCanvas(canvas!!)
 				//drawText(canvas!!)
+
+
 			}
 
 			override fun surfaceResize(width: Int, height: Int) {
 				Log.d("com.test", "surfaceResize")
 			}
 		}
+
+
+
+		val offscreen = NSCCanvas(this)
+		offscreen.setBackgroundColor(Color.GRAY)
+		NSCCanvas.layoutView(16,16, offscreen)
+		offscreen.initContext("2d")
+
+		val root = findViewById<ViewGroup>(android.R.id.content)
+
+		root.addView(offscreen)
+
+		NSCCanvas.layoutView(400,400, offscreen)
+
+		Log.d("com.test", "ptr ${offscreen.nativeContext}")
+
+
 
 //		drawTransformPathSvg()
 //		svg?.setSrc(

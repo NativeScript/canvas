@@ -222,7 +222,9 @@ pub fn canvas_native_webgl_buffer_sub_data_none(
 
 pub fn canvas_native_webgl_check_frame_buffer_status(target: u32, state: &mut WebGLState) -> u32 {
     state.make_current();
-    return unsafe { gl_bindings::CheckFramebufferStatus(target) };
+    let ret = unsafe { gl_bindings::CheckFramebufferStatus(target) };
+
+    ret
 }
 
 #[allow(unused_assignments)]
@@ -338,6 +340,7 @@ fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
         gl_bindings::Clear(mask);
     }
     restore_state_after_clear(state);
+
     if combined_clear {
         return HowToClear::CombinedClear;
     }
@@ -349,6 +352,7 @@ pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
     if clear_if_composited(mask, state) != HowToClear::CombinedClear {
         unsafe { gl_bindings::Clear(mask) }
     }
+
     // Flush context
 }
 
@@ -511,6 +515,7 @@ pub fn canvas_native_webgl_create_buffer(state: &mut WebGLState) -> u32 {
     unsafe {
         gl_bindings::GenBuffers(1, buffers.as_mut_ptr());
     }
+
     buffers[0]
 }
 
@@ -518,30 +523,37 @@ pub fn canvas_native_webgl_create_framebuffer(state: &mut WebGLState) -> u32 {
     state.make_current();
     let mut frame_buffers = [0u32; 1];
     unsafe { gl_bindings::GenFramebuffers(1, frame_buffers.as_mut_ptr()) }
+
     frame_buffers[0]
 }
 
 pub fn canvas_native_webgl_create_program(state: &mut WebGLState) -> u32 {
     state.make_current();
-    unsafe { gl_bindings::CreateProgram() }
+    let ret = unsafe { gl_bindings::CreateProgram() };
+
+    ret
 }
 
 pub fn canvas_native_webgl_create_renderbuffer(state: &mut WebGLState) -> u32 {
     state.make_current();
     let mut render_buffers = [0u32; 1];
     unsafe { gl_bindings::GenRenderbuffers(1, render_buffers.as_mut_ptr()) }
+
     render_buffers[0]
 }
 
 pub fn canvas_native_webgl_create_shader(shader_type: u32, state: &mut WebGLState) -> u32 {
     state.make_current();
-    return unsafe { gl_bindings::CreateShader(shader_type) };
+    let ret = unsafe { gl_bindings::CreateShader(shader_type) };
+
+    ret
 }
 
 pub fn canvas_native_webgl_create_texture(state: &mut WebGLState) -> u32 {
     state.make_current();
     let mut textures = [0u32; 1];
     unsafe { gl_bindings::GenTextures(1, textures.as_mut_ptr()) }
+
     textures[0]
 }
 
@@ -618,6 +630,7 @@ pub fn canvas_native_webgl_draw_arrays(mode: u32, first: i32, count: i32, state:
     state.make_current();
     clear_if_composited(0, state);
     unsafe { gl_bindings::DrawArrays(mode, first, count) }
+
     // Flush Context
 }
 
@@ -720,6 +733,7 @@ pub fn canvas_native_webgl_get_active_attrib(
         )
     }
 
+
     name_buffer.shrink_to(name_length as usize);
 
     let c_str = unsafe { CStr::from_ptr(name_buffer.as_ptr()) };
@@ -754,6 +768,7 @@ pub fn canvas_native_webgl_get_active_uniform(
         )
     };
 
+
     name_buffer.shrink_to(name_length as usize);
 
     let c_str = unsafe { CStr::from_ptr(name_buffer.as_ptr()) };
@@ -768,6 +783,8 @@ pub fn canvas_native_webgl_get_attached_shaders(program: u32, state: &mut WebGLS
     let mut shaders = vec![0u32; count as usize];
     let mut len = 0;
     unsafe { gl_bindings::GetAttachedShaders(program, count, &mut len, shaders.as_mut_ptr()) }
+
+
     shaders
 }
 
@@ -778,7 +795,9 @@ pub fn canvas_native_webgl_get_attrib_location(
 ) -> i32 {
     state.make_current();
     let name = CString::new(name).unwrap();
-    unsafe { gl_bindings::GetAttribLocation(program, name.as_ptr()) }
+    let ret = unsafe { gl_bindings::GetAttribLocation(program, name.as_ptr()) };
+
+    ret
 }
 
 pub fn canvas_native_webgl_get_buffer_parameter(
@@ -789,6 +808,7 @@ pub fn canvas_native_webgl_get_buffer_parameter(
     state.make_current();
     let mut params = 0i32;
     unsafe { gl_bindings::GetBufferParameteriv(target, pname, &mut params) }
+
     params
 }
 
@@ -798,7 +818,9 @@ pub fn canvas_native_webgl_get_context_attributes(state: &WebGLState) -> Context
 
 pub fn canvas_native_webgl_get_error(state: &mut WebGLState) -> u32 {
     state.make_current();
-    unsafe { gl_bindings::GetError() }
+    let ret = unsafe { gl_bindings::GetError() };
+
+    ret
 }
 
 pub fn canvas_native_webgl_get_extension(
@@ -808,12 +830,13 @@ pub fn canvas_native_webgl_get_extension(
     state.make_current();
     let version = state.get_webgl_version();
     let extensions = unsafe { gl_bindings::GetString(gl_bindings::EXTENSIONS) };
+
     if extensions.is_null() {
         return None;
     }
     // API_LEVEL
     #[allow(non_snake_case)]
-    let JELLY_BEAN_MR2 = 18;
+        let JELLY_BEAN_MR2 = 18;
 
     let ext = unsafe { CStr::from_ptr(std::mem::transmute(extensions)) };
     let extensions = ext.to_string_lossy();
@@ -970,6 +993,7 @@ pub fn canvas_native_webgl_get_framebuffer_attachment_parameter(
         result.value = params;
     }
 
+
     result
 }
 
@@ -978,7 +1002,7 @@ pub fn canvas_native_webgl_get_framebuffer_attachment_parameter(
 pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> WebGLResult {
     state.make_current();
 
-    match pname {
+    let ret = match pname {
         gl_bindings::ACTIVE_TEXTURE
         | gl_bindings::ALPHA_BITS
         | gl_bindings::ARRAY_BUFFER_BINDING
@@ -1135,7 +1159,10 @@ pub fn canvas_native_webgl_get_parameter(pname: u32, state: &mut WebGLState) -> 
             }
         }
         _ => WebGLResult::None,
-    }
+    };
+
+
+    ret
 }
 
 pub fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLState) -> String {
@@ -1147,6 +1174,7 @@ pub fn canvas_native_webgl_get_program_info_log(program: u32, state: &mut WebGLS
     unsafe {
         gl_bindings::GetProgramInfoLog(program, length, &mut len, info.as_mut_ptr() as *mut c_char)
     }
+
     if len == 0 {
         return String::with_capacity(0);
     }
@@ -1163,6 +1191,7 @@ pub fn canvas_native_webgl_get_program_parameter(
     state.make_current();
     let mut param = 0i32;
     unsafe { gl_bindings::GetProgramiv(program, pname, &mut param) }
+
     match pname {
         gl_bindings::DELETE_STATUS | gl_bindings::LINK_STATUS | gl_bindings::VALIDATE_STATUS => {
             if param as u32 == gl_bindings::TRUE as u32 {
@@ -1187,6 +1216,7 @@ pub fn canvas_native_webgl_get_renderbuffer_parameter(
     state.make_current();
     let mut params = 0i32;
     unsafe { gl_bindings::GetRenderbufferParameteriv(target, pname, &mut params) }
+
     params
 }
 
@@ -1204,6 +1234,7 @@ pub fn canvas_native_webgl_get_shader_info_log(shader: u32, state: &mut WebGLSta
     unsafe {
         gl_bindings::GetShaderInfoLog(shader, length, &mut len, log.as_mut_ptr() as *mut c_char)
     }
+
     log.shrink_to(len.try_into().unwrap());
     let c_str = unsafe { CStr::from_ptr(log.as_ptr()) };
     c_str.to_string_lossy().to_string()
@@ -1217,6 +1248,7 @@ pub fn canvas_native_webgl_get_shader_parameter(
     state.make_current();
     let mut params = 0i32;
     unsafe { gl_bindings::GetShaderiv(shader, pname, &mut params) }
+
     return match pname {
         gl_bindings::DELETE_STATUS | gl_bindings::COMPILE_STATUS => {
             if params as u32 == gl_bindings::TRUE as u32 {
@@ -1245,6 +1277,7 @@ pub fn canvas_native_webgl_get_shader_precision_format(
             &mut precision,
         )
     }
+
     WebGLShaderPrecisionFormat::new(precision, range[0], range[1])
 }
 
@@ -1257,6 +1290,7 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
     unsafe {
         gl_bindings::GetShaderSource(shader, length, &mut len, source.as_mut_ptr() as *mut c_char)
     }
+
     source.shrink_to(len.try_into().unwrap());
     let c_str = unsafe { CStr::from_ptr(source.as_ptr()) };
     c_str.to_string_lossy().to_string()
@@ -1265,6 +1299,7 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
     let ext = unsafe { gl_bindings::GetString(gl_bindings::EXTENSIONS) as *const c_char };
+
     if ext.is_null() {
         return Vec::with_capacity(0);
     }
@@ -1283,6 +1318,7 @@ pub fn canvas_native_webgl_get_tex_parameter(
     state.make_current();
     let mut params = 0i32;
     unsafe { gl_bindings::GetTexParameteriv(target, pname, &mut params) }
+
     return params;
 }
 
@@ -1293,7 +1329,9 @@ pub fn canvas_native_webgl_get_uniform_location(
 ) -> i32 {
     state.make_current();
     let name = CString::new(name).unwrap();
-    return unsafe { gl_bindings::GetUniformLocation(program, name.as_ptr()) };
+    let ret = unsafe { gl_bindings::GetUniformLocation(program, name.as_ptr()) };
+
+    ret
 }
 
 pub fn canvas_native_webgl_get_uniform(
@@ -1316,7 +1354,7 @@ pub fn canvas_native_webgl_get_uniform(
             std::ptr::null_mut(),
         )
     }
-    match uniform_type {
+    let ret = match uniform_type {
         gl_bindings::FLOAT => {
             let mut single = [0f32; 1];
             unsafe { gl_bindings::GetUniformfv(program, location, single.as_mut_ptr()) }
@@ -1407,7 +1445,9 @@ pub fn canvas_native_webgl_get_uniform(
             return WebGLResult::F32Array(mat4);
         }
         _ => WebGLResult::None,
-    }
+    };
+
+    ret
 }
 
 pub fn canvas_native_webgl_get_vertex_attrib_offset(
@@ -1419,6 +1459,7 @@ pub fn canvas_native_webgl_get_vertex_attrib_offset(
     let mut ptr = [0 as usize; 1];
     let ptr_ptr = &mut (ptr.as_mut_ptr() as *mut c_void);
     unsafe { gl_bindings::GetVertexAttribPointerv(index, pname, ptr_ptr) }
+
     ptr[0]
 }
 
@@ -1431,10 +1472,12 @@ pub fn canvas_native_webgl_get_vertex_attrib(
     if pname == gl_bindings::CURRENT_VERTEX_ATTRIB {
         let mut params: Vec<f32> = Vec::with_capacity(4);
         unsafe { gl_bindings::GetVertexAttribfv(index, pname, params.as_mut_ptr()) }
+
         return WebGLResult::F32Array(params);
     }
     let mut params = 0i32;
     unsafe { gl_bindings::GetVertexAttribiv(index, pname, &mut params) }
+
     match pname {
         gl_bindings::VERTEX_ATTRIB_ARRAY_ENABLED
         | gl_bindings::VERTEX_ATTRIB_ARRAY_NORMALIZED
@@ -1459,37 +1502,51 @@ pub fn canvas_native_webgl_hint(target: u32, mode: u32, state: &mut WebGLState) 
 
 pub fn canvas_native_webgl_is_buffer(buffer: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsBuffer(buffer) == 1 }
+    let ret = unsafe { gl_bindings::IsBuffer(buffer) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl_is_enabled(cap: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsEnabled(cap) == 1 }
+    let ret = unsafe { gl_bindings::IsEnabled(cap) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl_is_framebuffer(framebuffer: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsFramebuffer(framebuffer) == 1 }
+    let ret = unsafe { gl_bindings::IsFramebuffer(framebuffer) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl_is_program(program: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsProgram(program) == 1 }
+    let ret = unsafe { gl_bindings::IsProgram(program) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl_is_renderbuffer(renderbuffer: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsRenderbuffer(renderbuffer) == 1 }
+    let ret = unsafe { gl_bindings::IsRenderbuffer(renderbuffer) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl_is_shader(shader: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsShader(shader) == 1 }
+    let ret = unsafe { gl_bindings::IsShader(shader) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl_is_texture(texture: u32, state: &mut WebGLState) -> bool {
     state.make_current();
-    unsafe { gl_bindings::IsTexture(texture) == 1 }
+    let ret = unsafe { gl_bindings::IsTexture(texture) == 1 };
+
+    ret
 }
 
 pub fn canvas_native_webgl_line_width(width: f32, state: &mut WebGLState) {
@@ -1505,7 +1562,8 @@ pub fn canvas_native_webgl_link_program(program: u32, state: &mut WebGLState) {
 pub fn canvas_native_webgl_pixel_storei(pname: u32, param: i32, state: &mut WebGLState) {
     match pname {
         gl_bindings::UNPACK_ALIGNMENT | gl_bindings::PACK_ALIGNMENT => unsafe {
-            gl_bindings::PixelStorei(pname, param)
+            state.make_current();
+            gl_bindings::PixelStorei(pname, param);
         },
         WEBGL_UNPACK_FLIP_Y_WEBGL => {
             if param == 1 {
@@ -1753,6 +1811,7 @@ pub fn canvas_native_webgl_tex_image2d_asset(
                     buffer.as_ptr() as *const c_void,
                 );
 
+
                 return;
             }
 
@@ -1799,6 +1858,8 @@ pub fn canvas_native_webgl_read_webgl_pixels(
     source.remove_if_current();
 
     context.make_current();
+
+    context.remove_if_current();
 
     (width as i32, height as i32, buf)
 }
@@ -1867,6 +1928,7 @@ pub fn canvas_native_webgl_tex_image2d(
                 image_type as u32,
                 buffer.as_ptr() as *const c_void,
             );
+
 
             return;
         }
@@ -1985,6 +2047,8 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
                     buffer.as_ptr() as *const c_void,
                 );
             }
+
+
             return;
         }
         unsafe {
@@ -2039,6 +2103,7 @@ pub fn canvas_native_webgl_tex_sub_image2d(
                 buffer.as_ptr() as *const c_void,
             );
         }
+
         return;
     }
     unsafe {

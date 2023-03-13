@@ -584,7 +584,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//scaleTriangle(this.canvas);
 		//setTimeout(()=>{
 		//colorRain(this.canvas);
-		//particlesLarge(this.canvas);
+		particlesLarge(this.canvas);
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
@@ -623,7 +623,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
-		this.playCanvas(this.canvas);
+		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
 		//this.decoder()

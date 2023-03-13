@@ -222,11 +222,6 @@ export class Canvas extends CanvasBase {
 		if (!this._canvas) {
 			return null;
 		}
-		// let direction = 0;
-		// if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
-		// 	direction = 1;
-		// }
-
 		if (typeof type === 'string') {
 			if (type === '2d') {
 				if (this._webglContext || this._webgl2Context) {
@@ -234,15 +229,18 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._2dContext) {
-					this._didLayout = false;
 					this._layoutNative();
-
 					const opts = Object.assign(defaultOpts, this._handleContextOptions(type, options));
 
-					// this.parent?.style?.color?.android || -16777216
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					opts['fontColor'] = this.parent?.style?.color?.android || -16777216;
 
-					this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
+					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
+
+					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
+
+					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
 
 					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;

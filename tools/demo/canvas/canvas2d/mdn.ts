@@ -130,7 +130,7 @@ export function lineJoin(canvas) {
 export function lineWidth(canvas) {
 	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-	console.log(ctx.getContextAttributes())
+	console.log(ctx.getContextAttributes());
 
 	ctx.lineWidth = 15;
 
@@ -497,16 +497,15 @@ export function scale(canvas) {
 export function pattern(canvas) {
 	const ctx = canvas.getContext('2d');
 	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
-		
-		try{
+		try {
 			const bytes = (org as any).nativescript.canvas.Utils.nativeLockBitmap(img.android);
-		console.log(bytes);
-		const style =  ctx.__createPatternWithBitmap(img, 'repeat');;
-	
-		console.log(style);
-		ctx.fillStyle = style;
-		ctx.fillRect(0, 0, 300, 300);
-		}catch(e){
+			console.log(bytes);
+			const style = ctx.__createPatternWithBitmap(img, 'repeat');
+
+			console.log(style);
+			ctx.fillStyle = style;
+			ctx.fillRect(0, 0, 300, 300);
+		} catch (e) {
 			console.log(e);
 		}
 	});

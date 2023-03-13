@@ -138,6 +138,9 @@ class NSCCanvas : FrameLayout {
     }
 
     fun initContextWithJsonString(type: String, contextAttributes: String?) {
+        if (nativeGL != 0L) {
+            return
+        }
         var alpha = true
 
         var antialias = true
@@ -257,7 +260,6 @@ class NSCCanvas : FrameLayout {
             textureView.surface
         }
 
-
         surface?.let {
             nativeGL = nativeInitGL(
                 it,
@@ -292,11 +294,56 @@ class NSCCanvas : FrameLayout {
                 version,
                 isCanvas
             )
+
+            nativeContext = nativeGetGLPointer(nativeGL)
         }
+    }
+
+    fun create2DContext(
+        alpha: Boolean,
+        antialias: Boolean,
+        depth: Boolean,
+        failIfMajorPerformanceCaveat: Boolean,
+        powerPreference: String,
+        premultipliedAlpha: Boolean,
+        preserveDrawingBuffer: Boolean,
+        stencil: Boolean,
+        desynchronized: Boolean,
+        xrCompatible: Boolean,
+        fontColor: Int
+    ): Long {
+
+        initContext(
+            "2d",
+            alpha,
+            antialias,
+            depth,
+            failIfMajorPerformanceCaveat,
+            powerPreference,
+            premultipliedAlpha,
+            preserveDrawingBuffer,
+            stencil,
+            desynchronized,
+            xrCompatible
+        )
+
+        val density = resources.displayMetrics.densityDpi.toFloat()
+
+        val samples = if (antialias) {
+            4
+        } else {
+            0
+        }
+
+        return nativeCreate2DContext(
+            nativeGL, this.drawingBufferWidth, this.drawingBufferHeight,
+            alpha, density, samples, fontColor, density * 160, direction
+        )
     }
 
     internal var isPaused = false
     internal var isAttachedToWindow = false
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         isPaused = true
@@ -357,7 +404,7 @@ class NSCCanvas : FrameLayout {
             var rootParams = canvas.layoutParams
 
             if (rootParams != null && width == rootParams.width && height == rootParams.height) {
-                return;
+                return
             }
 
             if (width != 0 && height != 0) {
@@ -366,6 +413,8 @@ class NSCCanvas : FrameLayout {
                 }
                 rootParams.width = width
                 rootParams.height = height
+
+
 
                 if (canvas.surfaceType == SurfaceType.Texture) {
                     if (canvas.textureView.surfaceTexture == null) {
@@ -380,6 +429,8 @@ class NSCCanvas : FrameLayout {
                         canvas.textureView.st?.setDefaultBufferSize(width, height)
                     }
                 }
+
+
 
                 canvas.layoutParams = rootParams
 
@@ -423,6 +474,20 @@ class NSCCanvas : FrameLayout {
             xrCompatible: Boolean,
             version: Int,
             isCanvas: Boolean,
+        ): Long
+
+
+        @JvmStatic
+        external fun nativeCreate2DContext(
+            context: Long,
+            width: Int,
+            height: Int,
+            alpha: Boolean,
+            density: Float,
+            samples: Int,
+            font_color: Int,
+            ppi: Float,
+            direction: Int
         ): Long
 
         @JvmStatic
@@ -471,6 +536,7 @@ class NSCCanvas : FrameLayout {
 
         @JvmStatic
         external fun nativeCustomWithBitmapFlush(context: Long, view: Bitmap)
+
 
         @JvmStatic
         internal val direction: Int

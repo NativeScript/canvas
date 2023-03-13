@@ -18,22 +18,24 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasJSIModule.create2DContext;
+		//ctor = global.CanvasJSIModule.create2DContext;
+		ctor = global.CanvasJSIModule.create2DContextWithPointer;
 	}
 
 	constructor(context: any, contextOptions) {
 		super();
-
-		const width = context.getDrawingBufferWidth(); // can use  getMeasuredWidth/ getMeasuredHeight
+		/*const width = context.getDrawingBufferWidth(); // can use  getMeasuredWidth / getMeasuredHeight
 		const height = context.getDrawingBufferHeight();
-		const ctx = BigInt(context.getNativeContext().toString());
 
+		const ctxPtr = BigInt(context.getNativeContext().toString());
 		let direction = 0;
 		if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
 			direction = 1;
 		}
-
-		this.context = ctor(ctx, width, height, Screen.mainScreen.scale, 1, contextOptions.alpha, 0, 1, direction);
+		this.context = ctor(ctxPtr, width, height, Screen.mainScreen.scale, contextOptions.antialias ? 4 : 0, contextOptions.alpha, contextOptions.fontColor, 1, direction);
+		*/
+		const ctxPtr = BigInt(context.toString());
+		this.context = ctor(ctxPtr);
 	}
 
 	get native() {

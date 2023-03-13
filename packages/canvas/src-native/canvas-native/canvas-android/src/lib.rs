@@ -1,6 +1,9 @@
 #![allow(non_snake_case)]
 
+extern crate android_logger;
 extern crate core;
+#[macro_use]
+extern crate log;
 
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_void};
@@ -9,6 +12,8 @@ use std::pin::Pin;
 use ::jni::signature::JavaType;
 use ::jni::sys::jint;
 use ::jni::JavaVM;
+use android_logger::Config;
+use log::LevelFilter;
 use once_cell::sync::OnceCell;
 
 use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
@@ -25,6 +30,8 @@ pub(crate) const BUILD_VERSION_CLASS: &str = "android/os/Build$VERSION";
 #[no_mangle]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
     if let Ok(mut env) = vm.get_env() {
+        android_logger::init_once(Config::default().with_max_level(LevelFilter::Trace));
+
         API_LEVEL.get_or_init(|| {
             let clazz = env.find_class(BUILD_VERSION_CLASS).unwrap();
 
@@ -44,6 +51,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
         });
 
         SURFACE_TEXTURE.get_or_init(|| SurfaceTexture::new());
+
+        log::info!("Canvas library loaded");
     }
 
     JVM.get_or_init(|| vm);

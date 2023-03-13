@@ -1,5 +1,5 @@
 use jni::objects::{JClass, JString};
-use jni::sys::{jboolean, jint, jlong, jobject, JNI_TRUE};
+use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
@@ -62,7 +62,6 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
                 window.height(),
                 window.raw_window_handle(),
             ) {
-                gl_context.make_current();
                 return Box::into_raw(Box::new(AndroidGLContext {
                     android_window: Some(window),
                     gl_context,
@@ -116,15 +115,61 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGLNoSurf
     );
 
     if let Some(gl_context) = GLContext::create_pbuffer(&mut attrs, width, height) {
-        gl_context.make_current();
         return Box::into_raw(Box::new(AndroidGLContext {
             android_window: None,
             gl_context,
             contextAttributes: attrs,
         })) as jlong;
     }
-
     0
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DContext(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    width: jint,
+    height: jint,
+    alpha: jboolean,
+    density: jfloat,
+    samples: jint,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    if context == 0 {
+        return 0;
+    }
+
+    let context = context as *mut AndroidGLContext;
+    let context = unsafe { &mut *context };
+
+    context.gl_context.make_current();
+    let mut frame_buffers = [0];
+    unsafe {
+        gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
+    };
+
+    let ret = Box::into_raw(Box::new(canvas_cxx::CanvasRenderingContext2D::new(
+        canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
+            width as f32,
+            height as f32,
+            density,
+            frame_buffers[0],
+            samples,
+            alpha == JNI_TRUE,
+            font_color,
+            ppi,
+            canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
+        )),
+        context.gl_context.clone(),
+        alpha == JNI_TRUE,
+    ))) as jlong;
+
+    context.gl_context.remove_if_current();
+
+    ret
 }
 
 #[no_mangle]

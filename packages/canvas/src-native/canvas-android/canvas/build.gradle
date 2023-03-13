@@ -16,6 +16,7 @@ project.ext {
 	SNAPSHOT_REPOSITORY_URL = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 }
 
+def computeKotlinVersion = { -> project.hasProperty("kotlin_version") ? kotlin_version : "1.7.10" }
 
 def NDK_PATH = ""
 def hasNdkDirectory = project.hasProperty("ndkDirectory")
@@ -94,7 +95,7 @@ dependencies {
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 	//noinspection KtxExtensionAvailable
 	implementation "androidx.core:core:1.9.0"
-	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$computeKotlinVersion"
 }
 
 tasks.withType(Javadoc) {

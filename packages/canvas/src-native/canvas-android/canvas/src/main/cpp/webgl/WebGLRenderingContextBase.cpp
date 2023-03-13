@@ -72,7 +72,7 @@ RafImpl *WebGLRenderingContextBase::GetRaf() {
 }
 
 void WebGLRenderingContextBase::SetInvalidateState(InvalidateState state) {
-    this->invalidateState_ = (int)state;
+    this->invalidateState_ = (int) state;
 }
 
 

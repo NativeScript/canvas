@@ -676,10 +676,26 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                     auto font_color = (int) arguments[6].asNumber();
                     auto ppi = (float) arguments[7].asNumber();
                     auto direction = (int) arguments[8].asNumber();
+
                     auto context_2d = canvas_native_context_create_gl(width, height, density,
                                                                       context,
                                                                       samples, alpha,
                                                                       font_color, ppi, direction);
+
+                    auto ret = std::make_shared<CanvasRenderingContext2DImpl>(
+                            std::move(context_2d));
+
+                    return jsi::Object::createFromHostObject(runtime, ret);
+                }
+
+    );
+
+    CREATE_FUNC("create2DContextWithPointer", canvas_module, 1,
+                [](jsi::Runtime &runtime, const jsi::Value &thisValue,
+                   const jsi::Value *arguments, size_t count) -> jsi::Value {
+                    auto pointer = getPointerValue(runtime, arguments[0]);
+
+                    auto context_2d = canvas_native_context_create_with_pointer(pointer);
 
                     auto ret = std::make_shared<CanvasRenderingContext2DImpl>(
                             std::move(context_2d));

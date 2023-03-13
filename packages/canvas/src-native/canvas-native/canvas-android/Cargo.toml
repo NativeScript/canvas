@@ -26,3 +26,5 @@ utf16string = "0.2.0"
 ndk = { version = "0.7.0", features = ["bitmap"] }
 openssl = { version = "0.10.38", features = ["vendored"] }
 libloading = "0.7.3"
+log = "0.4.17"
+android_logger = "0.13.1"

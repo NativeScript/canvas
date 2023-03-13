@@ -299,7 +299,7 @@ impl GLContext {
                         let context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
                                 if context_attrs.get_is_canvas() {
-                                    Version::new(2, 1)
+                                    Version::new(2, 0)
                                 } else {
                                     Version::new(3, 0)
                                 },
@@ -381,7 +381,7 @@ impl GLContext {
                         let context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
                                 if context_attrs.get_is_canvas() {
-                                    Version::new(2, 1)
+                                    Version::new(2, 0)
                                 } else {
                                     Version::new(3, 0)
                                 },
@@ -513,7 +513,7 @@ impl GLContext {
 
                         let surface = display
                             .create_pbuffer_surface(&config, &surface_attr)
-                            .map(|v| SurfaceHelper::Pbuffer(v))
+                            .map(SurfaceHelper::Pbuffer)
                             .ok();
 
                         let context_attrs = glutin::context::ContextAttributesBuilder::new()
@@ -593,13 +593,13 @@ impl GLContext {
 
                         let surface = display
                             .create_pbuffer_surface(&config, &surface_attr)
-                            .map(|v| SurfaceHelper::Pbuffer(v))
+                            .map(SurfaceHelper::Pbuffer)
                             .ok();
 
                         let context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
                                 if context_attrs.get_is_canvas() {
-                                    Version::new(2, 1)
+                                    Version::new(2, 0)
                                 } else {
                                     Version::new(3, 0)
                                 },
@@ -673,13 +673,13 @@ impl GLContext {
 
                         let surface = display
                             .create_pbuffer_surface(&config, &surface_attr)
-                            .map(|v| SurfaceHelper::Pbuffer(v))
+                            .map(SurfaceHelper::Pbuffer)
                             .ok();
 
                         let context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
                                 if context_attrs.get_is_canvas() {
-                                    Version::new(2, 1)
+                                    Version::new(2, 0)
                                 } else {
                                     Version::new(3, 0)
                                 },

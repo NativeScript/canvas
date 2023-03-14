@@ -487,7 +487,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
 		//filterBlur(this.canvas);
-		//handleVideo(this.canvas);
+		handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
@@ -584,7 +584,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//scaleTriangle(this.canvas);
 		//setTimeout(()=>{
 		//colorRain(this.canvas);
-		particlesLarge(this.canvas);
+		//particlesLarge(this.canvas);
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);

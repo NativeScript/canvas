@@ -1,7 +1,6 @@
 use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
-pub use canvas_webgl::prelude::WebGLState;
 
 pub mod st;
 pub(crate) mod surface_texture;
@@ -21,32 +20,14 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
         return JNI_FALSE;
     }
 
-    let state = state as *mut WebGLState;
-    if state.is_null() {
-        return JNI_FALSE;
-    }
-    let state = &mut *state;
-    if state.make_current() {
-        return JNI_TRUE;
-    }
-    return JNI_FALSE;
-}
+    let state = state as *mut crate::jni_compat::org_nativescript_canvas_NSCCanvas::AndroidGLContext;
 
-#[no_mangle]
-pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeGetFlipYWebGL(
-    _: JNIEnv,
-    _: jni::objects::JClass,
-    state: jlong,
-) -> jboolean {
-    if state == 0 {
-        return JNI_FALSE;
-    }
-    let state = state as *mut WebGLState;
     if state.is_null() {
         return JNI_FALSE;
     }
     let state = &mut *state;
-    if state.get_flip_y() {
+
+    if state.gl_context.make_current() {
         return JNI_TRUE;
     }
     return JNI_FALSE;

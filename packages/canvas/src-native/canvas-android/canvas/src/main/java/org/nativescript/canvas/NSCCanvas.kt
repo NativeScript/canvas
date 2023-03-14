@@ -20,7 +20,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class NSCCanvas : FrameLayout {
 
-    internal var nativeGL: Long = 0
+    var nativeGL: Long = 0
+        private set
 
     var nativeContext: Long = 0
         private set

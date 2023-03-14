@@ -892,11 +892,15 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		linkProgram(value);
 	}
 
+	_flipY = false;
 	pixelStorei(pname: number, param: any): void {
 		this._glCheckError('pixelStorei');
 		this._checkArgs('pixelStorei', arguments);
 		const pixelStorei = this._getMethod('pixelStorei');
 		if (pname === this.UNPACK_FLIP_Y_WEBGL || pname === this.UNPACK_PREMULTIPLY_ALPHA_WEBGL) {
+			if (pname === this.UNPACK_FLIP_Y_WEBGL) {
+				this._flipY = param;
+			}
 			pixelStorei(pname, param);
 		} else if (pname === this.PACK_ALIGNMENT || pname === this.UNPACK_ALIGNMENT || pname === this.UNPACK_COLORSPACE_CONVERSION_WEBGL) {
 			if (pname === this.UNPACK_COLORSPACE_CONVERSION_WEBGL) {

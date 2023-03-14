@@ -9,9 +9,9 @@ use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 
 #[allow(dead_code)]
-struct AndroidGLContext {
-    contextAttributes: ContextAttributes,
-    gl_context: GLContext,
+pub(crate) struct AndroidGLContext {
+    pub(crate) contextAttributes: ContextAttributes,
+    pub(crate) gl_context: GLContext,
     android_window: Option<NativeWindow>,
 }
 

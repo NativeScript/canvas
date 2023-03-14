@@ -9,16 +9,17 @@ const STATE_READY: number = 3;
 const STATE_ENDED: number = 4;
 const MATCH_PARENT = 0xffffffff;
 const TYPE = { DETECT: 0, SS: 1, DASH: 2, HLS: 3, OTHER: 4 };
+declare const org;
 export class Video extends VideoBase {
-	#container: android.widget.LinearLayout;
-	#sourceView: Source[] = [];
-	#playerView: com.google.android.exoplayer2.ui.PlayerView;
-	#player: com.google.android.exoplayer2.SimpleExoPlayer;
-	#playerListener; //com.google.android.exoplayer2.Player.Listener;
-	#src: string;
-	#autoplay: boolean;
-	#loop: boolean;
-	#textureView: android.view.TextureView;
+	_container: android.widget.LinearLayout;
+	_sourceView: Source[] = [];
+	_playerView: com.google.android.exoplayer2.ui.PlayerView;
+	_player: com.google.android.exoplayer2.SimpleExoPlayer;
+	_playerListener; //com.google.android.exoplayer2.Player.Listener;
+	_src: string;
+	_autoplay: boolean;
+	_loop: boolean;
+	_textureView: android.view.TextureView;
 
 	private static _cache: com.google.android.exoplayer2.upstream.cache.SimpleCache;
 	private static _leastRecentlyUsedCacheEvictor: com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor;
@@ -42,15 +43,64 @@ export class Video extends VideoBase {
 	private static _didInit = false;
 	static BUFFER_MS = 500;
 	static IS_DEBUG = false;
+	_instance;
 	constructor() {
 		super();
 		try {
 			java.lang.System.loadLibrary('canvasnative');
 		} catch (ex) {}
 
-
 		const activity: androidx.appcompat.app.AppCompatActivity = Application.android.foregroundActivity || Application.android.startActivity;
 
+		const cacheDir = new java.io.File(path.join(knownFolders.documents().path, 'MEDIA_PLAYER_CACHE'));
+
+		this._instance = new org.nativescript.canvas.media.VideoHelper(activity, knownFolders.documents().path);
+
+		const ref = new WeakRef(this);
+
+		this._instance.setCallback(
+			new org.nativescript.canvas.media.VideoHelper.Callback({
+				onDurationChange(duration) {
+					const owner = ref.get();
+					if (owner) {
+						durationProperty.nativeValueChange(owner, duration);
+						owner._notifyListener(Video.durationchangeEvent);
+					}
+				},
+
+				onPlaying() {
+					const owner = ref.get();
+					if (owner) {
+						owner._notifyListener(Video.playingEvent);
+					}
+				},
+
+				onVideoSizeChanged(width, height) {
+					const owner = ref.get();
+					if (owner) {
+						owner._videoWidth = width;
+						owner._videoHeight = height;
+					}
+				},
+
+				onCurrentTimeChanged(time) {
+					const owner = ref.get();
+					if (owner) {
+						currentTimeProperty.nativeValueChange(owner, time);
+						owner._notifyListener(Video.timeupdateEvent);
+					}
+				},
+
+				onVideoFrame() {
+					const owner = ref.get();
+					if (owner) {
+						owner._notifyVideoFrameCallbacks();
+					}
+				},
+			})
+		);
+
+		/*
 		if (!Video._didInit) {
 			const packageName = activity.getPackageName();
 			const cacheDir = new java.io.File(path.join(knownFolders.documents().path, 'MEDIA_PLAYER_CACHE'));
@@ -74,13 +124,13 @@ export class Video extends VideoBase {
 		const loadControl = new com.google.android.exoplayer2.DefaultLoadControl.Builder();
 		loadControl.setBufferDurationsMs(Video.BUFFER_MS, com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_MAX_BUFFER_MS, Video.BUFFER_MS, Video.BUFFER_MS);
 		builder.setLoadControl(loadControl.build());
-		this.#player = builder.build();
+		this._player = builder.build();
 		const ref = new WeakRef(this);
-		this.#playerListener = new com.google.android.exoplayer2.Player.Listener({
+		this._playerListener = new com.google.android.exoplayer2.Player.Listener({
 			onIsPlayingChanged: function (isPlaying) {
 				const owner = ref.get();
 				if (owner) {
-					const duration = owner.#player.getDuration();
+					const duration = owner._player.getDuration();
 					if (owner.duration != duration) {
 						durationProperty.nativeValueChange(owner, duration);
 						owner._notifyListener(Video.durationchangeEvent);
@@ -97,7 +147,7 @@ export class Video extends VideoBase {
 						}
 
 						owner._timer = setInterval(function () {
-							const current = owner.#player.getCurrentPosition();
+							const current = owner._player.getCurrentPosition();
 							if (current != owner.currentTime) {
 								currentTimeProperty.nativeValueChange(owner, current);
 								owner._notifyListener(Video.timeupdateEvent);
@@ -107,7 +157,7 @@ export class Video extends VideoBase {
 					} else {
 						clearInterval(owner._timer);
 						clearInterval(owner._frameTimer);
-						currentTimeProperty.nativeValueChange(owner, owner.#player.getCurrentPosition());
+						currentTimeProperty.nativeValueChange(owner, owner._player.getCurrentPosition());
 					}
 				}
 			},
@@ -124,39 +174,40 @@ export class Video extends VideoBase {
 			onTimelineChanged(timeline: com.google.android.exoplayer2.Timeline, manifest: any, reason: number) {},
 			onTracksChanged: function (trackGroups, trackSelections) {},
 
-			onPlayWhenReadyChanged​(playWhenReady: boolean, reason: number){},
-			onEvents​(player, events){},
-			onMediaItemTransition​(mediaItem,reason: number){},
-			onAvailableCommandsChanged​(availableCommands){},
-			onPlaybackStateChanged​(playbackState: number){},
-			onIsLoadingChanged​(isLoading: boolean){},
-			onPlayerErrorChanged​(error){
+			onPlayWhenReadyChanged(playWhenReady: boolean, reason: number) {},
+			onEvents(player, events) {},
+			onMediaItemTransition(mediaItem, reason: number) {},
+			onAvailableCommandsChanged(availableCommands) {},
+			onPlaybackStateChanged(playbackState: number) {},
+			onIsLoadingChanged(isLoading: boolean) {},
+			onPlayerErrorChanged(error) {
 				if (Video.IS_DEBUG) {
 					console.log(error);
 				}
 			},
-			onTracksInfoChanged(tracksInfo){},
-			onSurfaceSizeChanged(width: number, height: number){},
-			onRenderedFirstFrame(){},
-			onDeviceVolumeChanged​(volume: number, muted: boolean){},
-			onVideoSizeChanged​(videoSize) {
+			onTracksInfoChanged(tracksInfo) {},
+			onSurfaceSizeChanged(width: number, height: number) {},
+			onRenderedFirstFrame() {},
+			onDeviceVolumeChanged(volume: number, muted: boolean) {},
+			onVideoSizeChanged(videoSize) {
 				const owner = ref.get();
 				if (owner) {
 					owner._videoWidth = videoSize.width;
 					owner._videoHeight = videoSize.height;
 				}
-			}
+			},
 		});
 		const inflator = activity.getLayoutInflater();
 		const layout = Video.getResourceId(Application.android.foregroundActivity || Application.android.startActivity, 'player');
-		this.#player.addListener(this.#playerListener);
-		this.#playerView = inflator.inflate(layout, null, false) as any; //new com.google.android.exoplayer2.ui.PlayerView(Application.android.foregroundActivity || Application.android.startActivity);
-		this.#container = new android.widget.LinearLayout(Application.android.foregroundActivity || Application.android.startActivity);
+		this._player.addListener(this._playerListener);
+		this._playerView = inflator.inflate(layout, null, false) as any; //new com.google.android.exoplayer2.ui.PlayerView(Application.android.foregroundActivity || Application.android.startActivity);
+		this._container = new android.widget.LinearLayout(Application.android.foregroundActivity || Application.android.startActivity);
 		const params = new android.widget.LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
-		this.#textureView = new android.view.TextureView(Application.android.foregroundActivity || Application.android.startActivity);
-		this.#container.addView(this.#textureView as any, params);
-		this.setNativeView(this.#container);
-
+		this._textureView = new android.view.TextureView(Application.android.foregroundActivity || Application.android.startActivity);
+		this._container.addView(this._textureView as any, params);
+		this.setNativeView(this._container);
+		*/
+		this.setNativeView(this._instance.getContainer());
 	}
 
 	get readyState() {
@@ -164,7 +215,7 @@ export class Video extends VideoBase {
 	}
 
 	_setSurface(surface) {
-		this.#player.setVideoSurface(surface);
+		this._player.setVideoSurface(surface);
 	}
 
 	private static getResourceId(context: any, res: string = '') {
@@ -189,144 +240,155 @@ export class Video extends VideoBase {
 		return video;
 	}
 
-	private _setSrc(value: string) {
-		try {
-			if (typeof value === 'string' && value.startsWith('~/')) {
-				value = path.join(knownFolders.currentApp().path, value.replace('~', ''));
-			}
-			this.#player.setMediaItems(java.util.Arrays.asList([com.google.android.exoplayer2.MediaItem.fromUri(android.net.Uri.parse(value))]), true);
-			this.#player.prepare();
-			if (this.#autoplay) {
-				this.#player.setPlayWhenReady(true);
-			}
-		} catch (e) {
-			if (Video.IS_DEBUG) {
-				console.log(e);
-			}
-		}
-	}
+	// private _setSrc(value: string) {
+	// 	try {
+	// 		if (typeof value === 'string' && value.startsWith('~/')) {
+	// 			value = path.join(knownFolders.currentApp().path, value.replace('~', ''));
+	// 		}
+	// 		this._player.setMediaItems(java.util.Arrays.asList([com.google.android.exoplayer2.MediaItem.fromUri(android.net.Uri.parse(value))]), true);
+	// 		this._player.prepare();
+	// 		if (this._autoplay) {
+	// 			this._player.setPlayWhenReady(true);
+	// 		}
+	// 	} catch (e) {
+	// 		if (Video.IS_DEBUG) {
+	// 			console.log(e);
+	// 		}
+	// 	}
+	// }
 
 	_hasFrame = false;
 	getCurrentFrame(context?: WebGLRenderingContext) {
-		if (this.isLoaded) {
-			const surfaceView = this.#playerView.getVideoSurfaceView();
+		const ctx = arguments[1] as any;
+		const flipY = ctx._flipY;
+		const ptr = ctx._canvas._canvas.getNativeGL();
+
+		this._instance.getCurrentFrame(!!this.isLoaded, ptr, flipY, arguments[4], arguments[5]);
+
+		/*	if (this.isLoaded) {
+			const surfaceView = this._playerView.getVideoSurfaceView();
 			if (surfaceView instanceof android.view.TextureView) {
 				const st = surfaceView.getSurfaceTexture();
 				if (st) {
 					// @ts-ignore
-					this._render = org.nativescript.canvas.Utils.createRenderAndAttachToGLContext(context, st);
+					this._render = org.nativescript.canvas.Utils.createRenderAndAttachToGLContext(ptr, st);
 					this._st = st;
 				}
 			}
 		}
 
-		if (!this._st) {
-			// @ts-ignore
-			const result = org.nativescript.canvas.Utils.createSurfaceTexture(context);
-			this._st = result[0];
-			const ref = new WeakRef(this);
-			this._frameListener = new android.graphics.SurfaceTexture.OnFrameAvailableListener({
-				onFrameAvailable(param0: android.graphics.SurfaceTexture) {
-					const owner = ref.get();
-					if (owner) {
-						owner._hasFrame = true;
-						owner._notifyVideoFrameCallbacks();
-					}
-				},
-			});
 
-			this._st.setOnFrameAvailableListener(this._frameListener);
-
-			this._surface = new android.view.Surface(this._st);
-			this.#player.setVideoSurface(this._surface);
-			this._render = result[1];
-		}
-
-		if (this._st) {
-			if (!this._hasFrame) {
-				return;
+		try {
+			if (!this._st) {
+				// @ts-ignore
+				const result = org.nativescript.canvas.Utils.createSurfaceTexture(ptr);
+				console.log(result);
+				this._st = result[0];
+				const ref = new WeakRef(this);
+				this._frameListener = new android.graphics.SurfaceTexture.OnFrameAvailableListener({
+					onFrameAvailable(param0: android.graphics.SurfaceTexture) {
+						const owner = ref.get();
+						if (owner) {
+							owner._hasFrame = true;
+							owner._notifyVideoFrameCallbacks();
+						}
+					},
+				});
+	
+				this._st.setOnFrameAvailableListener(this._frameListener);
+	
+				this._surface = new android.view.Surface(this._st);
+				this._player.setVideoSurface(this._surface);
+				this._render = result[1];
 			}
-			// @ts-ignore
-			org.nativescript.canvas.Utils.updateTexImage(context, this._st, this._render, this._videoWidth, this._videoHeight, arguments[4], arguments[5]);
-			this._hasFrame = false;
+	
+			if (this._st) {
+				if (!this._hasFrame) {
+					return;
+				}
+				// @ts-ignore
+				console.log(ptr, flipY, this._st, this._render, this._videoWidth, this._videoHeight, arguments[4], arguments[5]);
+	
+				org.nativescript.canvas.Utils.updateTexImage(ptr, flipY, this._st, this._render, this._videoWidth, this._videoHeight, arguments[4], arguments[5]);
+				this._hasFrame = false;
+			}
+		} catch (error) {
+			console.log(error);
 		}
+		*/
 	}
 
 	play() {
-		this.#player.setPlayWhenReady(true);
+		this._instance.play();
 	}
 
 	pause() {
-		this.#player.setPlayWhenReady(false);
+		this._instance.pause();
 	}
 
 	get muted() {
-		return this.#player.isDeviceMuted();
+		return this._instance.getMuted();
 	}
 
 	set muted(value: boolean) {
-		this.#player.setDeviceMuted(value);
+		this._instance.setMuted(value);
 	}
 
 	get duration() {
-		return this.#player.getDuration();
+		return this._instance.getDuration();
 	}
 
 	get currentTime() {
-		return this.#player.getCurrentPosition() / 1000;
+		return this._instance.getCurrentTime();
 	}
 
 	set currentTime(value: number) {
-		this.#player.seekTo(value * 1000, 0);
+		this._instance.setCurrentTime(value);
 	}
 
 	get src() {
-		return this.#src;
+		return this._instance.getSrc();
 	}
 
 	set src(value: string) {
-		this.#src = value;
-		this._setSrc(value);
+		if (typeof value === 'string' && value.startsWith('~/')) {
+			value = path.join(knownFolders.currentApp().path, value.replace('~', ''));
+		}
+		this._instance.setSrc(value);
 	}
 
 	//@ts-ignore
 	get autoplay() {
-		return this.#autoplay;
+		return this._instance.getAutoplay();
 	}
 
 	set autoplay(value: boolean) {
-		this.#player.setPlayWhenReady(value);
+		this._instance.setAutoplay(value);
 	}
 
 	get controls() {
-		return this.#playerView.getUseController();
+		return this._instance.getControls();
 	}
 
 	set controls(enabled: boolean) {
-		this.#playerView.setUseController(enabled);
+		this._instance.setControls(enabled);
 	}
 
 	// @ts-ignore
 	get loop() {
-		return this.#loop;
+		return this._instance.getLoop();
 	}
 
 	set loop(value: boolean) {
-		this.#loop = value;
-
-		if (value) {
-			this.#player.setRepeatMode(com.google.android.exoplayer2.Player.REPEAT_MODE_ALL);
-		} else {
-			this.#player.setRepeatMode(com.google.android.exoplayer2.Player.REPEAT_MODE_OFF);
-		}
+		this._instance.setLoop(value);
 	}
 
 	createNativeView(): Object {
-		if (!this.#playerView) {
-			this.#playerView = new com.google.android.exoplayer2.ui.PlayerView(this._context);
+		if (!this._playerView) {
+			this._playerView = new com.google.android.exoplayer2.ui.PlayerView(this._context);
 		}
-		this.#playerView.setPlayer(this.#player);
-		return this.#playerView;
+		this._playerView.setPlayer(this._player);
+		return this._playerView;
 	}
 
 	initNativeView() {
@@ -335,14 +397,14 @@ export class Video extends VideoBase {
 
 	_addChildFromBuilder(name: string, value: any) {
 		if (value instanceof Source) {
-			this.#sourceView.push(value);
+			this._sourceView.push(value);
 		}
 	}
 
 	onLoaded() {
 		super.onLoaded();
-		if (this.#sourceView.length > 0) {
-			this._setSrc(this.#sourceView[0].src);
+		if (this._sourceView.length > 0) {
+			this.src = this._sourceView[0].src;
 		}
 	}
 
@@ -351,16 +413,7 @@ export class Video extends VideoBase {
 		if (this.getMeasuredWidth() > 0) {
 			return this.getMeasuredWidth();
 		}
-		//@ts-ignore
-		const width = this.#container.getWidth();
-		if (width === 0) {
-			//@ts-ignore
-			let rootParams = this.#container.getLayoutParams();
-			if (rootParams) {
-				return rootParams.width;
-			}
-		}
-		return width;
+		return this._instance.getWidth();
 	}
 
 	set width(value) {
@@ -375,16 +428,7 @@ export class Video extends VideoBase {
 		if (this.getMeasuredHeight() > 0) {
 			return this.getMeasuredHeight();
 		}
-		//@ts-ignore
-		const height = this.#container.getHeight();
-		if (height === 0) {
-			//@ts-ignore
-			let rootParams = this.#container.getLayoutParams();
-			if (rootParams) {
-				return rootParams.height;
-			}
-		}
-		return height;
+		return this._instance.getHeight();
 	}
 
 	set height(value) {
@@ -407,8 +451,9 @@ export class Video extends VideoBase {
 			const size = this._realSize;
 			size.width = size.width * Screen.mainScreen.scale;
 			size.height = size.height * Screen.mainScreen.scale;
-			//@ts-ignore
-			let rootParams = this.#container.getLayoutParams();
+			this._instance.layoutNative(size.width, size.height);
+			/*	//@ts-ignore
+			let rootParams = this._container.getLayoutParams();
 
 			if (rootParams && (size.width || 0) === rootParams.width && (size.height || 0) === rootParams.height) {
 				return;
@@ -428,19 +473,20 @@ export class Video extends VideoBase {
 				//	surfaceParams.height = size.height;
 
 				//@ts-ignore
-				this.#container.setLayoutParams(rootParams);
+				this._container.setLayoutParams(rootParams);
 
 				const w = android.view.View.MeasureSpec.makeMeasureSpec(size.width, android.view.View.MeasureSpec.EXACTLY);
 				const h = android.view.View.MeasureSpec.makeMeasureSpec(size.height, android.view.View.MeasureSpec.EXACTLY);
 				//@ts-ignore
-				this.#container.measure(w, h);
+				this._container.measure(w, h);
 				//@ts-ignore
-				this.#container.layout(0, 0, size.width || 0, size.height || 0);
+				this._container.layout(0, 0, size.width || 0, size.height || 0);
 
 				if (this._st) {
 					this._st.setDefaultBufferSize(size.width || 0, size.height || 0);
 				}
 			}
+			*/
 		}
 	}
 }

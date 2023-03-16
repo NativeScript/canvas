@@ -151,7 +151,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DCont
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let ret = Box::into_raw(Box::new(canvas_cxx::CanvasRenderingContext2D::new(
+    let mut ctx_2d = canvas_cxx::CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -165,11 +165,12 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DCont
         )),
         context.gl_context.clone(),
         alpha == JNI_TRUE,
-    ))) as jlong;
+    );
 
-    context.gl_context.remove_if_current();
+    ctx_2d.get_context_mut().flush();
+    context.gl_context.swap_buffers();
 
-    ret
+    Box::into_raw(Box::new(ctx_2d)) as jlong
 }
 
 #[no_mangle]
@@ -187,7 +188,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurf
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             context.gl_context.set_window_surface(
-                &context.contextAttributes,
+                &mut context.contextAttributes,
                 window.width(),
                 window.height(),
                 window.raw_window_handle(),

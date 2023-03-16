@@ -1,6 +1,6 @@
 import { Element } from './Element';
 import { knownFolders, path, File, Utils } from '@nativescript/core';
-// import { ImageAsset } from '@nativescript/canvas';
+import { ImageAsset } from '@nativescript/canvas';
 declare const qos_class_t;
 const background_queue = global.isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
 const main_queue = global.isIOS ? dispatch_get_current_queue() : undefined;
@@ -80,9 +80,8 @@ export class HTMLImageElement extends Element {
 
 	constructor(props?) {
 		super('img');
-		this._asset = new global.ImageAsset();
+		this._asset = new ImageAsset();
 		this.__id = getUUID();
-		this.__instanceType = 53;
 		this._onload = () => {};
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;

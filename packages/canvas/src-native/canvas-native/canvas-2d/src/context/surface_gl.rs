@@ -35,6 +35,9 @@ impl Context {
         };
         let interface = Interface::new_native();
         let mut ctx = skia_safe::gpu::DirectContext::new_gl(interface, None).unwrap();
+
+        ctx.reset(None);
+
         let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
         if alpha {
             frame_buffer.format = GR_GL_RGBA8;
@@ -45,7 +48,7 @@ impl Context {
         let target = skia_safe::gpu::BackendRenderTarget::new_gl(
             (width as i32, height as i32),
             Some(samples as usize),
-            8,
+            0,
             frame_buffer,
         );
         let surface_props = skia_safe::SurfaceProps::new(
@@ -54,7 +57,7 @@ impl Context {
         );
         let mut color_type = ColorType::RGBA8888;
         if !alpha {
-            color_type = ColorType::RGB888x;
+            color_type = ColorType::RGB565;
         }
         let surface_holder = Surface::from_backend_render_target(
             &mut ctx,
@@ -112,7 +115,7 @@ impl Context {
         let target = skia_safe::gpu::BackendRenderTarget::new_gl(
             (width as i32, height as i32),
             Some(samples as usize),
-            8,
+            0,
             frame_buffer,
         );
         let surface_props = skia_safe::SurfaceProps::new(

@@ -401,13 +401,15 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		const createPattern = this._getMethod('createPattern');
 
 		let img;
-		if (image instanceof ImageSource) {
+
+		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
+			img = (image as any).native;
+		} else if (image instanceof ImageSource) {
 			img = image.android;
 		} else if (image instanceof android.graphics.Bitmap) {
 			const ptr = this._getMethod('__getPointer');
 			const createPattern = this._getMethod('__createPatternWithNative');
 			const pattern = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.createPattern(long(ptr), image, repetition);
-
 			return new CanvasPattern(createPattern(pattern));
 		} else if (image instanceof ImageAsset) {
 			img = image.native;
@@ -457,7 +459,9 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this._ensureLayoutBeforeDraw();
 		const drawImage = this._getMethod('drawImage');
 		let image = args[0];
-		if (image instanceof ImageAsset) {
+		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
+			image = (image as any).native;
+		} else if (image instanceof ImageAsset) {
 			image = image.native;
 		} else if (image instanceof ImageSource) {
 			image = image.android;

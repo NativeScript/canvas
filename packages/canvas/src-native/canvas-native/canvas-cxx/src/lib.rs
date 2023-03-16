@@ -24,8 +24,8 @@ use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
-    from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy,
-    to_image_encoded_from_data,
+    from_bitmap_slice, from_image_encoded_data, from_image_slice, from_image_slice_encoded,
+    from_image_slice_no_copy, to_image_encoded_from_data,
 };
 use canvas_core::image_asset::OutputFormat;
 use canvas_webgl::prelude::WebGLVersion;
@@ -741,6 +741,10 @@ pub mod ffi {
             format: &str,
             quality: i32,
         ) -> String;
+
+        fn canvas_native_context_get_filter(context: &CanvasRenderingContext2D) -> String;
+
+        fn canvas_native_context_set_filter(context: &mut CanvasRenderingContext2D, font: &str);
 
         fn canvas_native_context_get_font(context: &CanvasRenderingContext2D) -> String;
 
@@ -3165,11 +3169,14 @@ pub fn canvas_native_context_create_gl(
 ) -> Box<CanvasRenderingContext2D> {
     let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
+    gl_context.remove_if_current();
     gl_context.make_current();
+
     let mut frame_buffers = [0];
     unsafe {
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
+
     let ret = Box::new(CanvasRenderingContext2D {
         context: ContextWrapper::new(Context::new_gl(
             width,
@@ -3185,7 +3192,10 @@ pub fn canvas_native_context_create_gl(
         gl_context,
         alpha,
     });
-    ret.gl_context.remove_if_current();
+
+    ret.context.get_context_mut().flush();
+    ret.gl_context.swap_buffers();
+
     ret
 }
 
@@ -3252,6 +3262,14 @@ pub fn canvas_native_context_create_gl_no_window(
         gl_context,
         alpha,
     })
+}
+
+fn canvas_native_context_get_filter(context: &CanvasRenderingContext2D) -> String {
+    context.get_context().get_filter().to_string()
+}
+
+fn canvas_native_context_set_filter(context: &mut CanvasRenderingContext2D, filter: &str) {
+    context.get_context_mut().set_filter(filter)
 }
 
 fn canvas_native_context_get_font(context: &CanvasRenderingContext2D) -> String {
@@ -3962,7 +3980,6 @@ pub fn canvas_native_context_create_pattern_canvas2d(
     Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
         None,
         |repetition| {
-            context.remove_if_current();
             let width;
             let height;
             let source_non_gpu;
@@ -3979,39 +3996,29 @@ pub fn canvas_native_context_create_pattern_canvas2d(
             let buf;
             if !source_non_gpu {
                 source.make_current();
-                // source.get_context_mut().flush();
-                /*   buf = vec![0u8; (width as i32 * height as i32 * 4) as usize];
-
-                unsafe {
-                    gl_bindings::PixelStorei(gl_bindings::GL_UNPACK_ALIGNMENT, 1);
-                    //   gl_bindings::Finish();
-                    gl_bindings::ReadPixels(
-                        0,
-                        0,
-                        width as i32,
-                        height as i32,
-                        gl_bindings::RGBA,
-                        gl_bindings::UNSIGNED_BYTE,
-                        buf.as_mut_ptr() as *mut c_void,
-                    );
-                }
-                */
 
                 // todo use gpu image created from snapshot ... need single or shared context or transfer to a texture
-                return if let Some(data) = source_ctx.read_pixels_to_encoded_data() {
-                    to_image_encoded_from_data(data).map(|image| {
-                        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
-                            context.get_context().create_pattern(image, repetition),
-                        )
-                    })
-                } else {
-                    None
-                };
+                //let data = source_ctx.snapshot_to_raster_data();
+
+                //let mut data = source_ctx.snapshot_to_raster_data();
+                let image = source_ctx.snapshot_to_raster_image();
+                context.make_current();
+
+                return image.map(|image| {
+                    canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                        context.get_context().create_pattern(image, repetition),
+                    )
+                });
+
+                // return from_image_slice(data.as_slice(), width, height).map(|image| {
+                //     canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                //         context.get_context().create_pattern(image, repetition),
+                //     )
+                // });
             } else {
+                source.make_current();
                 buf = source_ctx.read_pixels();
             }
-
-            source.remove_if_current();
 
             {
                 let ctx = context.get_context();
@@ -4530,6 +4537,7 @@ pub fn canvas_native_context_translate(context: &mut CanvasRenderingContext2D, x
 pub fn canvas_native_context_flush(context: &CanvasRenderingContext2D) {
     context.make_current();
     context.get_context_mut().flush();
+    context.gl_context.swap_buffers();
 }
 
 pub fn canvas_native_to_data_url(
@@ -5461,6 +5469,7 @@ pub fn canvas_native_context_gl_make_current(context: &CanvasRenderingContext2D)
 }
 
 pub fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D) -> bool {
+    context.get_context_mut().flush();
     context.gl_context.swap_buffers()
 }
 /* GL */
@@ -7497,19 +7506,7 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
     let mut buf;
     if !source_non_gpu {
         canvas.gl_context.make_current();
-        buf = vec![0u8; (width as i32 * height as i32 * 4) as usize];
-        unsafe {
-            gl_bindings::Finish();
-            gl_bindings::ReadPixels(
-                0,
-                0,
-                width as i32,
-                height as i32,
-                gl_bindings::RGBA,
-                gl_bindings::UNSIGNED_BYTE,
-                buf.as_mut_ptr() as *mut c_void,
-            );
-        }
+        buf = source_ctx.snapshot_to_raster_data();
         canvas.gl_context.remove_if_current();
     } else {
         buf = source_ctx.read_pixels();

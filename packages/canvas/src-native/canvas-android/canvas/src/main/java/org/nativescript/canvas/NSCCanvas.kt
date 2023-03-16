@@ -31,6 +31,7 @@ class NSCCanvas : FrameLayout {
         Surface
     }
 
+
     var ignorePixelScaling: Boolean
         set(value) {
             if (surfaceType == SurfaceType.Surface) {
@@ -45,11 +46,11 @@ class NSCCanvas : FrameLayout {
             return textureView.ignorePixelScaling
         }
 
-
-    private var surface: Surface? = null
     private var surfaceType = SurfaceType.Texture
     private lateinit var textureView: GLView
     private lateinit var surfaceView: GLViewSV
+
+    private var isAlpha = false
 
     constructor(context: Context) : super(context, null) {
         init(context, null, SurfaceType.Texture)
@@ -218,6 +219,8 @@ class NSCCanvas : FrameLayout {
             desynchronized,
             xrCompatible
         )
+
+        this.isAlpha = alpha
     }
 
     fun initContextWithContextAttributes(
@@ -298,6 +301,8 @@ class NSCCanvas : FrameLayout {
 
             nativeContext = nativeGetGLPointer(nativeGL)
         }
+
+        this.isAlpha = alpha
     }
 
     fun create2DContext(
@@ -415,8 +420,6 @@ class NSCCanvas : FrameLayout {
                 rootParams.width = width
                 rootParams.height = height
 
-
-
                 if (canvas.surfaceType == SurfaceType.Texture) {
                     if (canvas.textureView.surfaceTexture == null) {
                         val st = SurfaceTexture(0)
@@ -430,8 +433,6 @@ class NSCCanvas : FrameLayout {
                         canvas.textureView.st?.setDefaultBufferSize(width, height)
                     }
                 }
-
-
 
                 canvas.layoutParams = rootParams
 

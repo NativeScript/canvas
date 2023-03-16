@@ -14,8 +14,6 @@ export class HTMLCanvasElement extends Element {
 		} else {
 			this._canvas = (Canvas as any).createCustomView(true);
 		}
-
-		this.__instanceType = 52;
 	}
 
 	set width(value) {

@@ -14,8 +14,6 @@ export class HTMLVideoElement extends Element {
 		if (Video) {
 			this._video = Video.createCustomView();
 		}
-
-		this.__instanceType = 54;
 	}
 
 	addEventListener(type: string, listener: Function, useCapture: boolean | any) {

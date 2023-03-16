@@ -36,6 +36,7 @@ std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi:
     ret.reserve(64);
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__getPointer")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__resize")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("filter")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("font")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingEnabled")));
@@ -106,8 +107,10 @@ void
 CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &name,
                                   const jsi::Value &value) {
     auto methodName = name.utf8(runtime);
-
-    if (methodName == "font") {
+    if (methodName == "filter") {
+        auto val = value.asString(runtime).utf8(runtime);
+        canvas_native_context_set_filter(this->GetContext(), rust::Str(val.c_str()));
+    } else if (methodName == "font") {
         auto val = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_font(this->GetContext(), rust::Str(val.c_str()));
     } else if (methodName == "globalAlpha") {
@@ -161,40 +164,52 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
             auto style = value.asString(runtime).utf8(runtime);
             canvas_native_paint_style_set_fill_color_with_string(this->GetContext(),
                                                                  rust::Str(style.c_str()));
-        } else if (!value.isNull() && !value.isUndefined() && value.isObject()) {
-            auto gradient = getHostObject<CanvasGradient>(runtime, value);
-            if (gradient != nullptr) {
-                canvas_native_context_set_fill_style(this->GetContext(), gradient->GetPaintStyle());
-                return;
-            }
+        } else if (value.isObject()) {
 
-            auto pattern = getHostObject<CanvasPattern>(runtime, value);
+            try {
+                auto gradient = getHostObject<CanvasGradient>(runtime, value);
+                if (gradient != nullptr) {
+                    canvas_native_context_set_fill_style(this->GetContext(),
+                                                         gradient->GetPaintStyle());
+                    return;
+                }
+            } catch (...) {}
 
-            if (pattern != nullptr) {
-                canvas_native_context_set_fill_style(this->GetContext(), pattern->GetPaintStyle());
-                return;
-            }
+            try {
+                auto pattern = getHostObject<CanvasPattern>(runtime, value);
+
+                if (pattern != nullptr) {
+                    canvas_native_context_set_fill_style(this->GetContext(),
+                                                         pattern->GetPaintStyle());
+                    return;
+                }
+            } catch (...) {}
         }
     } else if (methodName == "strokeStyle") {
         if (value.isString()) {
             auto style = value.asString(runtime).utf8(runtime);
             canvas_native_paint_style_set_stroke_color_with_string(this->GetContext(),
                                                                    rust::Str(style.c_str()));
-        } else if (!value.isNull() && !value.isUndefined() && value.isObject()) {
-            auto gradient = getHostObject<CanvasGradient>(runtime, value);
-            if (gradient != nullptr) {
-                canvas_native_context_set_stroke_style(this->GetContext(),
-                                                       gradient->GetPaintStyle());
-                return;
-            }
+        } else if (value.isObject()) {
 
-            auto pattern = getHostObject<CanvasPattern>(runtime, value);
+            try {
+                auto gradient = getHostObject<CanvasGradient>(runtime, value);
+                if (gradient != nullptr) {
+                    canvas_native_context_set_stroke_style(this->GetContext(),
+                                                           gradient->GetPaintStyle());
+                    return;
+                }
+            } catch (...) {}
 
-            if (pattern != nullptr) {
-                canvas_native_context_set_stroke_style(this->GetContext(),
-                                                       pattern->GetPaintStyle());
-                return;
-            }
+            try {
+                auto pattern = getHostObject<CanvasPattern>(runtime, value);
+
+                if (pattern != nullptr) {
+                    canvas_native_context_set_stroke_style(this->GetContext(),
+                                                           pattern->GetPaintStyle());
+                    return;
+                }
+            } catch (...) {}
         }
     } else if (methodName == "lineWidth") {
         auto lineWidth = (float) value.asNumber();
@@ -224,6 +239,11 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
 
 jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
+
+    if (methodName == "filter") {
+        auto filter = canvas_native_context_get_filter(this->GetContext());
+        return jsi::String::createFromAscii(runtime, filter.data(), filter.length());
+    }
 
     if (methodName == "__getPointer") {
         auto ptr = (intptr_t *) &this->GetContext();
@@ -636,8 +656,8 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                      auto rep = arguments[1].asString(
                                                                              runtime).utf8(runtime);
                                                                      rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
-                                                                             this->GetContext(),
                                                                              canvas_2d->GetContext(),
+                                                                             this->GetContext(),
                                                                              rust::Str(
                                                                                      rep.c_str()));
                                                                      auto type = canvas_native_context_get_style_type(
@@ -1657,7 +1677,6 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
     return jsi::Value::undefined();
 }
 
-
 CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
     auto raf = this->raf_.get();
     if (raf != nullptr) {
@@ -1666,7 +1685,7 @@ CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
 }
 
 void CanvasRenderingContext2DImpl::UpdateInvalidateState() {
-    auto raf = this->raf_.get();
+    auto raf = this->GetRaf();
     if (raf != nullptr) {
         if (!canvas_native_raf_get_started(raf->GetRaf())) {
             canvas_native_raf_start(raf->GetRaf());
@@ -1691,7 +1710,8 @@ void CanvasRenderingContext2DImpl::SetInvalidateState(int state) {
 
 
 void CanvasRenderingContext2DImpl::Flush() {
-    if (this->GetInvalidateState() == InvalidateState::PENDING) {
+    auto state = (int) this->GetInvalidateState() & (int) InvalidateState::PENDING;
+    if (state == (int) InvalidateState::PENDING) {
         canvas_native_context_flush(this->GetContext());
         this->SetInvalidateState(InvalidateState::INVALIDATING);
         canvas_native_context_gl_make_current(this->GetContext());

@@ -51,8 +51,8 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
-		//this.renderTextureAdvance(canvas);
-		this.starWarp(canvas);
+		this.renderTextureAdvance(canvas);
+		//this.starWarp(canvas);
 		// this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
 		//this.multiPassShaderGenMesh(canvas);

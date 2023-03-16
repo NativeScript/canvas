@@ -510,6 +510,14 @@ _cache = new com.google.android.exoplayer2.upstream.cache.SimpleCache(cacheDir, 
         }
     }
 
+    public StyledPlayerView getPlayerView(){
+        return this._playerView;
+    }
+
+    public void setPlayer(){
+          this._playerView.setPlayer(this._player);
+    }
+
     public LinearLayout getContainer() {
         return this._container;
     }

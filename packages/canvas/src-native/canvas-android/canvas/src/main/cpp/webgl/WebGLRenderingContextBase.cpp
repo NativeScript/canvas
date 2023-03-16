@@ -43,7 +43,7 @@ void WebGLRenderingContextBase::UpdateInvalidateState() {
 }
 
 void WebGLRenderingContextBase::Flush() {
-    auto state = this->GetInvalidateState();
+    auto state = this->GetInvalidateState() & (int) InvalidateState::PENDING;
     if (state == (int) InvalidateState::PENDING) {
         this->SetInvalidateState((int) InvalidateState::INVALIDATING);
         canvas_native_webgl_make_current(this->GetState());

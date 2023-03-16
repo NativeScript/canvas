@@ -1,9 +1,9 @@
 use std::os::raw::c_float;
 use std::sync::{Arc, RwLock};
 
-use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::{Mutex, RawMutex, RawRwLock};
-use skia_safe::{Color, Image, Point, Surface};
+use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
+use skia_safe::{Color, Data, Image, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use drawing_text::typography::Font;
@@ -246,6 +246,47 @@ impl Context {
 
     pub fn flush(&mut self) {
         self.surface.flush_and_submit();
+    }
+
+    pub fn flush_and_sync_cpu(&mut self) {
+        self.surface.flush_submit_and_sync_cpu()
+    }
+
+    pub fn snapshot_to_raster_data(&mut self) -> Vec<u8> {
+        self.flush();
+        let info = self.surface.image_info();
+        let size = info.height() as usize * info.min_row_bytes();
+        let mut buf = vec![0_u8; size];
+
+        let ss = self.surface.image_snapshot();
+        match ss.to_raster_image(skia_safe::image::CachingHint::Allow) {
+            Some(image) => {
+                let mut info = skia_safe::ImageInfo::new(
+                    skia_safe::ISize::new(ss.width(), ss.height()),
+                    skia_safe::ColorType::RGBA8888,
+                    skia_safe::AlphaType::Unpremul,
+                    None,
+                );
+                let row_bytes = info.width() * 4;
+                let _read = image.read_pixels(
+                    &mut info,
+                    buf.as_mut_slice(),
+                    row_bytes as usize,
+                    skia_safe::IPoint::new(0, 0),
+                    skia_safe::image::CachingHint::Allow,
+                );
+            }
+            _ => {}
+        }
+
+        buf
+    }
+
+
+    pub fn snapshot_to_raster_image(&mut self) -> Option<Image> {
+        self.flush();
+        let ss = self.surface.image_snapshot();
+        ss.to_raster_image(skia_safe::image::CachingHint::Allow)
     }
 
     pub fn read_pixels(&mut self) -> Vec<u8> {

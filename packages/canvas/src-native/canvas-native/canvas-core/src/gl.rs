@@ -11,12 +11,13 @@ use glutin::api::egl::{
 use glutin::config::{
     Api, AsRawConfig, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig,
 };
-use glutin::context::{ContextApi, GlContext, Version};
+use glutin::context::{AsRawContext, ContextApi, GlContext, RawContext, Version};
 use glutin::display::{AsRawDisplay, DisplayApiPreference};
 use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, WindowSurface};
+use once_cell::sync::Lazy;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use raw_window_handle::{
     AndroidDisplayHandle, AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
@@ -39,10 +40,17 @@ pub struct GLContextInner {
     display: Option<Display>,
 }
 
+unsafe impl Sync for GLContextInner {}
+
+unsafe impl Send for GLContextInner {}
+
 #[derive(Debug, Default)]
 pub struct GLContext {
     inner: Arc<RwLock<GLContextInner>>,
 }
+
+unsafe impl Sync for GLContext {}
+unsafe impl Send for GLContext {}
 
 impl GLContext {
     // pointer has to
@@ -87,6 +95,26 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
     }
 }
 
+impl Into<ConfigTemplateBuilder> for ContextAttributes {
+    fn into(self) -> ConfigTemplateBuilder {
+        ConfigTemplateBuilder::new()
+            .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
+            .with_depth_size(if self.get_depth() { 16 } else { 0 })
+            .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
+            .with_transparency(self.get_alpha())
+    }
+}
+
+impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
+    fn from(value: &mut ContextAttributes) -> Self {
+        ConfigTemplateBuilder::new()
+            .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
+            .with_depth_size(if value.get_depth() { 16 } else { 0 })
+            .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
+            .with_transparency(value.get_alpha())
+    }
+}
+
 // impl Into<glutin::config::ConfigTemplate> for ContextAttributes {
 //     fn into(self) -> ConfigTemplate {
 //         ConfigTemplateBuilder::new()
@@ -108,6 +136,7 @@ impl GLContext {
         height: i32,
         window: RawWindowHandle,
     ) -> bool {
+        let is_2d = context_attrs.get_is_canvas();
         let cfg = context_attrs.into();
         let mut lock = self.inner.write();
         unsafe {
@@ -115,20 +144,58 @@ impl GLContext {
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
@@ -136,6 +203,12 @@ impl GLContext {
 
                 return match config {
                     Some(config) => {
+                        if context_attrs.get_antialias() && config.num_samples() == 0 {
+                            context_attrs.set_antialias(false);
+                        }
+
+                        context_attrs.set_samples(config.num_samples());
+
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
@@ -176,24 +249,63 @@ impl GLContext {
                     display.get_proc_address(symbol.as_c_str()).cast()
                 });
 
+                let is_2d = context_attrs.get_is_canvas();
                 let cfg = context_attrs.into();
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
@@ -201,6 +313,12 @@ impl GLContext {
 
                 match config {
                     Some(config) => {
+                        if context_attrs.get_antialias() && config.num_samples() == 0 {
+                            context_attrs.set_antialias(false);
+                        }
+
+                        context_attrs.set_samples(config.num_samples());
+
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
@@ -258,24 +376,63 @@ impl GLContext {
                     display.get_proc_address(symbol.as_c_str()).cast()
                 });
 
+                let is_2d = context_attrs.get_is_canvas();
                 let cfg = context_attrs.into();
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
@@ -283,6 +440,12 @@ impl GLContext {
 
                 match config {
                     Some(config) => {
+                        if context_attrs.get_antialias() && config.num_samples() == 0 {
+                            context_attrs.set_antialias(false);
+                        }
+
+                        context_attrs.set_samples(config.num_samples());
+
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
@@ -340,24 +503,63 @@ impl GLContext {
                     display.get_proc_address(symbol.as_c_str()).cast()
                 });
 
+                let is_2d = context_attrs.get_is_canvas();
                 let cfg = context_attrs.into();
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
@@ -365,6 +567,12 @@ impl GLContext {
 
                 match config {
                     Some(config) => {
+                        if context_attrs.get_antialias() && config.num_samples() == 0 {
+                            context_attrs.set_antialias(false);
+                        }
+
+                        context_attrs.set_samples(config.num_samples());
+
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
@@ -411,7 +619,7 @@ impl GLContext {
     #[cfg(target_os = "android")]
     pub fn set_window_surface(
         &mut self,
-        context_attrs: &ContextAttributes,
+        context_attrs: &mut ContextAttributes,
         width: i32,
         height: i32,
         window: RawWindowHandle,
@@ -423,30 +631,75 @@ impl GLContext {
                     display.get_proc_address(symbol.as_c_str()).cast()
                 });
 
+                let is_2d = context_attrs.get_is_canvas();
                 let cfg = context_attrs.clone().into();
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
                     .flatten();
 
                 if let Some(config) = config {
+                    if context_attrs.get_antialias() && config.num_samples() == 0 {
+                        context_attrs.set_antialias(false);
+                    }
+
+                    context_attrs.set_samples(config.num_samples());
+
                     let surface_attr =
                         glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
                             window,
@@ -479,24 +732,65 @@ impl GLContext {
                     display.get_proc_address(symbol.as_c_str()).cast()
                 });
 
-                let cfg = context_attrs.into();
+                let is_2d = context_attrs.get_is_canvas();
+                let mut cfg: ConfigTemplateBuilder = context_attrs.into();
+                let cfg = cfg.with_surface_type(ConfigSurfaceTypes::PBUFFER).build();
+
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
@@ -504,6 +798,12 @@ impl GLContext {
 
                 match config {
                     Some(config) => {
+                        if context_attrs.get_antialias() && config.num_samples() == 0 {
+                            context_attrs.set_antialias(false);
+                        }
+
+                        context_attrs.set_samples(config.num_samples());
+
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new()
                                 .build(
@@ -559,24 +859,71 @@ impl GLContext {
                     display.get_proc_address(symbol.as_c_str()).cast()
                 });
 
-                let cfg = context_attrs.into();
+                let is_2d = context_attrs.get_is_canvas();
+                let mut cfg: ConfigTemplateBuilder = context_attrs.into();
+                let cfg = cfg
+                    .with_surface_type(ConfigSurfaceTypes::PBUFFER)
+                    .with_pbuffer_sizes(
+                        (width as u32).try_into().unwrap(),
+                        (height as u32).try_into().unwrap(),
+                    )
+                    .build();
+
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
@@ -584,6 +931,12 @@ impl GLContext {
 
                 match config {
                     Some(config) => {
+                        if context_attrs.get_antialias() && config.num_samples() == 0 {
+                            context_attrs.set_antialias(false);
+                        }
+
+                        context_attrs.set_samples(config.num_samples());
+
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new()
                                 .build(
@@ -639,24 +992,71 @@ impl GLContext {
                     display.get_proc_address(symbol.as_c_str()).cast()
                 });
 
-                let cfg = context_attrs.into();
+                let is_2d = context_attrs.get_is_canvas();
+                let mut cfg: ConfigTemplateBuilder = context_attrs.into();
+                let cfg = cfg
+                    .with_surface_type(ConfigSurfaceTypes::PBUFFER)
+                    .with_pbuffer_sizes(
+                        (width as u32).try_into().unwrap(),
+                        (height as u32).try_into().unwrap(),
+                    )
+                    .build();
+
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
-                        c.reduce(|acc, cconfig| {
-                            if cconfig.supports_transparency().unwrap_or_default()
-                                && context_attrs.get_alpha()
-                                && context_attrs.get_alpha()
-                                && cconfig.alpha_size() == 8u8
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == 8u8
+                                && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == 16u8
+                                && cconfig.depth_size() == depth_size
                             {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
                                 return cconfig;
                             }
 
-                            acc
+                            accum
                         })
                     })
                     .ok()
@@ -664,6 +1064,12 @@ impl GLContext {
 
                 match config {
                     Some(config) => {
+                        if context_attrs.get_antialias() && config.num_samples() == 0 {
+                            context_attrs.set_antialias(false);
+                        }
+
+                        context_attrs.set_samples(config.num_samples());
+
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new()
                                 .build(
@@ -791,6 +1197,20 @@ impl GLContext {
     }
 
     pub fn remove_if_current(&self) {
+        let lock = self.inner.read();
+        let is_current = match (lock.context.as_ref(), lock.surface.as_ref()) {
+            (Some(context), Some(surface)) => match surface {
+                SurfaceHelper::Window(window) => window.is_current(context),
+                SurfaceHelper::Pbuffer(buffer) => buffer.is_current(context),
+                SurfaceHelper::Pixmap(map) => map.is_current(context),
+            },
+            _ => false,
+        };
+
+        if !is_current {
+            return;
+        }
+
         #[cfg(any(target_os = "android", target_os = "ios"))]
         {
             let display = self

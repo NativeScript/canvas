@@ -61,6 +61,10 @@ pub fn from_bitmap_slice(image_slice: &[u8], width: c_int, height: c_int) -> Opt
     Image::from_bitmap(&bm)
 }
 
+pub fn from_image_encoded_data(data: Data) -> Option<Image> {
+    Image::from_encoded(data)
+}
+
 pub fn from_image_slice(image_slice: &[u8], width: c_int, height: c_int) -> Option<Image> {
     let info = ImageInfo::new(
         ISize::new(width, height),

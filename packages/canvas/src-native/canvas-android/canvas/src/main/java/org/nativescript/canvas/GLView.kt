@@ -51,7 +51,6 @@ internal class GLView : TextureView, SurfaceTextureListener {
 	}
 
 
-	@Synchronized
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
 		if (isReady) {
 			return
@@ -73,7 +72,6 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		}
 	}
 
-	@Synchronized
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
 		if (isReady) {
 			return
@@ -96,12 +94,10 @@ internal class GLView : TextureView, SurfaceTextureListener {
 		}
 	}
 
-	@Synchronized
 	override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
 		isCreated = false
 		return true
 	}
 
-	@Synchronized
 	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
 }

@@ -11,6 +11,7 @@ pub struct ContextAttributes {
     desynchronized: bool,
     xr_compatible: bool,
     is_canvas: bool,
+    samples: u8,
 }
 
 impl Default for ContextAttributes {
@@ -27,6 +28,7 @@ impl Default for ContextAttributes {
             desynchronized: false,
             xr_compatible: false,
             is_canvas: false,
+            samples: 0,
         }
     }
 }
@@ -57,7 +59,16 @@ impl ContextAttributes {
             desynchronized,
             xr_compatible,
             is_canvas,
+            samples: 0,
         }
+    }
+
+    pub fn get_samples(&self) -> u8 {
+        self.samples
+    }
+
+    pub fn set_samples(&mut self, value: u8) {
+        self.samples = value;
     }
 
     pub fn get_is_canvas(&self) -> bool {

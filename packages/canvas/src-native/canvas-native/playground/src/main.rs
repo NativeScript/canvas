@@ -54,6 +54,8 @@ fn main() {
         raw_window_handle,
     );
 
+
+
     let webgl = context.unwrap();
 
     let mut gl_state = WebGLState::new_with_context(webgl, WebGLVersion::V2);
@@ -140,6 +142,8 @@ fn main() {
 
     //  triangle(&mut gl_state);
 
+    /*
+
     event_loop.run(move |event, target, control_flow| {
         control_flow.set_wait();
         match event {
@@ -212,6 +216,8 @@ fn main() {
         }
     });
 
+
+    */
     /*
 
     #[cfg(target_os = "macos")]

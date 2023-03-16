@@ -104,9 +104,10 @@ export class Canvas extends CanvasBase {
 
 	static createCustomView() {
 		const canvas = new Canvas();
-		canvas._isCustom = true;
 		canvas.width = 300;
 		canvas.height = 150;
+		canvas._isCustom = true;
+		canvas._layoutNative();
 		return canvas;
 	}
 
@@ -121,7 +122,6 @@ export class Canvas extends CanvasBase {
 		}
 		const ref = new WeakRef(this);
 		this.on(View.layoutChangedEvent, (args) => {
-			console.log(this.nativeView.getWidth(), this.nativeView.getHeight());
 			const parent = this.parent as any;
 			// TODO change DIPs once implemented
 			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
@@ -147,7 +147,7 @@ export class Canvas extends CanvasBase {
 					}
 				},
 				surfaceResize(width, height) {
-					console.log('surfaceResize', width, height);
+					//console.log('surfaceResize', width, height);
 					// if(this._webglContext || this._webgl2Context){
 					// 	(this._webglContext || this._webgl2Context)?.resize();
 					// }

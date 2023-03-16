@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /*
         val offscreen = NSCCanvas(this)
 
         //offscreen.setBackgroundColor(Color.GRAY)
@@ -78,6 +79,8 @@ class MainActivity : AppCompatActivity() {
       //  NSCCanvas.layoutView(400, 400, offscreen)
 
         Log.d("com.test", "Help ${offscreen.nativeContext}")
+
+        */
 
 //		drawTransformPathSvg()
 //		svg?.setSrc(

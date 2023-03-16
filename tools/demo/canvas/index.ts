@@ -487,7 +487,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
 		//filterBlur(this.canvas);
-		handleVideo(this.canvas);
+		//handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
@@ -563,7 +563,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillStyle = 'blue';
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
-		//this.drawPatternWithCanvas(this.canvas);
+		this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 
@@ -1454,6 +1454,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	drawPatternWithCanvas(canvas) {
 		const patternCanvas = Canvas.createCustomView();
 
+		//const patternContext = patternCanvas.getContext('webgl') as any;
+
+		// if(patternContext instanceof WebGLRenderingContext){
+		// 	patternContext.clearColor(0,1,0,1);
+		// 	patternContext.clear(patternContext.COLOR_BUFFER_BIT);
+		// }
+
 		const patternContext = patternCanvas.getContext('2d') as any;
 
 		// Give the pattern a width and height of 50
@@ -1465,12 +1472,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const scale = Screen.mainScreen.scale;
 		// Give the pattern a background color and draw an arc
 		patternContext.fillStyle = '#fec';
-		patternContext.fillRect(0, 0, patternCanvas.width * scale, patternCanvas.height * scale);
-		patternContext.arc(0, 0, 50 * scale, 0, 0.5 * Math.PI);
+		patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
+		patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
 		patternContext.stroke();
 
 		// Create our primary canvas and fill it with the pattern
-		const ctx = canvas.getContext('2d');
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 		ctx.fillStyle = ctx.createPattern(patternContext, 'repeat');
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	}

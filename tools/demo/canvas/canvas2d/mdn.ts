@@ -48,7 +48,7 @@ export function imageSmoothingEnabled(canvas) {
 	ctx.font = '16px sans-serif';
 	ctx.textAlign = 'center';
 	const img = new global.ImageAsset();
-	img.loadUrlAsync('https://interactive-examples.mdn.mozilla.net/media/examples/star.png').then((done) => {
+	img.fromUrl('https://interactive-examples.mdn.mozilla.net/media/examples/star.png').then((done) => {
 		const w = img.width,
 			h = img.height;
 
@@ -67,7 +67,7 @@ export function imageSmoothingEnabled(canvas) {
 
 export function imageSmoothingQuality(canvas) {
 	const ctx = canvas.getContext('2d');
-	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
+	ImageSource.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png').then(function (img) {
 		ctx.imageSmoothingQuality = 'low';
 		ctx.drawImage(img, 0, 0, 300, 150);
 	});
@@ -77,7 +77,7 @@ export function imageBlock(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.save();
 	const asset = new global.ImageAsset();
-	asset.loadUrlAsync('https://mdn.mozillademos.org/files/5397/rhino.jpg').then((done) => {
+	asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
 		for (var i = 0; i < 4; i++) {
 			for (var j = 0; j < 3; j++) {
 				ctx.drawImage(asset, j * 50 * Screen.mainScreen.scale, i * 38 * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
@@ -496,7 +496,7 @@ export function scale(canvas) {
 
 export function pattern(canvas) {
 	const ctx = canvas.getContext('2d');
-	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
+	ImageSource.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png').then(function (img) {
 		try {
 			const bytes = (org as any).nativescript.canvas.Utils.nativeLockBitmap(img.android);
 			console.log(bytes);

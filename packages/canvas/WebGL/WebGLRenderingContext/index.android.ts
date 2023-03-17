@@ -47,7 +47,7 @@ let ctor;
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
-	private context;
+	_context;
 
 	static {
 		Helpers.initialize();
@@ -64,22 +64,22 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				direction = 1;
 			}
 
-			this.context = ctor(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
+			this._context = ctor(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
 		} else {
-			this.context = context;
+			this._context = context;
 		}
 	}
 
 	get native() {
-		return this.context;
+		return this._context;
 	}
 
 	get drawingBufferHeight() {
-		return this.context.drawingBufferHeight;
+		return this.native.drawingBufferHeight;
 	}
 
 	get drawingBufferWidth() {
-		return this.context.drawingBufferWidth;
+		return this.native.drawingBufferWidth;
 	}
 
 	_methodCache = new Map();
@@ -87,7 +87,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	_getMethod(name: string) {
 		const cached = this._methodCache.get(name);
 		if (cached === undefined) {
-			const ret = this.context[name];
+			const ret = this.native[name];
 			this._methodCache.set(name, ret);
 			return ret;
 		}
@@ -1016,9 +1016,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			texImage2D(target, level, internalformat, width, height, border, format, type, pixels);
 		} else if (arguments.length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
-				border._video.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
+				border._video.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
-				border.getCurrentFrame(this.context, this, target, level, internalformat, width, height);
+				border.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
 			} else if (border instanceof ImageAsset) {
 				texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {

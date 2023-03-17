@@ -360,7 +360,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this._glCheckError('getTransformFeedbackVarying');
 		const info = this.native.getTransformFeedbackVarying(program.native, index);
 		if (info) {
-			return new WebGLActiveInfo(info.name, info.size, info.size);
+			return new WebGLActiveInfo(info);
 		}
 		return null;
 	}

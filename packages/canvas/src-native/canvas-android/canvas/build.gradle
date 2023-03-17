@@ -83,7 +83,7 @@ android {
 		}
 	}
 
-	ndkVersion '22.1.7171670'
+	ndkVersion '21.1.6352462'
 
 }
 

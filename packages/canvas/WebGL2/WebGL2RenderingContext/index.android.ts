@@ -29,7 +29,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		ctor = global.CanvasJSIModule.createWebGL2Context;
 	}
 
+	_context;
+
 	constructor(context, contextOptions) {
+		super(null);
 		const ctx = BigInt(context.getNativeContext().toString());
 
 		let direction = 0;
@@ -37,8 +40,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			direction = 1;
 		}
 		const native = ctor(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
-
-		super(native);
+		this._context = native;
 	}
 
 	_methodCache = new Map();

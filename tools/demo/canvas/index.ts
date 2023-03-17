@@ -563,8 +563,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillStyle = 'blue';
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
-		this.drawPatternWithCanvas(this.canvas);
-		//this.clock(this.canvas);
+		//this.drawPatternWithCanvas(this.canvas);
+		this.clock(this.canvas);
 		//this.solar(this.canvas);
 
 		//console.log('ready ??');

@@ -438,7 +438,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._checkArgs('getActiveAttrib', arguments);
 		const value = program ? program.native : 0;
 		const attrib = this.context.getActiveAttrib(value, index);
-		return new WebGLActiveInfo(attrib.name, attrib.size, attrib.type);
+		return new WebGLActiveInfo(attrib);
 	}
 
 	getActiveUniform(program: WebGLProgram, index: number): WebGLActiveInfo {
@@ -446,7 +446,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._checkArgs('getActiveUniform', arguments);
 		const value = program ? program.native : 0;
 		const uniform = this.context.getActiveUniform(value, index);
-		return new WebGLActiveInfo(uniform.name, uniform.size, uniform.type);
+		return new WebGLActiveInfo(uniform);
 	}
 
 	getAttachedShaders(program: WebGLProgram): WebGLShader[] {

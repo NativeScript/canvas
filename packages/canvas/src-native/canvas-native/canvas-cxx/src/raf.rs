@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::choregrapher::{
     AChoreographer_getInstance, AChoreographer_postFrameCallback,
-    AChoreographer_postFrameCallback64,
+   // AChoreographer_postFrameCallback64,
 };
 
 type RafCallback = Option<Box<dyn Fn(i64)>>;
@@ -42,8 +42,8 @@ impl Raf {
                     AChoreographer_postFrameCallback(instance, Some(Raf::callback), data_ptr);
                     return;
                 } else {
-                    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-                    AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data_ptr);
+                  //  #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+                //    AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data_ptr);
                 }
             }
         }
@@ -54,7 +54,7 @@ impl Raf {
             inner: Arc::new(parking_lot::Mutex::new(RafInner {
                 started: false,
                 callback,
-                use_deprecated: *crate::API_LEVEL.get().unwrap_or(&-1) < 24,
+                use_deprecated: true//*crate::API_LEVEL.get().unwrap_or(&-1) < 24,
             })),
         }
     }
@@ -68,8 +68,8 @@ impl Raf {
             if lock.use_deprecated {
                 AChoreographer_postFrameCallback(instance, Some(Raf::callback), data.cast());
             } else {
-                #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-                AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data.cast());
+             //   #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+            //    AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data.cast());
             }
         }
         let mut lock = self.inner.lock();

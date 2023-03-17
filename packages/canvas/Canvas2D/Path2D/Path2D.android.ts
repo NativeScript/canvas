@@ -12,6 +12,7 @@ export class Path2D extends Path2DBase {
 	}
 
 	constructor(instance?: any) {
+		super(null);
 		let nativeInstance;
 		if (typeof instance === 'string') {
 			nativeInstance = ctor(instance);
@@ -20,7 +21,7 @@ export class Path2D extends Path2DBase {
 		} else {
 			nativeInstance = ctor();
 		}
-		super(nativeInstance);
+		this.nativeInstance = nativeInstance;
 	}
 
 	_methodCache = new Map();

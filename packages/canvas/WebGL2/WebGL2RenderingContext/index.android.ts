@@ -43,19 +43,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this._context = native;
 	}
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.native[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	/* Transform feedback */
 
 	beginQuery(target: number, query: WebGLQuery): void {
@@ -123,21 +110,21 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this._glCheckError('clearBufferfv');
 		const clearBufferfv = this._getMethod('clearBufferfv');
 		const value = buffer.native;
-		clearBufferfv(value, drawbuffer, values as any);
+		clearBufferfv(value, drawbuffer, values);
 	}
 
 	clearBufferiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Int32Array): void {
 		this._glCheckError('clearBufferiv');
 		const clearBufferiv = this._getMethod('clearBufferiv');
 		const value = buffer ? buffer.native : 0;
-		clearBufferiv(value, drawbuffer, values as any);
+		clearBufferiv(value, drawbuffer, values);
 	}
 
 	clearBufferuiv(buffer: WebGLBuffer, drawbuffer: number, values: number[] | Uint32Array): void {
 		this._glCheckError('clearBufferuiv');
 		const clearBufferuiv = this._getMethod('clearBufferuiv');
 		const value = buffer ? buffer.native : 0;
-		clearBufferuiv(value, drawbuffer, values as any);
+		clearBufferuiv(value, drawbuffer, values);
 	}
 
 	clientWaitSync(sync: WebGLSync, flags: number, timeout: number): number {
@@ -355,7 +342,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			case this.COPY_READ_BUFFER_BINDING:
 			case this.COPY_WRITE_BUFFER_BINDING:
 				if (value) {
-					new WebGLBuffer(value);
+					return new WebGLBuffer(value);
 				}
 				return null;
 			case this.DRAW_FRAMEBUFFER_BINDING:
@@ -634,9 +621,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform3uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform3uiv');
+		console.log('uniform3uiv');
 		const uniform3uiv = this._getMethod('uniform3uiv');
 		const value = location.native;
-		uniform3uiv(value, Array.from(data as any));
+		uniform3uiv(value, data);
 	}
 
 	uniform4ui(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
@@ -648,9 +636,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform4uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform4uiv');
+		console.log('uniform4uiv');
 		const uniform4uiv = this._getMethod('uniform4uiv');
 		const value = location.native;
-		uniform4uiv(value, Array.from(data as any));
+		uniform4uiv(value, data);
 	}
 
 	uniformBlockBinding(program: WebGLProgram, uniformBlockIndex: number, uniformBlockBinding: number): void {
@@ -699,7 +688,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		this._glCheckError('uniformMatrix4x3fv');
 		const uniformMatrix4x3fv = this._getMethod('uniformMatrix4x3fv');
 		const value = location.native;
-		uniformMatrix4x3fv(value, transpose, data as any);
+		uniformMatrix4x3fv(value, transpose, data);
 	}
 
 	vertexAttribDivisor(index: number, divisor: number): void {
@@ -717,7 +706,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	vertexAttribI4iv(index: number, value: number[] | Int32Array): void {
 		this._glCheckError('vertexAttribI4iv');
 		const vertexAttribI4iv = this._getMethod('vertexAttribI4iv');
-		vertexAttribI4iv(index, value as any);
+		vertexAttribI4iv(index, value);
 	}
 
 	vertexAttribI4ui(index: number, v0: number, v1: number, v2: number, v3: number): void {
@@ -729,7 +718,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	vertexAttribI4uiv(index: number, value: number[] | Uint32Array): void {
 		this._glCheckError('vertexAttribI4uiv');
 		const vertexAttribI4uiv = this._getMethod('vertexAttribI4uiv');
-		vertexAttribI4uiv(index, value as any);
+		vertexAttribI4uiv(index, value);
 	}
 
 	/* Miscellaneous constants */

@@ -152,7 +152,6 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                                  }, std::move(url),
                                                                  std::move(asset));
 
-
                                                          thread.detach();
 
                                                          return jsi::Value::undefined();
@@ -248,7 +247,6 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                                  }, std::move(path),
                                                                  std::move(asset));
-
 
                                                          thread.detach();
 
@@ -356,9 +354,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                                  }, std::move(asset));
 
-
                                                          thread.detach();
-
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -460,7 +456,6 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
 
                                                                  }, std::move(path), format,
                                                                  std::move(asset));
-
 
                                                          thread.detach();
 

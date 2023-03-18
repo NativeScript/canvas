@@ -823,6 +823,19 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              } catch (...) {}
 
 
+                                                             try {
+                                                                 auto image_canvas = getHostObject<CanvasRenderingContext2DImpl>(
+                                                                         runtime, image);
+                                                                 if (image_canvas != nullptr) {
+                                                                     canvas_native_context_draw_image_dx_dy_context(
+                                                                             this->GetContext(),
+                                                                             image_canvas->GetContext(),
+                                                                             dx, dy);
+                                                                     this->UpdateInvalidateState();
+                                                                 }
+                                                             } catch (...) {}
+
+
                                                          } else if (count == 5) {
                                                              auto image = arguments[0].asObject(
                                                                      runtime);
@@ -853,6 +866,21 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                      canvas_native_context_draw_image_dx_dy_dw_dh_asset(
                                                                              this->GetContext(),
                                                                              image_bitmap->GetImageAsset(),
+                                                                             dx, dy,
+                                                                             dWidth,
+                                                                             dHeight);
+                                                                     this->UpdateInvalidateState();
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             } catch (...) {}
+
+                                                             try {
+                                                                 auto image_canvas = getHostObject<CanvasRenderingContext2DImpl>(
+                                                                         runtime, image);
+                                                                 if (image_canvas != nullptr) {
+                                                                     canvas_native_context_draw_image_dx_dy_dw_dh_context(
+                                                                             this->GetContext(),
+                                                                             image_canvas->GetContext(),
                                                                              dx, dy,
                                                                              dWidth,
                                                                              dHeight);
@@ -897,6 +925,22 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                      canvas_native_context_draw_image_asset(
                                                                              this->GetContext(),
                                                                              image_bitmap->GetImageAsset(),
+                                                                             sx,
+                                                                             sy, sWidth, sHeight,
+                                                                             dx,
+                                                                             dy, dWidth, dHeight);
+                                                                     this->UpdateInvalidateState();
+                                                                     return jsi::Value::undefined();
+                                                                 }
+                                                             } catch (...) {}
+
+                                                             try {
+                                                                 auto image_canvas = getHostObject<CanvasRenderingContext2DImpl>(
+                                                                         runtime, image);
+                                                                 if (image_canvas != nullptr) {
+                                                                     canvas_native_context_draw_image_context(
+                                                                             this->GetContext(),
+                                                                             image_canvas->GetContext(),
                                                                              sx,
                                                                              sy, sWidth, sHeight,
                                                                              dx,

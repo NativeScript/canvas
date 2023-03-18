@@ -4,7 +4,7 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { TDSLoader } from 'three/examples/jsm/loaders/TDSLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { RoughnessMipmapper } from 'three/examples/jsm/utils/RoughnessMipmapper';
+// import { RoughnessMipmapper } from 'three/examples/jsm/utils/RoughnessMipmapper';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper';
@@ -19,6 +19,8 @@ import { Sky } from 'three/examples/jsm/objects/Sky';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 // import {ThreeMFLoader} from "three/examples/jsm/loaders/3MFLoader";
+import { init } from './x-jet/main';
+
 class IconMesh extends THREE.Mesh {
 	constructor() {
 		super(new THREE.BoxBufferGeometry(5.0, 5.0, 5.0), new THREE.MeshNormalMaterial());
@@ -41,13 +43,16 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
+		//x jet game
+
+		init(this.canvas);
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
-		this.skinningAndMorphing(this.canvas);
+		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
 		//this.threeOcean(this.canvas);
 		//this.threeCube(this.canvas);
@@ -119,7 +124,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					// model
 
 					// use of RoughnessMipmapper is optional
-					var roughnessMipmapper = new RoughnessMipmapper(renderer);
+					//var roughnessMipmapper = new RoughnessMipmapper(renderer);
 
 					var loader = new GLTFLoader().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
 					loader.load('DamagedHelmet.gltf', function (gltf) {
@@ -133,7 +138,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 						scene.add(gltf.scene);
 
-						roughnessMipmapper.dispose();
+					//	roughnessMipmapper.dispose();
 
 						render();
 					});

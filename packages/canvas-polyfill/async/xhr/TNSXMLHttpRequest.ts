@@ -290,16 +290,23 @@ export class TNSXMLHttpRequest {
 		const encodings = ['UTF-8', 'US-ASCII', 'ISO-8859-1', null];
 		let value;
 		const count = encodings.length;
+
+		try {
+			const decoder = new TextDecoder();
+			const ret = decoder.decode(data);
+			return ret;
+		} catch (error) {}
+
 		for (let i = 0; i < count; i++) {
 			let encodingType = encodings[i];
 			// let java decide :D
 			if (encodingType === null) {
-				value = new java.lang.String(data).toString();
+				value = java.nio.charset.Charset.defaultCharset().decode(data).toString();
 				break;
 			}
 			try {
-				let encoding = java.nio.charset.Charset.forName(encodingType);
-				value = new java.lang.String(data, encoding).toString();
+				const encoding = java.nio.charset.Charset.forName(encodingType);
+				value = encoding.decode(data).toString();
 				break;
 			} catch (e) {}
 		}
@@ -453,17 +460,19 @@ export class TNSXMLHttpRequest {
 						if ((global as any).isIOS) {
 							this._response = interop.bufferFromData(data);
 						} else {
-							this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data));
+							//this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data));
+							this._response = data;
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 						let buffer: ArrayBuffer;
 						if ((global as any).isIOS) {
 							buffer = interop.bufferFromData(data);
 						} else {
-							const buf = java.nio.ByteBuffer.wrap(data);
-							buffer = (ArrayBuffer as any).from(buf);
+							buffer = data;
+							//const buf = java.nio.ByteBuffer.wrap(data);
+							//buffer = (ArrayBuffer as any).from(buf);
+							//buf.rewind();
 						}
-
 						this._response = new Blob([buffer]);
 					}
 
@@ -473,7 +482,7 @@ export class TNSXMLHttpRequest {
 							size = data.length;
 						}
 					} else {
-						size = data ? data.length : 0;
+						size = data?.length ?? data?.byteLength ?? 0;
 					}
 
 					this._lastProgress = {

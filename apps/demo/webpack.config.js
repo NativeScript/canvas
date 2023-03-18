@@ -51,5 +51,40 @@ module.exports = (env) => {
     context: webpack.Utils.project.getProjectFilePath('node_modules')
   });
 
+  webpack.Utils.addCopyRule({
+    from: '../../../tools/demo/canvas-three/x-jet/hdr512', 
+		to: 'assets/x-jet/hdr512',
+    context: webpack.Utils.project.getProjectFilePath('node_modules')
+  });
+
+  webpack.Utils.addCopyRule({
+    from: '../../../tools/demo/canvas-three/x-jet/Drone.glb', 
+		to: 'assets/x-jet',
+    context: webpack.Utils.project.getProjectFilePath('node_modules')
+  });
+
+
+  webpack.Utils.addCopyRule({
+    from: '../../../tools/demo/canvas-three/x-jet/TriniShip.glb', 
+		to: 'assets/x-jet',
+    context: webpack.Utils.project.getProjectFilePath('node_modules')
+  });
+
+  webpack.Utils.addCopyRule({
+    from: '../../../tools/demo/canvas-three/x-jet/explosion.png', 
+		to: 'assets/x-jet',
+    context: webpack.Utils.project.getProjectFilePath('node_modules')
+  });
+
+
+  webpack.Utils.addCopyRule({
+    from: '../../../tools/demo/canvas-three/x-jet/waternormals.jpg', 
+		to: 'assets/x-jet',
+    context: webpack.Utils.project.getProjectFilePath('node_modules')
+  });
+
+
+
+
   return webpack.resolveConfig();
 };

@@ -1,313 +1,206 @@
-import { knownFolders, File as NSFile, isIOS, path, Folder, Application } from '@nativescript/core';
+import { knownFolders, File as NSFile, isIOS, path, Folder, Application, Utils } from '@nativescript/core';
 const BLOB_PATH = 'blob:nativescript/';
 const BLOB_DIR = 'ns_blobs';
 const BLOB_KEYS = 'org.nativescript.canvas.blob.keys';
+declare const org;
+
+const MIME_TO_EXT = {
+	'image/jpeg': '.jpg',
+	'image/png': '.png',
+	'image/gif': '.gif',
+};
+
+function get_mime_ext(value): string {
+	return '.' + MIME_TO_EXT[value] ?? '';
+}
 
 let sharedPreferences;
 export class URL {
-	#native: java.net.URI;
-	#isBlobURL = false;
+	_native: java.net.URI;
+	_isBlobURL = false;
 	constructor(url: string, base?: string | URL) {
-		console.log('URL');
 		if (url?.startsWith?.('blob:')) {
-			this.#isBlobURL = true;
+			this._isBlobURL = true;
 		}
 		let baseUrl: java.net.URL;
 		if (typeof url === 'string' && url.startsWith('blob:')) {
-			this.#native = new java.net.URI(url);
+			this._native = new java.net.URI(url);
 		} else {
 			if (base instanceof URL) {
-				baseUrl = base.#native.toURL();
+				baseUrl = base._native.toURL();
 			} else if (base) {
 				try {
 					baseUrl = new java.net.URL(base);
 				} catch (e) {
 					throw new TypeError(`Failed to construct 'URL': Invalid base URL`);
 				}
-
 			}
 			try {
 				if (baseUrl) {
-					this.#native = new java.net.URL(baseUrl, url).toURI();
+					this._native = new java.net.URL(baseUrl, url).toURI();
 				} else {
-					this.#native = new java.net.URL(url).toURI();
+					this._native = new java.net.URL(url).toURI();
 				}
 			} catch (e) {
 				throw new TypeError(`Failed to construct 'URL': Invalid URL`);
 			}
 		}
-
 	}
 
 	get native() {
-		return this.#native.toURL();
+		return this._native.toURL();
 	}
 
 	private _updateURL() {
 		const currentURL = this.native;
-		this.#native = new java.net.URI(
-			this.#protocol || currentURL.getProtocol(),
-			`${this.#username}${this.password ? ':' : ''}${this.#password}` || currentURL.getUserInfo(),
-			this.#hostname || currentURL.getHost(),
-			this.#port || currentURL.getPort(),
-			this.#pathname || currentURL.getPath(),
-			this.#search || currentURL.getQuery(),
-			this.#hash || currentURL.getRef()
-		)
+		this._native = new java.net.URI(this._protocol || currentURL.getProtocol(), `${this._username}${this.password ? ':' : ''}${this._password}` || currentURL.getUserInfo(), this._hostname || currentURL.getHost(), this._port || currentURL.getPort(), this._pathname || currentURL.getPath(), this._search || currentURL.getQuery(), this._hash || currentURL.getRef());
 	}
 
 	get hash() {
-		const hash = this.#native.getFragment();
+		const hash = this._native.getFragment();
 		return hash ? `#${hash}` : '';
 	}
 
-	#hash = '';
+	_hash = '';
 	set hash(value: string) {
-		this.#hash = value;
+		this._hash = value;
 		this._updateURL();
 	}
 
 	get host() {
-		const port = this.#native.getPort();
+		const port = this._native.getPort();
 		const scheme = this.protocol;
 		let returnPort = true;
 		if (scheme === 'https' && port === 443) {
 			returnPort = false;
 		}
-		return `${this.#native.getHost()}${returnPort && port != -1 ? ':' : ''}${(returnPort && port != -1) ? port : ''}`;
+		return `${this._native.getHost()}${returnPort && port != -1 ? ':' : ''}${returnPort && port != -1 ? port : ''}`;
 	}
 
 	set host(value: string) {
 		const url = new java.net.URL(value);
-		this.#port = url.getPort();
-		this.#hostname = url.getHost();
+		this._port = url.getPort();
+		this._hostname = url.getHost();
 		this._updateURL();
 	}
-
 
 	get hostname() {
-		return this.#native.getHost();
+		return this._native.getHost();
 	}
 
-	#hostname = '';
+	_hostname = '';
 	set hostname(value: string) {
-		this.#hostname = value;
+		this._hostname = value;
 		this._updateURL();
 	}
 
-
 	get href() {
-		return this.#native.toString();
+		return this._native.toString();
 	}
 
 	set href(value: string) {
-		this.#native = new java.net.URI(value);
+		this._native = new java.net.URI(value);
 	}
-
 
 	get origin() {
-		let url = this.#native;
-		if (this.#isBlobURL) {
-			url = new java.net.URI(this.#native.toString().replace('blob:', ''));
+		let url = this._native;
+		if (this._isBlobURL) {
+			url = new java.net.URI(this._native.toString().replace('blob:', ''));
 		}
 
-		return `${url.getScheme()}://${url.getHost()}`
+		return `${url.getScheme()}://${url.getHost()}`;
 	}
 
-	#password = '';
+	_password = '';
 	get password() {
-		const user = this.#native.getUserInfo() || '';
+		const user = this._native.getUserInfo() || '';
 		return user.split(':')[1] || '';
 	}
 
 	set password(value: string) {
-		this.#password = value;
+		this._password = value;
 		this._updateURL();
 	}
-
 
 	get pathname() {
-		return this.#native.getPath();
+		return this._native.getPath();
 	}
 
-	#pathname = '';
+	_pathname = '';
 	set pathname(value: string) {
-		this.#pathname = value;
+		this._pathname = value;
 		this._updateURL();
 	}
 
-
 	get port() {
-		const port = this.#native.getPort();
+		const port = this._native.getPort();
 		if (port === -1) {
-			return ''
+			return '';
 		}
-		return `${port}`
+		return `${port}`;
 	}
 
-	#port = -1
+	_port = -1;
 	set port(value: string) {
-		this.#port = +value;
+		this._port = +value;
 		this._updateURL();
 	}
 
 	get protocol() {
-		return this.#native.getScheme() + ':';
+		return this._native.getScheme() + ':';
 	}
 
-	#protocol = '';
+	_protocol = '';
 	set protocol(value: string) {
-		this.#protocol = value;
+		this._protocol = value;
 		this._updateURL();
 	}
 
-
 	get search() {
-		const query = this.#native.getQuery();
+		const query = this._native.getQuery();
 		return query ? `?${query}` : '';
 	}
 
-	#search = ""
+	_search = '';
 	set search(value: string) {
-		this.#search = value;
+		this._search = value;
 		this._updateURL();
 	}
 
-
 	get username() {
-		const user = this.#native.getUserInfo() || '';
+		const user = this._native.getUserInfo() || '';
 		return user.split(':')[0] || '';
 	}
 
-
-	#username = '';
+	_username = '';
 	set username(value: string) {
 		this.username = value;
 		this._updateURL();
 	}
 
 	toJSON() {
-		return this.#native.toString();
+		return this._native.toString();
 	}
-
 
 	toString() {
-		return this.#native.toString();
+		return this._native.toString();
 	}
-
 
 	public static createObjectURL(object: any, options = null): string {
 		const buf = (Blob as any).InternalAccessor.getBuffer(object);
 		if (buf || object instanceof Blob || object instanceof File) {
-			const id = this.getUUID();
-			const exists = Folder.exists(path.join(knownFolders.documents().path, BLOB_DIR));
-			if (!exists) {
-				Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
-			}
-			let fileName = id;
-			// todo get type from magic bytes
-			if (options?.appendExt) {
-				fileName = `${fileName}.${options.ext}`;
-			}
-
-			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
-
-			if (isIOS) {
-				NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
-			} else {
-				try {
-					const file = new java.io.File(filePath);
-					const fos = new java.io.FileOutputStream(file);
-					fos.write(Array.from(buf) as any);
-					fos.flush();
-					fos.close();
-				} catch (e) {
-					return null;
-				}
-			}
-			URL.putItem(id, fileName);
-			return `${BLOB_PATH}${id}`;
+			return org.nativescript.canvas.polyfill.Utils.createObjectURL(Utils.android.getApplicationContext(), buf, buf.byteOffset, options?.type ?? null);
 		}
 		return null;
 	}
 
 	public static revokeObjectURL(url: string) {
-		if (typeof url === 'string') {
-			const id = url.replace(BLOB_PATH, '');
-			const realPath = URL.getItem(id);
-			if (NSFile.exists(realPath)) {
-				const file = NSFile.fromPath(realPath);
-				file.removeSync();
-			}
-		}
+		org.nativescript.canvas.polyfill.Utils.revokeObjectURL(Utils.android.getApplicationContext(), url ?? null);
 	}
 
 	public static InternalAccessor = class {
 		public static getPath(url: string) {
-			if (typeof url === 'string') {
-				const id = url.replace(BLOB_PATH, '');
-				return URL.getItem(id);
-			}
-			return ""
+			return org.nativescript.canvas.polyfill.Utils.getPath(Utils.android.getApplicationContext(), url ?? null);
 		}
 	};
-
-	private static getUUID() {
-		if (isIOS) {
-			return NSUUID.UUID().UUIDString;
-		}
-		return java.util.UUID.randomUUID().toString();
-	}
-
-	private static putItem(key: string, value: string) {
-		if (global.isAndroid) {
-			if (!sharedPreferences) {
-				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
-			}
-
-			(<android.content.SharedPreferences>sharedPreferences).edit().putString(
-				key, value
-			).apply();
-		} else {
-
-			if (!sharedPreferences) {
-				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
-			}
-
-			(<NSUserDefaults>sharedPreferences).setObjectForKey(value, key);
-
-		}
-	}
-
-	private static getItem(key: string) {
-		const fileDir = Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
-		let fileName = null;
-		if (global.isAndroid) {
-			if (!sharedPreferences) {
-				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
-			}
-
-			fileName = (<android.content.SharedPreferences>sharedPreferences).getString(
-				key, null
-			);
-		} else {
-
-			if (!sharedPreferences) {
-				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
-			}
-
-			if (!(<NSUserDefaults>sharedPreferences).objectForKey(key)) {
-				return null;
-			}
-
-			fileName = (<NSUserDefaults>sharedPreferences).stringForKey(key);
-
-		}
-
-
-		if (fileName) {
-			return path.join(fileDir.path, fileName)
-		}
-		return null;
-	}
 }

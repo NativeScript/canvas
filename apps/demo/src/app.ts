@@ -1,7 +1,7 @@
 //require('@nativescript/canvas-polyfill');
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
 
-import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource } from '@nativescript/core';
+import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
 
 
 Application.on('discardedError', (args) => {

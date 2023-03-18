@@ -10,7 +10,7 @@ import { WebGLRenderbuffer } from '../WebGLRenderbuffer';
 import { WebGLShaderPrecisionFormat } from '../WebGLShaderPrecisionFormat';
 import { WebGLBuffer } from '../WebGLBuffer';
 
-import { ImageSource, Screen } from '@nativescript/core';
+import { ImageSource, profile, Screen } from '@nativescript/core';
 import {
 	ANGLE_instanced_arrays,
 	EXT_blend_minmax,
@@ -54,6 +54,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		ctor = global.CanvasJSIModule.createWebGLContext;
 	}
 
+	@profile
 	constructor(context, contextOptions) {
 		super(context);
 		if (contextOptions) {
@@ -100,6 +101,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return __toDataURL(arguments[0], arguments[1]);
 	}
 
+	@profile
 	activeTexture(texture: number): void {
 		this._glCheckError('activeTexture');
 		this._checkArgs('activeTexture', arguments);
@@ -107,6 +109,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		activeTexture(texture);
 	}
 
+	@profile
 	attachShader(program: WebGLProgram, shader: WebGLShader): void {
 		this._glCheckError('attachShader');
 		this._checkArgs('attachShader', arguments);
@@ -116,6 +119,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		attachShader(value, value2);
 	}
 
+	@profile
 	bindAttribLocation(program: WebGLProgram, index: number, name: string): void {
 		this._glCheckError('bindAttribLocation');
 		this._checkArgs('bindAttribLocation', arguments);
@@ -124,6 +128,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		bindAttribLocation(value, index, name);
 	}
 
+	@profile
 	bindBuffer(target: number, buffer: WebGLBuffer): void {
 		this._glCheckError('bindBuffer');
 		this._checkArgs('bindBuffer', arguments);
@@ -132,6 +137,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		bindBuffer(target, value);
 	}
 
+	@profile
 	bindFramebuffer(target: number, framebuffer: WebGLFramebuffer): void {
 		this._glCheckError('bindFramebuffer');
 		this._checkArgs('bindFramebuffer', arguments);
@@ -140,6 +146,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		bindFramebuffer(target, value);
 	}
 
+	@profile
 	bindRenderbuffer(target: number, renderbuffer: WebGLRenderbuffer): void {
 		this._glCheckError('bindRenderbuffer');
 		this._checkArgs('bindRenderbuffer', arguments);
@@ -148,6 +155,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		bindRenderbuffer(target, value);
 	}
 
+	@profile
 	bindTexture(target: number, texture: WebGLTexture): void {
 		this._glCheckError('bindTexture');
 		this._checkArgs('bindTexture', arguments);
@@ -156,6 +164,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		bindTexture(target, value);
 	}
 
+	@profile
 	blendColor(red: number, green: number, blue: number, alpha: number): void {
 		this._glCheckError('blendColor');
 		this._checkArgs('blendColor', arguments);
@@ -163,6 +172,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		blendColor(red, green, blue, alpha);
 	}
 
+	@profile
 	blendEquationSeparate(modeRGB: number, modeAlpha: number): void {
 		this._glCheckError('blendEquationSeparate');
 		this._checkArgs('blendEquationSeparate', arguments);
@@ -170,6 +180,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		blendEquationSeparate(modeRGB, modeAlpha);
 	}
 
+	@profile
 	blendEquation(mode: number): void {
 		this._glCheckError('blendEquation');
 		this._checkArgs('blendEquation', arguments);
@@ -177,6 +188,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		blendEquation(mode);
 	}
 
+	@profile
 	blendFuncSeparate(srcRGB: number = this.ONE, dstRGB: number = this.ZERO, srcAlpha: number = this.ONE, dstAlpha: number = this.ZERO): void {
 		this._glCheckError('blendFuncSeparate');
 		this._checkArgs('blendFuncSeparate', arguments);
@@ -184,6 +196,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
 	}
 
+	@profile
 	blendFunc(sfactor: number = this.ONE, dfactor: number = this.ZERO): void {
 		this._glCheckError('blendFunc');
 		this._checkArgs('blendFunc', arguments);
@@ -195,6 +208,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 
 	bufferData(target: number, srcData: ArrayBuffer | ArrayBufferView, usage: number): void;
 
+	@profile
 	bufferData(target: any, srcData: any, usage: any) {
 		this._glCheckError('bufferData');
 		this._checkArgs('bufferData', arguments);
@@ -202,6 +216,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		bufferData(target, srcData, usage);
 	}
 
+	@profile
 	bufferSubData(target: number, offset: number, srcData: ArrayBuffer | ArrayBufferView): void {
 		this._glCheckError('bufferSubData');
 		this._checkArgs('bufferSubData', arguments);
@@ -209,6 +224,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		bufferSubData(target, offset, srcData);
 	}
 
+	@profile
 	checkFramebufferStatus(target: number): number {
 		this._glCheckError('checkFramebufferStatus');
 		this._checkArgs('checkFramebufferStatus', arguments);
@@ -216,6 +232,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return checkFramebufferStatus(target);
 	}
 
+	@profile
 	clearColor(red: number, green: number, blue: number, alpha: number): void {
 		this._glCheckError('clearColor');
 		this._checkArgs('clearColor', arguments);
@@ -223,6 +240,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		clearColor(red, green, blue, alpha);
 	}
 
+	@profile
 	clearDepth(depth: number): void {
 		this._glCheckError('clearDepth');
 		this._checkArgs('clearDepth', arguments);
@@ -230,6 +248,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		clearDepth(depth);
 	}
 
+	@profile
 	clearStencil(stencil: number): void {
 		this._glCheckError('clearStencil');
 		this._checkArgs('clearStencil', arguments);
@@ -237,6 +256,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		clearStencil(stencil);
 	}
 
+	@profile
 	clear(mask: number): void {
 		this._glCheckError('clear');
 		this._checkArgs('clear', arguments);
@@ -244,6 +264,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		clear(mask);
 	}
 
+	@profile
 	colorMask(red: boolean, green: boolean, blue: boolean, alpha: boolean): void {
 		this._glCheckError('colorMask');
 		this._checkArgs('colorMask', arguments);
@@ -251,12 +272,14 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		colorMask(red, green, blue, alpha);
 	}
 
+	@profile
 	commit(): void {
 		// NOOP
 		const commit = this._getMethod('commit');
 		commit();
 	}
 
+	@profile
 	compileShader(shader: WebGLShader): void {
 		this._glCheckError('compileShader');
 		this._checkArgs('compileShader', arguments);
@@ -265,6 +288,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		compileShader(value);
 	}
 
+	@profile
 	compressedTexImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, pixels: ArrayBuffer | ArrayBufferView): void {
 		this._glCheckError('compressedTexImage2D');
 		this._checkArgs('compressedTexImage2D', arguments);
@@ -272,6 +296,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		compressedTexImage2D(target, level, internalformat, width, height, border, pixels);
 	}
 
+	@profile
 	compressedTexSubImage2D(target: number, level: number, xoffset: number, yoffset: number, width: number, height: number, format: number, pixels: ArrayBufferView): void {
 		this._glCheckError('compressedTexSubImage2D');
 		this._checkArgs('compressedTexSubImage2D', arguments);
@@ -279,6 +304,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		compressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels);
 	}
 
+	@profile
 	copyTexImage2D(target: number, level: number, internalformat: number, x: number, y: number, width: number, height: number, border: number): void {
 		this._glCheckError('copyTexImage2D');
 		this._checkArgs('copyTexImage2D', arguments);
@@ -286,6 +312,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		copyTexImage2D(target, level, internalformat, x, y, width, height, border);
 	}
 
+	@profile
 	copyTexSubImage2D(target: number, level: number, xoffset: number, yoffset: number, x: number, y: number, width: number, height: number): void {
 		this._glCheckError('copyTexSubImage2D');
 		this._checkArgs('copyTexSubImage2D', arguments);
@@ -293,6 +320,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		copyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
 	}
 
+	@profile
 	createBuffer(): WebGLBuffer {
 		this._glCheckError('createBuffer');
 		this._checkArgs('createBuffer', arguments);
@@ -301,6 +329,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLBuffer(id);
 	}
 
+	@profile
 	createFramebuffer(): WebGLFramebuffer {
 		this._glCheckError('createFramebuffer');
 		this._checkArgs('createFramebuffer', arguments);
@@ -308,6 +337,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLFramebuffer(createFramebuffer());
 	}
 
+	@profile
 	createProgram(): WebGLProgram {
 		this._glCheckError('createProgram');
 		this._checkArgs('createProgram', arguments);
@@ -315,6 +345,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLProgram(createProgram());
 	}
 
+	@profile
 	createRenderbuffer(): WebGLRenderbuffer {
 		this._glCheckError('createRenderbuffer');
 		this._checkArgs('createRenderbuffer', arguments);
@@ -322,6 +353,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLRenderbuffer(createRenderbuffer());
 	}
 
+	@profile
 	createShader(type: number): WebGLShader {
 		this._glCheckError('createShader');
 		this._checkArgs('createShader', arguments);
@@ -329,6 +361,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLShader(createShader(type));
 	}
 
+	@profile
 	createTexture(): WebGLTexture {
 		this._glCheckError('createTexture');
 		this._checkArgs('createTexture', arguments);
@@ -336,6 +369,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLTexture(createTexture());
 	}
 
+	@profile
 	cullFace(mode: number): void {
 		this._glCheckError('cullFace');
 		this._checkArgs('cullFace', arguments);
@@ -343,6 +377,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		cullFace(mode);
 	}
 
+	@profile
 	deleteBuffer(buffer: WebGLBuffer): void {
 		this._glCheckError('deleteBuffer');
 		this._checkArgs('deleteBuffer', arguments);
@@ -351,6 +386,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		deleteBuffer(value);
 	}
 
+	@profile
 	deleteFramebuffer(frameBuffer: WebGLFramebuffer): void {
 		this._glCheckError('deleteFramebuffer');
 		this._checkArgs('deleteFramebuffer', arguments);
@@ -359,6 +395,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		deleteFramebuffer(value);
 	}
 
+	@profile
 	deleteProgram(program: WebGLProgram): void {
 		this._glCheckError('deleteProgram');
 		this._checkArgs('deleteProgram', arguments);
@@ -367,6 +404,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		deleteProgram(value);
 	}
 
+	@profile
 	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void {
 		this._glCheckError('deleteRenderbuffer');
 		this._checkArgs('deleteRenderbuffer', arguments);
@@ -375,6 +413,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		deleteRenderbuffer(value);
 	}
 
+	@profile
 	deleteShader(shader: WebGLRenderbuffer): void {
 		this._glCheckError('deleteShader');
 		this._checkArgs('deleteShader', arguments);
@@ -382,6 +421,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		deleteShader(shader.native);
 	}
 
+	@profile
 	deleteTexture(texture: WebGLTexture): void {
 		this._glCheckError('deleteTexture');
 		this._checkArgs('deleteTexture', arguments);
@@ -390,6 +430,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		deleteTexture(value);
 	}
 
+	@profile
 	depthFunc(func: number): void {
 		this._glCheckError('depthFunc');
 		this._checkArgs('depthFunc', arguments);
@@ -397,6 +438,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		depthFunc(func);
 	}
 
+	@profile
 	depthMask(flag: boolean): void {
 		this._glCheckError('depthMask');
 		this._checkArgs('depthMask', arguments);
@@ -404,6 +446,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		depthMask(flag);
 	}
 
+	@profile
 	depthRange(zNear: number, zFar: number): void {
 		this._glCheckError('depthRange');
 		this._checkArgs('depthRange', arguments);
@@ -411,6 +454,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		depthRange(zNear, zFar);
 	}
 
+	@profile
 	detachShader(program: WebGLProgram, shader: WebGLShader): void {
 		this._glCheckError('detachShader');
 		this._checkArgs('detachShader', arguments);
@@ -420,6 +464,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		detachShader(value, value2);
 	}
 
+	@profile
 	disableVertexAttribArray(index: number): void {
 		this._glCheckError('disableVertexAttribArray');
 		this._checkArgs('disableVertexAttribArray', arguments);
@@ -427,6 +472,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		disableVertexAttribArray(index);
 	}
 
+	@profile
 	disable(cap: number): void {
 		this._glCheckError('disable');
 		this._checkArgs('disable', arguments);
@@ -434,6 +480,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		disable(cap);
 	}
 
+	@profile
 	drawArrays(mode: number, first: number, count: number): void {
 		this._glCheckError('drawArrays');
 		this._checkArgs('drawArrays', arguments);
@@ -441,6 +488,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		drawArrays(mode, first, count);
 	}
 
+	@profile
 	drawElements(mode: number, count: number, type: number, offset: number): void {
 		this._glCheckError('drawElements');
 		this._checkArgs('drawElements', arguments);
@@ -448,6 +496,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		drawElements(mode, count, type, offset);
 	}
 
+	@profile
 	enableVertexAttribArray(index: number): void {
 		this._glCheckError('enableVertexAttribArray');
 		this._checkArgs('enableVertexAttribArray', arguments);
@@ -455,6 +504,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		enableVertexAttribArray(index);
 	}
 
+	@profile
 	enable(cap: number): void {
 		this._glCheckError('enable');
 		this._checkArgs('enable', arguments);
@@ -462,18 +512,21 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		enable(cap);
 	}
 
+	@profile
 	finish(): void {
 		this._glCheckError('finish');
 		const finish = this._getMethod('finish');
 		finish();
 	}
 
+	@profile
 	flush(): void {
 		this._glCheckError('flush');
 		const flush = this._getMethod('flush');
 		flush();
 	}
 
+	@profile
 	framebufferRenderbuffer(target: number, attachment: number, renderbuffertarget: number, renderbuffer: WebGLRenderbuffer): void {
 		this._glCheckError('framebufferRenderbuffer');
 		this._checkArgs('framebufferRenderbuffer', arguments);
@@ -482,6 +535,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		framebufferRenderbuffer(target, attachment, renderbuffertarget, value);
 	}
 
+	@profile
 	framebufferTexture2D(target: number, attachment: number, textarget: number, texture: WebGLTexture, level: number): void {
 		this._glCheckError('framebufferTexture2D');
 		this._checkArgs('framebufferTexture2D', arguments);
@@ -490,6 +544,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		framebufferTexture2D(target, attachment, textarget, value, level);
 	}
 
+	@profile
 	frontFace(mode: number): void {
 		this._checkArgs('frontFace', arguments);
 		this._glCheckError('frontFace');
@@ -497,13 +552,15 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		frontFace(mode);
 	}
 
+	@profile
 	generateMipmap(target: number): void {
 		this._checkArgs('generateMipmap', arguments);
 		this._glCheckError('generateMipmap');
 		const generateMipmap = this._getMethod('generateMipmap');
 		generateMipmap(target);
 	}
-
+	
+	@profile
 	getActiveAttrib(program: WebGLProgram, index: number): WebGLActiveInfo {
 		this._glCheckError('getActiveAttrib');
 		this._checkArgs('getActiveAttrib', arguments);
@@ -513,6 +570,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLActiveInfo(attrib);
 	}
 
+	@profile
 	getActiveUniform(program: WebGLProgram, index: number): WebGLActiveInfo {
 		this._glCheckError('getActiveUniform');
 		this._checkArgs('getActiveUniform', arguments);
@@ -522,6 +580,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLActiveInfo(uniform);
 	}
 
+	@profile
 	getAttachedShaders(program: WebGLProgram): WebGLShader[] {
 		this._glCheckError('getAttachedShaders');
 		this._checkArgs('getAttachedShaders', arguments);
@@ -530,6 +589,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getAttachedShaders(value).map((shader) => new WebGLShader(shader));
 	}
 
+	@profile
 	getAttribLocation(program: WebGLProgram, name: string): number {
 		this._glCheckError('getAttribLocation');
 		this._checkArgs('getAttribLocation', arguments);
@@ -538,6 +598,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getAttribLocation(value, name);
 	}
 
+	@profile
 	getBufferParameter(target: number, pname: number): number {
 		this._glCheckError('getBufferParameter');
 		this._checkArgs('getBufferParameter', arguments);
@@ -545,16 +606,19 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getBufferParameter(target, pname);
 	}
 
+	@profile
 	getContextAttributes(): any {
 		const getContextAttributes = this._getMethod('getContextAttributes');
 		return getContextAttributes();
 	}
 
+	@profile
 	getError(): number {
 		const getError = this._getMethod('getError');
 		return getError();
 	}
 
+	@profile
 	getExtension(name: string) {
 		this._glCheckError('getExtension');
 		this._checkArgs('getExtension', arguments);
@@ -618,6 +682,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return null;
 	}
 
+	@profile
 	getFramebufferAttachmentParameter(target: number, attachment: number, pname: number): number | WebGLRenderbuffer | WebGLTexture {
 		this._glCheckError('getFramebufferAttachmentParameter');
 		this._checkArgs('getFramebufferAttachmentParameter', arguments);
@@ -688,6 +753,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		}
 	}
 
+	@profile
 	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
 		this._glCheckError('getParameter');
 		this._checkArgs('getParameter', arguments);
@@ -696,6 +762,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return this._handleGetParameter(pname, value);
 	}
 
+	@profile
 	getProgramInfoLog(program: WebGLProgram): string {
 		this._glCheckError('getProgramInfoLog');
 		this._checkArgs('getProgramInfoLog', arguments);
@@ -704,6 +771,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getProgramInfoLog(value);
 	}
 
+	@profile
 	getProgramParameter(program: WebGLProgram, pname: number): number | boolean {
 		this._glCheckError('getProgramParameter');
 		this._checkArgs('getProgramParameter', arguments);
@@ -713,6 +781,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return result;
 	}
 
+	@profile
 	getRenderbufferParameter(target: number, pname: number): number {
 		this._glCheckError('getRenderbufferParameter');
 		this._checkArgs('getRenderbufferParameter', arguments);
@@ -720,6 +789,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getRenderbufferParameter(target, pname);
 	}
 
+	@profile
 	getShaderInfoLog(shader: WebGLShader): string {
 		this._glCheckError('getShaderInfoLog');
 		this._checkArgs('getShaderInfoLog', arguments);
@@ -728,6 +798,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getShaderInfoLog(value);
 	}
 
+
+	@profile
 	getShaderParameter(shader: WebGLShader, pname: number): boolean | number {
 		this._glCheckError('getShaderParameter');
 		this._checkArgs('getShaderParameter', arguments);
@@ -737,6 +809,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return result;
 	}
 
+	@profile
 	getShaderPrecisionFormat(shaderType: number, precisionType: number): WebGLShaderPrecisionFormat {
 		this._glCheckError('getShaderPrecisionFormat');
 		this._checkArgs('getShaderPrecisionFormat', arguments);
@@ -745,6 +818,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLShaderPrecisionFormat(precision);
 	}
 
+	@profile
 	getShaderSource(shader: WebGLShader): string {
 		this._glCheckError('getShaderSource');
 		this._checkArgs('getShaderSource', arguments);
@@ -753,12 +827,14 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getShaderSource(value);
 	}
 
+	@profile
 	getSupportedExtensions(): string[] {
 		this._glCheckError('getSupportedExtensions');
 		const getSupportedExtensions = this._getMethod('getSupportedExtensions');
 		return getSupportedExtensions();
 	}
 
+	@profile
 	getTexParameter(target: number, pname: number): number {
 		this._glCheckError('getTexParameter');
 		this._checkArgs('getTexParameter', arguments);
@@ -766,6 +842,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getTexParameter(target, pname);
 	}
 
+	@profile
 	getUniformLocation(program: WebGLProgram, name: string): WebGLUniformLocation {
 		this._glCheckError('getUniformLocation');
 		this._checkArgs('getUniformLocation', arguments);
@@ -778,6 +855,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return new WebGLUniformLocation(id);
 	}
 
+	@profile
 	getUniform(program: WebGLProgram, location: WebGLUniformLocation): any {
 		this._glCheckError('getUniform');
 		this._checkArgs('getUniform', arguments);
@@ -791,6 +869,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return uniform;
 	}
 
+	@profile
 	getVertexAttribOffset(index: number, pname: number): number {
 		this._glCheckError('getVertexAttribOffset');
 		this._checkArgs('getVertexAttribOffset', arguments);
@@ -798,6 +877,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return getVertexAttribOffset(index, pname);
 	}
 
+	@profile
 	getVertexAttrib(index: number, pname: number): number[] | boolean | number | Float32Array {
 		this._glCheckError('getVertexAttrib');
 		this._checkArgs('getVertexAttrib', arguments);
@@ -809,6 +889,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return value;
 	}
 
+	@profile
 	hint(target: number, mode: number): void {
 		this._glCheckError('hint');
 		this._checkArgs('hint', arguments);
@@ -816,6 +897,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		hint(target, mode);
 	}
 
+	@profile
 	isBuffer(buffer: WebGLBuffer): boolean {
 		this._glCheckError('isBuffer');
 		this._checkArgs('isBuffer', arguments);
@@ -824,12 +906,14 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return isBuffer(value);
 	}
 
+	@profile
 	isContextLost(): boolean {
 		this._glCheckError('isContextLost');
 		const isContextLost = this._getMethod('isContextLost');
 		return isContextLost();
 	}
 
+	@profile
 	isEnabled(cap: number): boolean {
 		this._glCheckError('isEnabled');
 		this._checkArgs('isEnabled', arguments);
@@ -837,6 +921,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return isEnabled(cap);
 	}
 
+	@profile
 	isFramebuffer(framebuffer: WebGLFramebuffer): boolean {
 		this._glCheckError('isFramebuffer');
 		this._checkArgs('isFramebuffer', arguments);
@@ -845,6 +930,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return isFramebuffer(value);
 	}
 
+	@profile
 	isProgram(program: WebGLProgram): boolean {
 		this._glCheckError('isProgram');
 		this._checkArgs('isProgram', arguments);
@@ -853,6 +939,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return isProgram(value);
 	}
 
+	@profile
 	isRenderbuffer(renderbuffer: WebGLRenderbuffer): boolean {
 		this._glCheckError('isRenderbuffer');
 		this._checkArgs('isRenderbuffer', arguments);
@@ -861,6 +948,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return isRenderbuffer(value);
 	}
 
+	@profile
 	isShader(shader: WebGLShader): boolean {
 		this._glCheckError('isShader');
 		this._checkArgs('isShader', arguments);
@@ -869,6 +957,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return isShader(value);
 	}
 
+	@profile
 	isTexture(texture: WebGLTexture): boolean {
 		this._glCheckError('isTexture');
 		this._checkArgs('isTexture', arguments);
@@ -877,6 +966,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		return isTexture(value);
 	}
 
+	@profile
 	lineWidth(width: number): void {
 		this._glCheckError('lineWidth');
 		this._checkArgs('lineWidth', arguments);
@@ -884,6 +974,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		lineWidth(width);
 	}
 
+	@profile
 	linkProgram(program: WebGLProgram): void {
 		this._glCheckError('linkProgram');
 		this._checkArgs('linkProgram', arguments);
@@ -893,6 +984,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	}
 
 	_flipY = false;
+	@profile
 	pixelStorei(pname: number, param: any): void {
 		this._glCheckError('pixelStorei');
 		this._checkArgs('pixelStorei', arguments);
@@ -914,6 +1006,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		}
 	}
 
+	@profile
 	polygonOffset(factor: number, units: number): void {
 		this._glCheckError('polygonOffset');
 		this._checkArgs('polygonOffset', arguments);
@@ -921,6 +1014,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		polygonOffset(factor, units);
 	}
 
+	@profile
 	readPixels(x: number, y: number, width: number, height: number, format: number, type: number, pixels: ArrayBuffer | ArrayBufferView): void {
 		this._glCheckError('readPixels');
 		this._checkArgs('readPixels', arguments);
@@ -928,6 +1022,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		readPixels(x, y, width, height, format, type, pixels);
 	}
 
+	@profile
 	renderbufferStorage(target: number, internalFormat: number, width: number, height: number): void {
 		this._glCheckError('renderbufferStorage');
 		this._checkArgs('renderbufferStorage', arguments);
@@ -940,6 +1035,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		renderbufferStorage(target, internalFormat, width, height);
 	}
 
+	@profile
 	sampleCoverage(value: number, invert: boolean): void {
 		this._glCheckError('sampleCoverage');
 		this._checkArgs('sampleCoverage', arguments);
@@ -947,6 +1043,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		sampleCoverage(value, invert);
 	}
 
+	@profile
 	scissor(x: number, y: number, width: number, height: number): void {
 		this._glCheckError('scissor');
 		this._checkArgs('scissor', arguments);
@@ -954,6 +1051,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		scissor(x, y, width, height);
 	}
 
+	@profile
 	shaderSource(shader: WebGLShader, source: string): void {
 		this._glCheckError('shaderSource');
 		this._checkArgs('shaderSource', arguments);
@@ -962,6 +1060,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		shaderSource(value, source);
 	}
 
+	@profile
 	stencilFuncSeparate(face: number, func: number, ref: number, mask: number): void {
 		this._glCheckError('stencilFuncSeparate');
 		this._checkArgs('stencilFuncSeparate', arguments);
@@ -969,6 +1068,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		stencilFuncSeparate(face, func, ref, mask);
 	}
 
+	@profile
 	stencilFunc(func: number, ref: number, mask: number): void {
 		this._glCheckError('stencilFunc');
 		this._checkArgs('stencilFunc', arguments);
@@ -976,6 +1076,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		stencilFunc(func, ref, mask);
 	}
 
+	@profile
 	stencilMaskSeparate(face: number, mask: number): void {
 		this._glCheckError('stencilMaskSeparate');
 		this._checkArgs('stencilMaskSeparate', arguments);
@@ -983,6 +1084,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		stencilMaskSeparate(face, mask);
 	}
 
+	@profile
 	stencilMask(mask: number): void {
 		this._glCheckError('stencilMask');
 		this._checkArgs('stencilMask', arguments);
@@ -990,6 +1092,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		stencilMask(mask);
 	}
 
+	@profile
 	stencilOpSeparate(face: number, fail: number, zfail: number, zpass: number): void {
 		this._glCheckError('stencilOpSeparate');
 		this._checkArgs('stencilOpSeparate', arguments);
@@ -997,6 +1100,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		stencilOpSeparate(face, fail, zfail, zpass);
 	}
 
+	@profile
 	stencilOp(fail: number, zfail: number, zpass: number): void {
 		this._glCheckError('stencilOp');
 		this._checkArgs('stencilOp', arguments);
@@ -1008,6 +1112,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 
 	texImage2D(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type: number, pixels: ArrayBufferView): void;
 
+	@profile
 	texImage2D(target: any, level: any, internalformat: any, width: any, height: any, border: any, format?: any, type?: any, pixels?: any) {
 		this._glCheckError('texImage2D');
 		this._checkArgs('texImage2D', arguments);
@@ -1043,6 +1148,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		}
 	}
 
+	@profile
 	texParameterf(target: number, pname: number, param: number): void {
 		this._glCheckError('texParameterf');
 		this._checkArgs('texParameterf', arguments);
@@ -1050,6 +1156,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		texParameterf(target, pname, param);
 	}
 
+	@profile
 	texParameteri(target: number, pname: number, param: number): void {
 		this._glCheckError('texParameteri');
 		this._checkArgs('texParameteri', arguments);
@@ -1061,6 +1168,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 
 	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, format: number, type: number, pixels: any): void;
 
+	@profile
 	texSubImage2D(target: any, level: any, xoffset: any, yoffset: any, width: any, height: any, format: any, type?: any, pixels?: any) {
 		this._glCheckError('texSubImage2D');
 		this._checkArgs('texSubImage2D', arguments);
@@ -1093,6 +1201,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		}
 	}
 
+	@profile
 	uniform1f(location: WebGLUniformLocation, v0: number): void {
 		this._glCheckError('uniform1f');
 		this._checkArgs('uniform1f', arguments);
@@ -1101,6 +1210,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform1f(loc, v0);
 	}
 
+	@profile
 	uniform1iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform1iv');
 		this._checkArgs('uniform1iv', arguments);
@@ -1109,6 +1219,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform1iv(loc, value);
 	}
 
+	@profile
 	uniform1fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform1fv');
 		this._checkArgs('uniform1fv', arguments);
@@ -1117,6 +1228,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform1fv(loc, value);
 	}
 
+	@profile
 	uniform1i(location: WebGLUniformLocation, v0: number): void {
 		this._glCheckError('uniform1i');
 		this._checkArgs('uniform1i', arguments);
@@ -1125,6 +1237,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform1i(loc, Number(v0));
 	}
 
+	@profile
 	uniform2f(location: WebGLUniformLocation, v0: number, v1: number): void {
 		this._glCheckError('uniform2f');
 		this._checkArgs('uniform2f', arguments);
@@ -1133,6 +1246,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform2f(loc, v0, v1);
 	}
 
+	@profile
 	uniform2iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform2iv');
 		this._checkArgs('uniform2iv', arguments);
@@ -1142,6 +1256,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform2iv(loc, value);
 	}
 
+	@profile
 	uniform2fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform2fv');
 		this._checkArgs('uniform2fv', arguments);
@@ -1151,6 +1266,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform2fv(loc, value);
 	}
 
+	@profile
 	uniform2i(location: WebGLUniformLocation, v0: number, v1: number): void {
 		this._glCheckError('uniform2i');
 		this._checkArgs('uniform2i', arguments);
@@ -1159,6 +1275,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform2i(loc, v0, v1);
 	}
 
+	@profile
 	uniform3f(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
 		this._glCheckError('uniform3f');
 		this._checkArgs('uniform3f', arguments);
@@ -1167,6 +1284,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform3f(loc, v0, v1, v2);
 	}
 
+	@profile
 	uniform3iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform3iv');
 		this._checkArgs('uniform3iv', arguments);
@@ -1176,6 +1294,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform3iv(loc, value);
 	}
 
+	@profile
 	uniform3fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform3fv');
 		this._checkArgs('uniform3fv', arguments);
@@ -1185,6 +1304,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform3fv(loc, value);
 	}
 
+	@profile
 	uniform3i(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void {
 		this._glCheckError('uniform3i');
 		this._checkArgs('uniform3i', arguments);
@@ -1193,6 +1313,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform3i(loc, v0, v1, v2);
 	}
 
+	@profile
 	uniform4f(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('uniform4f');
 		this._checkArgs('uniform4f', arguments);
@@ -1201,6 +1322,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform4f(loc, v0, v1, v2, v3);
 	}
 
+	@profile
 	uniform4iv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform4iv');
 		this._checkArgs('uniform4iv', arguments);
@@ -1210,6 +1332,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform4iv(loc, value);
 	}
 
+	@profile
 	uniform4fv(location: WebGLUniformLocation, value: number[]): void {
 		this._glCheckError('uniform4fv');
 		this._checkArgs('uniform4fv', arguments);
@@ -1219,6 +1342,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform4fv(loc, value);
 	}
 
+	@profile
 	uniform4i(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('uniform4i');
 		this._checkArgs('uniform4i', arguments);
@@ -1227,6 +1351,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniform4i(loc, v0, v1, v2, v3);
 	}
 
+	@profile
 	uniformMatrix2fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix2fv');
 		this._checkArgs('uniformMatrix2fv', arguments);
@@ -1236,6 +1361,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniformMatrix2fv(loc, transpose, value);
 	}
 
+	@profile
 	uniformMatrix3fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix3fv');
 		this._checkArgs('uniformMatrix3fv', arguments);
@@ -1245,6 +1371,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniformMatrix3fv(loc, transpose, value);
 	}
 
+	@profile
 	uniformMatrix4fv(location: WebGLUniformLocation, transpose: boolean, value: number[]): void {
 		this._glCheckError('uniformMatrix4fv');
 		this._checkArgs('uniformMatrix4fv', arguments);
@@ -1254,6 +1381,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		uniformMatrix4fv(loc, transpose, value);
 	}
 
+	@profile
 	useProgram(program: WebGLProgram): void {
 		this._glCheckError('useProgram');
 		this._checkArgs('useProgram', arguments);
@@ -1262,6 +1390,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		useProgram(value);
 	}
 
+	@profile
 	validateProgram(program: WebGLProgram): void {
 		this._glCheckError('validateProgram');
 		this._checkArgs('validateProgram', arguments);
@@ -1270,6 +1399,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		validateProgram(value);
 	}
 
+	@profile
 	vertexAttrib1f(index: number, v0: number): void {
 		this._glCheckError('vertexAttrib1f');
 		this._checkArgs('vertexAttrib1f', arguments);
@@ -1277,6 +1407,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib1f(index, v0);
 	}
 
+	@profile
 	vertexAttrib1fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib1fv');
 		this._checkArgs('vertexAttrib1fv', arguments);
@@ -1285,6 +1416,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib1fv(index, value);
 	}
 
+	@profile
 	vertexAttrib2f(index: number, v0: number, v1: number): void {
 		this._glCheckError('vertexAttrib2f');
 		this._checkArgs('vertexAttrib2f', arguments);
@@ -1292,6 +1424,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib2f(index, v0, v1);
 	}
 
+	@profile
 	vertexAttrib2fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib2fv');
 		this._checkArgs('vertexAttrib2fv', arguments);
@@ -1300,6 +1433,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib2fv(index, value);
 	}
 
+	@profile
 	vertexAttrib3f(index: number, v0: number, v1: number, v2: number): void {
 		this._glCheckError('vertexAttrib3f');
 		this._checkArgs('vertexAttrib3f', arguments);
@@ -1307,6 +1441,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib3f(index, v0, v1, v2);
 	}
 
+	@profile
 	vertexAttrib3fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib3fv');
 		this._checkArgs('vertexAttrib3fv', arguments);
@@ -1315,6 +1450,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib3fv(index, value);
 	}
 
+	@profile
 	vertexAttrib4f(index: number, v0: number, v1: number, v2: number, v3: number): void {
 		this._glCheckError('vertexAttrib4f');
 		this._checkArgs('vertexAttrib4f', arguments);
@@ -1322,6 +1458,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib4f(index, v0, v1, v2, v3);
 	}
 
+	@profile
 	vertexAttrib4fv(index: number, value: number[]): void {
 		this._glCheckError('vertexAttrib4fv');
 		this._checkArgs('vertexAttrib4fv', arguments);
@@ -1330,6 +1467,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttrib4fv(index, value);
 	}
 
+	@profile
 	vertexAttribPointer(index: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void {
 		this._glCheckError('vertexAttribPointer');
 		this._checkArgs('vertexAttribPointer', arguments);
@@ -1337,6 +1475,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		vertexAttribPointer(index, size, type, normalized, stride, offset);
 	}
 
+	@profile
 	viewport(x: number, y: number, width: number, height: number): void {
 		this._glCheckError('viewport');
 		this._checkArgs('viewport', arguments);

@@ -271,6 +271,7 @@ pub(crate) fn create_image_bitmap_internal(
                     bytes.as_mut_slice(),
                     (out_width * 4.) as usize,
                 );
+
                 let _ = image.scale_pixels(
                     &pixel_map,
                     ImageBitmapResizeQuality::from(resize_quality).to_quality(),
@@ -279,7 +280,29 @@ pub(crate) fn create_image_bitmap_internal(
 
                 data = pixel_map.encode(EncodedImageFormat::PNG, 100);
             } else {
-                data = image.encode_to_data(EncodedImageFormat::PNG);
+
+
+                let size = image_info.height() as usize * image_info.min_row_bytes();
+                let mut buf = vec![0_u8; size];
+
+
+                let mut info = skia_safe::ImageInfo::new(
+                    skia_safe::ISize::new(image.width(), image.height()),
+                    skia_safe::ColorType::RGBA8888,
+                    skia_safe::AlphaType::Unpremul,
+                    None,
+                );
+                let row_bytes = info.width() * 4;
+                let _read = image.read_pixels(
+                    &mut info,
+                    buf.as_mut_slice(),
+                    row_bytes as usize,
+                    skia_safe::IPoint::new(0, 0),
+                    skia_safe::image::CachingHint::Allow,
+                );
+
+
+                data = image.encode_to_data_with_quality(EncodedImageFormat::PNG, 100);
             }
 
             if let Some(data) = data {

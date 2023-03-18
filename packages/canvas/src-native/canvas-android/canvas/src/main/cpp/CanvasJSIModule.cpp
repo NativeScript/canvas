@@ -6,60 +6,108 @@
 #include "JSICallback.h"
 #include "JSIRuntime.h"
 #include "Helpers.h"
+#include "JSIReadFileCallback.h"
 
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
 
-    CREATE_FUNC("readFile", canvas_module, 1,
+    CREATE_FUNC("readFile", canvas_module, 2,
                 ([](jsi::Runtime &runtime, const jsi::Value &thisValue,
                     const jsi::Value *arguments, size_t count) -> jsi::Value {
 
                     auto file = arguments[0].asString(runtime).utf8(runtime);
 
-                    jsi::Value promise = runtime.global().getPropertyAsFunction(runtime,
-                                                                                "Promise").callAsConstructor(
-                            runtime,
-                            jsi::Function::createFromHostFunction(
-                                    runtime,
-                                    jsi::PropNameID::forAscii(runtime, "executor"),
-                                    2,
-                                    [file](jsi::Runtime &rt, const jsi::Value &thisValue,
-                                           const jsi::Value *args,
-                                           size_t) -> jsi::Value {
 
-                                        std::thread thread([&rt, &file, resolve{
-                                                std::make_shared<jsi::Value>(rt, args[0])}, reject{
-                                                std::make_shared<jsi::Value>(rt, args[1])}] {
+                    auto cbFunc = std::make_shared<jsi::Value>(
+                            runtime, arguments[1]);
 
-                                            auto ret = canvas_native_helper_read_file(
-                                                    rust::Str(file.c_str()));
-
-                                            if (!canvas_native_helper_read_file_has_error(*ret)) {
-                                                auto buf = canvas_native_helper_read_file_get_data(
-                                                        std::move(ret));
-                                                auto vec_buffer = std::make_shared<VecMutableBuffer<uint8_t>>(
-                                                        std::move(buf));
-                                                auto arrayBuffer = jsi::ArrayBuffer(rt, vec_buffer);
-                                                resolve->asObject(rt).asFunction(rt).call(rt,
-                                                                                          std::move(
-                                                                                                  arrayBuffer));
-                                            } else {
-                                                auto error = canvas_native_helper_read_file_get_error(
-                                                        *ret);
-                                                reject->asObject(rt).asFunction(rt).call(rt,
-                                                                                         jsi::String::createFromAscii(
-                                                                                                 rt,
-                                                                                                 error.c_str()));
-                                            }
-                                        });
-
-                                        thread.detach();
+                    auto jsi_callback = new JSIReadFileCallback(
+                            std::shared_ptr<jsi::Value>(
+                                    cbFunc));
 
 
-                                        return {};
-                                    }));
+                    ALooper_addFd(jsi_callback->looper_,
+                                  jsi_callback->fd_[0],
+                                  ALOOPER_POLL_CALLBACK,
+                                  ALOOPER_EVENT_INPUT,
+                                  [](int fd, int events,
+                                     void *data) {
+                                      auto cb = static_cast<JSIReadFileCallback *>(data);
+                                      bool done;
+                                      read(fd, &done,
+                                           sizeof(bool));
 
-                    return promise;
+                                      jsi::Runtime &rt = *jsi_runtime;
+
+                                      auto func = cb->value_->asObject(
+                                              rt).asFunction(
+                                              rt);
+
+                                      while (cb->data_ == nullptr){
+                                          return 1;
+                                      }
+
+                                      if (done) {
+                                          auto buf = cb->data_->asObject(rt).getArrayBuffer(rt);
+                                          func.call(rt, {jsi::Value::null(), std::move(buf)});
+                                      } else {
+                                          auto error = cb->data_->asString(rt);
+                                          func.call(rt, {std::move(error), jsi::Value::null()});
+                                      }
+
+                                      delete static_cast<JSIReadFileCallback *>(data);
+                                      return 0;
+                                  }, jsi_callback);
+
+                    ALooper_wake(jsi_callback->looper_);
+
+                    auto ab = std::make_shared<jsi::Value>(runtime,
+                                                           std::move(arguments[0]));
+
+
+                    std::thread thread(
+                            [&runtime, jsi_callback, cbFunc](const std::string& file) {
+
+
+                                bool done = false;
+                                auto ret = canvas_native_helper_read_file(
+                                        rust::Str(file.c_str()));
+
+                                if (!canvas_native_helper_read_file_has_error(*ret)) {
+                                    auto buf = canvas_native_helper_read_file_get_data(
+                                            std::move(ret));
+
+                                    auto vec_buffer = std::make_shared<VecMutableBuffer<uint8_t>>(
+                                            std::move(buf));
+
+                                    jsi_callback->data_ = std::move(std::make_shared<jsi::Value>(runtime,
+                                                                                                 std::move(
+                                                                                                         jsi::ArrayBuffer(
+                                                                                                                 runtime,
+                                                                                                                 vec_buffer))));
+                                    done = true;
+                                } else {
+                                    auto error = canvas_native_helper_read_file_get_error(
+                                            *ret);
+
+                                    jsi_callback->data_ = std::move(std::make_shared<jsi::Value>(runtime,
+                                                                                                 std::move(
+                                                                                                         jsi::String::createFromAscii(
+                                                                                                                 runtime,
+                                                                                                                 error.c_str()))));
+                                }
+
+
+                                write(jsi_callback->fd_[1],
+                                      &done,
+                                      sizeof(bool));
+
+
+                            }, std::move(file));
+
+                    thread.detach();
+
+                    return jsi::Value::undefined();
                 }
 
                 )
@@ -168,7 +216,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         if (obj->isString()) {
                             auto d = obj->asString(runtime).utf8(runtime);
                             auto path = canvas_native_path_create_with_str(
-                                    rust::Str(d.data(), d.size()));
+                                    rust::Str(d.c_str()));
                             auto object = std::make_shared<Path2D>(std::move(path));
                             return jsi::Object::createFromHostObject(runtime, std::move(object));
                         } else if (obj->isObject()) {
@@ -206,7 +254,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         encoding = arguments[0].asString(runtime).utf8(runtime);
                     }
                     auto encoder = canvas_native_text_encoder_create(
-                            rust::Str(encoding.data(), encoding.size()));
+                            rust::Str(encoding.c_str()));
                     auto shared_encoder = std::make_shared<TextEncoderImpl>(std::move(encoder));
                     return jsi::Object::createFromHostObject(runtime, shared_encoder);
                 }
@@ -228,7 +276,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                         encoding = arguments[0].asString(runtime).utf8(runtime);
                     }
                     auto encoder = canvas_native_text_decoder_create(
-                            rust::Str(encoding.data(), encoding.size()));
+                            rust::Str(encoding.c_str()));
                     auto shared_decoder = std::make_shared<TextDecoderImpl>(std::move(encoder));
                     return jsi::Object::createFromHostObject(runtime, shared_decoder);
                 }
@@ -305,9 +353,11 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                                 auto asset = canvas_native_image_asset_create();
 
+                                auto shared_asset = canvas_native_image_asset_shared_clone(*asset);
+
 
                                 auto ret = std::make_shared<ImageBitmapImpl>(
-                                        std::move(canvas_native_image_asset_shared_clone(*asset)));
+                                        std::move(asset));
 
                                 auto cbFunc = std::make_shared<jsi::Value>(
                                         runtime, arguments[count - 1]);
@@ -392,7 +442,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                                       sizeof(bool));
 
 
-                                            }, std::move(asset));
+                                            }, std::move(shared_asset));
 
                                     thread.detach();
                                     return jsi::Value::undefined();
@@ -424,8 +474,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                                       sizeof(bool));
 
 
-                                            }, std::move(asset));
-
+                                            }, std::move(shared_asset));
                                     thread.detach();
 
                                 }
@@ -443,10 +492,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                                 auto asset = canvas_native_image_asset_create();
 
-                                auto asset_clone = canvas_native_image_asset_shared_clone(*asset);
+                                auto shared_asset = canvas_native_image_asset_shared_clone(*asset);
 
                                 auto ret = std::make_shared<ImageBitmapImpl>(
-                                        std::move(asset_clone));
+                                        std::move(asset));
 
                                 auto jsi_callback = new JSICallback(
                                         std::shared_ptr<jsi::Value>(
@@ -534,7 +583,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                                       &done,
                                                       sizeof(bool));
 
-                                            }, std::move(asset),
+                                            }, std::move(shared_asset),
                                             (float) sx_or_options->asNumber(),
                                             (float) sy->asNumber(),
                                             (float) sw->asNumber(),
@@ -578,7 +627,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                                       &done,
                                                       sizeof(bool));
 
-                                            }, std::move(asset),
+                                            }, std::move(shared_asset),
                                             (float) sx_or_options->asNumber(),
                                             (float) sy->asNumber(),
                                             (float) sw->asNumber(),

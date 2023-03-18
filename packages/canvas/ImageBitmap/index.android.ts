@@ -2,7 +2,6 @@ import { ImageAsset } from '../ImageAsset';
 import { ImageData } from '../Canvas2D';
 import { ImageBitmapBase } from './common';
 import { Canvas } from '../Canvas';
-import lazy from '../utils';
 import { ImageSource } from '@nativescript/core';
 
 import { Helpers } from '../helpers';

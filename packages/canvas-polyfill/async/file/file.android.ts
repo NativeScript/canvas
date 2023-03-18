@@ -23,21 +23,20 @@ export class FileManager {
 
 	static _readFile;
 
-	static {
-		//	this._readFile = global?.CanvasJSIModule?.readFile;
-	}
-
 	public static readFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
 		//const opts = new com.github.triniwiz.async.Async2.FileManager.Options();
 		//opts.asStream = options.asStream;
+		if (this._readFile === undefined) {
+			this._readFile = global?.CanvasJSIModule?.readFile;
+		}
 		if (this._readFile) {
-			this._readFile(path)
-				.then((buffer: ArrayBuffer) => {
-					callback(null, buffer);
-				})
-				.catch((error) => {
+			this._readFile(path, (error, buffer) => {
+				if (error) {
 					callback(new Error(error), null);
-				});
+				} else {
+					callback(null, buffer);
+				}
+			});
 		} else {
 			com.github.triniwiz.async.Async2.FileManager.readFile(
 				path,

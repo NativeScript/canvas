@@ -1128,6 +1128,35 @@ pub mod ffi {
             d_height: f32,
         );
 
+        fn canvas_native_context_draw_image_dx_dy_context(
+            context: &mut CanvasRenderingContext2D,
+            source: &mut CanvasRenderingContext2D,
+            dx: f32,
+            dy: f32,
+        );
+
+        fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
+            context: &mut CanvasRenderingContext2D,
+            source: &mut CanvasRenderingContext2D,
+            dx: f32,
+            dy: f32,
+            d_width: f32,
+            d_height: f32,
+        );
+
+        fn canvas_native_context_draw_image_context(
+            context: &mut CanvasRenderingContext2D,
+            source: &mut CanvasRenderingContext2D,
+            sx: f32,
+            sy: f32,
+            s_width: f32,
+            s_height: f32,
+            dx: f32,
+            dy: f32,
+            d_width: f32,
+            d_height: f32,
+        );
+
         fn canvas_native_context_draw_image_dx_dy_asset(
             context: &mut CanvasRenderingContext2D,
             asset: &mut ImageAsset,
@@ -4224,6 +4253,74 @@ pub fn canvas_native_context_draw_image_asset(
     }
 }
 
+pub fn canvas_native_context_draw_image_dx_dy_context(
+    context: &mut CanvasRenderingContext2D,
+    source: &mut CanvasRenderingContext2D,
+    dx: f32,
+    dy: f32,
+) {
+    let device;
+    {
+        let source_ctx = source.get_context();
+        device = *source_ctx.device();
+    }
+
+    let width = device.width;
+    let height = device.height;
+
+    canvas_native_context_draw_image_context(
+        context, source, 0.0, 0.0, width, height, dx, dy, width, height,
+    );
+}
+
+pub fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
+    context: &mut CanvasRenderingContext2D,
+    source: &mut CanvasRenderingContext2D,
+    dx: f32,
+    dy: f32,
+    d_width: f32,
+    d_height: f32,
+) {
+    let device;
+    {
+        let source_ctx = source.get_context();
+        device = *source_ctx.device();
+    }
+
+    let width = device.width;
+    let height = device.height;
+    canvas_native_context_draw_image_context(
+        context, source, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
+    );
+}
+
+pub fn canvas_native_context_draw_image_context(
+    context: &mut CanvasRenderingContext2D,
+    source: &mut CanvasRenderingContext2D,
+    sx: f32,
+    sy: f32,
+    s_width: f32,
+    s_height: f32,
+    dx: f32,
+    dy: f32,
+    d_width: f32,
+    d_height: f32,
+) {
+    source.gl_context.make_current();
+    let source_ctx = source.get_context_mut();
+    let width = source_ctx.device().width;
+    let height = source_ctx.device().height;
+    let bytes = source.get_context_mut().snapshot_to_raster_data();
+
+    if let Some(image) = from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
+    {
+        context.make_current();
+        context.get_context_mut().draw_image_src_xywh_dst_xywh(
+            &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+        );
+    }
+}
+
 pub fn canvas_native_context_ellipse(
     context: &mut CanvasRenderingContext2D,
     x: f32,
@@ -4650,6 +4747,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
         &mut output.0,
     );
 
+    
     if output.width() > 0 && output.height() > 0 {
         return true;
     }

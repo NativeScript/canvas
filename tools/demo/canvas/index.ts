@@ -525,7 +525,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//console.log(ctx.getLineDash());
 		//clip(this.canvas);
 		//fillStyle(this.canvas);
-		// font(this.canvas);
+		 font(this.canvas);
 		// globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
@@ -564,7 +564,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		this.clock(this.canvas);
+		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 
 		//console.log('ready ??');

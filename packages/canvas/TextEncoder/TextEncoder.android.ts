@@ -1,5 +1,6 @@
 import { TextEncoderBase } from './common';
 import { Helpers } from '../helpers';
+import { profile } from '@nativescript/core';
 let ctor;
 
 export class TextEncoder extends TextEncoderBase {
@@ -29,6 +30,7 @@ export class TextEncoder extends TextEncoderBase {
 		return this.native.encoding;
 	}
 
+	@profile
 	encode(text?: string): Uint8Array {
 		if (text === undefined) {
 			return new Uint8Array(0);

@@ -167,8 +167,8 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DCont
         alpha == JNI_TRUE,
     );
 
-    ctx_2d.get_context_mut().flush();
-    context.gl_context.swap_buffers();
+    //ctx_2d.get_context_mut().flush();
+    //context.gl_context.swap_buffers();
 
     Box::into_raw(Box::new(ctx_2d)) as jlong
 }

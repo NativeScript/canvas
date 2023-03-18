@@ -54,7 +54,6 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		ctor = global.CanvasJSIModule.createWebGLContext;
 	}
 
-	@profile
 	constructor(context, contextOptions) {
 		super(context);
 		if (contextOptions) {
@@ -81,19 +80,6 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 
 	get drawingBufferWidth() {
 		return this.native.drawingBufferWidth;
-	}
-
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.native[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
 	}
 
 	__toDataURL() {
@@ -559,7 +545,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		const generateMipmap = this._getMethod('generateMipmap');
 		generateMipmap(target);
 	}
-	
+
 	@profile
 	getActiveAttrib(program: WebGLProgram, index: number): WebGLActiveInfo {
 		this._glCheckError('getActiveAttrib');
@@ -797,7 +783,6 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		const value = shader.native;
 		return getShaderInfoLog(value);
 	}
-
 
 	@profile
 	getShaderParameter(shader: WebGLShader, pname: number): boolean | number {

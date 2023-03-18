@@ -1,16 +1,14 @@
-import {
-	WebGLRenderingContextBase,
-} from './common';
+import { WebGLRenderingContextBase } from './common';
 
-import {WebGLShader} from '../WebGLShader';
-import {WebGLFramebuffer} from '../WebGLFramebuffer';
-import {WebGLTexture} from '../WebGLTexture';
-import {WebGLProgram} from '../WebGLProgram';
-import {WebGLUniformLocation} from '../WebGLUniformLocation';
-import {WebGLActiveInfo} from '../WebGLActiveInfo';
-import {WebGLRenderbuffer} from '../WebGLRenderbuffer';
-import {WebGLShaderPrecisionFormat} from '../WebGLShaderPrecisionFormat';
-import {WebGLBuffer} from '../WebGLBuffer';
+import { WebGLShader } from '../WebGLShader';
+import { WebGLFramebuffer } from '../WebGLFramebuffer';
+import { WebGLTexture } from '../WebGLTexture';
+import { WebGLProgram } from '../WebGLProgram';
+import { WebGLUniformLocation } from '../WebGLUniformLocation';
+import { WebGLActiveInfo } from '../WebGLActiveInfo';
+import { WebGLRenderbuffer } from '../WebGLRenderbuffer';
+import { WebGLShaderPrecisionFormat } from '../WebGLShaderPrecisionFormat';
+import { WebGLBuffer } from '../WebGLBuffer';
 
 export declare class WebGLRenderingContext extends WebGLRenderingContextBase {
 	readonly native: any;
@@ -304,5 +302,4 @@ export declare class WebGLRenderingContext extends WebGLRenderingContextBase {
 	vertexAttribPointer(index: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void;
 
 	viewport(x: number, y: number, width: number, height: number): void;
-
 }

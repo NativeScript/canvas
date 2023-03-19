@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-phaser-ce",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.2",
   "description": "Tools for using Phaser-ce to build native 2D games in NativeScript 👾",
   "main": "index",
   "typings": "index.d.ts",

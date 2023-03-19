@@ -1103,7 +1103,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._checkArgs('texImage2D', arguments);
 		const texImage2D = this._getMethod('texImage2D');
 		if (arguments.length === 9) {
-			texImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+			texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels);
 		} else if (arguments.length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {
 				border._video.getCurrentFrame(this.native, this, target, level, internalformat, width, height);

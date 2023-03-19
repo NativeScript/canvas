@@ -15,10 +15,106 @@ class NSCCanvasRenderingContext2D {
         }
 
         @JvmStatic
+        fun drawImage(context: Long, image: Bitmap, dx: Float, dy: Float): Boolean {
+            val width = image.width.toFloat()
+            val height = image.height.toFloat()
+            return nativeDrawImageDxDyWithBitmap(context, image, width, height, dx, dy)
+        }
+
+        @JvmStatic
+        fun drawImage(
+            context: Long,
+            image: Bitmap,
+            dx: Float,
+            dy: Float,
+            dWidth: Float,
+            dHeight: Float
+        ): Boolean {
+            val width = image.width.toFloat()
+            val height = image.height.toFloat()
+            return nativeDrawImageDxDyDwDhWithBitmap(
+                context,
+                image,
+                width,
+                height,
+                dx,
+                dy,
+                dWidth,
+                dHeight
+            )
+        }
+
+        @JvmStatic
+        fun drawImage(
+            context: Long,
+            image: Bitmap,
+            sx: Float,
+            sy: Float,
+            sWidth: Float,
+            sHeight: Float,
+            dx: Float,
+            dy: Float,
+            dWidth: Float,
+            dHeight: Float
+        ): Boolean {
+            val width = image.width.toFloat()
+            val height = image.height.toFloat()
+            return nativeDrawImageWithBitmap(
+                context, image, width, height, sx,
+                sy,
+                sWidth,
+                sHeight,
+                dx,
+                dy,
+                dWidth,
+                dHeight
+            )
+        }
+
+        @JvmStatic
         private external fun nativeCreatePattern(
             context: Long,
             bitmap: Bitmap,
             repetition: String
         ): Long
+
+
+        @JvmStatic
+        private external fun nativeDrawImageDxDyWithBitmap(
+            context: Long,
+            bitmap: Bitmap,
+            width: Float,
+            height: Float,
+            dx: Float,
+            dy: Float
+        ): Boolean
+
+        @JvmStatic
+        private external fun nativeDrawImageDxDyDwDhWithBitmap(
+            context: Long,
+            bitmap: Bitmap,
+            width: Float,
+            height: Float,
+            dx: Float,
+            dy: Float,
+            dWidth: Float,
+            dHeight: Float
+        ): Boolean
+
+        @JvmStatic
+        private external fun nativeDrawImageWithBitmap(
+            context: Long,
+            bitmap: Bitmap,
+            width: Float,
+            height: Float,
+            sx: Float,
+            sy: Float,
+            sWidth: Float,
+            sHeight: Float,
+            dx: Float,
+            dy: Float,
+            dWidth: Float,
+            dHeight: Float
+        ): Boolean
     }
 }

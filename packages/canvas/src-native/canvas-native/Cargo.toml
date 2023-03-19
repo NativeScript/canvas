@@ -15,7 +15,7 @@ members = [
 [profile.release]
 codegen-units = 1
 lto = true
-opt-level = 3
+opt-level = "z"
 debug = false
 incremental = false
 strip = true

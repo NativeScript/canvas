@@ -237,3 +237,25 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPoi
     let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let _ = GLContext::from_raw_inner(gl_context);
 }
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTest(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+    {
+        let mut ctx = context.get_context_mut();
+        ctx.set_fill_style_with_color("red");
+        ctx.fill_rect_xywh(0., 0., 300., 300.);
+    }
+    context.render();
+}

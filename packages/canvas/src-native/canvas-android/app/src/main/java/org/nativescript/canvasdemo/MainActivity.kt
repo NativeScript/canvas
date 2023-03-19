@@ -1,6 +1,7 @@
 package org.nativescript.canvasdemo
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -36,18 +37,61 @@ class MainActivity : AppCompatActivity() {
 
         canvas?.listener = object : NSCCanvas.Listener {
             override fun contextReady() {
-                /*	Log.d("com.test", "Is Ready")
-                    val params = canvas!!.layoutParams
-                    canvas?.initContext("2d")
-                    params.width = 300
+                Log.d("com.test", "Is Ready")
+                canvas?.let { canvas ->
+                    val params = canvas.layoutParams
+                    val context = canvas.create2DContext(
+                        true,
+                        true,
+                        true,
+                        false,
+                        "default",
+                        true,
+                        false,
+                        false,
+                        false,
+                        false,
+                        Color.BLACK
+                    )
 
-                    canvas?.layoutParams = params
-                    canvas?.requestLayout()
+                    //canvas?.initContext("2d")
+//                    params.width = 300
+//
+//                    canvas.layoutParams = params
+//                    canvas.requestLayout()
+
+
+                    executor.execute {
+                        try {
+                            val file = File(filesDir, "canvas_createpattern.svg")
+                            if (file.exists()) {
+                                file.delete()
+                            }
+
+                            val url =
+                                URL("https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png")
+                            val fs = FileOutputStream(file)
+                            url.openStream().use { input ->
+                                fs.use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            val bm = BitmapFactory.decodeFile(file.absolutePath)
+                            runOnUiThread {
+                                NSCCanvasRenderingContext2D.drawImage(context, bm, 0F, 0F)
+                            }
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                        }
+                    }
+
+                }
+
+
                 //	draw2D()
-                    //drawPatterWithCanvas(canvas!!)
-                    //drawText(canvas!!)
+                //drawPatterWithCanvas(canvas!!)
+                //drawText(canvas!!)
 
-    */
 
             }
 

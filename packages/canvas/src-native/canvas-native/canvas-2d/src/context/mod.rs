@@ -335,7 +335,7 @@ impl Context {
         self.surface.image_snapshot()
     }
 
-    pub fn read_pixels_to_encoded_data(&mut self) -> Option<skia_safe::Data> {
+    pub fn read_pixels_to_encoded_data(&mut self) -> Option<Data> {
         let image = self.surface.image_snapshot();
         image.encode_to_data_with_quality(skia_safe::EncodedImageFormat::PNG, 100)
     }

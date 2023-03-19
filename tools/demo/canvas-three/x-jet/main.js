@@ -82,7 +82,6 @@ export function init(canvas) {
 
 	pmremGenerator = new THREE.PMREMGenerator(renderer);
 
-	console.time('TriniShip');
 	const loader = new GLTFLoader();
 	loader.setPath(root).load('TriniShip.glb', function (gltf) {
 		ship = gltf.scene;
@@ -98,9 +97,7 @@ export function init(canvas) {
 
 		animate();
 	});
-	console.timeEnd('TriniShip');
 
-	console.time('Drone');
 	const droneLoader = new GLTFLoader();
 	droneLoader.setPath(root).load('Drone.glb', function (gltf) {
 		const droneContainer = new THREE.Group();
@@ -123,7 +120,6 @@ export function init(canvas) {
 		drones.push(droneContainer.clone());
 		drones.push(droneContainer.clone());
 	});
-	console.timeEnd('Drone');
 
 	updateSun();
 

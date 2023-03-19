@@ -21,7 +21,6 @@ jsi::Value OES_texture_half_floatImpl::get(jsi::Runtime &runtime, const jsi::Pro
         return jsi::String::createFromAscii(runtime, "OES_texture_half_float");
     }
 
-
     if (methodName == "HALF_FLOAT_OES") {
         return {GL_HALF_FLOAT_OES};
     }

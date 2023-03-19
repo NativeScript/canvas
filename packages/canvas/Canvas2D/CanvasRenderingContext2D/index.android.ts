@@ -406,6 +406,10 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			img = (image as any).native;
 		} else if (image instanceof ImageSource) {
 			img = image.android;
+			const ptr = this._getMethod('__getPointer');
+			const createPattern = this._getMethod('__createPatternWithNative');
+			const pattern = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.createPattern(long(ptr), img, repetition);
+			return new CanvasPattern(createPattern(pattern));
 		} else if (image instanceof android.graphics.Bitmap) {
 			const ptr = this._getMethod('__getPointer');
 			const createPattern = this._getMethod('__createPatternWithNative');
@@ -422,6 +426,10 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 				img = image._asset.native;
 			} else if (typeof image.src === 'string') {
 				img = ImageSource.fromFileSync(image.src).android;
+				const ptr = this._getMethod('__getPointer');
+				const createPattern = this._getMethod('__createPatternWithNative');
+				const pattern = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.createPattern(long(ptr), img, repetition);
+				return new CanvasPattern(createPattern(pattern));
 			}
 		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
 			img = image._canvas.native;
@@ -465,6 +473,24 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 			image = image.native;
 		} else if (image instanceof ImageSource) {
 			image = image.android;
+			const ptr = this._getMethod('__getPointer');
+			const makeDirty = this._getMethod('__makeDirty');
+
+			let dirty = false;
+
+			if (args.length === 3) {
+				dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(ptr), image, args[1], args[2]);
+			} else if (args.length === 5) {
+				dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(ptr), image, args[1], args[2], args[3], args[4]);
+			} else if (args.length === 9) {
+				dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(ptr), image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+			}
+
+			if (dirty) {
+				makeDirty();
+			}
+
+			return;
 		} else if (image instanceof android.graphics.Bitmap) {
 			image = image;
 		} else if (image instanceof Canvas) {

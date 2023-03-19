@@ -541,6 +541,16 @@ class NSCCanvas : FrameLayout {
 
 
         @JvmStatic
+        external fun nativeContext2DTest(context: Long)
+
+
+        @JvmStatic
+        fun context2DTest(context: Long){
+            nativeContext2DTest(context)
+        }
+
+
+        @JvmStatic
         internal val direction: Int
             get() {
                 var direction = 0

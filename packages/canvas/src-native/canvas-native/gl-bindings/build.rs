@@ -48,6 +48,17 @@ fn main() {
             "GL_EXT_texture_compression_s3tc",
             "GL_EXT_texture_compression_s3tc_srgb",
             "GL_IMG_texture_compression_pvrtc",
+            "GL_OES_texture_half_float",
+            "GL_OES_texture_float_linear",
+            "GL_OES_texture_float",
+            "GL_OES_depth_texture",
+            "GL_EXT_texture_filter_anisotropic",
+            "GL_EXT_color_buffer_half_float",
+            "GL_EXT_blend_minmax",
+            "GL_OES_element_index_uint",
+            "GL_OES_vertex_array_object",
+            "GL_OES_packed_depth_stencil",
+            "GL_EXT_draw_buffers",
         ],
     )
     .write_bindings(GlobalGenerator, &mut file)

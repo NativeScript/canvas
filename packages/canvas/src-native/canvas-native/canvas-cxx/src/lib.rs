@@ -133,6 +133,13 @@ impl CanvasRenderingContext2D {
             alpha,
         }
     }
+
+    pub fn render(&self) {
+        self.gl_context.make_current();
+        self.get_context_mut().flush();
+        self.gl_context.swap_buffers();
+    }
+
     pub fn get_context(&self) -> RwLockReadGuard<'_, RawRwLock, Context> {
         self.context.get_context()
     }
@@ -146,8 +153,12 @@ impl CanvasRenderingContext2D {
         self.context.resize_gl(width, height);
     }
 
-    pub fn make_current(&self) {
-        self.gl_context.make_current();
+    pub fn make_current(&self) -> bool {
+        self.gl_context.make_current()
+    }
+
+    pub fn swap_buffers(&self) -> bool {
+        self.gl_context.swap_buffers()
     }
 
     pub fn remove_if_current(&self) {
@@ -169,6 +180,11 @@ impl PaintStyle {
 
         unsafe { *Box::from_raw(ptr as *mut PaintStyle) }
     }
+
+    pub fn new_with_color(color: &str) -> Self {
+        Self(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::new_color_str(color))
+    }
+
     pub fn new(
         style: Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>,
     ) -> Self {
@@ -735,6 +751,8 @@ pub mod ffi {
         ) -> Box<CanvasRenderingContext2D>;
 
         fn canvas_native_context_flush(context: &CanvasRenderingContext2D);
+
+        fn canvas_native_context_render(context: &CanvasRenderingContext2D);
 
         fn canvas_native_to_data_url(
             context: &mut CanvasRenderingContext2D,
@@ -3198,9 +3216,8 @@ pub fn canvas_native_context_create_gl(
 ) -> Box<CanvasRenderingContext2D> {
     let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
-    gl_context.remove_if_current();
-    gl_context.make_current();
 
+    gl_context.make_current();
     let mut frame_buffers = [0];
     unsafe {
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
@@ -3221,9 +3238,6 @@ pub fn canvas_native_context_create_gl(
         gl_context,
         alpha,
     });
-
-    ret.context.get_context_mut().flush();
-    ret.gl_context.swap_buffers();
 
     ret
 }
@@ -4634,7 +4648,10 @@ pub fn canvas_native_context_translate(context: &mut CanvasRenderingContext2D, x
 pub fn canvas_native_context_flush(context: &CanvasRenderingContext2D) {
     context.make_current();
     context.get_context_mut().flush();
-    context.gl_context.swap_buffers();
+}
+
+pub fn canvas_native_context_render(context: &CanvasRenderingContext2D) {
+    context.render();
 }
 
 pub fn canvas_native_to_data_url(
@@ -4643,9 +4660,7 @@ pub fn canvas_native_to_data_url(
     quality: i32,
 ) -> String {
     context.make_current();
-    let ret = to_data_url(context, format, quality);
-
-    ret
+    to_data_url(context, format, quality)
 }
 
 /* CanvasRenderingContext2D */
@@ -4747,7 +4762,6 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
         &mut output.0,
     );
 
-    
     if output.width() > 0 && output.height() > 0 {
         return true;
     }
@@ -5563,12 +5577,11 @@ pub fn canvas_native_text_encoder_get_encoding(encoder: &mut TextEncoder) -> Str
 
 /* GL */
 pub fn canvas_native_context_gl_make_current(context: &CanvasRenderingContext2D) -> bool {
-    context.gl_context.make_current()
+    context.make_current()
 }
 
 pub fn canvas_native_context_gl_swap_buffers(context: &CanvasRenderingContext2D) -> bool {
-    context.get_context_mut().flush();
-    context.gl_context.swap_buffers()
+    context.swap_buffers()
 }
 /* GL */
 

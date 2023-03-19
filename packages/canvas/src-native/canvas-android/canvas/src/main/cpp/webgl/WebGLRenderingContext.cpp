@@ -2677,7 +2677,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
 
                                                          if (count == 0) {
-                                                             return jsi::Value::undefined();
+                                                             return jsi::Value::null();
                                                          }
 
                                                          if (!arguments[0].isString()) {

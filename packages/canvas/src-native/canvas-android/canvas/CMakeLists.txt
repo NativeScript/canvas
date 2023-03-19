@@ -8,26 +8,26 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(ENABLE_LTO "Enable cross language linking time optimization" ON)
 if (ENABLE_LTO)
-  include(CheckIPOSupported)
-  check_ipo_supported(RESULT supported OUTPUT error)
-  if (supported)
-    message(STATUS "IPO / LTO enabled")
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-    add_link_options(-fuse-ld=lld)
-  else ()
-    message(STATUS "IPO / LTO not supported: <${error}>")
-  endif ()
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT supported OUTPUT error)
+    if (supported)
+        message(STATUS "IPO / LTO enabled")
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+        add_link_options(-fuse-ld=lld)
+    else ()
+        message(STATUS "IPO / LTO not supported: <${error}>")
+    endif ()
 endif ()
 
 
 if ("${ANDROID_ABI}" MATCHES "armeabi-v7a$")
-  set(RUST_BUILD_TARGET "armv7-linux-androideabi")
+    set(RUST_BUILD_TARGET "armv7-linux-androideabi")
 elseif ("${ANDROID_ABI}" MATCHES "arm64-v8a$")
-  set(RUST_BUILD_TARGET "aarch64-linux-android")
+    set(RUST_BUILD_TARGET "aarch64-linux-android")
 elseif ("${ANDROID_ABI}" MATCHES "x86_64$")
-  set(RUST_BUILD_TARGET "x86_64-linux-android")
+    set(RUST_BUILD_TARGET "x86_64-linux-android")
 elseif ("${ANDROID_ABI}" MATCHES "x86$")
-  set(RUST_BUILD_TARGET "i686-linux-android")
+    set(RUST_BUILD_TARGET "i686-linux-android")
 endif ()
 
 get_filename_component(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
@@ -45,26 +45,24 @@ set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/lib.rs)
 set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-cxx/src/lib.rs.cc)
 
-#set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_ABI_VERSION=Cr -DV8_31BIT_SMIS_ON_64BIT_ARCH")
-
 set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH")
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(RUST_BUILD_TYPE)
-  set(CANVAS_ANDROID_LIB ${CURRENT_TARGET_DIR}/debug)
+    set(RUST_BUILD_TYPE)
+    set(CANVAS_ANDROID_LIB ${CURRENT_TARGET_DIR}/debug)
 else ()
-  set(RUST_BUILD_TYPE --release)
-  set(CANVAS_ANDROID_LIB ${CURRENT_TARGET_DIR}/release)
-  set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -OFast")
+    set(RUST_BUILD_TYPE --release)
+    set(CANVAS_ANDROID_LIB ${CURRENT_TARGET_DIR}/release)
+    set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -O3")
 endif ()
 
 
 set(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB}/${CMAKE_STATIC_LIBRARY_PREFIX}canvasandroid${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 if ("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
-  # Enable pointer compression on 64 bit platforms
-  set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -DV8_COMPRESS_POINTERS")
+    # Enable pointer compression on 64 bit platforms
+    set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -DV8_COMPRESS_POINTERS")
 endif ()
 
 
@@ -87,8 +85,8 @@ set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
 # Add a custom command that builds the rust crate and generates C++ bridge code
 add_custom_command(
         OUTPUT ${CANVAS_ANDROID_BRIDGE_CPP} ${CANVAS_ANDROID_LIB}
-       # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
         USES_TERMINAL
 )
@@ -174,9 +172,6 @@ add_library(
 )
 
 
-message("CARGO_TARGET_DIR " ${CARGO_TARGET_DIR})
-
-
 set_target_properties(
         canvasnativev8 PROPERTIES
         CXX_STANDARD 17
@@ -206,35 +201,38 @@ find_library(system-z z)
 find_library(egl EGL)
 find_library(gl2 GLESv2)
 find_library(gl3 GLESv3)
+find_library(graphics jnigraphics)
 
 add_custom_command(TARGET canvasnativev8 POST_BUILD COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:canvasnativev8>)
 
 if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND NOT "${ANDROID_ABI}" MATCHES "x86_64")
-  # On API Level 19 and lower we need to link with android_support
-  # because it contains some implementation of functions such as "strtoll" and "strtoul"
-  target_link_libraries(canvasnativev8
-          ${system-log}
-          ${system-z}
-          ${egl}
-          ${gl2}
-          ${gl3}
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
-          ${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
-          ${CANVAS_ANDROID_LIB}
-          android
-          )
+    # On API Level 19 and lower we need to link with android_support
+    # because it contains some implementation of functions such as "strtoll" and "strtoul"
+    target_link_libraries(canvasnativev8
+            ${system-log}
+            ${system-z}
+            ${egl}
+            ${gl2}
+            ${gl3}
+            ${graphics}
+            ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
+            ${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
+            ${CANVAS_ANDROID_LIB}
+            android
+            )
 
 else ()
-  target_link_libraries(canvasnativev8
-          ${system-log}
-          ${system-z}
-          ${egl}
-          ${gl2}
-          ${gl3}
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
-          ${CANVAS_ANDROID_LIB}
-          android
-          )
+    target_link_libraries(canvasnativev8
+            ${system-log}
+            ${system-z}
+            ${egl}
+            ${gl2}
+            ${gl3}
+            ${graphics}
+            ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
+            ${CANVAS_ANDROID_LIB}
+            android
+            )
 endif ()
 
 

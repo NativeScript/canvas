@@ -496,18 +496,10 @@ export function scale(canvas) {
 
 export function pattern(canvas) {
 	const ctx = canvas.getContext('2d');
-	ImageSource.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png').then(function (img) {
-		try {
-			const bytes = (org as any).nativescript.canvas.Utils.nativeLockBitmap(img.android);
-			console.log(bytes);
-			const style = ctx.__createPatternWithBitmap(img, 'repeat');
-
-			console.log(style);
-			ctx.fillStyle = style;
-			ctx.fillRect(0, 0, 300, 300);
-		} catch (e) {
-			console.log(e);
-		}
+	const img = new ImageAsset();
+	img.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png').then(function (done) {
+		ctx.fillStyle = ctx.createPattern(img, 'repeat');
+		ctx.fillRect(0, 0, 300, 300);
 	});
 }
 

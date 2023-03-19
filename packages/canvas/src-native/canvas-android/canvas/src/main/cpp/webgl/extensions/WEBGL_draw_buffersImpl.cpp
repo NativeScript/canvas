@@ -147,8 +147,6 @@ jsi::Value WEBGL_draw_buffersImpl::get(jsi::Runtime &runtime, const jsi::PropNam
         return {GL_DRAW_BUFFER5_EXT};
     } else if (methodName == "DRAW_BUFFER6_WEBGL") {
         return {GL_DRAW_BUFFER6_EXT};
-    } else if (methodName == "DRAW_BUFFER0_WEBGL") {
-        return {GL_DRAW_BUFFER0_EXT};
     } else if (methodName == "DRAW_BUFFER7_WEBGL") {
         return {GL_DRAW_BUFFER7_EXT};
     } else if (methodName == "DRAW_BUFFER8_WEBGL") {

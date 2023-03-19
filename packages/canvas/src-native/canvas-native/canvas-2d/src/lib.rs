@@ -27,7 +27,10 @@ pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_int) 
     if quality > 100 || quality < 0 {
         quality = 92;
     }
-    let mut encoded_prefix = String::new();
+    let data_txt = "data:";
+    let base_64_txt = ";base64,";
+    let mut encoded_prefix =
+        String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
     encoded_prefix.push_str("data:");
     encoded_prefix.push_str(format);
     encoded_prefix.push_str(";base64,");
@@ -46,17 +49,15 @@ pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_int) 
     match data {
         Some(data) => {
             let encoded_data = base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
-            let mut encoded = String::new();
+            if encoded_data.is_empty() {
+                return "data:,".to_string();
+            }
+            let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
             encoded.push_str(&encoded_prefix);
             encoded.push_str(&encoded_data);
             encoded
         }
-        _ => {
-            let mut encoded = String::new();
-            encoded.push_str(&encoded_prefix);
-            encoded.push_str("\"\"");
-            encoded
-        }
+        _ => "data:,".to_string(),
     }
 }
 
@@ -68,7 +69,10 @@ pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -
     if quality > 100 || quality < 0 {
         quality = 92;
     }
-    let mut encoded_prefix = String::new();
+    let data_txt = "data:";
+    let base_64_txt = ";base64,";
+    let mut encoded_prefix =
+        String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
     encoded_prefix.push_str("data:");
     encoded_prefix.push_str(format);
     encoded_prefix.push_str(";base64,");
@@ -87,17 +91,15 @@ pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -
     match data {
         Some(data) => {
             let encoded_data = base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
-            let mut encoded = String::new();
+            if encoded_data.is_empty() {
+                return "data:,".to_string();
+            }
+            let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
             encoded.push_str(&encoded_prefix);
             encoded.push_str(&encoded_data);
             encoded
         }
-        _ => {
-            let mut encoded = String::new();
-            encoded.push_str(&encoded_prefix);
-            encoded.push_str("\"\"");
-            encoded
-        }
+        _ => "data:,".to_string(),
     }
 }
 
@@ -125,6 +127,13 @@ pub fn bytes_to_data_url(
         if quality > 100 || quality < 0 {
             quality = 92;
         }
+        let data_txt = "data:";
+        let base_64_txt = ";base64,";
+        let mut encoded_prefix =
+            String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
+        encoded_prefix.push_str("data:");
+        encoded_prefix.push_str(format);
+        encoded_prefix.push_str(";base64,");
         let data = image.encode_to_data_with_quality(
             match format {
                 "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
@@ -141,24 +150,19 @@ pub fn bytes_to_data_url(
             Some(data) => {
                 let encoded_data =
                     base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
-                let mut encoded = String::new();
+                if encoded_data.is_empty() {
+                    return "data:,".to_string();
+                }
+                let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
                 encoded.push_str(&encoded_prefix);
                 encoded.push_str(&encoded_data);
                 encoded
             }
-            _ => {
-                let mut encoded = String::new();
-                encoded.push_str(&encoded_prefix);
-                encoded.push_str("\"\"");
-                encoded
-            }
+            _ => "data:,".to_string(),
         };
     }
 
-    let mut encoded = String::new();
-    encoded.push_str(&encoded_prefix);
-    encoded.push_str("\"\"");
-    encoded
+    return "data:,".to_string();
 }
 
 pub(crate) fn to_data(context: &mut ContextWrapper) -> Vec<u8> {

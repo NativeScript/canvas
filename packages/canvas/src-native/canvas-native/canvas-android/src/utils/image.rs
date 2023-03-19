@@ -17,8 +17,8 @@ impl BitmapBytes {
     pub fn new(env: &JNIEnv, bitmap: JObject) -> Self {
         let bitmap_ref = env.new_global_ref(bitmap).unwrap();
         let native_interface = env.get_native_interface();
-        let bitmap = bitmap_ref.as_obj().as_raw();
-        let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };
+        let bitmap = bitmap_ref.as_obj();
+        let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap.as_raw()) };
 
         Self {
             bitmap: bitmap_ref,
@@ -31,12 +31,18 @@ impl BitmapBytes {
     pub fn data_mut(&mut self) -> Option<&mut [u8]> {
         if self.pixels.is_null() {
             match self.native_bitmap.lock_pixels() {
-                Ok(pixels) => self.pixels = pixels,
+                Ok(pixels) => {
+                    self.is_locked = true;
+                    self.pixels = pixels
+                },
                 _ => {
                     self.pixels = std::ptr::null();
                 }
             }
-            return None;
+        }
+
+        if self.pixels.is_null() {
+            return None
         }
 
         match self.native_bitmap.get_info() {
@@ -53,13 +59,20 @@ impl BitmapBytes {
     pub fn data(&mut self) -> Option<&[u8]> {
         if self.pixels.is_null() {
             match self.native_bitmap.lock_pixels() {
-                Ok(pixels) => self.pixels = pixels,
+                Ok(pixels) => {
+                    self.is_locked = true;
+                    self.pixels = pixels
+                },
                 _ => {
                     self.pixels = std::ptr::null();
                 }
             }
-            return None;
         }
+
+        if self.pixels.is_null() {
+            return None
+        }
+
 
         match self.native_bitmap.get_info() {
             Ok(info) => unsafe {
@@ -82,15 +95,19 @@ impl BitmapBytes {
 
 impl Drop for BitmapBytes {
     fn drop(&mut self) {
-        let jvm = crate::JVM.get().unwrap();
-        let _ = jvm.attach_current_thread().unwrap();
+        if let Some(jvm) = crate::JVM.get() {
+            let _ = jvm.attach_current_thread().unwrap();
+        }
         if self.is_locked || !self.pixels.is_null() {
             let _ = self.native_bitmap.unlock_pixels();
         }
     }
 }
 
-pub fn get_bytes_from_bitmap(env: &JNIEnv, bitmap: JObject) -> Option<(Vec<u8>, AndroidBitmapInfo)> {
+pub fn get_bytes_from_bitmap(
+    env: &JNIEnv,
+    bitmap: JObject,
+) -> Option<(Vec<u8>, AndroidBitmapInfo)> {
     let native_interface = env.get_native_interface();
     let bitmap = bitmap.as_raw();
     let native_bitmap = unsafe { AndroidBitmap::from_jni(native_interface, bitmap) };

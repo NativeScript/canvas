@@ -33,7 +33,8 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
 
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(64);
+    ret.reserve(65);
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__makeDirty")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__getPointer")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__resize")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("filter")));
@@ -107,6 +108,7 @@ void
 CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &name,
                                   const jsi::Value &value) {
     auto methodName = name.utf8(runtime);
+
     if (methodName == "filter") {
         auto val = value.asString(runtime).utf8(runtime);
         canvas_native_context_set_filter(this->GetContext(), rust::Str(val.c_str()));
@@ -243,6 +245,20 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
     if (methodName == "filter") {
         auto filter = canvas_native_context_get_filter(this->GetContext());
         return jsi::String::createFromAscii(runtime, filter.data(), filter.length());
+    }
+
+    if (methodName == "__makeDirty") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         this->UpdateInvalidateState();
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
     }
 
     if (methodName == "__getPointer") {
@@ -1758,8 +1774,9 @@ void CanvasRenderingContext2DImpl::Flush() {
     if (state == (int) InvalidateState::PENDING) {
         canvas_native_context_flush(this->GetContext());
         this->SetInvalidateState(InvalidateState::INVALIDATING);
-        canvas_native_context_gl_make_current(this->GetContext());
-        canvas_native_context_gl_swap_buffers(this->GetContext());
+        canvas_native_context_render(this->GetContext());
+//        canvas_native_context_gl_make_current(this->GetContext());
+//        canvas_native_context_gl_swap_buffers(this->GetContext());
         this->SetInvalidateState(InvalidateState::NONE);
     }
 }

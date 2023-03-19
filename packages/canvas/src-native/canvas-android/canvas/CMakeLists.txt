@@ -5,7 +5,6 @@ project(canvasnativev8)
 
 set(CMAKE_CXX_STANDARD 17)
 
-
 option(ENABLE_LTO "Enable cross language linking time optimization" ON)
 if (ENABLE_LTO)
     include(CheckIPOSupported)
@@ -13,12 +12,11 @@ if (ENABLE_LTO)
     if (supported)
         message(STATUS "IPO / LTO enabled")
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-        add_link_options(-fuse-ld=lld)
+        add_link_options(-fuse-ld=lld-14)
     else ()
         message(STATUS "IPO / LTO not supported: <${error}>")
     endif ()
 endif ()
-
 
 if ("${ANDROID_ABI}" MATCHES "armeabi-v7a$")
     set(RUST_BUILD_TARGET "armv7-linux-androideabi")
@@ -66,6 +64,15 @@ if ("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
 endif ()
 
 
+if (${ANDROID_PLATFORM_LEVEL} LESS 18)
+    add_definitions("-DDYNAMIC_ES3")
+    set(GL3STUB_SRC  src/main/cpp/gl3stub.c)
+    set(OPENGL_LIB GLESv2)
+else ()
+    set(OPENGL_LIB GLESv2 GLESv3)
+endif()
+
+
 include_directories(
         canvasnativev8
 
@@ -85,7 +92,8 @@ set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
 # Add a custom command that builds the rust crate and generates C++ bridge code
 add_custom_command(
         OUTPUT ${CANVAS_ANDROID_BRIDGE_CPP} ${CANVAS_ANDROID_LIB}
-        COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+       # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        COMMAND cargo +nightly build -Z build-std='std' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
         USES_TERMINAL
@@ -96,6 +104,8 @@ add_library(
         canvasnativev8
 
         SHARED
+
+        ${GL3STUB_SRC}
 
         src/main/cpp/rust/cxx.cc
 
@@ -199,9 +209,6 @@ MESSAGE("# ANDROID_NDK_ROOT: " ${ANDROID_NDK_ROOT})
 find_library(system-log log)
 find_library(system-z z)
 find_library(egl EGL)
-find_library(gl2 GLESv2)
-find_library(gl3 GLESv3)
-find_library(graphics jnigraphics)
 
 add_custom_command(TARGET canvasnativev8 POST_BUILD COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:canvasnativev8>)
 
@@ -212,9 +219,7 @@ if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND
             ${system-log}
             ${system-z}
             ${egl}
-            ${gl2}
-            ${gl3}
-            ${graphics}
+            ${OPENGL_LIB}
             ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
             ${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
             ${CANVAS_ANDROID_LIB}
@@ -226,8 +231,7 @@ else ()
             ${system-log}
             ${system-z}
             ${egl}
-            ${gl2}
-            ${gl3}
+            ${OPENGL_LIB}
             ${graphics}
             ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
             ${CANVAS_ANDROID_LIB}

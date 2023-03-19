@@ -3,6 +3,9 @@ name = "canvas-ios"
 version = "2.0.0"
 edition = "2021"
 
+[build]
+rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
+
 [lib]
 name = "canvasnative"
 crate-type = ["staticlib"]

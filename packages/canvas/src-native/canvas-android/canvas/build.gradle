@@ -42,7 +42,7 @@ println "Runtime using NDK_PATH: " + NDK_PATH
 android {
 	compileSdkVersion 33
 	defaultConfig {
-		minSdkVersion 21
+		minSdkVersion 17
 		targetSdkVersion 33
 		versionCode 1
 		versionName "1.0"

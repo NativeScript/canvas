@@ -450,6 +450,20 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		return CanvasGradient.fromNative(createRadialGradient(x0, y0, r0, x1, y1, r1));
 	}
 
+	drawPoint(x: number, y: number) {
+		this.log('drawPoint value:', x, y);
+		this._ensureLayoutBeforeDraw();
+		const drawPoint = this._getMethod('drawPoint');
+		drawPoint(x, y);
+	}
+
+	drawPoints(mode: 'points' | 'lines' | 'polygon', points: { x: number; y: number }[]) {
+		this.log('drawPoints value:', mode, points);
+		this._ensureLayoutBeforeDraw();
+		const drawPoints = this._getMethod('drawPoints');
+		drawPoints(mode, points);
+	}
+
 	drawFocusIfNeeded(element): void;
 
 	drawFocusIfNeeded(path, element): void;

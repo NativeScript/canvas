@@ -42,6 +42,7 @@ pub mod surface_gl;
 pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
+pub mod non_standard;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Device {

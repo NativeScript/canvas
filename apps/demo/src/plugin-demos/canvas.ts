@@ -1,14 +1,15 @@
-import { EventData, Page, WebView } from '@nativescript/core';
+import { EventData, ImageSource, Page, WebView } from '@nativescript/core';
 import { DemoSharedCanvas } from '@demo/shared';
+import { ImageAsset } from '@nativescript/canvas';
 
 export function navigatingTo(args: EventData) {
-  const page = <Page>args.object;
-  page.bindingContext = new DemoModel();
+	const page = <Page>args.object;
+	page.bindingContext = new DemoModel();
 }
 
 export function loaded(args) {
-  const view = <WebView>args.object;
-  view.src = `
+	const view = <WebView>args.object;
+	view.src = `
 <script>
 
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -54,4 +55,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
 }
 
 export class DemoModel extends DemoSharedCanvas {
+	points = [
+		{ x: 128, y: 0 },
+		{ x: 168, y: 80 },
+		{ x: 256, y: 93 },
+		{ x: 192, y: 155 },
+		{ x: 207, y: 244 },
+		{ x: 128, y: 202 },
+		{ x: 49, y: 244 },
+		{ x: 64, y: 155 },
+		{ x: 0, y: 93 },
+		{ x: 88, y: 80 },
+		{ x: 128, y: 0 },
+	];
+
+	image = new ImageAsset();
+
+	constructor() {
+		super();
+    this.image.fromFileSync('~/assets/file-assets/webgl/svh.jpeg');
+    console.log(this.image.width);
+	}
 }

@@ -22,6 +22,7 @@ use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::context::{Context, ContextWrapper};
+use canvas_2d::context::non_standard::PointMode;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_encoded_data, from_image_slice, from_image_slice_encoded,
@@ -1081,6 +1082,18 @@ pub mod ffi {
             y1: f32,
             r1: f32,
         ) -> Box<PaintStyle>;
+
+        fn canvas_native_context_draw_point(
+            context: &mut CanvasRenderingContext2D,
+            x: f32,
+            y: f32,
+        );
+
+        fn canvas_native_context_draw_points(
+            context: &mut CanvasRenderingContext2D,
+            mode: i32,
+            points: &[f32]
+        );
 
         fn canvas_native_context_draw_image_dx_dy(
             context: &mut CanvasRenderingContext2D,
@@ -4100,6 +4113,30 @@ pub fn canvas_native_context_create_radial_gradient(
         ),
     )))
 }
+
+
+fn canvas_native_context_draw_point(
+    context: &mut CanvasRenderingContext2D,
+    x: f32,
+    y: f32,
+) {
+    context.make_current();
+    context
+        .get_context_mut()
+        .draw_point(x, y);
+}
+
+fn canvas_native_context_draw_points(
+    context: &mut CanvasRenderingContext2D,
+    mode: i32,
+    points: &[f32]
+) {
+    context.make_current();
+    context
+        .get_context_mut()
+        .draw_points(mode.try_into().unwrap(), points);
+}
+
 
 pub fn canvas_native_context_draw_image_dx_dy(
     context: &mut CanvasRenderingContext2D,

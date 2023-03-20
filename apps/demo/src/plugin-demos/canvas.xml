@@ -1,12 +1,44 @@
-<Page xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
+<Page xmlns:canvas="@nativescript/canvas" xmlns:canvasDom="@nativescript/canvas/Dom" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
     <Page.actionBar>
         <ActionBar title="canvas 2.0" icon="" class="action-bar">
         </ActionBar>
     </Page.actionBar>
+
+
+
+
   <GridLayout loaded="{{ gridLoaded }}" rows="*,*" columns="*,*" iosOverflowSafeArea="false" width="100%" height="100%">
+  
+  <canvasDom:Dom>
+   <canvasDom:Img image="{{image}}" fit="contain" x="0" y="0"  width="1000" height="1000"/>
+    <!-- <canvasDom:Rect x="0" y="0" width="256" height="256" color="lightblue"/>
+    <canvasDom:Path path="M 128 0 L 168 80 L 256 93 L 192 155 L 207 244 L 128 202 L 49 244 L 64 155 L 0 93 L 88 80 L 128 0 Z" color="red"/> -->
+
+<!-- <canvasDom:RoundedRect
+        x="0"
+        y="0"
+        width="256"
+        height="256"
+        r="25"
+        color="lightblue"
+      /> -->
+    <!-- <canvasDom:Circle cx="128" cy="128" r="128" color="lightblue" /> -->
+
+     <!-- <canvasDom:Points
+        points="{{ points }}"
+        mode="polygon"
+        color="lightblue"
+        paintStyle="stroke"
+        strokeWidth="4"
+      /> -->
+
+        
+  </canvasDom:Dom>
+  
+  
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
-		 <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"
-									 layoutChanged="{{ onLayout }}"/> 
+		 <!-- <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"
+									 layoutChanged="{{ onLayout }}"/>  -->
                                      <!-- <canvas:Svg  id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/>
                                      <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/>
                                       <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/>

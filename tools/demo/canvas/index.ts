@@ -466,6 +466,26 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		console.log(url.username); // Logs "anonymous"
 	}
 
+	drawHouse(canvas) {
+		const ctx = canvas.getContext('2d');
+		// Set line width
+		ctx.lineWidth = 10;
+
+		// Wall
+		ctx.strokeRect(75, 140, 150, 110);
+
+		// Door
+		ctx.fillRect(130, 190, 40, 60);
+
+		// Roof
+		ctx.beginPath();
+		ctx.moveTo(50, 140);
+		ctx.lineTo(150, 60);
+		ctx.lineTo(250, 140);
+		ctx.closePath();
+		ctx.stroke();
+	}
+
 	draw() {
 		//const ctx = this.canvas.getContext('2d');
 
@@ -570,7 +590,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
-		swarm(this.canvas);
+		//swarm(this.canvas);
+		this.drawHouse(this.canvas);
 		//this.bubbleChart(this.canvas);
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;

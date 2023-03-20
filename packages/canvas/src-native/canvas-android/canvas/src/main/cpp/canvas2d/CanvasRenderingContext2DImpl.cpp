@@ -33,7 +33,15 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
 
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(65);
+    ret.reserve(67);
+
+    /* Non Standard 2D */
+
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPoint")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPoints")));
+
+    /* Non Standard 2D */
+
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__makeDirty")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__getPointer")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__resize")));
@@ -241,6 +249,85 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
 
 jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
     auto methodName = name.utf8(runtime);
+
+
+    if (methodName == "drawPoint") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto x = (float) arguments[0].asNumber();
+                                                         auto y = (float) arguments[1].asNumber();
+                                                         canvas_native_context_draw_point(
+                                                                 this->GetContext(), x, y);
+                                                         this->UpdateInvalidateState();
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "drawPoints") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto mode = arguments[0].asString(
+                                                                 runtime).utf8(
+                                                                 runtime);
+                                                         auto points = arguments[1].asObject(
+                                                                 runtime).getArray(
+                                                                 runtime);
+                                                         auto size = points.size(runtime);
+
+
+                                                         if ((size % 2) == 0) {
+                                                             int32_t pointMode = -1;
+                                                             if (mode == "points") {
+                                                                 pointMode = 0;
+                                                             } else if (mode == "lines") {
+                                                                 pointMode = 1;
+                                                             } else if (mode == "polygon") {
+                                                                 pointMode = 2;
+                                                             }
+                                                             if (pointMode == -1) {
+                                                                 return jsi::Value::undefined();
+                                                             }
+                                                             rust::Vec<float> store;
+                                                             store.reserve(size);
+                                                             size_t next = 0;
+                                                             for (size_t i = 0; i < size; i++) {
+
+                                                                 auto object = points.getValueAtIndex(
+                                                                         runtime, i).asObject(
+                                                                         runtime);
+
+                                                                 auto x = object.getProperty(
+                                                                         runtime, "x").asNumber();
+                                                                 auto y = object.getProperty(
+                                                                         runtime, "y").asNumber();
+                                                                 store[next] = (float) x;
+                                                                 store[next + 1] = (float) y;
+
+                                                                 next = i + 2;
+                                                             }
+
+                                                             rust::Slice<const float> buf(
+                                                                     store.data(),
+                                                                     store.size());
+
+                                                             canvas_native_context_draw_points(
+                                                                     this->GetContext(), pointMode,
+                                                                     buf);
+                                                             this->UpdateInvalidateState();
+                                                         }
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    }
 
     if (methodName == "filter") {
         auto filter = canvas_native_context_get_filter(this->GetContext());
@@ -1757,7 +1844,8 @@ void CanvasRenderingContext2DImpl::UpdateInvalidateState() {
 }
 
 InvalidateState CanvasRenderingContext2DImpl::GetInvalidateState() const {
-    return (InvalidateState) this->invalidateState_;
+    return (InvalidateState)
+            this->invalidateState_;
 }
 
 void CanvasRenderingContext2DImpl::SetInvalidateState(InvalidateState state) {

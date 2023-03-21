@@ -1,9 +1,11 @@
 use std::os::raw::c_float;
 
+use csscolorparser::Color;
 use skia_safe::paint::Style;
 use skia_safe::{BlendMode, Paint, Rect};
 
 use crate::context::Context;
+use crate::utils::color;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -33,7 +35,6 @@ impl Into<i32> for PointMode {
     }
 }
 
-
 impl TryFrom<i32> for PointMode {
     type Error = &'static str;
 
@@ -46,8 +47,6 @@ impl TryFrom<i32> for PointMode {
         }
     }
 }
-
-
 
 impl TryFrom<&str> for PointMode {
     type Error = &'static str;
@@ -63,6 +62,15 @@ impl TryFrom<&str> for PointMode {
 }
 
 impl Context {
+    pub fn draw_paint(&mut self, color: &str) {
+        if let Some(color) = color::parse_color(color) {
+            let mut paint = skia_safe::Paint::default();
+            paint.set_anti_alias(true);
+            paint.set_color(color);
+            self.surface.canvas().draw_paint(&paint);
+        }
+    }
+
     pub fn draw_point(&mut self, x: c_float, y: c_float) {
         self.surface
             .canvas()

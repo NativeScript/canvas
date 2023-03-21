@@ -1,4 +1,4 @@
-<Page xmlns:canvas="@nativescript/canvas" xmlns:canvasDom="@nativescript/canvas/Dom" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
+<Page xmlns:canvas="@nativescript/canvas" xmlns:ui="@nativescript/canvas/dom/index" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
     <Page.actionBar>
         <ActionBar title="canvas 2.0" icon="" class="action-bar">
         </ActionBar>
@@ -9,12 +9,14 @@
 
   <GridLayout loaded="{{ gridLoaded }}" rows="*,*" columns="*,*" iosOverflowSafeArea="false" width="100%" height="100%">
   
-  <canvasDom:Dom>
-   <canvasDom:Img image="{{image}}" fit="contain" x="0" y="0"  width="1000" height="1000"/>
-    <!-- <canvasDom:Rect x="0" y="0" width="256" height="256" color="lightblue"/>
-    <canvasDom:Path path="M 128 0 L 168 80 L 256 93 L 192 155 L 207 244 L 128 202 L 49 244 L 64 155 L 0 93 L 88 80 L 128 0 Z" color="red"/> -->
+  <ui:Dom rowSpan="2" colSpan="2">
 
-<!-- <canvasDom:RoundedRect
+  <!-- <ui:Fill color="#e8f4f8" /> -->
+
+    <!-- <ui:Rect x="0" y="0" width="256" height="256" color="lightblue"/>
+    <ui:Path path="M 128 0 L 168 80 L 256 93 L 192 155 L 207 244 L 128 202 L 49 244 L 64 155 L 0 93 L 88 80 L 128 0 Z" color="red"/> -->
+
+<!-- <ui:RoundedRect
         x="0"
         y="0"
         width="256"
@@ -22,9 +24,9 @@
         r="25"
         color="lightblue"
       /> -->
-    <!-- <canvasDom:Circle cx="128" cy="128" r="128" color="lightblue" /> -->
+    <!-- <ui:Circle cx="128" cy="128" r="128" color="lightblue" /> -->
 
-     <!-- <canvasDom:Points
+     <!-- <ui:Points
         points="{{ points }}"
         mode="polygon"
         color="lightblue"
@@ -32,8 +34,61 @@
         strokeWidth="4"
       /> -->
 
+<!-- <ui:Image image="{{image}}" fit="contain" x="0" y="0"  width="256" height="256"/> -->
+
+       <!-- <ui:Circle c="{{c}}" r="{{r}}" color="red">
+        <ui:Paint color="lightblue" />
+        <ui:Paint color="#adbce6" paintStyle="stroke" strokeWidth="{{strokeWidth}}" />
+        <ui:Paint color="#ade6d8" paintStyle="stroke" strokeWidth="{{strokeWidth / 2}}" />
+      </ui:Circle> -->
+
+       <!-- <ui:Rect x="0" y="0" width="300" height="300" color="red">
+        <ui:Paint color="lightblue" />
+        <ui:Paint color="#adbce6" paintStyle="stroke" strokeWidth="{{strokeWidth}}" />
+        <ui:Paint color="#ade6d8" paintStyle="stroke" strokeWidth="{{strokeWidth / 2}}" />
+      </ui:Rect> -->
+<!-- 
+        <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{groupR}}" color="#51AFED" />
+      <ui:Group color="lightblue" paintStyle="stroke" strokeWidth="10">
+        <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{groupR / 2}}" />
+        <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{groupR / 3}}" color="white" />
+      </ui:Group> -->
+
+
+       <!-- <ui:Fill color="#e8f4f8" />
+      <ui:Group
+        color="lightblue"
+        origin="{x: 128, y: 128 }"
+        transform="[{ skewX: Math.PI / 6 }]"
+      >
+        <ui:RoundedRect x="64" y="64" width="128" height="128" r="10" /> 
+
+   </ui:Group>
+   -->
+
+
+  <!-- <ui:Fill color="white" />
+
+   <ui:Image image="{{image}}" fit="contain" x="50" y="0"  width="256" height="256"/>
+
+   <ui:Path path="M 128 0 L 168 80 L 256 93 L 192 155 L 207 244 L 128 202 L 49 244 L 64 155 L 0 93 L 88 80 L 128 0 Z" color="red"/>
+
+    <ui:Text
+        x="0"
+        y="400"
+        text="Hello World"
+        font="bold 100px serif"
+      /> -->
+
+
+      <ui:Fill color="lightblue" />
+      <ui:RoundedRect x="32" y="32" width="192" height="192" r="32" color="lightblue">
+        <ui:Shadow dx="12" dy="12" blur="25" color="#93b8c4" />
+        <ui:Shadow dx="-12" dy="-12" blur="25" color="#c7f8ff" />
+      </ui:RoundedRect>
+
         
-  </canvasDom:Dom>
+  </ui:Dom>
   
   
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->

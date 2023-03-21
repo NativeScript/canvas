@@ -1,4 +1,4 @@
-import { colorProperty, Property, booleanConverter } from '@nativescript/core';
+import { colorProperty, Property, booleanConverter, ViewBase } from '@nativescript/core';
 import { Group } from '../Group';
 import { Paint } from '../Paint';
 
@@ -36,11 +36,36 @@ export class Rect extends Paint {
 	width: number;
 	height: number;
 
+	_children: Paint[] = [];
+
 	draw() {
-		const override_color = (this.parent as any)._overrideColor;
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
 		context.rect(this.x, this.y, this.width, this.height);
-		super.draw();
+
+		if (this._children.length > 0) {
+			this._children.forEach((child) => {
+				switch (child.paintStyle) {
+					case 'fill':
+						context.fillStyle = child.color.hex;
+						context.fill();
+						break;
+					case 'stroke':
+						context.strokeStyle = child.color.hex;
+						context.lineWidth = child.strokeWidth;
+						context.stroke();
+						break;
+				}
+			});
+		} else {
+			super.draw();
+		}
+	}
+
+	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
+		if (view instanceof Paint) {
+			this._children.push(view);
+		}
+		return false;
 	}
 }
 

@@ -1,4 +1,4 @@
-import { ImageSource, LayoutBase, Property, View, ViewBase } from '@nativescript/core';
+import { ImageSource, LayoutBase, Property, View, ViewBase, Screen } from '@nativescript/core';
 import { Canvas } from '../Canvas';
 import { ImageAsset } from '../ImageAsset';
 
@@ -26,11 +26,6 @@ export class Image extends View {
 	width: number;
 	height: number;
 
-	constructor() {
-		super();
-		console.log('??');
-	}
-
 	_canvas: Canvas;
 	_addCanvas(canvas: Canvas) {
 		this._canvas = canvas;
@@ -39,15 +34,13 @@ export class Image extends View {
 	image;
 
 	draw() {
-		console.log('draw', this.image);
 		if (this.image === undefined) {
 			return;
 		}
-		console.log(this.image);
-		const override_color = (this.parent as any)._overrideColor;
-		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
+		const context = this._canvas.getContext('2d') as any;
+		const scale = Screen.mainScreen.scale;
 
-		context.drawImage(this.image as any, this.x, this.y, this.width, this.height);
+		context.drawImage(this.image as any, this.x * scale, this.y * scale, this.width * scale, this.height * scale);
 	}
 }
 

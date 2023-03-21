@@ -24,7 +24,7 @@ impl Context {
 
         if let Some(rule) = fill_rule {
             let path = path.unwrap_or(self.path.borrow_mut());
-            path.path_mut().set_fill_type(rule.to_fill_type());
+            path.path.set_fill_type(rule.to_fill_type());
 
             if let Some(paint) = self.state.paint.fill_shadow_paint(
                 self.state.shadow_offset,
@@ -64,7 +64,7 @@ impl Context {
         match path {
             None => {
                 self.path
-                    .path_mut()
+                    .path
                     .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
                 let path = self.path.path().clone();
                 self.surface
@@ -72,7 +72,7 @@ impl Context {
                     .clip_path(&path, Some(ClipOp::Intersect), Some(true));
             }
             Some(path) => {
-                path.path_mut()
+                path.path
                     .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
                 let path = path.path().clone();
                 self.surface

@@ -19,10 +19,10 @@ pub use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
+use canvas_2d::context::non_standard::PointMode;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::context::{Context, ContextWrapper};
-use canvas_2d::context::non_standard::PointMode;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_encoded_data, from_image_slice, from_image_slice_encoded,
@@ -55,6 +55,10 @@ mod raf;
 #[derive(Clone)]
 pub struct Raf(raf::Raf);
 /* Raf */
+
+
+#[derive(Clone)]
+pub struct ImageFilter(canvas_2d::context::filters::ImageFilter);
 
 /* Helpers */
 
@@ -487,6 +491,27 @@ pub mod ffi {
         );
 
         fn canvas_native_path_rect(path: &mut Path, x: f32, y: f32, width: f32, height: f32);
+
+        fn canvas_native_path_round_rect(
+            path: &mut Path,
+            x: f32,
+            y: f32,
+            width: f32,
+            height: f32,
+            radii: &[f32],
+        );
+
+        fn canvas_native_path_round_rect_tl_tr_br_bl(
+            path: &mut Path,
+            x: f32,
+            y: f32,
+            width: f32,
+            height: f32,
+            top_left: f32,
+            top_right: f32,
+            bottom_right: f32,
+            bottom_left: f32,
+        );
 
         fn canvas_native_path_to_string(path: &Path) -> String;
 
@@ -1083,16 +1108,14 @@ pub mod ffi {
             r1: f32,
         ) -> Box<PaintStyle>;
 
-        fn canvas_native_context_draw_point(
-            context: &mut CanvasRenderingContext2D,
-            x: f32,
-            y: f32,
-        );
+        fn canvas_native_context_draw_paint(context: &mut CanvasRenderingContext2D, color: &str);
+
+        fn canvas_native_context_draw_point(context: &mut CanvasRenderingContext2D, x: f32, y: f32);
 
         fn canvas_native_context_draw_points(
             context: &mut CanvasRenderingContext2D,
             mode: i32,
-            points: &[f32]
+            points: &[f32],
         );
 
         fn canvas_native_context_draw_image_dx_dy(
@@ -1327,6 +1350,27 @@ pub mod ffi {
             y: f32,
             width: f32,
             height: f32,
+        );
+
+        fn canvas_native_context_round_rect(
+            context: &mut CanvasRenderingContext2D,
+            x: f32,
+            y: f32,
+            width: f32,
+            height: f32,
+            radii: &[f32],
+        );
+
+        fn canvas_native_context_round_rect_tl_tr_br_bl(
+            context: &mut CanvasRenderingContext2D,
+            x: f32,
+            y: f32,
+            width: f32,
+            height: f32,
+            top_left: f32,
+            top_right: f32,
+            bottom_right: f32,
+            bottom_left: f32,
         );
 
         fn canvas_native_context_reset_transform(context: &mut CanvasRenderingContext2D);
@@ -4114,29 +4158,26 @@ pub fn canvas_native_context_create_radial_gradient(
     )))
 }
 
-
-fn canvas_native_context_draw_point(
-    context: &mut CanvasRenderingContext2D,
-    x: f32,
-    y: f32,
-) {
+fn canvas_native_context_draw_paint(context: &mut CanvasRenderingContext2D, color: &str) {
     context.make_current();
-    context
-        .get_context_mut()
-        .draw_point(x, y);
+    context.get_context_mut().draw_paint(color);
+}
+
+fn canvas_native_context_draw_point(context: &mut CanvasRenderingContext2D, x: f32, y: f32) {
+    context.make_current();
+    context.get_context_mut().draw_point(x, y);
 }
 
 fn canvas_native_context_draw_points(
     context: &mut CanvasRenderingContext2D,
     mode: i32,
-    points: &[f32]
+    points: &[f32],
 ) {
     context.make_current();
     context
         .get_context_mut()
         .draw_points(mode.try_into().unwrap(), points);
 }
-
 
 pub fn canvas_native_context_draw_image_dx_dy(
     context: &mut CanvasRenderingContext2D,
@@ -4580,6 +4621,47 @@ pub fn canvas_native_context_rect(
     context.get_context_mut().rect(x, y, width, height)
 }
 
+fn canvas_native_context_round_rect(
+    context: &mut CanvasRenderingContext2D,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    radii: &[f32],
+) {
+    if radii.len() == 8 {
+        context
+            .get_context_mut()
+            .round_rect(x, y, width, height, radii)
+    }
+}
+
+fn canvas_native_context_round_rect_tl_tr_br_bl(
+    context: &mut CanvasRenderingContext2D,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    top_left: f32,
+    top_right: f32,
+    bottom_right: f32,
+    bottom_left: f32,
+) {
+    let radii = [
+        top_left,
+        top_left,
+        top_right,
+        top_right,
+        bottom_right,
+        bottom_right,
+        bottom_left,
+        bottom_left,
+    ];
+    context
+        .get_context_mut()
+        .round_rect(x, y, width, height, radii.as_ref())
+}
+
 pub fn canvas_native_context_reset_transform(context: &mut CanvasRenderingContext2D) {
     context.make_current();
     context.get_context_mut().reset_transform();
@@ -4992,6 +5074,109 @@ pub fn canvas_native_path_ellipse(
 #[inline(always)]
 pub fn canvas_native_path_rect(path: &mut Path, x: f32, y: f32, width: f32, height: f32) {
     path.0.rect(x, y, width, height)
+}
+
+#[inline(always)]
+fn canvas_native_path_round_rect(
+    path: &mut Path,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    radii: &[f32],
+) {
+    let size = radii.len();
+    if size == 0 {
+        return;
+    }
+    /*
+    [all-corners]
+    [top-left-and-bottom-right, top-right-and-bottom-left]
+    [top-left, top-right-and-bottom-left, bottom-right]
+    [top-left, top-right, bottom-right, bottom-left]
+     */
+    let mut top_left = 0.;
+    let mut top_right = 0.;
+    let mut bottom_right = 0.;
+    let mut bottom_left = 0.;
+
+    match size {
+        1 => {
+            top_left = radii[0];
+            top_right = top_left;
+            bottom_right = top_left;
+            bottom_left = top_left;
+        }
+        2 => {
+            top_left = radii[0];
+            top_right = radii[1];
+            bottom_right = top_left;
+            bottom_left = top_right;
+        }
+
+        3 => {
+            top_left = radii[0];
+            top_right = radii[1];
+            bottom_right = radii[2];
+            bottom_left = top_right
+        }
+        4 => {
+            top_left = radii[0];
+            top_right = radii[1];
+            bottom_right = radii[2];
+            bottom_left = radii[3];
+        }
+        _ => {}
+    }
+
+    if size > 0 && size <= 4 {
+        path.0.round_rect(
+            x,
+            y,
+            width,
+            height,
+            &[
+                top_left,
+                top_left,
+                top_right,
+                top_right,
+                bottom_right,
+                bottom_right,
+                bottom_left,
+                bottom_left,
+            ],
+        )
+    }
+}
+
+#[inline(always)]
+fn canvas_native_path_round_rect_tl_tr_br_bl(
+    path: &mut Path,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    top_left: f32,
+    top_right: f32,
+    bottom_right: f32,
+    bottom_left: f32,
+) {
+    path.0.round_rect(
+        x,
+        y,
+        width,
+        height,
+        &[
+            top_left,
+            top_left,
+            top_right,
+            top_right,
+            bottom_right,
+            bottom_right,
+            bottom_left,
+            bottom_left,
+        ],
+    )
 }
 
 #[inline(always)]

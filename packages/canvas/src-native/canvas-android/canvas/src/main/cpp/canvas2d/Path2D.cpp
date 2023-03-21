@@ -21,6 +21,7 @@ std::vector<jsi::PropNameID> Path2D::getPropertyNames(jsi::Runtime &rt) {
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("moveTo")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rect")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("roundRect")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__toSVG")));
     return ret;
 }
@@ -248,6 +249,64 @@ jsi::Value Path2D::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
                                                      }
         );
 
+    } else if (methodName == "roundRect") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count == 5) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             auto width = static_cast<float>(arguments[2].asNumber());
+                                                             auto height = static_cast<float>(arguments[3].asNumber());
+                                                             if (arguments[4].isObject()) {
+                                                                 auto radii = arguments[4].asObject(
+                                                                         runtime);
+                                                                 if (radii.isArray(runtime)) {
+                                                                     auto array = radii.getArray(
+                                                                             runtime);
+                                                                     auto size = array.size(
+                                                                             runtime);
+                                                                     if (size > 1) {
+                                                                         rust::Vec<float> store;
+                                                                         store.reserve(size);
+                                                                         for (int i = 0;
+                                                                              i < size; i++) {
+                                                                             store[i] = (float) array.getValueAtIndex(
+                                                                                     runtime,
+                                                                                     i).asNumber();
+                                                                         }
+
+                                                                         rust::Slice<const float> buf(
+                                                                                 store.data(),
+                                                                                 store.size());
+                                                                         canvas_native_path_round_rect(
+                                                                                 this->GetPath(),
+                                                                                 x, y,
+                                                                                 width,
+                                                                                 height, buf);
+
+                                                                     }
+                                                                 }
+                                                             } else {
+                                                                 auto radii = (float) arguments[4].asNumber();
+                                                                 canvas_native_path_round_rect_tl_tr_br_bl(
+                                                                         this->GetPath(), x, y,
+                                                                         width,
+                                                                         height, radii, radii,
+                                                                         radii, radii);
+
+                                                             }
+                                                         }
+
+                                                         return jsi::Value::undefined();
+
+                                                     }
+        );
     } else if (methodName == "__toSVG") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),

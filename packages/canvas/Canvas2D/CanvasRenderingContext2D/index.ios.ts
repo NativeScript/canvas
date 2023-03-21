@@ -884,6 +884,12 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.context.rect(x, y, width, height);
 	}
 
+	public roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+	public roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
+	public roundRect(x: unknown, y: unknown, width: unknown, height: unknown, radii: unknown): void {
+		throw new Error('Method not implemented.');
+	}
+
 	removeHitRegion(id: string): void {}
 
 	resetTransform(): void {

@@ -110,6 +110,10 @@ export abstract class CanvasRenderingContext2DBase implements CanvasRenderingCon
 
 	public abstract rect(x: number, y: number, width: number, height: number): void;
 
+	public abstract roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+
+	public abstract roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
+
 	public abstract removeHitRegion(id: string): void;
 
 	public abstract resetTransform(): void;
@@ -144,5 +148,5 @@ export abstract class CanvasRenderingContext2DBase implements CanvasRenderingCon
 
 	drawPoint(x: number, y: number) {}
 
-	drawPoints(mode: 'points' | 'lines' | 'polygon', points: {x: number, y: number}[]) {}
+	drawPoints(mode: 'points' | 'lines' | 'polygon', points: { x: number; y: number }[]) {}
 }

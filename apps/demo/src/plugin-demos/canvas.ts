@@ -71,9 +71,15 @@ export class DemoModel extends DemoSharedCanvas {
 
 	image = new ImageAsset();
 
+	width = 256;
+	height = 256;
+	strokeWidth = 10;
+	c = { x: this.width / 2, y: this.height / 2 };
+	r = (this.width - this.strokeWidth) / 2;
+	groupR = 128;
 	constructor() {
 		super();
-    this.image.fromFileSync('~/assets/file-assets/webgl/svh.jpeg');
-    console.log(this.image.width);
+		this.image.fromFileSync('~/assets/file-assets/webgl/svh.jpeg');
+		console.log(this.image.width);
 	}
 }

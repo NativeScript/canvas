@@ -113,7 +113,11 @@ impl IndexMut<Member2DName> for [f32] {
 
 impl Matrix {
     pub fn new() -> Self {
-        Self(skia_safe::M44::new_identity())
+        Self(M44::new_identity())
+    }
+
+    pub fn set_scale(&mut self, x: f32, y: f32, z: f32) {
+        self.0.set_scale(x, y, z);
     }
 
     fn member_2d(&self, member: Member2D) -> c_float {

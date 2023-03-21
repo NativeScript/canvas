@@ -33,12 +33,13 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
 
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(67);
+    ret.reserve(68);
 
     /* Non Standard 2D */
 
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPoint")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPoints")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPaint")));
 
     /* Non Standard 2D */
 
@@ -93,6 +94,7 @@ std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi:
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("putImageData")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rect")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("roundRect")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("removeHitRegion")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("resetTransform")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("restore")));
@@ -251,7 +253,24 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
     auto methodName = name.utf8(runtime);
 
 
-    if (methodName == "drawPoint") {
+    if (methodName == "drawPaint") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     2,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+                                                         auto color = arguments[0].asString(
+                                                                 runtime).utf8(runtime);
+                                                         canvas_native_context_draw_paint(
+                                                                 this->GetContext(),
+                                                                 rust::Str(color));
+                                                         this->UpdateInvalidateState();
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    } else if (methodName == "drawPoint") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      2,
@@ -1447,6 +1466,64 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                              canvas_native_context_quadratic_curve_to(
                                                                      this->GetContext(), cpx, cpy,
                                                                      x, y);
+                                                         }
+
+                                                         return jsi::Value::undefined();
+
+                                                     }
+        );
+    } else if (methodName == "roundRect") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     4,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         if (count == 5) {
+                                                             auto x = static_cast<float>(arguments[0].asNumber());
+                                                             auto y = static_cast<float>(arguments[1].asNumber());
+                                                             auto width = static_cast<float>(arguments[2].asNumber());
+                                                             auto height = static_cast<float>(arguments[3].asNumber());
+                                                             if (arguments[4].isObject()) {
+                                                                 auto radii = arguments[4].asObject(
+                                                                         runtime);
+                                                                 if (radii.isArray(runtime)) {
+                                                                     auto array = radii.getArray(
+                                                                             runtime);
+                                                                     auto size = array.size(
+                                                                             runtime);
+                                                                     if (size > 1) {
+                                                                         rust::Vec<float> store;
+                                                                         store.reserve(size);
+                                                                         for (int i = 0;
+                                                                              i < size; i++) {
+                                                                             store[i] = (float) array.getValueAtIndex(
+                                                                                     runtime,
+                                                                                     i).asNumber();
+                                                                         }
+
+                                                                         rust::Slice<const float> buf(
+                                                                                 store.data(),
+                                                                                 store.size());
+                                                                         canvas_native_context_round_rect(
+                                                                                 this->GetContext(),
+                                                                                 x, y,
+                                                                                 width,
+                                                                                 height, buf);
+
+                                                                     }
+                                                                 }
+                                                             } else {
+                                                                 auto radii = (float) arguments[4].asNumber();
+                                                                 canvas_native_context_round_rect_tl_tr_br_bl(
+                                                                         this->GetContext(), x, y,
+                                                                         width,
+                                                                         height, radii, radii,
+                                                                         radii, radii);
+
+                                                             }
                                                          }
 
                                                          return jsi::Value::undefined();

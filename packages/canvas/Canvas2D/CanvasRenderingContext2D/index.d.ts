@@ -100,6 +100,10 @@ export declare class CanvasRenderingContext2D extends CanvasRenderingContext2DBa
 
 	rect(x: number, y: number, width: number, height: number): void;
 
+	roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+
+	roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
+
 	removeHitRegion(id: string): void;
 
 	resetTransform(): void;

@@ -450,6 +450,13 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		return CanvasGradient.fromNative(createRadialGradient(x0, y0, r0, x1, y1, r1));
 	}
 
+	drawPaint(color: string) {
+		this.log('drawPaint value:', color);
+		this._ensureLayoutBeforeDraw();
+		const drawPaint = this._getMethod('drawPaint');
+		drawPaint(color);
+	}
+
 	drawPoint(x: number, y: number) {
 		this.log('drawPoint value:', x, y);
 		this._ensureLayoutBeforeDraw();
@@ -683,6 +690,15 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this._ensureLayoutBeforeDraw();
 		const rect = this._getMethod('rect');
 		rect(x, y, width, height);
+	}
+
+	public roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+	public roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
+	public roundRect(x: unknown, y: unknown, width: unknown, height: unknown, radii: unknown): void {
+		this.log('roundRect value:', x, y, width, height);
+		this._ensureLayoutBeforeDraw();
+		const roundRect = this._getMethod('roundRect');
+		roundRect(x, y, width, height, radii);
 	}
 
 	removeHitRegion(id: string): void {}

@@ -1,13 +1,16 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{Point, Rect};
+use skia_safe::{Point, RRect, Rect};
 
+use crate::context::drawing_paths::fill_rule::FillRule;
 use crate::context::matrix::Matrix;
 use crate::utils::geometry::{almost_equal, to_degrees};
 
 #[derive(Clone)]
-pub struct Path(skia_safe::Path);
+pub struct Path {
+    pub(crate) path: skia_safe::Path,
+}
 
 impl Default for Path {
     fn default() -> Self {
@@ -17,36 +20,48 @@ impl Default for Path {
 
 impl Path {
     pub fn path(&self) -> &skia_safe::Path {
-        &self.0
-    }
-
-    pub fn path_mut(&mut self) -> &mut skia_safe::Path {
-        &mut self.0
+        &self.path
     }
 
     pub fn make_scale(&mut self, (sx, sy): (f32, f32)) -> Self {
-        Self(self.0.make_scale((sx, sy)))
-    }
-
-    pub fn new() -> Self {
-        Self(skia_safe::Path::default())
-    }
-
-    pub fn from_str(val: &str) -> Self {
-        Self(skia_safe::Path::from_svg(val).unwrap_or(skia_safe::Path::default()))
-    }
-
-    pub fn from_path(path: &skia_safe::Path) -> Self {
-        Self(path.clone())
-    }
-
-    fn init(&mut self, _x: f32, _y: f32) {
-        if self.0.is_empty() {
-            //   self.0.move_to(Point::new(x, y));
+        Self {
+            path: self.path.make_scale((sx, sy)),
         }
     }
 
-    fn add_ellipse(
+    pub fn with_transform(&self, matrix: &skia_safe::Matrix) -> Path {
+        Self {
+            path: self.path.with_transform(matrix),
+        }
+    }
+
+    pub fn new() -> Self {
+        Self {
+            path: skia_safe::Path::default(),
+        }
+    }
+
+    pub fn from_str(val: &str) -> Self {
+        Self {
+            path: skia_safe::Path::from_svg(val).unwrap_or(skia_safe::Path::default()),
+        }
+    }
+
+    pub fn from_path(path: &skia_safe::Path) -> Self {
+        Self { path: path.clone() }
+    }
+
+    fn init(&mut self, _x: f32, _y: f32) {
+        if self.path.is_empty() {
+            //   self.path.move_to(Point::new(x, y));
+        }
+    }
+
+    pub fn set_fill_type(&mut self, fill_type: FillRule) {
+        self.path.set_fill_type(fill_type.to_fill_type());
+    }
+
+    pub(crate) fn add_ellipse(
         &mut self,
         origin: impl Into<Point>,
         radii: impl Into<Point>,
@@ -95,7 +110,7 @@ impl Path {
             .pre_translate((-x, -y));
         let unrotated = rotated.invert().unwrap();
 
-        self.0.transform(&unrotated);
+        self.path.transform(&unrotated);
 
         // draw in 2 180 degree segments because trying to draw all 360 degrees at once
         // draws nothing.
@@ -103,24 +118,32 @@ impl Path {
         let start_deg = to_degrees(start_angle);
         if almost_equal(sweep_deg.abs(), 360.0) {
             let half_sweep = sweep_deg / 2.0;
-            self.0.arc_to(oval, start_deg, half_sweep, false);
-            self.0
+            self.path.arc_to(oval, start_deg, half_sweep, false);
+            self.path
                 .arc_to(oval, start_deg + half_sweep, half_sweep, false);
         } else {
-            self.0.arc_to(oval, start_deg, sweep_deg, false);
+            self.path.arc_to(oval, start_deg, sweep_deg, false);
         }
 
-        self.0.transform(&rotated);
+        self.path.transform(&rotated);
     }
 
     pub fn add_path(&mut self, path: &Path, matrix: Option<&Matrix>) {
         match matrix {
             None => {
-                self.0.add_path(path.path(), Point::new(0.0, 0.0), None);
+                self.path.add_path(
+                    path.path(),
+                    Point::new(0.0, 0.0),
+                    skia_safe::path::AddPathMode::Append,
+                );
             }
             Some(matrix) => {
                 let matrix_2d = matrix.to_m33();
-                self.0.add_path_matrix(path.path(), &matrix_2d, None);
+                self.path.add_path_matrix(
+                    path.path(),
+                    &matrix_2d,
+                    skia_safe::path::AddPathMode::Append,
+                );
             }
         }
     }
@@ -146,28 +169,28 @@ impl Path {
 
     pub fn arc_to(&mut self, x1: c_float, y1: c_float, x2: c_float, y2: c_float, radius: c_float) {
         self.init(x1, y1);
-        self.0
+        self.path
             .arc_to_tangent(Point::new(x1, y1), Point::new(x2, y2), radius);
     }
 
     pub fn begin_path(&mut self) {
-        if !self.0.is_empty() {
-            self.0 = skia_safe::Path::default();
+        if !self.path.is_empty() {
+            self.path = skia_safe::Path::default();
         }
     }
 
     pub fn move_to(&mut self, x: c_float, y: c_float) {
-        self.0.move_to(Point::new(x, y));
+        self.path.move_to(Point::new(x, y));
     }
 
     pub fn line_to(&mut self, x: c_float, y: c_float) {
         self.init(x, y);
-        self.0.line_to(Point::new(x, y));
+        self.path.line_to(Point::new(x, y));
     }
 
     pub fn close_path(&mut self) {
-        if !self.0.is_empty() {
-            self.0.close();
+        if !self.path.is_empty() {
+            self.path.close();
         }
     }
 
@@ -181,7 +204,7 @@ impl Path {
         y: c_float,
     ) {
         self.init(x, y);
-        self.0.cubic_to(
+        self.path.cubic_to(
             Point::new(cp1x, cp1y),
             Point::new(cp2x, cp2y),
             Point::new(x, y),
@@ -190,7 +213,7 @@ impl Path {
 
     pub fn quadratic_curve_to(&mut self, cpx: c_float, cpy: c_float, x: c_float, y: c_float) {
         self.init(x, y);
-        self.0.quad_to(Point::new(cpx, cpy), Point::new(x, y));
+        self.path.quad_to(Point::new(cpx, cpy), Point::new(x, y));
     }
 
     pub fn ellipse(
@@ -216,6 +239,32 @@ impl Path {
 
     pub fn rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
         let rect = Rect::from_xywh(x, y, width, height);
-        self.0.add_rect(&rect, None);
+        let direction = if width.signum() == height.signum() {
+            skia_safe::PathDirection::CW
+        } else {
+            skia_safe::PathDirection::CCW
+        };
+        self.path.add_rect(&rect, Some((direction, 0)));
+    }
+
+    pub fn round_rect(
+        &mut self,
+        x: c_float,
+        y: c_float,
+        width: c_float,
+        height: c_float,
+        radii: &[c_float],
+    ) {
+        if radii.len() == 8 {
+            let rect = Rect::from_xywh(x, y, width, height);
+            let radii: Vec<Point> = radii.chunks(2).map(|xy| Point::new(xy[0], xy[1])).collect();
+            let rrect = RRect::new_rect_radii(rect, &[radii[0], radii[1], radii[2], radii[3]]);
+            let direction = if width.signum() == height.signum() {
+                skia_safe::PathDirection::CW
+            } else {
+                skia_safe::PathDirection::CCW
+            };
+            self.path.add_rrect(rrect, Some((direction, 0)));
+        }
     }
 }

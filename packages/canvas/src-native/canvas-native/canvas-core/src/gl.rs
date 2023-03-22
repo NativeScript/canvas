@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
-#[cfg(any(target_os = "ios"))]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 use glutin::api::egl::{
     config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
 };

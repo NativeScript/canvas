@@ -25,7 +25,7 @@ impl Raf {
             let data_ptr = data;
             let data = data as *mut Raf;
             let data = unsafe { &mut *data };
-            let lock = data.inner.lock();
+            let lock = data.inner.read();
             let started = lock.started;
             if !started {
                 drop(lock);

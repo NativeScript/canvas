@@ -488,7 +488,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	draw() {
 		//const ctx = this.canvas.getContext('2d');
-
 		//this.urlTests();
 		//const str = new java.lang.String()
 		// ctx.font = '50px serif';
@@ -590,8 +589,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
-		//swarm(this.canvas);
-		this.drawHouse(this.canvas);
+		swarm(this.canvas);
+		//this.drawHouse(this.canvas);
 		//this.bubbleChart(this.canvas);
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;

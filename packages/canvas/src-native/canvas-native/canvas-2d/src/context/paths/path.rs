@@ -175,7 +175,7 @@ impl Path {
 
     pub fn begin_path(&mut self) {
         if !self.path.is_empty() {
-            self.path = skia_safe::Path::default();
+            self.path.reset();
         }
     }
 

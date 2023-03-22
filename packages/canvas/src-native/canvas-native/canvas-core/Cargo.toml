@@ -9,7 +9,7 @@ edition = "2021"
 
 [dependencies]
 gl-bindings = { path = "../gl-bindings" }
-glutin = "0.30.4"
+glutin = {git="https://github.com/triniwiz/glutin", rev ="b199cc2"}
 raw-window-handle = "0.5.0"
 parking_lot = "0.12.0"
 image = "0.24.5"

@@ -3,79 +3,28 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F107B96E255AE5850094FC51 /* TNSFillRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = F107B96D255AE5850094FC51 /* TNSFillRule.swift */; };
 		F11A1ABB25C238F100E60484 /* TNSSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11A1ABA25C238F100E60484 /* TNSSVG.swift */; };
-		F11A7431255930590038B4C6 /* TNSTextDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11A7430255930590038B4C6 /* TNSTextDirection.swift */; };
 		F11C5D142524403700538D04 /* CanvasNative.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F11C5D0A2524403700538D04 /* CanvasNative.framework */; };
 		F11C5D192524403700538D04 /* CanvasNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11C5D182524403700538D04 /* CanvasNativeTests.swift */; };
 		F11C5D1B2524403700538D04 /* CanvasNative.h in Headers */ = {isa = PBXBuildFile; fileRef = F11C5D0D2524403700538D04 /* CanvasNative.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F18165C72621CECC0051F06B /* TNSRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18165C62621CECC0051F06B /* TNSRender.swift */; };
 		F181661D26228CBA0051F06B /* TNSImageBitmap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181661C26228CBA0051F06B /* TNSImageBitmap.swift */; };
-		F181662926230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181662826230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift */; };
-		F181662D26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181662C26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift */; };
-		F181663126230D8C0051F06B /* TNSImageBitmapResizeQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181663026230D8C0051F06B /* TNSImageBitmapResizeQuality.swift */; };
-		F181663526230E500051F06B /* TNSImageBitmapOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181663426230E500051F06B /* TNSImageBitmapOptions.swift */; };
-		F18B4A7227D95313009258DD /* TNSCanvasData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18B4A7127D95313009258DD /* TNSCanvasData.swift */; };
-		F1A87B25255BB4F000394387 /* TextBaseLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A87B24255BB4F000394387 /* TextBaseLine.swift */; };
 		F1A87C75255D00BA00394387 /* TNSCanvas.xib in Resources */ = {isa = PBXBuildFile; fileRef = F1A87C74255D00BA00394387 /* TNSCanvas.xib */; };
 		F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE2E4E2612F7CA0000D48F /* Utils.swift */; };
-		F1FF6A6A25248CFF001DAE0D /* TNSDOMMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3225248CFE001DAE0D /* TNSDOMMatrix.swift */; };
-		F1FF6A6B25248CFF001DAE0D /* TNSTextAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3325248CFE001DAE0D /* TNSTextAlignment.swift */; };
 		F1FF6A6C25248CFF001DAE0D /* TNSCanvasListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3425248CFE001DAE0D /* TNSCanvasListener.swift */; };
-		F1FF6A6D25248CFF001DAE0D /* TNS_OES_standard_derivatives.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3525248CFE001DAE0D /* TNS_OES_standard_derivatives.swift */; };
-		F1FF6A6E25248CFF001DAE0D /* TNS_OES_vertex_array_object.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3625248CFE001DAE0D /* TNS_OES_vertex_array_object.swift */; };
-		F1FF6A6F25248CFF001DAE0D /* TNS_OES_texture_float.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3725248CFE001DAE0D /* TNS_OES_texture_float.swift */; };
-		F1FF6A7025248CFF001DAE0D /* DataURLRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3825248CFE001DAE0D /* DataURLRequest.swift */; };
 		F1FF6A7125248CFF001DAE0D /* TNSAnimationFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3925248CFE001DAE0D /* TNSAnimationFrame.swift */; };
-		F1FF6A7225248CFF001DAE0D /* TNS_EXT_sRGB.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3A25248CFE001DAE0D /* TNS_EXT_sRGB.swift */; };
-		F1FF6A7325248CFF001DAE0D /* TNSImageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3B25248CFE001DAE0D /* TNSImageData.swift */; };
-		F1FF6A7425248CFF001DAE0D /* TNS_WEBGL_color_buffer_float.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3C25248CFE001DAE0D /* TNS_WEBGL_color_buffer_float.swift */; };
 		F1FF6A7525248CFF001DAE0D /* TNS_ANGLE_instanced_arrays.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3D25248CFE001DAE0D /* TNS_ANGLE_instanced_arrays.swift */; };
-		F1FF6A7725248CFF001DAE0D /* TNS_EXT_blend_minmax.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3F25248CFE001DAE0D /* TNS_EXT_blend_minmax.swift */; };
 		F1FF6A7825248CFF001DAE0D /* TNSCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4025248CFE001DAE0D /* TNSCanvas.swift */; };
-		F1FF6A7A25248CFF001DAE0D /* TNSTextEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4225248CFE001DAE0D /* TNSTextEncoder.swift */; };
-		F1FF6A7B25248CFF001DAE0D /* TNS_WEBGL_compressed_texture_etc1.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4325248CFE001DAE0D /* TNS_WEBGL_compressed_texture_etc1.swift */; };
-		F1FF6A7C25248CFF001DAE0D /* TNS_EXT_texture_filter_anisotropic.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4425248CFE001DAE0D /* TNS_EXT_texture_filter_anisotropic.swift */; };
-		F1FF6A7D25248CFF001DAE0D /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4525248CFE001DAE0D /* Extensions.swift */; };
-		F1FF6A7E25248CFF001DAE0D /* TNSLineJoin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4625248CFE001DAE0D /* TNSLineJoin.swift */; };
 		F1FF6A7F25248CFF001DAE0D /* Utils.m in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4725248CFE001DAE0D /* Utils.m */; };
-		F1FF6A8025248CFF001DAE0D /* TNSFramebufferAttachmentParameter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4825248CFE001DAE0D /* TNSFramebufferAttachmentParameter.swift */; };
-		F1FF6A8125248CFF001DAE0D /* TNS_OES_element_index_uint.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4925248CFE001DAE0D /* TNS_OES_element_index_uint.swift */; };
 		F1FF6A8225248CFF001DAE0D /* GLUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4A25248CFE001DAE0D /* GLUtils.swift */; };
-		F1FF6A8325248CFF001DAE0D /* TNSWebGL2RenderingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4B25248CFE001DAE0D /* TNSWebGL2RenderingContext.swift */; };
-		F1FF6A8425248CFF001DAE0D /* TNS_WEBGL_compressed_texture_pvrtc.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4C25248CFE001DAE0D /* TNS_WEBGL_compressed_texture_pvrtc.swift */; };
-		F1FF6A8525248CFF001DAE0D /* TNSLineCap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4D25248CFE001DAE0D /* TNSLineCap.swift */; };
-		F1FF6A8625248CFF001DAE0D /* TNSPath2D.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4E25248CFE001DAE0D /* TNSPath2D.swift */; };
-		F1FF6A8725248CFF001DAE0D /* TNS_OES_texture_half_float.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A4F25248CFE001DAE0D /* TNS_OES_texture_half_float.swift */; };
-		F1FF6A8825248CFF001DAE0D /* TNSTextDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5025248CFE001DAE0D /* TNSTextDecoder.swift */; };
-		F1FF6A8925248CFF001DAE0D /* TNSWebGLActiveInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5125248CFE001DAE0D /* TNSWebGLActiveInfo.swift */; };
-		F1FF6A8A25248CFF001DAE0D /* TNSWebGLRenderingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5225248CFE001DAE0D /* TNSWebGLRenderingContext.swift */; };
-		F1FF6A8B25248CFF001DAE0D /* HowToClear.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5325248CFE001DAE0D /* HowToClear.swift */; };
-		F1FF6A8C25248CFF001DAE0D /* TNS_OES_fbo_render_mipmap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5425248CFE001DAE0D /* TNS_OES_fbo_render_mipmap.swift */; };
-		F1FF6A8D25248CFF001DAE0D /* TNSImageSmoothingQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5525248CFE001DAE0D /* TNSImageSmoothingQuality.swift */; };
-		F1FF6A8E25248CFF001DAE0D /* TNSWebGLShaderPrecisionFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5625248CFE001DAE0D /* TNSWebGLShaderPrecisionFormat.swift */; };
-		F1FF6A8F25248CFF001DAE0D /* TNS_OES_texture_half_float_linear.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5725248CFE001DAE0D /* TNS_OES_texture_half_float_linear.swift */; };
-		F1FF6A9025248CFF001DAE0D /* TNS_OES_texture_float_linear.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5825248CFE001DAE0D /* TNS_OES_texture_float_linear.swift */; };
-		F1FF6A9125248CFF001DAE0D /* TNS_EXT_color_buffer_half_float.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5925248CFE001DAE0D /* TNS_EXT_color_buffer_half_float.swift */; };
 		F1FF6A9225248CFF001DAE0D /* TNSCanvasRenderingContext2D.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5A25248CFE001DAE0D /* TNSCanvasRenderingContext2D.swift */; };
-		F1FF6A9325248CFF001DAE0D /* TNS_WEBGL_lose_context.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5B25248CFE001DAE0D /* TNS_WEBGL_lose_context.swift */; };
-		F1FF6A9425248CFF001DAE0D /* TNS_WEBGL_compressed_texture_etc.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5C25248CFE001DAE0D /* TNS_WEBGL_compressed_texture_etc.swift */; };
-		F1FF6A9525248CFF001DAE0D /* TNS_EXT_shader_texture_lod.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5D25248CFE001DAE0D /* TNS_EXT_shader_texture_lod.swift */; };
-		F1FF6A9725248CFF001DAE0D /* TNSImageAssetFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A5F25248CFF001DAE0D /* TNSImageAssetFormat.swift */; };
 		F1FF6A9825248CFF001DAE0D /* GLRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6025248CFF001DAE0D /* GLRenderer.swift */; };
-		F1FF6A9925248CFF001DAE0D /* TNSIndexedParameter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6125248CFF001DAE0D /* TNSIndexedParameter.swift */; };
-		F1FF6A9A25248CFF001DAE0D /* TNS_EXT_color_buffer_float.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6225248CFF001DAE0D /* TNS_EXT_color_buffer_float.swift */; };
-		F1FF6A9B25248CFF001DAE0D /* TNSCompositeOperationType.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6325248CFF001DAE0D /* TNSCompositeOperationType.swift */; };
 		F1FF6A9C25248CFF001DAE0D /* TNSImageAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6425248CFF001DAE0D /* TNSImageAsset.swift */; };
 		F1FF6A9D25248CFF001DAE0D /* TNSCanvasRenderingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6525248CFF001DAE0D /* TNSCanvasRenderingContext.swift */; };
-		F1FF6A9E25248CFF001DAE0D /* TNS_WEBGL_draw_buffers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6625248CFF001DAE0D /* TNS_WEBGL_draw_buffers.swift */; };
-		F1FF6A9F25248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6725248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift */; };
-		F1FF6AA025248CFF001DAE0D /* TNSColorStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6825248CFF001DAE0D /* TNSColorStyle.swift */; };
-		F1FF6AA125248CFF001DAE0D /* TNSTextMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A6925248CFF001DAE0D /* TNSTextMetrics.swift */; };
 		F1FF6AB125248DD9001DAE0D /* Utils.h in Headers */ = {isa = PBXBuildFile; fileRef = F1FF6AB025248DD9001DAE0D /* Utils.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
@@ -90,9 +39,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		F107B96D255AE5850094FC51 /* TNSFillRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSFillRule.swift; sourceTree = "<group>"; };
 		F11A1ABA25C238F100E60484 /* TNSSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSSVG.swift; path = CanvasNative/Source/TNSSVG.swift; sourceTree = "<group>"; };
-		F11A7430255930590038B4C6 /* TNSTextDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSTextDirection.swift; sourceTree = "<group>"; };
 		F11C5D0A2524403700538D04 /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F11C5D0D2524403700538D04 /* CanvasNative.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CanvasNative.h; sourceTree = "<group>"; };
 		F11C5D0E2524403700538D04 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -101,71 +48,20 @@
 		F11C5D1A2524403700538D04 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F18165C62621CECC0051F06B /* TNSRender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSRender.swift; sourceTree = "<group>"; };
 		F181661C26228CBA0051F06B /* TNSImageBitmap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmap.swift; sourceTree = "<group>"; };
-		F181662826230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapColorSpaceConversion.swift; sourceTree = "<group>"; };
-		F181662C26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapPremultiplyAlpha.swift; sourceTree = "<group>"; };
-		F181663026230D8C0051F06B /* TNSImageBitmapResizeQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapResizeQuality.swift; sourceTree = "<group>"; };
-		F181663426230E500051F06B /* TNSImageBitmapOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSImageBitmapOptions.swift; sourceTree = "<group>"; };
-		F18B4A7127D95313009258DD /* TNSCanvasData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSCanvasData.swift; sourceTree = "<group>"; };
-		F1A87B24255BB4F000394387 /* TextBaseLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextBaseLine.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* TNSCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TNSCanvas.xib; sourceTree = "<group>"; };
 		F1DE2E4E2612F7CA0000D48F /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
-		F1FF5772271E5F7B001CBF6D /* CanvasNative copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "CanvasNative copy-Info.plist"; path = "/Users/triniwiz/Desktop/oss/canvas/packages/canvas/src-native/canvas-ios/CanvasNative copy-Info.plist"; sourceTree = "<absolute>"; };
-		F1FF57C0271E6998001CBF6D /* CanvasNative copy2-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "CanvasNative copy2-Info.plist"; path = "/Users/triniwiz/Desktop/oss/canvas/packages/canvas/src-native/canvas-ios/CanvasNative copy2-Info.plist"; sourceTree = "<absolute>"; };
 		F1FF57C2271E6BF0001CBF6D /* libcanvasnative.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcanvasnative.a; path = "CanvasNative/libs/arm64-iphoneos/libcanvasnative.a"; sourceTree = "<group>"; };
 		F1FF57C4271E6C01001CBF6D /* libcanvasnative.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcanvasnative.a; path = CanvasNative/libs/iphonesimulator/libcanvasnative.a; sourceTree = "<group>"; };
-		F1FF6A3225248CFE001DAE0D /* TNSDOMMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSDOMMatrix.swift; path = CanvasNative/Source/TNSDOMMatrix.swift; sourceTree = "<group>"; };
-		F1FF6A3325248CFE001DAE0D /* TNSTextAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSTextAlignment.swift; path = CanvasNative/Source/TNSTextAlignment.swift; sourceTree = "<group>"; };
 		F1FF6A3425248CFE001DAE0D /* TNSCanvasListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSCanvasListener.swift; path = CanvasNative/Source/TNSCanvasListener.swift; sourceTree = "<group>"; };
-		F1FF6A3525248CFE001DAE0D /* TNS_OES_standard_derivatives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_standard_derivatives.swift; path = CanvasNative/Source/TNS_OES_standard_derivatives.swift; sourceTree = "<group>"; };
-		F1FF6A3625248CFE001DAE0D /* TNS_OES_vertex_array_object.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_vertex_array_object.swift; path = CanvasNative/Source/TNS_OES_vertex_array_object.swift; sourceTree = "<group>"; };
-		F1FF6A3725248CFE001DAE0D /* TNS_OES_texture_float.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_texture_float.swift; path = CanvasNative/Source/TNS_OES_texture_float.swift; sourceTree = "<group>"; };
-		F1FF6A3825248CFE001DAE0D /* DataURLRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataURLRequest.swift; path = CanvasNative/Source/DataURLRequest.swift; sourceTree = "<group>"; };
 		F1FF6A3925248CFE001DAE0D /* TNSAnimationFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSAnimationFrame.swift; path = CanvasNative/Source/TNSAnimationFrame.swift; sourceTree = "<group>"; };
-		F1FF6A3A25248CFE001DAE0D /* TNS_EXT_sRGB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_EXT_sRGB.swift; path = CanvasNative/Source/TNS_EXT_sRGB.swift; sourceTree = "<group>"; };
-		F1FF6A3B25248CFE001DAE0D /* TNSImageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSImageData.swift; path = CanvasNative/Source/TNSImageData.swift; sourceTree = "<group>"; };
-		F1FF6A3C25248CFE001DAE0D /* TNS_WEBGL_color_buffer_float.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_color_buffer_float.swift; path = CanvasNative/Source/TNS_WEBGL_color_buffer_float.swift; sourceTree = "<group>"; };
 		F1FF6A3D25248CFE001DAE0D /* TNS_ANGLE_instanced_arrays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNS_ANGLE_instanced_arrays.swift; sourceTree = "<group>"; };
-		F1FF6A3F25248CFE001DAE0D /* TNS_EXT_blend_minmax.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_EXT_blend_minmax.swift; path = CanvasNative/Source/TNS_EXT_blend_minmax.swift; sourceTree = "<group>"; };
 		F1FF6A4025248CFE001DAE0D /* TNSCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSCanvas.swift; path = CanvasNative/Source/TNSCanvas.swift; sourceTree = "<group>"; };
-		F1FF6A4225248CFE001DAE0D /* TNSTextEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSTextEncoder.swift; path = CanvasNative/Source/TNSTextEncoder.swift; sourceTree = "<group>"; };
-		F1FF6A4325248CFE001DAE0D /* TNS_WEBGL_compressed_texture_etc1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_compressed_texture_etc1.swift; path = CanvasNative/Source/TNS_WEBGL_compressed_texture_etc1.swift; sourceTree = "<group>"; };
-		F1FF6A4425248CFE001DAE0D /* TNS_EXT_texture_filter_anisotropic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_EXT_texture_filter_anisotropic.swift; path = CanvasNative/Source/TNS_EXT_texture_filter_anisotropic.swift; sourceTree = "<group>"; };
-		F1FF6A4525248CFE001DAE0D /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Extensions.swift; path = CanvasNative/Source/Extensions.swift; sourceTree = "<group>"; };
-		F1FF6A4625248CFE001DAE0D /* TNSLineJoin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSLineJoin.swift; sourceTree = "<group>"; };
 		F1FF6A4725248CFE001DAE0D /* Utils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = Utils.m; path = CanvasNative/Source/Utils.m; sourceTree = "<group>"; };
-		F1FF6A4825248CFE001DAE0D /* TNSFramebufferAttachmentParameter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSFramebufferAttachmentParameter.swift; path = CanvasNative/Source/TNSFramebufferAttachmentParameter.swift; sourceTree = "<group>"; };
-		F1FF6A4925248CFE001DAE0D /* TNS_OES_element_index_uint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_element_index_uint.swift; path = CanvasNative/Source/TNS_OES_element_index_uint.swift; sourceTree = "<group>"; };
 		F1FF6A4A25248CFE001DAE0D /* GLUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GLUtils.swift; path = CanvasNative/Source/GLUtils.swift; sourceTree = "<group>"; };
-		F1FF6A4B25248CFE001DAE0D /* TNSWebGL2RenderingContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSWebGL2RenderingContext.swift; path = CanvasNative/Source/TNSWebGL2RenderingContext.swift; sourceTree = "<group>"; };
-		F1FF6A4C25248CFE001DAE0D /* TNS_WEBGL_compressed_texture_pvrtc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_compressed_texture_pvrtc.swift; path = CanvasNative/Source/TNS_WEBGL_compressed_texture_pvrtc.swift; sourceTree = "<group>"; };
-		F1FF6A4D25248CFE001DAE0D /* TNSLineCap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSLineCap.swift; sourceTree = "<group>"; };
-		F1FF6A4E25248CFE001DAE0D /* TNSPath2D.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSPath2D.swift; path = CanvasNative/Source/TNSPath2D.swift; sourceTree = "<group>"; };
-		F1FF6A4F25248CFE001DAE0D /* TNS_OES_texture_half_float.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_texture_half_float.swift; path = CanvasNative/Source/TNS_OES_texture_half_float.swift; sourceTree = "<group>"; };
-		F1FF6A5025248CFE001DAE0D /* TNSTextDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSTextDecoder.swift; path = CanvasNative/Source/TNSTextDecoder.swift; sourceTree = "<group>"; };
-		F1FF6A5125248CFE001DAE0D /* TNSWebGLActiveInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSWebGLActiveInfo.swift; path = CanvasNative/Source/TNSWebGLActiveInfo.swift; sourceTree = "<group>"; };
-		F1FF6A5225248CFE001DAE0D /* TNSWebGLRenderingContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSWebGLRenderingContext.swift; path = CanvasNative/Source/TNSWebGLRenderingContext.swift; sourceTree = "<group>"; };
-		F1FF6A5325248CFE001DAE0D /* HowToClear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HowToClear.swift; path = CanvasNative/Source/HowToClear.swift; sourceTree = "<group>"; };
-		F1FF6A5425248CFE001DAE0D /* TNS_OES_fbo_render_mipmap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_fbo_render_mipmap.swift; path = CanvasNative/Source/TNS_OES_fbo_render_mipmap.swift; sourceTree = "<group>"; };
-		F1FF6A5525248CFE001DAE0D /* TNSImageSmoothingQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSImageSmoothingQuality.swift; path = CanvasNative/Source/TNSImageSmoothingQuality.swift; sourceTree = "<group>"; };
-		F1FF6A5625248CFE001DAE0D /* TNSWebGLShaderPrecisionFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSWebGLShaderPrecisionFormat.swift; path = CanvasNative/Source/TNSWebGLShaderPrecisionFormat.swift; sourceTree = "<group>"; };
-		F1FF6A5725248CFE001DAE0D /* TNS_OES_texture_half_float_linear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_texture_half_float_linear.swift; path = CanvasNative/Source/TNS_OES_texture_half_float_linear.swift; sourceTree = "<group>"; };
-		F1FF6A5825248CFE001DAE0D /* TNS_OES_texture_float_linear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_OES_texture_float_linear.swift; path = CanvasNative/Source/TNS_OES_texture_float_linear.swift; sourceTree = "<group>"; };
-		F1FF6A5925248CFE001DAE0D /* TNS_EXT_color_buffer_half_float.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_EXT_color_buffer_half_float.swift; path = CanvasNative/Source/TNS_EXT_color_buffer_half_float.swift; sourceTree = "<group>"; };
 		F1FF6A5A25248CFE001DAE0D /* TNSCanvasRenderingContext2D.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSCanvasRenderingContext2D.swift; sourceTree = "<group>"; };
-		F1FF6A5B25248CFE001DAE0D /* TNS_WEBGL_lose_context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_lose_context.swift; path = CanvasNative/Source/TNS_WEBGL_lose_context.swift; sourceTree = "<group>"; };
-		F1FF6A5C25248CFE001DAE0D /* TNS_WEBGL_compressed_texture_etc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_compressed_texture_etc.swift; path = CanvasNative/Source/TNS_WEBGL_compressed_texture_etc.swift; sourceTree = "<group>"; };
-		F1FF6A5D25248CFE001DAE0D /* TNS_EXT_shader_texture_lod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_EXT_shader_texture_lod.swift; path = CanvasNative/Source/TNS_EXT_shader_texture_lod.swift; sourceTree = "<group>"; };
-		F1FF6A5F25248CFF001DAE0D /* TNSImageAssetFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSImageAssetFormat.swift; path = CanvasNative/Source/TNSImageAssetFormat.swift; sourceTree = "<group>"; };
 		F1FF6A6025248CFF001DAE0D /* GLRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GLRenderer.swift; path = CanvasNative/Source/GLRenderer.swift; sourceTree = "<group>"; };
-		F1FF6A6125248CFF001DAE0D /* TNSIndexedParameter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSIndexedParameter.swift; path = CanvasNative/Source/TNSIndexedParameter.swift; sourceTree = "<group>"; };
-		F1FF6A6225248CFF001DAE0D /* TNS_EXT_color_buffer_float.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_EXT_color_buffer_float.swift; path = CanvasNative/Source/TNS_EXT_color_buffer_float.swift; sourceTree = "<group>"; };
-		F1FF6A6325248CFF001DAE0D /* TNSCompositeOperationType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSCompositeOperationType.swift; sourceTree = "<group>"; };
 		F1FF6A6425248CFF001DAE0D /* TNSImageAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSImageAsset.swift; path = CanvasNative/Source/TNSImageAsset.swift; sourceTree = "<group>"; };
 		F1FF6A6525248CFF001DAE0D /* TNSCanvasRenderingContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSCanvasRenderingContext.swift; path = CanvasNative/Source/TNSCanvasRenderingContext.swift; sourceTree = "<group>"; };
-		F1FF6A6625248CFF001DAE0D /* TNS_WEBGL_draw_buffers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_draw_buffers.swift; path = CanvasNative/Source/TNS_WEBGL_draw_buffers.swift; sourceTree = "<group>"; };
-		F1FF6A6725248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNS_WEBGL_depth_texture.swift; path = CanvasNative/Source/TNS_WEBGL_depth_texture.swift; sourceTree = "<group>"; };
-		F1FF6A6825248CFF001DAE0D /* TNSColorStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TNSColorStyle.swift; path = CanvasNative/Source/TNSColorStyle.swift; sourceTree = "<group>"; };
-		F1FF6A6925248CFF001DAE0D /* TNSTextMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNSTextMetrics.swift; sourceTree = "<group>"; };
 		F1FF6AB025248DD9001DAE0D /* Utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Utils.h; path = CanvasNative/include/Utils.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -188,113 +84,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		F11A74022558C4D70038B4C6 /* SVG */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = SVG;
-			sourceTree = "<group>";
-		};
-		F11A74052558C55E0038B4C6 /* 2D */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = 2D;
-			sourceTree = "<group>";
-		};
-		F11A74062558C56A0038B4C6 /* WebGL */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = WebGL;
-			sourceTree = "<group>";
-		};
-		F11A74072558C5780038B4C6 /* WebGL2 */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = WebGL2;
-			sourceTree = "<group>";
-		};
 		F11C5D002524403700538D04 = {
 			isa = PBXGroup;
 			children = (
-				F18B4A7127D95313009258DD /* TNSCanvasData.swift */,
-				F181663426230E500051F06B /* TNSImageBitmapOptions.swift */,
-				F181663026230D8C0051F06B /* TNSImageBitmapResizeQuality.swift */,
-				F181662C26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift */,
-				F181662826230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift */,
 				F181661C26228CBA0051F06B /* TNSImageBitmap.swift */,
 				F18165C62621CECC0051F06B /* TNSRender.swift */,
 				F1DE2E4E2612F7CA0000D48F /* Utils.swift */,
 				F11A1ABA25C238F100E60484 /* TNSSVG.swift */,
 				F1A87C74255D00BA00394387 /* TNSCanvas.xib */,
-				F1A87B24255BB4F000394387 /* TextBaseLine.swift */,
-				F107B96D255AE5850094FC51 /* TNSFillRule.swift */,
-				F11A7430255930590038B4C6 /* TNSTextDirection.swift */,
-				F11A74072558C5780038B4C6 /* WebGL2 */,
-				F11A74062558C56A0038B4C6 /* WebGL */,
-				F11A74052558C55E0038B4C6 /* 2D */,
-				F11A74022558C4D70038B4C6 /* SVG */,
 				F1FF6AB025248DD9001DAE0D /* Utils.h */,
-				F1FF6A3825248CFE001DAE0D /* DataURLRequest.swift */,
-				F1FF6A4525248CFE001DAE0D /* Extensions.swift */,
-				F1FF6A6925248CFF001DAE0D /* TNSTextMetrics.swift */,
 				F1FF6A3D25248CFE001DAE0D /* TNS_ANGLE_instanced_arrays.swift */,
-				F1FF6A4625248CFE001DAE0D /* TNSLineJoin.swift */,
-				F1FF6A4D25248CFE001DAE0D /* TNSLineCap.swift */,
 				F1FF6A5A25248CFE001DAE0D /* TNSCanvasRenderingContext2D.swift */,
-				F1FF6A6325248CFF001DAE0D /* TNSCompositeOperationType.swift */,
 				F1FF6A6025248CFF001DAE0D /* GLRenderer.swift */,
 				F1FF6A4A25248CFE001DAE0D /* GLUtils.swift */,
-				F1FF6A5325248CFE001DAE0D /* HowToClear.swift */,
-				F1FF6A3F25248CFE001DAE0D /* TNS_EXT_blend_minmax.swift */,
-				F1FF6A6225248CFF001DAE0D /* TNS_EXT_color_buffer_float.swift */,
-				F1FF6A5925248CFE001DAE0D /* TNS_EXT_color_buffer_half_float.swift */,
-				F1FF6A5D25248CFE001DAE0D /* TNS_EXT_shader_texture_lod.swift */,
-				F1FF6A3A25248CFE001DAE0D /* TNS_EXT_sRGB.swift */,
-				F1FF6A4425248CFE001DAE0D /* TNS_EXT_texture_filter_anisotropic.swift */,
-				F1FF6A4925248CFE001DAE0D /* TNS_OES_element_index_uint.swift */,
-				F1FF6A5425248CFE001DAE0D /* TNS_OES_fbo_render_mipmap.swift */,
-				F1FF6A3525248CFE001DAE0D /* TNS_OES_standard_derivatives.swift */,
-				F1FF6A5825248CFE001DAE0D /* TNS_OES_texture_float_linear.swift */,
-				F1FF6A3725248CFE001DAE0D /* TNS_OES_texture_float.swift */,
-				F1FF6A5725248CFE001DAE0D /* TNS_OES_texture_half_float_linear.swift */,
-				F1FF6A4F25248CFE001DAE0D /* TNS_OES_texture_half_float.swift */,
-				F1FF6A3625248CFE001DAE0D /* TNS_OES_vertex_array_object.swift */,
-				F1FF6A3C25248CFE001DAE0D /* TNS_WEBGL_color_buffer_float.swift */,
-				F1FF6A5C25248CFE001DAE0D /* TNS_WEBGL_compressed_texture_etc.swift */,
-				F1FF6A4325248CFE001DAE0D /* TNS_WEBGL_compressed_texture_etc1.swift */,
-				F1FF6A4C25248CFE001DAE0D /* TNS_WEBGL_compressed_texture_pvrtc.swift */,
-				F1FF6A6725248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift */,
-				F1FF6A6625248CFF001DAE0D /* TNS_WEBGL_draw_buffers.swift */,
-				F1FF6A5B25248CFE001DAE0D /* TNS_WEBGL_lose_context.swift */,
 				F1FF6A3925248CFE001DAE0D /* TNSAnimationFrame.swift */,
 				F1FF6A4025248CFE001DAE0D /* TNSCanvas.swift */,
 				F1FF6A3425248CFE001DAE0D /* TNSCanvasListener.swift */,
 				F1FF6A6525248CFF001DAE0D /* TNSCanvasRenderingContext.swift */,
-				F1FF6A6825248CFF001DAE0D /* TNSColorStyle.swift */,
-				F1FF6A3225248CFE001DAE0D /* TNSDOMMatrix.swift */,
-				F1FF6A4825248CFE001DAE0D /* TNSFramebufferAttachmentParameter.swift */,
 				F1FF6A6425248CFF001DAE0D /* TNSImageAsset.swift */,
-				F1FF6A5F25248CFF001DAE0D /* TNSImageAssetFormat.swift */,
-				F1FF6A3B25248CFE001DAE0D /* TNSImageData.swift */,
-				F1FF6A5525248CFE001DAE0D /* TNSImageSmoothingQuality.swift */,
-				F1FF6A6125248CFF001DAE0D /* TNSIndexedParameter.swift */,
-				F1FF6A4E25248CFE001DAE0D /* TNSPath2D.swift */,
-				F1FF6A3325248CFE001DAE0D /* TNSTextAlignment.swift */,
-				F1FF6A5025248CFE001DAE0D /* TNSTextDecoder.swift */,
-				F1FF6A4225248CFE001DAE0D /* TNSTextEncoder.swift */,
-				F1FF6A4B25248CFE001DAE0D /* TNSWebGL2RenderingContext.swift */,
-				F1FF6A5125248CFE001DAE0D /* TNSWebGLActiveInfo.swift */,
-				F1FF6A5225248CFE001DAE0D /* TNSWebGLRenderingContext.swift */,
-				F1FF6A5625248CFE001DAE0D /* TNSWebGLShaderPrecisionFormat.swift */,
 				F1FF6A4725248CFE001DAE0D /* Utils.m */,
 				F11C5D0C2524403700538D04 /* CanvasNative */,
 				F11C5D172524403700538D04 /* CanvasNativeTests */,
 				F11C5D0B2524403700538D04 /* Products */,
-				F1FF5772271E5F7B001CBF6D /* CanvasNative copy-Info.plist */,
-				F1FF57C0271E6998001CBF6D /* CanvasNative copy2-Info.plist */,
 				F1FF57C1271E6BF0001CBF6D /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -355,6 +166,7 @@
 			buildConfigurationList = F11C5D1E2524403700538D04 /* Build configuration list for PBXNativeTarget "CanvasNative" */;
 			buildPhases = (
 				F11C5D052524403700538D04 /* Headers */,
+				F1024FB629CA1B3800FD78D8 /* Prebuild Canvas */,
 				F11C5D062524403700538D04 /* Sources */,
 				F11C5D072524403700538D04 /* Frameworks */,
 				F11C5D082524403700538D04 /* Resources */,
@@ -440,76 +252,48 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		F1024FB629CA1B3800FD78D8 /* Prebuild Canvas */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Prebuild Canvas";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"$SRCROOT/pre-build.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		F11C5D062524403700538D04 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F1FF6A6A25248CFF001DAE0D /* TNSDOMMatrix.swift in Sources */,
-				F1FF6A6B25248CFF001DAE0D /* TNSTextAlignment.swift in Sources */,
 				F1FF6A6C25248CFF001DAE0D /* TNSCanvasListener.swift in Sources */,
-				F1FF6A6D25248CFF001DAE0D /* TNS_OES_standard_derivatives.swift in Sources */,
-				F1FF6A6E25248CFF001DAE0D /* TNS_OES_vertex_array_object.swift in Sources */,
-				F1FF6A6F25248CFF001DAE0D /* TNS_OES_texture_float.swift in Sources */,
-				F1FF6A7025248CFF001DAE0D /* DataURLRequest.swift in Sources */,
 				F1FF6A7125248CFF001DAE0D /* TNSAnimationFrame.swift in Sources */,
-				F107B96E255AE5850094FC51 /* TNSFillRule.swift in Sources */,
-				F1FF6A7225248CFF001DAE0D /* TNS_EXT_sRGB.swift in Sources */,
-				F1FF6A7325248CFF001DAE0D /* TNSImageData.swift in Sources */,
-				F11A7431255930590038B4C6 /* TNSTextDirection.swift in Sources */,
-				F1FF6A7425248CFF001DAE0D /* TNS_WEBGL_color_buffer_float.swift in Sources */,
 				F1FF6A7525248CFF001DAE0D /* TNS_ANGLE_instanced_arrays.swift in Sources */,
-				F1FF6A7725248CFF001DAE0D /* TNS_EXT_blend_minmax.swift in Sources */,
 				F1FF6A7825248CFF001DAE0D /* TNSCanvas.swift in Sources */,
-				F1FF6A7A25248CFF001DAE0D /* TNSTextEncoder.swift in Sources */,
-				F181662D26230D100051F06B /* TNSImageBitmapPremultiplyAlpha.swift in Sources */,
-				F1FF6A7B25248CFF001DAE0D /* TNS_WEBGL_compressed_texture_etc1.swift in Sources */,
-				F1FF6A7C25248CFF001DAE0D /* TNS_EXT_texture_filter_anisotropic.swift in Sources */,
-				F1FF6A7D25248CFF001DAE0D /* Extensions.swift in Sources */,
-				F1FF6A7E25248CFF001DAE0D /* TNSLineJoin.swift in Sources */,
 				F1FF6A7F25248CFF001DAE0D /* Utils.m in Sources */,
-				F181663526230E500051F06B /* TNSImageBitmapOptions.swift in Sources */,
-				F1FF6A8025248CFF001DAE0D /* TNSFramebufferAttachmentParameter.swift in Sources */,
-				F1FF6A8125248CFF001DAE0D /* TNS_OES_element_index_uint.swift in Sources */,
 				F1FF6A8225248CFF001DAE0D /* GLUtils.swift in Sources */,
-				F1FF6A8325248CFF001DAE0D /* TNSWebGL2RenderingContext.swift in Sources */,
-				F1FF6A8425248CFF001DAE0D /* TNS_WEBGL_compressed_texture_pvrtc.swift in Sources */,
-				F1FF6A8525248CFF001DAE0D /* TNSLineCap.swift in Sources */,
-				F1FF6A8625248CFF001DAE0D /* TNSPath2D.swift in Sources */,
-				F1FF6A8725248CFF001DAE0D /* TNS_OES_texture_half_float.swift in Sources */,
-				F1FF6A8825248CFF001DAE0D /* TNSTextDecoder.swift in Sources */,
-				F1FF6A8925248CFF001DAE0D /* TNSWebGLActiveInfo.swift in Sources */,
 				F18165C72621CECC0051F06B /* TNSRender.swift in Sources */,
 				F11A1ABB25C238F100E60484 /* TNSSVG.swift in Sources */,
-				F1FF6A8A25248CFF001DAE0D /* TNSWebGLRenderingContext.swift in Sources */,
-				F1FF6A8B25248CFF001DAE0D /* HowToClear.swift in Sources */,
 				F181661D26228CBA0051F06B /* TNSImageBitmap.swift in Sources */,
-				F1FF6A8C25248CFF001DAE0D /* TNS_OES_fbo_render_mipmap.swift in Sources */,
-				F18B4A7227D95313009258DD /* TNSCanvasData.swift in Sources */,
-				F1FF6A8D25248CFF001DAE0D /* TNSImageSmoothingQuality.swift in Sources */,
 				F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */,
-				F1FF6A8E25248CFF001DAE0D /* TNSWebGLShaderPrecisionFormat.swift in Sources */,
-				F1FF6A8F25248CFF001DAE0D /* TNS_OES_texture_half_float_linear.swift in Sources */,
-				F1FF6A9025248CFF001DAE0D /* TNS_OES_texture_float_linear.swift in Sources */,
-				F1FF6A9125248CFF001DAE0D /* TNS_EXT_color_buffer_half_float.swift in Sources */,
 				F1FF6A9225248CFF001DAE0D /* TNSCanvasRenderingContext2D.swift in Sources */,
-				F1FF6A9325248CFF001DAE0D /* TNS_WEBGL_lose_context.swift in Sources */,
-				F1FF6A9425248CFF001DAE0D /* TNS_WEBGL_compressed_texture_etc.swift in Sources */,
-				F1FF6A9525248CFF001DAE0D /* TNS_EXT_shader_texture_lod.swift in Sources */,
-				F1FF6A9725248CFF001DAE0D /* TNSImageAssetFormat.swift in Sources */,
-				F1A87B25255BB4F000394387 /* TextBaseLine.swift in Sources */,
 				F1FF6A9825248CFF001DAE0D /* GLRenderer.swift in Sources */,
-				F1FF6A9925248CFF001DAE0D /* TNSIndexedParameter.swift in Sources */,
-				F1FF6A9A25248CFF001DAE0D /* TNS_EXT_color_buffer_float.swift in Sources */,
-				F1FF6A9B25248CFF001DAE0D /* TNSCompositeOperationType.swift in Sources */,
 				F1FF6A9C25248CFF001DAE0D /* TNSImageAsset.swift in Sources */,
-				F181662926230C790051F06B /* TNSImageBitmapColorSpaceConversion.swift in Sources */,
-				F181663126230D8C0051F06B /* TNSImageBitmapResizeQuality.swift in Sources */,
 				F1FF6A9D25248CFF001DAE0D /* TNSCanvasRenderingContext.swift in Sources */,
-				F1FF6A9E25248CFF001DAE0D /* TNS_WEBGL_draw_buffers.swift in Sources */,
-				F1FF6A9F25248CFF001DAE0D /* TNS_WEBGL_depth_texture.swift in Sources */,
-				F1FF6AA025248CFF001DAE0D /* TNSColorStyle.swift in Sources */,
-				F1FF6AA125248CFF001DAE0D /* TNSTextMetrics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -671,10 +455,13 @@
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/canvas-core/target\"";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/target/cxxbridge\"";
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphoneos*][arch=arm64]" = 11.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 14.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=x86_64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -683,17 +470,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = "";
 				ONLY_ACTIVE_ARCH = YES;
-				"OTHER_LDFLAGS[arch=x86_64]" = (
-					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/debug\"",
-					"-Wl,-keep_dwarf_unwind",
-					"-Wl,-no_compact_unwind",
-					"-lcanvasnative",
-					"-ObjC",
-					"-framework",
-					OpenGLES,
-					"-lc++",
-				);
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
 					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios/debug\"",
@@ -708,6 +484,17 @@
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
 					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios-sim/debug\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/debug\"",
 					"-Wl,-keep_dwarf_unwind",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
@@ -746,10 +533,13 @@
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/canvas-core/target\"";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/target/cxxbridge\"";
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphoneos*][arch=arm64]" = 11.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 14.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=x86_64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -758,17 +548,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = "";
 				"LIBRARY_SEARCH_PATHS[arch=*]" = "";
-				"OTHER_LDFLAGS[arch=x86_64]" = (
-					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/release\"",
-					"-Wl,-keep_dwarf_unwind",
-					"-Wl,-no_compact_unwind",
-					"-lcanvasnative",
-					"-ObjC",
-					"-framework",
-					OpenGLES,
-					"-lc++",
-				);
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
 					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios/release\"",
@@ -783,6 +562,17 @@
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
 					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios-sim/release\"",
+					"-Wl,-keep_dwarf_unwind",
+					"-Wl,-no_compact_unwind",
+					"-lcanvasnative",
+					"-ObjC",
+					"-framework",
+					OpenGLES,
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/release\"",
 					"-Wl,-keep_dwarf_unwind",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",

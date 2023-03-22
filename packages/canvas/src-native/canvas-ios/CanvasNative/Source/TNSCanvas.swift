@@ -45,25 +45,7 @@ public class TNSCanvas: UIView, RenderListener {
     var contextDesynchronized = false;
     var contextXrCompatible = false;
     
-    var mClearStencil: Int32 = 0
-    var mClearColor: [Float] = [0,0,0,0]
-    var mScissorEnabled = false
-    var mClearDepth: Float = 1
-    var mColorMask: [Bool] = [true, true, true, true]
-    var mStencilMask: UInt32 = 0xFFFFFFFF
-    var mStencilMaskBack: UInt32 = 0xFFFFFFFF;
-    var mStencilFuncRef: Int32 = 0;
-    var mStencilFuncRefBack: Int32 = 0;
-    var mStencilFuncMask: UInt32 = 0xFFFFFFFF;
-    var mStencilFuncMaskBack: UInt32 = 0xFFFFFFFF;
-    var mDepthMask: Bool = true
 
-    
-    
-    public static func createSVGMatrix() -> TNSDOMMatrix {
-        TNSDOMMatrix()
-    }
-    
     
     public func forceLayout(_ width: CGFloat, _ height: CGFloat){
         
@@ -82,43 +64,6 @@ public class TNSCanvas: UIView, RenderListener {
     }
     
     
-    var isContextLost: Bool = false
-    var _handleInvalidationManually: Bool = false
-    public var handleInvalidationManually: Bool {
-        get {
-            return _handleInvalidationManually
-        }
-        set {
-            _handleInvalidationManually = newValue
-            if(newValue){
-                displayLink?.invalidate()
-                displayLink = nil
-                _fps = 0
-            }else {
-                displayLink = CADisplayLink(target: self, selector: #selector(handleAnimation))
-                displayLink?.add(to: .main, forMode: .common)
-            }
-        }
-    }
-    
-    public func didDraw() {
-        if(dataURLCallbacks.count == 0) {return}
-        DispatchQueue.main.async {
-            for request in self.dataURLCallbacks {
-                let result = context_data_url(self.context, request.type, request.format)
-                let data = String(cString: result!)
-                request.callback(data)
-            }
-        }
-    }
-    
-    public func toDataURL() -> String {
-        return toDataURL("image/png")
-    }
-    
-    public func toDataURL(_ type: String) -> String {
-        return toDataURL(type, 0.92)
-    }
     
     public func toDataURL(_ type: String,_ format: Float) -> String {
         if(renderer.contextType == ContextType.webGL){
@@ -132,20 +77,6 @@ public class TNSCanvas: UIView, RenderListener {
         return data
     }
     
-    
-    public func toDataURLAsync(_ callback: @escaping (String) -> Void) {
-        toDataURLAsync("image/png", callback)
-    }
-    
-    public func toDataURLAsync(_ type: String,_ callback: @escaping (String) -> Void) {
-        toDataURLAsync(type, 0.92, callback)
-    }
-    
-    private var dataURLCallbacks: [DataURLRequest] = []
-    
-    public func toDataURLAsync(_ type: String,_ format: Float,_ callback: @escaping (String) -> Void) {
-        dataURLCallbacks.append(DataURLRequest(type: type, format: format, callback: callback))
-    }
     
     public func snapshot() -> [UInt8]{
         renderer.ensureIsContextIsCurrent()
@@ -211,7 +142,6 @@ public class TNSCanvas: UIView, RenderListener {
     var renderingContextWebGL: TNSCanvasRenderingContext?
     var renderingContextWebGL2: TNSCanvasRenderingContext?
     public func doDraw() {
-        if(handleInvalidationManually){return}
         renderer.isDirty = true
     }
     

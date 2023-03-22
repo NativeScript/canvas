@@ -1,10 +1,12 @@
+use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::CString;
 use std::num::NonZeroU32;
-use std::sync::Arc;
+use std::rc::Rc;
+
 
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
-#[cfg(any(target_os = "ios", target_os = "android"))]
+#[cfg(any(target_os = "ios"))]
 use glutin::api::egl::{
     config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
 };
@@ -18,7 +20,6 @@ use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, WindowSurface};
 use once_cell::sync::Lazy;
-use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use raw_window_handle::{
     AndroidDisplayHandle, AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
     UiKitDisplayHandle,
@@ -46,21 +47,18 @@ unsafe impl Send for GLContextInner {}
 
 #[derive(Debug, Default)]
 pub struct GLContext {
-    inner: Arc<RwLock<GLContextInner>>,
+    inner: Rc<RefCell<GLContextInner>>,
 }
-
-unsafe impl Sync for GLContext {}
-unsafe impl Send for GLContext {}
 
 impl GLContext {
     // pointer has to
-    pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
-        Arc::into_raw(Arc::clone(&self.inner))
+    pub fn as_raw_inner(&self) -> *const RefCell<GLContextInner> {
+        Rc::into_raw(Rc::clone(&self.inner))
     }
 
-    pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
+    pub fn from_raw_inner(raw: *const RefCell<GLContextInner>) -> Self {
         Self {
-            inner: unsafe { Arc::from_raw(raw) },
+            inner: unsafe { Rc::from_raw(raw) },
         }
     }
 }
@@ -68,7 +66,7 @@ impl GLContext {
 impl Clone for GLContext {
     fn clone(&self) -> Self {
         Self {
-            inner: Arc::clone(&self.inner),
+            inner: Rc::clone(&self.inner),
         }
     }
 }
@@ -138,9 +136,8 @@ impl GLContext {
     ) -> bool {
         let is_2d = context_attrs.get_is_canvas();
         let cfg = context_attrs.into();
-        let mut lock = self.inner.write();
         unsafe {
-            if let Some(display) = lock.display.as_ref() {
+            if let Some(display) = self.display() {
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
@@ -224,7 +221,8 @@ impl GLContext {
 
                         let ret = surface.is_some();
 
-                        lock.surface = surface;
+
+                        self.inner.borrow_mut().surface = surface;
 
                         ret
                     }
@@ -348,7 +346,7 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
+                            inner: Rc::new(RefCell::new(GLContextInner {
                                 surface,
                                 context,
                                 display: Some(display),
@@ -475,7 +473,7 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
+                            inner: Rc::new(RefCell::new(GLContextInner {
                                 surface,
                                 context,
                                 display: Some(display),
@@ -602,7 +600,7 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
+                            inner: Rc::new(RefCell::new(GLContextInner {
                                 surface,
                                 context,
                                 display: Some(display),
@@ -712,8 +710,7 @@ impl GLContext {
                         .map(SurfaceHelper::Window)
                         .ok();
 
-                    let mut lock = self.inner.write();
-                    lock.surface = surface;
+                    self.inner.borrow_mut().surface = surface;
                 }
             }
         }
@@ -832,7 +829,7 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
+                            inner: Rc::new(RefCell::new(GLContextInner {
                                 surface,
                                 context,
                                 display: Some(display),
@@ -965,7 +962,7 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
+                            inner: Rc::new(RefCell::new(GLContextInner {
                                 surface,
                                 context,
                                 display: Some(display),
@@ -1098,7 +1095,7 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
+                            inner: Rc::new(RefCell::new(GLContextInner {
                                 surface,
                                 context,
                                 display: Some(display),
@@ -1172,21 +1169,20 @@ impl GLContext {
         GLContext::create_pbuffer(config, width, height)
     }
 
-    pub fn surface(&self) -> Option<MappedRwLockReadGuard<SurfaceHelper>> {
-        RwLockReadGuard::try_map(self.inner.read(), |lock| lock.surface.as_ref()).ok()
+    pub fn surface(&self) -> Option<&SurfaceHelper> {
+        unsafe { (*self.inner.as_ptr()).surface.as_ref() }
     }
 
-    pub fn context(&self) -> Option<MappedRwLockReadGuard<PossiblyCurrentContext>> {
-        RwLockReadGuard::try_map(self.inner.read(), |lock| lock.context.as_ref()).ok()
+    pub fn context(&self) -> Option<&PossiblyCurrentContext> {
+        unsafe { (*self.inner.as_ptr()).context.as_ref() }
     }
 
-    pub fn display(&self) -> Option<MappedRwLockReadGuard<Display>> {
-        RwLockReadGuard::try_map(self.inner.read(), |lock| lock.display.as_ref()).ok()
+    pub fn display(&self) -> Option<&Display> {
+        unsafe { (*self.inner.as_ptr()).display.as_ref() }
     }
 
     pub fn make_current(&self) -> bool {
-        let lock = self.inner.read();
-        match (lock.context.as_ref(), lock.surface.as_ref()) {
+        match (self.context(), self.surface()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).is_ok(),
@@ -1197,8 +1193,7 @@ impl GLContext {
     }
 
     pub fn remove_if_current(&self) {
-        let lock = self.inner.read();
-        let is_current = match (lock.context.as_ref(), lock.surface.as_ref()) {
+       let is_current = match (self.context(), self.surface()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.is_current(context),
                 SurfaceHelper::Pbuffer(buffer) => buffer.is_current(context),
@@ -1231,8 +1226,7 @@ impl GLContext {
     }
 
     pub fn swap_buffers(&self) -> bool {
-        let lock = self.inner.read();
-        match (lock.context.as_ref(), lock.surface.as_ref()) {
+        match (self.context(), self.surface()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => buffer.swap_buffers(context).is_ok(),
@@ -1243,9 +1237,7 @@ impl GLContext {
     }
 
     pub fn get_surface_width(&self) -> i32 {
-        self.inner
-            .read()
-            .surface
+        self.surface()
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.width().unwrap_or_default() as i32,
@@ -1256,9 +1248,7 @@ impl GLContext {
     }
 
     pub fn get_surface_height(&self) -> i32 {
-        self.inner
-            .read()
-            .surface
+        self.surface()
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,

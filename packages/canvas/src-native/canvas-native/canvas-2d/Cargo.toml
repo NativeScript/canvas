@@ -9,7 +9,6 @@ gl = ["skia-safe/gl"]
 
 [dependencies]
 canvas-core = { path = "../canvas-core", features = ["2d"] }
-egl = "0.2.7"
 parking_lot = "0.12.0"
 regex = "1.5.4"
 base64 = "0.21.0"

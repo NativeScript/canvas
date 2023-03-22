@@ -6,9 +6,9 @@
 //
 
 #import <Foundation/Foundation.h>
-
-#import "canvas-native.h"
 #import "Utils.h"
+#import "canvas-cxx/src/lib.rs.h"
+
 
 //! Project version number for CanvasNative.
 FOUNDATION_EXPORT double CanvasNativeVersionNumber;

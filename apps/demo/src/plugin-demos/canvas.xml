@@ -9,7 +9,7 @@
 
   <GridLayout loaded="{{ gridLoaded }}" rows="*,*" columns="*,*" iosOverflowSafeArea="false" width="100%" height="100%">
   
-  <ui:Dom rowSpan="2" colSpan="2">
+  <!-- <ui:Dom rowSpan="2" colSpan="2"> -->
 
   <!-- <ui:Fill color="#e8f4f8" /> -->
 
@@ -81,19 +81,19 @@
       /> -->
 
 
-      <ui:Fill color="lightblue" />
+      <!-- <ui:Fill color="lightblue" />
       <ui:RoundedRect x="32" y="32" width="192" height="192" r="32" color="lightblue">
         <ui:Shadow dx="12" dy="12" blur="25" color="#93b8c4" />
         <ui:Shadow dx="-12" dy="-12" blur="25" color="#c7f8ff" />
       </ui:RoundedRect>
 
         
-  </ui:Dom>
-  
+  </ui:Dom> 
+   -->
   
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
-		 <!-- <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"
-									 layoutChanged="{{ onLayout }}"/>  -->
+		 <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"
+									 layoutChanged="{{ onLayout }}"/> 
                                      <!-- <canvas:Svg  id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/>
                                      <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/>
                                       <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/>

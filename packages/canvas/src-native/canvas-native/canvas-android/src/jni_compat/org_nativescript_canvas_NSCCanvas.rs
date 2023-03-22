@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_TRUE};
 use jni::JNIEnv;
@@ -234,7 +235,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPoi
     if gl_context == 0 {
         return;
     }
-    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
     let _ = GLContext::from_raw_inner(gl_context);
 }
 

@@ -1,11 +1,13 @@
 #![allow(non_snake_case)]
 
 use std::borrow::Cow;
+use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::CStr;
 use std::io::{Read, Write};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
 use std::os::raw::{c_char, c_int, c_uint};
+use std::rc::Rc;
 use std::sync::Arc;
 
 use cxx::{type_id, ExternType};
@@ -47,11 +49,11 @@ pub static API_LEVEL: OnceCell<i32> = OnceCell::new();
 #[cfg(target_os = "android")]
 pub mod choregrapher;
 
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 mod raf;
 
 /* Raf */
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 #[derive(Clone)]
 pub struct Raf(raf::Raf);
 /* Raf */
@@ -145,11 +147,11 @@ impl CanvasRenderingContext2D {
         self.gl_context.swap_buffers();
     }
 
-    pub fn get_context(&self) -> RwLockReadGuard<'_, RawRwLock, Context> {
+    pub fn get_context(&self) -> Ref<Context> {
         self.context.get_context()
     }
 
-    pub fn get_context_mut(&self) -> RwLockWriteGuard<'_, RawRwLock, Context> {
+    pub fn get_context_mut(&self) -> RefMut<Context> {
         self.context.get_context_mut()
     }
 
@@ -239,24 +241,24 @@ unsafe impl ExternType for PaintStyle {
 }
 
 /* Raf */
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 pub fn canvas_native_raf_create(callback: isize) -> Box<Raf> {
     Box::new(Raf(raf::Raf::new(Some(Box::new(move |ts| {
         ffi::OnRafCallbackOnFrame(callback, ts);
     })))))
 }
 
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 pub fn canvas_native_raf_start(raf: &mut Raf) {
     raf.0.start();
 }
 
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 pub fn canvas_native_raf_stop(raf: &mut Raf) {
     raf.0.stop()
 }
 
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 pub fn canvas_native_raf_get_started(raf: &Raf) -> bool {
     raf.0.started()
 }
@@ -3217,14 +3219,14 @@ fn canvas_native_context_create_with_wrapper(
     let wrapper = context as *mut ContextWrapper;
     let wrapper = unsafe { &mut *wrapper };
 
-    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
     let alpha;
     {
         let lock = wrapper.get_context();
         alpha = lock.device().alpha;
     }
-    let clone = ContextWrapper::from_inner(Arc::clone(wrapper.get_inner()));
+    let clone = ContextWrapper::from_inner(Rc::clone(wrapper.get_inner()));
     Box::new(CanvasRenderingContext2D {
         context: clone,
         gl_context,
@@ -3271,7 +3273,7 @@ pub fn canvas_native_context_create_gl(
     ppi: f32,
     direction: u32,
 ) -> Box<CanvasRenderingContext2D> {
-    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
 
     gl_context.make_current();
@@ -6685,7 +6687,7 @@ pub fn canvas_native_webgl_create(
         WebGLVersion::NONE
     };
 
-    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
 
     let inner = WebGLState::new_with_context(

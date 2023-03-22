@@ -4,7 +4,6 @@ import { DOMMatrix } from '../DOMMatrix';
 import { Helpers } from '../../helpers';
 
 let ctor;
-
 export class Path2D extends Path2DBase {
 	static {
 		Helpers.initialize();
@@ -33,7 +32,6 @@ export class Path2D extends Path2DBase {
 			this._methodCache.set(name, ret);
 			return ret;
 		}
-
 		return cached;
 	}
 
@@ -90,6 +88,14 @@ export class Path2D extends Path2DBase {
 		const rect = this._getMethod('rect');
 		rect(x, y, width, height);
 	}
+
+	public roundRect(x: number, y: number, width: number, height: number, radii: number): void;
+	public roundRect(x: number, y: number, width: number, height: number, radii: number[]): void;
+	public roundRect(x: unknown, y: unknown, width: unknown, height: unknown, radii: unknown): void {
+		const roundRect = this._getMethod('roundRect');
+		roundRect(x, y, width, height, radii);
+	}
+
 	__toSVG() {
 		const __toSVG = this._getMethod('__toSVG');
 		return __toSVG();

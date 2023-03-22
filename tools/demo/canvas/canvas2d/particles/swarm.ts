@@ -155,8 +155,8 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
       if (dist <= minDist) {
         // Draw the line
         ctx.beginPath();
-        ctx.strokeStyle =
-          'rgba(255,255,255,' + (1.2 - dist / minDist) + ')';
+        // ctx.strokeStyle =
+        //   'rgba(255,255,255,' + (1.2 - dist / minDist) + ')';
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();

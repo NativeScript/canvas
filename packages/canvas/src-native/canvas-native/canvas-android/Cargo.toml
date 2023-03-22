@@ -6,7 +6,6 @@ edition = "2021"
 [build]
 rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
 
-
 [lib]
 name = "canvasandroid"
 crate-type = ["cdylib"]

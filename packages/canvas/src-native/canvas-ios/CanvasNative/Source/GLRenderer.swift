@@ -55,7 +55,7 @@ public class CanvasCPUView: UIView {
     }
     
     func deviceScale() -> Float32 {
-        if !(renderer?.canvasView?.ignorePixelScaling ?? false)  {
+        if (ignorePixelScaling)  {
             return Float32(UIScreen.main.nativeScale)
         }
         return 1
@@ -71,7 +71,7 @@ public class CanvasCPUView: UIView {
                 let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: size)
                 let colorSpace = CGColorSpaceCreateDeviceRGB()
                 let ctx = CGContext(data: buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-                context_custom_with_buffer_flush(renderer.context, buffer, UInt(size), Float(width), Float(height))
+//                context_custom_with_buffer_flush(renderer.context, buffer, UInt(size), Float(width), Float(height))
                 if let image = ctx?.makeImage() {
                     let currentContext = UIGraphicsGetCurrentContext()
                     currentContext?.clear(bounds)
@@ -108,21 +108,6 @@ public class GLRenderer: NSObject, GLKViewDelegate {
         cachedDirection = direction
     }
     
-    public var isDirty: Bool {
-        set{
-            if(useCpu){
-                cpuView.isDirty = newValue
-            }else {
-                glkView.isDirty = newValue
-            }
-        }
-        get {
-            if(useCpu){
-                return cpuView.isDirty
-            }
-            return glkView.isDirty
-        }
-    }
     
     var listener: RenderListener?
     var displayRenderbuffer: GLuint

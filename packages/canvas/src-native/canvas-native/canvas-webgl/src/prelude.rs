@@ -393,6 +393,7 @@ impl WebGLState {
         self.get().gl_context.get_surface_height()
     }
 
+    #[inline(always)]
     pub fn make_current(&self) -> bool {
         self.get().gl_context.make_current()
     }

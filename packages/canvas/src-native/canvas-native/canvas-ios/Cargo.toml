@@ -10,7 +10,11 @@ rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
 name = "canvasnative"
 crate-type = ["staticlib"]
 
+[build-dependencies]
+cxx-build = "1.0.73"
+
 [dependencies]
+cxx = "1.0.73"
 canvas-core = { path = "../canvas-core", features = ["2d"] }
 canvas-2d = { path = "../canvas-2d", features = ["gl"] }
 canvas-webgl = { path = "../canvas-webgl" }

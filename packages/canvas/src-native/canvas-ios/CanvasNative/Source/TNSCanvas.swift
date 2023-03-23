@@ -22,11 +22,11 @@ public class TNSCanvas: UIView, RenderListener {
     var displayLink: CADisplayLink?
     var ptr: UnsafeMutableRawPointer?
     
-    public func getViewPtr() -> UnsafeMutableRawPointer? {
-        if(ptr == nil && !isGL){
-            ptr = Unmanaged.passRetained(renderer.view).toOpaque()
+    public func getViewPtr() -> UnsafeMutableRawPointer {
+        if(ptr == nil){
+            ptr = Unmanaged.passUnretained(glkView).toOpaque()
         }
-        return ptr
+        return ptr!
     }
     
     public var ignorePixelScaling = false {
@@ -44,6 +44,151 @@ public class TNSCanvas: UIView, RenderListener {
     var contextStencil = false;
     var contextDesynchronized = false;
     var contextXrCompatible = false;
+    
+    private(set) public var nativeGL: Int64 = 0
+    private(set) public var nativeContext: Int64 = 0
+    
+    internal var glkView: CanvasGLKView
+    
+    public var drawingBufferWidth: Int {
+        return glkView.drawableWidth
+    }
+    public var drawingBufferHeight: Int {
+        return glkView.drawableHeight
+    }
+    public var width: Float {
+        get {
+            return Float(glkView.frame.size.width)
+        }
+    }
+    public var height: Float {
+        get {
+            return Float(glkView.frame.size.height)
+        }
+    }
+    
+    
+    @objc public func initContext(
+        _ type: String,
+        _ alpha: Bool = true,
+        _ antialias: Bool = true,
+        _ depth: Bool = true,
+        _ failIfMajorPerformanceCaveat: Bool = false,
+        _ powerPreference: String = "default",
+        _ premultipliedAlpha: Bool = true,
+        _ preserveDrawingBuffer: Bool = false,
+        _ stencil: Bool = false,
+        _ desynchronized: Bool = false,
+        _ xrCompatible: Bool = false
+        ) {
+            initContextWithContextAttributes(
+                type,
+                alpha,
+                antialias,
+                depth,
+                failIfMajorPerformanceCaveat,
+                powerPreference,
+                premultipliedAlpha,
+                preserveDrawingBuffer,
+                stencil,
+                desynchronized,
+                xrCompatible
+            )
+        }
+    
+    
+    
+    func initContextWithContextAttributes(
+        _ type: String,
+        _ alpha: Bool,
+        _ antialias: Bool,
+        _ depth: Bool,
+        _ failIfMajorPerformanceCaveat: Bool,
+        _ powerPreference: String,
+        _ premultipliedAlpha: Bool,
+        _ preserveDrawingBuffer: Bool,
+        _ stencil: Bool,
+        _ desynchronized: Bool,
+        _ xrCompatible: Bool
+    ) {
+        if (nativeGL != 0) {
+            return
+        }
+        var version = -1
+        var isCanvas = false
+        switch (type) {
+        case "2d":
+                version = 0
+                isCanvas = true
+            break
+        case "experimental-webgl", "webgl":
+                version = 1
+            break
+        case "webgl2":
+                version = 2
+            break
+        default:
+            break
+        }
+
+        if (version == -1) {
+            return
+        }
+        
+        
+        if(!useCpu){
+            var properties: [String: Any] = [:]
+            var useWebGL = version > 0
+            if(useWebGL && preserveDrawingBuffer){
+                properties[kEAGLDrawablePropertyRetainedBacking] = preserveDrawingBuffer
+            }
+            
+            if(alpha){
+                properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+                isOpaque = false
+            }else {
+                properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGB565
+                isOpaque = true
+            }
+            
+            
+            if(!properties.isEmpty){
+                let eaglLayer = self.glkView.layer as! CAEAGLLayer
+                eaglLayer.drawableProperties = [kEAGLDrawablePropertyRetainedBacking: NSNumber(value:false) , kEAGLDrawablePropertyColorFormat: kEAGLColorFormatRGBA8]
+
+            }
+            
+            if(useWebGL && depth){
+                glkView.drawableDepthFormat = .format24
+            }else {
+                glkView.drawableDepthFormat = .formatNone
+            }
+            
+            if(useWebGL && stencil){
+                glkView.drawableStencilFormat = .format8
+            }else if(version == 0) {
+                glkView.drawableStencilFormat = .format8
+            }
+            
+            if(useWebGL && antialias){
+                // glkView.drawableMultisample = .multisample4X
+            }else if(version == 0) {
+                // drawableMultisample = .multisample4X
+            }
+        }
+       
+    
+    
+        let contextType = type.utf8CString
+        
+        
+        let viewPtr = UInt64(bitPattern:Int64(Int(bitPattern: getViewPtr())))
+        
+        nativeGL = canvas_native_init_gl(viewPtr, drawingBufferWidth, drawingBufferHeight, alpha, antialias, depth, failIfMajorPerformanceCaveat, &contextType, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, version, version == 0)
+   
+   
+        nativeContext = canvas_native_get_gl_pointer(nativeGL)
+    }
     
 
     
@@ -98,13 +243,6 @@ public class TNSCanvas: UIView, RenderListener {
         return []
     }
     
-    var _isGL: Bool = false
-    var isDirty: Bool = false
-    public var isGL: Bool {
-        get {
-            return _isGL
-        }
-    }
     
     public func getId() -> GLint {
         GLint()

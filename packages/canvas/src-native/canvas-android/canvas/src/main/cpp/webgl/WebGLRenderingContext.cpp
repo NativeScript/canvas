@@ -1433,7 +1433,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             size_t count) -> jsi::Value {
 
 
-                                                         if (count > 0) {
+                                                         //if (count > 0) {
                                                              auto mask = (uint32_t) arguments[0].asNumber();
 
                                                              canvas_native_webgl_clear(
@@ -1442,7 +1442,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                              );
 
                                                              this->UpdateInvalidateState();
-                                                         }
+                                                        // }
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -2179,7 +2179,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         if (count > 2) {
+                                                        // if (count > 2) {
                                                              auto mode = (uint32_t) arguments[0].asNumber();
                                                              auto first = (int32_t) arguments[1].asNumber();
                                                              auto count_ = (int32_t) arguments[2].asNumber();
@@ -2191,7 +2191,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                      this->GetState()
                                                              );
                                                              this->UpdateInvalidateState();
-                                                         }
+                                                         //}
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -4771,8 +4771,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                         if (count > 1) {
-                                                             if (arguments[0].isObject()) {
+                                                         //if (count > 1) {
+                                                          //   if (arguments[0].isObject()) {
                                                                  auto location = arguments[0].asObject(
                                                                          runtime).asHostObject<WebGLUniformLocation>(
                                                                          runtime);
@@ -4784,8 +4784,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                              this->GetState()
                                                                      );
                                                                  }
-                                                             }
-                                                         }
+                                                          //   }
+                                                        // }
 
                                                          return jsi::Value::undefined();
                                                      }

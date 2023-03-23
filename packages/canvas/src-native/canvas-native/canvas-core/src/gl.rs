@@ -3,7 +3,6 @@ use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::rc::Rc;
 
-
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
 #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -18,7 +17,7 @@ use glutin::display::{AsRawDisplay, DisplayApiPreference};
 use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
-use glutin::surface::{PbufferSurface, PixmapSurface, WindowSurface};
+use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
 use once_cell::sync::Lazy;
 use raw_window_handle::{
     AndroidDisplayHandle, AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
@@ -74,6 +73,7 @@ impl Clone for GLContext {
 impl Into<ConfigTemplate> for ContextAttributes {
     fn into(self) -> ConfigTemplate {
         ConfigTemplateBuilder::new()
+            .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 16 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
@@ -85,6 +85,7 @@ impl Into<ConfigTemplate> for ContextAttributes {
 impl From<&mut ContextAttributes> for ConfigTemplate {
     fn from(value: &mut ContextAttributes) -> Self {
         ConfigTemplateBuilder::new()
+            .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
@@ -96,6 +97,7 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
 impl Into<ConfigTemplateBuilder> for ContextAttributes {
     fn into(self) -> ConfigTemplateBuilder {
         ConfigTemplateBuilder::new()
+            .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 16 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
@@ -106,6 +108,7 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
 impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
     fn from(value: &mut ContextAttributes) -> Self {
         ConfigTemplateBuilder::new()
+            .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
@@ -220,7 +223,6 @@ impl GLContext {
                             .ok();
 
                         let ret = surface.is_some();
-
 
                         self.inner.borrow_mut().surface = surface;
 
@@ -487,7 +489,7 @@ impl GLContext {
         }
     }
 
-   #[cfg(target_os = "android")]
+    #[cfg(target_os = "android")]
     pub fn create_window_surface(
         context_attrs: &mut ContextAttributes,
         width: i32,
@@ -614,6 +616,110 @@ impl GLContext {
         }
     }
 
+    #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+    pub fn set_window_surface(
+        &mut self,
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        window: RawWindowHandle,
+    ) {
+        unsafe {
+            if let Some(display) = self.display() {
+                gl_bindings::load_with(|symbol| {
+                    let symbol = CString::new(symbol).unwrap();
+                    display.get_proc_address(symbol.as_c_str()).cast()
+                });
+
+                let is_2d = context_attrs.get_is_canvas();
+                let cfg = context_attrs.clone().into();
+                let config = display
+                    .find_configs(cfg)
+                    .map(|c| {
+                        c.reduce(|accum, cconfig| {
+                            if is_2d {
+                                let transparency_check =
+                                    cconfig.supports_transparency().unwrap_or(false)
+                                        & !accum.supports_transparency().unwrap_or(false);
+
+                                return if transparency_check
+                                    || cconfig.num_samples() < accum.num_samples()
+                                {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            }
+
+                            let supports_transparency =
+                                cconfig.supports_transparency().unwrap_or(false);
+
+                            let num_samples = cconfig.num_samples();
+
+                            let alpha_requested = context_attrs.get_alpha();
+
+                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let mut stencil_size = if context_attrs.get_stencil() {
+                                8u8
+                            } else {
+                                0u8
+                            };
+                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+
+                            if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
+                                && context_attrs.get_stencil()
+                                && cconfig.stencil_size() == stencil_size
+                                && context_attrs.get_depth()
+                                && cconfig.depth_size() == depth_size
+                            {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && accum.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && accum.depth_size() == depth_size
+                                    && accum.num_samples() > num_samples
+                                {
+                                    return accum;
+                                }
+
+                                return cconfig;
+                            }
+
+                            accum
+                        })
+                    })
+                    .ok()
+                    .flatten();
+
+                if let Some(config) = config {
+                    if context_attrs.get_antialias() && config.num_samples() == 0 {
+                        context_attrs.set_antialias(false);
+                    }
+
+                    context_attrs.set_samples(config.num_samples());
+
+                    let surface_attr =
+                        glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
+                            window,
+                            NonZeroU32::try_from(width as u32).unwrap(),
+                            NonZeroU32::try_from(height as u32).unwrap(),
+                        );
+
+                    let surface = display
+                        .create_window_surface(&config, &surface_attr)
+                        .map(SurfaceHelper::Window)
+                        .ok();
+
+                    self.inner.borrow_mut().surface = surface;
+                }
+            }
+        }
+    }
+
+    /*
+
     #[cfg(target_os = "android")]
     pub fn set_window_surface(
         &mut self,
@@ -715,6 +821,7 @@ impl GLContext {
             }
         }
     }
+    */
 
     #[cfg(target_os = "macos")]
     pub fn create_pbuffer(
@@ -1181,8 +1288,28 @@ impl GLContext {
         unsafe { (*self.inner.as_ptr()).display.as_ref() }
     }
 
+    #[inline(always)]
+    pub fn set_vsync(&self, sync: bool) -> bool {
+        let inner = self.inner.borrow();
+        let vsync = if sync {
+            SwapInterval::Wait(NonZeroU32::new(1).unwrap())
+        } else {
+            SwapInterval::DontWait
+        };
+        match (inner.context.as_ref(), inner.surface.as_ref()) {
+            (Some(context), Some(surface)) => match surface {
+                SurfaceHelper::Window(window) => window.set_swap_interval(context, vsync).is_ok(),
+                SurfaceHelper::Pbuffer(buffer) => buffer.set_swap_interval(context, vsync).is_ok(),
+                SurfaceHelper::Pixmap(map) => map.set_swap_interval(context, vsync).is_ok(),
+            },
+            _ => false,
+        }
+    }
+
+    #[inline(always)]
     pub fn make_current(&self) -> bool {
-        match (self.context(), self.surface()) {
+        let inner = self.inner.borrow();
+        match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).is_ok(),
@@ -1192,8 +1319,10 @@ impl GLContext {
         }
     }
 
+    #[inline(always)]
     pub fn remove_if_current(&self) {
-       let is_current = match (self.context(), self.surface()) {
+        let inner = self.inner.borrow();
+        let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.is_current(context),
                 SurfaceHelper::Pbuffer(buffer) => buffer.is_current(context),
@@ -1225,8 +1354,10 @@ impl GLContext {
         }
     }
 
+    #[inline(always)]
     pub fn swap_buffers(&self) -> bool {
-        match (self.context(), self.surface()) {
+        let inner = self.inner.borrow();
+        match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => buffer.swap_buffers(context).is_ok(),
@@ -1236,6 +1367,7 @@ impl GLContext {
         }
     }
 
+    #[inline(always)]
     pub fn get_surface_width(&self) -> i32 {
         self.surface()
             .as_ref()
@@ -1247,6 +1379,7 @@ impl GLContext {
             .unwrap_or_default()
     }
 
+    #[inline(always)]
     pub fn get_surface_height(&self) -> i32 {
         self.surface()
             .as_ref()

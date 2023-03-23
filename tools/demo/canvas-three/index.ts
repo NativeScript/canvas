@@ -45,7 +45,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		this.canvas = args.object;
 		//x jet game
 
-		init(this.canvas);
+		//init(this.canvas);
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
@@ -66,7 +66,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.ThreeMF(this.canvas);
 		//this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
-		//this.birds(this.canvas);
+		this.birds(this.canvas);
 		//this.renderVideo();
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);

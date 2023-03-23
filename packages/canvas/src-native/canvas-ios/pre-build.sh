@@ -80,6 +80,10 @@ if [[ $CURRENT_ARCH == arm64 ]]; then
   fi
 fi
 
+export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
+export DYLD_LIBRARY_PATH="$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH:$DYLD_FALLBACK_LIBRARY_PATH"
+
+echo $DYLD_LIBRARY_PATH
 
 cargo +nightly build -Z build-std='std' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
 popd

@@ -1,5 +1,5 @@
 //
-//  TNSSVG.swift
+//  NSCSVG.swift
 //  CanvasNative
 //
 //  Created by Osei Fortune on 27/01/2021.
@@ -8,7 +8,7 @@ import Foundation
 import UIKit
 @objcMembers
 @objc(TNSSVG)
-public class TNSSVG: UIView {
+public class NSCSVG: UIView {
     var data: UnsafeMutableRawPointer? = nil
     var data_size: CGSize = .zero
     var buf_size: UInt = 0
@@ -43,7 +43,7 @@ public class TNSSVG: UIView {
     func doDraw(){
         if self.srcPath == nil && self.src == nil {return}
         workItem?.cancel()
-        workItem = DispatchWorkItem {
+     /*   workItem = DispatchWorkItem {
             [weak self] in
                 guard let self =  self else {return}
                 if(self.context > 0){
@@ -79,13 +79,13 @@ public class TNSSVG: UIView {
                         self.setNeedsDisplay()
                     }
                 }
-        }
+        }*/
         queue.async(execute: workItem!)
     }
     
 
     func update(){
-        let size = layer.frame.size
+     /*   let size = layer.frame.size
         let width = Float(size.width) * deviceScale()
         let height = Float(size.height) * deviceScale()
         if !size.equalTo(data_size) || forceResize {
@@ -108,7 +108,7 @@ public class TNSSVG: UIView {
             if forceResize {
                 forceResize = false
             }
-        }
+        }*/
     }
     
     public override func layoutSubviews() {
@@ -119,13 +119,13 @@ public class TNSSVG: UIView {
     let colorSpace = CGColorSpaceCreateDeviceRGB()
     private var queue: DispatchQueue
     public override init(frame: CGRect) {
-        queue = DispatchQueue(label: "TNSSVG")
+        queue = DispatchQueue(label: "NSCSVG")
         super.init(frame: frame)
         backgroundColor = .white
     }
     
     required init?(coder: NSCoder) {
-        queue = DispatchQueue(label: "TNSSVG")
+        queue = DispatchQueue(label: "NSCSVG")
         super.init(coder: coder)
     }
     

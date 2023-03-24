@@ -1,11 +1,16 @@
 use std::cell::RefCell;
-use std::ffi::{c_longlong, c_void};
+use std::ffi::{c_longlong, c_uchar, c_void, CStr};
 use std::ptr::NonNull;
 
 use raw_window_handle::HasRawWindowHandle;
 
+use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
+use canvas_2d::utils::image::from_image_slice;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
+use canvas_core::image_asset::ImageAsset;
+use canvas_cxx::CanvasRenderingContext2D;
+use canvas_cxx::PaintStyle;
 
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
@@ -57,6 +62,54 @@ pub mod ffi {
         pub fn canvas_native_release_gl_pointer(gl_context: i64);
 
         pub fn canvas_native_context_2d_test(context: i64);
+
+        pub fn canvas_native_imageasset_load_from_bytes(
+            asset: i64,
+            bytes: &[u8]
+        ) -> bool;
+
+        pub fn canvas_native_context_create_pattern(
+            context: i64,
+            width: i32,
+            height: i32,
+            bytes: &[u8],
+            repetition: &str
+        ) -> i64;
+
+        pub fn canvas_native_context_draw_image_dx_dy_with_bytes(
+            context: i64,
+            bytes: &[u8],
+            width: f32,
+            height: f32,
+            dx: f32,
+            dy: f32,
+        ) -> bool;
+
+        pub fn canvas_native_content_draw_image_dx_dy_dw_dh_with_bytes(
+            context: i64,
+            bytes: &[u8],
+            width: f32,
+            height: f32,
+            dx: f32,
+            dy: f32,
+            d_width: f32,
+            d_height: f32,
+        ) -> bool;
+
+        pub fn canvas_native_context_draw_image_with_bytes(
+            context: i64,
+            bytes: &[u8],
+            width: f32,
+            height: f32,
+            sx: f32,
+            sy: f32,
+            s_width: f32,
+            s_height: f32,
+            dx: f32,
+            dy: f32,
+            d_width: f32,
+            d_height: f32,
+        ) -> bool;
     }
 }
 
@@ -219,6 +272,129 @@ pub fn canvas_native_context_2d_test(context: i64) {
         ctx.fill_rect_xywh(0., 0., 300., 300.);
     }
     context.render();
+}
+
+pub fn canvas_native_imageasset_load_from_bytes(asset: i64, bytes: &[u8]) -> bool {
+    if asset == 0 {
+        return false;
+    }
+
+
+    let asset = asset as *mut canvas_core::image_asset::ImageAsset;
+    let asset = unsafe { &mut *asset };
+
+    asset.load_from_bytes(bytes)
+}
+
+pub fn canvas_native_context_create_pattern(
+    context: i64,
+    width: i32,
+    height: i32,
+    bytes: &[u8],
+    repetition: &str
+) -> i64 {
+    if context == 0 {
+        return 0;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+
+    let context = unsafe { &mut *context };
+
+    if let Some(image) = from_image_slice(bytes, width, height) {
+        return Box::into_raw(Box::new(PaintStyle::new(Some(
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                context.get_context().create_pattern(
+                    image,
+                    Repetition::try_from(repetition).unwrap_or(Repetition::NoRepeat),
+                ),
+            ),
+        )))) as i64;
+    }
+
+    0
+}
+
+fn draw_image(
+    context: i64,
+    image_data: &[u8],
+    width: f32,
+    height: f32,
+    sx: f32,
+    sy: f32,
+    s_width: f32,
+    s_height: f32,
+    dx: f32,
+    dy: f32,
+    d_width: f32,
+    d_height: f32,
+) -> bool {
+    unsafe {
+        if context == 0 {
+            return false;
+        }
+
+        let context = context as *mut CanvasRenderingContext2D;
+
+        let context = unsafe { &mut *context };
+
+        if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
+            context.make_current();
+            let mut context = context.get_context_mut();
+            context.draw_image_src_xywh_dst_xywh(
+                &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+            );
+            return true;
+        }
+        false
+    }
+}
+
+pub fn canvas_native_context_draw_image_dx_dy_with_bytes(
+    context: i64,
+    bytes: &[u8],
+    width: f32,
+    height: f32,
+    dx: f32,
+    dy: f32,
+) -> bool {
+    return draw_image(
+        context, bytes, width, height, 0.0, 0.0, width, height, dx, dy, width, height,
+    );
+}
+
+pub fn canvas_native_content_draw_image_dx_dy_dw_dh_with_bytes(
+    context: i64,
+    bytes: &[u8],
+    width: f32,
+    height: f32,
+    dx: f32,
+    dy: f32,
+    d_width: f32,
+    d_height: f32,
+) -> bool {
+    draw_image(
+        context, bytes, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
+    )
+}
+
+pub fn canvas_native_context_draw_image_with_bytes(
+    context: i64,
+    bytes: &[u8],
+    width: f32,
+    height: f32,
+    sx: f32,
+    sy: f32,
+    s_width: f32,
+    s_height: f32,
+    dx: f32,
+    dy: f32,
+    d_width: f32,
+    d_height: f32,
+) -> bool {
+    draw_image(
+        context, bytes, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+    )
 }
 
 /*

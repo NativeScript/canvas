@@ -100,13 +100,13 @@ class NSCCanvas : FrameLayout {
     @Synchronized
     @Throws(Throwable::class)
     protected fun finalize() {
-        if (nativeGL != 0L) {
-            nativeReleaseGL(nativeGL)
-            nativeGL = 0
-        }
         if (nativeContext != 0L) {
             nativeReleaseGLPointer(nativeContext)
             nativeContext = 0
+        }
+        if (nativeGL != 0L) {
+            nativeReleaseGL(nativeGL)
+            nativeGL = 0
         }
     }
 

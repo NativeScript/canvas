@@ -1,5 +1,5 @@
 //
-//  TNSRender.swift
+//  NSCRender.swift
 //  CanvasNative
 //
 //  Created by Osei Fortune on 10/04/2021.
@@ -10,7 +10,7 @@ import OpenGLES
 import CoreVideo
 @objcMembers
 @objc(TNSRender)
-public class TNSRender: NSObject {
+public class NSCRender: NSObject {
     private var mProgram = UInt32()
     private var rbo = UInt32()
     private var fbo = UInt32()
@@ -287,12 +287,12 @@ public class TNSRender: NSObject {
         
         mProgram = glCreateProgram()
         let vs = glCreateShader(GLenum(GL_VERTEX_SHADER))
-        var vs_ptr = (TNSRender.VERTEX_SHADER as NSString).cString(using: String.Encoding.utf8.rawValue)
+        var vs_ptr = (NSCRender.VERTEX_SHADER as NSString).cString(using: String.Encoding.utf8.rawValue)
     
         glShaderSource(vs, 1, &vs_ptr, nil)
         
         let fs = glCreateShader(GLenum(GL_FRAGMENT_SHADER))
-        var fs_ptr = (TNSRender.FRAGMENT_SHADER as NSString).cString(using: String.Encoding.utf8.rawValue)
+        var fs_ptr = (NSCRender.FRAGMENT_SHADER as NSString).cString(using: String.Encoding.utf8.rawValue)
         
         glShaderSource(fs, 1, &fs_ptr, nil)
         
@@ -349,7 +349,7 @@ public class TNSRender: NSObject {
         glBindBuffer(GLenum(GL_ARRAY_BUFFER), ab)
         glBufferData(
             GLenum(GL_ARRAY_BUFFER),
-            Int(vextexBuf.count * TNSRender.SIZE_OF_FLOAT),
+            Int(vextexBuf.count * NSCRender.SIZE_OF_FLOAT),
             vextexBuf,
             GLenum(GL_STATIC_DRAW)
         )
@@ -358,7 +358,7 @@ public class TNSRender: NSObject {
         samplerPos = glGetUniformLocation(mProgram, "uSampler")
         pos = glGetAttribLocation(mProgram, "aPosition")
         
-        glVertexAttribPointer(GLuint(pos), 2, GLenum(GL_FLOAT), GLboolean(0), GLsizei(2 * TNSRender.SIZE_OF_FLOAT), nil)
+        glVertexAttribPointer(GLuint(pos), 2, GLenum(GL_FLOAT), GLboolean(0), GLsizei(2 * NSCRender.SIZE_OF_FLOAT), nil)
         glEnableVertexAttribArray(GLuint(pos))
         
     }

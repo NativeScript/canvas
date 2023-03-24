@@ -12,9 +12,10 @@ import AVFoundation
 @objc(Utils)
 public class Utils: NSObject {
     private static let BYTES_PER_TEXEL = 4
-    @objc public static func createTextureCache(_ context: TNSWebGLRenderingContext) -> CVOpenGLESTextureCache? {
+    @objc public static func createTextureCache() -> CVOpenGLESTextureCache? {
         var out: CVOpenGLESTextureCache?
-        CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, nil, context.canvas.renderer.glContext, nil, &out)
+        guard let currentContext = EAGLContext.current() else {return nil}
+        CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, nil, currentContext, nil, &out)
         return out
     }
     
@@ -24,11 +25,11 @@ public class Utils: NSObject {
         return textureOut
     }
     
-    @objc public static func setupRender() -> TNSRender{
-        return TNSRender()
+    @objc public static func setupRender() -> NSCRender{
+        return NSCRender()
     }
     
-    @objc public static func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ render: TNSRender,_ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
+    @objc public static func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ render: NSCRender,_ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
 
         let currentTime = player.currentTime()
         

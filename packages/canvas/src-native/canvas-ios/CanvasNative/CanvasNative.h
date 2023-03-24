@@ -6,9 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "Utils.h"
-#import "Helpers.h"
-
+#import "CanvasHelpers.h"
 
 //! Project version number for CanvasNative.
 FOUNDATION_EXPORT double CanvasNativeVersionNumber;

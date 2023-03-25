@@ -58,7 +58,6 @@ mod raf;
 pub struct Raf(raf::Raf);
 /* Raf */
 
-
 #[derive(Clone)]
 pub struct ImageFilter(canvas_2d::context::filters::ImageFilter);
 
@@ -3336,9 +3335,12 @@ pub fn canvas_native_context_create_gl_no_window(
         alpha, false, false, false, "default", true, false, false, false, false, true,
     );
 
-    let gl_context =
-        canvas_core::gl::GLContext::new_with_no_window(width as i32, height as i32, &mut attr)
-            .unwrap();
+    let gl_context = canvas_core::gl::GLContext::create_offscreen_context(
+        &mut attr,
+        width as i32,
+        height as i32,
+    )
+    .unwrap();
 
     gl_context.make_current();
 
@@ -6780,7 +6782,7 @@ pub fn canvas_native_webgl_create_no_window_internal(
         is_canvas,
     );
 
-    let ctx = canvas_core::gl::GLContext::new_with_no_window(width, height, &mut attrs)
+    let ctx = canvas_core::gl::GLContext::create_offscreen_context(&mut attrs, width, height)
         .unwrap_or_default();
 
     WebGLState::new_with_context(

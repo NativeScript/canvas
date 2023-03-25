@@ -16,6 +16,9 @@
 		F134FE5029CCD5480051057B /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE4F29CCD5480051057B /* libresolv.tbd */; };
 		F134FE5229CCE1960051057B /* CanvasHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = F134FE5129CCE1960051057B /* CanvasHelpers.m */; };
 		F134FE5429CCEA460051057B /* CanvasHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = F134FE5329CCE1AE0051057B /* CanvasHelpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F134FE5629CE111E0051057B /* lib.rs.cc in Sources */ = {isa = PBXBuildFile; fileRef = F134FE5529CE111E0051057B /* lib.rs.cc */; };
+		F134FE5929CE18DF0051057B /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE5729CE18DF0051057B /* GLKit.framework */; };
+		F134FE5A29CE18DF0051057B /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE5829CE18DF0051057B /* OpenGLES.framework */; };
 		F18165C72621CECC0051F06B /* NSCRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18165C62621CECC0051F06B /* NSCRender.swift */; };
 		F181661D26228CBA0051F06B /* NSCImageBitmap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181661C26228CBA0051F06B /* NSCImageBitmap.swift */; };
 		F1A87C75255D00BA00394387 /* NSCCanvas.xib in Resources */ = {isa = PBXBuildFile; fileRef = F1A87C74255D00BA00394387 /* NSCCanvas.xib */; };
@@ -52,6 +55,9 @@
 		F134FE4F29CCD5480051057B /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 		F134FE5129CCE1960051057B /* CanvasHelpers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = CanvasHelpers.m; path = CanvasNative/Source/CanvasHelpers.m; sourceTree = "<group>"; };
 		F134FE5329CCE1AE0051057B /* CanvasHelpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CanvasHelpers.h; path = CanvasNative/include/CanvasHelpers.h; sourceTree = "<group>"; };
+		F134FE5529CE111E0051057B /* lib.rs.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = lib.rs.cc; path = "../canvas-native/target/aarch64-apple-ios-sim/debug/build/canvas-ios-54f90db0d55b1b09/out/cxxbridge/sources/canvas-ios/src/lib.rs.cc"; sourceTree = "<group>"; };
+		F134FE5729CE18DF0051057B /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
+		F134FE5829CE18DF0051057B /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		F18165C62621CECC0051F06B /* NSCRender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCRender.swift; sourceTree = "<group>"; };
 		F181661C26228CBA0051F06B /* NSCImageBitmap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCImageBitmap.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* NSCCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NSCCanvas.xib; sourceTree = "<group>"; };
@@ -72,6 +78,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F134FE5929CE18DF0051057B /* GLKit.framework in Frameworks */,
+				F134FE5A29CE18DF0051057B /* OpenGLES.framework in Frameworks */,
 				F134FE5029CCD5480051057B /* libresolv.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -90,6 +98,7 @@
 		F11C5D002524403700538D04 = {
 			isa = PBXGroup;
 			children = (
+				F134FE5529CE111E0051057B /* lib.rs.cc */,
 				F134FE5329CCE1AE0051057B /* CanvasHelpers.h */,
 				F134FE5129CCE1960051057B /* CanvasHelpers.m */,
 				F115E09B29CB485C00D0674F /* Helpers.h */,
@@ -143,6 +152,8 @@
 		F1FF57C1271E6BF0001CBF6D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F134FE5729CE18DF0051057B /* GLKit.framework */,
+				F134FE5829CE18DF0051057B /* OpenGLES.framework */,
 				F134FE4F29CCD5480051057B /* libresolv.tbd */,
 				F1FF57C4271E6C01001CBF6D /* libcanvasnative.a */,
 				F1FF57C2271E6BF0001CBF6D /* libcanvasnative.a */,
@@ -285,17 +296,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F134FE5629CE111E0051057B /* lib.rs.cc in Sources */,
+				F115E09A29CB3E3500D0674F /* Helpers.cpp in Sources */,
+				F134FE5229CCE1960051057B /* CanvasHelpers.m in Sources */,
 				F1FF6A6C25248CFF001DAE0D /* NSCCanvasListener.swift in Sources */,
 				F1FF6A7825248CFF001DAE0D /* NSCCanvas.swift in Sources */,
 				F1FF6A8225248CFF001DAE0D /* GLUtils.swift in Sources */,
 				F18165C72621CECC0051F06B /* NSCRender.swift in Sources */,
 				F11A1ABB25C238F100E60484 /* NSCSVG.swift in Sources */,
 				F181661D26228CBA0051F06B /* NSCImageBitmap.swift in Sources */,
-				F134FE5229CCE1960051057B /* CanvasHelpers.m in Sources */,
 				F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */,
 				F1FF6A9225248CFF001DAE0D /* NSCCanvasRenderingContext2D.swift in Sources */,
 				F1FF6A9825248CFF001DAE0D /* GLRenderer.swift in Sources */,
-				F115E09A29CB3E3500D0674F /* Helpers.cpp in Sources */,
 				F1FF6A9C25248CFF001DAE0D /* NSCImageAsset.swift in Sources */,
 				F1FF6A9D25248CFF001DAE0D /* NSCCanvasRenderingContext.swift in Sources */,
 			);
@@ -446,7 +458,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -530,7 +542,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;

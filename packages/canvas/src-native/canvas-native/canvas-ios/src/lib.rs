@@ -1,7 +1,14 @@
 use std::cell::RefCell;
-use std::ffi::{c_longlong, c_uchar, c_void, CStr};
+use std::ffi::{c_int, c_long, c_longlong, c_uchar, c_void, CStr};
 use std::ptr::NonNull;
+use std::sync::Once;
 
+use objc::declare::ClassDecl;
+use objc::rc::StrongPtr;
+use objc::runtime::{Class, Object, Sel, BOOL};
+use objc::Message;
+use objc_foundation::{INSObject, INSString, NSObject, NSString};
+use objc_id::ShareId;
 use raw_window_handle::HasRawWindowHandle;
 
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
@@ -11,6 +18,94 @@ use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
 use canvas_cxx::CanvasRenderingContext2D;
 use canvas_cxx::PaintStyle;
+
+pub enum CanvasHelpers {}
+
+static CANVAS_HELPERS_REGISTER_CLASS: Once = Once::new();
+
+impl CanvasHelpers {}
+
+unsafe impl Message for CanvasHelpers {}
+
+impl INSObject for CanvasHelpers {
+    fn class() -> &'static Class {
+        CANVAS_HELPERS_REGISTER_CLASS.call_once(|| {
+            let superclass = NSObject::class();
+            let mut decl = ClassDecl::new("CanvasHelpers", superclass).unwrap();
+
+            // Add ObjC methods for getting and setting the number
+
+            extern fn init_gl_with_view(
+                this: &Object,
+                _cmd: Sel,
+                view: c_long,
+                width: c_int,
+                height: c_int,
+                alpha: BOOL,
+                antialias: BOOL,
+                depth: BOOL,
+                fail_if_major_performance_caveat: BOOL,
+                power_preference: ShareId<NSString>,
+                premultiplied_alpha: BOOL,
+                preserve_drawing_buffer: BOOL,
+                stencil: BOOL,
+                desynchronized: BOOL,
+                xr_compatible: BOOL,
+                version: c_int,
+                is_canvas: BOOL,
+            ) -> c_longlong {
+                let power_preference = power_preference.as_str();
+                unsafe {
+                    canvas_native_init_ios_gl(
+                        view,
+                        width,
+                        height,
+                        alpha,
+                        antialias,
+                        depth,
+                        fail_if_major_performance_caveat,
+                        power_preference,
+                        premultiplied_alpha,
+                        preserve_drawing_buffer,
+                        stencil,
+                        desynchronized,
+                        xr_compatible,
+                        version,
+                        is_canvas,
+                    )
+                }
+            }
+
+            /*
+            unsafe {
+                decl.add_class_method(
+                    objc::sel!(
+                                       initGLWithView:
+                                      width:
+                                     height:
+                                      alpha:
+                                  antialias:
+                                      depth:
+                           power_preference:
+                        premultiplied_alpha:
+                    preserve_drawing_buffer:
+                                    stencil:
+                             desynchronized:
+                              xr_compatible:
+                                    version:
+                                  is_canvas
+                                   ),
+                    init_gl_with_view,
+                );
+            }
+            */
+
+            decl.register();
+        });
+
+        Class::get("CanvasHelpers").unwrap()
+    }
+}
 
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
@@ -63,17 +158,14 @@ pub mod ffi {
 
         pub fn canvas_native_context_2d_test(context: i64);
 
-        pub fn canvas_native_imageasset_load_from_bytes(
-            asset: i64,
-            bytes: &[u8]
-        ) -> bool;
+        pub fn canvas_native_imageasset_load_from_bytes(asset: i64, bytes: &[u8]) -> bool;
 
         pub fn canvas_native_context_create_pattern(
             context: i64,
             width: i32,
             height: i32,
             bytes: &[u8],
-            repetition: &str
+            repetition: &str,
         ) -> i64;
 
         pub fn canvas_native_context_draw_image_dx_dy_with_bytes(
@@ -148,12 +240,8 @@ pub fn canvas_native_init_ios_gl(
             xr_compatible,
             is_canvas,
         );
-        let mut window_handle = raw_window_handle::UiKitWindowHandle::empty();
-        window_handle.ui_view = ios_view.as_ptr();
-        let window = raw_window_handle::RawWindowHandle::UiKit(window_handle);
-        if let Some(gl_context) =
-            GLContext::create_window_surface(&mut attrs, width, height, window)
-        {
+
+        if let Some(gl_context) = GLContext::create_window_context(&mut attrs, ios_view) {
             return Box::into_raw(Box::new(iOSGLContext {
                 ios_view,
                 gl_context,
@@ -217,16 +305,7 @@ pub fn canvas_native_update_gl_surface(view: i64, width: i32, height: i32, conte
         let context = context as *mut iOSGLContext;
         let context = unsafe { &mut *context };
 
-        let mut window_handle = raw_window_handle::UiKitWindowHandle::empty();
-        window_handle.ui_view = ios_view.as_ptr();
-        let window = raw_window_handle::RawWindowHandle::UiKit(window_handle);
-
-        context.gl_context.set_window_surface(
-            &mut context.context_attributes,
-            width,
-            height,
-            window,
-        );
+        context.gl_context.set_surface(ios_view);
 
         context.ios_view = ios_view;
     }
@@ -279,7 +358,6 @@ pub fn canvas_native_imageasset_load_from_bytes(asset: i64, bytes: &[u8]) -> boo
         return false;
     }
 
-
     let asset = asset as *mut canvas_core::image_asset::ImageAsset;
     let asset = unsafe { &mut *asset };
 
@@ -291,7 +369,7 @@ pub fn canvas_native_context_create_pattern(
     width: i32,
     height: i32,
     bytes: &[u8],
-    repetition: &str
+    repetition: &str,
 ) -> i64 {
     if context == 0 {
         return 0;

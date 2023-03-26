@@ -8,13 +8,9 @@ rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
 
 [lib]
 name = "canvasnative"
-crate-type = ["staticlib"]
-
-[build-dependencies]
-cxx-build = "1.0.73"
+crate-type = ["staticlib", "dylib"]
 
 [dependencies]
-cxx = "1.0.73"
 canvas-core = { path = "../canvas-core", features = ["2d"] }
 canvas-2d = { path = "../canvas-2d", features = ["gl"] }
 canvas-webgl = { path = "../canvas-webgl" }
@@ -26,10 +22,4 @@ parking_lot = "0.12.0"
 once_cell = "1.10.0"
 utf16string = "0.2.0"
 log = "0.4.17"
-cocoa = { version = "0.24.0" }
-objc = { version = "0.2.4" }
-block = "0.1.6"
-objc-foundation = "0.1.1"
-core-foundation = "0.9.3"
-core-graphics-types = "0.1.1"
-objc_id = "0.1.1"
+icrate = { version = "0.0.2", features = ["Foundation_NSString", "Foundation", "Foundation_NSData"] }

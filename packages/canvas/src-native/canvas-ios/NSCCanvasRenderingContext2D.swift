@@ -12,24 +12,24 @@
     public class NSCCanvasRenderingContext2D: NSCCanvasRenderingContext {
        
         public static func createPattern(_ context: Int64, _ src: UIImage, _ repetition: String) -> Int64 {
-            return CanvasHelpers.createPattern(context, image: src, repetition: repetition)
+            return CanvasHelpers.createPattern(context, src, repetition as NSString)
         }
         
         
         
         public static func drawImage(_ context: Int64, _ image: UIImage, _ dx: Float, _ dy: Float){
-            CanvasHelpers.drawImage(withContext: context, image: image, dx: dx, dy: dy)
+            CanvasHelpers.drawImage(context: context, image: image, dx: dx, dy: dy)
         }
         
 
 
         public static func drawImage(_ context: Int64,_ image: UIImage, _ dx: Float, _ dy: Float, _ dWidth: Float, _ dHeight: Float){
-            CanvasHelpers.drawImage(withContext: context, image: image, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
+            CanvasHelpers.drawImage(context: context, image: image, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
         }
         
     
         public static func drawImage(_ context: Int64,_ image: UIImage, _ sx: Float, _ sy: Float, _ sWidth: Float, _ sHeight: Float, _ dx: Float, _ dy: Float, _ dWidth: Float, _ dHeight: Float){
-            CanvasHelpers.drawImage(withContext: context, image: image, sx: sx, sy: sy, sw: sWidth, sh: sHeight, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
+            CanvasHelpers.drawImage(context: context, image: image, sx: sx, sy: sy, sw: sWidth, sh: sHeight, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
         }
         
        

@@ -7,18 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F115E09A29CB3E3500D0674F /* Helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F115E09929CB3E3500D0674F /* Helpers.cpp */; };
 		F11A1ABB25C238F100E60484 /* NSCSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11A1ABA25C238F100E60484 /* NSCSVG.swift */; };
 		F11C5D142524403700538D04 /* CanvasNative.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F11C5D0A2524403700538D04 /* CanvasNative.framework */; };
 		F11C5D192524403700538D04 /* CanvasNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11C5D182524403700538D04 /* CanvasNativeTests.swift */; };
 		F11C5D1B2524403700538D04 /* CanvasNative.h in Headers */ = {isa = PBXBuildFile; fileRef = F11C5D0D2524403700538D04 /* CanvasNative.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		F134FE4E29CCD1360051057B /* Helpers.h in Headers */ = {isa = PBXBuildFile; fileRef = F115E09B29CB485C00D0674F /* Helpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F134FE5029CCD5480051057B /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE4F29CCD5480051057B /* libresolv.tbd */; };
-		F134FE5229CCE1960051057B /* CanvasHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = F134FE5129CCE1960051057B /* CanvasHelpers.m */; };
 		F134FE5429CCEA460051057B /* CanvasHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = F134FE5329CCE1AE0051057B /* CanvasHelpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		F134FE5629CE111E0051057B /* lib.rs.cc in Sources */ = {isa = PBXBuildFile; fileRef = F134FE5529CE111E0051057B /* lib.rs.cc */; };
 		F134FE5929CE18DF0051057B /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE5729CE18DF0051057B /* GLKit.framework */; };
 		F134FE5A29CE18DF0051057B /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE5829CE18DF0051057B /* OpenGLES.framework */; };
+		F134FE5C29D005BE0051057B /* CanvasHelpersExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = F134FE5B29D005BE0051057B /* CanvasHelpersExt.swift */; };
 		F18165C72621CECC0051F06B /* NSCRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18165C62621CECC0051F06B /* NSCRender.swift */; };
 		F181661D26228CBA0051F06B /* NSCImageBitmap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181661C26228CBA0051F06B /* NSCImageBitmap.swift */; };
 		F1A87C75255D00BA00394387 /* NSCCanvas.xib in Resources */ = {isa = PBXBuildFile; fileRef = F1A87C74255D00BA00394387 /* NSCCanvas.xib */; };
@@ -40,11 +37,30 @@
 			remoteGlobalIDString = F11C5D092524403700538D04;
 			remoteInfo = CanvasNative;
 		};
+		F134FE6629D0164F0051057B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F134FE6029D0164F0051057B /* CanvasDemo.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F16241E422DA6E9C007FBF7B;
+			remoteInfo = CanvasDemo;
+		};
+		F134FE6829D0164F0051057B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F134FE6029D0164F0051057B /* CanvasDemo.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F16241F822DA6E9D007FBF7B;
+			remoteInfo = CanvasDemoTests;
+		};
+		F134FE6A29D0164F0051057B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F134FE6029D0164F0051057B /* CanvasDemo.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F162420322DA6E9D007FBF7B;
+			remoteInfo = CanvasDemoUITests;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		F115E09929CB3E3500D0674F /* Helpers.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Helpers.cpp; path = CanvasNative/Source/Helpers.cpp; sourceTree = "<group>"; };
-		F115E09B29CB485C00D0674F /* Helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Helpers.h; path = CanvasNative/include/Helpers.h; sourceTree = "<group>"; };
 		F11A1ABA25C238F100E60484 /* NSCSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NSCSVG.swift; path = CanvasNative/Source/NSCSVG.swift; sourceTree = "<group>"; };
 		F11C5D0A2524403700538D04 /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F11C5D0D2524403700538D04 /* CanvasNative.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CanvasNative.h; sourceTree = "<group>"; };
@@ -53,11 +69,13 @@
 		F11C5D182524403700538D04 /* CanvasNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNativeTests.swift; sourceTree = "<group>"; };
 		F11C5D1A2524403700538D04 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F134FE4F29CCD5480051057B /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
-		F134FE5129CCE1960051057B /* CanvasHelpers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = CanvasHelpers.m; path = CanvasNative/Source/CanvasHelpers.m; sourceTree = "<group>"; };
 		F134FE5329CCE1AE0051057B /* CanvasHelpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CanvasHelpers.h; path = CanvasNative/include/CanvasHelpers.h; sourceTree = "<group>"; };
 		F134FE5529CE111E0051057B /* lib.rs.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = lib.rs.cc; path = "../canvas-native/target/aarch64-apple-ios-sim/debug/build/canvas-ios-54f90db0d55b1b09/out/cxxbridge/sources/canvas-ios/src/lib.rs.cc"; sourceTree = "<group>"; };
 		F134FE5729CE18DF0051057B /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
 		F134FE5829CE18DF0051057B /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		F134FE5B29D005BE0051057B /* CanvasHelpersExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CanvasHelpersExt.swift; path = CanvasNative/Source/CanvasHelpersExt.swift; sourceTree = "<group>"; };
+		F134FE5D29D00F170051057B /* libcanvasnative.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcanvasnative.a; path = "../canvas-native/target/aarch64-apple-ios-sim/release/libcanvasnative.a"; sourceTree = "<group>"; };
+		F134FE6029D0164F0051057B /* CanvasDemo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CanvasDemo.xcodeproj; path = CanvasDemo/CanvasDemo.xcodeproj; sourceTree = "<group>"; };
 		F18165C62621CECC0051F06B /* NSCRender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCRender.swift; sourceTree = "<group>"; };
 		F181661C26228CBA0051F06B /* NSCImageBitmap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCImageBitmap.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* NSCCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NSCCanvas.xib; sourceTree = "<group>"; };
@@ -98,11 +116,10 @@
 		F11C5D002524403700538D04 = {
 			isa = PBXGroup;
 			children = (
+				F134FE6029D0164F0051057B /* CanvasDemo.xcodeproj */,
+				F134FE5B29D005BE0051057B /* CanvasHelpersExt.swift */,
 				F134FE5529CE111E0051057B /* lib.rs.cc */,
 				F134FE5329CCE1AE0051057B /* CanvasHelpers.h */,
-				F134FE5129CCE1960051057B /* CanvasHelpers.m */,
-				F115E09B29CB485C00D0674F /* Helpers.h */,
-				F115E09929CB3E3500D0674F /* Helpers.cpp */,
 				F181661C26228CBA0051F06B /* NSCImageBitmap.swift */,
 				F18165C62621CECC0051F06B /* NSCRender.swift */,
 				F1DE2E4E2612F7CA0000D48F /* Utils.swift */,
@@ -149,9 +166,20 @@
 			path = CanvasNativeTests;
 			sourceTree = "<group>";
 		};
+		F134FE6129D0164F0051057B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F134FE6729D0164F0051057B /* CanvasDemo.app */,
+				F134FE6929D0164F0051057B /* CanvasDemoTests.xctest */,
+				F134FE6B29D0164F0051057B /* CanvasDemoUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		F1FF57C1271E6BF0001CBF6D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F134FE5D29D00F170051057B /* libcanvasnative.a */,
 				F134FE5729CE18DF0051057B /* GLKit.framework */,
 				F134FE5829CE18DF0051057B /* OpenGLES.framework */,
 				F134FE4F29CCD5480051057B /* libresolv.tbd */,
@@ -169,7 +197,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11C5D1B2524403700538D04 /* CanvasNative.h in Headers */,
-				F134FE4E29CCD1360051057B /* Helpers.h in Headers */,
 				F134FE5429CCEA460051057B /* CanvasHelpers.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -242,6 +269,12 @@
 			mainGroup = F11C5D002524403700538D04;
 			productRefGroup = F11C5D0B2524403700538D04 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = F134FE6129D0164F0051057B /* Products */;
+					ProjectRef = F134FE6029D0164F0051057B /* CanvasDemo.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				F11C5D092524403700538D04 /* CanvasNative */,
@@ -249,6 +282,30 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		F134FE6729D0164F0051057B /* CanvasDemo.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = CanvasDemo.app;
+			remoteRef = F134FE6629D0164F0051057B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		F134FE6929D0164F0051057B /* CanvasDemoTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = CanvasDemoTests.xctest;
+			remoteRef = F134FE6829D0164F0051057B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		F134FE6B29D0164F0051057B /* CanvasDemoUITests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = CanvasDemoUITests.xctest;
+			remoteRef = F134FE6A29D0164F0051057B /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		F11C5D082524403700538D04 /* Resources */ = {
@@ -296,10 +353,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F134FE5629CE111E0051057B /* lib.rs.cc in Sources */,
-				F115E09A29CB3E3500D0674F /* Helpers.cpp in Sources */,
-				F134FE5229CCE1960051057B /* CanvasHelpers.m in Sources */,
 				F1FF6A6C25248CFF001DAE0D /* NSCCanvasListener.swift in Sources */,
+				F134FE5C29D005BE0051057B /* CanvasHelpersExt.swift in Sources */,
 				F1FF6A7825248CFF001DAE0D /* NSCCanvas.swift in Sources */,
 				F1FF6A8225248CFF001DAE0D /* GLUtils.swift in Sources */,
 				F18165C72621CECC0051F06B /* NSCRender.swift in Sources */,
@@ -481,7 +536,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphoneos*][arch=arm64]" = 11.0;
-				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 14.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=x86_64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -501,6 +556,7 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
+					"-Wl,-U,_OBJC_CLASS_$_CanvasHelpers",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
@@ -512,6 +568,7 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
+					"-Wl,-U,_OBJC_CLASS_$_CanvasHelpers",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
@@ -523,6 +580,7 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
+					"-Wl,-U,_OBJC_CLASS_$_CanvasHelpers",
 				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
@@ -565,7 +623,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphoneos*][arch=arm64]" = 11.0;
-				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 14.0;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=x86_64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -585,6 +643,7 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
+					"-Wl,-U,_OBJC_CLASS_$_CanvasHelpers",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
@@ -596,6 +655,7 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
+					"-Wl,-U,_OBJC_CLASS_$_CanvasHelpers",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
@@ -607,6 +667,7 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
+					"-Wl,-U,_OBJC_CLASS_$_CanvasHelpers",
 				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;

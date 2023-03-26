@@ -7,7 +7,6 @@
 
 import Foundation
 import UIKit
-import MetalKit
 
 
 @objcMembers
@@ -20,8 +19,7 @@ public class NSCCanvas: UIView {
         return views
     }
     
-    var displayLink: CADisplayLink?
-    var ptr: UnsafeMutableRawPointer?
+    var ptr: UnsafeMutableRawPointer? = nil
     
     public func getViewPtr() -> UnsafeMutableRawPointer {
         if(ptr == nil){
@@ -32,21 +30,10 @@ public class NSCCanvas: UIView {
     
     public var ignorePixelScaling = false
     
-    var contextAlpha = true;
-    var contextAntialias = true;
-    var contextDepth = true;
-    var contextFailIfMajorPerformanceCaveat = false;
-    var contextPowerPreference = "default";
-    var contextPremultipliedAlpha = true;
-    var contextPreserveDrawingBuffer = false;
-    var contextStencil = false;
-    var contextDesynchronized = false;
-    var contextXrCompatible = false;
-    
     private(set) public var nativeGL: Int64 = 0
     private(set) public var nativeContext: Int64 = 0
     
-    internal var glkView: CanvasGLKView
+    internal var glkView: CanvasGLKView = CanvasGLKView(frame: .zero)
     
     public var drawingBufferWidth: Int {
         return glkView.drawableWidth
@@ -65,6 +52,7 @@ public class NSCCanvas: UIView {
         }
     }
     
+        /*
     
     @objc public func initContext(
         _ type: String,
@@ -184,6 +172,7 @@ public class NSCCanvas: UIView {
         nativeContext = CanvasHelpers.getGLPointer(withContext: nativeGL)
     }
     
+         */
     
     
     public func forceLayout(_ width: CGFloat, _ height: CGFloat){
@@ -236,7 +225,7 @@ public class NSCCanvas: UIView {
     
     
     public override init(frame: CGRect) {
-        glkView = CanvasGLKView(frame: frame)
+        glkView.frame = frame
         super.init(frame: frame)
         self.isOpaque = false
     }
@@ -251,26 +240,26 @@ public class NSCCanvas: UIView {
     private var lastSize: CGRect = .null
     private var isLoaded: Bool = false
     
-    public override func layoutSubviews() {
-        if(bounds == .zero || (bounds.size.width < 0 || bounds.size.height < 0)){
-            glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/UIScreen.main.nativeScale), height: CGFloat(1/UIScreen.main.nativeScale))
-        }else {
-            glkView.frame = bounds
-            glkView.setNeedsLayout()
-            glkView.layoutIfNeeded()
-        }
-        
-        if(drawingBufferHeight == 0 && drawingBufferWidth == 0){
-            if(!isLoaded){
-                self.isLoaded = true
-                self.readyListener?.contextReady()
-            }
-        }else {
-           // renderer.resize()
-        }
-        
-        lastSize = bounds
-    }
+//    public override func layoutSubviews() {
+//        if(bounds == .zero || (bounds.size.width < 0 || bounds.size.height < 0)){
+//            glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/UIScreen.main.nativeScale), height: CGFloat(1/UIScreen.main.nativeScale))
+//        }else {
+//            glkView.frame = bounds
+//            glkView.setNeedsLayout()
+//            glkView.layoutIfNeeded()
+//        }
+//        
+//        if(drawingBufferHeight == 0 && drawingBufferWidth == 0){
+//            if(!isLoaded){
+//                self.isLoaded = true
+//                self.readyListener?.contextReady()
+//            }
+//        }else {
+//           // renderer.resize()
+//        }
+//        
+//        lastSize = bounds
+//    }
     
     
     

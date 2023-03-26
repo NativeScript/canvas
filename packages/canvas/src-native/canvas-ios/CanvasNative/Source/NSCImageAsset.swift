@@ -13,7 +13,7 @@ public class NSCImageAsset: NSObject {
     private static let queue = DispatchQueue(label: "NSCImageAssetQueue", qos: .background, attributes:.concurrent, autoreleaseFrequency: .never, target: nil)
         
     public static func loadImageFromImageSync(_ context: Int64, _ image: UIImage) -> Bool {
-        return CanvasHelpers.loadImageAsset(withContext: context, image: image)
+        return CanvasHelpers.loadImageAssetWithContext(context, image)
     }
     
     public static func loadImageFromImage(_ context: Int64,_ image: UIImage, _ callback: @escaping (Bool)-> ()){

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,8 +14,6 @@
 		F16241F222DA6E9D007FBF7B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F16241F022DA6E9D007FBF7B /* LaunchScreen.storyboard */; };
 		F16241FD22DA6E9D007FBF7B /* CanvasDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241FC22DA6E9D007FBF7B /* CanvasDemoTests.swift */; };
 		F162420822DA6E9D007FBF7B /* CanvasDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F162420722DA6E9D007FBF7B /* CanvasDemoUITests.swift */; };
-		F188B80E274E8F800049AB62 /* CanvasNative.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; };
-		F188B80F274E8F800049AB62 /* CanvasNative.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F195B6052748903400E182CA /* CanvasNative.xcframework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,7 +40,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				F188B80F274E8F800049AB62 /* CanvasNative.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -72,7 +69,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F188B80E274E8F800049AB62 /* CanvasNative.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -497,8 +493,9 @@
 				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = Demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTS_MACCATALYST = YES;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
@@ -536,8 +533,9 @@
 				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTS_MACCATALYST = YES;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_INSTALL_OBJC_HEADER = NO;
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;

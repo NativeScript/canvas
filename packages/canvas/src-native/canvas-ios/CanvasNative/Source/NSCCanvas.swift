@@ -52,7 +52,6 @@ public class NSCCanvas: UIView {
         }
     }
     
-        /*
     
     @objc public func initContext(
         _ type: String,
@@ -67,6 +66,7 @@ public class NSCCanvas: UIView {
         _ desynchronized: Bool = false,
         _ xrCompatible: Bool = false
     ) {
+       
         initContextWithContextAttributes(
             type,
             alpha,
@@ -163,16 +163,62 @@ public class NSCCanvas: UIView {
             // drawableMultisample = .multisample4X
         }
         
-        
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
         
-        nativeGL = CanvasHelpers.initGL(withView: viewPtr, width: Int32(drawingBufferWidth), height: Int32(drawingBufferHeight), alpha: alpha, antialias: antialias, depth: depth, fail_if_major_performance_caveat: failIfMajorPerformanceCaveat, power_preference: type, premultiplied_alpha: premultipliedAlpha, preserve_drawing_buffer: preserveDrawingBuffer, stencil: stencil, desynchronized: desynchronized, xr_compatible: xrCompatible, version: Int32(version), is_canvas: isCanvas)
+        let width = glkView.frame.width * UIScreen.main.scale
+        let height = glkView.frame.height * UIScreen.main.scale
         
+        glkView.deleteDrawable()
         
-        nativeContext = CanvasHelpers.getGLPointer(withContext: nativeGL)
+        nativeGL = CanvasHelpers.initGLWithView(viewPtr, Int32(width), Int32(height),alpha, antialias, depth, failIfMajorPerformanceCaveat, type, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas)
+        
+        nativeContext = CanvasHelpers.getGLPointer(nativeGL)
+        
+        glkView.bindDrawable()
+        
     }
     
-         */
+    
+    
+    @objc public func create2DContext(
+           _ alpha: Bool,
+           _ antialias: Bool,
+           _ depth: Bool,
+           _ failIfMajorPerformanceCaveat: Bool,
+           _ powerPreference: String,
+           _ premultipliedAlpha: Bool,
+           _ preserveDrawingBuffer: Bool,
+           _ stencil: Bool,
+           _ desynchronized: Bool,
+           _ xrCompatible: Bool,
+           _ fontColor: Int32
+       ) -> Int64 {
+
+           initContext(
+               "2d",
+               alpha,
+               antialias,
+               depth,
+               failIfMajorPerformanceCaveat,
+               powerPreference,
+               premultipliedAlpha,
+               preserveDrawingBuffer,
+               stencil,
+               desynchronized,
+               xrCompatible
+           )
+           
+           var samples: Int32 = antialias ? 4 : 0
+        
+
+           let density = Float(UIScreen.main.scale)
+           return CanvasHelpers.create2DContext(
+            nativeGL, Int32(drawingBufferWidth), Int32(drawingBufferHeight),
+            alpha, density, samples, fontColor, density * 160, 0
+           )
+       }
+
+        
     
     
     public func forceLayout(_ width: CGFloat, _ height: CGFloat){
@@ -213,13 +259,20 @@ public class NSCCanvas: UIView {
     //        return []
     //    }
     
+    public func render(){
+        glkView.display()
+    }
     
-
     
+    public func context2DTest(_ context: Int64){
+        CanvasHelpers.test2D(context)
+        render()
+    }
     
     required init?(coder: NSCoder) {
         glkView = CanvasGLKView(coder: coder)!
         super.init(coder: coder)
+        addSubview(glkView)
         self.isOpaque = false
     }
     
@@ -227,6 +280,7 @@ public class NSCCanvas: UIView {
     public override init(frame: CGRect) {
         glkView.frame = frame
         super.init(frame: frame)
+        addSubview(glkView)
         self.isOpaque = false
     }
     
@@ -240,36 +294,36 @@ public class NSCCanvas: UIView {
     private var lastSize: CGRect = .null
     private var isLoaded: Bool = false
     
-//    public override func layoutSubviews() {
-//        if(bounds == .zero || (bounds.size.width < 0 || bounds.size.height < 0)){
-//            glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/UIScreen.main.nativeScale), height: CGFloat(1/UIScreen.main.nativeScale))
-//        }else {
-//            glkView.frame = bounds
-//            glkView.setNeedsLayout()
-//            glkView.layoutIfNeeded()
-//        }
-//        
-//        if(drawingBufferHeight == 0 && drawingBufferWidth == 0){
-//            if(!isLoaded){
-//                self.isLoaded = true
-//                self.readyListener?.contextReady()
-//            }
-//        }else {
-//           // renderer.resize()
-//        }
-//        
-//        lastSize = bounds
-//    }
+    public override func layoutSubviews() {
+        if(bounds == .zero || (bounds.size.width < 0 || bounds.size.height < 0)){
+            glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/UIScreen.main.nativeScale), height: CGFloat(1/UIScreen.main.nativeScale))
+        }else {
+            glkView.frame = bounds
+            glkView.setNeedsLayout()
+            glkView.layoutIfNeeded()
+        }
+        
+        if(drawingBufferHeight == 0 && drawingBufferWidth == 0){
+            if(!isLoaded){
+                self.isLoaded = true
+                self.readyListener?.contextReady()
+            }
+        }else {
+           // renderer.resize()
+        }
+        
+        lastSize = bounds
+    }
     
     
     
     deinit {
         if(nativeContext != 0){
-            CanvasHelpers.releaseGLPointer(withContext: nativeContext)
+            CanvasHelpers.releaseGLPointer(nativeContext)
             nativeContext = 0
         }
         if(nativeGL != 0){
-            CanvasHelpers.releaseGL(withContext: nativeGL)
+            CanvasHelpers.releaseGL(nativeGL)
             nativeGL = 0
         }
     }

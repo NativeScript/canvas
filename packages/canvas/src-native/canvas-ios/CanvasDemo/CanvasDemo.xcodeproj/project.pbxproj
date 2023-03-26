@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F134FE7E29D0C57C0051057B /* CanvasNative.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE7D29D0C57C0051057B /* CanvasNative.framework */; };
+		F134FE7F29D0C57C0051057B /* CanvasNative.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F134FE7D29D0C57C0051057B /* CanvasNative.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F16241E822DA6E9C007FBF7B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241E722DA6E9C007FBF7B /* AppDelegate.swift */; };
 		F16241EA22DA6E9C007FBF7B /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16241E922DA6E9C007FBF7B /* ViewController.swift */; };
 		F16241ED22DA6E9C007FBF7B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F16241EB22DA6E9C007FBF7B /* Main.storyboard */; };
@@ -34,12 +36,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F188B810274E8F800049AB62 /* Embed Frameworks */ = {
+		F134FE8029D0C57C0051057B /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				F134FE7F29D0C57C0051057B /* CanvasNative.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -47,6 +50,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F134FE7929D0C4940051057B /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F134FE7D29D0C57C0051057B /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F16241E422DA6E9C007FBF7B /* CanvasDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CanvasDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F16241E722DA6E9C007FBF7B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F16241E922DA6E9C007FBF7B /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -69,6 +74,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F134FE7E29D0C57C0051057B /* CanvasNative.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +98,8 @@
 		4481D334EC20564EAB46B0E3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F134FE7D29D0C57C0051057B /* CanvasNative.framework */,
+				F134FE7929D0C4940051057B /* CanvasNative.framework */,
 				F195B6052748903400E182CA /* CanvasNative.xcframework */,
 			);
 			name = Frameworks;
@@ -168,7 +176,7 @@
 				F16241E022DA6E9C007FBF7B /* Sources */,
 				F16241E122DA6E9C007FBF7B /* Frameworks */,
 				F16241E222DA6E9C007FBF7B /* Resources */,
-				F188B810274E8F800049AB62 /* Embed Frameworks */,
+				F134FE8029D0C57C0051057B /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -475,10 +483,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = TG7LSJHB64;
 				ENABLE_BITCODE = NO;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../build\"",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = CanvasDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -515,10 +520,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = TG7LSJHB64;
 				ENABLE_BITCODE = NO;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../build\"",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = CanvasDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;

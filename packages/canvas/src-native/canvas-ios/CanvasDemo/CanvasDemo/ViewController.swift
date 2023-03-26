@@ -6,8 +6,7 @@ class ViewController: UIViewController {
         print("ready")
     }
     
-   // @IBOutlet weak var canvas1: NSCCanvas!
-   // var canvas2: NSCCanvas?
+    var canvas: NSCCanvas?
     var imageView: UIImageView?
     let PI: Float = .pi
     let TWO_PI: Float = .pi * 2
@@ -15,8 +14,26 @@ class ViewController: UIViewController {
    // var svg: TNSSVG?
     override func viewDidLoad() {
         super.viewDidLoad()
-        print(CanvasHelpers.self)
-        let scale = Int(UIScreen.main.scale)
+        view.backgroundColor = .white
+        canvas = NSCCanvas(frame: view.bounds)
+        view.addSubview(canvas!)
+
+        let ctx = canvas!.create2DContext(
+                                    true,
+                                    true,
+                                    true,
+                                    false,
+                                    "default",
+                                    true,
+                                    false,
+                                    false,
+                                    false,
+                                    false,
+                                    -16777216
+        )
+        
+
+        canvas?.context2DTest(ctx)
         // Do any additional setup after loading the view.
        //canvas1.setListener(self)
         

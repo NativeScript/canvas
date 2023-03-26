@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::ffi::{c_float, c_int, c_long, c_longlong, c_uchar, c_void, CStr};
+use std::os::raw::c_char;
 use std::ptr::NonNull;
 use std::sync::Once;
 
@@ -19,233 +20,6 @@ use canvas_core::image_asset::ImageAsset;
 use canvas_cxx::CanvasRenderingContext2D;
 use canvas_cxx::PaintStyle;
 
-// #[cfg(any(target_os = "macos", target_os = "ios"))]
-// #[link(name = "OpenGLES", kind = "framework")]
-// #[link(name = "GLKit", kind = "framework")]
-// #[link(name = "Foundation", kind = "framework")]
-// extern "C" {}
-
-declare_class!(
-    #[derive(Debug)]
-    pub struct CanvasHelpers {}
-
-    unsafe impl ClassType for CanvasHelpers {
-        type Super = NSObject;
-        const NAME: &'static str = "CanvasHelpers";
-    }
-
-    unsafe impl CanvasHelpers {
-        #[method(initGLWithView:width:height:alpha:antialias:depth:fail_if_major_performance_caveat:power_preference:premultiplied_alpha:preserve_drawing_buffer:stencil:desynchronized:xr_compatible:version:is_canvas:)]
-        fn init_gl_with_view(
-            view: c_longlong,
-            width: c_int,
-            height: c_int,
-            alpha: BOOL,
-            antialias: BOOL,
-            depth: BOOL,
-            fail_if_major_performance_caveat: BOOL,
-            power_preference: *mut Object,
-            premultiplied_alpha: BOOL,
-            preserve_drawing_buffer: BOOL,
-            stencil: BOOL,
-            desynchronized: BOOL,
-            xr_compatible: BOOL,
-            version: c_int,
-            is_canvas: BOOL,
-        ) -> c_longlong {
-            autoreleasepool(|pool| {
-                if let Some(power_preference) =
-                    unsafe { Id::<NSString, Shared>::new(power_preference.cast()) }
-                {
-                    let power_preference = power_preference.as_str(pool);
-
-                    return canvas_native_init_ios_gl(
-                        view,
-                        width,
-                        height,
-                        alpha,
-                        antialias,
-                        depth,
-                        fail_if_major_performance_caveat,
-                        power_preference,
-                        premultiplied_alpha,
-                        preserve_drawing_buffer,
-                        stencil,
-                        desynchronized,
-                        xr_compatible,
-                        version,
-                        is_canvas,
-                    );
-                }
-                0
-            })
-        }
-
-        #[method(releaseGLWithContext:)]
-        fn release_gl_with_context(context: c_longlong) {
-            canvas_native_release_ios_gl(context)
-        }
-
-        #[method(getGLPointerWithContext:)]
-        fn get_gl_pointer_with_context(context: c_longlong) -> c_longlong {
-            canvas_native_get_gl_pointer(context)
-        }
-
-        #[method(releaseGLPointerWithContext:)]
-        fn release_gl_pointer_with_context(context: c_longlong) {
-            canvas_native_release_gl_pointer(context)
-        }
-
-        #[method(updateGLSurfaceWithView:width:height:context:)]
-        fn update_gl_surface_with_view(
-            view: c_longlong,
-            width: c_int,
-            height: c_int,
-            context: c_longlong,
-        ) {
-            canvas_native_update_gl_surface(view, width, height, context);
-        }
-
-        #[method(create2DContext:width:height:alpha:density:samples:font_color:ppi:direction:)]
-        fn create_2d_context(
-            context: c_longlong,
-            width: c_int,
-            height: c_int,
-            alpha: BOOL,
-            density: c_float,
-            samples: c_int,
-            font_color: c_int,
-            ppi: c_float,
-            direction: c_int,
-        ) -> c_longlong {
-            canvas_native_create_2d_context(
-                context, width, height, alpha, density, samples, font_color, ppi, direction,
-            )
-        }
-
-        #[method(test2D:)]
-        fn test2D(context: c_longlong) {
-            canvas_native_context_2d_test(context);
-        }
-
-        #[method(loadImageAssetFromData:data:)]
-        fn load_image_asset_from_data(asset: c_longlong, data: *mut NSData) -> bool {
-            let data = unsafe { Id::<NSData, Shared>::new(data) };
-            if let Some(data) = data {
-                return canvas_native_imageasset_load_from_bytes(asset, data.bytes()).into();
-            }
-            false
-        }
-
-        #[method(createPattern:width:height:data:repetition:)]
-        fn create_pattern(
-            context: c_longlong,
-            width: c_int,
-            height: c_int,
-            data: *mut NSData,
-            repetition: *mut NSString,
-        ) -> c_longlong {
-            let data = unsafe { Id::<NSData, Shared>::new(data) };
-            let repetition = unsafe { Id::<NSString, Shared>::new(repetition) };
-            if let (Some(data), Some(repetition)) = (data, repetition) {
-                return autoreleasepool(|pool| {
-                    let repetition = repetition.as_str(pool);
-                    return canvas_native_context_create_pattern(
-                        context,
-                        width,
-                        height,
-                        data.bytes(),
-                        repetition,
-                    );
-                });
-            }
-            0
-        }
-
-        #[method(drawImageWithContext:width:height:data:dx:dy:)]
-        fn draw_image_dx_dy_with_bytes(
-            context: c_longlong,
-            width: c_float,
-            height: c_float,
-            data: *mut NSData,
-            dx: c_float,
-            dy: c_float,
-        ) {
-            let data = unsafe { Id::<NSData, Shared>::new(data) };
-            if let Some(data) = data {
-                canvas_native_context_draw_image_dx_dy_with_bytes(
-                    context,
-                    data.bytes(),
-                    width,
-                    height,
-                    dx,
-                    dy,
-                );
-            }
-        }
-
-        #[method(drawImageWithContext:width:height:data:dx:dy:dw:dh:)]
-        fn draw_image_dx_dy_dw_dh_with_bytes(
-            context: c_longlong,
-            width: c_float,
-            height: c_float,
-            data: *mut NSData,
-            dx: c_float,
-            dy: c_float,
-            dw: c_float,
-            dh: c_float,
-        ) {
-            let data = unsafe { Id::<NSData, Shared>::new(data) };
-            if let Some(data) = data {
-                canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(
-                    context,
-                    data.bytes(),
-                    width,
-                    height,
-                    dx,
-                    dy,
-                    dw,
-                    dh,
-                );
-            }
-        }
-
-        #[method(drawImageWithContext:width:height:data:sx:sy:sw:sh:dx:dy:dw:dh:)]
-        fn draw_image_with_bytes(
-            context: c_longlong,
-            width: c_float,
-            height: c_float,
-            data: *mut NSData,
-            sx: c_float,
-            sy: c_float,
-            sw: c_float,
-            sh: c_float,
-            dx: c_float,
-            dy: c_float,
-            dw: c_float,
-            dh: c_float,
-        ) {
-            let data = unsafe { Id::<NSData, Shared>::new(data) };
-            if let Some(data) = data {
-                canvas_native_context_draw_image_with_bytes(
-                    context,
-                    data.bytes(),
-                    width,
-                    height,
-                    sx,
-                    sy,
-                    sw,
-                    sh,
-                    dx,
-                    dy,
-                    dw,
-                    dh,
-                );
-            }
-        }
-    }
-);
-
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
 pub(crate) struct iOSGLContext {
@@ -254,7 +28,8 @@ pub(crate) struct iOSGLContext {
     ios_view: NonNull<c_void>,
 }
 
-pub fn canvas_native_init_ios_gl(
+#[no_mangle]
+pub extern "C" fn canvas_native_init_ios_gl(
     view: i64,
     width: i32,
     height: i32,
@@ -262,7 +37,7 @@ pub fn canvas_native_init_ios_gl(
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: &str,
+    power_preference: *const c_char,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -274,6 +49,8 @@ pub fn canvas_native_init_ios_gl(
     if version == 1 && !GLContext::has_gl2support() {
         return 0;
     }
+
+    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
 
     if let Some(ios_view) = NonNull::new(view as *mut c_void) {
         let mut attrs = ContextAttributes::new(
@@ -302,7 +79,8 @@ pub fn canvas_native_init_ios_gl(
     0
 }
 
-pub fn canvas_native_create_2d_context(
+#[no_mangle]
+pub extern "C" fn canvas_native_create_2d_context(
     context: i64,
     width: i32,
     height: i32,
@@ -345,7 +123,13 @@ pub fn canvas_native_create_2d_context(
     Box::into_raw(Box::new(ctx_2d)) as i64
 }
 
-pub fn canvas_native_update_gl_surface(view: i64, width: i32, height: i32, context: i64) {
+#[no_mangle]
+pub extern "C" fn canvas_native_update_gl_surface(
+    view: i64,
+    width: i32,
+    height: i32,
+    context: i64,
+) {
     if context == 0 {
         return;
     }
@@ -360,7 +144,8 @@ pub fn canvas_native_update_gl_surface(view: i64, width: i32, height: i32, conte
     }
 }
 
-pub fn canvas_native_release_ios_gl(context: i64) {
+#[no_mangle]
+pub extern "C" fn canvas_native_release_ios_gl(context: i64) {
     if context == 0 {
         return;
     }
@@ -368,7 +153,8 @@ pub fn canvas_native_release_ios_gl(context: i64) {
     let _ = unsafe { Box::from_raw(context) };
 }
 
-pub fn canvas_native_get_gl_pointer(gl_context: i64) -> i64 {
+#[no_mangle]
+pub extern "C" fn canvas_native_get_gl_pointer(gl_context: i64) -> i64 {
     if gl_context == 0 {
         return 0;
     }
@@ -377,7 +163,8 @@ pub fn canvas_native_get_gl_pointer(gl_context: i64) -> i64 {
     gl_context.gl_context.as_raw_inner() as i64
 }
 
-pub fn canvas_native_release_gl_pointer(gl_context: i64) {
+#[no_mangle]
+pub extern "C" fn canvas_native_release_gl_pointer(gl_context: i64) {
     if gl_context == 0 {
         return;
     }
@@ -385,7 +172,8 @@ pub fn canvas_native_release_gl_pointer(gl_context: i64) {
     let _ = GLContext::from_raw_inner(gl_context);
 }
 
-pub fn canvas_native_context_2d_test(context: i64) {
+#[no_mangle]
+pub extern "C" fn canvas_native_context_2d_test(context: i64) {
     if context == 0 {
         return;
     }
@@ -402,7 +190,12 @@ pub fn canvas_native_context_2d_test(context: i64) {
     context.render();
 }
 
-pub fn canvas_native_imageasset_load_from_bytes(asset: i64, bytes: &[u8]) -> bool {
+#[no_mangle]
+pub extern "C" fn canvas_native_imageasset_load_from_bytes(
+    asset: i64,
+    bytes: *mut u8,
+    size: usize,
+) -> bool {
     if asset == 0 {
         return false;
     }
@@ -410,15 +203,18 @@ pub fn canvas_native_imageasset_load_from_bytes(asset: i64, bytes: &[u8]) -> boo
     let asset = asset as *mut ImageAsset;
     let asset = unsafe { &mut *asset };
 
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
     asset.load_from_bytes(bytes)
 }
 
-pub fn canvas_native_context_create_pattern(
+#[no_mangle]
+pub extern "C" fn canvas_native_context_create_pattern(
     context: i64,
     width: i32,
     height: i32,
-    bytes: &[u8],
-    repetition: &str,
+    bytes: *mut u8,
+    size: usize,
+    repetition: *const c_char,
 ) -> i64 {
     if context == 0 {
         return 0;
@@ -428,12 +224,15 @@ pub fn canvas_native_context_create_pattern(
 
     let context = unsafe { &mut *context };
 
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
+
     if let Some(image) = from_image_slice(bytes, width, height) {
+        let repetition = unsafe { CStr::from_ptr(repetition).to_string_lossy() };
         return Box::into_raw(Box::new(PaintStyle::new(Some(
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                 context.get_context().create_pattern(
                     image,
-                    Repetition::try_from(repetition).unwrap_or(Repetition::NoRepeat),
+                    Repetition::try_from(repetition.as_ref()).unwrap_or(Repetition::NoRepeat),
                 ),
             ),
         )))) as i64;
@@ -477,22 +276,27 @@ fn draw_image(
     }
 }
 
-pub fn canvas_native_context_draw_image_dx_dy_with_bytes(
+#[no_mangle]
+pub extern "C" fn canvas_native_context_draw_image_dx_dy_with_bytes(
     context: i64,
-    bytes: &[u8],
+    bytes: *mut u8,
+    size: usize,
     width: f32,
     height: f32,
     dx: f32,
     dy: f32,
 ) -> bool {
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
     return draw_image(
         context, bytes, width, height, 0.0, 0.0, width, height, dx, dy, width, height,
     );
 }
 
-pub fn canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(
+#[no_mangle]
+pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(
     context: i64,
-    bytes: &[u8],
+    bytes: *mut u8,
+    size: usize,
     width: f32,
     height: f32,
     dx: f32,
@@ -500,14 +304,17 @@ pub fn canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(
     d_width: f32,
     d_height: f32,
 ) -> bool {
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
     draw_image(
         context, bytes, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
     )
 }
 
-pub fn canvas_native_context_draw_image_with_bytes(
+#[no_mangle]
+pub extern "C" fn canvas_native_context_draw_image_with_bytes(
     context: i64,
-    bytes: &[u8],
+    bytes: *mut u8,
+    size: usize,
     width: f32,
     height: f32,
     sx: f32,
@@ -519,6 +326,7 @@ pub fn canvas_native_context_draw_image_with_bytes(
     d_width: f32,
     d_height: f32,
 ) -> bool {
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
     draw_image(
         context, bytes, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
     )

@@ -12,7 +12,7 @@
     public class NSCCanvasRenderingContext2D: NSCCanvasRenderingContext {
        
         public static func createPattern(_ context: Int64, _ src: UIImage, _ repetition: String) -> Int64 {
-            return CanvasHelpers.createPattern(context, src, repetition as NSString)
+            return CanvasHelpers.createPattern(context, src, repetition)
         }
         
         

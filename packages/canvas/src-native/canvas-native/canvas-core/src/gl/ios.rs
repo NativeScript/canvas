@@ -10,12 +10,18 @@ use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFuncti
 use core_foundation::string::CFString;
 use icrate::objc2::ffi::{objc_class, BOOL};
 use icrate::objc2::rc::{Allocated, Owned};
+use icrate::objc2::Encoding::Void;
 use icrate::objc2::{
-    class, msg_send, msg_send_id, rc::Id, rc::Shared, runtime::Object, Encode, Encoding,
+    class, msg_send, msg_send_id, rc::Id, rc::Shared, runtime::Object, sel, Encode, Encoding,
 };
 use icrate::Foundation::NSInteger;
 
 use crate::context_attributes::ContextAttributes;
+
+// #[link(name = "OpenGLES", kind = "framework")]
+// #[link(name = "GLKit", kind = "framework")]
+// #[link(name = "Foundation", kind = "framework")]
+// extern "C" {}
 
 #[derive(Debug, Default)]
 pub struct GLContextInner {
@@ -60,7 +66,7 @@ pub enum EAGLRenderingAPI {
 }
 
 unsafe impl Encode for EAGLRenderingAPI {
-    const ENCODING: Encoding = Encoding::Long;
+    const ENCODING: Encoding = Encoding::ULongLong;
 }
 #[derive(Clone, Debug)]
 pub(crate) struct EAGLContext(Id<Object, Shared>);
@@ -71,7 +77,6 @@ impl EAGLContext {
             let cls = class!(EAGLContext);
             let context = msg_send_id![cls, alloc];
             let mut context: Option<Id<Object, Shared>> = msg_send_id![context, initWithAPI: api];
-
             context.map(EAGLContext)
         }
     }
@@ -94,7 +99,6 @@ impl EAGLContext {
         return match context {
             Some(ctx) => unsafe {
                 let instance: BOOL = msg_send![cls, setCurrentContext: &*ctx.0];
-
                 instance
             },
             None => unsafe {
@@ -134,6 +138,7 @@ impl EAGLContext {
     }
 }
 
+#[derive(Debug)]
 #[repr(i32)]
 pub enum GLKViewDrawableColorFormat {
     RGBA8888 = 0,
@@ -158,6 +163,7 @@ impl TryFrom<i32> for GLKViewDrawableColorFormat {
     }
 }
 
+#[derive(Debug)]
 #[repr(i32)]
 pub enum GLKViewDrawableDepthFormat {
     DepthFormatNone = 0,
@@ -182,6 +188,7 @@ impl TryFrom<i32> for GLKViewDrawableDepthFormat {
     }
 }
 
+#[derive(Debug)]
 #[repr(i32)]
 pub enum GLKViewDrawableStencilFormat {
     StencilFormatNone = 0,
@@ -269,14 +276,14 @@ impl GLKView {
         GLKViewDrawableStencilFormat::try_from(stencil).unwrap()
     }
 
-    pub fn set_context(&self, context: Option<&EAGLContext>) {
+    pub fn set_context(&mut self, context: Option<&EAGLContext>) {
         match context {
             Some(context) => {
-                let _: () = unsafe { msg_send![&self.0, context: &*context.0] };
+                let _: () = unsafe { msg_send![&self.0, setContext: &*context.0] };
             }
             None => {
                 let nil: *mut Object = std::ptr::null_mut();
-                let _: () = unsafe { msg_send![&self.0, context: nil] };
+                let _: () = unsafe { msg_send![&self.0, setContext: nil] };
             }
         }
     }
@@ -288,7 +295,7 @@ impl GLKView {
 
     fn get_proc_address(&self, addr: &str) -> *const c_void {
         let symbol_name = CFString::new(addr);
-        let framework_name = CFString::new("com.apple.opengl");
+        let framework_name = CFString::new("com.apple.opengles");
         unsafe {
             let framework = CFBundleGetBundleWithIdentifier(framework_name.as_concrete_TypeRef());
             CFBundleGetFunctionPointerForName(framework, symbol_name.as_concrete_TypeRef()).cast()
@@ -296,7 +303,7 @@ impl GLKView {
     }
 }
 
-//#[cfg(target_os = "ios")]
+#[cfg(target_os = "ios")]
 impl GLContext {
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
         let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
@@ -319,8 +326,7 @@ impl GLContext {
         match glview {
             None => None,
             Some(glview) => {
-                let id = glview.clone();
-                let glview = GLKView(id.into());
+                let glview = GLKView(glview);
                 GLContext::create_window_context_with_gl_view(context_attrs, glview)
             }
         }
@@ -328,7 +334,7 @@ impl GLContext {
 
     pub(crate) fn create_window_context_with_gl_view(
         context_attrs: &mut ContextAttributes,
-        view: GLKView,
+        mut view: GLKView,
     ) -> Option<GLContext> {
         gl_bindings::load_with(|symbol| view.get_proc_address(symbol).cast());
 

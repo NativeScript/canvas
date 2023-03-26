@@ -8,7 +8,7 @@ rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
 
 [lib]
 name = "canvasnative"
-crate-type = ["staticlib", "dylib"]
+crate-type = ["staticlib"]
 
 [dependencies]
 canvas-core = { path = "../canvas-core", features = ["2d"] }

@@ -29,6 +29,7 @@ function to_bool() {
   esac
 }
 
+CWD="$SRCROOT/../canvas-native"
 pushd "$SRCROOT/../canvas-native"
 
 IS_SIMULATOR=false
@@ -83,7 +84,8 @@ fi
 export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
 export DYLD_LIBRARY_PATH="$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH:$DYLD_FALLBACK_LIBRARY_PATH"
 
-echo $DYLD_LIBRARY_PATH
+
+cbindgen --config "$CWD/canvas-ios/cbindgen.toml"  "$CWD/canvas-ios/src/lib.rs" -l c >"$SRCROOT/CanvasNative/include/canvas_native.h"
 
 cargo +nightly build -Z build-std='std' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
 popd

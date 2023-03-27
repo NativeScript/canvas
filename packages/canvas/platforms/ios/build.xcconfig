@@ -1,0 +1,3 @@
+OTHER_LDFLAGS[sdk=*] = $(inherited) -framework CanvasNative
+
+HEADER_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../../../../packages/canvas/platforms/ios/src/cpp"

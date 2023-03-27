@@ -28,6 +28,6 @@
 	},
 	"devDependencies": {
 		"@nativescript/android": "8.5.0-alpha.1",
-		"@nativescript/ios": "~8.2.0"
+		"@nativescript/ios": "beta"
 	}
 }

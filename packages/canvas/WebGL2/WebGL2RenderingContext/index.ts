@@ -33,11 +33,24 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	constructor(context, contextOptions) {
 		super(null);
-		const ctx = BigInt(context.getNativeContext().toString());
+		let nativeContext = 0;
+		if (global.isAndroid) {
+			nativeContext = context.getNativeContext().toString();
+		}
+
+		if (global.isIOS) {
+			nativeContext = context.nativeContext.toString();
+		}
+
+		const ctx = BigInt(nativeContext);
 
 		let direction = 0;
-		if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
-			direction = 1;
+		if (global.isAndroid) {
+			if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
+				direction = 1;
+			}
+		} else {
+			//direction = 1;
 		}
 		const native = ctor(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
 		this._context = native;
@@ -621,7 +634,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform3uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform3uiv');
-		console.log('uniform3uiv');
 		const uniform3uiv = this._getMethod('uniform3uiv');
 		const value = location.native;
 		uniform3uiv(value, data);
@@ -636,7 +648,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	uniform4uiv(location: WebGLUniformLocation, data: Uint32Array): void {
 		this._glCheckError('uniform4uiv');
-		console.log('uniform4uiv');
 		const uniform4uiv = this._getMethod('uniform4uiv');
 		const value = location.native;
 		uniform4uiv(value, data);

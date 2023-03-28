@@ -1,4 +1,3 @@
-use_frameworks!
 platform :ios, '11.0'
 #pod 'CanvasNative' , '~> 1.0.0.alpha.11'
 #pod 'CanvasNative', :path => "$(SRCROOT)/../../../../../"

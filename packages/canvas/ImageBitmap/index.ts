@@ -1,6 +1,5 @@
 import { ImageAsset } from '../ImageAsset';
 import { ImageData } from '../Canvas2D';
-import { ImageBitmapBase } from './common';
 import { Canvas } from '../Canvas';
 import { ImageSource } from '@nativescript/core';
 
@@ -8,14 +7,19 @@ import { Helpers } from '../helpers';
 
 let ctor;
 
-export class ImageBitmap extends ImageBitmapBase {
+export class ImageBitmap {
 	static {
 		Helpers.initialize();
 		ctor = global.CanvasJSIModule.createImageBitmap;
 	}
 
+	_native;
+	get native() {
+		return this._native;
+	}
+
 	private constructor(bitmap: any) {
-		super(bitmap);
+		this._native = bitmap;
 	}
 
 	_methodCache = new Map();

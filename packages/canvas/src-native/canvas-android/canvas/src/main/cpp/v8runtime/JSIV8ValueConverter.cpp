@@ -69,6 +69,9 @@ namespace rnv8 {
         } else if (value.isObject()) {
             return scopedHandle.Escape(ToV8Object(
                     runtime, std::move(value.getObject(const_cast<V8Runtime &>(runtime)))));
+        }else if(value.isBigInt()){
+            return scopedHandle.Escape(ToV8BigInt(
+                    runtime, std::move(value.getBigInt(const_cast<V8Runtime &>(runtime)))));
         } else {
             // What are you?
             std::abort();

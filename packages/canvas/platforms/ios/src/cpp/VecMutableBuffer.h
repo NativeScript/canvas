@@ -2,12 +2,13 @@
 // Created by Osei Fortune on 28/02/2023.
 //
 
+#pragma once
 #ifndef CANVAS_ANDROID_VECMUTABLEBUFFER_H
 #define CANVAS_ANDROID_VECMUTABLEBUFFER_H
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#import "NativeScript/JSIRuntime.h"
+#include "NativeScript/JSIRuntime.h"
 
 using namespace facebook;
 

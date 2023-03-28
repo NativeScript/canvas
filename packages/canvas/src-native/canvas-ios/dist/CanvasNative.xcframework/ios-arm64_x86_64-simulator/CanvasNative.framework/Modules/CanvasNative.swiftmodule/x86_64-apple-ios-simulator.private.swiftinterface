@@ -54,7 +54,7 @@ import _StringProcessing
   @objc @_Concurrency.MainActor(unsafe) public var height: Swift.Float {
     @objc get
   }
-  @objc @_Concurrency.MainActor(unsafe) public func initContext(_ type: Swift.String, _ alpha: Swift.Bool = true, _ antialias: Swift.Bool = true, _ depth: Swift.Bool = true, _ failIfMajorPerformanceCaveat: Swift.Bool = false, _ powerPreference: Swift.String = "default", _ premultipliedAlpha: Swift.Bool = true, _ preserveDrawingBuffer: Swift.Bool = false, _ stencil: Swift.Bool = false, _ desynchronized: Swift.Bool = false, _ xrCompatible: Swift.Bool = false)
+  @objc @_Concurrency.MainActor(unsafe) public func initContext(_ type: Swift.String, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ failIfMajorPerformanceCaveat: Swift.Bool, _ powerPreference: Swift.String, _ premultipliedAlpha: Swift.Bool, _ preserveDrawingBuffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xrCompatible: Swift.Bool)
   @objc @_Concurrency.MainActor(unsafe) public func create2DContext(_ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ failIfMajorPerformanceCaveat: Swift.Bool, _ powerPreference: Swift.String, _ premultipliedAlpha: Swift.Bool, _ preserveDrawingBuffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xrCompatible: Swift.Bool, _ fontColor: Swift.Int32) -> Swift.Int64
   @objc @_Concurrency.MainActor(unsafe) public func forceLayout(_ width: CoreFoundation.CGFloat, _ height: CoreFoundation.CGFloat)
   @objc @_Concurrency.MainActor(unsafe) public func render()

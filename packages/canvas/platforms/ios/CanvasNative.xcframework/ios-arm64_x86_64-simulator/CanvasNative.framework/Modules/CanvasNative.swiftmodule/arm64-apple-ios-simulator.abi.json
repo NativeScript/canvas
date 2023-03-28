@@ -1288,70 +1288,60 @@
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "String",
                 "printedName": "Swift.String",
-                "hasDefaultArg": true,
                 "usr": "s:SS"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               },
               {
                 "kind": "TypeNominal",
                 "name": "Bool",
                 "printedName": "Swift.Bool",
-                "hasDefaultArg": true,
                 "usr": "s:Sb"
               }
             ],
@@ -4159,77 +4149,7 @@
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 1407,
-      "length": 4,
-      "value": "true"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1441,
-      "length": 4,
-      "value": "true"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1471,
-      "length": 4,
-      "value": "true"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1524,
-      "length": 5,
-      "value": "false"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "StringLiteral",
-      "offset": 1567,
-      "length": 9,
-      "value": "\"default\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1615,
-      "length": 4,
-      "value": "true"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1661,
-      "length": 5,
-      "value": "false"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1694,
-      "length": 5,
-      "value": "false"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1734,
-      "length": 5,
-      "value": "false"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 1772,
-      "length": 5,
-      "value": "false"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
-      "kind": "BooleanLiteral",
-      "offset": 8470,
+      "offset": 8390,
       "length": 5,
       "value": "false"
     },

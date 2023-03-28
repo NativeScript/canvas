@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   
     s.authors      = "Facebook, Inc. and its affiliates", "Ammar Ahmed", "Jamie Birch"
     s.homepage     = "https://github.com/OpenNative/open-native"
-    s.platforms    = { :ios => "12.4" }
+    s.platforms    = { :ios => "11.0" }
     s.source       = { :git => "https://github.com/OpenNative/open-native.git", :tag => "v1.0.0" }
     s.preserve_paths         = "package.json", "LICENSE-react-native"
     s.cocoapods_version      = ">= 1.10.1"

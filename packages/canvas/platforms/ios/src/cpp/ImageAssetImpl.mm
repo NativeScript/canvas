@@ -7,6 +7,7 @@
 #include "JSICallback.h"
 
 
+
 ImageAssetImpl::ImageAssetImpl(rust::Box<ImageAsset> asset)
         : asset_(std::move(asset)) {
 }
@@ -78,10 +79,11 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                      }
         );
     } else if (methodName == "fromUrlCb") {
+        auto current_queue = NSOperationQueue.currentQueue;
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      2,
-                                                     [this](jsi::Runtime &runtime,
+                                                     [this, current_queue](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
@@ -105,56 +107,36 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                          auto jsi_callback = new JSICallback(
                                                                  std::shared_ptr<jsi::Value>(
                                                                          cb));
-/*
+            
+        
+            auto queue = [NSOperationQueue new];
+            [queue addOperationWithBlock:^{
+             rust::Str asset_url(url.c_str());
 
-                                                         ALooper_addFd(jsi_callback->looper_,
-                                                                       jsi_callback->fd_[0],
-                                                                       ALOOPER_POLL_CALLBACK,
-                                                                       ALOOPER_EVENT_INPUT,
-                                                                       [](int fd, int events,
-                                                                          void *data) {
-                                                                           auto cb = static_cast<JSICallback *>(data);
-                                                                           bool done;
-                                                                           read(fd, &done,
-                                                                                sizeof(bool));
+             auto asset = canvas_native_image_asset_shared_clone(
+                     this->GetImageAsset());
+             
+             auto done = canvas_native_image_asset_load_from_url(
+                                                                  this->GetImageAsset(), asset_url
+                     );
+             [current_queue addOperationWithBlock:^{
+              
 
-                                                                           jsi::Runtime &rt = *jsi_runtime;
+        
+              
+                                              auto func = jsi_callback->value_->asObject(
+                                                      runtime).asFunction(
+                                                                          runtime);
+              
+              
 
-                                                                           auto func = cb->value_->asObject(
-                                                                                   rt).asFunction(
-                                                                                   rt);
+                                              func.call(runtime,
+                                                        jsi::Value(
+                                                                done));
 
-                                                                           func.call(rt,
-                                                                                     jsi::Value(
-                                                                                             done));
-
-                                                                           delete static_cast<JSICallback *>(data);
-                                                                           return 0;
-                                                                       }, jsi_callback);
-
-                                                         ALooper_wake(jsi_callback->looper_);
-
-
-                                                         std::thread thread(
-                                                                 [jsi_callback, cb](
-                                                                         const std::string &url,
-                                                                         rust::Box<ImageAsset> asset) {
-
-                                                                     auto done = canvas_native_image_asset_load_from_url(
-                                                                             *asset,
-                                                                             rust::Str(
-                                                                                     url.c_str()));
-
-                                                                     write(jsi_callback->fd_[1],
-                                                                           &done,
-                                                                           sizeof(bool));
-
-                                                                 }, std::move(url),
-                                                                 std::move(asset));
-
-                                                         thread.detach();
-
-            */
+                                              delete static_cast<JSICallback *>(jsi_callback);
+              }];
+             }];
                                                          return jsi::Value::undefined();
                                                      }
         );
@@ -183,7 +165,7 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      2,
-                                                     [this, &current_queue](jsi::Runtime &runtime,
+                                                     [this, current_queue](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
@@ -268,10 +250,11 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                      }
         );
     } else if (methodName == "fromBytesCb") {
+        auto current_queue = NSOperationQueue.currentQueue;
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      2,
-                                                     [this](jsi::Runtime &runtime,
+                                                     [this, current_queue](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
@@ -295,52 +278,38 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                          auto jsi_callback = new JSICallback(
                                                                  std::shared_ptr<jsi::Value>(
                                                                          cb));
-
-/*
-                                                         ALooper_addFd(jsi_callback->looper_,
-                                                                       jsi_callback->fd_[0],
-                                                                       ALOOPER_POLL_CALLBACK,
-                                                                       ALOOPER_EVENT_INPUT,
-                                                                       [](int fd, int events,
-                                                                          void *data) {
-                                                                           auto cb = static_cast<JSICallback *>(data);
-                                                                           bool done;
-                                                                           read(fd, &done,
-                                                                                sizeof(bool));
-
-                                                                           jsi::Runtime &rt = *jsi_runtime;
-
-                                                                           auto func = cb->value_->asObject(
-                                                                                   rt).asFunction(
-                                                                                   rt);
-
-                                                                           func.call(rt,
-                                                                                     jsi::Value(
-                                                                                             done));
-
-                                                                           delete static_cast<JSICallback *>(data);
-                                                                           return 0;
-                                                                       }, jsi_callback);
-
-                                                         ALooper_wake(jsi_callback->looper_);
-
-
-                                                         std::thread thread(
-                                                                 [jsi_callback, &buf, cb](
-                                                                         rust::Box<ImageAsset> asset) {
-
-                                                                     auto done = canvas_native_image_asset_load_from_raw(
-                                                                             *asset, buf);
-
-                                                                     write(jsi_callback->fd_[1],
-                                                                           &done,
-                                                                           sizeof(bool));
-
-                                                                 }, std::move(asset));
-
-                                                         thread.detach();
             
-            */
+            
+            auto queue = [NSOperationQueue new];
+            [queue addOperationWithBlock:^{
+
+             auto asset = canvas_native_image_asset_shared_clone(
+                     this->GetImageAsset());
+             
+           
+                
+                
+                auto done = canvas_native_image_asset_load_from_raw(
+                                                                    this->GetImageAsset(), buf);
+                
+             [current_queue addOperationWithBlock:^{
+              
+
+        
+              
+                                              auto func = jsi_callback->value_->asObject(
+                                                      runtime).asFunction(
+                                                                          runtime);
+              
+              
+
+                                              func.call(runtime,
+                                                        jsi::Value(
+                                                                done));
+
+                                              delete static_cast<JSICallback *>(jsi_callback);
+              }];
+             }];
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -369,10 +338,11 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                      }
         );
     } else if (methodName == "saveCb") {
+        auto current_queue = NSOperationQueue.currentQueue;
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      3,
-                                                     [this](jsi::Runtime &runtime,
+                                                     [this, current_queue](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
@@ -394,59 +364,45 @@ jsi::Value ImageAssetImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &nam
                                                          auto jsi_callback = new JSICallback(
                                                                  std::shared_ptr<jsi::Value>(
                                                                          cb));
+            
+            
+            auto queue = [NSOperationQueue new];
+            [queue addOperationWithBlock:^{
+                
+                rust::Str asset_path(
+                                     path.c_str());
+            
 
-            /*
-
-                                                         ALooper_addFd(jsi_callback->looper_,
-                                                                       jsi_callback->fd_[0],
-                                                                       ALOOPER_POLL_CALLBACK,
-                                                                       ALOOPER_EVENT_INPUT,
-                                                                       [](int fd, int events,
-                                                                          void *data) {
-                                                                           auto cb = static_cast<JSICallback *>(data);
-                                                                           bool done;
-                                                                           read(fd, &done,
-                                                                                sizeof(bool));
-
-                                                                           jsi::Runtime &rt = *jsi_runtime;
-
-                                                                           auto func = cb->value_->asObject(
-                                                                                   rt).asFunction(
-                                                                                   rt);
-
-                                                                           func.call(rt,
-                                                                                     jsi::Value(
-                                                                                             done));
-
-                                                                           delete static_cast<JSICallback *>(data);
-                                                                           return 0;
-                                                                       }, jsi_callback);
-
-                                                         ALooper_wake(jsi_callback->looper_);
-
-                                                         std::thread thread(
-                                                                 [jsi_callback, cb](
-                                                                         const std::string &path,
-                                                                         std::uint32_t format,
-                                                                         rust::Box<ImageAsset> asset) {
-
-                                                                     auto done = canvas_native_image_asset_save_path(
-                                                                             *asset,
-                                                                             rust::Str(
-                                                                                     path.c_str()),
-                                                                             format);
-
-
-                                                                     write(jsi_callback->fd_[1],
-                                                                           &done,
-                                                                           sizeof(bool));
-
-                                                                 }, std::move(path), format,
-                                                                 std::move(asset));
-
-                                                         thread.detach();
+             auto asset = canvas_native_image_asset_shared_clone(
+                     this->GetImageAsset());
              
-             */
+                
+                auto done = canvas_native_image_asset_save_path(
+                                                                this->GetImageAsset(),
+                        asset_path,
+                        format);
+
+           
+                
+             [current_queue addOperationWithBlock:^{
+              
+
+        
+              
+                                              auto func = jsi_callback->value_->asObject(
+                                                      runtime).asFunction(
+                                                                          runtime);
+              
+              
+
+                                              func.call(runtime,
+                                                        jsi::Value(
+                                                                done));
+
+                                              delete static_cast<JSICallback *>(jsi_callback);
+              }];
+             }];
+            
                                                          return jsi::Value::undefined();
                                                      }
         );

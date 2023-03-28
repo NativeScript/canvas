@@ -3,7 +3,6 @@
 
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
 
-
 Application.on('discardedError', (args) => {
 	console.log(args.error);
 });

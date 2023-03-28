@@ -16,7 +16,7 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
       H = height || canvas.getMeasuredHeight();
 
     // Some variables for later use
-    var particleCount = 500,
+    var particleCount = 1000,
       particles = [],
       minDist = 50,
       dist;

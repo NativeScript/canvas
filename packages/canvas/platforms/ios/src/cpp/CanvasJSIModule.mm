@@ -6,6 +6,7 @@
 #include "JSICallback.h"
 #include "Helpers.h"
 #include "JSIReadFileCallback.h"
+#include "NativeScript/JSIRuntime.h"
 
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
@@ -24,6 +25,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                             std::shared_ptr<jsi::Value>(
                                     cbFunc));
 
+        /*
 
                     ALooper_addFd(jsi_callback->looper_,
                                   jsi_callback->fd_[0],
@@ -105,6 +107,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                             }, std::move(file));
 
                     thread.detach();
+        */
 
                     return jsi::Value::undefined();
                 }
@@ -243,9 +246,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                    const jsi::Value *arguments, size_t count) -> jsi::Value {
                     if (count == 1 && !arguments[0].isString()) {
                         auto arg = arguments[0].toString(runtime).utf8(runtime);
-                        throw jsi::JSINativeException(
-                                "Failed to construct 'TextEncoder': The encoding label provided (" +
-                                arg + "') is invalid");
+                        std::string error = "Failed to construct 'TextEncoder': The encoding label provided (" +
+                        arg + "') is invalid";
+                        
+                        throw jsi::JSINativeException(error);
                     }
 
                     std::string encoding("utf-8");
@@ -367,7 +371,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                                 jsi_callback->data_ = std::move(ret);
 
-
+/*
                                 ALooper_addFd(jsi_callback->looper_,
                                               jsi_callback->fd_[0],
                                               ALOOPER_POLL_CALLBACK,
@@ -477,6 +481,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                     thread.detach();
 
                                 }
+                                */
 
 
                                 return jsi::Value::undefined();
@@ -502,6 +507,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
 
                                 jsi_callback->data_ = std::move(ret);
 
+                                /*
 
                                 ALooper_addFd(jsi_callback->looper_,
                                               jsi_callback->fd_[0],
@@ -635,6 +641,7 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                                     thread.detach();
 
                                 }
+                                 */
 
 
                                 return jsi::Value::undefined();

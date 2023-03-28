@@ -256,7 +256,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webglContext) {
 					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer,opts.stencil, opts.desynchronized, opts.xrCompatible);
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -271,7 +271,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webgl2Context) {
 					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil,opts.desynchronized, opts.xrCompatible);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;

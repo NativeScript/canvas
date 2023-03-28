@@ -355,8 +355,8 @@ class JSI_EXPORT Runtime {
             std::shared_ptr<MutableBuffer> buffer) = 0;
   virtual size_t size(const Array&) = 0;
   virtual size_t size(const ArrayBuffer&) = 0;
-  virtual uint8_t* data(const ArrayBuffer&) = 0;
   virtual size_t size(const TypedArray&) = 0;
+  virtual uint8_t* data(const ArrayBuffer&) = 0;
   virtual uint8_t* data(const TypedArray&) = 0;
   virtual size_t offset(const TypedArray&) = 0;
 

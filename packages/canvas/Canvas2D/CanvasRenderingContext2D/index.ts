@@ -1,4 +1,3 @@
-import { CanvasRenderingContext2DBase } from './common';
 import { CanvasGradient } from '../CanvasGradient';
 import { Path2D } from '../Path2D';
 import { ImageData } from '../ImageData';
@@ -12,7 +11,7 @@ import { Helpers } from '../../helpers';
 
 let ctor;
 
-export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
+export class CanvasRenderingContext2D {
 	public static isDebug = false;
 	private context;
 
@@ -23,7 +22,6 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 	}
 
 	constructor(context: any, contextOptions) {
-		super();
 		/*const width = context.getDrawingBufferWidth(); // can use  getMeasuredWidth / getMeasuredHeight
 		const height = context.getDrawingBufferHeight();
 
@@ -38,10 +36,16 @@ export class CanvasRenderingContext2D extends CanvasRenderingContext2DBase {
 		this.context = ctor(ctxPtr);
 	}
 
+	_type: string = 'none';
+	get type() {
+		return this._type;
+	}
+
 	get native() {
 		return this.context;
 	}
 
+	_canvas: any;
 	get canvas() {
 		return this._canvas;
 	}

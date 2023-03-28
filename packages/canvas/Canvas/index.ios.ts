@@ -4,13 +4,26 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Utils, profile } from '@nativescript/core';
-declare var TNSCanvas, TNSCanvasListener;
+declare var NSCCanvas, NSCCanvasListener;
 
 export * from './common';
 
 export function createSVGMatrix(): DOMMatrix {
-	return new DOMMatrix(TNSCanvas.createSVGMatrix());
+	return new DOMMatrix();
 }
+
+const defaultOpts = {
+	alpha: true,
+	antialias: true,
+	depth: true,
+	failIfMajorPerformanceCaveat: false,
+	powerPreference: 'default',
+	premultipliedAlpha: true,
+	preserveDrawingBuffer: false,
+	stencil: false,
+	desynchronized: false,
+	xrCompatible: false,
+};
 
 export class Canvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D;
@@ -21,9 +34,9 @@ export class Canvas extends CanvasBase {
 	private _isReady: boolean = false;
 	private _readyListener: any;
 
-	constructor(useCpu = false) {
+	constructor() {
 		super();
-		this._canvas = TNSCanvas.alloc().initWithFrameUseCpu(CGRectZero, useCpu);
+		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
 		const ref = new WeakRef(this);
 		const listener = (NSObject as any).extend(
 			{
@@ -38,7 +51,7 @@ export class Canvas extends CanvasBase {
 				},
 			},
 			{
-				protocols: [TNSCanvasListener],
+				protocols: [NSCCanvasListener],
 			}
 		);
 		this._readyListener = listener.new();
@@ -147,14 +160,8 @@ export class Canvas extends CanvasBase {
 		this._canvas.ignorePixelScaling = this.ignorePixelScaling;
 	}
 
-	flush() {
-		if (this.ios) {
-			this.ios.flush();
-		}
-	}
-
 	onUnloaded() {
-		this.ios.pause();
+		//	this.ios.pause();
 		this._didPause = true;
 		super.onUnloaded();
 	}
@@ -163,7 +170,7 @@ export class Canvas extends CanvasBase {
 	onLoaded() {
 		super.onLoaded();
 		if (this._didPause) {
-			this.ios.resume();
+			//	this.ios.resume();
 			this._didPause = false;
 		}
 	}
@@ -176,7 +183,6 @@ export class Canvas extends CanvasBase {
 
 	_layoutNative() {
 		if (!this.parent) {
-			console.time('_layoutNative');
 			if ((typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
 				return;
 			}
@@ -204,8 +210,6 @@ export class Canvas extends CanvasBase {
 			// this._canvas.frame = frame;
 			// this._canvas.setNeedsLayout();
 			// this._canvas.layoutIfNeeded();
-
-			console.timeEnd('_layoutNative');
 		}
 	}
 
@@ -213,48 +217,80 @@ export class Canvas extends CanvasBase {
 		if (!this._canvas) {
 			return null;
 		}
-		if (type && type === '2d') {
-			if (this._webglContext || this._webgl2Context) {
-				return null;
+		if (typeof type === 'string') {
+			if (type === '2d') {
+				if (this._webglContext || this._webgl2Context) {
+					return null;
+				}
+
+				if (!this._2dContext) {
+					this._layoutNative();
+					const opts = Object.assign(defaultOpts, this._handleContextOptions(type, options));
+
+					opts['fontColor'] = this.parent?.style?.color?.android || -16777216;
+
+					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
+
+					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
+
+					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
+
+					// // @ts-ignore
+					(this._2dContext as any)._canvas = this;
+				}
+
+				// @ts-ignore
+				this._2dContext._type = '2d';
+				return this._2dContext;
+			} else if (type === 'webgl' || type === 'experimental-webgl') {
+				if (this._2dContext || this._webgl2Context) {
+					return null;
+				}
+				if (!this._webglContext) {
+					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
+
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer,opts.stencil, opts.desynchronized, opts.xrCompatible);
+
+					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
+					(this._webglContext as any)._canvas = this;
+				}
+
+				this._webglContext._type = 'webgl';
+				return this._webglContext;
+			} else if (type && (type === 'webgl2' || type === 'experimental-webgl2')) {
+				if (this._2dContext || this._webglContext) {
+					return null;
+				}
+				if (!this._webgl2Context) {
+					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
+
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+
+					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
+					(this._webgl2Context as any)._canvas = this;
+				}
+				(this._webgl2Context as any)._type = 'webgl2';
+				return this._webgl2Context;
 			}
-			if (!this._2dContext) {
-				this._2dContext = new CanvasRenderingContext2D(this._canvas.getContextContextAttributes(type, this._handleContextOptions(type, options)));
-				this._2dContext._canvas = this;
-			} else {
-				this._canvas.getContextContextAttributes(type, this._handleContextOptions(type, options));
-			}
-			this._2dContext._type = '2d';
-			return this._2dContext;
-		} else if (type && (type === 'webgl' || type === 'experimental-webgl')) {
-			if (this._2dContext || this._webgl2Context) {
-				return null;
-			}
-			if (!this._webglContext) {
-				this._webglContext = new WebGLRenderingContext(this._canvas.getContextContextAttributes('webgl', this._handleContextOptions(type, options)));
-				this._webglContext._canvas = this;
-			} else {
-				this._canvas.getContextContextAttributes('webgl', this._handleContextOptions(type, options));
-			}
-			this._webglContext._type = 'webgl';
-			return this._webglContext;
-		} else if (type && (type === 'webgl2' || type === 'experimental-webgl2')) {
-			if (this._2dContext || this._webglContext) {
-				return null;
-			}
-			if (!this._webgl2Context) {
-				this._webgl2Context = new WebGL2RenderingContext(this._canvas.getContextContextAttributes('webgl2', this._handleContextOptions(type, options)));
-				(this._webgl2Context as any)._canvas = this;
-			} else {
-				this._canvas.getContextContextAttributes('webgl2', this._handleContextOptions(type, options));
-			}
-			(this._webgl2Context as any)._type = 'webgl';
-			return this._webgl2Context;
 		}
 		return null;
 	}
 
-	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		return this._canvas.toDataURL(type, encoderOptions);
+	get __native__context() {
+		return this._2dContext?.native ?? this._webglContext?.native ?? this._webgl2Context?.native;
+	}
+
+	get native() {
+		return this.__native__context;
+	}
+
+	toDataURL(type = 'png', encoderOptions = 0.92) {
+		if (this._2dContext) {
+			return (this._2dContext as any).__toDataURL(type, encoderOptions);
+		}
+		return (this._webglContext || (this._webgl2Context as any)).__toDataURL(type, encoderOptions);
 	}
 
 	getBoundingClientRect(): {

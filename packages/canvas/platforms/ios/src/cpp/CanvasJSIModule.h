@@ -6,7 +6,7 @@
 
 #include <memory>
 #include <array>
-#import "NativeScript/JSIRuntime.h"
+#include "NativeScript/JSIRuntime.h"
 #include "canvas2d/CanvasRenderingContext2DImpl.h"
 
 #import "canvas-cxx/src/lib.rs.h"

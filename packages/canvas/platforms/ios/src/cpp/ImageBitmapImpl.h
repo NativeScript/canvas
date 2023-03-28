@@ -7,7 +7,7 @@
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
-#import "v8runtime/V8Runtime.h"
+#import "NativeScript/JSIRuntime.h"
 #include <vector>
 using namespace org::nativescript::canvas;
 

@@ -102,73 +102,73 @@ jsi::Value WEBGL_draw_buffersImpl::get(jsi::Runtime &runtime, const jsi::PropNam
                                                      }
         );
     } else if (methodName == "COLOR_ATTACHMENT0_WEBGL") {
-        return {GL_COLOR_ATTACHMENT0_EXT};
+        return {GL_COLOR_ATTACHMENT0};
     } else if (methodName == "COLOR_ATTACHMENT1_WEBGL") {
-        return {GL_COLOR_ATTACHMENT1_EXT};
+        return {GL_COLOR_ATTACHMENT1};
     } else if (methodName == "COLOR_ATTACHMENT2_WEBGL") {
-        return {GL_COLOR_ATTACHMENT2_EXT};
+        return {GL_COLOR_ATTACHMENT2};
     } else if (methodName == "COLOR_ATTACHMENT3_WEBGL") {
-        return {GL_COLOR_ATTACHMENT3_EXT};
+        return {GL_COLOR_ATTACHMENT3};
     } else if (methodName == "COLOR_ATTACHMENT4_WEBGL") {
-        return {GL_COLOR_ATTACHMENT4_EXT};
+        return {GL_COLOR_ATTACHMENT4};
     } else if (methodName == "COLOR_ATTACHMENT5_WEBGL") {
-        return {GL_COLOR_ATTACHMENT5_EXT};
+        return {GL_COLOR_ATTACHMENT5};
     } else if (methodName == "COLOR_ATTACHMENT6_WEBGL") {
-        return {GL_COLOR_ATTACHMENT6_EXT};
+        return {GL_COLOR_ATTACHMENT6};
     } else if (methodName == "COLOR_ATTACHMENT7_WEBGL") {
-        return {GL_COLOR_ATTACHMENT7_EXT};
+        return {GL_COLOR_ATTACHMENT7};
     } else if (methodName == "COLOR_ATTACHMENT8_WEBGL") {
-        return {GL_COLOR_ATTACHMENT8_EXT};
+        return {GL_COLOR_ATTACHMENT8};
     } else if (methodName == "COLOR_ATTACHMENT9_WEBGL") {
-        return {GL_COLOR_ATTACHMENT9_EXT};
+        return {GL_COLOR_ATTACHMENT9};
     } else if (methodName == "COLOR_ATTACHMENT10_WEBGL") {
-        return {GL_COLOR_ATTACHMENT10_EXT};
+        return {GL_COLOR_ATTACHMENT10};
     } else if (methodName == "COLOR_ATTACHMENT11_WEBGL") {
-        return {GL_COLOR_ATTACHMENT11_EXT};
+        return {GL_COLOR_ATTACHMENT11};
     } else if (methodName == "COLOR_ATTACHMENT12_WEBGL") {
-        return {GL_COLOR_ATTACHMENT12_EXT};
+        return {GL_COLOR_ATTACHMENT12};
     } else if (methodName == "COLOR_ATTACHMENT13_WEBGL") {
-        return {GL_COLOR_ATTACHMENT13_EXT};
+        return {GL_COLOR_ATTACHMENT13};
     } else if (methodName == "COLOR_ATTACHMENT14_WEBGL") {
-        return {GL_COLOR_ATTACHMENT14_EXT};
+        return {GL_COLOR_ATTACHMENT14};
     } else if (methodName == "COLOR_ATTACHMENT15_WEBGL") {
-        return {GL_COLOR_ATTACHMENT15_EXT};
+        return {GL_COLOR_ATTACHMENT15};
     } else if (methodName == "DRAW_BUFFER0_WEBGL") {
-        return {GL_DRAW_BUFFER0_EXT};
+        return {GL_DRAW_BUFFER0};
     } else if (methodName == "DRAW_BUFFER1_WEBGL") {
-        return {GL_DRAW_BUFFER1_EXT};
+        return {GL_DRAW_BUFFER1};
     } else if (methodName == "DRAW_BUFFER2_WEBGL") {
-        return {GL_DRAW_BUFFER2_EXT};
+        return {GL_DRAW_BUFFER2};
     } else if (methodName == "DRAW_BUFFER3_WEBGL") {
-        return {GL_DRAW_BUFFER3_EXT};
+        return {GL_DRAW_BUFFER3};
     } else if (methodName == "DRAW_BUFFER4_WEBGL") {
-        return {GL_DRAW_BUFFER4_EXT};
+        return {GL_DRAW_BUFFER4};
     } else if (methodName == "DRAW_BUFFER5_WEBGL") {
-        return {GL_DRAW_BUFFER5_EXT};
+        return {GL_DRAW_BUFFER5};
     } else if (methodName == "DRAW_BUFFER6_WEBGL") {
-        return {GL_DRAW_BUFFER6_EXT};
+        return {GL_DRAW_BUFFER6};
     } else if (methodName == "DRAW_BUFFER7_WEBGL") {
-        return {GL_DRAW_BUFFER7_EXT};
+        return {GL_DRAW_BUFFER7};
     } else if (methodName == "DRAW_BUFFER8_WEBGL") {
-        return {GL_DRAW_BUFFER8_EXT};
+        return {GL_DRAW_BUFFER8};
     } else if (methodName == "DRAW_BUFFER9_WEBGL") {
-        return {GL_DRAW_BUFFER9_EXT};
+        return {GL_DRAW_BUFFER9};
     } else if (methodName == "DRAW_BUFFER10_WEBGL") {
-        return {GL_DRAW_BUFFER10_EXT};
+        return {GL_DRAW_BUFFER10};
     } else if (methodName == "DRAW_BUFFER11_WEBGL") {
-        return {GL_DRAW_BUFFER11_EXT};
+        return {GL_DRAW_BUFFER11};
     } else if (methodName == "DRAW_BUFFER12_WEBGL") {
-        return {GL_DRAW_BUFFER12_EXT};
+        return {GL_DRAW_BUFFER12};
     } else if (methodName == "DRAW_BUFFER13_WEBGL") {
-        return {GL_DRAW_BUFFER13_EXT};
+        return {GL_DRAW_BUFFER13};
     } else if (methodName == "DRAW_BUFFER14_WEBGL") {
-        return {GL_DRAW_BUFFER14_EXT};
+        return {GL_DRAW_BUFFER14};
     } else if (methodName == "DRAW_BUFFER15_WEBGL") {
-        return {GL_DRAW_BUFFER15_EXT};
+        return {GL_DRAW_BUFFER15};
     } else if (methodName == "MAX_COLOR_ATTACHMENTS_WEBGL") {
-        return {GL_MAX_COLOR_ATTACHMENTS_EXT};
+        return {GL_MAX_COLOR_ATTACHMENTS};
     } else if (methodName == "MAX_DRAW_BUFFERS_WEBGL") {
-        return {GL_MAX_DRAW_BUFFERS_EXT};
+        return {GL_MAX_DRAW_BUFFERS};
     }
 
     return jsi::Value::undefined();

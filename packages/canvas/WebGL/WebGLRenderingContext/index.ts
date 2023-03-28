@@ -54,14 +54,29 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		ctor = global.CanvasJSIModule.createWebGLContext;
 	}
 
-	constructor(context, contextOptions) {
+	constructor(context, contextOptions?) {
 		super(context);
 		if (contextOptions) {
-			const ctx = BigInt(context.getNativeContext().toString());
+			let nativeContext = 0;
+			if (global.isAndroid) {
+				nativeContext = context.getNativeContext().toString();
+			}
+
+			if (global.isIOS) {
+				nativeContext = context.nativeContext.toString();
+			}
+
+			const ctx = BigInt(nativeContext);
 
 			let direction = 0;
-			if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
-				direction = 1;
+
+			if (global.isAndroid) {
+				if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
+					direction = 1;
+				}
+			} else {
+				// todo
+				//direction = 1;
 			}
 
 			this._context = ctor(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);

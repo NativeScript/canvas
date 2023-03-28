@@ -2072,7 +2072,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                      mode,
                                                                      start,
                                                                      end,
-                                                                     count,
+                                                                     count_,
                                                                      type,
                                                                      static_cast<ssize_t>(offset),
                                                                      this->GetState()

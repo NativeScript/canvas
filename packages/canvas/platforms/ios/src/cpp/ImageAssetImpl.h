@@ -8,7 +8,7 @@
 #include "canvas-cxx/src/lib.rs.h"
 #include <unistd.h>
 #include <thread>
-#import "NativeScript/JSIRuntime.h"
+#include "NativeScript/JSIRuntime.h"
 #include <vector>
 
 using namespace org::nativescript::canvas;

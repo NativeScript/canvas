@@ -765,7 +765,7 @@ pub fn canvas_native_webgl_get_extension(
         } else {
             None
         };
-    } else if name.eq("WEBGL_color_buffer_float")
+    } else if (name.eq("WEBGL_color_buffer_float")  || name.eq("EXT_color_buffer_float"))
         && extensions.contains("GL_OES_packed_depth_stencil")
     {
         return Some(Box::new(WEBGL_color_buffer_float::new()));

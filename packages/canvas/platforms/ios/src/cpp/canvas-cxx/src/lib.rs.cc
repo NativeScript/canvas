@@ -2071,6 +2071,10 @@ void org$nativescript$canvas$cxxbridge1$canvas_native_context_render(::org::nati
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_to_data_url(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str format, ::std::int32_t quality, ::rust::String *return$) noexcept;
 
+void org$nativescript$canvas$cxxbridge1$canvas_native_to_data_url_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::String *format, ::std::int32_t quality, ::rust::String *return$) noexcept;
+
+void org$nativescript$canvas$cxxbridge1$canvas_native_to_data_url_c_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, char const *format, ::std::int32_t quality, ::rust::String *return$) noexcept;
+
 void org$nativescript$canvas$cxxbridge1$canvas_native_context_get_filter(::org::nativescript::canvas::CanvasRenderingContext2D const &context, ::rust::String *return$) noexcept;
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_context_set_filter(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str font) noexcept;
@@ -3639,6 +3643,18 @@ void canvas_native_context_render(::org::nativescript::canvas::CanvasRenderingCo
 ::rust::String canvas_native_to_data_url(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str format, ::std::int32_t quality) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
   org$nativescript$canvas$cxxbridge1$canvas_native_to_data_url(context, format, quality, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::rust::String canvas_native_to_data_url_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::String format, ::std::int32_t quality) noexcept {
+  ::rust::MaybeUninit<::rust::String> return$;
+  org$nativescript$canvas$cxxbridge1$canvas_native_to_data_url_string(context, &format, quality, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::rust::String canvas_native_to_data_url_c_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, char const *format, ::std::int32_t quality) noexcept {
+  ::rust::MaybeUninit<::rust::String> return$;
+  org$nativescript$canvas$cxxbridge1$canvas_native_to_data_url_c_string(context, format, quality, &return$.value);
   return ::std::move(return$.value);
 }
 

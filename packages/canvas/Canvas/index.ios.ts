@@ -130,6 +130,7 @@ export class Canvas extends CanvasBase {
 		canvas.width = 300;
 		canvas.height = 150;
 		canvas._isCustom = true;
+		canvas._layoutNative();
 		return canvas;
 	}
 
@@ -251,7 +252,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webglContext) {
 					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer,opts.stencil, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -286,7 +287,7 @@ export class Canvas extends CanvasBase {
 		return this.__native__context;
 	}
 
-	toDataURL(type = 'png', encoderOptions = 0.92) {
+	toDataURL(type = 'image/png', encoderOptions = 0.92) {
 		if (this._2dContext) {
 			return (this._2dContext as any).__toDataURL(type, encoderOptions);
 		}

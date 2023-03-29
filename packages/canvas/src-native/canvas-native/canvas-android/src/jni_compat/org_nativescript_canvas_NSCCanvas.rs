@@ -57,7 +57,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
                 xr_compatible == JNI_TRUE,
                 is_canvas == JNI_TRUE,
             );
-            if let Some(gl_context) = GLContext::create_window_surface(
+            if let Some(gl_context) = GLContext::create_window_context(
                 &mut attrs,
                 window.width(),
                 window.height(),

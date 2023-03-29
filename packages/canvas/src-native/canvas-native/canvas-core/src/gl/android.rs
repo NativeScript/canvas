@@ -615,9 +615,9 @@ impl GLContext {
     }
 
     pub fn create_offscreen_context(
-        width: i32,
-        height: i32,
         config: &mut ContextAttributes,
+        width: i32,
+        height: i32
     ) -> Option<Self> {
         GLContext::create_pbuffer(config, width, height)
     }

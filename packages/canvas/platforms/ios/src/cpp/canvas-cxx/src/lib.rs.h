@@ -1978,6 +1978,10 @@ void canvas_native_context_render(::org::nativescript::canvas::CanvasRenderingCo
 
 ::rust::String canvas_native_to_data_url(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str format, ::std::int32_t quality) noexcept;
 
+::rust::String canvas_native_to_data_url_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::String format, ::std::int32_t quality) noexcept;
+
+::rust::String canvas_native_to_data_url_c_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, char const *format, ::std::int32_t quality) noexcept;
+
 ::rust::String canvas_native_context_get_filter(::org::nativescript::canvas::CanvasRenderingContext2D const &context) noexcept;
 
 void canvas_native_context_set_filter(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str font) noexcept;

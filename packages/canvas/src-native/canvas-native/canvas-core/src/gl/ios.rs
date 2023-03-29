@@ -15,6 +15,7 @@ use icrate::objc2::{
     class, msg_send, msg_send_id, rc::Id, rc::Shared, runtime::Object, sel, Encode, Encoding,
 };
 use icrate::Foundation::NSInteger;
+use skia_safe::wrapper::PointerWrapper;
 
 use crate::context_attributes::ContextAttributes;
 
@@ -303,7 +304,7 @@ impl GLKView {
     }
 }
 
-#[cfg(target_os = "ios")]
+//#[cfg(target_os = "ios")]
 impl GLContext {
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
         let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
@@ -343,7 +344,6 @@ impl GLContext {
         } else {
             EAGLRenderingAPI::GLES3
         };
-
         let context = EAGLContext::new_with_api(api);
 
         if context.is_none() {
@@ -356,6 +356,7 @@ impl GLContext {
             context,
             view: Some(view),
         };
+
         Some(GLContext {
             inner: Rc::new(RefCell::new(inner)),
         })

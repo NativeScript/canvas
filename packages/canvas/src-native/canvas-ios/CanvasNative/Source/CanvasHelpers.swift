@@ -125,5 +125,16 @@ public class CanvasHelpers: NSObject {
     public static func test2D(_ context: Int64) {
         canvas_native_context_2d_test(context)
     }
+    
+    public static func testToDataURL(_ context: Int64)-> String {
+        let data = canvas_native_context_2d_test_to_data_url(context);
+        if(data == nil){
+            return String()
+        }
+        let ret = String(utf8String: data!)
+        
+        canvas_native_context_2d_destroy_string(data)
+        return ret ?? String()
+    }
 
 }

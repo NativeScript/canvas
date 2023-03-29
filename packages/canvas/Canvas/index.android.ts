@@ -180,7 +180,7 @@ export class Canvas extends CanvasBase {
 		super.disposeNativeView();
 	}
 
-	toDataURL(type = 'png', encoderOptions = 0.92) {
+	toDataURL(type = 'image/png', encoderOptions = 0.92) {
 		if (this._2dContext) {
 			return (this._2dContext as any).__toDataURL(type, encoderOptions);
 		}

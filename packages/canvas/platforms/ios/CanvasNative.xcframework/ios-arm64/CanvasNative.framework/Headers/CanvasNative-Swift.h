@@ -306,6 +306,7 @@ SWIFT_CLASS_NAMED("NSCCanvas")
 - (void)forceLayout:(CGFloat)width :(CGFloat)height;
 - (void)render;
 - (void)context2DTest:(int64_t)context;
+- (NSString * _Nonnull)context2DTestToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;

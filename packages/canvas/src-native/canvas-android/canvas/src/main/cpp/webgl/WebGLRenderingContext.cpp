@@ -1434,15 +1434,15 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
 
                                                          //if (count > 0) {
-                                                             auto mask = (uint32_t) arguments[0].asNumber();
+                                                         auto mask = (uint32_t) arguments[0].asNumber();
 
-                                                             canvas_native_webgl_clear(
-                                                                     mask,
-                                                                     this->GetState()
-                                                             );
+                                                         canvas_native_webgl_clear(
+                                                                 mask,
+                                                                 this->GetState()
+                                                         );
 
-                                                             this->UpdateInvalidateState();
-                                                        // }
+                                                         this->UpdateInvalidateState();
+                                                         // }
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -2179,18 +2179,18 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
 
-                                                        // if (count > 2) {
-                                                             auto mode = (uint32_t) arguments[0].asNumber();
-                                                             auto first = (int32_t) arguments[1].asNumber();
-                                                             auto count_ = (int32_t) arguments[2].asNumber();
+                                                         // if (count > 2) {
+                                                         auto mode = (uint32_t) arguments[0].asNumber();
+                                                         auto first = (int32_t) arguments[1].asNumber();
+                                                         auto count_ = (int32_t) arguments[2].asNumber();
 
-                                                             canvas_native_webgl_draw_arrays(
-                                                                     mode,
-                                                                     first,
-                                                                     count_,
-                                                                     this->GetState()
-                                                             );
-                                                             this->UpdateInvalidateState();
+                                                         canvas_native_webgl_draw_arrays(
+                                                                 mode,
+                                                                 first,
+                                                                 count_,
+                                                                 this->GetState()
+                                                         );
+                                                         this->UpdateInvalidateState();
                                                          //}
 
                                                          return jsi::Value::undefined();
@@ -2777,6 +2777,10 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                  break;
                                                              case WebGLExtensionType::WEBGL_color_buffer_float: {
                                                                  auto ret = std::make_shared<WEBGL_color_buffer_floatImpl>();
+                                                                 if (this->GetVersion() ==
+                                                                     WebGLRenderingVersion::V2) {
+                                                                     ret->ext_name_ = "EXT_color_buffer_float";
+                                                                 }
                                                                  return jsi::Object::createFromHostObject(
                                                                          runtime, ret);
                                                              }
@@ -4772,20 +4776,20 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             size_t count) -> jsi::Value {
 
                                                          //if (count > 1) {
-                                                          //   if (arguments[0].isObject()) {
-                                                                 auto location = arguments[0].asObject(
-                                                                         runtime).asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = arguments[1].asNumber();
-                                                                 if (location != nullptr) {
-                                                                     canvas_native_webgl_uniform1f(
-                                                                             location->GetUniformLocation(),
-                                                                             static_cast<float>(v0),
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                          //   }
-                                                        // }
+                                                         //   if (arguments[0].isObject()) {
+                                                         auto location = arguments[0].asObject(
+                                                                 runtime).asHostObject<WebGLUniformLocation>(
+                                                                 runtime);
+                                                         auto v0 = arguments[1].asNumber();
+                                                         if (location != nullptr) {
+                                                             canvas_native_webgl_uniform1f(
+                                                                     location->GetUniformLocation(),
+                                                                     static_cast<float>(v0),
+                                                                     this->GetState()
+                                                             );
+                                                         }
+                                                         //   }
+                                                         // }
 
                                                          return jsi::Value::undefined();
                                                      }

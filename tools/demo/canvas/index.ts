@@ -565,7 +565,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
-		// arcToAnimation(this.canvas);
+		//arcToAnimation(this.canvas);
 		// ellipse(this.canvas);
 		//fillPath(this.canvas);
 		//flappyBird(this.canvas);
@@ -583,7 +583,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		this.clock(this.canvas);
+		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 
 		//console.log('ready ??');
@@ -620,7 +620,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
 
-		//fog(this.canvas);
+		fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
@@ -664,7 +664,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			}
 		}
 
-		asset.loadFileSync(realPath);
+		asset.fromFileSync(realPath);
 		//asset.loadFromUrlSync('https://i0.wp.com/www.printmag.com/wp-content/uploads/2021/02/4cbe8d_f1ed2800a49649848102c68fc5a66e53mv2.gif?fit=476%2C280&ssl=1');
 		//asset.loadFromUrl('https://pbs.twimg.com/media/FQaPvSZXwAgfun7?format=png&name=large')
 		//asset.loadFromUrlSync(`https://pbs.twimg.com/media/FQaPvSZXwAgfun7?format=jpg&name=large`);

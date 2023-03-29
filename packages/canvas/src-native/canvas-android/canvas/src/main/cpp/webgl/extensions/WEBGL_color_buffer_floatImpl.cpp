@@ -28,7 +28,7 @@ jsi::Value WEBGL_color_buffer_floatImpl::get(jsi::Runtime &runtime, const jsi::P
     auto methodName = name.utf8(runtime);
 
     if (methodName == "ext_name") {
-        return jsi::String::createFromAscii(runtime, "WEBGL_color_buffer_float");
+        return jsi::String::createFromAscii(runtime, this->ext_name_);
     }
 
     if (methodName == "RGBA32F_EXT") {

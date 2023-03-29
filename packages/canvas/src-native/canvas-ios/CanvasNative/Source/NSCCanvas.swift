@@ -160,7 +160,7 @@ public class NSCCanvas: UIView {
         if(useWebGL && antialias){
             // glkView.drawableMultisample = .multisample4X
         }else if(isCanvas) {
-            // drawableMultisample = .multisample4X
+         //   glkView.drawableMultisample = .multisample4X
         }
         
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
@@ -208,9 +208,8 @@ public class NSCCanvas: UIView {
                xrCompatible
            )
            
-           var samples: Int32 = antialias ? 4 : 0
+           let samples: Int32 = antialias ? 0 : 0
         
-
            let density = Float(UIScreen.main.scale)
            return CanvasHelpers.create2DContext(
             nativeGL, Int32(drawingBufferWidth), Int32(drawingBufferHeight),
@@ -269,6 +268,10 @@ public class NSCCanvas: UIView {
         render()
     }
     
+    public func context2DTestToDataURL(_ context: Int64) -> String{
+        return CanvasHelpers.testToDataURL(context)
+    }
+    
     required init?(coder: NSCoder) {
         glkView = CanvasGLKView(coder: coder)!
         super.init(coder: coder)
@@ -303,8 +306,9 @@ public class NSCCanvas: UIView {
             glkView.layoutIfNeeded()
         }
         
+        
         if(drawingBufferHeight == 0 && drawingBufferWidth == 0){
-            if(!isLoaded){
+            if(!isLoaded && bounds != .zero){
                 self.isLoaded = true
                 self.readyListener?.contextReady()
             }

@@ -1870,25 +1870,20 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
-                                                         std::string type("image/png");
-                                                         int quality = 92;
-                                                         if (arguments[0].isString()) {
-                                                             type = arguments[0].asString(
-                                                                     runtime).utf8(
-                                                                     runtime);
-                                                         }
+                                                         
+                                                        auto format = arguments[0].asString(
+                                                                                          runtime).utf8(
+                                                                                                        runtime);
+                                                        auto quality = static_cast<int>(arguments[1].getNumber());
 
 
-                                                         if (arguments[1].isNumber()) {
-                                                             quality = (int) arguments[1].asNumber();
-                                                         }
-
-
-                                                         rust::Str str(type);
-
-                                                         auto data = canvas_native_to_data_url(
-                                                                 this->GetContext(), str,
-                                                                 quality);
+                                                         
+//                                                         auto data = canvas_native_to_data_url(
+//                                                                 this->GetContext(), rust::Str(format.c_str()),quality);
+            
+            
+            auto data = canvas_native_to_data_url_c_string(this->GetContext(), format.c_str(),quality);
+            
                                                          return jsi::String::createFromAscii(
                                                                  runtime,
                                                                  data.data(),

@@ -44,6 +44,10 @@ void canvas_native_release_gl_pointer(int64_t gl_context);
 
 void canvas_native_context_2d_test(int64_t context);
 
+char *canvas_native_context_2d_test_to_data_url(int64_t context);
+
+void canvas_native_context_2d_destroy_string(char *string);
+
 bool canvas_native_imageasset_load_from_bytes(int64_t asset, uint8_t *bytes, uintptr_t size);
 
 int64_t canvas_native_context_create_pattern(int64_t context,

@@ -1128,7 +1128,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {
 				texImage2D(target, level, internalformat, width, height, border.native);
-			} else if (border instanceof android.graphics.Bitmap) {
+			} else if (global.isAndroid && border instanceof android.graphics.Bitmap) {
+				// todo ios
 				texImage2D(target, level, internalformat, width, height, border);
 			} else if (border instanceof ImageSource) {
 				texImage2D(target, level, internalformat, width, height, border.android);
@@ -1137,7 +1138,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 					texImage2D(target, level, internalformat, width, height, border._asset.native);
 				} else if (border._imageSource instanceof ImageSource) {
 					texImage2D(target, level, internalformat, width, height, border._imageSource.android);
-				} else if (border._image instanceof android.graphics.Bitmap) {
+				} else if (global.isAndroid && border._image instanceof android.graphics.Bitmap) {
+					//todo ios
 					texImage2D(target, level, internalformat, width, height, border._image);
 				} else if (typeof border.src === 'string') {
 					texImage2D(target, level, internalformat, width, height, ImageSource.fromFileSync(border.src).android);
@@ -1176,7 +1178,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (arguments.length === 9) {
 			texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
 		} else if (arguments.length === 7) {
-			if (format instanceof android.graphics.Bitmap) {
+			if (global.isAndroid && format instanceof android.graphics.Bitmap) {
+				// todo
 				texSubImage2D(target, level, xoffset, yoffset, width, height, format);
 			} else if (format instanceof ImageSource) {
 				texSubImage2D(target, level, xoffset, yoffset, width, height, format.android);
@@ -1187,7 +1190,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
 				if (format._imageSource instanceof ImageSource) {
 					texSubImage2D(target, level, xoffset, yoffset, width, height, format._imageSource.android);
-				} else if (format._image instanceof android.graphics.Bitmap) {
+				} else if (global.isAndroid && format._image instanceof android.graphics.Bitmap) {
+					// todo
 					texSubImage2D(target, level, xoffset, yoffset, width, height, format._image);
 				} else if (format._asset instanceof ImageAsset) {
 					texSubImage2D(target, level, xoffset, yoffset, width, height, format._asset.native);

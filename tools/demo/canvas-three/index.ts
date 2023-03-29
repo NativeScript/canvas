@@ -27,7 +27,7 @@ class IconMesh extends THREE.Mesh {
 	}
 }
 
-global.console.warn = () => {};
+// global.console.warn = () => {};
 
 export class DemoSharedCanvasThree extends DemoSharedBase {
 	canvas: any;
@@ -47,11 +47,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		//init(this.canvas);
 		// (canvas as any).scaleX = -1;
-		//this.group(this.canvas);
+	//	this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
-		//this.threeCrate(this.canvas);
+		this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
 		//this.threeOcean(this.canvas);
@@ -66,7 +66,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.ThreeMF(this.canvas);
 		//this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
-		this.birds(this.canvas);
+		//this.birds(this.canvas);
 		//this.renderVideo();
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
@@ -138,7 +138,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 						scene.add(gltf.scene);
 
-					//	roughnessMipmapper.dispose();
+						//	roughnessMipmapper.dispose();
 
 						render();
 					});
@@ -2773,7 +2773,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var container, stats;
 		var camera, scene, renderer;
 		var controls, water, sun, mesh, mesh2, mesh3;
-		const context = canvas.getContext('webgl', { antialias: false }) as any;
+		const context = canvas.getContext('webgl2', { antialias: false }) as any;
 		renderer = new THREE.WebGLRenderer({ context, antialias: false });
 		renderer.setPixelRatio(1);
 		renderer.setSize(context.drawingBufferWidth, context.drawingBufferHeight);

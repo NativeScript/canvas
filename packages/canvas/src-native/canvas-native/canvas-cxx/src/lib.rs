@@ -142,7 +142,9 @@ impl CanvasRenderingContext2D {
 
     pub fn render(&self) {
         self.gl_context.make_current();
-        self.get_context_mut().flush();
+        {
+            self.get_context_mut().flush();
+        }
         self.gl_context.swap_buffers();
     }
 
@@ -784,6 +786,18 @@ pub mod ffi {
         fn canvas_native_to_data_url(
             context: &mut CanvasRenderingContext2D,
             format: &str,
+            quality: i32,
+        ) -> String;
+
+        pub fn canvas_native_to_data_url_string(
+            context: &mut CanvasRenderingContext2D,
+            format: String,
+            quality: i32,
+        ) -> String;
+
+        pub unsafe fn canvas_native_to_data_url_c_string(
+            context: &mut CanvasRenderingContext2D,
+            format: *const c_char,
             quality: i32,
         ) -> String;
 
@@ -3338,7 +3352,7 @@ pub fn canvas_native_context_create_gl_no_window(
     let gl_context = canvas_core::gl::GLContext::create_offscreen_context(
         &mut attr,
         width as i32,
-        height as i32,
+        height as i32
     )
     .unwrap();
 
@@ -4784,6 +4798,25 @@ pub fn canvas_native_to_data_url(
 ) -> String {
     context.make_current();
     to_data_url(context, format, quality)
+}
+
+pub fn canvas_native_to_data_url_string(
+    context: &mut CanvasRenderingContext2D,
+    format: String,
+    quality: i32,
+) -> String {
+    context.make_current();
+    to_data_url(context, format.as_str(), quality)
+}
+
+pub fn canvas_native_to_data_url_c_string(
+    context: &mut CanvasRenderingContext2D,
+    format: *const c_char,
+    quality: i32,
+) -> String {
+    context.make_current();
+    let format = unsafe { CStr::from_ptr(format).to_string_lossy() };
+    to_data_url(context, format.as_ref(), quality)
 }
 
 /* CanvasRenderingContext2D */
@@ -7844,7 +7877,7 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
     if !source_non_gpu {
         canvas.gl_context.make_current();
         buf = source_ctx.snapshot_to_raster_data();
-        canvas.gl_context.remove_if_current();
+      //  canvas.gl_context.remove_if_current();
     } else {
         buf = source_ctx.read_pixels();
     }

@@ -1,5 +1,6 @@
 import UIKit
 import CanvasNative
+import GLKit
 @available(iOS 13.0, *)
 class ViewController: UIViewController {
     func contextReady() {
@@ -32,8 +33,24 @@ class ViewController: UIViewController {
                                     -16777216
         )
         
+        
 
         canvas?.context2DTest(ctx)
+        
+        var start = CACurrentMediaTime()
+        print(canvas?.context2DTestToDataURL(ctx))
+        print("done", CACurrentMediaTime() - start)
+        
+        
+        let glView = canvas!.subviews.first as! GLKView
+        
+        start = CACurrentMediaTime()
+        let data = glView.snapshot.pngData()?.base64EncodedData()
+       
+        print("done", CACurrentMediaTime() - start)
+//        print(String(data: data!, encoding: .utf8))
+        
+    //    print(canvas?.context2DTestToDataURL(ctx))
         // Do any additional setup after loading the view.
        //canvas1.setListener(self)
         

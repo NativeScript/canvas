@@ -12,7 +12,7 @@ export class ImageAsset {
 	get native() {
 		return this._native;
 	}
-	constructor(native) {
+	constructor(native?) {
 		this._native = native || ctor();
 	}
 

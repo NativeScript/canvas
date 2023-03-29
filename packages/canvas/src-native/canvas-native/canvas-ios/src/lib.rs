@@ -1,5 +1,6 @@
 use std::cell::RefCell;
-use std::ffi::{c_float, c_int, c_long, c_longlong, c_uchar, c_void, CStr};
+use std::ffi::{c_float, c_int, c_long, c_longlong, c_uchar, c_void, CStr, CString};
+use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 use std::sync::Once;
@@ -104,7 +105,7 @@ pub extern "C" fn canvas_native_create_2d_context(
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let mut ctx_2d = canvas_cxx::CanvasRenderingContext2D::new(
+    let mut ctx_2d = CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -188,6 +189,31 @@ pub extern "C" fn canvas_native_context_2d_test(context: i64) {
         ctx.fill_rect_xywh(0., 0., 300., 300.);
     }
     context.render();
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_2d_test_to_data_url(context: i64) -> *mut c_char {
+    if context == 0 {
+        return std::ptr::null_mut();
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+    let mut ctx = context.get_context_mut();
+    ctx.flush_and_sync_cpu();
+    let ret = canvas_2d::to_data_url_context(ctx.deref_mut(), "image/png", 92);
+    CString::new(ret).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_2d_destroy_string(string: *mut c_char) {
+    if string.is_null() {
+        return;
+    }
+
+    let _ = unsafe { CString::from_raw(string) };
 }
 
 #[no_mangle]

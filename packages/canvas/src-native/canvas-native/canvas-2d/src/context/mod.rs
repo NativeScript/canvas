@@ -255,7 +255,7 @@ impl Context {
     pub fn snapshot_to_raster_data(&mut self) -> Vec<u8> {
         self.flush();
         let info = self.surface.image_info();
-        let size = info.height() as usize * info.min_row_bytes();
+        let size = (info.width() * info.height() * 4) as usize;
         let mut buf = vec![0_u8; size];
 
         let ss = self.surface.image_snapshot();

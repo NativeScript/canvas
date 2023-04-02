@@ -56,7 +56,6 @@ export class ImageBitmap {
 
 	static createFrom(source: any, options: any) {
 		return new Promise((resolve, reject) => {
-			console.log('createFrom');
 			let realSource;
 			if (source instanceof Canvas) {
 				realSource = (source as any).native;

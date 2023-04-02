@@ -27,7 +27,7 @@ class IconMesh extends THREE.Mesh {
 	}
 }
 
-// global.console.warn = () => {};
+global.console.warn = () => {};
 
 export class DemoSharedCanvasThree extends DemoSharedBase {
 	canvas: any;
@@ -45,16 +45,30 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		this.canvas = args.object;
 		//x jet game
 
-		//init(this.canvas);
+		init(this.canvas);
 		// (canvas as any).scaleX = -1;
-	//	this.group(this.canvas);
+		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
-		this.threeCrate(this.canvas);
+		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
 		//this.nearestNeighbour(this.canvas);
+		//const canvas = document.createElement('canvas') as any;
+		//canvas.width = 1000;
+		//canvas.height = 1000;
 		//this.threeOcean(this.canvas);
+
+		//this.skinningAndMorphing(this.canvas);
+		//this.geoColors(canvas);
+		// setTimeout(()=>{
+		// 	console.log(canvas.toDataURL());
+		// 	const view = canvas._canvas._canvas.subviews.objectAtIndex(0);
+		// 	const image = view.snapshot as UIImage;
+		// 	const png = UIImagePNGRepresentation(image);
+		// 	const base = png.base64EncodedDataWithOptions(0);
+		// 	console.log(NSString.alloc().initWithDataEncoding(base, NSUTF8StringEncoding));
+		// }, 10000);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
@@ -95,7 +109,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mouseY = 0,
 			windowHalfX = 0,
 			windowHalfY = 0;
-
+		// THREE.RGBELoader: unsupported type:  1009
 		const init = () => {
 			context = canvas.getContext('webgl2');
 			width = context.drawingBufferWidth;
@@ -107,42 +121,39 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			light.position.set(-1.8, 0.6, 2.7 * 1.2);
 			scene.add(light);
 
-			new RGBELoader()
-				.setDataType(THREE.UnsignedByteType)
-				.setPath(this.root + '/textures/equirectangular/')
-				.load('royal_esplanade_1k.hdr', (texture) => {
-					var envMap = pmremGenerator.fromEquirectangular(texture).texture;
+			new RGBELoader().setPath(this.root + '/textures/equirectangular/').load('royal_esplanade_1k.hdr', (texture) => {
+				var envMap = pmremGenerator.fromEquirectangular(texture).texture;
 
-					scene.background = envMap;
-					scene.environment = envMap;
+				scene.background = envMap;
+				scene.environment = envMap;
 
-					texture.dispose();
-					pmremGenerator.dispose();
+				texture.dispose();
+				pmremGenerator.dispose();
+
+				render();
+
+				// model
+
+				// use of RoughnessMipmapper is optional
+				//var roughnessMipmapper = new RoughnessMipmapper(renderer);
+
+				var loader = new GLTFLoader().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
+				loader.load('DamagedHelmet.gltf', function (gltf) {
+					gltf.scene.traverse(function (child) {
+						// @ts-ignore
+						if (child.isMesh) {
+							// TOFIX RoughnessMipmapper seems to be broken with WebGL 2.0
+							// roughnessMipmapper.generateMipmaps( child.material );
+						}
+					});
+
+					scene.add(gltf.scene);
+
+					//	roughnessMipmapper.dispose();
 
 					render();
-
-					// model
-
-					// use of RoughnessMipmapper is optional
-					//var roughnessMipmapper = new RoughnessMipmapper(renderer);
-
-					var loader = new GLTFLoader().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
-					loader.load('DamagedHelmet.gltf', function (gltf) {
-						gltf.scene.traverse(function (child) {
-							// @ts-ignore
-							if (child.isMesh) {
-								// TOFIX RoughnessMipmapper seems to be broken with WebGL 2.0
-								// roughnessMipmapper.generateMipmaps( child.material );
-							}
-						});
-
-						scene.add(gltf.scene);
-
-						//	roughnessMipmapper.dispose();
-
-						render();
-					});
 				});
+			});
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
@@ -252,7 +263,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var pmremGenerator = new THREE.PMREMGenerator(renderer);
 			pmremGenerator.compileEquirectangularShader();
 
-			var rgbeLoader = new RGBELoader().setDataType(THREE.UnsignedByteType).setPath(this.root + '/textures/equirectangular/');
+			var rgbeLoader = new RGBELoader().setPath(this.root + '/textures/equirectangular/');
 
 			var gltfLoader = new GLTFLoader().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
 
@@ -1144,7 +1155,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		animate();
 	}
 
-	geoColors(args) {
+	geoColors(canvas) {
 		var container, stats;
 
 		var camera, scene, renderer;
@@ -1152,14 +1163,17 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		var mouseX = 0,
 			mouseY = 0;
 
-		var windowHalfX = window.innerWidth / 2;
-		var windowHalfY = window.innerHeight / 2;
+		var width = canvas.width;
+		var height = canvas.height;
+
+		var windowHalfX = width / 2;
+		var windowHalfY = height / 2;
 
 		init();
 		animate();
 
 		function init() {
-			camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 1, 100000);
+			camera = new THREE.PerspectiveCamera(20, width / height, 1, 100000);
 			camera.position.z = 8000;
 
 			scene = new THREE.Scene();
@@ -1171,19 +1185,19 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			// shadow
 
-			var canvas = document.createElement('canvas');
-			canvas.width = 128;
-			canvas.height = 128;
+			var shadow = document.createElement('canvas');
+			shadow.width = 128;
+			shadow.height = 128;
 
-			var context = canvas.getContext('2d');
-			var gradient = context.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2);
+			var context = shadow.getContext('2d');
+			var gradient = context.createRadialGradient(shadow.width / 2, shadow.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2);
 			gradient.addColorStop(0.1, 'rgba(210,210,210,1)');
 			gradient.addColorStop(1, 'rgba(255,255,255,1)');
 
 			context.fillStyle = gradient;
-			context.fillRect(0, 0, canvas.width, canvas.height);
+			context.fillRect(0, 0, shadow.width, shadow.height);
 
-			var shadowTexture = new THREE.CanvasTexture(canvas);
+			var shadowTexture = new THREE.CanvasTexture(shadow);
 
 			var shadowMaterial = new THREE.MeshBasicMaterial({ map: shadowTexture });
 			var shadowGeo = new THREE.PlaneBufferGeometry(300, 300, 1, 1);
@@ -1262,11 +1276,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var wireframe = new THREE.Mesh(geometry3, wireframeMaterial);
 			mesh.add(wireframe);
 			scene.add(mesh);
-			const gl = args.getContext('webgl2') as any;
+			const gl = canvas.getContext('webgl2') as any;
 
 			renderer = new THREE.WebGLRenderer({ context: gl, antialias: true });
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			//renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(width, height);
 
 			document.addEventListener('mousemove', onDocumentMouseMove, false);
 
@@ -1320,7 +1334,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const context = canvas.getContext('webgl2');
 			const width = context.drawingBufferWidth;
 			const height = context.drawingBufferHeight;
-			renderer = new THREE.WebGLRenderer();
+			renderer = new THREE.WebGLRenderer({context});
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 
@@ -2553,7 +2567,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	*/
 
 	skinningAndMorphing(canvas) {
-		const context = canvas.getContext('webgl2') as any;
+		const context = canvas.getContext('webgl2') as WebGL2RenderingContext;
 
 		const { drawingBufferWidth: width, drawingBufferHeight: height } = context;
 		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;
@@ -2770,154 +2784,151 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	threeOcean(canvas) {
-		var container, stats;
-		var camera, scene, renderer;
-		var controls, water, sun, mesh, mesh2, mesh3;
 		const context = canvas.getContext('webgl2', { antialias: false }) as any;
-		renderer = new THREE.WebGLRenderer({ context, antialias: false });
-		renderer.setPixelRatio(1);
-		renderer.setSize(context.drawingBufferWidth, context.drawingBufferHeight);
-		scene = new THREE.Scene();
-		camera = new THREE.PerspectiveCamera(55, context.drawingBufferWidth / context.drawingBufferHeight, 1, 20000);
-		camera.position.set(30, 30, 100);
 
-		//
-		sun = new THREE.Vector3();
+		let camera, scene, renderer;
+		let controls, water, sun, mesh;
 
-		// Water
+		init(this.root);
+		animate();
 
-		var waterGeometry = new THREE.PlaneBufferGeometry(10000, 10000);
+		function init(root) {
+			//
 
-		water = new Water(waterGeometry, {
-			textureWidth: 512,
-			textureHeight: 512,
-			waterNormals: new THREE.TextureLoader().load(this.root + '/textures/waternormals.jpg', function (texture) {
-				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-			}),
-			alpha: 1.0,
-			sunDirection: new THREE.Vector3(),
-			sunColor: 0xffffff,
-			waterColor: 0x001e0f,
-			distortionScale: 3.7,
-			fog: scene.fog !== undefined,
-		});
+			renderer = new THREE.WebGLRenderer({ context, antialias: false });
+			//renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(context.drawingBufferWidth, context.drawingBufferHeight);
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
-		water.renderOrder = 2;
+			//
 
-		water.rotation.x = -Math.PI / 2;
+			scene = new THREE.Scene();
 
-		scene.add(water);
+			camera = new THREE.PerspectiveCamera(55, context.drawingBufferWidth / context.drawingBufferHeight, 1, 20000);
+			camera.position.set(30, 30, 100);
 
-		// Skybox
+			//
 
-		var sky = new Sky();
-		sky.scale.setScalar(10000);
-		scene.add(sky);
+			sun = new THREE.Vector3();
 
-		var uniforms = sky.material.uniforms;
+			// Water
 
-		uniforms['turbidity'].value = 10;
-		uniforms['rayleigh'].value = 2;
-		uniforms['mieCoefficient'].value = 0.005;
-		uniforms['mieDirectionalG'].value = 0.8;
+			const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
 
-		var parameters = {
-			inclination: 0.49,
-			azimuth: 0.205,
-		};
+			water = new Water(waterGeometry, {
+				textureWidth: 512,
+				textureHeight: 512,
+				waterNormals: new THREE.TextureLoader().load(root + '/textures/waternormals.jpg', function (texture) {
+					texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+				}),
+				sunDirection: new THREE.Vector3(),
+				sunColor: 0xffffff,
+				waterColor: 0x001e0f,
+				distortionScale: 3.7,
+				fog: scene.fog !== undefined,
+			});
 
-		var pmremGenerator = new THREE.PMREMGenerator(renderer);
+			water.rotation.x = -Math.PI / 2;
 
-		function updateSun() {
-			var theta = Math.PI * (parameters.inclination - 0.5);
-			var phi = 2 * Math.PI * (parameters.azimuth - 0.5);
+			scene.add(water);
 
-			sun.x = Math.cos(phi);
-			sun.y = Math.sin(phi) * Math.sin(theta);
-			sun.z = Math.sin(phi) * Math.cos(theta);
+			// Skybox
 
-			sky.material.uniforms['sunPosition'].value.copy(sun);
-			water.material.uniforms['sunDirection'].value.copy(sun).normalize();
+			const sky = new Sky();
+			sky.scale.setScalar(10000);
+			scene.add(sky);
 
-			scene.environment = pmremGenerator.fromScene(sky as any).texture;
+			const skyUniforms = sky.material.uniforms;
+
+			skyUniforms['turbidity'].value = 10;
+			skyUniforms['rayleigh'].value = 2;
+			skyUniforms['mieCoefficient'].value = 0.005;
+			skyUniforms['mieDirectionalG'].value = 0.8;
+
+			const parameters = {
+				elevation: 2,
+				azimuth: 180,
+			};
+
+			const pmremGenerator = new THREE.PMREMGenerator(renderer);
+			let renderTarget;
+
+			function updateSun() {
+				const phi = THREE.MathUtils.degToRad(90 - parameters.elevation);
+				const theta = THREE.MathUtils.degToRad(parameters.azimuth);
+
+				sun.setFromSphericalCoords(1, phi, theta);
+
+				sky.material.uniforms['sunPosition'].value.copy(sun);
+				water.material.uniforms['sunDirection'].value.copy(sun).normalize();
+
+				if (renderTarget !== undefined) renderTarget.dispose();
+
+				renderTarget = pmremGenerator.fromScene(sky);
+
+				scene.environment = renderTarget.texture;
+			}
+
+			updateSun();
+
+			//
+
+			const geometry = new THREE.BoxGeometry(30, 30, 30);
+			const material = new THREE.MeshStandardMaterial({ roughness: 0 });
+
+			mesh = new THREE.Mesh(geometry, material);
+			scene.add(mesh);
+
+			//
+
+			controls = new OrbitControls(camera, canvas);
+			controls.maxPolarAngle = Math.PI * 0.495;
+			controls.target.set(0, 10, 0);
+			controls.minDistance = 40.0;
+			controls.maxDistance = 200.0;
+			controls.update();
+
+			//
+
+			//	stats = new Stats();
+			//	container.appendChild( stats.dom );
+
+			// GUI
+
+			//const gui = new GUI();
+
+			// const folderSky = gui.addFolder( 'Sky' );
+			// folderSky.add( parameters, 'elevation', 0, 90, 0.1 ).onChange( updateSun );
+			// folderSky.add( parameters, 'azimuth', - 180, 180, 0.1 ).onChange( updateSun );
+			// folderSky.open();
+
+			const waterUniforms = water.material.uniforms;
+
+			// const folderWater = gui.addFolder( 'Water' );
+			// folderWater.add( waterUniforms.distortionScale, 'value', 0, 8, 0.1 ).name( 'distortionScale' );
+			// folderWater.add( waterUniforms.size, 'value', 0.1, 10, 0.1 ).name( 'size' );
+			// folderWater.open();
+
+			//
+
+			window.addEventListener('resize', onWindowResize);
 		}
 
-		updateSun();
-
-		//
-		/*
-				const texture = document.createElement('video');
-				texture.loop = true;
-				texture.muted = true;
-				texture.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-				texture.play();
-				*/
-
-		var geometry = new THREE.BoxBufferGeometry(30, 30, 30);
-		var material = new THREE.MeshStandardMaterial({
-			transparent: true,
-			roughness: 0,
-		});
-
-		//material.map = new THREE.VideoTexture(texture);
-
-		//material.depthTest = true;
-		//material.depthWrite = true;
-
-		mesh = new THREE.Mesh(geometry, material);
-
-		scene.add(mesh);
-
-		//
-
-		controls = new OrbitControls(camera, canvas);
-		controls.maxPolarAngle = Math.PI * 0.495;
-		controls.target.set(0, 10, 0);
-		controls.minDistance = 40.0;
-		controls.maxDistance = 200.0;
-		controls.update();
-
-		/*
-		//
-
-		stats = new Stats();
-		container.appendChild( stats.dom );
-
-		// GUI
-
-		var gui = new GUI();
-
-		var folder = gui.addFolder( 'Sky' );
-		folder.add( parameters, 'inclination', 0, 0.5, 0.0001 ).onChange( updateSun );
-		folder.add( parameters, 'azimuth', 0, 1, 0.0001 ).onChange( updateSun );
-		folder.open();
-
-		var uniforms = water.material.uniforms;
-
-		var folder = gui.addFolder( 'Water' );
-		folder.add( uniforms.distortionScale, 'value', 0, 8, 0.1 ).name( 'distortionScale' );
-		folder.add( uniforms.size, 'value', 0.1, 10, 0.1 ).name( 'size' );
-		folder.add( uniforms.alpha, 'value', 0.9, 1, .001 ).name( 'alpha' );
-		folder.open();
-		*/
-
-		//
-
 		function onWindowResize() {
-			camera.aspect = context.drawingBufferWidth / context.drawingBufferHeight;
+			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 
-			renderer.setSize(context.drawingBufferWidth, context.drawingBufferHeight);
+			renderer.setSize(window.innerWidth, window.innerHeight);
 		}
 
 		function animate() {
 			requestAnimationFrame(animate);
 			render();
-			// stats.update();
+			//stats.update();
 		}
 
 		function render() {
-			var time = performance.now() * 0.001;
+			const time = performance.now() * 0.001;
 
 			mesh.position.y = Math.sin(time) * 20 + 5;
 			mesh.rotation.x = time * 0.5;
@@ -2927,10 +2938,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			renderer.render(scene, camera);
 		}
-
-		window.addEventListener('resize', onWindowResize, false);
-
-		animate();
 	}
 
 	threeCrate(canvas) {

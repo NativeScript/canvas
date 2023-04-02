@@ -7,11 +7,17 @@
 
 import Foundation
 import UIKit
+import GLKit
 
 
 @objcMembers
 @objc(NSCCanvas)
-public class NSCCanvas: UIView {
+public class NSCCanvas: UIView, GLKViewDelegate {
+    
+    public func glkView(_ view: GLKView, drawIn rect: CGRect) {
+        view.enableSetNeedsDisplay = false
+    }
+    
     
     private static var views: NSMapTable<NSString,NSCCanvas> = NSMapTable(keyOptions: .copyIn, valueOptions: .weakMemory)
     
@@ -23,7 +29,7 @@ public class NSCCanvas: UIView {
     
     public func getViewPtr() -> UnsafeMutableRawPointer {
         if(ptr == nil){
-            ptr = Unmanaged.passUnretained(glkView).toOpaque()
+            ptr = Unmanaged.passRetained(glkView).toOpaque()
         }
         return ptr!
     }
@@ -32,8 +38,10 @@ public class NSCCanvas: UIView {
     
     private(set) public var nativeGL: Int64 = 0
     private(set) public var nativeContext: Int64 = 0
+    private var native2DContext: Int64 = 0
     
-    internal var glkView: CanvasGLKView = CanvasGLKView(frame: .zero)
+    internal var glkView: CanvasGLKView
+    private var is2D = false
     
     public var drawingBufferWidth: Int {
         return glkView.drawableWidth
@@ -106,6 +114,7 @@ public class NSCCanvas: UIView {
         case "2d":
             version = 0
             isCanvas = true
+            is2D = isCanvas
             break
         case "experimental-webgl", "webgl":
             version = 1
@@ -123,9 +132,9 @@ public class NSCCanvas: UIView {
         
         
         var properties: [String: Any] = [:]
-        var useWebGL = !isCanvas
+        let useWebGL = !isCanvas
         if(useWebGL && preserveDrawingBuffer){
-            properties[kEAGLDrawablePropertyRetainedBacking] = preserveDrawingBuffer
+            properties[kEAGLDrawablePropertyRetainedBacking] = NSNumber(value: preserveDrawingBuffer)
         }
         
         if(alpha){
@@ -133,7 +142,7 @@ public class NSCCanvas: UIView {
             isOpaque = false
             (glkView.layer as! CAEAGLLayer).isOpaque = false
         }else {
-            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGB565
+            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
             isOpaque = true
             (glkView.layer as! CAEAGLLayer).isOpaque = true
         }
@@ -141,7 +150,7 @@ public class NSCCanvas: UIView {
         
         if(!properties.isEmpty){
             let eaglLayer = self.glkView.layer as! CAEAGLLayer
-            eaglLayer.drawableProperties = [kEAGLDrawablePropertyRetainedBacking: NSNumber(value:false) , kEAGLDrawablePropertyColorFormat: kEAGLColorFormatRGBA8]
+            eaglLayer.drawableProperties = properties
             
         }
         
@@ -165,20 +174,17 @@ public class NSCCanvas: UIView {
         
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
         
-        let width = glkView.frame.width * UIScreen.main.scale
-        let height = glkView.frame.height * UIScreen.main.scale
-        
-        glkView.deleteDrawable()
-        
-        nativeGL = CanvasHelpers.initGLWithView(viewPtr, Int32(width), Int32(height),alpha, antialias, depth, failIfMajorPerformanceCaveat, type, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas)
-        
+        nativeGL = CanvasHelpers.initGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, type, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas)
+
         nativeContext = CanvasHelpers.getGLPointer(nativeGL)
         
-        glkView.bindDrawable()
         
+        if(useWebGL){
+            // fixes initial whitescreen
+            glkView.deleteDrawable()
+        }
+    
     }
-    
-    
     
     @objc public func create2DContext(
            _ alpha: Bool,
@@ -193,6 +199,10 @@ public class NSCCanvas: UIView {
            _ xrCompatible: Bool,
            _ fontColor: Int32
        ) -> Int64 {
+           
+           if(native2DContext != 0){
+               return native2DContext
+           }
 
            initContext(
                "2d",
@@ -208,58 +218,46 @@ public class NSCCanvas: UIView {
                xrCompatible
            )
            
+           // disable for now
            let samples: Int32 = antialias ? 0 : 0
-        
+    
+           glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
+           
            let density = Float(UIScreen.main.scale)
-           return CanvasHelpers.create2DContext(
+           native2DContext = CanvasHelpers.create2DContext(
             nativeGL, Int32(drawingBufferWidth), Int32(drawingBufferHeight),
             alpha, density, samples, fontColor, density * 160, 0
            )
+           return native2DContext
        }
 
         
     
     
     public func forceLayout(_ width: CGFloat, _ height: CGFloat){
-        
         if (width == .zero && height == .zero) {
             return
         }
-        let w = UIScreen.main.scale * width;
-        let h = UIScreen.main.scale * height
         
-        if (w == frame.size.width && h == frame.size.height) {
-            return;
-        }
-        frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: w, height: h)
-        setNeedsLayout()
+//        if (width == lastSize.width && height == lastSize.height) {
+//            return;
+//        }
+        
+        frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: width, height: height)
         layoutIfNeeded()
     }
     
     
-    //
-    //    public func snapshot() -> [UInt8]{
-    //        renderer.ensureIsContextIsCurrent()
-    //        if(renderer.contextType == ContextType.twoD){
-    //            let result = context_snapshot_canvas(self.context)
-    //            if(result == nil){
-    //                return []
-    //            }
-    //            let pointer = result!.pointee
-    //            let data = [UInt8](Data(bytes: pointer.data, count: Int(pointer.data_len)))
-    //            destroy_u8_array(result)
-    //            return data
-    //        }else if(renderer.contextType == ContextType.webGL){
-    //            let pixels = (renderer.view as! CanvasGLKView).snapshot
-    //            let data = pixels.pngData() ?? Data()
-    //            EAGLContext.setCurrent(nil)
-    //            return [UInt8](data)
-    //        }
-    //        return []
-    //    }
+    public func snapshot(_ flip: Bool) -> UIImage?{
+        let snapshot = glkView.snapshot
+        if(flip){
+            return snapshot.withHorizontallyFlippedOrientation()
+        }
+        return snapshot
+    }
     
-    public func render(){
-        glkView.display()
+    @discardableResult public func render() -> Bool{
+        return CanvasHelpers.flushGL(nativeGL)
     }
     
     
@@ -271,18 +269,37 @@ public class NSCCanvas: UIView {
     public func context2DTestToDataURL(_ context: Int64) -> String{
         return CanvasHelpers.testToDataURL(context)
     }
+    private var enterBackgroundNotification: Any?
+    private var becomeActiveNotification: Any?
+    var enterBackgroundListener: (()-> Void)?
+    var becomeActiveListener: (()-> Void)?
+    private func setup(){
+        self.enterBackgroundNotification = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil){ _ in
+            self.enterBackgroundListener?()
+      }
+        
+        self.becomeActiveNotification = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
+            self.becomeActiveListener?()
+        }
+    }
     
     required init?(coder: NSCoder) {
         glkView = CanvasGLKView(coder: coder)!
         super.init(coder: coder)
+        backgroundColor = .clear
+        glkView.enableSetNeedsDisplay = false
+        glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
     }
     
     
     public override init(frame: CGRect) {
-        glkView.frame = frame
+        glkView = CanvasGLKView(frame: frame)
         super.init(frame: frame)
+        backgroundColor = .clear
+        glkView.enableSetNeedsDisplay = false
+        glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
     }
@@ -297,23 +314,34 @@ public class NSCCanvas: UIView {
     private var lastSize: CGRect = .null
     private var isLoaded: Bool = false
     
+    private func resize(){
+        if(nativeGL == 0){return}
+        EAGLContext.setCurrent(glkView.context)
+        glkView.deleteDrawable()
+        
+        if(is2D){
+            glkView.bindDrawable()
+            glViewport(0, 0, GLsizei(glkView.frame.width), GLsizei(glkView.frame.height))
+            CanvasHelpers.resize2DContext(native2DContext, Float(drawingBufferWidth), Float(drawingBufferHeight))
+        }
+    }
+    
     public override func layoutSubviews() {
-        if(bounds == .zero || (bounds.size.width < 0 || bounds.size.height < 0)){
-            glkView.frame = CGRect(x: 0, y: 0, width: CGFloat(1/UIScreen.main.nativeScale), height: CGFloat(1/UIScreen.main.nativeScale))
-        }else {
-            glkView.frame = bounds
-            glkView.setNeedsLayout()
-            glkView.layoutIfNeeded()
+        if(bounds.isEmpty && lastSize.isEmpty){return}
+        glkView.frame = bounds
+        
+        if(!isLoaded && drawingBufferWidth > 0 && drawingBufferHeight > 0){
+            self.isLoaded = true
+            self.readyListener?.contextReady()
         }
         
-        
-        if(drawingBufferHeight == 0 && drawingBufferWidth == 0){
-            if(!isLoaded && bounds != .zero){
+        if(drawingBufferWidth == 0 && drawingBufferHeight == 0){
+            if(!isLoaded && (lastSize.width != .zero && lastSize.height != .zero)){
                 self.isLoaded = true
                 self.readyListener?.contextReady()
             }
-        }else {
-           // renderer.resize()
+        }else if(isLoaded && nativeGL != 0) {
+            resize()
         }
         
         lastSize = bounds
@@ -329,6 +357,18 @@ public class NSCCanvas: UIView {
         if(nativeGL != 0){
             CanvasHelpers.releaseGL(nativeGL)
             nativeGL = 0
+        }
+        
+        if(ptr != nil){
+           let _ = Unmanaged<AnyObject>.fromOpaque(ptr!).takeRetainedValue()
+        }
+        
+        if(enterBackgroundNotification != nil){
+            NotificationCenter.default.removeObserver(enterBackgroundNotification!)
+        }
+        
+        if(becomeActiveNotification != nil){
+            NotificationCenter.default.removeObserver(becomeActiveNotification!)
         }
     }
     

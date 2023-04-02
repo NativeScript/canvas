@@ -626,6 +626,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		if (name === 'EXT_disjoint_timer_query_webgl2') {
 			return null;
 		}
+
 		const getExtension = this._getMethod('getExtension');
 
 		const ext = getExtension(name);
@@ -1198,9 +1199,9 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				} else if (typeof format.src === 'string') {
 					const result = ImageSource.fromFileSync(format.src);
 					texSubImage2D(target, level, xoffset, yoffset, width, height, result ? result.android : null);
-				} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {
-					texSubImage2D(target, level, xoffset, yoffset, width, height, format._canvas.native);
 				}
+			} else if (format && typeof format.tagName === 'string' && format.tagName === 'CANVAS' && format._canvas instanceof Canvas) {
+				texSubImage2D(target, level, xoffset, yoffset, width, height, format._canvas.native);
 			}
 		}
 	}

@@ -32,8 +32,6 @@ pub(crate) struct iOSGLContext {
 #[no_mangle]
 pub extern "C" fn canvas_native_init_ios_gl(
     view: i64,
-    width: i32,
-    height: i32,
     alpha: bool,
     antialias: bool,
     depth: bool,
@@ -78,6 +76,31 @@ pub extern "C" fn canvas_native_init_ios_gl(
     }
 
     0
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_ios_flush_gl(context: i64) -> bool {
+    if context == 0 {
+        return false;
+    }
+
+    let context = context as *mut iOSGLContext;
+    let context = unsafe { &mut *context };
+
+    context.gl_context.make_current();
+    context.gl_context.swap_buffers()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_resize_context_2d(context: i64, width: f32, height: f32) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.resize(width, height);
 }
 
 #[no_mangle]
@@ -140,7 +163,6 @@ pub extern "C" fn canvas_native_update_gl_surface(
         let context = unsafe { &mut *context };
 
         context.gl_context.set_surface(ios_view);
-
         context.ios_view = ios_view;
     }
 }
@@ -179,7 +201,7 @@ pub extern "C" fn canvas_native_context_2d_test(context: i64) {
         return;
     }
 
-    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = context as *mut CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
     context.make_current();

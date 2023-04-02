@@ -20,7 +20,7 @@ std::vector<jsi::PropNameID> WebGL2RenderingContext::getPropertyNames(jsi::Runti
     std::vector<jsi::PropNameID> ret;
 
     // gl2 + gl1 props
-    ret.reserve(351 + 434);
+    ret.reserve(353 + 434);
 
     // 351
     ret.push_back(jsi::PropNameID::forAscii(rt, "beginQuery"));
@@ -499,6 +499,8 @@ std::vector<jsi::PropNameID> WebGL2RenderingContext::getPropertyNames(jsi::Runti
     /* GL 1 */
 
     ret.push_back(jsi::PropNameID::forUtf8(rt, "__resized"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__startRaf"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__stopRaf"));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("activeTexture")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("attachShader")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindAttribLocation")));

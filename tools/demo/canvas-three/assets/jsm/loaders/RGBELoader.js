@@ -415,7 +415,6 @@ RGBELoader.prototype = Object.assign( Object.create( DataTextureLoader.prototype
 
 		} )();
 
-		console.log(Array.from(buffer));
 		var byteArray = new Uint8Array( buffer );
 		byteArray.pos = 0;
 		var rgbe_header_info = RGBE_ReadHeader( byteArray );

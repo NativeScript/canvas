@@ -59,6 +59,11 @@ public:
     RafImpl *GetRaf();
 
     CanvasRenderingContext2D &GetContext();
+    
+    void StartRaf();
+    
+    void StopRaf();
+    
 
 private:
     rust::Box<CanvasRenderingContext2D> context_;

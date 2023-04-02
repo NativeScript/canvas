@@ -14,7 +14,7 @@ use icrate::objc2::Encoding::Void;
 use icrate::objc2::{
     class, msg_send, msg_send_id, rc::Id, rc::Shared, runtime::Object, sel, Encode, Encoding,
 };
-use icrate::Foundation::NSInteger;
+use icrate::Foundation::{NSData, NSInteger, NSObject, NSUInteger};
 use skia_safe::wrapper::PointerWrapper;
 
 use crate::context_attributes::ContextAttributes;
@@ -128,6 +128,9 @@ impl EAGLContext {
                 Some(current) => {
                     let is_equal: bool = unsafe { msg_send![&current, isEqual: &*self.0] };
                     if is_equal {
+                        unsafe {
+                            gl_bindings::Flush();
+                        }
                         let nil: *mut Object = std::ptr::null_mut();
                         return msg_send![cls, setCurrentContext: nil];
                     }
@@ -136,6 +139,12 @@ impl EAGLContext {
                 None => false,
             }
         }
+    }
+
+    pub fn present_renderbuffer(&self) -> bool {
+        // GL_RENDERBUFFER
+        let result: BOOL = unsafe { msg_send![&self.0, presentRenderbuffer: 0x8d41 as NSUInteger] };
+        result
     }
 }
 
@@ -238,6 +247,21 @@ impl GLKView {
         }
     }
 
+    pub fn snapshot(&self) -> Vec<u8> {
+        let width = self.drawable_width();
+        let height = self.drawable_height();
+        let size = width * height * 4;
+        let mut buf = vec![0u8; size as usize];
+        let mut data = unsafe {
+            NSData::dataWithBytesNoCopy_length(
+                NonNull::new(buf.as_mut_ptr() as _).unwrap(),
+                size as NSUInteger,
+            )
+        };
+        let _: () = unsafe { msg_send![&self.0, snapshotWithData: &*data] };
+        buf
+    }
+
     pub fn display(&self) {
         let _: () = unsafe { msg_send![&self.0, display] };
     }
@@ -248,6 +272,14 @@ impl GLKView {
 
     pub fn drawable_height(&self) -> NSInteger {
         return unsafe { msg_send![&self.0, drawableHeight] };
+    }
+
+    pub fn bind_drawable(&self) {
+        let _: () = unsafe { msg_send![&self.0, bindDrawable] };
+    }
+
+    pub fn delete_drawable(&self) {
+        let _: () = unsafe { msg_send![&self.0, deleteDrawable] };
     }
 
     pub fn set_drawable_color_format(&self, format: GLKViewDrawableColorFormat) {
@@ -304,7 +336,7 @@ impl GLKView {
     }
 }
 
-//#[cfg(target_os = "ios")]
+#[cfg(target_os = "ios")]
 impl GLContext {
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
         let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
@@ -352,6 +384,10 @@ impl GLContext {
 
         view.set_context(context.as_ref());
 
+        EAGLContext::set_current_context(context.as_ref());
+
+        view.bind_drawable();
+
         let inner = GLContextInner {
             context,
             view: Some(view),
@@ -380,15 +416,42 @@ impl GLContext {
         true
     }
 
+    pub fn snapshot(&self) -> Option<Vec<u8>> {
+        let inner = self.inner.borrow();
+        inner.view.as_ref().map(|view| view.snapshot())
+    }
+
     #[inline(always)]
-    pub fn set_vsync(&self, sync: bool) -> bool {
+    pub fn set_vsync(&self, _sync: bool) -> bool {
         true
     }
 
     #[inline(always)]
     pub fn make_current(&self) -> bool {
         let inner = self.inner.borrow();
-        EAGLContext::set_current_context(inner.context.as_ref())
+
+        if let Some(context) = inner.context.as_ref() {
+            // unsafe {
+            //     let cls = class!(EAGLContext);
+            //     let current: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];
+            //
+            //     match current {
+            //         Some(current) => {
+            //             let is_equal: bool = unsafe { msg_send![&current, isEqual: &*context.0] };
+            //             if !is_equal {
+            //                 unsafe {
+            //                     gl_bindings::Flush();
+            //                 }
+            //             }
+            //         }
+            //         None => {}
+            //     }
+            // }
+
+            return EAGLContext::set_current_context(Some(context));
+        }
+
+        false
     }
 
     #[inline(always)]
@@ -400,10 +463,22 @@ impl GLContext {
     }
 
     #[inline(always)]
+    pub fn bind_drawable(&self) {
+        let inner = self.inner.borrow();
+        if let Some(view) = inner.view.as_ref() {
+            view.bind_drawable();
+        }
+    }
+
+    #[inline(always)]
     pub fn swap_buffers(&self) -> bool {
         let inner = self.inner.borrow();
         if let Some(view) = inner.view.as_ref() {
             view.display();
+            // // Testing
+            // unsafe {
+            //     gl_bindings::Flush();
+            // }
             return true;
         }
         false

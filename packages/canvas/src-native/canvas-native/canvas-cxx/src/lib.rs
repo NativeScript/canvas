@@ -31,7 +31,7 @@ use canvas_2d::utils::image::{
     from_image_slice_no_copy, to_image_encoded_from_data,
 };
 use canvas_core::image_asset::OutputFormat;
-use canvas_webgl::prelude::WebGLVersion;
+use canvas_webgl::prelude::{WebGLExtensionType, WebGLVersion};
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
 
@@ -157,7 +157,7 @@ impl CanvasRenderingContext2D {
     }
 
     pub fn resize(&mut self, width: f32, height: f32) {
-        self.make_current();
+        self.gl_context.make_current();
         self.context.resize_gl(width, height);
     }
 
@@ -1480,6 +1480,7 @@ pub mod ffi {
         ANGLE_instanced_arrays,
         WEBGL_depth_texture,
         WEBGL_draw_buffers,
+        OES_fbo_render_mipmap,
         None,
     }
 
@@ -2388,6 +2389,28 @@ pub mod ffi {
             format: u32,
             image_type: i32,
             asset: &mut ImageAsset,
+            state: &mut WebGLState,
+        );
+
+        fn canvas_native_webgl_tex_sub_image2d_canvas2d(
+            target: u32,
+            level: i32,
+            xoffset: i32,
+            yoffset: i32,
+            format: u32,
+            image_type: i32,
+            canvas: &mut CanvasRenderingContext2D,
+            state: &mut WebGLState,
+        );
+
+        fn canvas_native_webgl_tex_sub_image2d_webgl(
+            target: u32,
+            level: i32,
+            xoffset: i32,
+            yoffset: i32,
+            format: u32,
+            image_type: i32,
+            webgl: &mut WebGLState,
             state: &mut WebGLState,
         );
 
@@ -3352,7 +3375,7 @@ pub fn canvas_native_context_create_gl_no_window(
     let gl_context = canvas_core::gl::GLContext::create_offscreen_context(
         &mut attr,
         width as i32,
-        height as i32
+        height as i32,
     )
     .unwrap();
 
@@ -4098,6 +4121,8 @@ pub fn canvas_native_context_create_pattern_canvas2d(
     Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
         None,
         |repetition| {
+            context.remove_if_current();
+
             let width;
             let height;
             let source_non_gpu;
@@ -5942,6 +5967,9 @@ impl Into<ffi::WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType
                 ffi::WebGLExtensionType::WEBGL_draw_buffers
             }
             canvas_webgl::prelude::WebGLExtensionType::None => ffi::WebGLExtensionType::None,
+            WebGLExtensionType::OES_fbo_render_mipmap => {
+                ffi::WebGLExtensionType::OES_fbo_render_mipmap
+            }
         }
     }
 }
@@ -5954,6 +5982,7 @@ pub fn canvas_native_context_create_pattern_webgl(
     Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
         None,
         |repetition| {
+            context.remove_if_current();
             let state = source.get_inner();
             state.make_current();
             let width = state.get_drawing_buffer_width();
@@ -5962,7 +5991,7 @@ pub fn canvas_native_context_create_pattern_webgl(
             let mut buf = vec![0u8; (width * height * 4) as usize];
 
             unsafe {
-                gl_bindings::Finish();
+                gl_bindings::Flush();
                 gl_bindings::ReadPixels(
                     0,
                     0,
@@ -6449,21 +6478,21 @@ fn canvas_native_webgl_result_get_bool(result: &WebGLResult) -> bool {
 
 fn canvas_native_webgl_result_get_i32_array(result: &WebGLResult) -> Vec<i32> {
     match &result.0 {
-        canvas_webgl::prelude::WebGLResult::I32Array(value) => value.clone(),
+        canvas_webgl::prelude::WebGLResult::I32Array(value) => value.to_vec(),
         _ => Vec::new(),
     }
 }
 
 fn canvas_native_webgl_result_get_u32_array(result: &WebGLResult) -> Vec<u32> {
     match &result.0 {
-        canvas_webgl::prelude::WebGLResult::U32Array(value) => value.clone(),
+        canvas_webgl::prelude::WebGLResult::U32Array(value) => value.to_vec(),
         _ => Vec::new(),
     }
 }
 
 fn canvas_native_webgl_result_get_f32_array(result: &WebGLResult) -> Vec<f32> {
     match &result.0 {
-        canvas_webgl::prelude::WebGLResult::F32Array(value) => value.clone(),
+        canvas_webgl::prelude::WebGLResult::F32Array(value) => value.to_vec(),
         _ => Vec::new(),
     }
 }
@@ -7877,10 +7906,12 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
     if !source_non_gpu {
         canvas.gl_context.make_current();
         buf = source_ctx.snapshot_to_raster_data();
-      //  canvas.gl_context.remove_if_current();
+        canvas.gl_context.remove_if_current();
+        //  canvas.gl_context.remove_if_current();
     } else {
         buf = source_ctx.read_pixels();
     }
+
 
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
@@ -8029,6 +8060,93 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
         &asset.0,
         state.get_inner(),
     )
+}
+
+pub fn canvas_native_webgl_tex_sub_image2d_canvas2d(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    format: u32,
+    image_type: i32,
+    canvas: &mut CanvasRenderingContext2D,
+    state: &mut WebGLState,
+) {
+    {
+        let context = &mut state.0;
+        context.remove_if_current();
+    }
+
+    let width;
+    let height;
+    let source_non_gpu;
+    {
+        let ctx = canvas.get_context();
+        let device = ctx.device();
+        width = device.width;
+        height = device.height;
+        source_non_gpu = device.non_gpu;
+    }
+
+    let mut source_ctx = canvas.get_context_mut();
+    let mut buf;
+    if !source_non_gpu {
+        canvas.gl_context.make_current();
+        buf = source_ctx.snapshot_to_raster_data();
+        canvas.gl_context.remove_if_current();
+        //  canvas.gl_context.remove_if_current();
+    } else {
+        buf = source_ctx.read_pixels();
+    }
+
+    canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        width as _,
+        height as _,
+        format,
+        image_type,
+        buf.as_mut_slice(),
+        state.get_inner_mut(),
+    );
+}
+
+pub fn canvas_native_webgl_tex_sub_image2d_webgl(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    format: u32,
+    image_type: i32,
+    webgl: &mut WebGLState,
+    state: &mut WebGLState,
+) {
+    {
+        let state = &state.0;
+        state.remove_if_current();
+    }
+    let source = webgl.get_inner();
+    source.make_current();
+    let width = source.drawing_buffer_width();
+    let height = source.drawing_buffer_height();
+
+    let mut pixels =
+        canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
+
+    canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        width,
+        height,
+        format,
+        image_type,
+        pixels.2.as_mut_slice(),
+        state.get_inner_mut(),
+    );
 }
 
 pub fn canvas_native_webgl_tex_sub_image2d(

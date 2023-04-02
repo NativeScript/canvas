@@ -523,7 +523,7 @@ pub fn canvas_native_webgl2_get_active_uniform_block_parameter(
                 )
             }
 
-            let mut indices: Vec<i32> = Vec::with_capacity(uniform_count[0] as usize);
+            let mut indices: Vec<i32> = vec![0i32;uniform_count[0] as usize];
             unsafe {
                 gl_bindings::GetActiveUniformBlockiv(
                     program,
@@ -560,7 +560,7 @@ pub fn canvas_native_webgl2_get_active_uniforms(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-    let mut params: Vec<i32> = Vec::with_capacity(uniform_indices.len());
+    let mut params: Vec<i32> = vec![0i32;uniform_indices.len()];
 
     unsafe {
         gl_bindings::GetActiveUniformsiv(
@@ -765,7 +765,7 @@ pub fn canvas_native_webgl2_get_internalformat_parameter(
         if length[0] <= 0 {
             return WebGLResult::I32Array(Vec::with_capacity(0));
         }
-        let mut values: Vec<i32> = Vec::with_capacity(length[0] as usize);
+        let mut values: Vec<i32> = vec![0i32;length[0] as usize];
         unsafe {
             gl_bindings::GetInternalformativ(
                 target,
@@ -962,7 +962,7 @@ pub fn canvas_native_webgl2_get_uniform_indices(
 ) -> Vec<u32> {
     state.make_current();
     // TODO improve performance
-    let mut count: Vec<u32> = Vec::with_capacity(uniform_names.len());
+    let mut count: Vec<u32> = vec![0;uniform_names.len()];
     let mut buffer: Vec<CString> = Vec::with_capacity(uniform_names.len());
     for name in uniform_names.into_iter() {
         let name = CString::new(name.as_str()).unwrap();

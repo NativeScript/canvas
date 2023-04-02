@@ -31,15 +31,20 @@ impl Raf {
         }));
 
         let clone = Arc::clone(&inner);
-        inner.write().dl = DisplayLink::new(move |ts| {
-            let lock = clone.read();
-            if !lock.started {
-                return;
-            }
-            if let Some(callback) = lock.callback.as_ref() {
-                callback(ts.nanos_since_zero);
-            }
-        });
+
+        {
+            let mut lock = inner.write();
+            lock.dl = DisplayLink::new(move |ts| {
+                let lock = clone.read();
+                if !lock.started {
+                    return;
+                }
+
+                if let Some(callback) = lock.callback.as_ref() {
+                    callback(ts.nanos_since_zero);
+                }
+            });
+        }
 
         Self { inner }
     }

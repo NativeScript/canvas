@@ -35,6 +35,32 @@ public class CanvasGLKView: GLKView {
     }
 }
 
+
+extension GLKView {
+    @objc public func snapshotWithData(_ data: Data){
+        let pixels = self.snapshot
+                 
+                 var cgImage: CGImage?
+                 
+                 if let image = pixels.cgImage {
+                     cgImage = image
+                 } else if let image = pixels.ciImage {
+                     let ctx = CIContext()
+                     cgImage = ctx.createCGImage(image, from: image.extent)
+                 }
+                 
+                 if let image = cgImage {
+                     let width = Int(pixels.size.width)
+                     let height = Int(pixels.size.height)
+                     let row = width * 4
+                     var buffer = [UInt8](data)
+                     let colorSpace = CGColorSpaceCreateDeviceRGB()
+                     let imageCtx = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: row, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+                     imageCtx!.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+                 }
+    }
+}
+
 @objcMembers
 @objc(CanvasCPUView)
 public class CanvasCPUView: UIView {

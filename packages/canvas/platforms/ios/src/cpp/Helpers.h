@@ -42,9 +42,11 @@ inline static std::shared_ptr<T>
 getHostObject(jsi::Runtime &runtime, const facebook::jsi::Value &value) {
     if (value.isObject()) {
         auto valueObject = value.asObject(runtime);
-        if (valueObject.template isHostObject(runtime)) {
-            return valueObject.template asHostObject<T>(runtime);
-        }
+        try {
+            if (valueObject.template isHostObject(runtime)) {
+                return valueObject.template asHostObject<T>(runtime);
+            }
+        } catch (...) {}
     }
 
     return nullptr;

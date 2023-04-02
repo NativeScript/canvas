@@ -10,9 +10,11 @@ import android.view.Surface
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.drawToBitmap
 import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import android.graphics.Matrix
 
 
 /**
@@ -245,6 +247,7 @@ class NSCCanvas : FrameLayout {
             "2d" -> {
                 version = 0
                 isCanvas = true
+                is2D = isCanvas
             }
             "experimental-webgl", "webgl" -> {
                 version = 1
@@ -305,6 +308,7 @@ class NSCCanvas : FrameLayout {
         this.isAlpha = alpha
     }
 
+    private var is2D = false
     fun create2DContext(
         alpha: Boolean,
         antialias: Boolean,
@@ -380,6 +384,57 @@ class NSCCanvas : FrameLayout {
 
     var listener: Listener? = null
 
+
+    private val defaultMatrix = Matrix()
+    private val invertMatrix = Matrix()
+    private val invertFlipMatrix = Matrix()
+
+    init {
+        defaultMatrix.postScale(-1f, 1f)
+        invertMatrix.postScale(1f, -1f)
+        invertFlipMatrix.postScale(-1f, -1f)
+    }
+
+
+    @JvmOverloads
+    fun snapshot(flip: Boolean = false): Bitmap? {
+        var bitmap: Bitmap? = null
+        var needsToFlip = false
+        if (is2D) {
+            bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            nativeCustomWithBitmapFlush(nativeContext, bitmap!!)
+            return bitmap
+        } else {
+            if (surfaceType == SurfaceType.Surface) {
+                try {
+                    bitmap = surfaceView.drawToBitmap()
+                } catch (_: Exception) {
+                }
+            } else {
+                bitmap = textureView.getBitmap(width, height)
+            }
+
+
+            if (bitmap == null) {
+                needsToFlip = true
+                bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                nativeWriteCurrentGLContextToBitmap(nativeGL, bitmap!!)
+            }
+        }
+
+        if (needsToFlip) {
+            bitmap = if (flip) {
+                Bitmap.createBitmap(bitmap, 0, 0, width, height, invertFlipMatrix, true)
+            } else {
+                Bitmap.createBitmap(bitmap, 0, 0, width, height, invertMatrix, true)
+            }
+        } else if (flip) {
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, defaultMatrix, true)
+        }
+
+        return bitmap
+    }
+
     companion object {
         var views: ConcurrentHashMap<*, *> = ConcurrentHashMap<Any?, Any?>()
         internal var isLibraryLoaded = false
@@ -396,6 +451,7 @@ class NSCCanvas : FrameLayout {
                 isLibraryLoaded = true
             }
         }
+
 
         @JvmStatic
         var enableDebug = false
@@ -514,6 +570,9 @@ class NSCCanvas : FrameLayout {
         )
 
         @JvmStatic
+        external fun nativeWriteCurrentGLContextToBitmap(context: Long, bitmap: Bitmap)
+
+        @JvmStatic
         external fun nativeInitContextWithCustomSurface(
             width: Float,
             height: Float,
@@ -545,7 +604,7 @@ class NSCCanvas : FrameLayout {
 
 
         @JvmStatic
-        fun context2DTest(context: Long){
+        fun context2DTest(context: Long) {
             nativeContext2DTest(context)
         }
 

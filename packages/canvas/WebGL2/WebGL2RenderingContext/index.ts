@@ -238,6 +238,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	drawBuffers(buffers: number[]): void {
 		this._glCheckError('drawBuffers');
+		this._checkArgs('drawBuffers', arguments);
 		const drawBuffers = this._getMethod('drawBuffers');
 		drawBuffers(buffers);
 	}

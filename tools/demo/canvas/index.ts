@@ -51,7 +51,6 @@ import {
 	strokeStyle,
 } from './canvas2d';
 
-declare var NSData, interop, NSString, malloc, TNSCanvas;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import Vex from 'vexflow';
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle } from './webgl';
@@ -595,7 +594,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;
 		//this.hBarChart(this.canvas);
-		//this.bubbleChart(this.canvas);
+		this.bubbleChart(this.canvas);
 		//this.dataSets(this.canvas);
 		//this.chartJS(this.canvas);
 		//clear(null)
@@ -620,7 +619,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
 
-		fog(this.canvas);
+		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
@@ -1472,7 +1471,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	drawPatternWithCanvas(canvas) {
-		const patternCanvas = Canvas.createCustomView();
+		const patternCanvas = Canvas.createCustomView() as any;
 
 		//const patternContext = patternCanvas.getContext('webgl') as any;
 
@@ -1481,20 +1480,36 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// 	patternContext.clear(patternContext.COLOR_BUFFER_BIT);
 		// }
 
+		const scale = Screen.mainScreen.scale;
+
+		const size = 50 * scale;
 		const patternContext = patternCanvas.getContext('2d') as any;
 
+		//glViewport(0,0,50,50);
 		// Give the pattern a width and height of 50
 		patternCanvas.width = 50;
 		patternCanvas.height = 50;
 
 		//  patternCanvas.getContext('2d') as any;
-
-		const scale = Screen.mainScreen.scale;
 		// Give the pattern a background color and draw an arc
 		patternContext.fillStyle = '#fec';
-		patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-		patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+
+		patternContext.fillRect(0, 0, size, size);
+		patternContext.arc(0, 0, size, 0, 0.5 * Math.PI);
 		patternContext.stroke();
+
+		var vp = interop.alloc(16);
+
+		glGetIntegerv(0x0ba2, vp);
+
+		const x = new interop.Reference<number>(interop.types.int32, vp);
+		const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
+		const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
+		const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
+
+		console.log(x.value, y.value, w.value, h.value);
+
+		console.log(patternCanvas.toDataURL());
 
 		// Create our primary canvas and fill it with the pattern
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;

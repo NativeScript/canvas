@@ -34,6 +34,24 @@ export class Canvas extends CanvasBase {
 	private _isReady: boolean = false;
 	private _readyListener: any;
 
+	_didLayout = false;
+
+	_methodCache = new Map();
+
+	_getMethod(name: string) {
+		if (this.__native__context === undefined) {
+			return undefined;
+		}
+		const cached = this._methodCache.get(name);
+		if (cached === undefined) {
+			const ret = this.__native__context[name];
+			this._methodCache.set(name, ret);
+			return ret;
+		}
+
+		return cached;
+	}
+
 	constructor() {
 		super();
 		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
@@ -56,6 +74,21 @@ export class Canvas extends CanvasBase {
 		);
 		this._readyListener = listener.new();
 		this._canvas.setListener(this._readyListener);
+		this._canvas.enterBackgroundListener = () => {
+			const __stopRaf = this._getMethod('__stopRaf');
+			if (__stopRaf === undefined) {
+				return;
+			}
+			__stopRaf();
+		};
+
+		this._canvas.becomeActiveListener = () => {
+			const __startRaf = this._getMethod('__startRaf');
+			if (__startRaf === undefined) {
+				return;
+			}
+			__startRaf();
+		};
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
@@ -78,7 +111,7 @@ export class Canvas extends CanvasBase {
 	//@ts-ignore
 	get width() {
 		const measuredWidth = this.getMeasuredWidth();
-		if (measuredWidth > 0) {
+		if (measuredWidth !== 0) {
 			return measuredWidth;
 		}
 		return this._realSize.width;
@@ -86,15 +119,14 @@ export class Canvas extends CanvasBase {
 
 	set width(value) {
 		this.style.width = value;
-		if (this._isCustom) {
-			this._layoutNative();
-		}
+		this._didLayout = false;
+		this._layoutNative();
 	}
 
 	//@ts-ignore
 	get height() {
 		const measuredHeight = this.getMeasuredHeight();
-		if (measuredHeight > 0) {
+		if (measuredHeight !== 0) {
 			return measuredHeight;
 		}
 		return this._realSize.height;
@@ -102,9 +134,8 @@ export class Canvas extends CanvasBase {
 
 	set height(value) {
 		this.style.height = value;
-		if (this._isCustom) {
-			this._layoutNative();
-		}
+		this._didLayout = false;
+		this._layoutNative();
 	}
 
 	private _iosOverflowSafeArea = false;
@@ -183,6 +214,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative() {
+		if (this._didLayout) {
+			return;
+		}
 		if (!this.parent) {
 			if ((typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
 				return;
@@ -193,24 +227,12 @@ export class Canvas extends CanvasBase {
 
 			const size = this._realSize;
 
-			// if (!(size.width || 0) && !(size.height || 0)) {
-			// 	return;
-			// }
+			const width = Utils.layout.toDeviceIndependentPixels(size.width || 1);
+			const height = Utils.layout.toDeviceIndependentPixels(size.height || 1);
 
-			this._canvas.forceLayout(size.width || 0, size.height || 0);
-			// const width = Utils.layout.toDeviceIndependentPixels(size.width || 0);
-			// const height = Utils.layout.toDeviceIndependentPixels(size.height || 0);
-			// let frameSize = this._canvas.frame.size;
+			this._canvas.forceLayout(width, height);
 
-			// if (width === frameSize.width && height === frameSize.height) {
-			// 	return;
-			// }
-
-			// const frame_origin = this._canvas.frame.origin;
-			// const frame = CGRectMake(frame_origin.x, frame_origin.y, width, height);
-			// this._canvas.frame = frame;
-			// this._canvas.setNeedsLayout();
-			// this._canvas.layoutIfNeeded();
+			this._didLayout = true;
 		}
 	}
 
@@ -250,6 +272,7 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
+					this._layoutNative();
 					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
 					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
@@ -260,11 +283,13 @@ export class Canvas extends CanvasBase {
 
 				this._webglContext._type = 'webgl';
 				return this._webglContext;
-			} else if (type && (type === 'webgl2' || type === 'experimental-webgl2')) {
+			} else if (type === 'webgl2') {
 				if (this._2dContext || this._webglContext) {
 					return null;
 				}
+				const glkview = this._canvas.subviews.objectAtIndex(0);
 				if (!this._webgl2Context) {
+					this._layoutNative();
 					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
 					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
@@ -288,10 +313,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		if (this._2dContext) {
-			return (this._2dContext as any).__toDataURL(type, encoderOptions);
+		const toDataURL = this._getMethod('__toDataURL');
+		if (toDataURL === undefined) {
+			return 'data:,';
 		}
-		return (this._webglContext || (this._webgl2Context as any)).__toDataURL(type, encoderOptions);
+		return toDataURL(type, encoderOptions);
 	}
 
 	getBoundingClientRect(): {

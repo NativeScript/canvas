@@ -1,10 +1,12 @@
 use std::cell::RefCell;
-use jni::objects::{JClass, JString};
+use std::ffi::c_void;
+use jni::objects::{JClass, JString, JObject};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
+use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect, Surface};
 
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
@@ -259,4 +261,99 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
         ctx.fill_rect_xywh(0., 0., 300., 300.);
     }
     context.render();
+}
+
+
+
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrentGLContextToBitmap(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    bitmap: JObject,
+) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut AndroidGLContext;
+    let context = unsafe { &mut *context };
+
+    unsafe {
+       crate::utils::image::bitmap_handler(
+            env,
+            bitmap,
+            Box::new(move |cb| {
+                if let Some((image_data, info)) = cb {
+                    context.gl_context.make_current();
+                    let mut buf = vec![0u8; (info.width() * info.height() * 4) as usize];
+                    gl_bindings::Flush();
+                    gl_bindings::ReadPixels(
+                        0,
+                        0,
+                        info.width() as i32,
+                        info.height() as i32,
+                        gl_bindings::RGBA as std::os::raw::c_uint,
+                        gl_bindings::UNSIGNED_BYTE as std::os::raw::c_uint,
+                        buf.as_mut_ptr() as *mut c_void,
+                    );
+                    image_data.copy_from_slice(buf.as_slice());
+                }
+            })
+        )
+    }
+}
+
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBitmapFlush(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    bitmap: JObject,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        crate::utils::image::bitmap_handler(
+            env,
+            bitmap,
+            Box::new(move |cb| {
+                if let Some((image_data, image_info)) = cb {
+                    let mut ct = ColorType::RGBA8888;
+
+                    if image_info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+                        ct = ColorType::RGB565;
+                    }
+                    let info = ImageInfo::new(
+                        ISize::new(image_info.width() as i32, image_info.height() as i32),
+                        ct,
+                        AlphaType::Premul,
+                        None,
+                    );
+                    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+                    let context = unsafe { &mut *context };
+                    let mut context = context.get_context_mut();
+
+                    let mut surface =
+                        Surface::new_raster_direct(&info, image_data, None, None).unwrap();
+                    let canvas = surface.canvas();
+                    let mut paint = skia_safe::Paint::default();
+                    paint.set_anti_alias(true);
+                    paint.set_style(skia_safe::PaintStyle::Fill);
+                    paint.set_blend_mode(skia_safe::BlendMode::Clear);
+                    canvas.draw_rect(
+                        Rect::from_xywh(
+                            0f32,
+                            0f32,
+                            image_info.width() as f32,
+                            image_info.height() as f32,
+                        ),
+                        &paint,
+                    );
+                    context.draw_on_surface(&mut surface);
+                }
+            }),
+        )
+    }
 }

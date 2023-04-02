@@ -195,9 +195,11 @@ jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
 
 std::vector<jsi::PropNameID> WebGLRenderingContext::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(434);
+    ret.reserve(436);
 
     ret.push_back(jsi::PropNameID::forUtf8(rt, "__resized"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__startRaf"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__stopRaf"));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("activeTexture")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("attachShader")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindAttribLocation")));
@@ -808,6 +810,38 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          // width->NumberValue(context).FromMaybe(1))
                                                          canvas_native_webgl_resized(
                                                                  this->GetState());
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    }
+
+    if (methodName == "__startRaf") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         this->StartRaf();
+
+                                                         return jsi::Value::undefined();
+                                                     }
+        );
+    }
+
+    if (methodName == "__stopRaf") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         this->StartRaf();
 
                                                          return jsi::Value::undefined();
                                                      }
@@ -2698,6 +2732,11 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                          auto type = canvas_native_webgl_context_extension_get_type(
                                                                  *ext);
                                                          switch (type) {
+                                                             case WebGLExtensionType::OES_fbo_render_mipmap: {
+                                                                 auto ret = std::make_shared<OES_fbo_render_mipmapImpl>();
+                                                                 return jsi::Object::createFromHostObject(
+                                                                         runtime, ret);
+                                                             }
                                                              case WebGLExtensionType::EXT_blend_minmax: {
                                                                  auto ret = std::make_shared<EXT_blend_minmaxImpl>();
                                                                  return jsi::Object::createFromHostObject(
@@ -4469,6 +4508,48 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                                      format,
                                                                                      type,
                                                                                      bitmap->GetImageAsset(),
+                                                                                     this->GetState()
+                                                                             );
+
+                                                                             return jsi::Value::undefined();
+                                                                         }
+                                                                     } catch (...) {}
+
+
+                                                                     try {
+                                                                         auto canvas2d = pixels.asHostObject<CanvasRenderingContext2DImpl>(
+                                                                                 runtime);
+
+                                                                         if (canvas2d != nullptr) {
+                                                                             canvas_native_webgl_tex_sub_image2d_canvas2d(
+                                                                                     target,
+                                                                                     level,
+                                                                                     xoffset,
+                                                                                     yoffset,
+                                                                                     format,
+                                                                                     type,
+                                                                                     canvas2d->GetContext(),
+                                                                                     this->GetState()
+                                                                             );
+
+                                                                             return jsi::Value::undefined();
+                                                                         }
+                                                                     } catch (...) {}
+
+
+                                                                     try {
+                                                                         auto webgl = pixels.asHostObject<WebGLRenderingContext>(
+                                                                                 runtime);
+
+                                                                         if (webgl != nullptr) {
+                                                                             canvas_native_webgl_tex_sub_image2d_webgl(
+                                                                                     target,
+                                                                                     level,
+                                                                                     xoffset,
+                                                                                     yoffset,
+                                                                                     format,
+                                                                                     type,
+                                                                                     webgl->GetState(),
                                                                                      this->GetState()
                                                                              );
 

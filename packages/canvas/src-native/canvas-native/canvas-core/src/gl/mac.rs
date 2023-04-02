@@ -572,24 +572,6 @@ impl GLContext {
         if !is_current {
             return;
         }
-
-        #[cfg(any(target_os = "android", target_os = "ios"))]
-        {
-            let display = self
-                .display()
-                .map(|display| match display.raw_display() {
-                    RawDisplay::Egl(display) => display,
-                    _ => 0 as _,
-                })
-                .unwrap_or(egl::EGL_NO_DISPLAY as _);
-
-            egl::make_current(
-                display as _,
-                egl::EGL_NO_SURFACE,
-                egl::EGL_NO_SURFACE,
-                egl::EGL_NO_CONTEXT,
-            );
-        }
     }
 
     #[inline(always)]

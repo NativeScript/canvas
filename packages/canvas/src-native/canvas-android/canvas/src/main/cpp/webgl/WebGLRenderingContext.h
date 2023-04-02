@@ -56,6 +56,7 @@
 #include "extensions/WEBGL_lose_contextImpl.h"
 #include "extensions/ANGLE_instanced_arraysImpl.h"
 #include "extensions/WEBGL_draw_buffersImpl.h"
+#include "extensions/OES_fbo_render_mipmap.h"
 #include "gl.h"
 
 using namespace facebook;

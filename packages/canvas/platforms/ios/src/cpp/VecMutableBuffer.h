@@ -15,36 +15,31 @@ using namespace facebook;
 template<typename T>
 struct VecMutableBuffer : jsi::MutableBuffer {
 public:
-    VecMutableBuffer(rust::Vec<T> buffer) : vec_(std::move(buffer)) {
-        this->buf_ = vec_.data();
-        this->buffer_size_ = vec_.size();
-        this->size_ = vec_.size() * sizeof(T);
-    }
+    VecMutableBuffer(rust::Vec<T> buffer) : vec_(std::move(buffer)) {}
 
     T *buffer_data() {
-        return this->buf_;
+        return this->vec_.data();
     }
 
     size_t buffer_size() const {
-        return this->buffer_size_;
+        return this->vec_.size();
+    }
+    
+    size_t buffer_size() {
+        return this->vec_.size();
     }
 
+
     uint8_t *data() override {
-        return (uint8_t *) this->buf_;
+        return (uint8_t *) this->vec_.data();
     }
 
     size_t size() const override {
-        return this->size_;
+        return this->vec_.size() * sizeof(T);
     }
 
-    ~VecMutableBuffer() override {
-        this->buf_ = nullptr;
-    }
 
 private:
-    T *buf_;
-    size_t size_;
-    size_t buffer_size_;
     rust::Vec<T> vec_;
 };
 

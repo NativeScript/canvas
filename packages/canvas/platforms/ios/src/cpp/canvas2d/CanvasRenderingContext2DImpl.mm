@@ -31,9 +31,28 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
 }
 
 
+void CanvasRenderingContext2DImpl::StartRaf() {
+    auto raf = this->GetRaf();
+    if (raf != nullptr) {
+        if (!canvas_native_raf_get_started(raf->GetRaf())) {
+            canvas_native_raf_start(raf->GetRaf());
+        }
+    }
+}
+
+void CanvasRenderingContext2DImpl::StopRaf() {
+    auto raf = this->GetRaf();
+    if (raf != nullptr) {
+        if (canvas_native_raf_get_started(raf->GetRaf())) {
+            canvas_native_raf_stop(raf->GetRaf());
+        }
+    }
+}
+
+
 std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(68);
+    ret.reserve(70);
 
     /* Non Standard 2D */
 
@@ -46,6 +65,8 @@ std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi:
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__makeDirty")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__getPointer")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__resize")));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__startRaf"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__stopRaf"));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("filter")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("font")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")));

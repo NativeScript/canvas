@@ -20,6 +20,6 @@ gl-bindings = { path = "../gl-bindings" }
 canvas-core = { path = "../canvas-core" }
 canvas-2d = { path = "../canvas-2d", optional = true }
 canvas-webgl = { path = "../canvas-webgl", optional = true }
-skia-bindings = { version = "0.58.0", features = ["gl"] }
-skia-safe = { version = "0.58.0", features = ["gl"] }
+skia-bindings = { version = "0.60.0", features = ["gl"] }
+skia-safe = { version = "0.60.0", features = ["gl"] }
 css-color-parser = "0.1.2"

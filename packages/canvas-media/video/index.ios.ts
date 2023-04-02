@@ -28,7 +28,7 @@ class NativeObject extends NSObject {
 				*/
 				} else if (owner._player.currentItem.status === AVPlayerItemStatus.ReadyToPlay) {
 					if (!owner._videoSize) {
-						owner._videoSize = owner._asset.tracksWithMediaType(AVMediaTypeVideo)?.[0].naturalSize ?? undefined;
+						owner._videoSize = owner._asset.tracksWithMediaType(AVMediaTypeVideo)?.objectAtIndex(0).naturalSize ?? undefined;
 					}
 				}
 			}
@@ -138,7 +138,7 @@ export class Video extends VideoBase {
 			} catch (e) {
 				if (Video.IS_DEBUG) {
 					console.log('getCurrentFrame error:', e);
-				}	
+				}
 			}
 		}
 	}
@@ -217,7 +217,7 @@ export class Video extends VideoBase {
 	}
 
 	set src(value: string) {
-		if(value !== this._currentUrl){
+		if (value !== this._currentUrl) {
 			this.#src = value;
 			this._loadSrc(value);
 		}
@@ -265,7 +265,8 @@ export class Video extends VideoBase {
 			this._asset = AVURLAsset.assetWithURL(url);
 			const keys = ['tracks', 'duration'];
 			this._asset.loadValuesAsynchronouslyForKeysCompletionHandler(keys, () => {
-				this._videoSize = this._asset.tracksWithMediaType(AVMediaTypeVideo)?.[0].naturalSize ?? undefined;
+				console.dir(this._asset.tracksWithMediaType(AVMediaTypeVideo));
+				this._videoSize = this._asset.tracksWithMediaType(AVMediaTypeVideo)?.objectAtIndex(0).naturalSize ?? undefined;
 
 				const fps = this._asset.tracks.firstObject?.nominalFrameRate ?? 30;
 

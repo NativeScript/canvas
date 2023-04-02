@@ -30,3 +30,4 @@ openssl = { version = "0.10.38", features = ["vendored"] }
 libloading = "0.7.3"
 log = "0.4.17"
 android_logger = "0.13.1"
+skia-safe = { version = "0.60.0" }

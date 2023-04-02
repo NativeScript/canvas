@@ -69,7 +69,7 @@ public class CanvasHelpers: NSObject {
         canvas_native_context_draw_image_with_bytes(context, &bytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
     }
     
-    public static func initGLWithView(_ view: Int64, _ width: Int32, _ height: Int32, _ alpha: Bool,
+    public static func initGLWithView(_ view: Int64, _ alpha: Bool,
                                  _ antialias: Bool,
                                  _ depth: Bool,
               _ fail_if_major_performance_caveat: Bool,
@@ -85,7 +85,15 @@ public class CanvasHelpers: NSObject {
         let power_preference = (power_preference as NSString).utf8String
         
         
-        return canvas_native_init_ios_gl(view, width, height, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
+        return canvas_native_init_ios_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
+    }
+    
+    public static func resize2DContext(_ context: Int64, _ width: Float, _ height: Float) {
+        canvas_native_resize_context_2d(context, width, height)
+    }
+    
+    public static func flushGL(_ context: Int64)-> Bool {
+        return canvas_native_ios_flush_gl(context)
     }
   
 

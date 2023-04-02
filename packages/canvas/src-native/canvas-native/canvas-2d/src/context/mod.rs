@@ -257,9 +257,8 @@ impl Context {
         let info = self.surface.image_info();
         let size = (info.width() * info.height() * 4) as usize;
         let mut buf = vec![0_u8; size];
-
         let ss = self.surface.image_snapshot();
-        match ss.to_raster_image(skia_safe::image::CachingHint::Allow) {
+        match ss.to_raster_image(skia_safe::image::CachingHint::Allow){
             Some(image) => {
                 let mut info = skia_safe::ImageInfo::new(
                     skia_safe::ISize::new(ss.width(), ss.height()),
@@ -283,13 +282,13 @@ impl Context {
     }
 
     pub fn snapshot_to_raster_image(&mut self) -> Option<Image> {
-        self.flush();
+        self.flush_and_sync_cpu();
         let ss = self.surface.image_snapshot();
         ss.to_raster_image(skia_safe::image::CachingHint::Allow)
     }
 
     pub fn read_pixels(&mut self) -> Vec<u8> {
-        self.flush();
+        self.flush_and_sync_cpu();
         let info = self.surface.image_info();
         let size = info.height() as usize * info.min_row_bytes();
         let mut buf = vec![0_u8; size];
@@ -311,7 +310,7 @@ impl Context {
     }
 
     pub fn read_pixels_into_bitmap(&mut self) -> skia_safe::Bitmap {
-        self.flush();
+        self.flush_and_sync_cpu();
         let info = self.surface.image_info();
         let mut bm = skia_safe::Bitmap::new();
         bm.alloc_pixels_flags(&info);
@@ -321,7 +320,7 @@ impl Context {
     }
 
     pub fn read_pixels_into_image(&mut self) -> Option<Image> {
-        self.flush();
+        self.flush_and_sync_cpu();
         let info = self.surface.image_info();
         let mut bm = skia_safe::Bitmap::new();
         bm.alloc_pixels_flags(&info);
@@ -340,7 +339,7 @@ impl Context {
     }
 
     pub fn snapshot(&mut self) -> Image {
-        self.flush();
+        self.flush_and_sync_cpu();
         self.surface.image_snapshot()
     }
 

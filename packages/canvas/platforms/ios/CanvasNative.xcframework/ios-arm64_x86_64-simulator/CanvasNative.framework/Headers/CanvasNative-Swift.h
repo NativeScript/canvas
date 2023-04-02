@@ -287,11 +287,19 @@ SWIFT_CLASS("_TtC12CanvasNative13CanvasHelpers")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@class NSData;
+
+@interface GLKView (SWIFT_EXTENSION(CanvasNative))
+- (void)snapshotWithData:(NSData * _Nonnull)data;
+@end
+
 @class NSString;
+@class UIImage;
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
-@interface NSCCanvas : UIView
+@interface NSCCanvas : UIView <GLKViewDelegate>
+- (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getViewPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL ignorePixelScaling;
@@ -304,7 +312,8 @@ SWIFT_CLASS_NAMED("NSCCanvas")
 - (void)initContext:(NSString * _Nonnull)type :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(NSString * _Nonnull)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible SWIFT_METHOD_FAMILY(none);
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(NSString * _Nonnull)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor SWIFT_WARN_UNUSED_RESULT;
 - (void)forceLayout:(CGFloat)width :(CGFloat)height;
-- (void)render;
+- (UIImage * _Nullable)snapshot:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
+- (BOOL)render;
 - (void)context2DTest:(int64_t)context;
 - (NSString * _Nonnull)context2DTestToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
@@ -325,7 +334,6 @@ SWIFT_CLASS_NAMED("NSCCanvasRenderingContext")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
-@class UIImage;
 
 SWIFT_CLASS_NAMED("NSCCanvasRenderingContext2D")
 @interface NSCCanvasRenderingContext2D : NSCCanvasRenderingContext
@@ -680,11 +688,19 @@ SWIFT_CLASS("_TtC12CanvasNative13CanvasHelpers")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@class NSData;
+
+@interface GLKView (SWIFT_EXTENSION(CanvasNative))
+- (void)snapshotWithData:(NSData * _Nonnull)data;
+@end
+
 @class NSString;
+@class UIImage;
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
-@interface NSCCanvas : UIView
+@interface NSCCanvas : UIView <GLKViewDelegate>
+- (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getViewPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL ignorePixelScaling;
@@ -697,7 +713,8 @@ SWIFT_CLASS_NAMED("NSCCanvas")
 - (void)initContext:(NSString * _Nonnull)type :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(NSString * _Nonnull)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible SWIFT_METHOD_FAMILY(none);
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(NSString * _Nonnull)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor SWIFT_WARN_UNUSED_RESULT;
 - (void)forceLayout:(CGFloat)width :(CGFloat)height;
-- (void)render;
+- (UIImage * _Nullable)snapshot:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
+- (BOOL)render;
 - (void)context2DTest:(int64_t)context;
 - (NSString * _Nonnull)context2DTestToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
@@ -718,7 +735,6 @@ SWIFT_CLASS_NAMED("NSCCanvasRenderingContext")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
-@class UIImage;
 
 SWIFT_CLASS_NAMED("NSCCanvasRenderingContext2D")
 @interface NSCCanvasRenderingContext2D : NSCCanvasRenderingContext

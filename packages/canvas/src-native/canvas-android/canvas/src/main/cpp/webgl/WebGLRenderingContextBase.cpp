@@ -31,6 +31,27 @@ WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state
 
 }
 
+
+void WebGLRenderingContextBase::StartRaf() {
+    auto raf = this->GetRaf();
+    if (raf != nullptr) {
+        if (!canvas_native_raf_get_started(raf->GetRaf())) {
+            canvas_native_raf_start(raf->GetRaf());
+        }
+    }
+}
+
+
+void WebGLRenderingContextBase::StopRaf() {
+    auto raf = this->GetRaf();
+    if (raf != nullptr) {
+        if (canvas_native_raf_get_started(raf->GetRaf())) {
+            canvas_native_raf_stop(raf->GetRaf());
+        }
+    }
+}
+
+
 void WebGLRenderingContextBase::UpdateInvalidateState() {
     auto raf = this->GetRaf();
     if (raf != nullptr) {

@@ -4,7 +4,7 @@ let LAF = 0;
 
 export function cubeRotationRotation(canvas) {
 	function main() {
-		var gl = canvas.getContext('webgl2');
+		var gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
 		if (!gl) {
 			return;
 		}

@@ -69,13 +69,11 @@ export class HTMLImageElement extends Element {
 	}
 
 	set complete(value) {
-		Utils.executeOnMainThread(() => {
-			this._complete = value;
-			if (value) {
-				this.emitter.emit('load', this);
-				this.onload();
-			}
-		});
+		this._complete = value;
+		if (value) {
+			this.emitter.emit('load', this);
+			this.onload();
+		}
 	}
 
 	constructor(props?) {

@@ -35,7 +35,7 @@ export class RoundedRect extends Paint {
 
 	draw() {
 		const scale = Screen.mainScreen.scale;
-		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
+		const context = this._canvas.getContext('2d') as any;
 		const color = this._getColor();
 		context.roundRect(this.x * scale, this.y * scale, this.width * scale, this.height * scale, this.r * scale);
 		if (this._children.length > 0) {

@@ -1285,7 +1285,8 @@ enum class WebGLExtensionType : ::std::uint8_t {
   ANGLE_instanced_arrays = 21,
   WEBGL_depth_texture = 22,
   WEBGL_draw_buffers = 23,
-  None = 24,
+  OES_fbo_render_mipmap = 24,
+  None = 25,
 };
 #endif // CXXBRIDGE1_ENUM_org$nativescript$canvas$WebGLExtensionType
 
@@ -2748,6 +2749,10 @@ void org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_parameterf(::std
 void org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_parameteri(::std::uint32_t target, ::std::uint32_t pname, ::std::int32_t param, ::org::nativescript::canvas::WebGLState &state) noexcept;
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_sub_image2d_asset(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::uint32_t format, ::std::int32_t image_type, ::org::nativescript::canvas::ImageAsset &asset, ::org::nativescript::canvas::WebGLState &state) noexcept;
+
+void org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_sub_image2d_canvas2d(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::uint32_t format, ::std::int32_t image_type, ::org::nativescript::canvas::CanvasRenderingContext2D &canvas, ::org::nativescript::canvas::WebGLState &state) noexcept;
+
+void org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_sub_image2d_webgl(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::uint32_t format, ::std::int32_t image_type, ::org::nativescript::canvas::WebGLState &webgl, ::org::nativescript::canvas::WebGLState &state) noexcept;
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_sub_image2d(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::int32_t width, ::std::int32_t height, ::std::uint32_t format, ::std::int32_t image_type, ::rust::Slice<::std::uint8_t const> buf, ::org::nativescript::canvas::WebGLState &state) noexcept;
 
@@ -5174,6 +5179,14 @@ void canvas_native_webgl_tex_parameteri(::std::uint32_t target, ::std::uint32_t 
 
 void canvas_native_webgl_tex_sub_image2d_asset(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::uint32_t format, ::std::int32_t image_type, ::org::nativescript::canvas::ImageAsset &asset, ::org::nativescript::canvas::WebGLState &state) noexcept {
   org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_sub_image2d_asset(target, level, xoffset, yoffset, format, image_type, asset, state);
+}
+
+void canvas_native_webgl_tex_sub_image2d_canvas2d(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::uint32_t format, ::std::int32_t image_type, ::org::nativescript::canvas::CanvasRenderingContext2D &canvas, ::org::nativescript::canvas::WebGLState &state) noexcept {
+  org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_sub_image2d_canvas2d(target, level, xoffset, yoffset, format, image_type, canvas, state);
+}
+
+void canvas_native_webgl_tex_sub_image2d_webgl(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::uint32_t format, ::std::int32_t image_type, ::org::nativescript::canvas::WebGLState &webgl, ::org::nativescript::canvas::WebGLState &state) noexcept {
+  org$nativescript$canvas$cxxbridge1$canvas_native_webgl_tex_sub_image2d_webgl(target, level, xoffset, yoffset, format, image_type, webgl, state);
 }
 
 void canvas_native_webgl_tex_sub_image2d(::std::uint32_t target, ::std::int32_t level, ::std::int32_t xoffset, ::std::int32_t yoffset, ::std::int32_t width, ::std::int32_t height, ::std::uint32_t format, ::std::int32_t image_type, ::rust::Slice<::std::uint8_t const> buf, ::org::nativescript::canvas::WebGLState &state) noexcept {

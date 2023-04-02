@@ -55,7 +55,8 @@ pub enum WebGLExtensionType {
     ANGLE_instanced_arrays,
     WEBGL_depth_texture,
     WEBGL_draw_buffers,
-    None,
+    OES_fbo_render_mipmap,
+    None
 }
 
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -90,9 +91,9 @@ pub enum WebGLVersion {
 }
 
 #[derive(Debug)]
-struct WebGLStateInner {
+pub(crate) struct WebGLStateInner {
     version: WebGLVersion,
-    gl_context: GLContext,
+    pub(crate) gl_context: GLContext,
     flip_y: bool,
     alpha: bool,
     antialias: bool,
@@ -121,7 +122,7 @@ struct WebGLStateInner {
 }
 
 #[derive(Debug)]
-pub struct WebGLState(Rc<RefCell<WebGLStateInner>>);
+pub struct WebGLState(pub(crate) Rc<RefCell<WebGLStateInner>>);
 
 impl WebGLState {
     pub(crate) fn resized(&mut self) {
@@ -138,7 +139,7 @@ impl WebGLState {
     }
 
     pub fn new_with_context(context: GLContext, version: WebGLVersion) -> Self {
-        let ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
+        let mut ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
             version,
             alpha: true,
             antialias: true,
@@ -167,7 +168,8 @@ impl WebGLState {
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
-
+        ctx.make_current();
+        crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
     }
 
@@ -186,7 +188,7 @@ impl WebGLState {
         xr_compatible: bool,
         is_canvas: bool,
     ) -> Self {
-        let ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
+        let mut ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
             version,
             alpha,
             antialias,
@@ -215,8 +217,14 @@ impl WebGLState {
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
-
+        ctx.make_current();
+        crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
+    }
+
+    #[cfg(target_os = "ios")]
+    pub fn snapshot(&self) -> Option<Vec<u8>>{
+        self.get().gl_context.snapshot()
     }
 
     // pub(crate) fn get_context(&self) -> &GLContext {
@@ -980,6 +988,21 @@ impl OES_texture_float {
 impl WebGLExtension for OES_texture_float {
     fn extension_type(&self) -> WebGLExtensionType {
         WebGLExtensionType::OES_texture_float
+    }
+}
+
+
+pub struct OES_fbo_render_mipmap{}
+
+impl OES_fbo_render_mipmap {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WebGLExtension for OES_fbo_render_mipmap {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_fbo_render_mipmap
     }
 }
 

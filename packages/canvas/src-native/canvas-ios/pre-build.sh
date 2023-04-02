@@ -38,8 +38,6 @@ IS_RELEASE=false
 RUST_BUILD_TYPE=""
 RUST_BUILD_TARGET=""
 
-echo $CONFIGURATION
-
 if [[ $CONFIGURATION == Release ]]; then
   IS_RELEASE=true
 fi

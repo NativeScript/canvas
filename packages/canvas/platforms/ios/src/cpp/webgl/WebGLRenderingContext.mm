@@ -195,9 +195,11 @@ jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
 
 std::vector<jsi::PropNameID> WebGLRenderingContext::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(434);
+    ret.reserve(436);
     
     ret.push_back(jsi::PropNameID::forUtf8(rt, "__resized"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__startRaf"));
+    ret.push_back(jsi::PropNameID::forUtf8(rt, "__stopRaf"));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("activeTexture")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("attachShader")));
     ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindAttribLocation")));
@@ -802,12 +804,42 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
             
-            // auto width = args[0];
-            // auto height = args[1];
-            // width->NumberValue(context).FromMaybe(1)
-            // width->NumberValue(context).FromMaybe(1))
             canvas_native_webgl_resized(
                                         this->GetState());
+            
+            this->UpdateBindings();
+            
+            return jsi::Value::undefined();
+        }
+                                                     );
+    }
+    
+    if (methodName == "__startRaf") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+            
+            this->StartRaf();
+            
+            return jsi::Value::undefined();
+        }
+                                                     );
+    }
+    
+    if (methodName == "__stopRaf") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     0,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+            
+            this->StartRaf();
             
             return jsi::Value::undefined();
         }
@@ -950,21 +982,22 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                 
                 if (arguments[0].isNumber()) {
                     auto target = (uint32_t) arguments[0].asNumber();
-                    if (arguments[1].isObject()) {
-                        auto framebuffer = arguments[1].asObject(
-                                                                 runtime).asHostObject<WebGLFramebuffer>(
-                                                                                                         runtime);
-                        canvas_native_webgl_bind_frame_buffer(
-                                                              target,
-                                                              framebuffer->GetFrameBuffer(),
-                                                              this->GetState()
-                                                              );
-                    } else {
-                        // null value
-                        // unbind
+                    
+                    if(arguments[1].isNull()){
+                        
                         canvas_native_webgl_bind_frame_buffer(
                                                               target,
                                                               0,
+                                                              this->GetState()
+                                                              );
+                        
+                        return jsi::Value::undefined();
+                        
+                    }else if (arguments[1].isObject()) {
+                        auto framebuffer = getHostObject<WebGLFramebuffer>(runtime, arguments[1]);
+                        canvas_native_webgl_bind_frame_buffer(
+                                                              target,
+                                                              framebuffer->GetFrameBuffer(),
                                                               this->GetState()
                                                               );
                     }
@@ -986,10 +1019,20 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             if (count > 1) {
                 if (arguments[0].isNumber()) {
                     auto target = (uint32_t) arguments[0].asNumber();
-                    if (arguments[1].isObject()) {
-                        auto renderbuffer = arguments[1].asObject(
-                                                                  runtime).asHostObject<WebGLRenderbuffer>(
-                                                                                                           runtime);
+                    
+                    if(arguments[1].isNull()){
+                        
+                        canvas_native_webgl_bind_render_buffer(
+                                                               target,
+                                                               0,
+                                                               this->GetState()
+                                                               );
+                        
+                        return jsi::Value::undefined();
+                        
+                    }else if (arguments[1].isObject()) {
+                        
+                        auto renderbuffer = getHostObject<WebGLRenderbuffer>(runtime, arguments[1]);
                         
                         if (renderbuffer ==
                             nullptr) { return jsi::Value::undefined(); }
@@ -1024,9 +1067,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                 if (arguments[0].isNumber()) {
                     auto target = (uint32_t) arguments[0].asNumber();
                     if (arguments[1].isObject()) {
-                        auto texture = arguments[1].asObject(
-                                                             runtime).asHostObject<WebGLTexture>(
-                                                                                                 runtime);
+                        
+                        auto texture = getHostObject<WebGLTexture>(runtime, arguments[1]);
                         canvas_native_webgl_bind_texture(
                                                          target,
                                                          texture->GetTexture(),
@@ -1496,9 +1538,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                             size_t count) -> jsi::Value {
             
             if (count > 0) {
-                auto shader = arguments[0].asObject(
-                                                    runtime).asHostObject<WebGLShader>(
-                                                                                       runtime);
+                auto shader = getHostObject<WebGLShader>(runtime, arguments[0]);
                 if (shader != nullptr) {
                     canvas_native_webgl_compile_shader(
                                                        shader->GetShader(),
@@ -1887,9 +1927,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             
             if (count > 0) {
                 if (arguments[0].isObject()) {
-                    auto buffer = arguments[0].asObject(
-                                                        runtime).asHostObject<WebGLBuffer>(
-                                                                                           runtime);
+                    
+                    auto buffer = getHostObject<WebGLBuffer>(runtime, arguments[0]);
                     if (buffer != nullptr) {
                         canvas_native_webgl_delete_buffer(
                                                           buffer->GetBuffer(),
@@ -1913,9 +1952,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             
             if (count > 0) {
                 if (arguments[0].isObject()) {
-                    auto buffer = arguments[0].asObject(
-                                                        runtime).asHostObject<WebGLFramebuffer>(
-                                                                                                runtime);
+                    
+                    auto buffer = getHostObject<WebGLFramebuffer>(runtime, arguments[0]);
                     
                     if (buffer != nullptr) {
                         canvas_native_webgl_delete_framebuffer(
@@ -1940,9 +1978,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             if (count > 0) {
                 
                 if (arguments[0].isObject()) {
-                    auto program = arguments[0].asObject(
-                                                         runtime).asHostObject<WebGLProgram>(
-                                                                                             runtime);
+                    
+                    auto program = getHostObject<WebGLProgram>(runtime, arguments[0]);
                     if (program != nullptr) {
                         canvas_native_webgl_delete_framebuffer(
                                                                program->GetProgram(),
@@ -1967,9 +2004,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             if (count > 0) {
                 
                 if (arguments[0].isObject()) {
-                    auto buffer = arguments[0].asObject(
-                                                        runtime).asHostObject<WebGLRenderbuffer>(
-                                                                                                 runtime);
+                    auto buffer =  getHostObject<WebGLRenderbuffer>(runtime, arguments[0]);
                     if (buffer != nullptr) {
                         canvas_native_webgl_delete_renderbuffer(
                                                                 buffer->GetRenderBuffer(),
@@ -1993,9 +2028,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             
             if (count > 0) {
                 if (arguments[0].isObject()) {
-                    auto shader = arguments[0].asObject(
-                                                        runtime).asHostObject<WebGLShader>(
-                                                                                           runtime);
+                    
+                    auto shader = getHostObject<WebGLShader>(runtime, arguments[0]);
                     if (shader != nullptr) {
                         canvas_native_webgl_delete_shader(
                                                           shader->GetShader(),
@@ -2019,9 +2053,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             
             if (count > 0) {
                 if (arguments[0].isObject()) {
-                    auto texture = arguments[0].asObject(
-                                                         runtime).asHostObject<WebGLTexture>(
-                                                                                             runtime);
+                    auto texture = getHostObject<WebGLTexture>(runtime, arguments[0]);
                     if (texture != nullptr) {
                         canvas_native_webgl_delete_texture(
                                                            texture->GetTexture(),
@@ -2699,6 +2731,11 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
             auto type = canvas_native_webgl_context_extension_get_type(
                                                                        *ext);
             switch (type) {
+                case WebGLExtensionType::OES_fbo_render_mipmap: {
+                                                                 auto ret = std::make_shared<OES_fbo_render_mipmapImpl>();
+                                                                 return jsi::Object::createFromHostObject(
+                                                                         runtime, ret);
+                                                             }
                 case WebGLExtensionType::EXT_blend_minmax: {
                     auto ret = std::make_shared<EXT_blend_minmaxImpl>();
                     return jsi::Object::createFromHostObject(
@@ -4469,6 +4506,48 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                           format,
                                                                           type,
                                                                           bitmap->GetImageAsset(),
+                                                                          this->GetState()
+                                                                          );
+                                
+                                return jsi::Value::undefined();
+                            }
+                        } catch (...) {}
+                        
+                        
+                        try {
+                            auto canvas2d = pixels.asHostObject<CanvasRenderingContext2DImpl>(
+                                                                                              runtime);
+                            
+                            if (canvas2d != nullptr) {
+                                canvas_native_webgl_tex_sub_image2d_canvas2d(
+                                                                             target,
+                                                                             level,
+                                                                             xoffset,
+                                                                             yoffset,
+                                                                             format,
+                                                                             type,
+                                                                             canvas2d->GetContext(),
+                                                                             this->GetState()
+                                                                             );
+                                
+                                return jsi::Value::undefined();
+                            }
+                        } catch (...) {}
+                        
+                        
+                        try {
+                            auto webgl = pixels.asHostObject<WebGLRenderingContext>(
+                                                                                    runtime);
+                            
+                            if (webgl != nullptr) {
+                                canvas_native_webgl_tex_sub_image2d_webgl(
+                                                                          target,
+                                                                          level,
+                                                                          xoffset,
+                                                                          yoffset,
+                                                                          format,
+                                                                          type,
+                                                                          webgl->GetState(),
                                                                           this->GetState()
                                                                           );
                                 

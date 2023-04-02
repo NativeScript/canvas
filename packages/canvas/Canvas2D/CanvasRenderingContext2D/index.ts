@@ -57,6 +57,7 @@ export class CanvasRenderingContext2D {
 
 	set shadowColor(color: string) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.shadowColor = color;
 		}
 	}
@@ -67,6 +68,7 @@ export class CanvasRenderingContext2D {
 
 	set font(value: string) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.font = value;
 		}
 	}
@@ -77,6 +79,7 @@ export class CanvasRenderingContext2D {
 
 	set direction(value: string) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.direction = value;
 		}
 	}
@@ -87,6 +90,7 @@ export class CanvasRenderingContext2D {
 
 	set globalAlpha(alpha: number) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.globalAlpha = alpha;
 		}
 	}
@@ -97,6 +101,7 @@ export class CanvasRenderingContext2D {
 
 	set imageSmoothingEnabled(enabled: boolean) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.imageSmoothingEnabled = enabled;
 		}
 	}
@@ -106,6 +111,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set imageSmoothingQuality(quality: string) {
+		this._ensureLayoutBeforeDraw();
 		this.context.imageSmoothingQuality = quality;
 	}
 
@@ -115,6 +121,7 @@ export class CanvasRenderingContext2D {
 
 	set lineDashOffset(offset: number) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.lineDashOffset = offset;
 		}
 	}
@@ -124,6 +131,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set lineJoin(join: string) {
+		this._ensureLayoutBeforeDraw();
 		this.context.lineJoin = join;
 	}
 
@@ -132,6 +140,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set lineCap(cap: string) {
+		this._ensureLayoutBeforeDraw();
 		this.context.lineCap = cap;
 	}
 
@@ -140,6 +149,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set miterLimit(limit: number) {
+		this._ensureLayoutBeforeDraw();
 		this.context.miterLimit = limit;
 	}
 
@@ -148,6 +158,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set shadowBlur(blur: number) {
+		this._ensureLayoutBeforeDraw();
 		this.context.shadowBlur = blur;
 	}
 
@@ -157,6 +168,7 @@ export class CanvasRenderingContext2D {
 
 	set shadowOffsetX(x: number) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.shadowOffsetX = x;
 		}
 	}
@@ -167,6 +179,7 @@ export class CanvasRenderingContext2D {
 
 	set shadowOffsetY(y: number) {
 		if (this.context) {
+			this._ensureLayoutBeforeDraw();
 			this.context.shadowOffsetY = y;
 		}
 	}
@@ -176,6 +189,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set textAlign(alignment: string) {
+		this._ensureLayoutBeforeDraw();
 		this.context.setTextAlign = alignment;
 	}
 
@@ -184,6 +198,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set globalCompositeOperation(composite: string) {
+		this._ensureLayoutBeforeDraw();
 		this.context.globalCompositeOperation = composite;
 	}
 
@@ -195,6 +210,7 @@ export class CanvasRenderingContext2D {
 		if (color === undefined || color === null) {
 			return;
 		}
+		this._ensureLayoutBeforeDraw();
 		if (color instanceof CanvasGradient || color instanceof CanvasPattern) {
 			this.context.fillStyle = color.native;
 		} else {
@@ -207,6 +223,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set filter(value: string) {
+		this._ensureLayoutBeforeDraw();
 		this.context.filter = value;
 	}
 
@@ -218,6 +235,7 @@ export class CanvasRenderingContext2D {
 		if (color === undefined || color === null) {
 			return;
 		}
+		this._ensureLayoutBeforeDraw();
 		if (color instanceof CanvasGradient || color instanceof CanvasPattern) {
 			this.context.strokeStyle = color.native;
 		} else {
@@ -230,6 +248,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set lineWidth(width: number) {
+		this._ensureLayoutBeforeDraw();
 		this.context.lineWidth = width;
 	}
 
@@ -246,7 +265,7 @@ export class CanvasRenderingContext2D {
 		return cached;
 	}
 
-	__toDataURL(type: string = 'image/png', quality: number = 92) {
+	__toDataURL(type: string = 'image/jpg', quality: number = 92) {
 		const __toDataURL = this._getMethod('__toDataURL');
 		return __toDataURL(type, quality);
 	}

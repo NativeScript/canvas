@@ -9,8 +9,6 @@
 #include <stdlib.h>
 
 long long canvas_native_init_ios_gl(int64_t view,
-                                    int32_t width,
-                                    int32_t height,
                                     bool alpha,
                                     bool antialias,
                                     bool depth,
@@ -23,6 +21,10 @@ long long canvas_native_init_ios_gl(int64_t view,
                                     bool xr_compatible,
                                     int32_t version,
                                     bool is_canvas);
+
+bool canvas_native_ios_flush_gl(int64_t context);
+
+void canvas_native_resize_context_2d(int64_t context, float width, float height);
 
 int64_t canvas_native_create_2d_context(int64_t context,
                                         int32_t width,

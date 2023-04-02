@@ -2,12 +2,13 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
+use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::CString;
-use std::os::raw::{ c_void};
+use std::os::raw::c_void;
+use std::rc::Rc;
 use std::sync::Arc;
 
-use parking_lot::lock_api::{ RwLockReadGuard, RwLockWriteGuard};
-use parking_lot::{ RawRwLock};
+use parking_lot::RawRwLock;
 
 use canvas_core::gl::GLContext;
 
@@ -54,7 +55,8 @@ pub enum WebGLExtensionType {
     ANGLE_instanced_arrays,
     WEBGL_depth_texture,
     WEBGL_draw_buffers,
-    None,
+    OES_fbo_render_mipmap,
+    None
 }
 
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -89,9 +91,9 @@ pub enum WebGLVersion {
 }
 
 #[derive(Debug)]
-struct WebGLStateInner {
+pub(crate) struct WebGLStateInner {
     version: WebGLVersion,
-    gl_context: GLContext,
+    pub(crate) gl_context: GLContext,
     flip_y: bool,
     alpha: bool,
     antialias: bool,
@@ -120,7 +122,7 @@ struct WebGLStateInner {
 }
 
 #[derive(Debug)]
-pub struct WebGLState(Arc<parking_lot::RwLock<WebGLStateInner>>);
+pub struct WebGLState(pub(crate) Rc<RefCell<WebGLStateInner>>);
 
 impl WebGLState {
     pub(crate) fn resized(&mut self) {
@@ -128,16 +130,16 @@ impl WebGLState {
         //state.gl_context = GLContext::get_current();
     }
 
-    fn get(&self) -> RwLockReadGuard<'_, RawRwLock, WebGLStateInner> {
-        self.0.read()
+    fn get(&self) -> Ref<WebGLStateInner> {
+        Ref::map(self.0.borrow(), |v| v)
     }
 
-    fn get_mut(&self) -> RwLockWriteGuard<'_, RawRwLock, WebGLStateInner> {
-        self.0.write()
+    fn get_mut(&self) -> RefMut<WebGLStateInner> {
+        RefMut::map(self.0.borrow_mut(), |v| v)
     }
 
     pub fn new_with_context(context: GLContext, version: WebGLVersion) -> Self {
-        let ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
+        let mut ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
             version,
             alpha: true,
             antialias: true,
@@ -166,7 +168,8 @@ impl WebGLState {
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
-
+        ctx.make_current();
+        crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
     }
 
@@ -185,7 +188,7 @@ impl WebGLState {
         xr_compatible: bool,
         is_canvas: bool,
     ) -> Self {
-        let ctx = Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
+        let mut ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
             version,
             alpha,
             antialias,
@@ -214,8 +217,14 @@ impl WebGLState {
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
-
+        ctx.make_current();
+        crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
+    }
+
+    #[cfg(target_os = "ios")]
+    pub fn snapshot(&self) -> Option<Vec<u8>>{
+        self.get().gl_context.snapshot()
     }
 
     // pub(crate) fn get_context(&self) -> &GLContext {
@@ -392,6 +401,7 @@ impl WebGLState {
         self.get().gl_context.get_surface_height()
     }
 
+    #[inline(always)]
     pub fn make_current(&self) -> bool {
         self.get().gl_context.make_current()
     }
@@ -407,17 +417,17 @@ impl WebGLState {
 
 impl Clone for WebGLState {
     fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
+        Self(Rc::clone(&self.0))
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.0 = Arc::clone(&source.0)
+        self.0 = Rc::clone(&source.0)
     }
 }
 
 impl Default for WebGLState {
     fn default() -> Self {
-        Self(Arc::new(parking_lot::RwLock::new(WebGLStateInner {
+        Self(Rc::new(RefCell::new(WebGLStateInner {
             version: WebGLVersion::NONE,
             alpha: true,
             antialias: true,
@@ -715,9 +725,9 @@ pub struct EXT_color_buffer_half_float {
 impl EXT_color_buffer_half_float {
     pub fn new() -> Self {
         let rgba16f_ext = gl_bindings::RGBA16F;
-        let rgb16f_ext = gl_bindings::RGB16F ;
+        let rgb16f_ext = gl_bindings::RGB16F;
         let framebuffer_attachment_component_type_ext =
-            gl_bindings::FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE ;
+            gl_bindings::FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE;
         let unsigned_normalized_ext = gl_bindings::UNSIGNED_NORMALIZED;
         Self {
             rgba16f_ext,
@@ -978,6 +988,21 @@ impl OES_texture_float {
 impl WebGLExtension for OES_texture_float {
     fn extension_type(&self) -> WebGLExtensionType {
         WebGLExtensionType::OES_texture_float
+    }
+}
+
+
+pub struct OES_fbo_render_mipmap{}
+
+impl OES_fbo_render_mipmap {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WebGLExtension for OES_fbo_render_mipmap {
+    fn extension_type(&self) -> WebGLExtensionType {
+        WebGLExtensionType::OES_fbo_render_mipmap
     }
 }
 

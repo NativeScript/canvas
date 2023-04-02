@@ -42,7 +42,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 		//this.text(canvas);
 		//this.drawPatternWithCanvas(canvas);
-		//this.simple(canvas);
+		this.simple(canvas);
 		//this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
@@ -53,7 +53,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
 		//this.starWarp(canvas);
-		// this.meshShader(canvas);
+		//this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
 		//this.multiPassShaderGenMesh(canvas);
 		//this.cacheAsBitmap(canvas);
@@ -62,7 +62,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.transparent(canvas);
 		//this.textureRotate(canvas);
 		//this.simplePlane(canvas);
-		this.animatedJet(canvas);
+		//this.animatedJet(canvas);
 	}
 
 	textureRotate(canvas) {
@@ -1400,7 +1400,7 @@ void main()
 	}
 
 	drawPatternWithCanvas(canvas) {
-		const scale = Screen.mainScreen.scale;
+		const scale = 1;//Screen.mainScreen.scale;
 		const patternCanvas = document.createElement('canvas');
 		// Give the pattern a width and height of 50
 		patternCanvas.width = 50 * scale;
@@ -1411,7 +1411,7 @@ void main()
 		// Give the pattern a background color and draw an arc
 		patternContext.fillStyle = '#fec';
 		patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-		patternContext.arc(0, 0, 50 * scale, 0, 0.5 * Math.PI);
+		patternContext.arc(0, 0, 50 * Screen.mainScreen.scale, 0, 0.5 * Math.PI);
 		patternContext.stroke();
 
 		// Create our primary canvas and fill it with the pattern
@@ -1425,6 +1425,7 @@ void main()
 	simple(canvas) {
 		const app = new TNSPIXIApplication({
 			canvas,
+			backgroundColor: 0x1099bb
 		});
 		const graphics = new PIXI.Graphics();
 

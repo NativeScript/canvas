@@ -50,6 +50,9 @@ public:
 
     WebGLRenderingVersion GetVersion() const;
 
+    void StartRaf();
+
+    void StopRaf();
 
 private:
     rust::Box<WebGLState> state_;

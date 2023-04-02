@@ -3,7 +3,9 @@ extern crate core;
 use std::os::raw::c_int;
 
 use base64::Engine;
+use image::EncodableLayout;
 use skia_safe::image::CachingHint;
+use skia_safe::wrapper::NativeTransmutableWrapper;
 use skia_safe::{
     AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface,
 };
@@ -21,86 +23,102 @@ pub mod utils;
 pub mod ios;
 
 pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_int) -> String {
-    let image = context.surface.image_snapshot();
+    let image = context
+        .surface
+        .image_snapshot()
+        .to_raster_image(Some(CachingHint::Allow));
 
-    let mut quality = quality;
-    if quality > 100 || quality < 0 {
-        quality = 92;
-    }
-    let data_txt = "data:";
-    let base_64_txt = ";base64,";
-    let mut encoded_prefix =
-        String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
-    encoded_prefix.push_str("data:");
-    encoded_prefix.push_str(format);
-    encoded_prefix.push_str(";base64,");
-    let data = image.encode_to_data_with_quality(
-        match format {
-            "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
-            "image/webp" => EncodedImageFormat::WEBP,
-            "image/gif" => EncodedImageFormat::GIF,
-            "image/heif" | "image/heic" | "image/heif-sequence" | "image/heic-sequence" => {
-                EncodedImageFormat::HEIF
-            }
-            _ => EncodedImageFormat::PNG,
-        },
-        quality,
-    );
-    match data {
-        Some(data) => {
-            let encoded_data = base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
-            if encoded_data.is_empty() {
-                return "data:,".to_string();
-            }
-            let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
-            encoded.push_str(&encoded_prefix);
-            encoded.push_str(&encoded_data);
-            encoded
+    if let Some(image) = image {
+        let mut quality = quality;
+        if quality > 100 || quality < 0 {
+            quality = 92;
         }
-        _ => "data:,".to_string(),
+        let data_txt = "data:";
+        let base_64_txt = ";base64,";
+        let mut encoded_prefix =
+            String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
+        encoded_prefix.push_str("data:");
+        encoded_prefix.push_str(format);
+        encoded_prefix.push_str(";base64,");
+        let data = image.encode_to_data_with_quality(
+            match format {
+                "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
+                "image/webp" => EncodedImageFormat::WEBP,
+                "image/gif" => EncodedImageFormat::GIF,
+                "image/heif" | "image/heic" | "image/heif-sequence" | "image/heic-sequence" => {
+                    EncodedImageFormat::HEIF
+                }
+                _ => EncodedImageFormat::PNG,
+            },
+            quality,
+        );
+        return match data {
+            Some(data) => {
+                let encoded_data =
+                    base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
+                if encoded_data.is_empty() {
+                    return "data:,".to_string();
+                }
+                let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
+                encoded.push_str(&encoded_prefix);
+                encoded.push_str(&encoded_data);
+                encoded
+            }
+            _ => "data:,".to_string(),
+        };
     }
+
+    "data:,".to_string()
 }
 
 pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -> String {
     let mut context = context.get_context_mut();
-    let image = context.surface.image_snapshot();
+    let image = context
+        .surface
+        .image_snapshot()
+        .to_raster_image(Some(CachingHint::Allow));
 
-    let mut quality = quality;
-    if quality > 100 || quality < 0 {
-        quality = 92;
-    }
-    let data_txt = "data:";
-    let base_64_txt = ";base64,";
-    let mut encoded_prefix =
-        String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
-    encoded_prefix.push_str("data:");
-    encoded_prefix.push_str(format);
-    encoded_prefix.push_str(";base64,");
-    let data = image.encode_to_data_with_quality(
-        match format {
-            "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
-            "image/webp" => EncodedImageFormat::WEBP,
-            "image/gif" => EncodedImageFormat::GIF,
-            "image/heif" | "image/heic" | "image/heif-sequence" | "image/heic-sequence" => {
-                EncodedImageFormat::HEIF
-            }
-            _ => EncodedImageFormat::PNG,
-        },
-        quality,
-    );
-    match data {
-        Some(data) => {
-            let encoded_data = base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
-            if encoded_data.is_empty() {
-                return "data:,".to_string();
-            }
-            let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
-            encoded.push_str(&encoded_prefix);
-            encoded.push_str(&encoded_data);
-            encoded
+    if let Some(image) = image {
+        let mut quality = quality;
+        if quality > 100 || quality < 0 {
+            quality = 92;
         }
-        _ => "data:,".to_string(),
+        let data_txt = "data:";
+        let base_64_txt = ";base64,";
+        let mut encoded_prefix =
+            String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
+        encoded_prefix.push_str("data:");
+        encoded_prefix.push_str(format);
+        encoded_prefix.push_str(";base64,");
+        let data = image.encode_to_data_with_quality(
+            match format {
+                "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
+                "image/webp" => EncodedImageFormat::WEBP,
+                "image/gif" => EncodedImageFormat::GIF,
+                "image/heif" | "image/heic" | "image/heif-sequence" | "image/heic-sequence" => {
+                    EncodedImageFormat::HEIF
+                }
+                _ => EncodedImageFormat::PNG,
+            },
+            quality,
+        );
+        return match data {
+            Some(data) => {
+                let encoded_data =
+                    base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
+                if encoded_data.is_empty() {
+                    return "data:,".to_string();
+                }
+                let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
+                encoded.push_str(&encoded_prefix);
+                encoded.push_str(&encoded_data);
+                encoded
+            }
+            _ => "data:,".to_string(),
+        };
     }
+
+    "data:,".to_string()
 }
 
 pub fn bytes_to_data_url(
@@ -163,6 +181,28 @@ pub fn bytes_to_data_url(
     }
 
     return "data:,".to_string();
+}
+
+pub(crate) fn to_data_with_context(context: &mut Context) -> Vec<u8> {
+    let width = context.surface.width();
+    let height = context.surface.height();
+    let image = context.surface.image_snapshot();
+    let mut info = ImageInfo::new(
+        ISize::new(width, height),
+        ColorType::RGBA8888,
+        AlphaType::Unpremul,
+        None,
+    );
+    let row_bytes = info.width() * 4;
+    let mut pixels = vec![255u8; (row_bytes * info.height()) as usize];
+    let _read = image.read_pixels(
+        &mut info,
+        pixels.as_mut_slice(),
+        row_bytes as usize,
+        IPoint::new(0, 0),
+        CachingHint::Allow,
+    );
+    pixels
 }
 
 pub(crate) fn to_data(context: &mut ContextWrapper) -> Vec<u8> {

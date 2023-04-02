@@ -10,7 +10,7 @@ EXT_disjoint_timer_queryImpl::EXT_disjoint_timer_queryImpl(
 
 std::vector<jsi::PropNameID> EXT_disjoint_timer_queryImpl::getPropertyNames(jsi::Runtime &rt) {
     std::vector<jsi::PropNameID> ret;
-    ret.reserve(16);
+    ret.reserve(17);
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("QUERY_COUNTER_BITS_EXT")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("CURRENT_QUERY_EXT")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("QUERY_RESULT_EXT")));
@@ -26,6 +26,7 @@ std::vector<jsi::PropNameID> EXT_disjoint_timer_queryImpl::getPropertyNames(jsi:
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("queryCounterExt")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("getQueryExt")));
     ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("getQueryObjectExt")));
+    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("getQueryParameterExt")));
     ret.emplace_back(
             jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
     return ret;
@@ -255,6 +256,38 @@ jsi::Value EXT_disjoint_timer_queryImpl::get(jsi::Runtime &runtime, const jsi::P
                                                                  *ret)};
                                                      }
         );
+
+    } else if (methodName == "getQueryParameterExt") {
+        return jsi::Function::createFromHostFunction(runtime,
+                                                     jsi::PropNameID::forAscii(runtime, methodName),
+                                                     1,
+                                                     [this](jsi::Runtime &runtime,
+                                                            const jsi::Value &thisValue,
+                                                            const jsi::Value *arguments,
+                                                            size_t count) -> jsi::Value {
+
+                                                         auto query = arguments[0].asObject(
+                                                                 runtime).asHostObject<WebGLQuery>(
+                                                                 runtime);
+                                                         auto pname = (uint32_t) arguments[1].asNumber();
+
+                                                         auto ret = canvas_native_webgl_ext_disjoint_timer_query_get_query_object_ext(
+                                                                 query->GetQuery(),
+                                                                 pname,
+                                                                 this->GetQuery()
+                                                         );
+
+                                                         // GL_QUERY_RESULT_AVAILABLE_EXT
+                                                         if (pname == 0x8867) {
+                                                             return {canvas_native_webgl_result_get_bool(
+                                                                     *ret)};
+                                                         }
+
+                                                         return {canvas_native_webgl_result_get_i32(
+                                                                 *ret)};
+                                                     }
+        );
+
     }
     return jsi::Value::undefined();
 }

@@ -9,8 +9,8 @@
 #include "v8runtime/JSIV8ValueConverter.h"
 #include "canvas2d/CanvasRenderingContext2DImpl.h"
 
-#import "v8runtime/V8Runtime.h"
-#import "canvas-cxx/src/lib.rs.h"
+#include "v8runtime/V8Runtime.h"
+#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 
 #include "ImageAssetImpl.h"

@@ -1,6 +1,9 @@
 import { WebGLRenderingContext } from '../../WebGL/WebGLRenderingContext';
 
 export class WebGL2RenderingContextBase extends WebGLRenderingContext {
+	constructor(context, contextOptions?) {
+		super(context, contextOptions);
+	}
 	/* Getting GL parameter information */
 	public get READ_BUFFER(): number {
 		return 0x0c02;

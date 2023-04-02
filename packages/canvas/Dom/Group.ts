@@ -12,7 +12,6 @@ export const originProperty = new ShorthandProperty<Style, { x: number; y: numbe
 	cssName: 'origin',
 	getter: function () {
 		const view = this as any;
-		console.log(this);
 		return { x: view.originX, y: view.originY };
 	},
 	converter(value: any): any {

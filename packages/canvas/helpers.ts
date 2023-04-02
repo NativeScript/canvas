@@ -1,5 +1,4 @@
-declare var __non_webpack_require__;
-
+declare var __non_webpack_require__, CanvasModule;
 export class Helpers {
 	static _initialized = false;
 
@@ -17,6 +16,9 @@ export class Helpers {
 		}
 
 		if (global.isIOS) {
+			const cm = new CanvasModule();
+			cm.install();
+			this._initialized = true;
 		}
 	}
 }

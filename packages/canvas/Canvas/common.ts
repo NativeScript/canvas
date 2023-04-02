@@ -210,7 +210,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			value = PercentLength.parse(value);
 		}
 		if (typeof value === 'number') {
-			// treat as px
+			if (global.isIOS) {
+				return Utils.layout.toDevicePixels(value) || 0;
+			}
 			return value || 0;
 		} else if ((value !== null || true) && typeof value === 'object' && typeof value.value && typeof value.unit) {
 			if (value.unit === 'px') {
@@ -218,19 +220,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			} else if (value.unit === 'dip') {
 				return Utils.layout.toDevicePixels(value.value) || 0;
 			} else if (value.unit === '%') {
-				if (Application.orientation() === 'portrait') {
-					return type === 'width' ? Screen.mainScreen.widthPixels * value.value || 0 : Screen.mainScreen.heightPixels * value.value || 0;
-				} else if (Application.orientation() === 'landscape') {
-					return type === 'width' ? Screen.mainScreen.widthPixels * value.value || 0 : Screen.mainScreen.heightPixels * value.value || 0;
-				} else {
-					return 0;
+				const orientation = Application.orientation();
+				if (orientation === 'portrait' || orientation === 'landscape') {
+					return (measuredSize ?? (type === 'width' ? Screen.mainScreen.widthPixels : Screen.mainScreen.heightPixels)) * value.value ?? 0;
 				}
-			} else {
-				return 0;
 			}
-		} else {
-			return 0;
 		}
+
+		return 0;
 	}
 
 	setPointerCapture() {}

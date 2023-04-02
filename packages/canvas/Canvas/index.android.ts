@@ -74,9 +74,7 @@ export class Canvas extends CanvasBase {
 	set width(value) {
 		this.style.width = value;
 		this._didLayout = false;
-		if (this._isCustom) {
-			this._layoutNative();
-		}
+		this._layoutNative();
 	}
 
 	// @ts-ignore
@@ -97,9 +95,7 @@ export class Canvas extends CanvasBase {
 	set height(value) {
 		this.style.height = value;
 		this._didLayout = false;
-		if (this._isCustom) {
-			this._layoutNative();
-		}
+		this._layoutNative();
 	}
 
 	static createCustomView() {
@@ -180,7 +176,7 @@ export class Canvas extends CanvasBase {
 		super.disposeNativeView();
 	}
 
-	toDataURL(type = 'png', encoderOptions = 0.92) {
+	toDataURL(type = 'image/png', encoderOptions = 0.92) {
 		if (this._2dContext) {
 			return (this._2dContext as any).__toDataURL(type, encoderOptions);
 		}
@@ -188,14 +184,14 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative() {
+		if (!this._isCustom) {
+			return;
+		}
 		if (this._didLayout) {
 			return;
 		}
 		if (!this.parent) {
 			if ((typeof this.width === 'string' && this.width.indexOf('%')) || (typeof this.height === 'string' && this.height.indexOf('%'))) {
-				return;
-			}
-			if (!this._isCustom) {
 				return;
 			}
 			const size = this._realSize;
@@ -254,9 +250,10 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
+					this._layoutNative();
 					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -269,9 +266,10 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webgl2Context) {
+					this._layoutNative();
 					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;

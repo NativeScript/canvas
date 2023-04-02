@@ -6,6 +6,8 @@ use std::{env, fmt};
 use cbindgen::{Config, Language, ParseConfig, ParseExpandConfig};
 
 fn main() {
+    // TODO
+    /*
     println!("cargo:rerun-if-changed=build.rs");
 
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -41,6 +43,8 @@ fn main() {
     cbindgen::generate_with_config(&crate_dir, config)
         .unwrap()
         .write_to_file(&output_file);
+
+    */
 }
 
 fn target_dir() -> PathBuf {

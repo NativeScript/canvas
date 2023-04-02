@@ -518,7 +518,11 @@ export function patternWithCanvas(canvas) {
 	patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
 	patternContext.stroke();
 
+	//const url = patternCanvas.toDataURL('image/png', 92);
+	//console.log('toDataURL', url);
+
 	const ctx = canvas.getContext('2d');
+
 	// Create our primary canvas and fill it with the pattern
 	const pattern = ctx.createPattern(patternContext, 'repeat');
 	ctx.fillStyle = pattern;

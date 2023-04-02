@@ -1,8 +1,7 @@
+use std::cell::{Ref, RefCell, RefMut};
 use std::os::raw::c_float;
-use std::sync::{Arc, RwLock};
+use std::rc::Rc;
 
-use parking_lot::{Mutex, RawMutex, RawRwLock};
-use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use skia_safe::{Color, Data, Image, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
@@ -37,12 +36,12 @@ pub mod state;
 
 pub mod filter_quality;
 pub mod matrix;
+pub mod non_standard;
 pub mod surface;
 pub mod surface_gl;
 pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
-pub mod non_standard;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Device {
@@ -142,7 +141,7 @@ pub struct Context {
 }
 
 pub struct ContextWrapper {
-    inner: Arc<parking_lot::RwLock<Context>>,
+    inner: Rc<RefCell<Context>>,
 }
 
 unsafe impl Send for ContextWrapper {}
@@ -152,16 +151,16 @@ unsafe impl Sync for ContextWrapper {}
 impl ContextWrapper {
     pub fn new(context: Context) -> ContextWrapper {
         Self {
-            inner: Arc::new(parking_lot::RwLock::new(context)),
+            inner: Rc::new(RefCell::new(context)),
         }
     }
 
-    pub fn get_context(&self) -> RwLockReadGuard<'_, RawRwLock, Context> {
-        self.inner.read()
+    pub fn get_context(&self) -> Ref<Context> {
+        Ref::map(self.inner.borrow(), |v| v)
     }
 
-    pub fn get_context_mut(&self) -> RwLockWriteGuard<'_, RawRwLock, Context> {
-        self.inner.write()
+    pub fn get_context_mut(&self) -> RefMut<Context> {
+        RefMut::map(self.inner.borrow_mut(), |v| v)
     }
 
     pub fn into_box(self) -> Box<ContextWrapper> {
@@ -172,11 +171,11 @@ impl ContextWrapper {
         Box::into_raw(self.into_box())
     }
 
-    pub fn get_inner(&self) -> &Arc<parking_lot::RwLock<Context>> {
+    pub fn get_inner(&self) -> &Rc<RefCell<Context>> {
         &self.inner
     }
 
-    pub fn from_inner(inner: Arc<parking_lot::RwLock<Context>>) -> ContextWrapper {
+    pub fn from_inner(inner: Rc<RefCell<Context>>) -> ContextWrapper {
         Self { inner }
     }
 
@@ -221,12 +220,12 @@ impl ContextWrapper {
 impl Clone for ContextWrapper {
     fn clone(&self) -> Self {
         Self {
-            inner: Arc::clone(&self.inner),
+            inner: Rc::clone(&self.inner),
         }
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.inner = Arc::clone(&source.inner)
+        self.inner = Rc::clone(&source.inner)
     }
 }
 
@@ -256,11 +255,10 @@ impl Context {
     pub fn snapshot_to_raster_data(&mut self) -> Vec<u8> {
         self.flush();
         let info = self.surface.image_info();
-        let size = info.height() as usize * info.min_row_bytes();
+        let size = (info.width() * info.height() * 4) as usize;
         let mut buf = vec![0_u8; size];
-
         let ss = self.surface.image_snapshot();
-        match ss.to_raster_image(skia_safe::image::CachingHint::Allow) {
+        match ss.to_raster_image(skia_safe::image::CachingHint::Allow){
             Some(image) => {
                 let mut info = skia_safe::ImageInfo::new(
                     skia_safe::ISize::new(ss.width(), ss.height()),
@@ -283,15 +281,14 @@ impl Context {
         buf
     }
 
-
     pub fn snapshot_to_raster_image(&mut self) -> Option<Image> {
-        self.flush();
+        self.flush_and_sync_cpu();
         let ss = self.surface.image_snapshot();
         ss.to_raster_image(skia_safe::image::CachingHint::Allow)
     }
 
     pub fn read_pixels(&mut self) -> Vec<u8> {
-        self.flush();
+        self.flush_and_sync_cpu();
         let info = self.surface.image_info();
         let size = info.height() as usize * info.min_row_bytes();
         let mut buf = vec![0_u8; size];
@@ -313,7 +310,7 @@ impl Context {
     }
 
     pub fn read_pixels_into_bitmap(&mut self) -> skia_safe::Bitmap {
-        self.flush();
+        self.flush_and_sync_cpu();
         let info = self.surface.image_info();
         let mut bm = skia_safe::Bitmap::new();
         bm.alloc_pixels_flags(&info);
@@ -323,7 +320,7 @@ impl Context {
     }
 
     pub fn read_pixels_into_image(&mut self) -> Option<Image> {
-        self.flush();
+        self.flush_and_sync_cpu();
         let info = self.surface.image_info();
         let mut bm = skia_safe::Bitmap::new();
         bm.alloc_pixels_flags(&info);
@@ -342,7 +339,7 @@ impl Context {
     }
 
     pub fn snapshot(&mut self) -> Image {
-        self.flush();
+        self.flush_and_sync_cpu();
         self.surface.image_snapshot()
     }
 

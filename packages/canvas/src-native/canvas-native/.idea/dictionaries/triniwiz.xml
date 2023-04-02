@@ -3,6 +3,7 @@
     <words>
       <w>bgra</w>
       <w>evenodd</w>
+      <w>gles</w>
       <w>heic</w>
       <w>internalformat</w>
       <w>jbitmap</w>
@@ -14,6 +15,7 @@
       <w>polyshape</w>
       <w>qual</w>
       <w>renderable</w>
+      <w>srgba</w>
       <w>triniwiz</w>
       <w>xoffset</w>
       <w>yoffset</w>

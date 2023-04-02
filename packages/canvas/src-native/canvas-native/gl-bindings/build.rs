@@ -6,9 +6,6 @@ use cfg_aliases::cfg_aliases;
 use gl_generator::{Api, Fallbacks, GlobalGenerator, Profile, Registry};
 
 fn main() {
-    // XXX this is taken from glutin/build.rs.
-
-    // Setup alias to reduce `cfg` boilerplate.
     cfg_aliases! {
         // Systems.
         android: { target_os = "android" },
@@ -23,7 +20,7 @@ fn main() {
         wayland_platform: { all(feature = "wayland", free_unix, not(wasm)) },
 
         // Backends.
-        egl_backend: { all(feature = "egl", any(windows, unix), not(apple), not(wasm)) },
+        egl_backend: { all(feature = "egl", any(windows, unix, ios), not(macos),not(wasm)) },
         glx_backend: { all(feature = "glx", x11_platform, not(wasm)) },
         wgl_backend: { all(feature = "wgl", windows, not(wasm)) },
         cgl_backend: { all(macos, not(wasm)) },
@@ -59,6 +56,7 @@ fn main() {
             "GL_OES_vertex_array_object",
             "GL_OES_packed_depth_stencil",
             "GL_EXT_draw_buffers",
+            "OES_fbo_render_mipmap"
         ],
     )
     .write_bindings(GlobalGenerator, &mut file)

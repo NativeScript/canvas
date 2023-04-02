@@ -422,7 +422,7 @@ export class TNSXMLHttpRequest {
 								this._response = JSON.parse(this._responseText);
 							}
 						} catch (e) {
-							console.log('json parse error', e);
+							console.error('json parse error', e);
 							// this should probably be caught before the promise resolves
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.text) {
@@ -457,22 +457,28 @@ export class TNSXMLHttpRequest {
 							this._responseText = this._response = response ? response : '';
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-						if ((global as any).isIOS) {
-							this._response = interop.bufferFromData(data);
-						} else {
-							//this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data));
-							this._response = data;
+						this._response = data;
+						if ((FileManager as any)._readFile === undefined) {
+							if ((global as any).isIOS) {
+								this._response = interop.bufferFromData(data);
+							} else {
+								this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data));
+							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-						let buffer: ArrayBuffer;
-						if ((global as any).isIOS) {
-							buffer = interop.bufferFromData(data);
-						} else {
-							buffer = data;
-							//const buf = java.nio.ByteBuffer.wrap(data);
-							//buffer = (ArrayBuffer as any).from(buf);
-							//buf.rewind();
+						let buffer: ArrayBuffer = data;
+
+						if ((FileManager as any)._readFile === undefined) {
+							if ((global as any).isIOS) {
+								buffer = interop.bufferFromData(data);
+							} else {
+								buffer = data;
+								//const buf = java.nio.ByteBuffer.wrap(data);
+								//buffer = (ArrayBuffer as any).from(buf);
+								//buf.rewind();
+							}
 						}
+
 						this._response = new Blob([buffer]);
 					}
 

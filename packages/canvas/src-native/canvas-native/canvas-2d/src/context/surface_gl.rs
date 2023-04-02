@@ -40,9 +40,9 @@ impl Context {
 
         let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
         if alpha {
-            frame_buffer.format = GR_GL_RGBA8;
+            frame_buffer.format = skia_safe::gpu::gl::Format::RGBA8.into();
         } else {
-            frame_buffer.format = GR_GL_RGB565;
+            frame_buffer.format = skia_safe::gpu::gl::Format::RGBX8.into()
         }
 
         let target = skia_safe::gpu::BackendRenderTarget::new_gl(
@@ -57,7 +57,7 @@ impl Context {
         );
         let mut color_type = ColorType::RGBA8888;
         if !alpha {
-            color_type = ColorType::RGB565;
+            color_type = ColorType::RGB888x;
         }
         let surface_holder = Surface::from_backend_render_target(
             &mut ctx,
@@ -107,9 +107,9 @@ impl Context {
         let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
         if alpha {
-            frame_buffer.format = GR_GL_RGBA8;
+            frame_buffer.format = skia_safe::gpu::gl::Format::RGBA8.into();
         } else {
-            frame_buffer.format = GR_GL_RGB565;
+            frame_buffer.format = skia_safe::gpu::gl::Format::RGBX8.into()
         }
 
         let target = skia_safe::gpu::BackendRenderTarget::new_gl(
@@ -125,7 +125,7 @@ impl Context {
         let mut color_type = ColorType::RGBA8888;
 
         if !alpha {
-            color_type = ColorType::RGB565;
+            color_type = ColorType::RGB888x;
         }
 
         if let Some(surface) = Surface::from_backend_render_target(

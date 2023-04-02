@@ -1,4 +1,5 @@
 import { Canvas } from '@nativescript/canvas';
+import { Screen } from '@nativescript/core';
 import { Element } from './Element';
 
 export class HTMLCanvasElement extends Element {
@@ -17,6 +18,11 @@ export class HTMLCanvasElement extends Element {
 	}
 
 	set width(value) {
+		// if (global.isIOS) {
+		// 	this._canvas.width = value / Screen.mainScreen.scale;
+		// } else {
+		// 	this._canvas.width = value;
+		// }
 		this._canvas.width = value;
 	}
 
@@ -25,6 +31,11 @@ export class HTMLCanvasElement extends Element {
 	}
 
 	set height(value) {
+		// if (global.isIOS) {
+		// 	this._canvas.height = value / Screen.mainScreen.scale;
+		// } else {
+		// 	this._canvas.height = value;
+		// }
 		this._canvas.height = value;
 	}
 

@@ -2,6 +2,7 @@ use std::fmt::Formatter;
 use std::io::Read;
 use std::num::NonZeroU32;
 use std::sync::Arc;
+use std::time::{Instant, SystemTime};
 
 use chrono::Timelike;
 use glutin::api::cgl::config::Config;
@@ -58,9 +59,11 @@ fn main() {
 
     let webgl = context.unwrap();
 
+    webgl.set_swap_interval();
+
     let mut gl_state = WebGLState::new_with_context(webgl, WebGLVersion::V2);
 
-    let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state) {
+    /*let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state) {
         WebGLResult::U32(value) => value as i32,
         WebGLResult::I32(value) => value,
         _ => 0,
@@ -79,6 +82,7 @@ fn main() {
         0.,
         canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
     ));
+    */
 
     // {
     //     let mut ctx = ctx_2d.get_context_mut();
@@ -142,7 +146,7 @@ fn main() {
 
     //  triangle(&mut gl_state);
 
-    /*
+
 
     event_loop.run(move |event, target, control_flow| {
         control_flow.set_wait();
@@ -151,7 +155,7 @@ fn main() {
             Event::WindowEvent { event, .. } => {
                 match event {
                     WindowEvent::Resized(resized) => {
-                        // canvas_webgl::webgl::canvas_native_webgl_viewport(0, 0, resized.width as i32, resized.height as i32, &gl_state);
+                         canvas_webgl::webgl::canvas_native_webgl_viewport(0, 0, resized.width as i32, resized.height as i32, &gl_state);
 
                         // window.request_redraw();
                         //
@@ -166,16 +170,14 @@ fn main() {
                 }
             }
             Event::RedrawEventsCleared => {
-                /*  canvas_webgl::webgl::canvas_native_webgl_clear_color(
-                     1., 0.2, 0.3, 1., &mut gl_state,
-                 );
-
-
-                 canvas_webgl::webgl::canvas_native_webgl_clear(
-                     16384, &mut gl_state,
-                 );
-
-                */
+                 //  canvas_webgl::webgl::canvas_native_webgl_clear_color(
+                 //     1., 0.2, 0.3, 1., &mut gl_state,
+                 // );
+                 //
+                 //
+                 // canvas_webgl::webgl::canvas_native_webgl_clear(
+                 //     16384, &mut gl_state,
+                 // );
 
                 window.request_redraw();
 
@@ -185,7 +187,7 @@ fn main() {
                 //     solar(&ctx_2d, earth, moon, sun, fill.clone(), stroke.clone())
                 // }
 
-                clock(&mut ctx_2d);
+               // clock(&mut ctx_2d);
 
                 //swarm(&mut ctx_2d, &mut particles, particle_count);
 
@@ -198,13 +200,16 @@ fn main() {
                 // }
                 //
                 // ctx_2d.fill_rect_xywh(0., 0., 300., 300.);
-                ctx_2d.get_context_mut().flush();
+              //  ctx_2d.get_context_mut().flush();
                 //ctx_2d.flush();
 
-                //  canvas_webgl::webgl::canvas_native_webgl_clear_color(1.0, 1.0, 1.0, 1.0, &mut gl_state);
-
-                //canvas_webgl::webgl::canvas_native_webgl_clear(canvas_webgl::webgl::COLOR_BUFFER_BIT, &mut gl_state);
-
+                //   canvas_webgl::webgl::canvas_native_webgl_clear_color(1.0, 1.0, 0.0, 1.0, &mut gl_state);
+                //
+                // let start = Instant::now();
+                // canvas_webgl::webgl::canvas_native_webgl_clear(canvas_webgl::webgl::COLOR_BUFFER_BIT, &mut gl_state);
+                // let end = Instant::now() - start;
+                //
+                // println!("clear {:?}", end.as_millis());
                 //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::TRIANGLES, 0, 3, &mut gl_state);
 
                 //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::POINTS, 0, 1, &mut gl_state);
@@ -217,7 +222,7 @@ fn main() {
     });
 
 
-    */
+
     /*
 
     #[cfg(target_os = "macos")]

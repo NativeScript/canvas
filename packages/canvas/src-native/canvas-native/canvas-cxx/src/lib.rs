@@ -7,10 +7,11 @@ use std::io::{Read, Write};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
 use std::os::raw::{c_char, c_int, c_uint};
+use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use cxx::{type_id, ExternType};
+use cxx::{type_id, ExternType, CxxString};
 use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::{RawRwLock, RwLock};
 
@@ -913,6 +914,16 @@ pub mod ffi {
             color: &str,
         );
 
+        fn canvas_native_paint_style_set_fill_color_with_cxx_string(
+            context: &mut CanvasRenderingContext2D,
+            color: Pin<&mut CxxString>,
+        );
+
+        unsafe fn canvas_native_paint_style_set_fill_color_with_c_string(
+            context: &mut CanvasRenderingContext2D,
+            color: *const c_char
+        );
+
         fn canvas_native_parse_css_color_rgba(
             value: &str,
             r: &mut u8,
@@ -940,6 +951,16 @@ pub mod ffi {
         fn canvas_native_paint_style_set_stroke_color_with_string(
             context: &mut CanvasRenderingContext2D,
             color: &str,
+        );
+
+        fn canvas_native_paint_style_set_stroke_color_with_cxx_string(
+            context: &mut CanvasRenderingContext2D,
+            color: Pin<&mut CxxString>,
+        );
+
+        unsafe fn canvas_native_paint_style_set_stroke_color_with_c_string(
+            context: &mut CanvasRenderingContext2D,
+            color: *const c_char
         );
 
         fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String;
@@ -3623,8 +3644,17 @@ pub fn canvas_native_paint_style_set_fill_color_with_string(
     paint_style_set_color_with_string(&mut context.context, true, color);
 }
 
+
+pub fn canvas_native_paint_style_set_fill_color_with_cxx_string(
+    context: &mut CanvasRenderingContext2D,
+    color: Pin<&mut CxxString>,
+) {
+    let color = color.to_string_lossy();
+    paint_style_set_color_with_string(&mut context.context, true, color.as_ref());
+}
+
 #[inline]
-pub fn canvas_native_paint_style_set_fill_color_with_c_str(
+pub fn canvas_native_paint_style_set_fill_color_with_c_string(
     context: &mut CanvasRenderingContext2D,
     color: *const c_char,
 ) {
@@ -3636,18 +3666,6 @@ pub fn canvas_native_paint_style_set_fill_color_with_c_str(
     paint_style_set_color_with_string(&mut context.context, true, color.as_ref());
 }
 
-#[inline]
-pub fn canvas_native_paint_style_set_stroke_color_with_c_str(
-    context: &mut CanvasRenderingContext2D,
-    color: *const c_char,
-) {
-    if color.is_null() {
-        return;
-    }
-    let color = unsafe { CStr::from_ptr(color) };
-    let color = color.to_string_lossy();
-    paint_style_set_color_with_string(&mut context.context, false, color.as_ref());
-}
 
 #[inline]
 pub fn canvas_native_paint_style_set_stroke_color_with_string(
@@ -3656,6 +3674,26 @@ pub fn canvas_native_paint_style_set_stroke_color_with_string(
 ) {
     paint_style_set_color_with_string(&mut context.context, false, color);
 }
+
+
+pub fn canvas_native_paint_style_set_stroke_color_with_cxx_string(
+    context: &mut CanvasRenderingContext2D,
+    color: Pin<&mut CxxString>,
+) {
+    let color = color.to_string_lossy();
+    paint_style_set_color_with_string(&mut context.context, false, color.as_ref());
+}
+
+pub fn canvas_native_paint_style_set_stroke_color_with_c_string(
+    context: &mut CanvasRenderingContext2D,
+    color: *const c_char,
+) {
+    if color.is_null() {return;}
+    let color = unsafe { CStr::from_ptr(color)};
+    let color = color.to_string_lossy();
+    paint_style_set_color_with_string(&mut context.context, false, color.as_ref());
+}
+
 
 #[inline]
 pub fn canvas_native_paint_style_set_stroke_color_with_rgba(

@@ -2140,6 +2140,10 @@ void org$nativescript$canvas$cxxbridge1$canvas_native_context_set_global_composi
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_fill_color_with_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str color) noexcept;
 
+void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_fill_color_with_cxx_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::std::string &color) noexcept;
+
+void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_fill_color_with_c_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, char const *color) noexcept;
+
 bool org$nativescript$canvas$cxxbridge1$canvas_native_parse_css_color_rgba(::rust::Str value, ::std::uint8_t &r, ::std::uint8_t &g, ::std::uint8_t &b, ::std::uint8_t &a) noexcept;
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_color_with_rgba(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::std::uint8_t r, ::std::uint8_t g, ::std::uint8_t b, ::std::uint8_t a) noexcept;
@@ -2147,6 +2151,10 @@ void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_col
 void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_fill_color_with_rgba(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::std::uint8_t r, ::std::uint8_t g, ::std::uint8_t b, ::std::uint8_t a) noexcept;
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_color_with_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str color) noexcept;
+
+void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_color_with_cxx_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::std::string &color) noexcept;
+
+void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_color_with_c_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, char const *color) noexcept;
 
 void org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_get_color_string(::org::nativescript::canvas::PaintStyle &color, ::rust::String *return$) noexcept;
 
@@ -3799,6 +3807,14 @@ void canvas_native_paint_style_set_fill_color_with_string(::org::nativescript::c
   org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_fill_color_with_string(context, color);
 }
 
+void canvas_native_paint_style_set_fill_color_with_cxx_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::std::string &color) noexcept {
+  org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_fill_color_with_cxx_string(context, color);
+}
+
+void canvas_native_paint_style_set_fill_color_with_c_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, char const *color) noexcept {
+  org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_fill_color_with_c_string(context, color);
+}
+
 bool canvas_native_parse_css_color_rgba(::rust::Str value, ::std::uint8_t &r, ::std::uint8_t &g, ::std::uint8_t &b, ::std::uint8_t &a) noexcept {
   return org$nativescript$canvas$cxxbridge1$canvas_native_parse_css_color_rgba(value, r, g, b, a);
 }
@@ -3813,6 +3829,14 @@ void canvas_native_paint_style_set_fill_color_with_rgba(::org::nativescript::can
 
 void canvas_native_paint_style_set_stroke_color_with_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::rust::Str color) noexcept {
   org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_color_with_string(context, color);
+}
+
+void canvas_native_paint_style_set_stroke_color_with_cxx_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, ::std::string &color) noexcept {
+  org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_color_with_cxx_string(context, color);
+}
+
+void canvas_native_paint_style_set_stroke_color_with_c_string(::org::nativescript::canvas::CanvasRenderingContext2D &context, char const *color) noexcept {
+  org$nativescript$canvas$cxxbridge1$canvas_native_paint_style_set_stroke_color_with_c_string(context, color);
 }
 
 ::rust::String canvas_native_paint_style_get_color_string(::org::nativescript::canvas::PaintStyle &color) noexcept {

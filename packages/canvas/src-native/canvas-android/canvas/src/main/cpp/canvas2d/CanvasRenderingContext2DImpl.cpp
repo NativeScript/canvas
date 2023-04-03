@@ -174,8 +174,7 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
     } else if (methodName == "fillStyle") {
         if (value.isString()) {
             auto style = value.asString(runtime).utf8(runtime);
-            canvas_native_paint_style_set_fill_color_with_string(this->GetContext(),
-                                                                 rust::Str(style.c_str()));
+            canvas_native_paint_style_set_fill_color_with_c_string(this->GetContext(), style.c_str());
         } else if (value.isObject()) {
 
             try {
@@ -200,8 +199,7 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
     } else if (methodName == "strokeStyle") {
         if (value.isString()) {
             auto style = value.asString(runtime).utf8(runtime);
-            canvas_native_paint_style_set_stroke_color_with_string(this->GetContext(),
-                                                                   rust::Str(style.c_str()));
+            canvas_native_paint_style_set_stroke_color_with_c_string(this->GetContext(),style.c_str());
         } else if (value.isObject()) {
 
             try {

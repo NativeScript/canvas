@@ -1477,7 +1477,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		this._glCheckError('vertexAttribPointer');
 		this._checkArgs('vertexAttribPointer', arguments);
 		const vertexAttribPointer = this._getMethod('vertexAttribPointer');
-		vertexAttribPointer(index, size, type, normalized, stride, offset);
+		vertexAttribPointer(index, size, type, !!normalized, stride, offset);
 	}
 
 	@profile

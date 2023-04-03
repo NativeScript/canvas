@@ -195,8 +195,7 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
     } else if (methodName == "fillStyle") {
         if (value.isString()) {
             auto style = value.asString(runtime).utf8(runtime);
-            canvas_native_paint_style_set_fill_color_with_string(this->GetContext(),
-                                                                 rust::Str(style.c_str()));
+            canvas_native_paint_style_set_fill_color_with_c_string(this->GetContext(), style.c_str());
         } else if (value.isObject()) {
 
             try {
@@ -221,8 +220,7 @@ CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &
     } else if (methodName == "strokeStyle") {
         if (value.isString()) {
             auto style = value.asString(runtime).utf8(runtime);
-            canvas_native_paint_style_set_stroke_color_with_string(this->GetContext(),
-                                                                   rust::Str(style.c_str()));
+            canvas_native_paint_style_set_stroke_color_with_c_string(this->GetContext(), style.c_str());
         } else if (value.isObject()) {
 
             try {
@@ -1904,7 +1902,6 @@ jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::P
             
             
             auto data = canvas_native_to_data_url_c_string(this->GetContext(), format.c_str(),quality);
-            
                                                          return jsi::String::createFromAscii(
                                                                  runtime,
                                                                  data.data(),
@@ -1953,7 +1950,7 @@ void CanvasRenderingContext2DImpl::SetInvalidateState(int state) {
 void CanvasRenderingContext2DImpl::Flush() {
     auto state = (int) this->GetInvalidateState() & (int) InvalidateState::PENDING;
     if (state == (int) InvalidateState::PENDING) {
-        canvas_native_context_flush(this->GetContext());
+       // canvas_native_context_flush(this->GetContext());
         this->SetInvalidateState(InvalidateState::INVALIDATING);
         canvas_native_context_render(this->GetContext());
 //        canvas_native_context_gl_make_current(this->GetContext());

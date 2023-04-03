@@ -7,7 +7,7 @@ members = [
     "canvas-webgl",
     "canvas-android",
     "canvas-ios",
-    "canvas-ffi",
+#    "canvas-ffi",
     "playground",
     "canvas-cxx"
 ]

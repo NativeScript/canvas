@@ -42,7 +42,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 		//this.text(canvas);
 		//this.drawPatternWithCanvas(canvas);
-		this.simple(canvas);
+		//this.simple(canvas);
 		//this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
@@ -1400,7 +1400,7 @@ void main()
 	}
 
 	drawPatternWithCanvas(canvas) {
-		const scale = 1;//Screen.mainScreen.scale;
+		const scale = 1; //Screen.mainScreen.scale;
 		const patternCanvas = document.createElement('canvas');
 		// Give the pattern a width and height of 50
 		patternCanvas.width = 50 * scale;
@@ -1425,7 +1425,7 @@ void main()
 	simple(canvas) {
 		const app = new TNSPIXIApplication({
 			canvas,
-			backgroundColor: 0x1099bb
+			backgroundColor: 0x1099bb,
 		});
 		const graphics = new PIXI.Graphics();
 

@@ -51,9 +51,9 @@ impl Path {
         Self { path: path.clone() }
     }
 
-    fn init(&mut self, _x: f32, _y: f32) {
+    fn scoot(&mut self, x: f32, y: f32) {
         if self.path.is_empty() {
-            //   self.path.move_to(Point::new(x, y));
+            self.path.move_to(Point::new(x, y));
         }
     }
 
@@ -61,6 +61,7 @@ impl Path {
         self.path.set_fill_type(fill_type.to_fill_type());
     }
 
+    #[inline(always)]
     pub(crate) fn add_ellipse(
         &mut self,
         origin: impl Into<Point>,
@@ -168,15 +169,14 @@ impl Path {
     }
 
     pub fn arc_to(&mut self, x1: c_float, y1: c_float, x2: c_float, y2: c_float, radius: c_float) {
-        self.init(x1, y1);
+        self.scoot(x1, y1);
         self.path
             .arc_to_tangent(Point::new(x1, y1), Point::new(x2, y2), radius);
     }
 
     pub fn begin_path(&mut self) {
-        if !self.path.is_empty() {
-            self.path.reset();
-        }
+        let mut new_path = skia_safe::Path::default();
+        self.path.swap(&mut new_path);
     }
 
     pub fn move_to(&mut self, x: c_float, y: c_float) {
@@ -184,14 +184,12 @@ impl Path {
     }
 
     pub fn line_to(&mut self, x: c_float, y: c_float) {
-        self.init(x, y);
+        self.scoot(x, y);
         self.path.line_to(Point::new(x, y));
     }
 
     pub fn close_path(&mut self) {
-        if !self.path.is_empty() {
-            self.path.close();
-        }
+        self.path.close();
     }
 
     pub fn bezier_curve_to(
@@ -203,7 +201,7 @@ impl Path {
         x: c_float,
         y: c_float,
     ) {
-        self.init(x, y);
+        self.scoot(x, y);
         self.path.cubic_to(
             Point::new(cp1x, cp1y),
             Point::new(cp2x, cp2y),
@@ -212,7 +210,7 @@ impl Path {
     }
 
     pub fn quadratic_curve_to(&mut self, cpx: c_float, cpy: c_float, x: c_float, y: c_float) {
-        self.init(x, y);
+        self.scoot(x, y);
         self.path.quad_to(Point::new(cpx, cpy), Point::new(x, y));
     }
 

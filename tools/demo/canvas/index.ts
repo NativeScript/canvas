@@ -594,7 +594,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;
 		//this.hBarChart(this.canvas);
-		this.bubbleChart(this.canvas);
+		//this.bubbleChart(this.canvas);
 		//this.dataSets(this.canvas);
 		//this.chartJS(this.canvas);
 		//clear(null)
@@ -646,6 +646,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
 		//this.decoder()
+		this.context2DTest(this.canvas);
 	}
 
 	drawRandomFullscreenImage(canvas) {
@@ -2750,5 +2751,75 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		};
 
 		loop(0);
+	}
+
+	context2DTest(canvas) {
+		const ctx = canvas.getContext('2d');
+		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+		let numCircles = 0;
+		// Measure performance outside requestAnimationFrame
+		const width = canvas.width;
+		const height = canvas.height;
+
+		let fillStyle = 0;
+		let beginPath = 0;
+		let arc = 0;
+		let closePath = 0;
+		let fill = 0;
+		let nonRafStartTime = performance.now();
+		for (let i = 0; i < 100000; i++) {
+			const x = Math.random() * width;
+			const y = Math.random() * height;
+			const radius = Math.random() * 20;
+			const color = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+			const a = Date.now();
+			ctx.fillStyle = color;
+			fillStyle += Date.now() - a;
+
+			const b = Date.now();
+			ctx.beginPath();
+			beginPath += Date.now() - b;
+
+			const c = Date.now();
+			ctx.arc(x, y, radius, 0, 2 * Math.PI);
+			arc += Date.now() - c;
+
+			const d = Date.now();
+			ctx.closePath();
+			closePath += Date.now() - d;
+
+			const e = Date.now();
+			ctx.fill();
+			fill += Date.now() - e;
+		}
+		const nonRafEndTime = performance.now();
+		console.log('Drawing 100000 circles without RAF took', nonRafEndTime - nonRafStartTime, 'milliseconds');
+
+		console.log('fillStyle', fillStyle, 'beginPath', beginPath, 'arc', arc, 'closePath', closePath, 'fill', fill);
+		const draw = () => {
+			const x = Math.random() * width;
+			const y = Math.random() * height;
+			const radius = Math.random() * 20;
+			const color = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+			ctx.fillStyle = color;
+			ctx.beginPath();
+			ctx.arc(x, y, radius, 0, 2 * Math.PI);
+			ctx.closePath();
+			ctx.fill();
+
+			numCircles++;
+
+			if (numCircles < 200) {
+				requestAnimationFrame(draw);
+			} else {
+				const rafEndTime = performance.now();
+				console.log('Drawing 200 circles with RAF took', rafEndTime - rafStartTime, 'milliseconds');
+			}
+		};
+
+		// Measure performance inside requestAnimationFrame
+		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+		let rafStartTime = performance.now();
+		requestAnimationFrame(draw);
 	}
 }

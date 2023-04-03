@@ -431,6 +431,22 @@ impl GLContext {
         let inner = self.inner.borrow();
 
         if let Some(context) = inner.context.as_ref() {
+
+            unsafe {
+                let cls = class!(EAGLContext);
+                let current: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];
+
+                match current {
+                    Some(current) => {
+                        let is_equal: bool = unsafe { msg_send![&current, isEqual: &*context.0] };
+                        if is_equal {
+                           return true;
+                        }
+                    }
+                    None => {}
+                }
+            }
+
             // unsafe {
             //     let cls = class!(EAGLContext);
             //     let current: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];

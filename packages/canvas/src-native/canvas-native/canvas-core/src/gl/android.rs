@@ -1,4 +1,3 @@
-
 use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::CString;
 use std::num::NonZeroU32;
@@ -18,9 +17,7 @@ use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
 use once_cell::sync::Lazy;
-use raw_window_handle::{
-    AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle
-};
+use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle};
 
 use crate::context_attributes::ContextAttributes;
 
@@ -127,7 +124,7 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
 //     }
 // }
 
-#[cfg(target_os = "android")]
+//#[cfg(target_os = "android")]
 impl GLContext {
     pub fn set_surface(
         &mut self,
@@ -233,7 +230,6 @@ impl GLContext {
         }
         false
     }
-
 
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
@@ -462,7 +458,6 @@ impl GLContext {
         }
     }
 
-
     pub fn create_pbuffer(
         context_attrs: &mut ContextAttributes,
         width: i32,
@@ -617,7 +612,7 @@ impl GLContext {
     pub fn create_offscreen_context(
         config: &mut ContextAttributes,
         width: i32,
-        height: i32
+        height: i32,
     ) -> Option<Self> {
         GLContext::create_pbuffer(config, width, height)
     }
@@ -656,11 +651,17 @@ impl GLContext {
     pub fn make_current(&self) -> bool {
         let inner = self.inner.borrow();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
-            (Some(context), Some(surface)) => match surface {
-                SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
-                SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).is_ok(),
-                SurfaceHelper::Pixmap(map) => context.make_current(map).is_ok(),
-            },
+            (Some(context), Some(surface)) => {
+                if context.is_current() {
+                    return true;
+                }
+
+                return match surface {
+                    SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
+                    SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).is_ok(),
+                    SurfaceHelper::Pixmap(map) => context.make_current(map).is_ok(),
+                };
+            }
             _ => false,
         }
     }
@@ -669,11 +670,17 @@ impl GLContext {
     pub fn remove_if_current(&self) {
         let inner = self.inner.borrow();
         let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
-            (Some(context), Some(surface)) => match surface {
-                SurfaceHelper::Window(window) => window.is_current(context),
-                SurfaceHelper::Pbuffer(buffer) => buffer.is_current(context),
-                SurfaceHelper::Pixmap(map) => map.is_current(context),
-            },
+            (Some(context), Some(surface)) => {
+                if !context.is_current() {
+                    false
+                }else {
+                    match surface {
+                        SurfaceHelper::Window(window) => window.is_current(context),
+                        SurfaceHelper::Pbuffer(buffer) => buffer.is_current(context),
+                        SurfaceHelper::Pixmap(map) => map.is_current(context),
+                    }
+                }
+            }
             _ => false,
         };
 

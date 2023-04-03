@@ -54,12 +54,15 @@ class MainActivity : AppCompatActivity() {
                         Color.BLACK
                     )
 
+                    Log.d("com.test", "" + canvas.snapshot())
+
                     //canvas?.initContext("2d")
 //                    params.width = 300
 //
 //                    canvas.layoutParams = params
 //                    canvas.requestLayout()
 
+                    /*
 
                     executor.execute {
                         try {
@@ -85,6 +88,8 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
+                    */
+
                 }
 
 
@@ -100,31 +105,31 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        /*
-        val offscreen = NSCCanvas(this)
+
+     //   val offscreen = NSCCanvas(this)
 
         //offscreen.setBackgroundColor(Color.GRAY)
-        NSCCanvas.layoutView(16, 16, offscreen)
-        offscreen.create2DContext(
-            false,
-            false,
-            false,
-            false,
-            "default",
-            false,
-            false,
-            false,
-            false,
-            false,
-            Color.BLACK
-        )
+//        NSCCanvas.layoutView(16, 16, offscreen)
+//        offscreen.create2DContext(
+//            false,
+//            false,
+//            false,
+//            false,
+//            "default",
+//            false,
+//            false,
+//            false,
+//            false,
+//            false,
+//            Color.BLACK
+//        )
         //val root = findViewById<ViewGroup>(android.R.id.content)
        // root.addView(offscreen)
       //  NSCCanvas.layoutView(400, 400, offscreen)
 
-        Log.d("com.test", "Help ${offscreen.nativeContext}")
+      // Log.d("com.test", "Help ${offscreen.nativeContext}")
 
-        */
+      //  Log.d("com.test", "" + offscreen.snapshot())
 
 //		drawTransformPathSvg()
 //		svg?.setSrc(

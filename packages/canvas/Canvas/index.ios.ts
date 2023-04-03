@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Utils, profile } from '@nativescript/core';
+import { ImageSource, Utils, profile } from '@nativescript/core';
 declare var NSCCanvas, NSCCanvasListener;
 
 export * from './common';
@@ -318,6 +318,16 @@ export class Canvas extends CanvasBase {
 			return 'data:,';
 		}
 		return toDataURL(type, encoderOptions);
+	}
+
+	public snapshot(flip: boolean = false): ImageSource | null {
+		if (this._canvas) {
+			const bm = this._canvas.snapshot?.(flip ?? false);
+			if (bm) {
+				return new ImageSource(bm);
+			}
+		}
+		return null;
 	}
 
 	getBoundingClientRect(): {

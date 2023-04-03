@@ -92,6 +92,10 @@ public class CanvasHelpers: NSObject {
         canvas_native_resize_context_2d(context, width, height)
     }
     
+    public static func flush2DContext(_ context: Int64) {
+        canvas_native_ios_flush_2d_context(context)
+    }
+    
     public static func flushGL(_ context: Int64)-> Bool {
         return canvas_native_ios_flush_gl(context)
     }

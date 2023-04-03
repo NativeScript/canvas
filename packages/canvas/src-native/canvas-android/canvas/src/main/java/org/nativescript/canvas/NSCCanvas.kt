@@ -28,6 +28,8 @@ class NSCCanvas : FrameLayout {
     var nativeContext: Long = 0
         private set
 
+    private var native2DContext: Long = 0
+
     enum class SurfaceType {
         Texture,
         Surface
@@ -309,6 +311,7 @@ class NSCCanvas : FrameLayout {
     }
 
     private var is2D = false
+
     fun create2DContext(
         alpha: Boolean,
         antialias: Boolean,
@@ -322,6 +325,10 @@ class NSCCanvas : FrameLayout {
         xrCompatible: Boolean,
         fontColor: Int
     ): Long {
+
+        if (native2DContext != 0L) {
+            return native2DContext
+        }
 
         initContext(
             "2d",
@@ -345,10 +352,12 @@ class NSCCanvas : FrameLayout {
             0
         }
 
-        return nativeCreate2DContext(
+        native2DContext = nativeCreate2DContext(
             nativeGL, this.drawingBufferWidth, this.drawingBufferHeight,
             alpha, density, samples, fontColor, density * 160, direction
         )
+
+        return native2DContext
     }
 
     internal var isPaused = false
@@ -402,7 +411,7 @@ class NSCCanvas : FrameLayout {
         var needsToFlip = false
         if (is2D) {
             bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            nativeCustomWithBitmapFlush(nativeContext, bitmap!!)
+            nativeCustomWithBitmapFlush(native2DContext, bitmap!!)
             return bitmap
         } else {
             if (surfaceType == SurfaceType.Surface) {

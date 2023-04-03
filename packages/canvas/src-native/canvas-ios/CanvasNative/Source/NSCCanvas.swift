@@ -249,6 +249,13 @@ public class NSCCanvas: UIView, GLKViewDelegate {
     
     
     public func snapshot(_ flip: Bool) -> UIImage?{
+            if(is2D){
+                CanvasHelpers.flush2DContext(native2DContext)
+            }else {
+                if(nativeGL != 0){
+                    glkView.display()
+                }
+            }
         let snapshot = glkView.snapshot
         if(flip){
             return snapshot.withHorizontallyFlippedOrientation()

@@ -24,6 +24,8 @@ long long canvas_native_init_ios_gl(int64_t view,
 
 bool canvas_native_ios_flush_gl(int64_t context);
 
+void canvas_native_ios_flush_2d_context(int64_t context);
+
 void canvas_native_resize_context_2d(int64_t context, float width, float height);
 
 int64_t canvas_native_create_2d_context(int64_t context,

@@ -1,12 +1,13 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
-use jni::objects::{JClass, JString, JObject};
+
+use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
-use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect, Surface};
+use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
 
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
@@ -263,9 +264,6 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
     context.render();
 }
 
-
-
-
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrentGLContextToBitmap(
     env: JNIEnv,
@@ -281,8 +279,8 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrent
     let context = unsafe { &mut *context };
 
     unsafe {
-       crate::utils::image::bitmap_handler(
-            env,
+        crate::utils::image::bitmap_handler(
+            &env,
             bitmap,
             Box::new(move |cb| {
                 if let Some((image_data, info)) = cb {
@@ -300,11 +298,12 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrent
                     );
                     image_data.copy_from_slice(buf.as_slice());
                 }
-            })
+            }),
         )
     }
 }
 
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBitmapFlush(
     env: JNIEnv,
     _: JClass,
@@ -316,7 +315,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBi
             return;
         }
         crate::utils::image::bitmap_handler(
-            env,
+            &env,
             bitmap,
             Box::new(move |cb| {
                 if let Some((image_data, image_info)) = cb {
@@ -324,6 +323,8 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBi
 
                     if image_info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
                         ct = ColorType::RGB565;
+                    } else if image_info.format() == ndk::bitmap::BitmapFormat::RGBA_4444 {
+                        ct = ColorType::ARGB4444;
                     }
                     let info = ImageInfo::new(
                         ISize::new(image_info.width() as i32, image_info.height() as i32),

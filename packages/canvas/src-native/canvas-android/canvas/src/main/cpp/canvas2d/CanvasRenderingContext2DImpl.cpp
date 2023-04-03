@@ -1935,8 +1935,8 @@ void CanvasRenderingContext2DImpl::SetInvalidateState(int state) {
 void CanvasRenderingContext2DImpl::Flush() {
     auto state = (int) this->GetInvalidateState() & (int) InvalidateState::PENDING;
     if (state == (int) InvalidateState::PENDING) {
-        canvas_native_context_flush(this->GetContext());
         this->SetInvalidateState(InvalidateState::INVALIDATING);
+     //   canvas_native_context_flush(this->GetContext());
         canvas_native_context_render(this->GetContext());
 //        canvas_native_context_gl_make_current(this->GetContext());
 //        canvas_native_context_gl_swap_buffers(this->GetContext());

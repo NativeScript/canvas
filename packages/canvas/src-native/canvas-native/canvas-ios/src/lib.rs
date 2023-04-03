@@ -91,6 +91,19 @@ pub extern "C" fn canvas_native_ios_flush_gl(context: i64) -> bool {
     context.gl_context.swap_buffers()
 }
 
+
+#[no_mangle]
+pub extern "C" fn canvas_native_ios_flush_2d_context(context: i64) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.get_context_mut().flush();
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_resize_context_2d(context: i64, width: f32, height: f32) {
     if context == 0 {

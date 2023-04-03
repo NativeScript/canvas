@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen, knownFolders } from '@nativescript/core';
+import { Application, View, profile, Device, Screen, knownFolders, ImageSource } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
 }
@@ -181,6 +181,16 @@ export class Canvas extends CanvasBase {
 			return (this._2dContext as any).__toDataURL(type, encoderOptions);
 		}
 		return (this._webglContext || (this._webgl2Context as any)).__toDataURL(type, encoderOptions);
+	}
+
+	public snapshot(flip: boolean = false): ImageSource | null {
+		if (this._canvas) {
+			const bm = this._canvas.snapshot?.(flip ?? false);
+			if (bm) {
+				return new ImageSource(bm);
+			}
+		}
+		return null;
 	}
 
 	_layoutNative() {

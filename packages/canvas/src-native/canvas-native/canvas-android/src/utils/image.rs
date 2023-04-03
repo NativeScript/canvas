@@ -127,7 +127,7 @@ pub fn get_bytes_from_bitmap(
 }
 
 pub fn bitmap_handler(
-    env: JNIEnv,
+    env: &JNIEnv,
     bitmap: JObject,
     handler: Box<dyn Fn(Option<(&mut [u8], &AndroidBitmapInfo)>)>,
 ) {

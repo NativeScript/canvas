@@ -52,4 +52,9 @@ export declare class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	};
+
+
+	snapshot(): ImageSource | null;
+	
+	snapshot(flip?: boolean): ImageSource | null;
 }

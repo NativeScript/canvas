@@ -512,6 +512,34 @@
           },
           {
             "kind": "Function",
+            "name": "flush2DContext",
+            "printedName": "flush2DContext(_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "Int64",
+                "printedName": "Swift.Int64",
+                "usr": "s:s5Int64V"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "s:12CanvasNative0A7HelpersC14flush2DContextyys5Int64VFZ",
+            "mangledName": "$s12CanvasNative0A7HelpersC14flush2DContextyys5Int64VFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "AccessControl"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
             "name": "flushGL",
             "printedName": "flushGL(_:)",
             "children": [
@@ -4558,7 +4586,7 @@
     {
       "filePath": "\/Users\/triniwiz\/Desktop\/oss\/latest\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 9125,
+      "offset": 9334,
       "length": 5,
       "value": "false"
     },

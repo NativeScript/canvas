@@ -2831,24 +2831,11 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                          if (count > 1) {
                                                              auto program = getHostObject<WebGLProgram>(
                                                                      runtime, arguments[0]);
-                                                             auto index = (uint32_t) arguments[1].asNumber();
+                                                             auto index = arguments[1].asString(runtime).utf8(runtime);
                                                              if (program != nullptr) {
-                                                                 auto ret = canvas_native_webgl2_get_transform_feedback_varying(
-                                                                         program->GetProgram(),
-                                                                         index,
-                                                                         this->GetState()
-                                                                 );
-
-                                                                 if (canvas_native_webgl_active_info_get_is_empty(
-                                                                         *ret)) {
-                                                                     return jsi::Value::null();
-                                                                 }
-
-                                                                 auto info = std::make_shared<WebGLActiveInfoImpl>(
-                                                                         std::move(ret));
-
-                                                                 return jsi::Object::createFromHostObject(
-                                                                         runtime, info);
+                                                                 auto ret = canvas_native_webgl2_get_uniform_block_index(program->GetProgram(), rust::Str(index.c_str()), this->GetState());
+                                                                 
+                                                                 return jsi::Value((int)ret);
                                                              }
                                                          }
 

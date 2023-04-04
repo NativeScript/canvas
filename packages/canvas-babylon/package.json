@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-babylon",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "description": "",
   "main": "index",
   "typings": "index.d.ts",
@@ -36,6 +36,6 @@
     "@nativescript/canvas-polyfill": "alpha"
   },
   "peerDependencies": {
-    "babylonjs": "^4.1.0"
+    "babylonjs": "^5.53.0"
   }
 }

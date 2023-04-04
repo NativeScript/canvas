@@ -15,6 +15,7 @@ import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import android.graphics.Matrix
+import java.nio.ByteBuffer
 
 
 /**
@@ -445,7 +446,51 @@ class NSCCanvas : FrameLayout {
     }
 
     companion object {
-        var views: ConcurrentHashMap<*, *> = ConcurrentHashMap<Any?, Any?>()
+        var views = ConcurrentHashMap<Any?, Any?>()
+
+        @JvmStatic
+        var store = ConcurrentHashMap<Any?, Any?>()
+
+        @JvmStatic
+        fun getBuffer(key: String): ByteBuffer? {
+            return store[key] as? ByteBuffer
+        }
+
+        @JvmStatic
+        fun storeBuffer(key: String, buffer: ByteBuffer) {
+            store[key] = buffer
+        }
+
+        @JvmStatic
+        fun storeBuffers(key: String, buffer: Array<ByteBuffer>) {
+            store[key] = buffer
+        }
+
+        @JvmStatic
+        fun removeBuffer(key: String) {
+            store.remove(key)
+        }
+
+        @JvmStatic
+        fun getBuffer(key: Int): ByteBuffer? {
+            return store[key] as? ByteBuffer
+        }
+
+        @JvmStatic
+        fun getBuffers(key: Int): Array<*>? {
+            return store[key] as? Array<*>
+        }
+
+        @JvmStatic
+        fun storeBuffer(key: Int, buffer: ByteBuffer) {
+            store[key] = buffer
+        }
+
+        @JvmStatic
+        fun removeBuffer(key: Int) {
+            store.remove(key)
+        }
+
         internal var isLibraryLoaded = false
         const val TAG = "CanvasView"
 

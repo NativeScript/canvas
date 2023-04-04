@@ -646,7 +646,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
 		//this.decoder()
-		this.context2DTest(this.canvas);
+		//this.context2DTest(this.canvas);
 	}
 
 	drawRandomFullscreenImage(canvas) {

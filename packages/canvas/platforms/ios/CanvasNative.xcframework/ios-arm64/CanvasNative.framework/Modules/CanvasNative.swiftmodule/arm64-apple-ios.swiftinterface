@@ -38,6 +38,7 @@ import _StringProcessing
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCCanvas) @_Concurrency.MainActor(unsafe) public class NSCCanvas : UIKit.UIView, GLKit.GLKViewDelegate {
   @_Concurrency.MainActor(unsafe) @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreFoundation.CGRect)
+  @objc @_Concurrency.MainActor(unsafe) public static let store: Foundation.NSMutableDictionary
   @objc @_Concurrency.MainActor(unsafe) public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.NSCCanvas>
   @objc @_Concurrency.MainActor(unsafe) public func getViewPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool

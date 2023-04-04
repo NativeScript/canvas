@@ -409,76 +409,91 @@ export class TNSXMLHttpRequest {
 					this._httpContent = data;
 					this._responseURL = responseURL;
 
+					const fastRead = (FileManager as any)._readFile === undefined;
+
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {
-							if ((global as any).isAndroid) {
+							if (fastRead) {
 								this._responseText = this._toJSString(data);
 								this._response = JSON.parse(this._responseText);
 							} else {
-								this._responseText = NSString.alloc().initWithDataEncoding(data, NSUTF8StringEncoding);
-								if (!this._responseText) {
-									this._responseText = NSString.alloc().initWithDataEncoding(data, NSISOLatin1StringEncoding);
+								if ((global as any).isAndroid) {
+									this._responseText = this._toJSString(data);
+									this._response = JSON.parse(this._responseText);
+								} else {
+									this._responseText = NSString.alloc().initWithDataEncoding(data, NSUTF8StringEncoding);
+									if (!this._responseText) {
+										this._responseText = NSString.alloc().initWithDataEncoding(data, NSISOLatin1StringEncoding);
+									}
+									this._response = JSON.parse(this._responseText);
 								}
-								this._response = JSON.parse(this._responseText);
 							}
 						} catch (e) {
 							console.error('json parse error', e);
 							// this should probably be caught before the promise resolves
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.text) {
-						if ((global as any).isIOS) {
-							let code = NSUTF8StringEncoding; // long:4
-							let encodedString = NSString.alloc().initWithDataEncoding(data, code);
-
-							// If UTF8 string encoding fails try with ISO-8859-1
-							if (!encodedString) {
-								code = NSISOLatin1StringEncoding; // long:5
-								encodedString = NSString.alloc().initWithDataEncoding(data, code);
-							}
-							this._responseText = this._response = encodedString.toString();
-						} else {
+						if (fastRead) {
 							const response = this._toJSString(data);
-							this._responseText = this._response = response ? response.toString() : '';
+							this._responseText = this._response = response ? response : '';
+						} else {
+							if ((global as any).isIOS) {
+								let code = NSUTF8StringEncoding; // long:4
+								let encodedString = NSString.alloc().initWithDataEncoding(data, code);
+
+								// If UTF8 string encoding fails try with ISO-8859-1
+								if (!encodedString) {
+									code = NSISOLatin1StringEncoding; // long:5
+									encodedString = NSString.alloc().initWithDataEncoding(data, code);
+								}
+								this._responseText = this._response = encodedString.toString();
+							} else {
+								const response = this._toJSString(data);
+								this._responseText = this._response = response ? response.toString() : '';
+							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.document) {
-						if ((global as any).isIOS) {
-							let code = NSUTF8StringEncoding; // long:4
-							let encodedString = NSString.alloc().initWithDataEncoding(data, code);
-
-							// If UTF8 string encoding fails try with ISO-8859-1
-							if (!encodedString) {
-								code = NSISOLatin1StringEncoding; // long:5
-								encodedString = NSString.alloc().initWithDataEncoding(data, code);
-							}
-
-							this._responseText = this._response = encodedString.toString();
-						} else {
+						if (fastRead) {
 							let response = this._toJSString(data);
 							this._responseText = this._response = response ? response : '';
+						} else {
+							if ((global as any).isIOS) {
+								let code = NSUTF8StringEncoding; // long:4
+								let encodedString = NSString.alloc().initWithDataEncoding(data, code);
+
+								// If UTF8 string encoding fails try with ISO-8859-1
+								if (!encodedString) {
+									code = NSISOLatin1StringEncoding; // long:5
+									encodedString = NSString.alloc().initWithDataEncoding(data, code);
+								}
+
+								this._responseText = this._response = encodedString.toString();
+							} else {
+								let response = this._toJSString(data);
+								this._responseText = this._response = response ? response : '';
+							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
 						this._response = data;
-						if ((FileManager as any)._readFile === undefined) {
+						if (fastRead) {
 							if ((global as any).isIOS) {
 								this._response = interop.bufferFromData(data);
 							} else {
-								this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data));
+								this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data).rewind());
 							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 						let buffer: ArrayBuffer = data;
 
-						if ((FileManager as any)._readFile === undefined) {
+						if (fastRead) {
 							if ((global as any).isIOS) {
 								buffer = interop.bufferFromData(data);
 							} else {
-								buffer = data;
-								//const buf = java.nio.ByteBuffer.wrap(data);
-								//buffer = (ArrayBuffer as any).from(buf);
-								//buf.rewind();
+								//	buffer = data;
+								const buf = java.nio.ByteBuffer.wrap(data).rewind();
+								buffer = (ArrayBuffer as any).from(buf);
 							}
 						}
-
 						this._response = new Blob([buffer]);
 					}
 

@@ -30,19 +30,23 @@ public class Utils {
     }
 
 
-    public static String createObjectURL(Context context, ByteBuffer buffer, int position, String mime) throws IOException {
+    public static String createObjectURL(Context context, ByteBuffer buffer, int position, String mime, String extension) throws IOException {
         String id = UUID.randomUUID().toString();
         File blob_root = new File(context.getFilesDir(), BLOB_DIR);
         if (!blob_root.exists()) {
             blob_root.mkdirs();
         }
 
-        // todo get type from magic bytes
-        String ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
         String fileName = id;
+       if(extension != null){
+            fileName = id + "." + extension;
+       }else {
+         // todo get type from magic bytes
+        String ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
         if (ext != null) {
             fileName = id + "." + ext;
         }
+       }
 
         org.nativescript.canvas.polyfill.Utils.writeBytes(buffer, position, new File(blob_root, fileName).getAbsolutePath());
 

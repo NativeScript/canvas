@@ -293,6 +293,7 @@ SWIFT_CLASS("_TtC12CanvasNative13CanvasHelpers")
 - (void)snapshotWithData:(NSData * _Nonnull)data;
 @end
 
+@class NSMutableDictionary;
 @class NSString;
 @class UIImage;
 @protocol NSCCanvasListener;
@@ -300,6 +301,8 @@ SWIFT_CLASS("_TtC12CanvasNative13CanvasHelpers")
 SWIFT_CLASS_NAMED("NSCCanvas")
 @interface NSCCanvas : UIView <GLKViewDelegate>
 - (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
++ (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getViewPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL ignorePixelScaling;
@@ -694,6 +697,7 @@ SWIFT_CLASS("_TtC12CanvasNative13CanvasHelpers")
 - (void)snapshotWithData:(NSData * _Nonnull)data;
 @end
 
+@class NSMutableDictionary;
 @class NSString;
 @class UIImage;
 @protocol NSCCanvasListener;
@@ -701,6 +705,8 @@ SWIFT_CLASS("_TtC12CanvasNative13CanvasHelpers")
 SWIFT_CLASS_NAMED("NSCCanvas")
 @interface NSCCanvas : UIView <GLKViewDelegate>
 - (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
++ (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getViewPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL ignorePixelScaling;

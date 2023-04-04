@@ -80,7 +80,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeCustomWithBi
             return;
         }
         image::bitmap_handler(
-            env,
+            &env,
             bitmap,
             Box::new(move |image_data| {
                 if let Some((image_data, image_info)) = image_data {

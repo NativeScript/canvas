@@ -189,7 +189,7 @@ export class URL {
 	public static createObjectURL(object: any, options = null): string {
 		const buf = (Blob as any).InternalAccessor.getBuffer(object);
 		if (buf || object instanceof Blob || object instanceof File) {
-			return org.nativescript.canvas.polyfill.Utils.createObjectURL(Utils.android.getApplicationContext(), buf, buf.byteOffset, options?.type ?? null);
+			return org.nativescript.canvas.polyfill.Utils.createObjectURL(Utils.android.getApplicationContext(), buf, buf.byteOffset, object?.type ?? null, options?.ext ?? null);
 		}
 		return null;
 	}

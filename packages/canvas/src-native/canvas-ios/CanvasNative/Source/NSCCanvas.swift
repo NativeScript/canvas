@@ -18,6 +18,7 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         view.enableSetNeedsDisplay = false
     }
     
+    public static let store = NSMutableDictionary()
     
     private static var views: NSMapTable<NSString,NSCCanvas> = NSMapTable(keyOptions: .copyIn, valueOptions: .weakMemory)
     

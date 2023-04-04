@@ -139,6 +139,7 @@ impl WebGLState {
     }
 
     pub fn new_with_context(context: GLContext, version: WebGLVersion) -> Self {
+        context.make_current();
         let mut ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
             version,
             alpha: true,
@@ -169,7 +170,7 @@ impl WebGLState {
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
         ctx.make_current();
-        crate::webgl::restore_state_after_clear(&mut ctx);
+       // crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
     }
 
@@ -188,6 +189,7 @@ impl WebGLState {
         xr_compatible: bool,
         is_canvas: bool,
     ) -> Self {
+        context.make_current();
         let mut ctx = Self(Rc::new(RefCell::new(WebGLStateInner {
             version,
             alpha,
@@ -217,8 +219,7 @@ impl WebGLState {
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
-        ctx.make_current();
-        crate::webgl::restore_state_after_clear(&mut ctx);
+       // crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
     }
 

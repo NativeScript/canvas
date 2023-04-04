@@ -9,7 +9,7 @@ import { Frame } from '@nativescript/core';
 
 export class Document extends Element {
 	private body: any;
-	private documentElement: any;
+	documentElement: any;
 	private readyState: string;
 	private head: any;
 	private defaultView: any;

@@ -3,6 +3,9 @@ use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::rc::Rc;
 
+use once_cell::sync::Lazy;
+use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle};
+
 #[cfg(any(target_os = "android"))]
 use glutin::api::egl::{
     config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
@@ -16,8 +19,6 @@ use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
-use once_cell::sync::Lazy;
-use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle};
 
 use crate::context_attributes::ContextAttributes;
 
@@ -673,7 +674,7 @@ impl GLContext {
             (Some(context), Some(surface)) => {
                 if !context.is_current() {
                     false
-                }else {
+                } else {
                     match surface {
                         SurfaceHelper::Window(window) => window.is_current(context),
                         SurfaceHelper::Pbuffer(buffer) => buffer.is_current(context),
@@ -688,7 +689,6 @@ impl GLContext {
             return;
         }
 
-        #[cfg(any(target_os = "android", target_os = "ios"))]
         {
             let display = self
                 .display()

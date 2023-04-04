@@ -18,8 +18,9 @@ import { Sky } from 'three/examples/jsm/objects/Sky';
 //import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
-// import {ThreeMFLoader} from "three/examples/jsm/loaders/3MFLoader";
+import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader';
 import { init } from './x-jet/main';
+import { Screen } from '@nativescript/core';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -82,7 +83,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
 		//this.renderVideo();
-		this.webgl_buffergeometry_drawrange(this.canvas);
+		//	this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 	}
 
@@ -441,12 +442,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	ThreeMF(canvas) {
-		/*
 		var camera, scene, renderer;
 
-
 		const init = () => {
-
 			scene = new THREE.Scene();
 			scene.background = new THREE.Color(0xa0a0a0);
 			scene.fog = new THREE.Fog(0xa0a0a0, 10, 500);
@@ -481,33 +479,30 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			var loader = new ThreeMFLoader(manager);
 			loader.load(this.root + '/models/3mf/truck.3mf', function (object) {
-
-				object.quaternion.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)); 	// z-up conversion
+				object.quaternion.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)); // z-up conversion
 
 				object.traverse(function (child) {
-
 					child.castShadow = true;
-
 				});
 
 				scene.add(object);
-
 			});
 
 			//
 
 			manager.onLoad = function () {
-
 				render();
-
 			};
 
 			//
 
-			var ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000, 1000), new THREE.MeshPhongMaterial({
-				color: 0x999999,
-				depthWrite: false
-			}));
+			var ground = new THREE.Mesh(
+				new THREE.PlaneBufferGeometry(1000, 1000),
+				new THREE.MeshPhongMaterial({
+					color: 0x999999,
+					depthWrite: false,
+				})
+			);
 			ground.rotation.x = -Math.PI / 2;
 			ground.position.y = 11;
 			ground.receiveShadow = true;
@@ -515,32 +510,30 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			const context = canvas.getContext('webgl');
-			renderer = new THREE.WebGLRenderer({context, antialias: true});
+			const context = canvas.getContext('webgl2');
+			renderer = new THREE.WebGLRenderer({ context, antialias: true });
+			const width = context.drawingBufferWidth;
+			const height = context.drawingBufferHeight;
 			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setSize(width, height);
 			renderer.outputEncoding = THREE.sRGBEncoding;
 			renderer.shadowMap.enabled = true;
 			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
 
 			//
 
 			window.addEventListener('resize', onWindowResize, false);
 
 			render();
-
-		}
+		};
 
 		function onWindowResize() {
-
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 
 			renderer.setSize(window.innerWidth, window.innerHeight);
 
 			render();
-
 		}
 
 		function render() {
@@ -549,7 +542,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		init();
 		render();
-		*/
 	}
 
 	ThreeDS(canvas) {
@@ -715,8 +707,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		function init() {
-			var container = document.getElementById('container');
-
 			scene = new THREE.Scene();
 
 			clock = new THREE.Clock();
@@ -762,7 +752,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			renderer = new THREE.WebGLRenderer({ context, antialias: true, alpha: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
-			container.appendChild(renderer.domElement);
 
 			//
 
@@ -774,14 +763,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//
 
 			window.addEventListener('resize', onWindowResize, false);
-			document.addEventListener('mousemove', onDocumentMouseMove, false);
+			canvas.addEventListener('touchmove', onDocumentMouseMove, false);
 		}
 
 		function onDocumentMouseMove(event) {
 			event.preventDefault();
 
-			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-			mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+			console.log(event.clientX, event.clientY);
+			mouse.x = (event.clientX / (canvas.width / Screen.mainScreen.scale)) * 2 - 1;
+			mouse.y = -(event.clientY / (canvas.height / Screen.mainScreen.scale)) * 2 + 1;
 		}
 
 		function onWindowResize() {
@@ -1282,7 +1272,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 
-			document.addEventListener('mousemove', onDocumentMouseMove, false);
+			canvas.addEventListener('touchmove', onDocumentMouseMove, false);
 
 			//
 
@@ -1290,18 +1280,19 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		function onWindowResize() {
-			windowHalfX = window.innerWidth / 2;
-			windowHalfY = window.innerHeight / 2;
+			windowHalfX = canvas.width / 2;
+			windowHalfY = canvas.height / 2;
 
-			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.aspect = canvas.width / canvas.height;
+
 			camera.updateProjectionMatrix();
 
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setSize(canvas.width, canvas.height);
 		}
 
 		function onDocumentMouseMove(event) {
-			mouseX = event.clientX - windowHalfX;
-			mouseY = event.clientY - windowHalfY;
+			mouseX = event.clientX - windowHalfX / Screen.mainScreen.scale;
+			mouseY = event.clientY - windowHalfY / Screen.mainScreen.scale;
 		}
 
 		//
@@ -1334,7 +1325,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const context = canvas.getContext('webgl2');
 			const width = context.drawingBufferWidth;
 			const height = context.drawingBufferHeight;
-			renderer = new THREE.WebGLRenderer({context});
+			renderer = new THREE.WebGLRenderer({ context });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 

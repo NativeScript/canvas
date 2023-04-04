@@ -281,21 +281,44 @@ SWIFT_CLASS_NAMED("CanvasGLKView")
 - (nonnull instancetype)initWithFrame:(CGRect)frame context:(EAGLContext * _Nonnull)context SWIFT_UNAVAILABLE;
 @end
 
+@class UIImage;
+@class NSMutableData;
+@class NSString;
+@class NSData;
+@class NSError;
 
-SWIFT_CLASS("_TtC12CanvasNative13CanvasHelpers")
-@interface CanvasHelpers : NSObject
+SWIFT_CLASS_NAMED("CanvasHelpers")
+@interface NSSCanvasHelpers : NSObject
++ (NSMutableData * _Nonnull)getBytesFromUIImage:(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)createPattern:(int64_t)context :(UIImage * _Nonnull)image :(NSString * _Nonnull)repetition SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)loadImageAssetWithContext:(int64_t)asset :(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
++ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy;
++ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
++ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
++ (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (void)resize2DContext:(int64_t)context :(float)width :(float)height;
++ (void)flush2DContext:(int64_t)context;
++ (BOOL)flushGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
++ (void)releaseGL:(int64_t)context;
++ (int64_t)getGLPointer:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
++ (void)releaseGLPointer:(int64_t)context;
++ (int64_t)create2DContext:(int64_t)context :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)samples :(int32_t)font_color :(float)ppi :(int32_t)direction SWIFT_WARN_UNUSED_RESULT;
++ (void)updateGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;
++ (void)test2D:(int64_t)context;
++ (NSString * _Nonnull)testToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
++ (void)writeFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
++ (void)readFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSString * _Nullable, NSData * _Nullable))callback;
++ (void)deleteFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSError * _Nullable, BOOL))callback;
++ (void)handleBase64Image:(NSString * _Nonnull)mime :(NSString * _Nonnull)dir :(NSString * _Nonnull)base64 :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
-@class NSData;
 
 @interface GLKView (SWIFT_EXTENSION(CanvasNative))
 - (void)snapshotWithData:(NSData * _Nonnull)data;
 @end
 
 @class NSMutableDictionary;
-@class NSString;
-@class UIImage;
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")

@@ -8,6 +8,8 @@
 import Foundation
 import UIKit
 
+@objc(NSSCanvasHelpers)
+@objcMembers
 public class CanvasHelpers: NSObject {
     
     public static func getBytesFromUIImage(_ image: UIImage) -> NSMutableData {
@@ -147,6 +149,115 @@ public class CanvasHelpers: NSObject {
         
         canvas_native_context_2d_destroy_string(data)
         return ret ?? String()
+    }
+    
+    
+    private static var _WriteQueue: OperationQueue?
+    
+    private static var WriteQueue: OperationQueue {
+        if(_WriteQueue == nil){
+            let queue = OperationQueue()
+            queue.maxConcurrentOperationCount = 5
+            _WriteQueue = queue
+        }
+        return _WriteQueue!
+    }
+    
+    
+    private static var _ReadQueue: OperationQueue?
+    
+    private static var ReadQueue: OperationQueue {
+        if(_ReadQueue == nil){
+            let queue = OperationQueue()
+            queue.maxConcurrentOperationCount = 5
+            _ReadQueue = queue
+        }
+        return _ReadQueue!
+    }
+    
+    public static func writeFile(_ data: NSData, _ path: String, _ callback:@escaping (String?, String?) -> Void){
+        let queue = OperationQueue.current ?? OperationQueue.main
+        WriteQueue.addOperation {
+            let done = data.write(toFile: path, atomically: true)
+            if(!done){
+                queue.addOperation {
+                    callback("Failed to write file.", nil)
+                }
+            }else {
+                queue.addOperation {
+                    callback(nil, path)
+                }
+            }
+           
+        }
+    }
+    
+    
+    public static func readFile(_ path: String, _ callback:@escaping (String?, NSData?) -> Void){
+        let queue = OperationQueue.current ?? OperationQueue.main
+        ReadQueue.addOperation {
+            let data = NSData(contentsOfFile: path)
+            if(data == nil){
+                queue.addOperation {
+                    callback("Failed to read file.", nil)
+                }
+            }else {
+                queue.addOperation {
+                    callback(nil, data)
+                }
+            }
+        }
+    }
+    
+    
+    public static func deleteFile(_ path: String, _ callback:@escaping (NSError?, Bool) -> Void){
+        let queue = OperationQueue.current ?? OperationQueue.main
+        ReadQueue.addOperation {
+            do {
+                try FileManager.default.removeItem(atPath: path)
+                queue.addOperation {
+                    callback(nil, true)
+                }
+            }catch {
+                queue.addOperation {
+                    callback(error as NSError, false)
+                }
+            }
+        }
+    }
+    
+    
+    public static func handleBase64Image(_ mime: String, _ dir: String, _ base64: String, _ callback:@escaping (String?, String?) -> Void){
+        let queue = OperationQueue.current ?? OperationQueue.main
+        WriteQueue.addOperation {
+    
+            let id = UUID().uuidString
+            
+            let localUri = "\(dir)/\(id)-b64image.\(mime)"
+            let toWrite = NSData(base64Encoded: base64)
+            
+            
+            guard let toWrite = toWrite else {
+                queue.addOperation {
+                    callback("Failed to decode", nil)
+                }
+                return
+            }
+            
+            let done = toWrite.write(toFile: localUri, atomically: true)
+            
+            if(!done){
+                queue.addOperation {
+                    callback("Failed to decode", nil)
+                }
+            }else {
+                queue.addOperation {
+                    callback(nil, localUri)
+                }
+                
+            }
+            
+        }
     }
 
 }

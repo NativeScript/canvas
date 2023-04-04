@@ -15,24 +15,28 @@ import _StringProcessing
 @objc(NSCCanvasListener) public protocol NSCCanvasListener {
   @objc func contextReady()
 }
-@objc @_inheritsConvenienceInitializers public class CanvasHelpers : ObjectiveC.NSObject {
-  public static func getBytesFromUIImage(_ image: UIKit.UIImage) -> Foundation.NSMutableData
-  public static func createPattern(_ context: Swift.Int64, _ image: UIKit.UIImage, _ repetition: Swift.String) -> Swift.Int64
-  public static func loadImageAssetWithContext(_ asset: Swift.Int64, _ image: UIKit.UIImage) -> Swift.Bool
-  public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float)
-  public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
-  public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, sx: Swift.Float, sy: Swift.Float, sw: Swift.Float, sh: Swift.Float, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
-  public static func initGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.String, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
-  public static func resize2DContext(_ context: Swift.Int64, _ width: Swift.Float, _ height: Swift.Float)
-  public static func flush2DContext(_ context: Swift.Int64)
-  public static func flushGL(_ context: Swift.Int64) -> Swift.Bool
-  public static func releaseGL(_ context: Swift.Int64)
-  public static func getGLPointer(_ context: Swift.Int64) -> Swift.Int64
-  public static func releaseGLPointer(_ context: Swift.Int64)
-  public static func create2DContext(_ context: Swift.Int64, _ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ density: Swift.Float, _ samples: Swift.Int32, _ font_color: Swift.Int32, _ ppi: Swift.Float, _ direction: Swift.Int32) -> Swift.Int64
-  public static func updateGLSurfaceWithView(_ view: Swift.Int64, _ width: Swift.Int32, _ height: Swift.Int32, _ context: Swift.Int64)
-  public static func test2D(_ context: Swift.Int64)
-  public static func testToDataURL(_ context: Swift.Int64) -> Swift.String
+@_inheritsConvenienceInitializers @objc(NSSCanvasHelpers) @objcMembers public class CanvasHelpers : ObjectiveC.NSObject {
+  @objc public static func getBytesFromUIImage(_ image: UIKit.UIImage) -> Foundation.NSMutableData
+  @objc public static func createPattern(_ context: Swift.Int64, _ image: UIKit.UIImage, _ repetition: Swift.String) -> Swift.Int64
+  @objc public static func loadImageAssetWithContext(_ asset: Swift.Int64, _ image: UIKit.UIImage) -> Swift.Bool
+  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float)
+  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
+  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, sx: Swift.Float, sy: Swift.Float, sw: Swift.Float, sh: Swift.Float, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
+  @objc public static func initGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.String, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
+  @objc public static func resize2DContext(_ context: Swift.Int64, _ width: Swift.Float, _ height: Swift.Float)
+  @objc public static func flush2DContext(_ context: Swift.Int64)
+  @objc public static func flushGL(_ context: Swift.Int64) -> Swift.Bool
+  @objc public static func releaseGL(_ context: Swift.Int64)
+  @objc public static func getGLPointer(_ context: Swift.Int64) -> Swift.Int64
+  @objc public static func releaseGLPointer(_ context: Swift.Int64)
+  @objc public static func create2DContext(_ context: Swift.Int64, _ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ density: Swift.Float, _ samples: Swift.Int32, _ font_color: Swift.Int32, _ ppi: Swift.Float, _ direction: Swift.Int32) -> Swift.Int64
+  @objc public static func updateGLSurfaceWithView(_ view: Swift.Int64, _ width: Swift.Int32, _ height: Swift.Int32, _ context: Swift.Int64)
+  @objc public static func test2D(_ context: Swift.Int64)
+  @objc public static func testToDataURL(_ context: Swift.Int64) -> Swift.String
+  @objc public static func writeFile(_ data: Foundation.NSData, _ path: Swift.String, _ callback: @escaping (Swift.String?, Swift.String?) -> Swift.Void)
+  @objc public static func readFile(_ path: Swift.String, _ callback: @escaping (Swift.String?, Foundation.NSData?) -> Swift.Void)
+  @objc public static func deleteFile(_ path: Swift.String, _ callback: @escaping (Foundation.NSError?, Swift.Bool) -> Swift.Void)
+  @objc public static func handleBase64Image(_ mime: Swift.String, _ dir: Swift.String, _ base64: Swift.String, _ callback: @escaping (Swift.String?, Swift.String?) -> Swift.Void)
   @objc override dynamic public init()
   @objc deinit
 }

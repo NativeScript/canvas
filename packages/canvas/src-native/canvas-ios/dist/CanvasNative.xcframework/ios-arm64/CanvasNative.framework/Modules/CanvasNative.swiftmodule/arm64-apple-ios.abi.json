@@ -97,13 +97,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC19getBytesFromUIImageySo13NSMutableDataCSo0G0CFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)getBytesFromUIImage:",
             "mangledName": "$s12CanvasNative0A7HelpersC19getBytesFromUIImageySo13NSMutableDataCSo0G0CFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -138,13 +139,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC13createPatternys5Int64VAF_So7UIImageCSStFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)createPattern:::",
             "mangledName": "$s12CanvasNative0A7HelpersC13createPatternys5Int64VAF_So7UIImageCSStFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -173,13 +175,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC25loadImageAssetWithContextySbs5Int64V_So7UIImageCtFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)loadImageAssetWithContext::",
             "mangledName": "$s12CanvasNative0A7HelpersC25loadImageAssetWithContextySbs5Int64V_So7UIImageCtFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -219,13 +222,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC9drawImage7context5image2dx2dyys5Int64V_So7UIImageCS2ftFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)drawImageWithContext:image:dx:dy:",
             "mangledName": "$s12CanvasNative0A7HelpersC9drawImage7context5image2dx2dyys5Int64V_So7UIImageCS2ftFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -277,13 +281,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC9drawImage7context5image2dx2dy2dw2dhys5Int64V_So7UIImageCS4ftFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)drawImageWithContext:image:dx:dy:dw:dh:",
             "mangledName": "$s12CanvasNative0A7HelpersC9drawImage7context5image2dx2dy2dw2dhys5Int64V_So7UIImageCS4ftFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -359,13 +364,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC9drawImage7context5image2sx2sy2sw2sh2dx2dy2dw2dhys5Int64V_So7UIImageCS8ftFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)drawImageWithContext:image:sx:sy:sw:sh:dx:dy:dw:dh:",
             "mangledName": "$s12CanvasNative0A7HelpersC9drawImage7context5image2sx2sy2sw2sh2dx2dy2dw2dhys5Int64V_So7UIImageCS8ftFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -460,13 +466,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC14initGLWithViewys5Int64VAF_S4bSSS5bs5Int32VSbtFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)initGLWithView:::::::::::::",
             "mangledName": "$s12CanvasNative0A7HelpersC14initGLWithViewys5Int64VAF_S4bSSS5bs5Int32VSbtFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -500,13 +507,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC15resize2DContextyys5Int64V_S2ftFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)resize2DContext:::",
             "mangledName": "$s12CanvasNative0A7HelpersC15resize2DContextyys5Int64V_S2ftFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -528,13 +536,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC14flush2DContextyys5Int64VFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)flush2DContext:",
             "mangledName": "$s12CanvasNative0A7HelpersC14flush2DContextyys5Int64VFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -557,13 +566,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC7flushGLySbs5Int64VFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)flushGL:",
             "mangledName": "$s12CanvasNative0A7HelpersC7flushGLySbs5Int64VFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -585,13 +595,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC9releaseGLyys5Int64VFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)releaseGL:",
             "mangledName": "$s12CanvasNative0A7HelpersC9releaseGLyys5Int64VFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -614,13 +625,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC12getGLPointerys5Int64VAFFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)getGLPointer:",
             "mangledName": "$s12CanvasNative0A7HelpersC12getGLPointerys5Int64VAFFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -642,13 +654,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC16releaseGLPointeryys5Int64VFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)releaseGLPointer:",
             "mangledName": "$s12CanvasNative0A7HelpersC16releaseGLPointeryys5Int64VFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -719,13 +732,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC15create2DContextys5Int64VAF_s5Int32VAHSbSfA2HSfAHtFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)create2DContext:::::::::",
             "mangledName": "$s12CanvasNative0A7HelpersC15create2DContextys5Int64VAF_s5Int32VAHSbSfA2HSfAHtFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -765,13 +779,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC23updateGLSurfaceWithViewyys5Int64V_s5Int32VAhFtFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)updateGLSurfaceWithView::::",
             "mangledName": "$s12CanvasNative0A7HelpersC23updateGLSurfaceWithViewyys5Int64V_s5Int32VAhFtFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -793,13 +808,14 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC6test2Dyys5Int64VFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)test2D:",
             "mangledName": "$s12CanvasNative0A7HelpersC6test2Dyys5Int64VFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -822,13 +838,328 @@
               }
             ],
             "declKind": "Func",
-            "usr": "s:12CanvasNative0A7HelpersC13testToDataURLySSs5Int64VFZ",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)testToDataURL:",
             "mangledName": "$s12CanvasNative0A7HelpersC13testToDataURLySSs5Int64VFZ",
             "moduleName": "CanvasNative",
             "static": true,
             "declAttributes": [
               "Final",
-              "AccessControl"
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "writeFile",
+            "printedName": "writeFile(_:_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "NSData",
+                "printedName": "Foundation.NSData",
+                "usr": "c:objc(cs)NSData"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Swift.String?, Swift.String?) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Tuple",
+                    "printedName": "(Swift.String?, Swift.String?)",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Swift.String?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Swift.String?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)writeFile:::",
+            "mangledName": "$s12CanvasNative0A7HelpersC9writeFileyySo6NSDataC_SSySSSg_AGtctFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "readFile",
+            "printedName": "readFile(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Swift.String?, Foundation.NSData?) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Tuple",
+                    "printedName": "(Swift.String?, Foundation.NSData?)",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Swift.String?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Foundation.NSData?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NSData",
+                            "printedName": "Foundation.NSData",
+                            "usr": "c:objc(cs)NSData"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)readFile::",
+            "mangledName": "$s12CanvasNative0A7HelpersC8readFileyySS_ySSSg_So6NSDataCSgtctFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "deleteFile",
+            "printedName": "deleteFile(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Foundation.NSError?, Swift.Bool) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Tuple",
+                    "printedName": "(Foundation.NSError?, Swift.Bool)",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Foundation.NSError?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "NSError",
+                            "printedName": "Foundation.NSError",
+                            "usr": "c:objc(cs)NSError"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Bool",
+                        "printedName": "Swift.Bool",
+                        "usr": "s:Sb"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)deleteFile::",
+            "mangledName": "$s12CanvasNative0A7HelpersC10deleteFileyySS_ySo7NSErrorCSg_SbtctFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "handleBase64Image",
+            "printedName": "handleBase64Image(_:_:_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              },
+              {
+                "kind": "TypeFunc",
+                "name": "Function",
+                "printedName": "(Swift.String?, Swift.String?) -> ()",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Void",
+                    "printedName": "()"
+                  },
+                  {
+                    "kind": "TypeNominal",
+                    "name": "Tuple",
+                    "printedName": "(Swift.String?, Swift.String?)",
+                    "children": [
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Swift.String?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      },
+                      {
+                        "kind": "TypeNominal",
+                        "name": "Optional",
+                        "printedName": "Swift.String?",
+                        "children": [
+                          {
+                            "kind": "TypeNominal",
+                            "name": "String",
+                            "printedName": "Swift.String",
+                            "usr": "s:SS"
+                          }
+                        ],
+                        "usr": "s:Sq"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(cm)handleBase64Image::::",
+            "mangledName": "$s12CanvasNative0A7HelpersC17handleBase64ImageyySS_S2SySSSg_AEtctFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "AccessControl",
+              "ObjC"
             ],
             "funcSelfKind": "NonMutating"
           },
@@ -841,11 +1172,11 @@
                 "kind": "TypeNominal",
                 "name": "CanvasHelpers",
                 "printedName": "CanvasNative.CanvasHelpers",
-                "usr": "c:@M@CanvasNative@objc(cs)CanvasHelpers"
+                "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers"
               }
             ],
             "declKind": "Constructor",
-            "usr": "c:@M@CanvasNative@objc(cs)CanvasHelpers(im)init",
+            "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers(im)init",
             "mangledName": "$s12CanvasNative0A7HelpersCACycfc",
             "moduleName": "CanvasNative",
             "overriding": true,
@@ -860,11 +1191,13 @@
           }
         ],
         "declKind": "Class",
-        "usr": "c:@M@CanvasNative@objc(cs)CanvasHelpers",
+        "usr": "c:@M@CanvasNative@objc(cs)NSSCanvasHelpers",
         "mangledName": "$s12CanvasNative0A7HelpersC",
         "moduleName": "CanvasNative",
+        "objc_name": "NSSCanvasHelpers",
         "declAttributes": [
           "AccessControl",
+          "ObjCMembers",
           "ObjC"
         ],
         "superclassUsr": "c:objc(cs)NSObject",

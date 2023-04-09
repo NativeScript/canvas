@@ -56,6 +56,16 @@ export class Canvas extends CanvasBase {
 		return this.height;
 	}
 
+	_drawingBufferHeight = 0;
+	get drawingBufferHeight() {
+		return this._drawingBufferHeight;
+	}
+
+	_drawingBufferWidth = 0;
+	get drawingBufferWidth() {
+		return this._drawingBufferWidth;
+	}
+
 	// @ts-ignore
 	get width() {
 		if (this.getMeasuredWidth() > 0) {
@@ -143,10 +153,14 @@ export class Canvas extends CanvasBase {
 					}
 				},
 				surfaceResize(width, height) {
-					//console.log('surfaceResize', width, height);
 					// if(this._webglContext || this._webgl2Context){
 					// 	(this._webglContext || this._webgl2Context)?.resize();
 					// }
+					const owner = ref.get() as any;
+					if (owner) {
+						owner._drawingBufferWidth = width;
+						owner._drawingBufferHeight = height;
+					}
 				},
 			})
 		);
@@ -207,6 +221,8 @@ export class Canvas extends CanvasBase {
 			const size = this._realSize;
 			org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 
+			this._drawingBufferWidth = size.width;
+			this._drawingBufferHeight = size.height;
 			if (this._2dContext) {
 				(this._2dContext as any).native.__resize(size.width, size.height);
 			}

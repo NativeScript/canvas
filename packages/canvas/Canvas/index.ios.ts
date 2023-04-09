@@ -255,7 +255,7 @@ export class Canvas extends CanvasBase {
 					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
-					
+
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
 
 					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
@@ -287,7 +287,7 @@ export class Canvas extends CanvasBase {
 				if (this._2dContext || this._webglContext) {
 					return null;
 				}
-				const glkview = this._canvas.subviews.objectAtIndex(0);
+
 				if (!this._webgl2Context) {
 					this._layoutNative();
 					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));

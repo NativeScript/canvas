@@ -90,10 +90,16 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 	}
 
 	get drawingBufferHeight() {
+		if (global.isAndroid) {
+			return this._canvas?._drawingBufferHeight ?? 0;
+		}
 		return this.native.drawingBufferHeight;
 	}
 
 	get drawingBufferWidth() {
+		if (global.isAndroid) {
+			return this._canvas?._drawingBufferWidth ?? 0;
+		}
 		return this.native.drawingBufferWidth;
 	}
 

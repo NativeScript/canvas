@@ -5,7 +5,7 @@
 #pragma once
 
 #include "rust/cxx.h"
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 #include "gl.h"
 #include "canvas-cxx/src/lib.rs.h"
 #include <vector>

@@ -73,7 +73,7 @@ class ViewController: UIViewController {
                                     false,
                                     -16777216
         )
-        
+            
   
         canvas2.forceLayout(300, 300)
 
@@ -91,7 +91,10 @@ class ViewController: UIViewController {
        let glView = canvas2.subviews.first as? GLKView
 //
         let data = glView?.snapshot.pngData()?.base64EncodedData()
-        print(String(data: data!, encoding: .utf8))
+       
+        if(data != nil){
+            print(String(data: data!, encoding: .utf8))
+        }
         
         /*var start = CACurrentMediaTime()
         print(canvas?.context2DTestToDataURL(ctx))

@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-polyfill",
-  "version": "2.0.0-alpha.10",
+  "version": "2.0.0-alpha.11",
   "description": "Polyfill for making NativeScript compatible with web libs like pixi.js, three.js, phaser.js, babylon.js, etc....",
   "main": "index",
   "typings": "index.d.ts",

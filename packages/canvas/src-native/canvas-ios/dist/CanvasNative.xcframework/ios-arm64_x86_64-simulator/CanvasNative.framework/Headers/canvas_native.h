@@ -22,6 +22,52 @@ long long canvas_native_init_ios_gl(int64_t view,
                                     int32_t version,
                                     bool is_canvas);
 
+long long canvas_native_init_ios_gl_with_shared_gl(int64_t view,
+                                                   bool alpha,
+                                                   bool antialias,
+                                                   bool depth,
+                                                   bool fail_if_major_performance_caveat,
+                                                   const char *power_preference,
+                                                   bool premultiplied_alpha,
+                                                   bool preserve_drawing_buffer,
+                                                   bool stencil,
+                                                   bool desynchronized,
+                                                   bool xr_compatible,
+                                                   int32_t version,
+                                                   bool is_canvas,
+                                                   int64_t shared_context);
+
+long long canvas_native_init_offscreen_ios_gl(int32_t width,
+                                              int32_t height,
+                                              bool alpha,
+                                              bool antialias,
+                                              bool depth,
+                                              bool fail_if_major_performance_caveat,
+                                              const char *power_preference,
+                                              bool premultiplied_alpha,
+                                              bool preserve_drawing_buffer,
+                                              bool stencil,
+                                              bool desynchronized,
+                                              bool xr_compatible,
+                                              int32_t version,
+                                              bool is_canvas);
+
+long long canvas_native_init_offscreen_ios_gl_with_shared_gl(int32_t width,
+                                                             int32_t height,
+                                                             bool alpha,
+                                                             bool antialias,
+                                                             bool depth,
+                                                             bool fail_if_major_performance_caveat,
+                                                             const char *power_preference,
+                                                             bool premultiplied_alpha,
+                                                             bool preserve_drawing_buffer,
+                                                             bool stencil,
+                                                             bool desynchronized,
+                                                             bool xr_compatible,
+                                                             int32_t version,
+                                                             bool is_canvas,
+                                                             int64_t shared_context);
+
 bool canvas_native_ios_flush_gl(int64_t context);
 
 void canvas_native_ios_flush_2d_context(int64_t context);

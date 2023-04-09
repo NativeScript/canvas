@@ -93,11 +93,6 @@
 						"glob": "**/*.d.ts",
 						"input": "packages/canvas/WebGL2/WebGL2RenderingContext",
 						"output": "./WebGL2/WebGL2RenderingContext"
-					},
-					{
-						"glob": "**/*",
-						"input": "packages/canvas/pods/",
-						"output": "./pods/"
 					}
 				]
 			},

@@ -39,7 +39,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
 ) -> jlong {
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
-            if version == 1 && !GLContext::has_gl2support() {
+            if version == 2 && !GLContext::has_gl2support() {
                 return 0;
             }
             let power_preference = match env.get_string(&power_preference) {
@@ -96,7 +96,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGLNoSurf
     version: jint,
     is_canvas: jboolean,
 ) -> jlong {
-    if version == 1 && !GLContext::has_gl2support() {
+    if version == 2 && !GLContext::has_gl2support() {
         return 0;
     }
     let power_preference = match env.get_string(&power_preference) {

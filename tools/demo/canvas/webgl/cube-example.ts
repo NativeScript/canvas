@@ -58,7 +58,7 @@ export function main(canvas, nativeCanvas?) {
       uniform sampler2D uSampler;
       void main(void) {
         highp vec4 texelColor = texture2D(uSampler, vTextureCoord);
-        gl_FragColor = vec4(texelColor.rgb * vLighting, texelColor.a);
+        gl_FragColor = vec4(texelColor.rgb, 1.0);
       }
     `;
 
@@ -283,7 +283,7 @@ function initBuffers(gl: WebGLRenderingContext) {
 // Initialize a texture and load an image.
 // When the image finished loading copy it into the texture.
 //
-function loadTexture(gl) {
+function loadTexture(gl: WebGLRenderingContext) {
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
 

@@ -21,12 +21,19 @@ use canvas_core::image_asset::ImageAsset;
 use canvas_cxx::CanvasRenderingContext2D;
 use canvas_cxx::PaintStyle;
 
+
+#[allow(non_camel_case_types)]
+pub(crate) enum iOSView {
+    OffScreen,
+    OnScreen(NonNull<c_void>)
+}
+
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
 pub(crate) struct iOSGLContext {
     pub(crate) context_attributes: ContextAttributes,
     pub(crate) gl_context: GLContext,
-    ios_view: NonNull<c_void>,
+    ios_view: iOSView,
 }
 
 #[no_mangle]
@@ -45,7 +52,7 @@ pub extern "C" fn canvas_native_init_ios_gl(
     version: i32,
     is_canvas: bool,
 ) -> c_longlong {
-    if version == 1 && !GLContext::has_gl2support() {
+    if version == 2 && !GLContext::has_gl2support() {
         return 0;
     }
 
@@ -68,7 +75,7 @@ pub extern "C" fn canvas_native_init_ios_gl(
 
         if let Some(gl_context) = GLContext::create_window_context(&mut attrs, ios_view) {
             return Box::into_raw(Box::new(iOSGLContext {
-                ios_view,
+                ios_view: iOSView::OnScreen(ios_view),
                 gl_context,
                 context_attributes: attrs,
             })) as i64;
@@ -77,6 +84,184 @@ pub extern "C" fn canvas_native_init_ios_gl(
 
     0
 }
+
+#[no_mangle]
+pub extern "C" fn canvas_native_init_ios_gl_with_shared_gl(
+    view: i64,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: *const c_char,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+    version: i32,
+    is_canvas: bool,
+    shared_context: i64,
+) -> c_longlong {
+    if version == 2 && !GLContext::has_gl2support() {
+        return 0;
+    }
+
+    if shared_context == 0 {
+        return 0;
+    }
+
+    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
+
+    if let Some(ios_view) = NonNull::new(view as *mut c_void) {
+        let mut attrs = ContextAttributes::new(
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference.as_ref(),
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+            is_canvas,
+        );
+
+        let shared_context = shared_context as *mut iOSGLContext;
+        let shared_context = unsafe { &*shared_context };
+
+        if let Some(gl_context) = GLContext::create_shared_window_context(
+            &mut attrs,
+            ios_view,
+            &shared_context.gl_context,
+        ) {
+            return Box::into_raw(Box::new(iOSGLContext {
+                ios_view: iOSView::OnScreen(ios_view),
+                gl_context,
+                context_attributes: attrs,
+            })) as i64;
+        }
+    }
+
+    0
+}
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_init_offscreen_ios_gl(
+    width: i32,
+    height: i32,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: *const c_char,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+    version: i32,
+    is_canvas: bool,
+) -> c_longlong {
+    if version == 1 && !GLContext::has_gl2support() {
+        return 0;
+    }
+
+    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
+
+    let mut attrs = ContextAttributes::new(
+        alpha,
+        antialias,
+        depth,
+        fail_if_major_performance_caveat,
+        power_preference.as_ref(),
+        premultiplied_alpha,
+        preserve_drawing_buffer,
+        stencil,
+        desynchronized,
+        xr_compatible,
+        is_canvas,
+    );
+
+    if let Some(gl_context) = GLContext::create_offscreen_context(&mut attrs, width, height) {
+        return Box::into_raw(Box::new(iOSGLContext {
+            ios_view: iOSView::OffScreen,
+            gl_context,
+            context_attributes: attrs,
+        })) as i64;
+    }
+
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_init_offscreen_ios_gl_with_shared_gl(
+    width: i32,
+    height: i32,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: *const c_char,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+    version: i32,
+    is_canvas: bool,
+    shared_context: i64,
+) -> c_longlong {
+    if version == 1 && !GLContext::has_gl2support() {
+        return 0;
+    }
+
+    if shared_context == 0 {
+        return 0;
+    }
+
+    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
+
+    let mut attrs = ContextAttributes::new(
+        alpha,
+        antialias,
+        depth,
+        fail_if_major_performance_caveat,
+        power_preference.as_ref(),
+        premultiplied_alpha,
+        preserve_drawing_buffer,
+        stencil,
+        desynchronized,
+        xr_compatible,
+        is_canvas,
+    );
+
+    let shared_context = shared_context as *mut iOSGLContext;
+    let shared_context = unsafe { &*shared_context };
+
+    if let Some(gl_context) = GLContext::create_shared_offscreen_context(
+        &mut attrs,
+        width,
+        height,
+        &shared_context.gl_context,
+    ) {
+        return Box::into_raw(Box::new(iOSGLContext {
+            ios_view: iOSView::OffScreen,
+            gl_context,
+            context_attributes: attrs,
+        })) as i64;
+    }
+
+    0
+}
+
+
+
+
 
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_flush_gl(context: i64) -> bool {
@@ -90,7 +275,6 @@ pub extern "C" fn canvas_native_ios_flush_gl(context: i64) -> bool {
     context.gl_context.make_current();
     context.gl_context.swap_buffers()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_flush_2d_context(context: i64) {
@@ -176,7 +360,7 @@ pub extern "C" fn canvas_native_update_gl_surface(
         let context = unsafe { &mut *context };
 
         context.gl_context.set_surface(ios_view);
-        context.ios_view = ios_view;
+        context.ios_view = iOSView::OnScreen(ios_view);
     }
 }
 

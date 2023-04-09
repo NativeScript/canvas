@@ -12,7 +12,7 @@
 #include "RafImpl.h"
 
 #include "canvas-cxx/src/lib.rs.h"
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 #include "VecMutableBuffer.h"
 #include <cmath>
 #include "Helpers.h"

@@ -8,7 +8,7 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "NativeScript/JSIRuntime.h"
+#include <NativeScript/JSIRuntime.h>
 
 using namespace facebook;
 

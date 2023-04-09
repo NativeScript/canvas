@@ -5,7 +5,7 @@
 #pragma once
 #pragma process_pending_includes
 
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 #include "rust/cxx.h"
 #include <vector>
 #include <cstdint>

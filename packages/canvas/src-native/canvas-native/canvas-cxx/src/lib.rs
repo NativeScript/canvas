@@ -4157,6 +4157,7 @@ pub fn canvas_native_context_create_pattern_canvas2d(
     Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
         None,
         |repetition| {
+
             context.remove_if_current();
 
             let width;
@@ -4179,9 +4180,9 @@ pub fn canvas_native_context_create_pattern_canvas2d(
                 // todo use gpu image created from snapshot ... need single or shared context or transfer to a texture
                 //let data = source_ctx.snapshot_to_raster_data();
 
-                //let mut data = source_ctx.snapshot_to_raster_data();
-                let image = source_ctx.snapshot_to_raster_image();
-                context.make_current();
+             //   let mut data = source_ctx.snapshot_to_raster_data();
+               let image = source_ctx.image_snapshot_to_non_texture_image();
+               // context.make_current();
 
                 return image.map(|image| {
                     canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
@@ -7965,23 +7966,28 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
 fn canvas_native_webgl_tex_image2d_webgl(
     target: i32,
     level: i32,
-    internalformat: i32,
-    format: i32,
-    image_type: i32,
+    _internalformat: i32,
+    _format: i32,
+    _image_type: i32,
     webgl: &mut WebGLState,
     state: &mut WebGLState,
 ) {
     let mut pixels =
         canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
+    //   gl_bindings::RGBA,
+    //             gl_bindings::UNSIGNED_BYTE,
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
-        internalformat,
+       // internalformat,
+        gl_bindings::RGBA as _,
         pixels.0,
         pixels.1,
         0,
-        format,
-        image_type,
+       // format,
+        gl_bindings::RGBA as _,
+        //image_type,
+        gl_bindings::UNSIGNED_BYTE as _,
         pixels.2.as_mut_slice(),
         state.get_inner_mut(),
     );
@@ -8153,8 +8159,8 @@ pub fn canvas_native_webgl_tex_sub_image2d_webgl(
     level: i32,
     xoffset: i32,
     yoffset: i32,
-    format: u32,
-    image_type: i32,
+    _format: u32,
+    _image_type: i32,
     webgl: &mut WebGLState,
     state: &mut WebGLState,
 ) {
@@ -8170,6 +8176,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_webgl(
     let mut pixels =
         canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
 
+
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
         target,
         level,
@@ -8177,8 +8184,10 @@ pub fn canvas_native_webgl_tex_sub_image2d_webgl(
         yoffset,
         width,
         height,
-        format,
-        image_type,
+       // format,
+        gl_bindings::RGBA as _,
+       // image_type,
+        gl_bindings::UNSIGNED_BYTE as _,
         pixels.2.as_mut_slice(),
         state.get_inner_mut(),
     );

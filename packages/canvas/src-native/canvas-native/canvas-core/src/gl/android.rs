@@ -232,11 +232,31 @@ impl GLContext {
         false
     }
 
+    pub fn create_shared_window_context(
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        window: RawWindowHandle,
+        shared_context: &GLContext,
+    ) -> Option<GLContext> {
+        GLContext::create_window_context_internal(context_attrs, width, height, window, Some(shared_context))
+    }
+
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
         width: i32,
         height: i32,
         window: RawWindowHandle,
+    ) -> Option<GLContext> {
+        GLContext::create_window_context_internal(context_attrs, width, height, window, None)
+    }
+
+    pub(crate) fn create_window_context_internal(
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        window: RawWindowHandle,
+        shared_context: Option<&GLContext>,
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
             Ok(display) => unsafe {
@@ -328,15 +348,23 @@ impl GLContext {
                             .map(|v| SurfaceHelper::Window(v))
                             .ok();
 
-                        let context_attrs = glutin::context::ContextAttributesBuilder::new()
+                        let mut context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
                                 if context_attrs.get_is_canvas() {
                                     Version::new(2, 0)
                                 } else {
                                     Version::new(3, 0)
                                 },
-                            )))
-                            .build(Some(window));
+                            )));
+
+                        if let Some(inner) = shared_context {
+                            let inner = inner.inner.borrow();
+                            if let Some(context) = inner.context.as_ref() {
+                                context_attrs = context_attrs.with_sharing(context);
+                            }
+                        }
+
+                        let context_attrs = context_attrs.build(Some(window));
 
                         let context = display
                             .create_context(&config, &context_attrs)

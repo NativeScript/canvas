@@ -6,7 +6,7 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "NativeScript/JSIRuntime.h"
+#include <NativeScript/JSIRuntime.h>
 #include <vector>
 #include "Helpers.h"
 

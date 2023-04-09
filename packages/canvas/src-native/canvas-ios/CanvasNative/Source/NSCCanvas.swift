@@ -18,6 +18,41 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         view.enableSetNeedsDisplay = false
     }
     
+    private static let shared_context_view = GLKView(frame: .init(x: 0, y: 0, width: 1, height: 1))
+    
+    private static var _shared_context: Int64 = 0
+    private static var shared_context: Int64 {
+        get {
+            
+            if(_shared_context != 0){
+                return _shared_context
+            }
+            
+            var properties: [String: Any] = [:]
+            
+            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+            shared_context_view.isOpaque = false
+            (shared_context_view.layer as! CAEAGLLayer).isOpaque = false
+            
+            let eaglLayer = shared_context_view.layer as! CAEAGLLayer
+            eaglLayer.drawableProperties = properties
+            
+            shared_context_view.drawableDepthFormat = .format24
+            
+    
+            let ptr = Unmanaged.passRetained(shared_context_view).toOpaque()
+            let viewPtr = Int64(Int(bitPattern: ptr))
+            
+       
+            
+            _shared_context = CanvasHelpers.initGLWithView(viewPtr, true, true, true, false, "default", true, false, false, false, false, 2, false)
+            
+            
+            return _shared_context
+            
+        }
+    }
+    
     public static let store = NSMutableDictionary()
     
     private static var views: NSMapTable<NSString,NSCCanvas> = NSMapTable(keyOptions: .copyIn, valueOptions: .weakMemory)
@@ -152,7 +187,6 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         if(!properties.isEmpty){
             let eaglLayer = self.glkView.layer as! CAEAGLLayer
             eaglLayer.drawableProperties = properties
-            
         }
         
         if(useWebGL && depth){
@@ -175,7 +209,10 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
         
-        nativeGL = CanvasHelpers.initGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, type, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas)
+        let shared_context = NSCCanvas.shared_context
+        
+        nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, type, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
+        
 
         nativeContext = CanvasHelpers.getGLPointer(nativeGL)
         
@@ -387,5 +424,14 @@ extension String {
         let idx1 = index(startIndex, offsetBy: max(0, range.lowerBound))
         let idx2 = index(startIndex, offsetBy: min(self.count, range.upperBound))
         return String(self[idx1..<idx2])
+    }
+}
+
+extension EAGLContext {
+    
+    @objc(initWithAPI:sharegroup_:) convenience init?(version: EAGLRenderingAPI, sharegroup: EAGLSharegroup){
+        print("sharegroup_", version.rawValue, sharegroup)
+        self.init(api: version, sharegroup: sharegroup)
+        print("help", self)
     }
 }

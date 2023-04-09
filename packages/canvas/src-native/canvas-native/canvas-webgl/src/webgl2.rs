@@ -1156,7 +1156,7 @@ pub fn canvas_native_webgl2_tex_image3d_none(
 pub fn canvas_native_webgl2_tex_image3d_asset(
     target: u32,
     level: i32,
-    internalformat: i32,
+    _internalformat: i32,
     _width: i32,
     _height: i32,
     depth: i32,
@@ -1185,13 +1185,16 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
                 gl_bindings::TexImage3D(
                     target,
                     level,
-                    internalformat,
+                    //internalformat,
+                    gl_bindings::RGBA as _,
                     width,
                     height,
                     depth,
                     border,
-                    format,
-                    type_,
+                   // format,
+                    gl_bindings::RGBA as _,
+                   // type_,
+                    gl_bindings::UNSIGNED_BYTE as _,
                     buffer.as_ptr() as *const c_void,
                 );
 
@@ -1201,13 +1204,16 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
             gl_bindings::TexImage3D(
                 target,
                 level,
-                internalformat,
+               // internalformat,
+                gl_bindings::RGBA as _,
                 width,
                 height,
                 depth,
                 border,
-                format,
-                type_,
+                //format,
+                gl_bindings::RGBA as _,
+                //type_,
+                gl_bindings::UNSIGNED_BYTE as _,
                 bytes.as_ptr() as *const c_void,
             );
         }
@@ -1455,6 +1461,8 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     asset.height() as usize,
                     depth as usize,
                 );
+
+
                 gl_bindings::TexSubImage3D(
                     target,
                     level,
@@ -1464,8 +1472,10 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     width,
                     height,
                     depth,
-                    format,
-                    type_,
+                   // format,
+                    gl_bindings::RGBA as _,
+                    //type_,
+                    gl_bindings::UNSIGNED_BYTE as _,
                     buffer.as_ptr() as *const c_void,
                 );
 
@@ -1481,8 +1491,10 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                 width,
                 height,
                 depth,
-                format,
-                type_,
+               // format,
+                gl_bindings::RGBA as _,
+               // type_,
+                gl_bindings::UNSIGNED_BYTE as _,
                 bytes.as_ptr() as *const c_void,
             );
         }

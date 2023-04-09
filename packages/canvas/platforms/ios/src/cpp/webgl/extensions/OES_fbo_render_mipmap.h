@@ -5,7 +5,7 @@
 #pragma once
 
 #include "rust/cxx.h"
-#include "NativeScript/JSIRuntime.h"
+#include <NativeScript/JSIRuntime.h>
 
 using namespace facebook;
 

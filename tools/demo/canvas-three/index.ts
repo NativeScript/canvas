@@ -58,7 +58,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
 		//this.geoColors(canvas);
@@ -72,7 +72,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// }, 10000);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
-		//this.threeKeyframes(this.canvas);
+		this.threeKeyframes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -455,11 +455,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			var hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+			const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
 			hemiLight.position.set(0, 100, 0);
 			scene.add(hemiLight);
 
-			var dirLight = new THREE.DirectionalLight(0xffffff);
+			const dirLight = new THREE.DirectionalLight(0xffffff);
 			dirLight.position.set(-0, 40, 50);
 			dirLight.castShadow = true;
 			dirLight.shadow.camera.top = 50;
@@ -471,15 +471,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			dirLight.shadow.mapSize.set(1024, 1024);
 			scene.add(dirLight);
 
-			// scene.add( new CameraHelper( dirLight.shadow.camera ) );
+			// scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
 			//
 
-			var manager = new THREE.LoadingManager();
+			const manager = new THREE.LoadingManager();
 
-			var loader = new ThreeMFLoader(manager);
+			const loader = new ThreeMFLoader(manager);
 			loader.load(this.root + '/models/3mf/truck.3mf', function (object) {
-				object.quaternion.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)); // z-up conversion
+				object.rotation.set(-Math.PI / 2, 0, 0); // z-up conversion
 
 				object.traverse(function (child) {
 					child.castShadow = true;
@@ -496,25 +496,20 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			var ground = new THREE.Mesh(
-				new THREE.PlaneBufferGeometry(1000, 1000),
-				new THREE.MeshPhongMaterial({
-					color: 0x999999,
-					depthWrite: false,
-				})
-			);
+			const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
 			ground.rotation.x = -Math.PI / 2;
 			ground.position.y = 11;
 			ground.receiveShadow = true;
 			scene.add(ground);
 
 			//
-
 			const context = canvas.getContext('webgl2');
-			renderer = new THREE.WebGLRenderer({ context, antialias: true });
+
 			const width = context.drawingBufferWidth;
 			const height = context.drawingBufferHeight;
-			renderer.setPixelRatio(window.devicePixelRatio);
+
+			renderer = new THREE.WebGLRenderer({ context, antialias: true });
+			//renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize(width, height);
 			renderer.outputEncoding = THREE.sRGBEncoding;
 			renderer.shadowMap.enabled = true;
@@ -522,7 +517,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			window.addEventListener('resize', onWindowResize, false);
+			const controls = new OrbitControls(camera, canvas);
+			controls.addEventListener('change', render);
+			controls.minDistance = 50;
+			controls.maxDistance = 200;
+			controls.enablePan = false;
+			controls.target.set(0, 20, 0);
+			controls.update();
+
+			window.addEventListener('resize', onWindowResize);
 
 			render();
 		};
@@ -1615,10 +1618,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	threeKeyframes(canvas) {
 		let mixer;
 		const context = canvas.getContext('webgl2') as any;
+		const width = context.drawingBufferWidth;
+		const height = context.drawingBufferHeight;
 		const clock = new THREE.Clock();
 		const renderer = new THREE.WebGLRenderer({ context, antialias: true });
-		renderer.setPixelRatio(window.devicePixelRatio);
-		renderer.setSize(window.innerWidth, window.innerHeight);
+		//renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(width, height);
 		renderer.outputEncoding = THREE.sRGBEncoding;
 
 		const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -1633,7 +1638,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-		const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+		const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
 		camera.position.set(5, 2, 8);
 
 		const controls = new OrbitControls(camera, canvas);
@@ -1666,12 +1671,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				console.error(e);
 			}
 		);
+		
 
 		window.onresize = function () {
-			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.aspect = width / height;
 			camera.updateProjectionMatrix();
 
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setSize(width, height);
 		};
 
 		function animate() {

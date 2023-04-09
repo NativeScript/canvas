@@ -6,7 +6,7 @@
 #include "JSICallback.h"
 #include "Helpers.h"
 #include "JSIReadFileCallback.h"
-#include "NativeScript/JSIRuntime.h"
+#include <NativeScript/JSIRuntime.h>
 
 void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
     auto canvas_module = facebook::jsi::Object(jsiRuntime);
@@ -813,10 +813,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
             } else {
                 if (count == 6) {
                     auto context = getPointerValue(runtime, arguments[1]);
-                    auto density = arguments[2].asNumber();
-                    auto fontColor = arguments[3].asNumber();
-                    auto ppi = arguments[4].asNumber();
-                    auto direction = arguments[5].asNumber();
+//                    auto density = arguments[2].asNumber();
+//                    auto fontColor = arguments[3].asNumber();
+//                    auto ppi = arguments[4].asNumber();
+//                    auto direction = arguments[5].asNumber();
                     auto ctx = canvas_native_webgl_create(
                                                           context,
                                                           rust::Str(
@@ -843,10 +843,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                 } else if (count == 7) {
                     auto width = arguments[1].asNumber();
                     auto height = arguments[2].asNumber();
-                    auto density = arguments[3].asNumber();
-                    auto fontColor = arguments[4].asNumber();
-                    auto ppi = arguments[5].asNumber();
-                    auto direction = arguments[6].asNumber();
+//                    auto density = arguments[3].asNumber();
+//                    auto fontColor = arguments[4].asNumber();
+//                    auto ppi = arguments[5].asNumber();
+//                    auto direction = arguments[6].asNumber();
                     auto ctx = canvas_native_webgl_create_no_window(
                                                                     (int32_t) width,
                                                                     (int32_t) height,
@@ -994,10 +994,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
             } else {
                 if (count == 6) {
                     auto context = getPointerValue(runtime, arguments[1]);
-                    auto density = arguments[2].asNumber();
-                    auto fontColor = arguments[3].asNumber();
-                    auto ppi = arguments[4].asNumber();
-                    auto direction = arguments[5].asNumber();
+//                    auto density = arguments[2].asNumber();
+//                    auto fontColor = arguments[3].asNumber();
+//                    auto ppi = arguments[4].asNumber();
+//                    auto direction = arguments[5].asNumber();
                     auto ctx = canvas_native_webgl_create(
                                                           context,
                                                           rust::Str(
@@ -1025,10 +1025,10 @@ void CanvasJSIModule::install(facebook::jsi::Runtime &jsiRuntime) {
                            7) {
                     auto width = arguments[1].asNumber();
                     auto height = arguments[2].asNumber();
-                    auto density = arguments[3].asNumber();
-                    auto fontColor = arguments[4].asNumber();
-                    auto ppi = arguments[5].asNumber();
-                    auto direction = arguments[6].asNumber();
+//                    auto density = arguments[3].asNumber();
+//                    auto fontColor = arguments[4].asNumber();
+//                    auto ppi = arguments[5].asNumber();
+//                    auto direction = arguments[6].asNumber();
                     auto ctx = canvas_native_webgl_create_no_window(
                                                                     (int32_t) width,
                                                                     (int32_t) height,

@@ -6,7 +6,7 @@
 
 #include "canvas-cxx/src/lib.rs.h"
 #include "rust/cxx.h"
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 #include "gl.h"
 #include "../../webgl2/WebGLVertexArrayObject.h"
 #include "Helpers.h"

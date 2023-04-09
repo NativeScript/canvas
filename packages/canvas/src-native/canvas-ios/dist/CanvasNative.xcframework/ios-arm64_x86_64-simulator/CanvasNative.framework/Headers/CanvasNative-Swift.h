@@ -296,6 +296,9 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
 + (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initSharedGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initSharedGLWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
 + (void)flush2DContext:(int64_t)context;
 + (BOOL)flushGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
@@ -312,6 +315,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)handleBase64Image:(NSString * _Nonnull)mime :(NSString * _Nonnull)dir :(NSString * _Nonnull)base64 :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
+
 
 
 @interface GLKView (SWIFT_EXTENSION(CanvasNative))
@@ -723,6 +727,9 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
 + (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initSharedGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initSharedGLWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(NSString * _Nonnull)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
 + (void)flush2DContext:(int64_t)context;
 + (BOOL)flushGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
@@ -739,6 +746,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)handleBase64Image:(NSString * _Nonnull)mime :(NSString * _Nonnull)dir :(NSString * _Nonnull)base64 :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
+
 
 
 @interface GLKView (SWIFT_EXTENSION(CanvasNative))

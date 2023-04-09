@@ -4,7 +4,7 @@
 
 #pragma once
 
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 
 using namespace facebook;
 

@@ -255,7 +255,7 @@ export class Canvas extends CanvasBase {
 					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
-
+					
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
 
 					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);

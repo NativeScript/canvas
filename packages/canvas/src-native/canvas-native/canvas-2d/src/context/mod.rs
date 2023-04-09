@@ -3,6 +3,7 @@ use std::os::raw::c_float;
 use std::rc::Rc;
 
 use skia_safe::{Color, Data, Image, Point, Surface};
+use skia_safe::gpu::BackendTexture;
 
 use compositing::composite_operation_type::CompositeOperationType;
 use drawing_text::typography::Font;
@@ -331,6 +332,10 @@ impl Context {
 
     pub fn image_snapshot(&mut self) -> Image {
         self.surface.image_snapshot()
+    }
+
+    pub fn image_snapshot_to_non_texture_image(&mut self) -> Option<Image> {
+        self.surface.image_snapshot().to_non_texture_image()
     }
 
     pub fn read_pixels_to_encoded_data(&mut self) -> Option<Data> {

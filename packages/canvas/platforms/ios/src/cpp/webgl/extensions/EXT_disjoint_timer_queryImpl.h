@@ -6,7 +6,7 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 #include "webgl2/WebGLQuery.h"
 #include <vector>
 

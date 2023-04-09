@@ -5,7 +5,7 @@
 #define once
 
 #include "rust/cxx.h"
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 #include "gl.h"
 #include <vector>
 

@@ -571,7 +571,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
-		//patternWithCanvas(this.canvas);
+		patternWithCanvas(this.canvas);
 		//isPointInStrokeTouch(this.canvas);
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
@@ -673,7 +673,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		console.log(asset.error);
 		console.log(asset.width, asset.height);
 		function draw() {
-			ctx.drawImage(asset, 0, 0);
+			ctx.drawImage(asset, 0, 0, 300 * Screen.mainScreen.scale,300 * Screen.mainScreen.scale);
 			requestAnimationFrame(draw);
 		}
 		draw();

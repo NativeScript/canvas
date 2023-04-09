@@ -999,7 +999,7 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 			if (pname === this.UNPACK_COLORSPACE_CONVERSION_WEBGL) {
 				param = 0x9244;
 			} else if (pname === this.PACK_ALIGNMENT || pname === this.UNPACK_ALIGNMENT) {
-				param = 4;
+				//param = 1;
 			}
 			pixelStorei(pname, param);
 		} else {

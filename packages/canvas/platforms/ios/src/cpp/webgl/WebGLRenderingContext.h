@@ -8,7 +8,7 @@
 #include <vector>
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#import "NativeScript/JSIRuntime.h"
+#import <NativeScript/JSIRuntime.h>
 #include "VecMutableBuffer.h"
 
 #include "WebGLRenderingContextBase.h"

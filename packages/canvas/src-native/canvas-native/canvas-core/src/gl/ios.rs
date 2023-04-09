@@ -12,10 +12,12 @@ use icrate::objc2::ffi::{objc_class, BOOL};
 use icrate::objc2::rc::{Allocated, Owned};
 use icrate::objc2::Encoding::Void;
 use icrate::objc2::{
-    class, msg_send, msg_send_id, rc::Id, rc::Shared, runtime::Object, sel, Encode, Encoding,
+    class, extern_class, msg_send, msg_send_id, rc::Id, rc::Shared, runtime::Object, sel,
+    ClassType, Encode, Encoding,
 };
 use icrate::Foundation::{NSData, NSInteger, NSObject, NSUInteger};
 use skia_safe::wrapper::PointerWrapper;
+use skia_safe::Shader;
 
 use crate::context_attributes::ContextAttributes;
 
@@ -27,6 +29,7 @@ use crate::context_attributes::ContextAttributes;
 #[derive(Debug, Default)]
 pub struct GLContextInner {
     context: Option<EAGLContext>,
+    sharegroup: EAGLSharegroup,
     view: Option<GLKView>,
 }
 
@@ -69,6 +72,29 @@ pub enum EAGLRenderingAPI {
 unsafe impl Encode for EAGLRenderingAPI {
     const ENCODING: Encoding = Encoding::ULongLong;
 }
+
+#[derive(Clone, Debug)]
+pub(crate) struct EAGLSharegroup(Id<Object, Shared>);
+
+impl EAGLSharegroup {
+    pub fn new() -> Self {
+        unsafe {
+            let cls = class!(EAGLSharegroup);
+            let sharegroup = msg_send_id![cls, alloc];
+            let sharegroup: Id<Object, Shared> =
+                msg_send_id![sharegroup, initWithAPI: EAGLRenderingAPI::GLES3];
+
+            Self(sharegroup)
+        }
+    }
+}
+
+impl Default for EAGLSharegroup {
+    fn default() -> Self {
+        EAGLSharegroup::new()
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct EAGLContext(Id<Object, Shared>);
 
@@ -84,13 +110,13 @@ impl EAGLContext {
 
     pub fn new_with_api_sharegroup(
         api: EAGLRenderingAPI,
-        sharegroup: &EAGLContext,
+        sharegroup: &EAGLSharegroup,
     ) -> Option<Self> {
         unsafe {
             let cls = class!(EAGLContext);
             let context = msg_send_id![cls, alloc];
             let context: Option<Id<Object, Shared>> =
-                msg_send_id![context, initWithAPI: api, sharegroup: &*sharegroup.0];
+                msg_send_id![context, initWithAPI: api, sharegroup_: &*sharegroup.0];
             context.map(EAGLContext)
         }
     }
@@ -282,13 +308,15 @@ impl GLKView {
         let _: () = unsafe { msg_send![&self.0, deleteDrawable] };
     }
 
-    pub fn set_drawable_color_format(&self, format: GLKViewDrawableColorFormat) {
-        let _: () = unsafe { msg_send![&self.0, drawableColorFormat: format] };
+    pub fn set_alpha(&self, alpha: bool) {
+        let layer: Id<Object, Shared> = unsafe { msg_send_id![&self.0, layer] };
+        let _: () = unsafe { msg_send![&layer, setOpaque: alpha] };
     }
 
-    pub fn get_drawable_color_format(&self) -> GLKViewDrawableColorFormat {
-        let format: i32 = unsafe { msg_send![&self.0, drawableColorFormat] };
-        GLKViewDrawableColorFormat::try_from(format).unwrap()
+    pub fn get_alpha(&self) -> bool {
+        let layer: Id<Object, Shared> = unsafe { msg_send_id![&self.0, layer] };
+        let ret: bool = unsafe { msg_send![&layer, isOpaque] };
+        ret
     }
 
     pub fn set_drawable_depth_format(&self, format: GLKViewDrawableDepthFormat) {
@@ -336,7 +364,6 @@ impl GLKView {
     }
 }
 
-#[cfg(target_os = "ios")]
 impl GLContext {
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
         let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
@@ -350,6 +377,20 @@ impl GLContext {
             }
         }
     }
+    pub fn create_shared_window_context(
+        context_attrs: &mut ContextAttributes,
+        view: NonNull<c_void>,
+        context: &GLContext,
+    ) -> Option<GLContext> {
+        let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
+        match glview {
+            None => None,
+            Some(glview) => {
+                let glview = GLKView(glview);
+                GLContext::create_window_context_with_gl_view(context_attrs, glview, Some(context))
+            }
+        }
+    }
 
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
@@ -360,7 +401,7 @@ impl GLContext {
             None => None,
             Some(glview) => {
                 let glview = GLKView(glview);
-                GLContext::create_window_context_with_gl_view(context_attrs, glview)
+                GLContext::create_window_context_with_gl_view(context_attrs, glview, None)
             }
         }
     }
@@ -368,15 +409,25 @@ impl GLContext {
     pub(crate) fn create_window_context_with_gl_view(
         context_attrs: &mut ContextAttributes,
         mut view: GLKView,
+        shared_context: Option<&GLContext>,
     ) -> Option<GLContext> {
         gl_bindings::load_with(|symbol| view.get_proc_address(symbol).cast());
 
         let api = if context_attrs.get_is_canvas() {
-            EAGLRenderingAPI::GLES2
+            EAGLRenderingAPI::GLES3
         } else {
             EAGLRenderingAPI::GLES3
         };
-        let context = EAGLContext::new_with_api(api);
+
+        let share_group = match shared_context {
+            Some(context) => {
+                let inner = context.inner.borrow();
+                inner.sharegroup.clone()
+            }
+            _ => EAGLSharegroup::new(),
+        };
+
+        let context = EAGLContext::new_with_api_sharegroup(api, &share_group);
 
         if context.is_none() {
             return None;
@@ -390,6 +441,7 @@ impl GLContext {
 
         let inner = GLContextInner {
             context,
+            sharegroup: share_group,
             view: Some(view),
         };
 
@@ -405,7 +457,17 @@ impl GLContext {
     ) -> Option<GLContext> {
         let view = GLKView::new_with_frame(0., 0., width as f32, height as f32);
 
-        GLContext::create_window_context_with_gl_view(context_attrs, view)
+        GLContext::create_window_context_with_gl_view(context_attrs, view, None)
+    }
+
+    pub fn create_shared_offscreen_context(
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        shared_context: &GLContext,
+    ) -> Option<GLContext> {
+        let view = GLKView::new_with_frame(0., 0., width as f32, height as f32);
+        GLContext::create_window_context_with_gl_view(context_attrs, view, Some(shared_context))
     }
 
     fn has_extension(extensions: &str, name: &str) -> bool {
@@ -431,7 +493,6 @@ impl GLContext {
         let inner = self.inner.borrow();
 
         if let Some(context) = inner.context.as_ref() {
-
             unsafe {
                 let cls = class!(EAGLContext);
                 let current: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];
@@ -440,7 +501,7 @@ impl GLContext {
                     Some(current) => {
                         let is_equal: bool = unsafe { msg_send![&current, isEqual: &*context.0] };
                         if is_equal {
-                           return true;
+                            return true;
                         }
                     }
                     None => {}

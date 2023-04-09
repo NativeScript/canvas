@@ -5,9 +5,11 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_uchar, c_void};
 
 use canvas_core::image_asset::ImageAsset;
+use gl_bindings::types::GLenum;
 
 use crate::prelude::*;
 use crate::utils;
+use crate::utils::gl::GLImageAssetBytesType;
 
 pub fn canvas_native_webgl_resized(state: &mut WebGLState) {
     state.resized();
@@ -2132,61 +2134,112 @@ pub fn canvas_native_webgl_tex_image2d_none(
 pub fn canvas_native_webgl_tex_image2d_image_asset(
     target: i32,
     level: i32,
-    internalformat: i32,
+    _internalformat: i32,
     format: i32,
     image_type: i32,
     image_asset: &ImageAsset,
     state: &WebGLState,
 ) {
     state.make_current();
-    if let Some(bytes) = image_asset.get_bytes() {
-        unsafe {
-            let width = image_asset.width() as i32;
-            let height = image_asset.height() as i32;
 
-            if state.get_flip_y() {
-                let mut buffer = bytes.to_vec();
-                utils::gl::flip_in_place(
-                    buffer.as_mut_ptr(),
-                    buffer.len(),
-                    (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                        as usize,
-                    height as usize,
-                );
 
-                gl_bindings::TexImage2D(
-                    target as u32,
-                    level,
-                    gl_bindings::RGBA as _,
-                    //  internalformat,
-                    width as _,
-                    height as _,
-                    0,
-                    gl_bindings::RGBA as _,
-                    //format as  _,
-                    //image_type,
-                    //gl_bindings::RGBA as u32,
-                    image_type as u32,
-                    buffer.as_ptr() as *const c_void,
-                );
+    let width = image_asset.width() as i32;
+    let height = image_asset.height() as i32;
+    let flip_y = state.get_flip_y();
 
-                return;
+
+    match utils::gl::get_image_asset_bytes_type(format, image_type) {
+        GLImageAssetBytesType::RGBA8 => {
+            if let Some(bytes) = image_asset.get_bytes() {
+                unsafe {
+                    if flip_y {
+                        let mut buffer = bytes.to_vec();
+                        utils::gl::flip_in_place(
+                            buffer.as_mut_ptr(),
+                            buffer.len(),
+                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
+                                as usize,
+                            height as usize,
+                        );
+
+
+                        gl_bindings::TexImage2D(
+                            target as u32,
+                            level,
+                            gl_bindings::RGBA as _,
+                            width as _,
+                            height as _,
+                            0,
+                            gl_bindings::RGBA as _,
+                            gl_bindings::UNSIGNED_BYTE as _,
+                            buffer.as_ptr() as *const c_void,
+                        );
+
+                        return;
+                    }
+
+                    gl_bindings::TexImage2D(
+                        target as u32,
+                        level,
+                        gl_bindings::RGBA as _,
+                        width as _,
+                        height as _,
+                        0,
+                        gl_bindings::RGBA as _,
+                        gl_bindings::UNSIGNED_BYTE as _,
+                        bytes.as_ptr() as *const c_void,
+                    );
+                }
             }
+        }
+        GLImageAssetBytesType::Luminance => {
+            if let Some(bytes) = image_asset.get_luminance_bytes() {
+                unsafe {
+                    if flip_y {
+                        let mut buffer = bytes.to_vec();
+                        utils::gl::flip_in_place(
+                            buffer.as_mut_ptr(),
+                            buffer.len(),
+                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
+                                as usize,
+                            height as usize,
+                        );
 
-            gl_bindings::TexImage2D(
-                target as u32,
-                level,
-                gl_bindings::RGBA as _,
-                // internalformat,
-                width as _,
-                height as _,
-                0,
-                gl_bindings::RGBA as _,
-                // format as  _,
-                //image_type,
-                image_type as u32,
-                bytes.as_ptr() as *const c_void,
-            );
+
+                        gl_bindings::TexImage2D(
+                            target as u32,
+                            level,
+                            gl_bindings::LUMINANCE_ALPHA as _,
+                            width as _,
+                            height as _,
+                            0,
+                            gl_bindings::LUMINANCE_ALPHA as _,
+                            gl_bindings::UNSIGNED_BYTE as _,
+                            buffer.as_ptr() as *const c_void,
+                        );
+
+                        return;
+                    }
+
+                    gl_bindings::TexImage2D(
+                        target as u32,
+                        level,
+                        gl_bindings::LUMINANCE_ALPHA as _,
+                        width as _,
+                        height as _,
+                        0,
+                        gl_bindings::LUMINANCE_ALPHA as _,
+                        gl_bindings::UNSIGNED_BYTE as _,
+                        bytes.as_ptr() as *const c_void,
+                    );
+                }
+            }
+        }
+        GLImageAssetBytesType::Alpha => {
+            // todo
+        }
+        GLImageAssetBytesType::None => {
+            // noop
         }
     }
 }

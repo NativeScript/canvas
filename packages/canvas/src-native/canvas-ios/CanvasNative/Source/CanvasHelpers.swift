@@ -90,6 +90,68 @@ public class CanvasHelpers: NSObject {
         return canvas_native_init_ios_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
     }
     
+    public static func initSharedGLWithView(_ view: Int64, _ alpha: Bool,
+                                 _ antialias: Bool,
+                                 _ depth: Bool,
+              _ fail_if_major_performance_caveat: Bool,
+                      _ power_preference:String,
+                   _ premultiplied_alpha: Bool,
+               _ preserve_drawing_buffer:Bool,
+                               _ stencil:Bool,
+                        _ desynchronized:Bool,
+                         _ xr_compatible:Bool,
+                               _ version:Int32,
+                             _ is_canvas:Bool,
+                                            _ shared_context: Int64) -> Int64{
+        
+        let power_preference = (power_preference as NSString).utf8String
+        
+        
+        return canvas_native_init_ios_gl_with_shared_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas, shared_context)
+    }
+    
+    
+    
+    public static func initGLWithWidthAndHeight(_ width: Int32, _ height: Int32, _ alpha: Bool,
+                                 _ antialias: Bool,
+                                 _ depth: Bool,
+              _ fail_if_major_performance_caveat: Bool,
+                      _ power_preference:String,
+                   _ premultiplied_alpha: Bool,
+               _ preserve_drawing_buffer:Bool,
+                               _ stencil:Bool,
+                        _ desynchronized:Bool,
+                         _ xr_compatible:Bool,
+                               _ version:Int32,
+                             _ is_canvas:Bool) -> Int64{
+        
+        let power_preference = (power_preference as NSString).utf8String
+        
+        
+        return canvas_native_init_offscreen_ios_gl(width, height, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
+    }
+    
+    public static func initSharedGLWidthAndHeight(_ width: Int32, _ height: Int32, _ alpha: Bool,
+                                 _ antialias: Bool,
+                                 _ depth: Bool,
+              _ fail_if_major_performance_caveat: Bool,
+                      _ power_preference:String,
+                   _ premultiplied_alpha: Bool,
+               _ preserve_drawing_buffer:Bool,
+                               _ stencil:Bool,
+                        _ desynchronized:Bool,
+                         _ xr_compatible:Bool,
+                               _ version:Int32,
+                             _ is_canvas:Bool,
+                                            _ shared_context: Int64) -> Int64{
+        
+        let power_preference = (power_preference as NSString).utf8String
+        
+        
+        return canvas_native_init_offscreen_ios_gl_with_shared_gl(width, height, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas, shared_context)
+    }
+    
+    
     public static func resize2DContext(_ context: Int64, _ width: Float, _ height: Float) {
         canvas_native_resize_context_2d(context, width, height)
     }

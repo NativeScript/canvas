@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "NativeScript/JSIRuntime.h"
+#include <NativeScript/JSIRuntime.h>
 
 using namespace facebook;
 

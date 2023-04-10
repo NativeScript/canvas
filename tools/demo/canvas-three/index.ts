@@ -58,7 +58,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		//this.threeOcean(this.canvas);
+		this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
 		//this.geoColors(canvas);
@@ -72,7 +72,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// }, 10000);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
-		this.threeKeyframes(this.canvas);
+		//this.threeKeyframes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -1671,7 +1671,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				console.error(e);
 			}
 		);
-		
 
 		window.onresize = function () {
 			camera.aspect = width / height;

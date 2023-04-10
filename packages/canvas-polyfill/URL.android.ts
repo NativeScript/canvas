@@ -15,6 +15,13 @@ function get_mime_ext(value): string {
 }
 
 let sharedPreferences;
+interface BlobItem {
+	blob: Blob;
+	path?: string;
+	type?: string;
+	ext?: string;
+}
+const BLOB_STORE = new Map<string, BlobItem>();
 export class URL {
 	_native: java.net.URI;
 	_isBlobURL = false;
@@ -187,20 +194,49 @@ export class URL {
 	}
 
 	public static createObjectURL(object: any, options = null): string {
-		const buf = (Blob as any).InternalAccessor.getBuffer(object);
-		if (buf || object instanceof Blob || object instanceof File) {
-			return org.nativescript.canvas.polyfill.Utils.createObjectURL(Utils.android.getApplicationContext(), buf, buf.byteOffset, object?.type ?? null, options?.ext ?? null);
+		//const buf = (Blob as any).InternalAccessor.getBuffer(object);
+		if (object instanceof Blob || object instanceof File) {
+			const id = java.util.UUID.randomUUID().toString();
+			const ret = `blob:nativescript/${id}`;
+			BLOB_STORE.set(ret, {
+				blob: object,
+				type: object?.type,
+				ext: options?.ext,
+			});
+			return ret;
+			//	return org.nativescript.canvas.polyfill.Utils.createObjectURL(Utils.android.getApplicationContext(), buf, buf.byteOffset, object?.type ?? null, options?.ext ?? null);
 		}
 		return null;
 	}
 
 	public static revokeObjectURL(url: string) {
-		org.nativescript.canvas.polyfill.Utils.revokeObjectURL(Utils.android.getApplicationContext(), url ?? null);
+		const blob = BLOB_STORE.get(url);
+		if (blob.path) {
+			org.nativescript.canvas.polyfill.Utils.revokeObjectURL(Utils.android.getApplicationContext(), url ?? null);
+		}
+		BLOB_STORE.delete(url);
+		//org.nativescript.canvas.polyfill.Utils.revokeObjectURL(Utils.android.getApplicationContext(), url ?? null);
 	}
 
 	public static InternalAccessor = class {
 		public static getPath(url: string) {
-			return org.nativescript.canvas.polyfill.Utils.getPath(Utils.android.getApplicationContext(), url ?? null);
+			//	return org.nativescript.canvas.polyfill.Utils.getPath(Utils.android.getApplicationContext(), url ?? null);
+			const blob = BLOB_STORE.get(url);
+			if (!blob) {
+				return '';
+			}
+			if (blob.path) {
+				return blob.path;
+			}
+			const buf = (Blob as any).InternalAccessor.getBuffer(blob.blob);
+			const path = org.nativescript.canvas.polyfill.Utils.getItemOrCreateAndReturn(Utils.android.getApplicationContext(), url, buf, buf.byteOffset, blob?.type ?? null, blob?.ext ?? null);
+			blob.path = path;
+			BLOB_STORE.set(url, blob);
+			return path;
+		}
+
+		public static getData(url: string) {
+			return BLOB_STORE.get(url);
 		}
 	};
 }

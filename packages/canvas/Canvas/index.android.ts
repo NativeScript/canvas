@@ -58,11 +58,17 @@ export class Canvas extends CanvasBase {
 
 	_drawingBufferHeight = 0;
 	get drawingBufferHeight() {
+		if (this._drawingBufferHeight === 0) {
+			return this.getMeasuredHeight();
+		}
 		return this._drawingBufferHeight;
 	}
 
 	_drawingBufferWidth = 0;
 	get drawingBufferWidth() {
+		if (this._drawingBufferWidth === 0) {
+			return this.getMeasuredWidth();
+		}
 		return this._drawingBufferWidth;
 	}
 

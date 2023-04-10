@@ -42,6 +42,8 @@ import { URL } from './URL';
 	}
 };
 
+(global as any).Intl = (global as any).window.Intl = (global as any).Intl || {}; // pixijs
+
 Object.defineProperty(global, 'Element', {
 	value: Element,
 	configurable: true,

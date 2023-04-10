@@ -145,6 +145,14 @@ impl ImageAsset {
         CString::new(lock.error.as_str()).unwrap().into_raw()
     }
 
+    pub fn is_valid(&self) -> bool {
+        self.read()
+            .image
+            .as_ref()
+            .map(|v| v.width() > 0 && v.height() > 0)
+            .unwrap_or_default()
+    }
+
     pub fn width(&self) -> c_uint {
         self.read()
             .image
@@ -164,6 +172,12 @@ impl ImageAsset {
     #[cfg(any(unix))]
     pub fn load_from_fd(&mut self, fd: c_int) -> bool {
         if fd == 0 {
+            let mut lock = self.get_lock();
+
+            if !lock.error.is_empty() {
+                lock.error.clear()
+            }
+            lock.image = None;
             return false;
         }
         use std::os::fd::FromRawFd;

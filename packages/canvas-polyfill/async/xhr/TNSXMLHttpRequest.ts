@@ -346,6 +346,7 @@ export class TNSXMLHttpRequest {
 		}
 		if (typeof this._request.method === 'string' && this._request.method.toLowerCase() === 'get' && typeof this._request.url === 'string' && !this._request.url.startsWith('http')) {
 			let path;
+			let isBlob = false;
 			if (this._request.url.startsWith('file://')) {
 				path = this._request.url.replace('file://', '');
 			} else if (this._request.url.startsWith('~/')) {
@@ -353,7 +354,122 @@ export class TNSXMLHttpRequest {
 			} else if (this._request.url.startsWith('/')) {
 				path = this._request.url;
 			} else if (this._request.url.startsWith('blob:nativescript')) {
-				path = (URL as any)?.InternalAccessor?.getPath?.(this._request.url);
+				//path = (URL as any)?.InternalAccessor?.getPath?.(this._request.url);
+				path = (URL as any)?.InternalAccessor?.getData?.(this._request.url).blob;
+				isBlob = true;
+			}
+			if (isBlob) {
+				const buf = (Blob as any).InternalAccessor.getBuffer(path) as Uint8Array;
+				const responseURL = this._request.url;
+
+				let contentLength = -1;
+
+				this._lastProgress = {
+					lengthComputable: contentLength > -1,
+					loaded: 0,
+					total: contentLength,
+					target: this,
+				};
+
+				const startEvent = new ProgressEvent('loadstart', this._lastProgress);
+
+				if (this.onloadstart) {
+					this.onloadstart(startEvent);
+				}
+
+				this.emitEvent('loadstart', startEvent);
+
+				this._updateReadyStateChange(this.LOADING);
+
+				if (!buf) {
+					this._status = 404;
+					const errorEvent = new ProgressEvent('error', this._lastProgress);
+					this._responseText = 'Invalid URL';
+
+					if (this.onerror) {
+						this.onerror(errorEvent);
+					}
+
+					this.emitEvent('error', errorEvent);
+
+					const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
+
+					if (this.onloadend) {
+						this.onloadend(loadendEvent);
+					}
+
+					this.emitEvent('loadend', loadendEvent);
+
+					this._updateReadyStateChange(this.DONE);
+				} else {
+					if (!this._didUserSetResponseType) {
+						this._setResponseType();
+					}
+					this._status = 200;
+					const data = buf.buffer;
+					this._httpContent = data;
+					this._responseURL = responseURL;
+
+					if (this.responseType === XMLHttpRequestResponseType.json) {
+						try {
+							this._responseText = this._toJSString(data);
+							this._response = JSON.parse(this._responseText);
+						} catch (e) {
+							console.error('json parse error', e);
+							// this should probably be caught before the promise resolves
+						}
+					} else if (this.responseType === XMLHttpRequestResponseType.text) {
+						const response = this._toJSString(data);
+						this._responseText = this._response = response ? response : '';
+					} else if (this.responseType === XMLHttpRequestResponseType.document) {
+						let response = this._toJSString(data);
+						this._responseText = this._response = response ? response : '';
+					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
+						this._response = data;
+					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
+						let buffer: ArrayBuffer = data;
+						this._response = new Blob([buffer]);
+					}
+
+					const size = data?.byteLength ?? 0;
+
+					contentLength = size;
+
+					this._lastProgress = {
+						lengthComputable: contentLength > -1,
+						loaded: size,
+						total: contentLength,
+						target: this,
+					};
+
+					const progressEvent = new ProgressEvent('progress', this._lastProgress);
+					if (this.onprogress) {
+						this.onprogress(progressEvent);
+					}
+					this.emitEvent('progress', progressEvent);
+
+					this._addToStringOnResponse();
+
+					const loadEvent = new ProgressEvent('load', this._lastProgress);
+
+					if (this.onload) {
+						this.onload(loadEvent);
+					}
+
+					this.emitEvent('load', loadEvent);
+
+					const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
+
+					if (this.onloadend) {
+						this.onloadend(loadendEvent);
+					}
+
+					this.emitEvent('loadend', loadendEvent);
+
+					this._updateReadyStateChange(this.DONE);
+				}
+
+				return;
 			}
 
 			const responseURL = `file://${path}`;
@@ -409,7 +525,7 @@ export class TNSXMLHttpRequest {
 					this._httpContent = data;
 					this._responseURL = responseURL;
 
-					const fastRead = (FileManager as any)._readFile === undefined;
+					const fastRead = (FileManager as any)._readFile !== undefined;
 
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {
@@ -475,7 +591,7 @@ export class TNSXMLHttpRequest {
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
 						this._response = data;
-						if (fastRead) {
+						if (!fastRead) {
 							if ((global as any).isIOS) {
 								this._response = interop.bufferFromData(data);
 							} else {
@@ -485,7 +601,7 @@ export class TNSXMLHttpRequest {
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
 						let buffer: ArrayBuffer = data;
 
-						if (fastRead) {
+						if (!fastRead) {
 							if ((global as any).isIOS) {
 								buffer = interop.bufferFromData(data);
 							} else {

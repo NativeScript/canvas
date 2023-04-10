@@ -387,6 +387,10 @@ class NSCCanvas : FrameLayout {
         isAttachedToWindow = true
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        listener?.surfaceResize(w, h)
+    }
     interface Listener {
         fun contextReady()
         fun surfaceResize(width: Int, height: Int)

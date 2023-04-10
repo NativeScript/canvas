@@ -66,14 +66,24 @@ export class ImageBitmap {
 			} else if (source instanceof ImageData) {
 				realSource = source.native;
 			} else if (source instanceof Blob) {
-				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
+				const bytes = (Blob as any).InternalAccessor.getBuffer(source) as Uint8Array;
 				realSource = bytes;
-			} else if (source && typeof source === 'object' && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
-				realSource = source._asset.native;
+			} else if (source && typeof source === 'object' && typeof source.tagName === 'string') {
+				if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
+					realSource = source._asset.native;
+				} else if (source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
+					realSource = source._canvas.native;
+				}
 			} else if (source instanceof ArrayBuffer) {
 				realSource = source;
 			} else if (source instanceof ImageSource) {
-				realSource = source.android; // todo
+				if (global.isAndroid) {
+					realSource = source.android; // todo
+				}
+
+				if (global.isIOS) {
+					realSource = source.ios; // todo
+				}
 			}
 
 			ctor(realSource, options, (error, value) => {
@@ -100,12 +110,22 @@ export class ImageBitmap {
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
 				realSource = bytes;
-			} else if (source && typeof source === 'object' && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
-				realSource = source._asset.native;
+			} else if (source && typeof source === 'object' && typeof source.tagName === 'string') {
+				if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
+					realSource = source._asset.native;
+				} else if (source.tagName === 'CANVAS' && source._canvas instanceof Canvas) {
+					realSource = source._canvas.native;
+				}
 			} else if (source instanceof ArrayBuffer) {
 				realSource = source;
 			} else if (source instanceof ImageSource) {
-				realSource = source.android; // todo
+				if (global.isAndroid) {
+					realSource = source.android; // todo
+				}
+
+				if (global.isIOS) {
+					realSource = source.ios; // todo
+				}
 			}
 
 			ctor(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {

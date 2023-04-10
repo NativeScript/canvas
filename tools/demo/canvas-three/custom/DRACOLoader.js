@@ -330,7 +330,6 @@ class DRACOLoader extends Loader {
 		return this._initDecoder().then(() => {
 			if (this.workerPool.length < this.workerLimit) {
 				//const worker = new Worker(this.workerSourceURL);
-
 				const worker = new Worker(URL.InternalAccessor.getPath(this.workerSourceURL));
 
 				worker._callbacks = {};

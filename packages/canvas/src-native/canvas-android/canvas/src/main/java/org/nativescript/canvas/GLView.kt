@@ -91,10 +91,6 @@ internal class GLView : TextureView, SurfaceTextureListener {
                     isReady = true
                 }
             }
-        } else {
-            canvas?.let {
-                it.listener?.surfaceResize(width, height)
-            }
         }
     }
 

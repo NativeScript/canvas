@@ -4980,10 +4980,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
         &mut output.0,
     );
 
-    if output.width() > 0 && output.height() > 0 {
-        return true;
-    }
-    false
+    output.is_valid()
 }
 
 fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
@@ -5039,10 +5036,7 @@ fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
         &mut output.0,
     );
 
-    if output.width() > 0 && output.height() > 0 {
-        return true;
-    }
-    false
+    output.is_valid()
 }
 
 /* ImageBitmap */
@@ -5564,6 +5558,11 @@ impl Default for ImageAsset {
 }
 
 impl ImageAsset {
+
+    pub fn is_valid(&self) -> bool {
+        self.0.is_valid()
+    }
+
     pub fn width(&self) -> c_uint {
         self.0.width()
     }

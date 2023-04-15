@@ -24,7 +24,7 @@ class WebGLActivity : AppCompatActivity() {
 			}
 
 			override fun surfaceResize(width: Int, height: Int) {
-				TODO("Not yet implemented")
+
 			}
 		}
 	}

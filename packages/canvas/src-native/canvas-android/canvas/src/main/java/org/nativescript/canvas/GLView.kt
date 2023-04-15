@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
+import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
@@ -11,12 +12,11 @@ import android.view.TextureView.SurfaceTextureListener
 /**
  * Created by triniwiz on 6/9/20
  */
-internal class GLView : TextureView, SurfaceTextureListener {
+class GLView : TextureView, SurfaceTextureListener {
     internal var isCreated = false
     internal var isCreatedWithZeroSized = false
     internal var canvas: NSCCanvas? = null
     internal var surface: Surface? = null
-    internal var st: SurfaceTexture? = null
 
     constructor(context: Context) : super(context) {
         init()
@@ -50,6 +50,10 @@ internal class GLView : TextureView, SurfaceTextureListener {
         surfaceTextureListener = this
     }
 
+    private fun resize() {
+        canvas?.resize()
+    }
+
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
         if (isReady) {
@@ -63,8 +67,10 @@ internal class GLView : TextureView, SurfaceTextureListener {
                 this.surface = Surface(surface)
                 canvas?.let {
                     if (!isReady) {
-                        it.listener?.contextReady()
                         isReady = true
+                        it.listener?.contextReady()
+                    } else {
+                        resize()
                     }
                 }
             }
@@ -72,32 +78,37 @@ internal class GLView : TextureView, SurfaceTextureListener {
         }
     }
 
+
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-        if (isReady) {
+        if (isReady || surface == this.surface) {
             return
         }
         if (!isCreatedWithZeroSized) {
             // resize
+            resize()
+            return
         }
         if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-            if (surface == st) {
-                return
-            }
             this.surface = Surface(surface)
             isCreatedWithZeroSized = false
             canvas?.let {
                 if (!isReady) {
-                    it.listener?.contextReady()
                     isReady = true
+                    it.listener?.contextReady()
+                } else {
+                    resize()
                 }
             }
         }
     }
+
 
     override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
         isCreated = false
         return true
     }
 
+
     override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+
 }

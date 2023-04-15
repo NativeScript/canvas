@@ -25,6 +25,13 @@ const defaultOpts = {
 	xrCompatible: false,
 };
 
+enum ContextType {
+	None,
+	Canvas,
+	WebGL,
+	WebGL2,
+}
+
 export class Canvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
@@ -34,8 +41,10 @@ export class Canvas extends CanvasBase {
 	private _isReady: boolean = false;
 	private _readyListener: any;
 
-	_didLayout = false;
+	private _contextType = ContextType.None;
+	private _is2D = false;
 
+	_didLayout = false;
 	_methodCache = new Map();
 
 	_getMethod(name: string) {
@@ -214,14 +223,16 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative() {
+		if (!this._isCustom) {
+			return;
+		}
+
 		if (this._didLayout) {
 			return;
 		}
+
 		if (!this.parent) {
 			if ((typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
-				return;
-			}
-			if (!this._isCustom) {
 				return;
 			}
 
@@ -262,10 +273,12 @@ export class Canvas extends CanvasBase {
 
 					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;
+
+					this._contextType = ContextType.Canvas;
+					// @ts-ignore
+					this._2dContext._type = '2d';
 				}
 
-				// @ts-ignore
-				this._2dContext._type = '2d';
 				return this._2dContext;
 			} else if (type === 'webgl' || type === 'experimental-webgl') {
 				if (this._2dContext || this._webgl2Context) {
@@ -279,9 +292,9 @@ export class Canvas extends CanvasBase {
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
+					this._webglContext._type = 'webgl';
+					this._contextType = ContextType.WebGL;
 				}
-
-				this._webglContext._type = 'webgl';
 				return this._webglContext;
 			} else if (type === 'webgl2') {
 				if (this._2dContext || this._webglContext) {
@@ -296,8 +309,9 @@ export class Canvas extends CanvasBase {
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;
+					(this._webgl2Context as any)._type = 'webgl2';
+					this._contextType = ContextType.WebGL2;
 				}
-				(this._webgl2Context as any)._type = 'webgl2';
 				return this._webgl2Context;
 			}
 		}
@@ -305,7 +319,16 @@ export class Canvas extends CanvasBase {
 	}
 
 	get __native__context() {
-		return this._2dContext?.native ?? this._webglContext?.native ?? this._webgl2Context?.native;
+		switch (this._contextType) {
+			case ContextType.Canvas:
+				return this._2dContext.native;
+			case ContextType.WebGL:
+				return this._webglContext.native;
+			case ContextType.Canvas:
+				return this._webgl2Context.native;
+			default:
+				return null;
+		}
 	}
 
 	get native() {
@@ -320,7 +343,7 @@ export class Canvas extends CanvasBase {
 		return toDataURL(type, encoderOptions);
 	}
 
-	public snapshot(flip: boolean = false): ImageSource | null {
+	snapshot(flip: boolean = false): ImageSource | null {
 		if (this._canvas) {
 			const bm = this._canvas.snapshot?.(flip ?? false);
 			if (bm) {

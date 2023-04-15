@@ -21,6 +21,12 @@ import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRe
 import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader';
 import { init } from './x-jet/main';
 import { Screen } from '@nativescript/core';
+import { webgl_materials_lightmap } from './examples/webgl_materials_lightmap';
+import { webgl_shadow_contact } from './examples/webgl_shadow_contact';
+import { webgl_shadowmap } from './examples/webgl_shadowmap';
+import { webgl_shadowmap_performance } from './examples/webgl_shadowmap_performance';
+import { webgl_shadowmap_pointlight } from './examples/webgl_shadowmap_pointlight';
+import { webgl_shadowmap_vsm } from './examples/webgl_shadowmap_vsm';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -46,9 +52,17 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		this.canvas = args.object;
 		//x jet game
 
+		//webgl_materials_lightmap(this.canvas);
+		//webgl_shadow_contact(this.canvas);
+		//webgl_shadowmap(this.canvas);
+		//webgl_shadowmap_performance(this.canvas);
+		//webgl_shadowmap_pointlight(this.canvas);
+		//webgl_shadowmap_vsm(this.canvas);
+
 		//init(this.canvas);
+
 		// (canvas as any).scaleX = -1;
-		//this.group(this.canvas);
+		this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
 		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
@@ -58,9 +72,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
+		
 		//this.geoColors(canvas);
 		// setTimeout(()=>{
 		// 	console.log(canvas.toDataURL());
@@ -1183,7 +1198,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			shadow.height = 128;
 
 			var context = shadow.getContext('2d');
-			var gradient = context.createRadialGradient(shadow.width / 2, shadow.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2);
+			var gradient = context.createRadialGradient(shadow.width / 2, shadow.height / 2, 0, shadow.width / 2, shadow.height / 2, shadow.width / 2);
 			gradient.addColorStop(0.1, 'rgba(210,210,210,1)');
 			gradient.addColorStop(1, 'rgba(255,255,255,1)');
 
@@ -1269,9 +1284,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var wireframe = new THREE.Mesh(geometry3, wireframeMaterial);
 			mesh.add(wireframe);
 			scene.add(mesh);
-			const gl = canvas.getContext('webgl2') as any;
+			const gl = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;
 
-			renderer = new THREE.WebGLRenderer({ context: gl, antialias: true });
+	
+
+			renderer = new THREE.WebGLRenderer({ context: gl, antialias: false });
 			//renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 
@@ -1692,7 +1709,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 	}
 	birds(canvas) {
-		const context = canvas.getContext('webgl2') as any;
+		const context = canvas.getContext('webgl2') as WebGL2RenderingContext;
+
+		const w = context.drawingBufferWidth;
+		const h = context.drawingBufferHeight;
 
 		/* TEXTURE WIDTH FOR SIMULATION */
 		const WIDTH = 20;
@@ -1805,8 +1825,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let mouseX = 0,
 			mouseY = 0;
 
-		let windowHalfX = window.innerWidth / 2;
-		let windowHalfY = window.innerHeight / 2;
+		let windowHalfX = w / 2;
+		let windowHalfY = h / 2;
 
 		const BOUNDS = 800,
 			BOUNDS_HALF = BOUNDS / 2;
@@ -1820,7 +1840,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let velocityUniforms;
 
 		function init() {
-			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
+			camera = new THREE.PerspectiveCamera(75, w / h, 1, 3000);
 			camera.position.z = 350;
 
 			scene = new THREE.Scene();
@@ -1842,8 +1862,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene.add(dirLight);
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			//renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(w, h);
 
 			initComputeRenderer();
 
@@ -2199,13 +2219,16 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		function onWindowResize() {
-			windowHalfX = window.innerWidth / 2;
-			windowHalfY = window.innerHeight / 2;
+			const w = context.drawingBufferWidth;
+			const h = context.drawingBufferHeight;
 
-			camera.aspect = window.innerWidth / window.innerHeight;
+			windowHalfX = w / 2;
+			windowHalfY = h / 2;
+
+			camera.aspect = w / h;
 			camera.updateProjectionMatrix();
 
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setSize(w, h);
 		}
 
 		function onPointerMove(event) {
@@ -2563,7 +2586,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	*/
 
 	skinningAndMorphing(canvas) {
-		const context = canvas.getContext('webgl2') as WebGL2RenderingContext;
+		const context = canvas.getContext('webgl2', {antialias: true}) as WebGL2RenderingContext;
 
 		const { drawingBufferWidth: width, drawingBufferHeight: height } = context;
 		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;

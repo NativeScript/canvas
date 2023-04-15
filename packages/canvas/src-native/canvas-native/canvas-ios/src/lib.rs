@@ -260,9 +260,6 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl_with_shared_gl(
 }
 
 
-
-
-
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_flush_gl(context: i64) -> bool {
     if context == 0 {
@@ -369,7 +366,7 @@ pub extern "C" fn canvas_native_release_ios_gl(context: i64) {
     if context == 0 {
         return;
     }
-    let context = context as *mut GLContext;
+    let context = context as *mut iOSGLContext;
     let _ = unsafe { Box::from_raw(context) };
 }
 

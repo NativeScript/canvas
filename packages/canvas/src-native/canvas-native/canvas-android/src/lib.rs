@@ -30,7 +30,7 @@ pub(crate) const BUILD_VERSION_CLASS: &str = "android/os/Build$VERSION";
 #[no_mangle]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
     if let Ok(mut env) = vm.get_env() {
-        android_logger::init_once(Config::default().with_max_level(LevelFilter::Trace));
+        android_logger::init_once(Config::default());
 
         API_LEVEL.get_or_init(|| {
             let clazz = env.find_class(BUILD_VERSION_CLASS).unwrap();

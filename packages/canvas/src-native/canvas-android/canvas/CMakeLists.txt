@@ -40,7 +40,12 @@ set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
 
-set(CANVAS_ANDROID_SOURCE_FILE ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/lib.rs)
+set(CANVAS_ANDROID_SOURCE_FILE
+        ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/lib.rs
+        ${PROJECT_NATIVE_ROOT_DIR}/canvas-core/src/lib.rs
+        ${PROJECT_NATIVE_ROOT_DIR}/canvas-core/src/gl/android.rs
+        ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs
+        )
 set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-cxx/src/lib.rs.cc)
 
 set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH")
@@ -66,11 +71,11 @@ endif ()
 
 if (${ANDROID_PLATFORM_LEVEL} LESS 18)
     add_definitions("-DDYNAMIC_ES3")
-    set(GL3STUB_SRC  src/main/cpp/gl3stub.c)
+    set(GL3STUB_SRC src/main/cpp/gl3stub.c)
     set(OPENGL_LIB GLESv2)
 else ()
     set(OPENGL_LIB GLESv2 GLESv3)
-endif()
+endif ()
 
 
 include_directories(
@@ -92,8 +97,8 @@ set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
 # Add a custom command that builds the rust crate and generates C++ bridge code
 add_custom_command(
         OUTPUT ${CANVAS_ANDROID_BRIDGE_CPP} ${CANVAS_ANDROID_LIB}
-       # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        COMMAND cargo +nightly build -Z build-std='std' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
         USES_TERMINAL

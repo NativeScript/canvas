@@ -1,8 +1,9 @@
 use std::cell::RefCell;
 use std::ffi::c_void;
+use std::rc::Rc;
 
 use jni::objects::{JClass, JObject, JString};
-use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_TRUE};
+use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
@@ -203,6 +204,65 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurf
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurface(
+    env: JNIEnv,
+    _: JClass,
+    surface: jobject,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+
+    unsafe {
+        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+            context.resize(window.width() as f32, window.height() as f32)
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurfaceNoSurface(
+    _env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+
+    context.resize(width as f32, height as f32)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLNoSurface(
+    _env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut AndroidGLContext;
+    let context = unsafe { &mut *context };
+    context
+        .gl_context
+        .resize_pbuffer(&mut context.contextAttributes, width, height);
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGL(
     _env: JNIEnv,
     _: JClass,
@@ -211,7 +271,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGL(
     if context == 0 {
         return;
     }
-    let context = context as *mut GLContext;
+    let context = context as *mut AndroidGLContext;
     let _ = unsafe { Box::from_raw(context) };
 }
 
@@ -230,6 +290,44 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGetGLPointer
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeMakeGLCurrent(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+) -> jboolean {
+    if gl_context == 0 {
+        return 0;
+    }
+    let gl_context = gl_context as *mut AndroidGLContext;
+    let gl_context = unsafe { &*gl_context };
+    if gl_context.gl_context.make_current() {
+        return JNI_TRUE;
+    }
+    JNI_FALSE
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGLPointerRefCount(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+) -> jlong {
+    if gl_context == 0 {
+        return 0;
+    }
+    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    if gl_context.is_null() {
+        return 0;
+    }
+
+    let ctx = GLContext::from_raw_inner(gl_context);
+    let count = ctx.get_strong_count();
+    let _ = ctx.as_raw_inner();
+
+    count as i64
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPointer(
     _env: JNIEnv,
     _: JClass,
@@ -239,7 +337,15 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPoi
         return;
     }
     let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
-    let _ = GLContext::from_raw_inner(gl_context);
+    if gl_context.is_null() {
+        return;
+    }
+
+    let ctx = GLContext::from_raw_inner(gl_context);
+
+    if ctx.get_strong_count() <= 1 {
+        ctx.increment_strong_count();
+    }
 }
 
 #[no_mangle]

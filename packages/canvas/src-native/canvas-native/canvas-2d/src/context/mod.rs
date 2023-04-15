@@ -255,19 +255,20 @@ impl Context {
 
     pub fn snapshot_to_raster_data(&mut self) -> Vec<u8> {
         self.flush();
-        let info = self.surface.image_info();
-        let size = (info.width() * info.height() * 4) as usize;
-        let mut buf = vec![0_u8; size];
         let ss = self.surface.image_snapshot();
+
+        let info = ss.image_info();
+        let row_bytes = info.min_row_bytes();
+        let size = info.height() as usize * row_bytes;
+        let mut buf = vec![0_u8; size];
         match ss.to_raster_image(skia_safe::image::CachingHint::Allow){
             Some(image) => {
                 let mut info = skia_safe::ImageInfo::new(
-                    skia_safe::ISize::new(ss.width(), ss.height()),
+                    info.dimensions(),
                     skia_safe::ColorType::RGBA8888,
-                    skia_safe::AlphaType::Unpremul,
-                    None,
+                    ss.image_info().alpha_type(),
+                    ss.image_info().color_space(),
                 );
-                let row_bytes = info.width() * 4;
                 let _read = image.read_pixels(
                     &mut info,
                     buf.as_mut_slice(),

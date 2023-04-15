@@ -15,6 +15,9 @@ import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import android.graphics.Matrix
+import android.opengl.GLES20
+import android.util.Log
+import android.view.ViewGroup
 import java.nio.ByteBuffer
 
 
@@ -52,7 +55,7 @@ class NSCCanvas : FrameLayout {
         }
 
     private var surfaceType = SurfaceType.Texture
-    private lateinit var textureView: GLView
+    lateinit var textureView: GLView
     private lateinit var surfaceView: GLViewSV
 
     private var isAlpha = false
@@ -76,30 +79,37 @@ class NSCCanvas : FrameLayout {
         surfaceView.canvas = this
         surfaceType = type
         setBackgroundColor(Color.TRANSPARENT)
-        when (type) {
+        when (surfaceType) {
             SurfaceType.Texture -> {
-                addView(textureView)
+                addView(
+                    textureView,
+                    LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
             }
             SurfaceType.Surface -> {
-                addView(surfaceView)
+                addView(
+                    surfaceView,
+                    LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
             }
         }
     }
 
+
     val drawingBufferWidth: Int
         get() {
-            if (surfaceType == SurfaceType.Surface) {
-                return surfaceView.width
-            }
-            return textureView.width
+            return width
         }
 
     val drawingBufferHeight: Int
         get() {
-            if (surfaceType == SurfaceType.Surface) {
-                return surfaceView.height
-            }
-            return textureView.height
+            return height
         }
 
     @Synchronized
@@ -245,12 +255,10 @@ class NSCCanvas : FrameLayout {
             return
         }
         var version = -1
-        var isCanvas = false
         when (type) {
             "2d" -> {
                 version = 0
-                isCanvas = true
-                is2D = isCanvas
+                is2D = true
             }
             "experimental-webgl", "webgl" -> {
                 version = 1
@@ -263,6 +271,7 @@ class NSCCanvas : FrameLayout {
         if (version == -1) {
             return
         }
+
         val surface = if (surfaceType == SurfaceType.Surface) {
             surfaceView.holder.surface
         } else {
@@ -284,7 +293,7 @@ class NSCCanvas : FrameLayout {
                 desynchronized,
                 xrCompatible,
                 version,
-                isCanvas
+                is2D
             )
             nativeContext = nativeGetGLPointer(nativeGL)
         } ?: run {
@@ -302,7 +311,7 @@ class NSCCanvas : FrameLayout {
                 desynchronized,
                 xrCompatible,
                 version,
-                isCanvas
+                is2D
             )
 
             nativeContext = nativeGetGLPointer(nativeGL)
@@ -311,7 +320,7 @@ class NSCCanvas : FrameLayout {
         this.isAlpha = alpha
     }
 
-    private var is2D = false
+    internal var is2D = false
 
     fun create2DContext(
         alpha: Boolean,
@@ -353,6 +362,7 @@ class NSCCanvas : FrameLayout {
             0
         }
 
+
         native2DContext = nativeCreate2DContext(
             nativeGL, this.drawingBufferWidth, this.drawingBufferHeight,
             alpha, density, samples, fontColor, density * 160, direction
@@ -371,17 +381,6 @@ class NSCCanvas : FrameLayout {
     }
 
     override fun onAttachedToWindow() {
-        if (surfaceType == SurfaceType.Texture && textureView.st != null) {
-            // the texture view needs to be removed and clean up from the view tree when moving from offscreen to onscreen
-            removeView(textureView)
-            textureView.surface?.release()
-            textureView.surface = null
-            textureView.st?.release()
-            textureView.st = null
-            textureView.isCreated = false
-            textureView.isReady = false
-            addView(textureView)
-        }
         super.onAttachedToWindow()
         isPaused = false
         isAttachedToWindow = true
@@ -391,6 +390,34 @@ class NSCCanvas : FrameLayout {
         super.onSizeChanged(w, h, oldw, oldh)
         listener?.surfaceResize(w, h)
     }
+
+    internal fun resize() {
+        if (nativeGL != 0L) {
+            val surface = if (surfaceType == SurfaceType.Surface) {
+                surfaceView.holder.surface
+            } else {
+                textureView.surface
+            }
+
+            surface?.let {
+                nativeUpdateGLSurface(it, nativeGL)
+                if (is2D) {
+                    nativeUpdate2DSurface(it, native2DContext)
+                }
+            } ?: run {
+                nativeUpdateGLNoSurface(this.drawingBufferWidth, this.drawingBufferWidth, nativeGL)
+                if (is2D) {
+                    nativeUpdate2DSurfaceNoSurface(
+                        this.drawingBufferWidth,
+                        this.drawingBufferWidth,
+                        native2DContext
+                    )
+                }
+            }
+
+        }
+    }
+
     interface Listener {
         fun contextReady()
         fun surfaceResize(width: Int, height: Int)
@@ -407,6 +434,11 @@ class NSCCanvas : FrameLayout {
         defaultMatrix.postScale(-1f, 1f)
         invertMatrix.postScale(1f, -1f)
         invertFlipMatrix.postScale(-1f, -1f)
+    }
+
+
+    fun makeContextCurrent() {
+        nativeMakeGLCurrent(nativeGL)
     }
 
 
@@ -534,20 +566,6 @@ class NSCCanvas : FrameLayout {
                 rootParams.width = width
                 rootParams.height = height
 
-                if (canvas.surfaceType == SurfaceType.Texture) {
-                    if (canvas.textureView.surfaceTexture == null) {
-                        val st = SurfaceTexture(0)
-                        st.setDefaultBufferSize(width, height)
-                        val surface = Surface(st)
-                        canvas.textureView.st = st
-                        canvas.textureView.setSurfaceTexture(st)
-                        canvas.textureView.surface = surface
-                        canvas.textureView.isCreated = true
-                    } else if (canvas.textureView.st != null) {
-                        canvas.textureView.st?.setDefaultBufferSize(width, height)
-                    }
-                }
-
                 canvas.layoutParams = rootParams
 
                 val w = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
@@ -613,9 +631,41 @@ class NSCCanvas : FrameLayout {
         )
 
         @JvmStatic
+        external fun nativeUpdate2DSurface(
+            surface: Surface,
+            context: Long
+        )
+
+        @JvmStatic
+        external fun nativeUpdate2DSurfaceNoSurface(
+            width: Int,
+            height: Int,
+            context: Long
+        )
+
+
+        @JvmStatic
+        external fun nativeUpdateGLNoSurface(
+            width: Int,
+            height: Int,
+            context: Long
+        )
+
+
+        @JvmStatic
         external fun nativeReleaseGL(
             context: Long
         )
+
+        @JvmStatic
+        external fun nativeMakeGLCurrent(
+            context: Long
+        ): Boolean
+
+        @JvmStatic
+        external fun nativeGLPointerRefCount(
+            context: Long
+        ): Long
 
         @JvmStatic
         external fun nativeGetGLPointer(

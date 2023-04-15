@@ -1,8 +1,11 @@
 package org.nativescript.canvasdemo
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
+import android.opengl.GLES20
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -39,22 +42,23 @@ class MainActivity : AppCompatActivity() {
             override fun contextReady() {
                 Log.d("com.test", "Is Ready")
                 canvas?.let { canvas ->
-                    val params = canvas.layoutParams
-                    val context = canvas.create2DContext(
-                        true,
-                        true,
-                        true,
-                        false,
-                        "default",
-                        true,
-                        false,
-                        false,
-                        false,
-                        false,
-                        Color.BLACK
-                    )
+//                    val params = canvas.layoutParams
+//                    val context = canvas.create2DContext(
+//                        true,
+//                        true,
+//                        true,
+//                        false,
+//                        "default",
+//                        true,
+//                        false,
+//                        false,
+//                        false,
+//                        false,
+//                        Color.BLACK
+//                    )
+//
+//                    Log.d("com.test", "windows $context")
 
-                    Log.d("com.test", "" + canvas.snapshot())
 
                     //canvas?.initContext("2d")
 //                    params.width = 300
@@ -101,16 +105,80 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun surfaceResize(width: Int, height: Int) {
-                Log.d("com.test", "surfaceResize")
+                Log.d("com.test", "surfaceResize $width $height")
             }
         }
 
 
-     //   val offscreen = NSCCanvas(this)
+        /*
+        val count = 500
+
+        for (i in 0 until count){
+            val offscreen = NSCCanvas(this)
+
+            //offscreen.setBackgroundColor(Color.GRAY)
+            NSCCanvas.layoutView(1, 1, offscreen)
+            offscreen.initContext("webgl", antialias = false)
+
+         //   Log.d("com.test", "ctx ${offscreen.nativeGL}")
+        }
+
+        System.gc()
+
+        */
+
+
+
+        val offscreen = NSCCanvas(this)
+
+        offscreen.listener = object : NSCCanvas.Listener {
+            override fun contextReady() {
+                Log.d("com.test", "offscreen ready")
+            }
+
+            override fun surfaceResize(width: Int, height: Int) {
+                Log.d("com.test", "offscreen surfaceResize: " + width + " : " +  height)
+            }
+        }
 
         //offscreen.setBackgroundColor(Color.GRAY)
-//        NSCCanvas.layoutView(16, 16, offscreen)
-//        offscreen.create2DContext(
+        NSCCanvas.layoutView(500, 500, offscreen)
+
+
+
+        val ctx = offscreen.create2DContext(
+            false,
+            false,
+            false,
+            false,
+            "default",
+            false,
+            false,
+            false,
+            false,
+            false,
+            Color.BLACK
+        )
+
+        NSCCanvas.context2DTest(ctx)
+
+        /*
+
+        val root = findViewById<ViewGroup>(android.R.id.content)
+
+        root.addView(offscreen)
+
+
+        Log.d("com.test", "offscreen.surfaceTexture " + offscreen.textureView.surfaceTexture)
+
+        NSCCanvas.layoutView(1000, 1000, offscreen)
+
+
+        */
+        //offscreen.initContext("webgl")
+
+
+//        val ctx = offscreen.create2DContext(
 //            false,
 //            false,
 //            false,
@@ -123,15 +191,15 @@ class MainActivity : AppCompatActivity() {
 //            false,
 //            Color.BLACK
 //        )
+        // NSCCanvas.context2DTest(ctx)
         //val root = findViewById<ViewGroup>(android.R.id.content)
-       // root.addView(offscreen)
-      //  NSCCanvas.layoutView(400, 400, offscreen)
+        // root.addView(offscreen)
+        //  NSCCanvas.layoutView(400, 400, offscreen)
 
-      // Log.d("com.test", "Help ${offscreen.nativeContext}")
+        // Log.d("com.test", "Help ${offscreen.nativeContext}")
 
-      //  Log.d("com.test", "" + offscreen.snapshot())
-
-//		drawTransformPathSvg()
+        //   Log.d("com.test", "" + offscreen.snapshot())
+        //drawTransformPathSvg()
 //		svg?.setSrc(
 //			"""
 //				<svg width="100" height="100" xmlns="svg">

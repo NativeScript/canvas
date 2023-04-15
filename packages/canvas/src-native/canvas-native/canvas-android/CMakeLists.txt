@@ -31,8 +31,6 @@ add_custom_command(
         WORKING_DIRECTORY ${PROJECT_NATIVE_ROOT_DIR}/canvas-native
 )
 
-
-
 #add_custom_command(
 #        OUTPUT ${BLOBSTORE_BRIDGE_CPP} ${BLOBSTORE_LIB}
 #        COMMAND cargo build --manifest-path ${CARGO_MANIFEST}

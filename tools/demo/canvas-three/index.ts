@@ -62,9 +62,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//init(this.canvas);
 
 		// (canvas as any).scaleX = -1;
-		this.group(this.canvas);
+		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
-		//this.geoColors(this.canvas);
+		this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
@@ -1284,7 +1284,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var wireframe = new THREE.Mesh(geometry3, wireframeMaterial);
 			mesh.add(wireframe);
 			scene.add(mesh);
-			const gl = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;
+			const gl = canvas.getContext('webgl2', { antialias: false }) as WebGL2RenderingContext;
 
 	
 

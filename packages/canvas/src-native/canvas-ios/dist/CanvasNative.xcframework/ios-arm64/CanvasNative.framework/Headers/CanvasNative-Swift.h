@@ -317,7 +317,6 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 @end
 
 
-
 @interface GLKView (SWIFT_EXTENSION(CanvasNative))
 - (void)snapshotWithData:(NSData * _Nonnull)data;
 @end

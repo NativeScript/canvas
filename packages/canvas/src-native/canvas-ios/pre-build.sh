@@ -85,5 +85,5 @@ export DYLD_LIBRARY_PATH="$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH:$DYLD_
 
 cbindgen --config "$CWD/canvas-ios/cbindgen.toml"  "$CWD/canvas-ios/src/lib.rs" -l c >"$SRCROOT/CanvasNative/include/canvas_native.h"
 
-cargo +nightly build -Z build-std='std' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
+cargo +nightly build -Z build-std='std,panic_abort' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
 popd

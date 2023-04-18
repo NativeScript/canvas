@@ -201,10 +201,9 @@ public class NSCCanvas: UIView, GLKViewDelegate {
             glkView.drawableStencilFormat = .format8
         }
         
+        // antialias fails in 2D
         if(useWebGL && antialias){
-            // glkView.drawableMultisample = .multisample4X
-        }else if(isCanvas) {
-         //   glkView.drawableMultisample = .multisample4X
+             glkView.drawableMultisample = .multisample4X
         }
         
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
@@ -424,14 +423,5 @@ extension String {
         let idx1 = index(startIndex, offsetBy: max(0, range.lowerBound))
         let idx2 = index(startIndex, offsetBy: min(self.count, range.upperBound))
         return String(self[idx1..<idx2])
-    }
-}
-
-extension EAGLContext {
-    
-    @objc(initWithAPI:sharegroup_:) convenience init?(version: EAGLRenderingAPI, sharegroup: EAGLSharegroup){
-        print("sharegroup_", version.rawValue, sharegroup)
-        self.init(api: version, sharegroup: sharegroup)
-        print("help", self)
     }
 }

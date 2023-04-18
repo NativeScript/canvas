@@ -21,11 +21,6 @@ use skia_safe::Shader;
 
 use crate::context_attributes::ContextAttributes;
 
-// #[link(name = "OpenGLES", kind = "framework")]
-// #[link(name = "GLKit", kind = "framework")]
-// #[link(name = "Foundation", kind = "framework")]
-// extern "C" {}
-
 #[derive(Debug, Default)]
 pub struct GLContextInner {
     context: Option<EAGLContext>,
@@ -116,7 +111,7 @@ impl EAGLContext {
             let cls = class!(EAGLContext);
             let context = msg_send_id![cls, alloc];
             let context: Option<Id<Object, Shared>> =
-                msg_send_id![context, initWithAPI: api, sharegroup_: &*sharegroup.0];
+                msg_send_id![context, initWithAPI: api, sharegroup: &*sharegroup.0];
             context.map(EAGLContext)
         }
     }
@@ -247,6 +242,30 @@ impl TryFrom<i32> for GLKViewDrawableStencilFormat {
     }
 }
 
+
+#[derive(Debug)]
+#[repr(i32)]
+pub enum GLKViewDrawableMultisample {
+    DrawableMultisampleNone = 0,
+    DrawableMultisample4X = 1,
+}
+
+unsafe impl Encode for GLKViewDrawableMultisample {
+    const ENCODING: Encoding = Encoding::ULong;
+}
+
+impl TryFrom<i32> for GLKViewDrawableMultisample {
+    type Error = &'static str;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(GLKViewDrawableMultisample::DrawableMultisampleNone),
+            1 => Ok(GLKViewDrawableMultisample::DrawableMultisample4X),
+            _ => Err("Invalid GLKViewDrawableMultisample"),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct GLKView(Id<Object, Shared>);
 
@@ -335,6 +354,16 @@ impl GLKView {
     pub fn get_drawable_stencil_format(&self) -> GLKViewDrawableStencilFormat {
         let stencil: i32 = unsafe { msg_send![&self.0, drawableStencilFormat] };
         GLKViewDrawableStencilFormat::try_from(stencil).unwrap()
+    }
+
+
+    pub fn set_drawable_multisample(&self, sample: GLKViewDrawableMultisample) {
+        let _: () = unsafe { msg_send![&self.0, drawableMultisample: sample] };
+    }
+
+    pub fn get_drawable_multisample(&self) -> GLKViewDrawableMultisample {
+        let sample: i32 = unsafe { msg_send![&self.0, drawableMultisample] };
+        GLKViewDrawableMultisample::try_from(sample).unwrap()
     }
 
     pub fn set_context(&mut self, context: Option<&EAGLContext>) {

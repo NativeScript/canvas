@@ -317,7 +317,6 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 @end
 
 
-
 @interface GLKView (SWIFT_EXTENSION(CanvasNative))
 - (void)snapshotWithData:(NSData * _Nonnull)data;
 @end
@@ -746,7 +745,6 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)handleBase64Image:(NSString * _Nonnull)mime :(NSString * _Nonnull)dir :(NSString * _Nonnull)base64 :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
-
 
 
 @interface GLKView (SWIFT_EXTENSION(CanvasNative))

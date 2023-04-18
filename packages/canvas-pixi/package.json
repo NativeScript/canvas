@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-pixi",
-  "version": "2.0.0-alpha.15",
+  "version": "2.0.0-alpha.16",
   "description": "Plugin for using pixi.js in NativeScript",
   "main": "index",
   "typings": "index.d.ts",

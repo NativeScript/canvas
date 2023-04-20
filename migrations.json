@@ -2,19 +2,35 @@
   "migrations": [
     {
       "cli": "nx",
-      "version": "2.2.1",
-      "description": "Migrate tools to 2.2.1",
-      "implementation": "./src/migrations/update-2-2-1/update-2-2-1",
+      "version": "4.0.0",
+      "description": "Migrate tools to 4.0.0",
+      "implementation": "./src/migrations/update-4-0-0/update-4-0-0",
       "package": "@nativescript/plugin-tools",
-      "name": "update-to-2.2.1"
+      "name": "update-to-4.0.0"
     },
     {
       "cli": "nx",
-      "version": "3.0.0",
-      "description": "Migrate tools to 3.0.0",
-      "implementation": "./src/migrations/update-3-0-0/update-3-0-0",
+      "version": "4.1.0",
+      "description": "Migrate tools to 4.1.0",
+      "implementation": "./src/migrations/update-4-1-0/update-4-1-0",
       "package": "@nativescript/plugin-tools",
-      "name": "update-to-3.0.0"
+      "name": "update-to-4.1.0"
+    },
+    {
+      "cli": "nx",
+      "version": "5.0.2",
+      "description": "Migrate tools to 5.0.0",
+      "implementation": "./src/migrations/update-5-0-0/update-5-0-0",
+      "package": "@nativescript/plugin-tools",
+      "name": "update-to-5.0.2"
+    },
+    {
+      "cli": "nx",
+      "version": "5.1.0",
+      "description": "Migrate tools to 5.1.0",
+      "implementation": "./src/migrations/update-5-1-0/update-5-1-0",
+      "package": "@nativescript/plugin-tools",
+      "name": "update-to-5.1.0"
     }
   ]
 }

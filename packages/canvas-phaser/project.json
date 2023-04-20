@@ -1,5 +1,6 @@
 {
-	"root": "packages/canvas-phaser",
+	"name": "canvas-phaser",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
 	"sourceRoot": "packages/canvas-phaser",
 	"projectType": "library",
 	"generators": {},
@@ -30,12 +31,12 @@
 			]
 		},
 		"build.all": {
-			"outputs": ["dist/packages/canvas-phaser"],
+			"outputs": ["{workspaceRoot}/dist/packages/canvas-phaser"],
 			"options": {
 				"commands": ["node tools/scripts/build-finish.ts canvas-phaser"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands",
+			"executor": "nx:run-commands",
 			"dependsOn": [
 				{
 					"target": "build.all",
@@ -52,7 +53,7 @@
 				"commands": ["nx workspace-schematic focus-packages canvas-phaser"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"lint": {
 			"executor": "@nrwl/linter:eslint",

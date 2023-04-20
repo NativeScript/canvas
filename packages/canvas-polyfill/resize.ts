@@ -1,4 +1,4 @@
-import { Screen } from '@nativescript/core';
+import { OrientationChangedEventData, Screen } from '@nativescript/core';
 import { Application } from '@nativescript/core';
 /*
  Window Resize Stub
@@ -16,7 +16,7 @@ const screenHeight = Screen.mainScreen.heightPixels;
 (global as any).window.screen.orientation = (global as any).screen.orientation = (global as any).screen.orientation || (global as any).clientWidth < (global as any).clientHeight ? 0 : 90;
 if (!(global as any).__TNS_BROWSER_POLYFILL_RESIZE) {
 	(global as any).__TNS_BROWSER_POLYFILL_RESIZE = true;
-	Application.on(Application.orientationChangedEvent, (args) => {
+	Application.on(Application.orientationChangedEvent, (args: OrientationChangedEventData) => {
 		// const width = Screen.mainScreen.widthPixels;
 		// const height = Screen.mainScreen.heightPixels;
 

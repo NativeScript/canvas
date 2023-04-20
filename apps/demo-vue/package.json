@@ -13,7 +13,7 @@
 		"@nativescript/canvas-three": "file:../../packages/canvas-three"
 	},
 	"devDependencies": {
-		"@nativescript/android": "~8.2.0",
-		"@nativescript/ios": "~8.2.0"
+		"@nativescript/android": "~8.5.0",
+		"@nativescript/ios": "8.5.1-dev.0"
 	}
 }

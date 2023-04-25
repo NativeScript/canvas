@@ -2129,11 +2129,12 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                          if (count > 1) {
                                                              auto condition = (uint32_t) arguments[0].asNumber();
                                                              auto flags = (uint32_t) arguments[1].asNumber();
-                                                             canvas_native_webgl2_fence_sync(
+                                                             auto sync = canvas_native_webgl2_fence_sync(
                                                                      condition,
                                                                      flags,
                                                                      this->GetState()
                                                              );
+                                                             return jsi::Object::createFromHostObject(runtime, std::make_shared<WebGLSyncImpl>(std::move(sync)));
                                                          }
 
                                                          return jsi::Value::undefined();

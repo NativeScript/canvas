@@ -2125,20 +2125,22 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
                                                             size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto condition = (uint32_t) arguments[0].asNumber();
-                                                             auto flags = (uint32_t) arguments[1].asNumber();
-                                                             canvas_native_webgl2_fence_sync(
-                                                                     condition,
-                                                                     flags,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
+            
+            if (count > 1) {
+                auto condition = (uint32_t) arguments[0].asNumber();
+                auto flags = (uint32_t) arguments[1].asNumber();
+                auto sync = canvas_native_webgl2_fence_sync(
+                                                            condition,
+                                                            flags,
+                                                            this->GetState()
+                                                            );
+                
+                return jsi::Object::createFromHostObject(runtime, std::make_shared<WebGLSyncImpl>(std::move(sync)));
+            }
+            
+            return jsi::Value::undefined();
+        }
+                                                     );
     } else if (methodName == "framebufferTextureLayer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),

@@ -267,10 +267,10 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		endTransformFeedback();
 	}
 
-	fenceSync(condition: number, flags: number): void {
+	fenceSync(condition: number, flags: number): WebGLSync {
 		this._glCheckError('fenceSync');
 		const fenceSync = this._getMethod('fenceSync');
-		fenceSync(condition, flags);
+		return new WebGLSync(fenceSync(condition, flags));
 	}
 
 	framebufferTextureLayer(target: number, attachment: number, texture: WebGLTexture, level: number, layer: number): void {

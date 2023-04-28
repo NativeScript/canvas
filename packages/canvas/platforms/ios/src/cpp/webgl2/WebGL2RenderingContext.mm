@@ -2384,7 +2384,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
     } else if (methodName == "getBufferSubData") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
+                                                     5,
                                                      [this](jsi::Runtime &runtime,
                                                             const jsi::Value &thisValue,
                                                             const jsi::Value *arguments,
@@ -2400,18 +2400,24 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
                                                              if (dstDataObject.isTypedArray(
                                                                      runtime)) {
-                                                                 ssize_t dstOffsetValue = 0;
-                                                                 if (arguments[3].isNumber()) {
-                                                                     dstOffsetValue = static_cast<ssize_t>(arguments[3].asNumber());
-                                                                 }
-
-                                                                 ssize_t lengthValue = 0;
-                                                                 if (arguments[4].isNumber()) {
-                                                                     lengthValue = static_cast<ssize_t>(arguments[4].asNumber());
-                                                                 }
-
-                                                                 auto array = dstDataObject.getTypedArray(
-                                                                         runtime);
+                                                               
+                                                                         
+                                                                         auto array = dstDataObject.getTypedArray(
+                                                                                                                  runtime);
+                                                                         
+                                                                         auto size = array.size(runtime) / array.length(runtime);
+                                                                         
+                                                                         ssize_t dstOffsetValue = 0;
+                                                                         if (arguments[3].isNumber()) {
+                                                                             dstOffsetValue = static_cast<ssize_t>(arguments[3].asNumber()) * size;
+                                                                         }
+                                                                         
+                                                                         ssize_t lengthValue = 0;
+                                                                         if (arguments[4].isNumber()) {
+                                                                             lengthValue = static_cast<ssize_t>(arguments[4].asNumber()) * size;
+                                                                         }
+                                                                         
+                                                                
                                                                  auto slice = GetTypedArrayData<uint8_t>(
                                                                          runtime, array);
 

@@ -370,6 +370,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
     context.render();
 }
 
+
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrentGLContextToBitmap(
     env: JNIEnv,

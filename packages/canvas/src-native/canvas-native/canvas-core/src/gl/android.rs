@@ -91,7 +91,7 @@ impl Into<ConfigTemplate> for ContextAttributes {
             })
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if self.get_depth() { 16 } else { 0 })
+            .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
             .with_transparency(self.get_alpha());
 
@@ -113,7 +113,7 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
             })
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if value.get_depth() { 16 } else { 0 })
+            .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
             .with_transparency(value.get_alpha());
 
@@ -135,7 +135,7 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
             })
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if self.get_depth() { 16 } else { 0 })
+            .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
             .with_transparency(self.get_alpha());
 
@@ -157,7 +157,7 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
             })
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if value.get_depth() { 16 } else { 0 })
+            .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
             .with_transparency(value.get_alpha());
 
@@ -223,6 +223,44 @@ impl GLContext {
                     })
                     .ok()
                     .flatten();
+
+
+              if config.is_none() {
+                  let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+
+                  cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
+
+                  let cfg = cfg.build();
+
+                  config = display
+                      .find_configs(cfg)
+                      .map(|c| {
+                          c.reduce(|accum, cconfig| {
+                              if is_2d {
+                                  let transparency_check =
+                                      cconfig.supports_transparency().unwrap_or(false)
+                                          & !accum.supports_transparency().unwrap_or(false);
+                                  return if transparency_check
+                                      || cconfig.num_samples() < accum.num_samples()
+                                  {
+                                      cconfig
+                                  } else {
+                                      accum
+                                  };
+                              }
+
+                              return if cconfig.num_samples() > accum.num_samples() {
+                                  cconfig
+                              } else {
+                                  accum
+                              };
+                          })
+                      })
+                      .ok()
+                      .flatten();
+              }
+
+
 
                 if config.is_none() && multi_sample {
                     context_attrs.set_antialias(false);
@@ -331,6 +369,7 @@ impl GLContext {
                 let is_2d = context_attrs.get_is_canvas();
                 let multi_sample = context_attrs.get_antialias();
                 let cfg = context_attrs.into();
+
                 let mut config = display
                     .find_configs(cfg)
                     .map(|c| {
@@ -357,6 +396,45 @@ impl GLContext {
                     })
                     .ok()
                     .flatten();
+
+
+
+                if config.is_none() {
+                    let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+
+                    cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
+
+                    let cfg = cfg.build();
+
+                    config = display
+                        .find_configs(cfg)
+                        .map(|c| {
+                            c.reduce(|accum, cconfig| {
+                                if is_2d {
+                                    let transparency_check =
+                                        cconfig.supports_transparency().unwrap_or(false)
+                                            & !accum.supports_transparency().unwrap_or(false);
+                                    return if transparency_check
+                                        || cconfig.num_samples() < accum.num_samples()
+                                    {
+                                        cconfig
+                                    } else {
+                                        accum
+                                    };
+                                }
+
+                                return if cconfig.num_samples() > accum.num_samples() {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            })
+                        })
+                        .ok()
+                        .flatten();
+                }
+
+
 
                 if config.is_none() && multi_sample {
                     context_attrs.set_antialias(false);
@@ -491,6 +569,43 @@ impl GLContext {
                     })
                     .ok()
                     .flatten();
+
+
+                if config.is_none() {
+                    let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+
+                    cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
+
+                    let cfg = cfg.build();
+
+                    config = display
+                        .find_configs(cfg)
+                        .map(|c| {
+                            c.reduce(|accum, cconfig| {
+                                if is_2d {
+                                    let transparency_check =
+                                        cconfig.supports_transparency().unwrap_or(false)
+                                            & !accum.supports_transparency().unwrap_or(false);
+                                    return if transparency_check
+                                        || cconfig.num_samples() < accum.num_samples()
+                                    {
+                                        cconfig
+                                    } else {
+                                        accum
+                                    };
+                                }
+
+                                return if cconfig.num_samples() > accum.num_samples() {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            })
+                        })
+                        .ok()
+                        .flatten();
+
+                }
 
                 if config.is_none() && multi_sample {
                     context_attrs.set_antialias(false);
@@ -674,6 +789,41 @@ impl GLContext {
                     })
                     .ok()
                     .flatten();
+
+                if config.is_none() {
+                    let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+
+                    cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
+
+                    let cfg = cfg.build();
+
+                    config = display
+                        .find_configs(cfg)
+                        .map(|c| {
+                            c.reduce(|accum, cconfig| {
+                                if is_2d {
+                                    let transparency_check =
+                                        cconfig.supports_transparency().unwrap_or(false)
+                                            & !accum.supports_transparency().unwrap_or(false);
+                                    return if transparency_check
+                                        || cconfig.num_samples() < accum.num_samples()
+                                    {
+                                        cconfig
+                                    } else {
+                                        accum
+                                    };
+                                }
+
+                                return if cconfig.num_samples() > accum.num_samples() {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            })
+                        })
+                        .ok()
+                        .flatten();
+                }
 
                 if config.is_none() && multi_sample {
                     context_attrs.set_antialias(false);

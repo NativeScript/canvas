@@ -64,7 +64,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
-		this.geoColors(this.canvas);
+		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
@@ -72,7 +72,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		//this.threeOcean(this.canvas);
+		this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
 		
@@ -98,7 +98,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
 		//this.renderVideo();
-		//	this.webgl_buffergeometry_drawrange(this.canvas);
+		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 	}
 

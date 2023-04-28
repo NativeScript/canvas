@@ -606,32 +606,39 @@ pub fn canvas_native_webgl2_get_buffer_sub_data(
         return;
     }
 
-    if length > length {
+    if length > len {
         // todo log error
         return;
     }
 
-    let mut len = len - dst_offset;
+    let mut ptr = dst_data.as_mut_ptr();
+
+    let mut new_size = len;
 
     if length != 0 {
-        len = length;
+        new_size = length;
     }
 
-    let mut ptr = dst_data.as_mut_ptr();
+    if dst_offset != 0  {
+        new_size = new_size - dst_offset;
+    }
 
     if dst_offset != 0 {
         unsafe { ptr = ptr.offset(dst_offset as isize) }
     }
 
-    let new_buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-
     unsafe {
-        gl_bindings::BufferSubData(
+        let data = gl_bindings::MapBufferRange(
             target,
             src_byte_offset.try_into().unwrap(),
-            new_buf.len().try_into().unwrap(),
-            new_buf.as_mut_ptr() as *const c_void,
-        )
+            new_size.try_into().unwrap(),
+            gl_bindings::MAP_READ_BIT
+        );
+        if !data.is_null() {
+            std::ptr::copy_nonoverlapping(data, ptr as *mut _, new_size);
+        }
+
+        gl_bindings::UnmapBuffer(target);
     }
 }
 

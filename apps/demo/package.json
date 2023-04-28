@@ -26,7 +26,7 @@
 		"zen-3d": "file:../../node_modules/zen-3d"
 	},
 	"devDependencies": {
-		"@nativescript/android": "~8.5.0",
+		"@nativescript/android": "^8.5.0-alpha.1",
 		"@nativescript/ios": "8.5.1-dev.0"
 	}
 }

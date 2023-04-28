@@ -2399,20 +2399,23 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
 
                                                              if (dstDataObject.isTypedArray(
                                                                      runtime)) {
-                                                                 ssize_t dstOffsetValue = 0;
-                                                                 if (arguments[3].isNumber()) {
-                                                                     dstOffsetValue = static_cast<ssize_t>(arguments[3].asNumber());
-                                                                 }
-
-                                                                 ssize_t lengthValue = 0;
-                                                                 if (arguments[4].isNumber()) {
-                                                                     lengthValue = static_cast<ssize_t>(arguments[4].asNumber());
-                                                                 }
 
                                                                  auto array = dstDataObject.getTypedArray(
                                                                          runtime);
                                                                  auto slice = GetTypedArrayData<uint8_t>(
                                                                          runtime, array);
+
+                                                                 auto BYTES_PER_ELEMENT = (ssize_t)array.getProperty(runtime, "BYTES_PER_ELEMENT").asNumber();
+
+                                                                 ssize_t dstOffsetValue = 0;
+                                                                 if (arguments[3].isNumber()) {
+                                                                     dstOffsetValue = static_cast<ssize_t>(arguments[3].asNumber()) * BYTES_PER_ELEMENT;
+                                                                 }
+
+                                                                 ssize_t lengthValue = 0;
+                                                                 if (arguments[4].isNumber()) {
+                                                                     lengthValue = static_cast<ssize_t>(arguments[4].asNumber()) * BYTES_PER_ELEMENT;
+                                                                 }
 
                                                                  canvas_native_webgl2_get_buffer_sub_data(
                                                                          target,

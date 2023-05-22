@@ -19,11 +19,11 @@ To install the plugin, run the following command from the root of your project:
 ns plugin add @nativescript/canvas
 ```
 
-You also need to install the following 2 plugins:
+<!-- You also need to install the following 2 plugins:
 
 - `ns plugin add @nativescript/canvas-polyfill`
 
-- `ns plugin add @nativescript/canvas-media`
+- `ns plugin add @nativescript/canvas-media` -->
 
 ## How to use @nativescript/canvas 
 
@@ -33,35 +33,22 @@ The following sections describe how to use the plugin in different frameworks.
 
 1. Register the plugin
 
-2. Add the Canvas view to your page
+To register the plugin, use the Page view's `xmlns` attribute to declare the plugin namespace under a prefix, as follows:
 
-### Using @nativescript/canvas in NativeScript Angular
+```xml
+<Page xmlns:canvas="@nativescript/canvas">
+...
+</Page>
+```
 
-1. Register the plugin
+2. Use the Canvas view
 
-2. Add the Canvas view to your page
-### Using @nativescript/canvas in NativeScript Vue
-
-1. Register the plugin
-
-2. Add the Canvas view to your page
-
-### Using @nativescript/canvas in NativeScript Svelte
-
-1. Register the plugin
-
-2. Add the Canvas view to your page
-
-
-IMPORTANT: ensure you include xmlns:canvas="@nativescript/canvas" on the Page element for core {N}
-
-# Usage
-
+Next, use the prefix(`canvas`) to access the Canvas view in the page
 ```xml
 <canvas:Canvas id="canvas" width="100%" height="100%" ready="canvasReady"/>
 ```
-## Vanilla
-### 2D
+
+#### 2D rendering context
 
 ```typescript
 let ctx;
@@ -76,7 +63,7 @@ export function canvasReady(args) {
 }
 ```
 
-### WEBGL
+#### WEBGL rendering context
 
 ```typescript
 let gl;
@@ -93,11 +80,26 @@ export function canvasReady(args) {
 	gl.clear(gl.COLOR_BUFFER_BIT);
 }
 ```
-## Vue
-In `app.ts`, add:
 
-```
-Vue.registerElement("Canvas", ()=>require("@nativescript/canvas").Canvas)
+<!-- ### Using @nativescript/canvas in NativeScript Angular
+
+1. Register the plugin
+
+2. Add the Canvas view to your page -->
+### Using @nativescript/canvas in NativeScript Vue
+
+1. Register the plugin
+
+In the `app.ts` file, add the following code:
+
+```ts
+import { registerElement } from 'nativescript-vue'
+
+registerElement(
+  'Canvas',
+  () => require('@nativescript/canvas').Canvas
+)
+
 ```
 Then in a `.vue` file:
 
@@ -115,12 +117,13 @@ Then in a `.vue` file:
 </template>
 ```
 ```ts
+<script lang="ts" setup>
+import { Canvas } from '@nativescript/canvas';
+import { EventData } from '@nativescript/core';
 let ctx;
 let canvas;
-export default Vue.extend({
-  methods: {
 
-    canvasReady(args: EventData) {
+function canvasReady(args: EventData) {
       console.log('canvas ready');
       canvas = args.object as Canvas;
       console.log(canvas);
@@ -129,17 +132,85 @@ export default Vue.extend({
       ctx.fillStyle = 'green';
       ctx.fillRect(10, 10, 150, 100);
     }
-  }
+</script>
 ```
 
+### Using @nativescript/canvas in NativeScript Svelte
+
+1. Register the plugin
+
+In the `app.ts` file, register the plugin as follows:
+
+```ts
+import { registerNativeViewElement } from 'svelte-native/dom'
+
+registerNativeViewElement('canvas', () => require('@nativescript/canvas').Canvas)
+```
+
+2. Then, in a `.svelte` file, add use the Canvas view as follows:
+
+
+```svelte
+<script lang="ts">
+  let ctx;
+  let canvas;
+  function canvasReady(args: any) {
+    console.log("canvas ready");
+    canvas = args.object;
+    console.log(canvas);
+    ctx = canvas.getContext("2d");
+    ctx.fillStyle = "green";
+    ctx.fillRect(10, 10, 150, 100);
+    ctx.fillStyle = "red";
+    ctx.fillRect(200, 10, 150, 100);
+  }
+</script>
+
+<page>
+  <actionBar title="Canvas" />
+  <gridLayout rows="auto, *">
+    <canvas width="100%" height="100%" on:ready={canvasReady} />
+  </gridLayout>
+</page>
+```
 ## API
 ### Canvas class
 
-|Method| Return Type| Description|
-|------|------------|------------|
-|`getContext(type: string, options?: any)`|`CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null`||
-|`toDataURL(type?: string, encoderOptions?: number)`| `any`||
-|`getBoundingClientRect()`| `{x: number; y: number;width: number;height: number;top: number;right: number;bottom: number;left: number;}`||
+#### getContext()
+```ts
+context : CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null = canvas.getContext(type, options)
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `type` | `string` | The context type. Can be either `2d`, `webgl` or `webgl2` |
+| `options?` | `any` | The context options. |
+
+---
+#### toDataURL()
+```ts
+data : any = canvas.toDataURL(type, encoderOptions)
+```
+
+| Param | Type | Description |
+| --- | --- | --- |
+| `type?` | `string` | 
+| `encoderOptions?` | `number` |
+
+---
+#### getBoundingClientRect()
+```ts
+rect : {x: number; y: number;width: number;height: number;top: number;right: number;bottom: number;left: number;} = canvas.getBoundingClientRect()
+```
+
+---
+
+#### flush()
+```ts
+canvas.flush()
+```
+
+---
 - 2D Similar to -> the [Web Spec](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
 - WebGL Similar to -> the [Web Spec](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext)
 - WebGL2 Similar to -> the [Web Spec](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext)

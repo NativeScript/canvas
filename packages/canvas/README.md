@@ -19,11 +19,15 @@ To install the plugin, run the following command from the root of your project:
 ns plugin add @nativescript/canvas
 ```
 
-<!-- You also need to install the following 2 plugins:
+The canvas plugin can be used with the following plugins:
 
-- `ns plugin add @nativescript/canvas-polyfill`
-
-- `ns plugin add @nativescript/canvas-media` -->
+- [@nativescript/babylon](https://www.npmjs.com/package/@nativescript/canvas-babylon): For rendering 3D graphics
+- [@nativescript/canvas-polyfill](https://github.com/NativeScript/canvas/tree/master/packages/canvas-polyfill): For polyfilling the canvas API
+- [@nativescript/canvas-media](https://github.com/NativeScript/canvas/tree/master/packages/canvas-media): For rendering video and audio
+- [@nativescript/canvas-three](https://www.npmjs.com/package/@nativescript/canvas-three): For rendering 3D graphics
+- [@nativescript/canvas-phaser](https://github.com/NativeScript/canvas/tree/master/packages/canvas-phaser): For rendering 2D graphics
+- [@nativescript/canvas-pixi](https://github.com/NativeScript/canvas/tree/master/packages/canvas-pixi): 
+- [@nativescript/canvas-phaser-ce](https://github.com/NativeScript/canvas/tree/master/packages/canvas-phaser-ce)
 
 ## How to use @nativescript/canvas 
 
@@ -80,6 +84,16 @@ export function canvasReady(args) {
 	gl.clear(gl.COLOR_BUFFER_BIT);
 }
 ```
+### Example: Create a swarm effect
+To use the canvas plugin to create a swarm effect, see the example at the following link:
+
+https://github.com/NativeScript/canvas/blob/cc723b4504a6878d8e25ec6b1fea22f5ca949f30/tools/demo/canvas/canvas2d/particles/swarm.ts
+
+### Example: solar system animation
+
+To use the canvas plugin to create a solar system animation, see the example at the following link:
+
+https://github.com/NativeScript/canvas/blob/cc723b4504a6878d8e25ec6b1fea22f5ca949f30/tools/demo/canvas/canvas2d/solarSystem.ts
 
 <!-- ### Using @nativescript/canvas in NativeScript Angular
 

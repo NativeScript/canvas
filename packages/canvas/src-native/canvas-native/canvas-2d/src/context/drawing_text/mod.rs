@@ -1,6 +1,4 @@
 use std::os::raw::c_float;
-
-use skia_safe::paint::Style;
 use skia_safe::{Point, Size};
 
 use crate::context::drawing_text::text_metrics::TextMetrics;

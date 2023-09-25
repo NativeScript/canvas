@@ -2,7 +2,7 @@
 
 use core::convert::{From, Into};
 
-use skia_safe::EncodedImageFormat;
+use skia_safe::{EncodedImageFormat, surfaces};
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -240,7 +240,7 @@ pub(crate) fn create_image_bitmap_internal(
         ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into(),
         ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
     );
-    match skia_safe::Surface::new_raster(
+    match surfaces::raster(
         &image_info,
         Some((source_rect.width() * 4.) as usize),
         None,
@@ -256,29 +256,37 @@ pub(crate) fn create_image_bitmap_internal(
             let mut paint = skia_safe::Paint::default();
             paint.set_anti_alias(true);
 
+            let mut ctx = surface.direct_context();
             surface
                 .canvas()
                 .draw_image(&image, (source_rect.x(), source_rect.y()), Some(&paint));
 
             let image = surface.image_snapshot();
-            let data;
+
             if image.width() != out_width as i32 && image.height() != out_height as i32 {
                 let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
 
                 let mut bytes = vec![0_u8; (out_width * out_height * 4.) as usize];
-                let pixel_map = skia_safe::Pixmap::new(
+                if let Some(pixel_map) = skia_safe::Pixmap::new(
                     &resize_info,
                     bytes.as_mut_slice(),
                     (out_width * 4.) as usize,
-                );
+                ) {
+                    let _ = image.scale_pixels(
+                        &pixel_map,
+                        ImageBitmapResizeQuality::from(resize_quality).to_quality(),
+                        None,
+                    );
 
-                let _ = image.scale_pixels(
-                    &pixel_map,
-                    ImageBitmapResizeQuality::from(resize_quality).to_quality(),
-                    None,
-                );
 
-                data = pixel_map.encode(EncodedImageFormat::PNG, 100);
+                    let data = pixel_map.encode(EncodedImageFormat::PNG, 100);
+
+                    if let Some(data) = data {
+                        output.load_from_bytes(data.as_slice());
+                    };
+
+                }
+
             } else {
 
 
@@ -302,12 +310,13 @@ pub(crate) fn create_image_bitmap_internal(
                 );
 
 
-                data = image.encode_to_data_with_quality(EncodedImageFormat::PNG, 100);
-            }
 
-            if let Some(data) = data {
-                output.load_from_bytes(data.as_bytes());
-            };
+                let encoded = image.encode(&mut ctx, EncodedImageFormat::PNG, 100);
+
+                if let Some(encoded) = encoded {
+                    output.load_from_bytes(encoded.as_bytes());
+                }
+            }
         }
     }
 }

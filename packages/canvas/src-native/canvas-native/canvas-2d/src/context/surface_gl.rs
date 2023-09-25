@@ -1,7 +1,6 @@
 use skia_safe::gpu::gl::Interface;
-use skia_safe::image::CachingHint;
 use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, ISize, ImageInfo, PixelGeometry, Rect, Surface,
+   Color, ColorType, PixelGeometry, surfaces, gpu, Surface,
 };
 
 use crate::context::paths::path::Path;
@@ -59,7 +58,7 @@ impl Context {
         if !alpha {
             color_type = ColorType::RGB888x;
         }
-        let surface_holder = Surface::from_backend_render_target(
+        let surface_holder = gpu::surfaces::wrap_backend_render_target(
             &mut ctx,
             &target,
             skia_safe::gpu::SurfaceOrigin::BottomLeft,
@@ -128,7 +127,7 @@ impl Context {
             color_type = ColorType::RGB888x;
         }
 
-        if let Some(surface) = Surface::from_backend_render_target(
+        if let Some(surface) = gpu::surfaces::wrap_backend_render_target(
             &mut ctx,
             &target,
             skia_safe::gpu::SurfaceOrigin::BottomLeft,

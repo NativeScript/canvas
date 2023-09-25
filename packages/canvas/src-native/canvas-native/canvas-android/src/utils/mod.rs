@@ -136,7 +136,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSCanvas_nativeDataURL(
                 .new_string(canvas_2d::to_data_url(
                     context,
                     format.as_ref(),
-                    (quality * 100 as f32) as i32,
+                    (quality * 100f32) as u32,
                 ))
                 .unwrap()
                 .into_raw();

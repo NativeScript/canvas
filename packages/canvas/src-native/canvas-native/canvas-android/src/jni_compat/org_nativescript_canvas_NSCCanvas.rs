@@ -156,7 +156,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DCont
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let mut ctx_2d = canvas_cxx::CanvasRenderingContext2D::new(
+    let ctx_2d = canvas_cxx::CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -366,6 +366,41 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
         let mut ctx = context.get_context_mut();
         ctx.set_fill_style_with_color("red");
         ctx.fill_rect_xywh(0., 0., 300., 300.);
+    }
+    context.render();
+}
+
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPathTest(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+    {
+        let mut ctx = context.get_context_mut();
+
+        // Create path
+        let mut region = canvas_2d::context::paths::path::Path::default();
+        region.move_to(30f32, 90f32);
+        region.line_to(110f32, 20f32);
+        region.line_to(240f32, 130f32);
+        region.line_to(60f32, 130f32);
+        region.line_to(190f32, 20f32);
+        region.line_to(270f32, 90f32);
+        region.close_path();
+
+        // Fill path
+        ctx.set_fill_style_with_color("green");
+        ctx.fill_rule(Some(&mut region), canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd);
     }
     context.render();
 }

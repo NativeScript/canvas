@@ -3,56 +3,136 @@
 //
 
 #include "TextEncoderImpl.h"
+#include "Caches.h"
+#include "Helpers.h"
 
 TextEncoderImpl::TextEncoderImpl(rust::Box<TextEncoder> encoder) : encoder_(std::move(encoder)) {}
 
-std::vector<jsi::PropNameID> TextEncoderImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(2);
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("encoding")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("encode")));
-    return ret;
+void TextEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
+
+    auto ctor = GetCtor(isolate);
+    auto context = isolate->GetCurrentContext();
+    auto func = ctor->GetFunction(context).ToLocalChecked();
+
+    canvasModule->Set(context, ConvertToV8String(isolate, "TextEncoder"), func);
 }
 
-jsi::Value TextEncoderImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-    if (methodName == "encoding") {
-        auto encoding = canvas_native_text_encoder_get_encoding(this->GetTextEncoder());
-        return jsi::String::createFromAscii(runtime, encoding.data(), encoding.size());
-    } else if (methodName == "encode") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+
+TextEncoderImpl *TextEncoderImpl::GetPointer(v8::Local<v8::Object> object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+    return static_cast<TextEncoderImpl *>(ptr);
+}
 
 
-                                                         auto text = arguments[0].asString(
-                                                                 runtime).utf8(runtime);
-
-                                                         auto data = canvas_native_text_encoder_encode(
-                                                                 this->GetTextEncoder(),
-                                                                 rust::Str(text.c_str()));
-
-                                                         auto buf = std::make_shared<VecMutableBuffer<uint8_t>>(
-                                                                 std::move(data));
-                                                         auto ab = jsi::ArrayBuffer(runtime, buf);
-                                                         auto Uint8ClampedArray = runtime.global()
-                                                                 .getProperty(runtime,
-                                                                              "Uint8ClampedArray")
-                                                                 .asObject(runtime)
-                                                                 .asFunction(runtime);
-
-
-                                                         return Uint8ClampedArray.callAsConstructor(
-                                                                 runtime, ab);
-                                                     }
-        );
+v8::Local<v8::FunctionTemplate> TextEncoderImpl::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->TextEncoderTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
     }
 
-    return jsi::Value::undefined();
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "TextEncoder"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "encoding"),
+            Encoding);
+    tmpl->Set(
+            ConvertToV8String(isolate, "encode"),
+            v8::FunctionTemplate::New(isolate, &Encode));
+    cache->TextEncoderTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}
+
+
+void TextEncoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto value = args[0];
+    auto isolate = args.GetIsolate();
+    if (count == 1 && !value->IsString()) {
+        auto label = value->ToString(isolate->GetCurrentContext()).ToLocalChecked();
+        auto arg = ConvertFromV8String(isolate, label);
+        auto error = "Failed to construct 'TextEncoder': The encoding label provided (" +
+                     arg + "') is invalid";
+        isolate->ThrowError(ConvertToV8String(isolate, error));
+        return;
+    }
+
+    std::string encoding("utf-8");
+    if (count == 1) {
+        encoding = ConvertFromV8String(isolate, value);
+    }
+    auto encoder = canvas_native_text_encoder_create(
+            rust::Str(encoding.c_str()));
+
+    auto ret = args.This();
+
+    auto txtEncoder = new TextEncoderImpl(std::move(encoder));
+
+    auto ext = v8::External::New(isolate, txtEncoder);
+
+    ret->SetInternalField(0, ext);
+
+    args.GetReturnValue().Set(ret);
+
+}
+
+
+void
+TextEncoderImpl::Encoding(v8::Local<v8::String> name,
+                          const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto isolate = info.GetIsolate();
+        auto encoding = canvas_native_text_encoder_get_encoding(ptr->GetTextEncoder());
+        info.GetReturnValue().Set(ConvertToV8String(isolate, encoding.c_str()));
+        return;
+    }
+    info.GetReturnValue().SetEmptyString();
+}
+
+void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    TextEncoderImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+    auto isolate = args.GetIsolate();
+
+    auto text = args[0];
+
+    auto encoded = canvas_native_text_encoder_encode(
+            ptr->GetTextEncoder(),
+            rust::Str(ConvertFromV8String(isolate, text).c_str()));
+
+    auto data = new VecBuffer(std::move(encoded));
+
+
+    auto length = data->size();
+    auto store = v8::ArrayBuffer::NewBackingStore(data->data(), length,
+                                                  [](void *data, size_t length,
+                                                     void *deleter_data) {
+                                                      if (deleter_data != nullptr) {
+                                                          delete (VecBuffer<uint8_t> *) deleter_data;
+                                                      }
+                                                  },
+                                                  data);
+    auto buf = v8::ArrayBuffer::New(isolate, std::move(store));
+
+    auto ret = v8::Uint8ClampedArray::New(buf, 0, length);
+
+
+    args.GetReturnValue().Set(ret);
 }
 
 TextEncoder &TextEncoderImpl::GetTextEncoder() {

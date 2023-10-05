@@ -3,26 +3,33 @@
 //
 
 #include "EXT_blend_minmaxImpl.h"
+#include "Caches.h"
+#include "Helpers.h"
 
-std::vector<jsi::PropNameID> EXT_blend_minmaxImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(3);
-    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("MIN_EXT")));
-    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("MAX_EXT")));
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
-    return ret;
-}
+v8::Local<v8::FunctionTemplate> EXT_blend_minmaxImpl::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->EXT_blend_minmaxTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
+    }
 
-jsi::Value EXT_blend_minmaxImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-    if (methodName == "ext_name") {
-        return jsi::String::createFromAscii(runtime,"EXT_blend_minmax");
-    }
-    if (methodName == "MIN_EXT") {
-        return {0x8007};
-    } else if (methodName == "MAX_EXT") {
-        return {0x8008};
-    }
-    return jsi::Value::undefined();
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "EXT_blend_minmax"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+
+    tmpl->Set(ConvertToV8String(isolate, "MIN_EXT"),
+              v8::Number::New(isolate, 0x8007));
+
+    tmpl->Set(ConvertToV8String(isolate, "MAX_EXT"),
+              v8::Number::New(isolate, 0x8008));
+
+    tmpl->Set(ConvertToV8String(isolate, "ext_name"),
+              ConvertToV8String(isolate, "EXT_blend_minmax"));
+
+    cache->EXT_blend_minmaxTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }

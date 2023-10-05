@@ -3300,6 +3300,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                      return jsi::Value::undefined();
                                                                  }
 
+                                                                 /*
                                                                  try {
                                                                      auto image_asset = getHostObject<ImageAssetImpl>(
                                                                              runtime, arguments[9]);
@@ -3343,7 +3344,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                          return jsi::Value::undefined();
                                                                      }
                                                                  } catch (...) {}
-
+*/
 
                                                              }
                                                          } else if (count > 10) {
@@ -3529,6 +3530,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                      return jsi::Value::undefined();
                                                                  }
 
+                                                                 /*
                                                                  auto asset = getHostObject<ImageAssetImpl>(
                                                                          runtime, arguments[10]);
                                                                  if (asset != nullptr) {
@@ -3549,6 +3551,7 @@ jsi::Value WebGL2RenderingContext::get(jsi::Runtime &runtime, const jsi::PropNam
                                                                      );
                                                                  }
 
+                                                                  */
                                                              }
 
                                                          } else if (count > 11) {

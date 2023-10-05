@@ -6,22 +6,28 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#import "v8runtime/V8Runtime.h"
 #include <vector>
-#include "Helpers.h"
+#include "Common.h"
 
-using namespace facebook;
 using namespace org::nativescript::canvas;
 
-class JSI_EXPORT TextDecoderImpl : public jsi::HostObject {
+class TextDecoderImpl {
 public:
     TextDecoderImpl(rust::Box<TextDecoder> decoder);
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
-
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
-
     TextDecoder &GetTextDecoder();
+
+    static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
+
+    static TextDecoderImpl *GetPointer(v8::Local<v8::Object> object);
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static void Ctor(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Decode(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     rust::Box<TextDecoder> decoder_;

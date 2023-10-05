@@ -3,145 +3,796 @@
 //
 
 #include "MatrixImpl.h"
-
+#include "Caches.h"
 
 MatrixImpl::MatrixImpl(rust::Box<Matrix> matrix) : matrix_(std::move(matrix)) {}
 
-std::vector<jsi::PropNameID> MatrixImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(22);
+void MatrixImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("a")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("b")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("c")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("d")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("e")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("f")));
+    auto ctor = GetCtor(isolate);
+    auto context = isolate->GetCurrentContext();
+    auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m11")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m12")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m13")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m14")));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m21")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m22")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m23")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m24")));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m31")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m32")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m33")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m34")));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m41")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m42")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m43")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("m44")));
-
-
-    return ret;
+    canvasModule->Set(context, ConvertToV8String(isolate, "DOMMatrix"), func);
 }
 
-jsi::Value MatrixImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-    if (methodName == "a") {
-        return {(double) canvas_native_matrix_get_a(this->GetMatrix())};
-    } else if (methodName == "b") {
-        return {(double) canvas_native_matrix_get_b(this->GetMatrix())};
-    } else if (methodName == "c") {
-        return {(double) canvas_native_matrix_get_c(this->GetMatrix())};
-    } else if (methodName == "d") {
-        return {(double) canvas_native_matrix_get_d(this->GetMatrix())};
-    } else if (methodName == "e") {
-        return {(double) canvas_native_matrix_get_e(this->GetMatrix())};
-    } else if (methodName == "f") {
-        return {(double) canvas_native_matrix_get_f(this->GetMatrix())};
-    } else if (methodName == "m11") {
-        return {(double) canvas_native_matrix_get_m11(this->GetMatrix())};
-    } else if (methodName == "m12") {
-        return {(double) canvas_native_matrix_get_m12(this->GetMatrix())};
-    } else if (methodName == "m13") {
-        return {(double) canvas_native_matrix_get_m13(this->GetMatrix())};
-    } else if (methodName == "m14") {
-        return {(double) canvas_native_matrix_get_m14(this->GetMatrix())};
-    } else if (methodName == "m21") {
-        return {(double) canvas_native_matrix_get_m21(this->GetMatrix())};
-    } else if (methodName == "m22") {
-        return {(double) canvas_native_matrix_get_m22(this->GetMatrix())};
-    } else if (methodName == "m23") {
-        return {(double) canvas_native_matrix_get_m23(this->GetMatrix())};
-    } else if (methodName == "m24") {
-        return {(double) canvas_native_matrix_get_m24(this->GetMatrix())};
-    } else if (methodName == "m31") {
-        return {(double) canvas_native_matrix_get_m31(this->GetMatrix())};
-    } else if (methodName == "m32") {
-        return {(double) canvas_native_matrix_get_m32(this->GetMatrix())};
-    } else if (methodName == "m33") {
-        return {(double) canvas_native_matrix_get_m33(this->GetMatrix())};
-    } else if (methodName == "m34") {
-        return {(double) canvas_native_matrix_get_m34(this->GetMatrix())};
-    } else if (methodName == "m41") {
-        return {(double) canvas_native_matrix_get_m41(this->GetMatrix())};
-    } else if (methodName == "m42") {
-        return {(double) canvas_native_matrix_get_m42(this->GetMatrix())};
-    } else if (methodName == "m43") {
-        return {(double) canvas_native_matrix_get_m43(this->GetMatrix())};
-    } else if (methodName == "m44") {
-        return {(double) canvas_native_matrix_get_m44(this->GetMatrix())};
+MatrixImpl *MatrixImpl::GetPointer(v8::Local<v8::Object> object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
     }
-
-    return jsi::Value::undefined();
+    return static_cast<MatrixImpl *>(ptr);
 }
 
-void MatrixImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &name, const jsi::Value &value) {
-    auto methodName = name.utf8(runtime);
-    if (!value.isNumber()) { return; }
-    auto val = (float) value.asNumber();
-    if (methodName == "a") {
-        canvas_native_matrix_set_a(this->GetMatrix(), val);
-    } else if (methodName == "b") {
-        canvas_native_matrix_set_b(this->GetMatrix(), val);
-    } else if (methodName == "c") {
-        canvas_native_matrix_set_c(this->GetMatrix(), val);
-    } else if (methodName == "d") {
-        canvas_native_matrix_set_d(this->GetMatrix(), val);
-    } else if (methodName == "e") {
-        canvas_native_matrix_set_e(this->GetMatrix(), val);
-    } else if (methodName == "f") {
-        canvas_native_matrix_set_f(this->GetMatrix(), val);
-    } else if (methodName == "m11") {
-        canvas_native_matrix_set_m11(this->GetMatrix(), val);
-    } else if (methodName == "m12") {
-        canvas_native_matrix_set_m12(this->GetMatrix(), val);
-    } else if (methodName == "m13") {
-        canvas_native_matrix_set_m13(this->GetMatrix(), val);
-    } else if (methodName == "m14") {
-        canvas_native_matrix_set_m14(this->GetMatrix(), val);
-    } else if (methodName == "m21") {
-        canvas_native_matrix_set_m21(this->GetMatrix(), val);
-    } else if (methodName == "m22") {
-        canvas_native_matrix_set_m22(this->GetMatrix(), val);
-    } else if (methodName == "m23") {
-        canvas_native_matrix_set_m23(this->GetMatrix(), val);
-    } else if (methodName == "m24") {
-        canvas_native_matrix_set_m24(this->GetMatrix(), val);
-    } else if (methodName == "m31") {
-        canvas_native_matrix_set_m31(this->GetMatrix(), val);
-    } else if (methodName == "m32") {
-        canvas_native_matrix_set_m32(this->GetMatrix(), val);
-    } else if (methodName == "m33") {
-        canvas_native_matrix_set_m33(this->GetMatrix(), val);
-    } else if (methodName == "m34") {
-        canvas_native_matrix_set_m34(this->GetMatrix(), val);
-    } else if (methodName == "m41") {
-        canvas_native_matrix_set_m41(this->GetMatrix(), val);
-    } else if (methodName == "m42") {
-        canvas_native_matrix_set_m42(this->GetMatrix(), val);
-    } else if (methodName == "m43") {
-        canvas_native_matrix_set_m43(this->GetMatrix(), val);
-    } else if (methodName == "m44") {
-        canvas_native_matrix_set_m44(this->GetMatrix(), val);
+v8::Local<v8::FunctionTemplate> MatrixImpl::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->MatrixTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
     }
+
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "DOMMatrix"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "a"),
+            GetA,
+            SetA
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "b"),
+            GetB,
+            SetB
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "c"),
+            GetC,
+            SetC
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "d"),
+            GetD,
+            SetD
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "e"),
+            GetE,
+            SetE
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "f"),
+            GetF,
+            SetF
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m11"),
+            GetM11,
+            SetM11
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m12"),
+            GetM12,
+            SetM12
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m13"),
+            GetM13,
+            SetM13
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m14"),
+            GetM14,
+            SetM14
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m21"),
+            GetM21,
+            SetM21
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m22"),
+            GetM22,
+            SetM22
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m23"),
+            GetM23,
+            SetM23
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m24"),
+            GetM24,
+            SetM24
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m31"),
+            GetM31,
+            SetM31
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m32"),
+            GetM32,
+            SetM32
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m33"),
+            GetM33,
+            SetM33
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m34"),
+            GetM34,
+            SetM34
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m41"),
+            GetM41,
+            SetM41
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m42"),
+            GetM42,
+            SetM42
+    );
+
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m43"),
+            GetM43,
+            SetM43
+    );
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "m44"),
+            GetM44,
+            SetM44
+    );
+
+
+    cache->MatrixTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}
+
+void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    auto ret = args.This();
+
+    if (count > 0) {
+        auto context = isolate->GetCurrentContext();
+        auto value = args[0];
+        if (value->IsArray()) {
+            auto array = value.As<v8::Array>();
+            auto size = array->Length();
+
+            if (size == 6) {
+                auto matrix = canvas_native_matrix_create();
+                rust::Vec<float> buf;
+                buf.reserve(size);
+                for (int i = 0; i < size; i++) {
+                    auto item = array->Get(context, i).ToLocalChecked()->NumberValue(
+                            context).ToChecked();
+                    buf.emplace_back((float) item);
+                }
+                rust::Slice<const float> slice(buf.data(), buf.size());
+
+                canvas_native_matrix_update(*matrix, slice);
+
+                auto object = new MatrixImpl(std::move(matrix));
+
+                auto ext = v8::External::New(isolate, object);
+
+                ret->SetInternalField(0, ext);
+
+                args.GetReturnValue().Set(ret);
+
+                return;
+            }
+
+            if (size == 16) {
+                auto matrix = canvas_native_matrix_create();
+                std::array<float, 16> buf{};
+
+                for (int i = 0; i < size; i++) {
+                    auto item = array->Get(context, i).ToLocalChecked()->NumberValue(
+                            context).ToChecked();
+                    buf[i] = (float) item;
+                }
+                canvas_native_matrix_update_3d(*matrix, buf);
+
+                auto object = new MatrixImpl(std::move(matrix));
+
+                auto ext = v8::External::New(isolate, object);
+
+                ret->SetInternalField(0, ext);
+
+                args.GetReturnValue().Set(ret);
+                return;
+            }
+
+        }
+    } else {
+        auto matrix = canvas_native_matrix_create();
+        auto object = new MatrixImpl(std::move(matrix));
+
+        auto ext = v8::External::New(isolate, object);
+
+        ret->SetInternalField(0, ext);
+
+        args.GetReturnValue().Set(ret);
+        return;
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void MatrixImpl::GetA(v8::Local<v8::String> property,
+                      const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_a(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetA(v8::Local<v8::String> property,
+                      v8::Local<v8::Value> value,
+                      const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_a(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+
+void MatrixImpl::GetB(v8::Local<v8::String> property,
+                      const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_b(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetB(v8::Local<v8::String> property,
+                      v8::Local<v8::Value> value,
+                      const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_b(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+
+void MatrixImpl::GetC(v8::Local<v8::String> property,
+                      const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_c(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetC(v8::Local<v8::String> property,
+                      v8::Local<v8::Value> value,
+                      const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_c(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+
+void MatrixImpl::GetD(v8::Local<v8::String> property,
+                      const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_d(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetD(v8::Local<v8::String> property,
+                      v8::Local<v8::Value> value,
+                      const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_d(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+
+void MatrixImpl::GetE(v8::Local<v8::String> property,
+                      const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_e(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetE(v8::Local<v8::String> property,
+                      v8::Local<v8::Value> value,
+                      const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_e(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+
+void MatrixImpl::GetF(v8::Local<v8::String> property,
+                      const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_f(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetF(v8::Local<v8::String> property,
+                      v8::Local<v8::Value> value,
+                      const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_f(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM11(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m11(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM11(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m11(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM12(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m12(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM12(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m12(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM13(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m13(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM13(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m13(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM14(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m14(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM14(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m14(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM21(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m21(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM21(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m21(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM22(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m22(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM22(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m22(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM23(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m23(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM23(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m23(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM24(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m24(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM24(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m24(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+
+void MatrixImpl::GetM31(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m31(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM31(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m31(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM32(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m32(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM32(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m32(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM33(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m33(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM33(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m33(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM34(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m34(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM34(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m34(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM41(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m41(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM41(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m41(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM42(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m42(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM42(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m42(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM43(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m43(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM43(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m43(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
+}
+
+void MatrixImpl::GetM44(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    info.GetReturnValue().Set((double) canvas_native_matrix_get_m44(ptr->GetMatrix()));
+
+}
+
+void MatrixImpl::SetM44(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info) {
+    MatrixImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_matrix_set_m44(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
 }
 
 Matrix &MatrixImpl::GetMatrix() {

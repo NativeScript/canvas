@@ -6,17 +6,17 @@ project(canvasnativev8)
 set(CMAKE_CXX_STANDARD 17)
 
 option(ENABLE_LTO "Enable cross language linking time optimization" ON)
-if (ENABLE_LTO)
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT supported OUTPUT error)
-    if (supported)
-        message(STATUS "IPO / LTO enabled")
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-        add_link_options(-fuse-ld=lld-14)
-    else ()
-        message(STATUS "IPO / LTO not supported: <${error}>")
-    endif ()
-endif ()
+#if (ENABLE_LTO)
+#    include(CheckIPOSupported)
+#    check_ipo_supported(RESULT supported OUTPUT error)
+#    if (supported)
+#        message(STATUS "IPO / LTO enabled")
+#        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#        add_link_options(-fuse-ld=lld-14)
+#    else ()
+#        message(STATUS "IPO / LTO not supported: <${error}>")
+#    endif ()
+#endif ()
 
 if ("${ANDROID_ABI}" MATCHES "armeabi-v7a$")
     set(RUST_BUILD_TARGET "armv7-linux-androideabi")
@@ -113,7 +113,9 @@ add_library(
         ${GL3STUB_SRC}
 
         src/main/cpp/rust/cxx.cc
+        src/main/cpp/Caches.cpp
 
+        src/main/cpp/OneByteStringResource.cpp
 
         src/main/cpp/jsi/jsi.cpp
         src/main/cpp/jsi/jsilib-posix.cpp
@@ -225,8 +227,8 @@ if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND
             ${system-z}
             ${egl}
             ${OPENGL_LIB}
-            ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
-            ${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
+            ${PROJECT_SOURCE_DIR}/src/main/java/jniLibs/${ANDROID_ABI}/libNativeScript.so
+            #${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
             ${CANVAS_ANDROID_LIB}
             android
             )
@@ -238,7 +240,7 @@ else ()
             ${egl}
             ${OPENGL_LIB}
             ${graphics}
-            ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
+            ${PROJECT_SOURCE_DIR}/src/main/java/jniLibs/${ANDROID_ABI}/libNativeScript.so
             ${CANVAS_ANDROID_LIB}
             android
             )

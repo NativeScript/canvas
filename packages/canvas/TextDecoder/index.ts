@@ -5,7 +5,7 @@ let ctor;
 export class TextDecoder {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasJSIModule.TextDecoder;
+		ctor = global.CanvasModule.TextDecoder;
 	}
 
 	_native;
@@ -25,8 +25,8 @@ export class TextDecoder {
 	}
 
 	constructor(encoding: string = 'utf-8') {
-		this._native = ctor(encoding);
-		this._getMethod('decode');
+		this._native = new ctor(encoding);
+		//this._getMethod('decode');
 	}
 
 	get encoding(): string {
@@ -39,7 +39,7 @@ export class TextDecoder {
 			if (buffer.byteLength === 0) {
 				return '';
 			}
-			return this._decode(buffer);
+			return this.native.decode(buffer);
 		} else {
 			return '';
 		}

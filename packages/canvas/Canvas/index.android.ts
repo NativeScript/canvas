@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen, knownFolders, ImageSource } from '@nativescript/core';
+import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
 }
@@ -222,13 +222,13 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		const toDataURL = this._getMethod('__toDataURL');
+		//const toDataURL = this._getMethod('__toDataURL');
 
-		if (toDataURL === undefined) {
-			return 'data:,';
-		}
+		// if (toDataURL === undefined) {
+		// 	return 'data:,';
+		// }
 
-		return toDataURL(type, encoderOptions);
+		return this.native.__toDataURL(type, encoderOptions);
 	}
 
 	snapshot(flip: boolean = false): ImageSource | null {
@@ -302,9 +302,7 @@ export class Canvas extends CanvasBase {
 					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
-
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
-
 					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
 
 					// // @ts-ignore

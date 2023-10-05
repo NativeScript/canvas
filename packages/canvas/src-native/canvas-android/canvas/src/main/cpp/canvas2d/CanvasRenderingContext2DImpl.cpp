@@ -3,6 +3,8 @@
 //
 
 #include "CanvasRenderingContext2DImpl.h"
+#include "Caches.h"
+#include "OneByteStringResource.h"
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
         rust::Box<CanvasRenderingContext2D> context) : context_(
@@ -22,6 +24,169 @@ CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
 
 }
 
+
+void CanvasRenderingContext2DImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
+
+    auto ctor = GetCtor(isolate);
+    auto context = isolate->GetCurrentContext();
+    auto func = ctor->GetFunction(context).ToLocalChecked();
+
+    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasRenderingContext2D"), func);
+}
+
+CanvasRenderingContext2DImpl *
+CanvasRenderingContext2DImpl::GetPointer(const v8::Local<v8::Object> &object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+    return static_cast<CanvasRenderingContext2DImpl *>(ptr);
+}
+
+v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->CanvasRenderingContext2DTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
+    }
+
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "CanvasRenderingContext2D"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+
+    tmpl->Set(ConvertToV8String(isolate, "drawPoint"),
+              v8::FunctionTemplate::New(isolate, &DrawPoint));
+    tmpl->Set(ConvertToV8String(isolate, "drawPoints"),
+              v8::FunctionTemplate::New(isolate, &DrawPoints));
+    tmpl->Set(ConvertToV8String(isolate, "drawPaint"),
+              v8::FunctionTemplate::New(isolate, &DrawPaint));
+
+
+    tmpl->Set(ConvertToV8String(isolate, "__makeDirty"),
+              v8::FunctionTemplate::New(isolate, __MakeDirty));
+    tmpl->Set(ConvertToV8String(isolate, "__getPointer"),
+              v8::FunctionTemplate::New(isolate, __GetPointer));
+    tmpl->Set(ConvertToV8String(isolate, "__resize"), v8::FunctionTemplate::New(isolate, __Resize));
+
+    tmpl->SetAccessor(ConvertToV8String(isolate, "filter"), GetFilter, SetFilter);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "font"), GetFont, SetFont);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "globalAlpha"), GetGlobalAlpha, SetGlobalAlpha);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingEnabled"), GetImageSmoothingEnabled,
+                      SetImageSmoothingEnabled);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingQuality"), GetImageSmoothingQuality,
+                      SetImageSmoothingQuality);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineDashOffset"), GetLineDashOffset,
+                      SetLineDashOffset);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineJoin"), GetLineJoin, SetLineJoin);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineCap"), GetLineCap, SetLineCap);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "miterLimit"), GetMiterLimit, SetMiterLimit);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowColor"), GetShadowColor, SetShadowColor);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowBlur"), GetShadowBlur, SetShadowBlur);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowOffsetX"), GetShadowOffsetX,
+                      SetShadowOffsetX);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "shadowOffsetY"), GetShadowOffsetY,
+                      SetShadowOffsetY);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "textAlign"), GetTextAlign, SetTextAlign);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "globalCompositeOperation"),
+                      GetGlobalCompositeOperation, SetGlobalCompositeOperation);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "fillStyle"), GetFillStyle, SetFillStyle);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "strokeStyle"), GetStrokeStyle, SetStrokeStyle);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineWidth"), GetLineWidth, SetLineWidth);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "lineDash"), GetLineDash, SetLineDash);
+
+
+    tmpl->Set(ConvertToV8String(isolate, "addHitRegion"),
+              v8::FunctionTemplate::New(isolate, &AddHitRegion));
+    tmpl->Set(ConvertToV8String(isolate, "arc"), v8::FunctionTemplate::New(isolate, &Arc));
+    tmpl->Set(ConvertToV8String(isolate, "arcTo"), v8::FunctionTemplate::New(isolate, &ArcTo));
+    tmpl->Set(ConvertToV8String(isolate, "beginPath"),
+              v8::FunctionTemplate::New(isolate, &BeginPath));
+    tmpl->Set(ConvertToV8String(isolate, "bezierCurveTo"),
+              v8::FunctionTemplate::New(isolate, &BezierCurveTo));
+    tmpl->Set(ConvertToV8String(isolate, "clearHitRegions"),
+              v8::FunctionTemplate::New(isolate, &ClearHitRegions));
+    tmpl->Set(ConvertToV8String(isolate, "clearRect"),
+              v8::FunctionTemplate::New(isolate, &ClearRect));
+    tmpl->Set(ConvertToV8String(isolate, "clip"), v8::FunctionTemplate::New(isolate, &Clip));
+    tmpl->Set(ConvertToV8String(isolate, "closePath"),
+              v8::FunctionTemplate::New(isolate, &ClosePath));
+    tmpl->Set(ConvertToV8String(isolate, "createImageData"),
+              v8::FunctionTemplate::New(isolate, &CreateImageData));
+    tmpl->Set(ConvertToV8String(isolate, "createPattern"),
+              v8::FunctionTemplate::New(isolate, &CreatePattern));
+    tmpl->Set(ConvertToV8String(isolate, "createLinearGradient"),
+              v8::FunctionTemplate::New(isolate, &CreateLinearGradient));
+    tmpl->Set(ConvertToV8String(isolate, "__createPatternWithNative"),
+              v8::FunctionTemplate::New(isolate, &__CreatePatternWithNative));
+    tmpl->Set(ConvertToV8String(isolate, "createRadialGradient"),
+              v8::FunctionTemplate::New(isolate, &CreateRadialGradient));
+    tmpl->Set(ConvertToV8String(isolate, "drawFocusIfNeeded"),
+              v8::FunctionTemplate::New(isolate, &DrawFocusIfNeeded));
+    tmpl->Set(ConvertToV8String(isolate, "drawImage"),
+              v8::FunctionTemplate::New(isolate, &DrawImage));
+    tmpl->Set(ConvertToV8String(isolate, "ellipse"), v8::FunctionTemplate::New(isolate, &Ellipse));
+    tmpl->Set(ConvertToV8String(isolate, "fill"), v8::FunctionTemplate::New(isolate, &Fill));
+    tmpl->Set(ConvertToV8String(isolate, "fillRect"),
+              v8::FunctionTemplate::New(isolate, &FillRect));
+    tmpl->Set(ConvertToV8String(isolate, "fillText"),
+              v8::FunctionTemplate::New(isolate, &FillText));
+    tmpl->Set(ConvertToV8String(isolate, "getImageData"),
+              v8::FunctionTemplate::New(isolate, &GetImageData));
+    tmpl->Set(ConvertToV8String(isolate, "getLineDash"),
+              v8::FunctionTemplate::New(isolate, &GetLineDash));
+    tmpl->Set(ConvertToV8String(isolate, "isPointInPath"),
+              v8::FunctionTemplate::New(isolate, &IsPointInPath));
+    tmpl->Set(ConvertToV8String(isolate, "isPointInStroke"),
+              v8::FunctionTemplate::New(isolate, &IsPointInStroke));
+    tmpl->Set(ConvertToV8String(isolate, "lineTo"), v8::FunctionTemplate::New(isolate, &LineTo));
+    tmpl->Set(ConvertToV8String(isolate, "measureText"),
+              v8::FunctionTemplate::New(isolate, &MeasureText));
+    tmpl->Set(ConvertToV8String(isolate, "moveTo"), v8::FunctionTemplate::New(isolate, &MoveTo));
+    tmpl->Set(ConvertToV8String(isolate, "putImageData"),
+              v8::FunctionTemplate::New(isolate, &PutImageData));
+    tmpl->Set(ConvertToV8String(isolate, "quadraticCurveTo"),
+              v8::FunctionTemplate::New(isolate, &QuadraticCurveTo));
+    tmpl->Set(ConvertToV8String(isolate, "roundRect"),
+              v8::FunctionTemplate::New(isolate, &RoundRect));
+    tmpl->Set(ConvertToV8String(isolate, "rect"), v8::FunctionTemplate::New(isolate, &Rect));
+    tmpl->Set(ConvertToV8String(isolate, "removeHitRegion"),
+              v8::FunctionTemplate::New(isolate, &RemoveHitRegion));
+    tmpl->Set(ConvertToV8String(isolate, "resetTransform"),
+              v8::FunctionTemplate::New(isolate, &ResetTransform));
+    tmpl->Set(ConvertToV8String(isolate, "restore"), v8::FunctionTemplate::New(isolate, &Restore));
+    tmpl->Set(ConvertToV8String(isolate, "rotate"), v8::FunctionTemplate::New(isolate, &Rotate));
+    tmpl->Set(ConvertToV8String(isolate, "save"), v8::FunctionTemplate::New(isolate, &Save));
+    tmpl->Set(ConvertToV8String(isolate, "scale"), v8::FunctionTemplate::New(isolate, &Scale));
+    tmpl->Set(ConvertToV8String(isolate, "scrollPathIntoView"),
+              v8::FunctionTemplate::New(isolate, &ScrollPathIntoView));
+    tmpl->Set(ConvertToV8String(isolate, "setLineDash"),
+              v8::FunctionTemplate::New(isolate, &SetLineDash));
+    tmpl->Set(ConvertToV8String(isolate, "setTransform"),
+              v8::FunctionTemplate::New(isolate, &SetTransform));
+    tmpl->Set(ConvertToV8String(isolate, "stroke"), v8::FunctionTemplate::New(isolate, &Stroke));
+    tmpl->Set(ConvertToV8String(isolate, "strokeRect"),
+              v8::FunctionTemplate::New(isolate, &StrokeRect));
+    tmpl->Set(ConvertToV8String(isolate, "strokeText"),
+              v8::FunctionTemplate::New(isolate, &StrokeText));
+    tmpl->Set(ConvertToV8String(isolate, "transform"),
+              v8::FunctionTemplate::New(isolate, &Transform));
+    tmpl->Set(ConvertToV8String(isolate, "translate"),
+              v8::FunctionTemplate::New(isolate, &Translate));
+    tmpl->Set(ConvertToV8String(isolate, "__toDataURL"),
+              v8::FunctionTemplate::New(isolate, &__ToDataURL));
+
+    cache->CanvasRenderingContext2DTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}
+
 void CanvasRenderingContext2DImpl::SetRaf(std::shared_ptr<RafImpl> raf) {
     this->raf_ = std::move(raf);
 }
@@ -30,1873 +195,2290 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
     return this->raf_.get();
 }
 
+/* Non Standard 2D */
 
-std::vector<jsi::PropNameID> CanvasRenderingContext2DImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(68);
+void CanvasRenderingContext2DImpl::DrawPoint(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
 
-    /* Non Standard 2D */
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPoint")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPoints")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawPaint")));
 
-    /* Non Standard 2D */
+    auto x = (float) args[0]->NumberValue(context).ToChecked();
+    auto y = (float) args[1]->NumberValue(context).ToChecked();
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__makeDirty")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__getPointer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__resize")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("filter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("font")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("globalAlpha")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingEnabled")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("imageSmoothingQuality")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineDashOffset")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineJoin")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineCap")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("miterLimit")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowColor")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowBlur")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetX")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shadowOffsetY")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("textAlign")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("globalCompositeOperation")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fillStyle")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("strokeStyle")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineWidth")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineDash")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("addHitRegion")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arc")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arcTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("beginPath")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearHitRegions")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearRect")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clip")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("closePath")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createImageData")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createLinearGradient")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createRadialGradient")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createPattern")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__createPatternWithNative")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawImage")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("ellipse")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fill")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fillRect")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("fillText")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getImageData")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getLineDash")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isPointInPath")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isPointInStroke")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("measureText")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("moveTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("putImageData")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rect")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("roundRect")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("removeHitRegion")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("resetTransform")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("restore")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rotate")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("save")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("scale")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("scrollPathIntoView")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("setLineDash")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("setTransform")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stroke")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("strokeRect")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("strokeText")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("transform")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("translate")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__toDataURL")));
-    return ret;
+    canvas_native_context_draw_point(
+            ptr->GetContext(), x, y);
+    ptr->UpdateInvalidateState();
+}
+
+void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    auto mode = ConvertFromV8String(isolate, args[0]);
+    auto points = args[1].As<v8::Array>();
+    auto size = points->Length();
+
+
+    if ((size % 2) == 0) {
+        int32_t pointMode = -1;
+        if (mode == "points") {
+            pointMode = 0;
+        } else if (mode == "lines") {
+            pointMode = 1;
+        } else if (mode == "polygon") {
+            pointMode = 2;
+        }
+        if (pointMode == -1) {
+            return;
+        }
+        rust::Vec<float> store;
+        store.reserve(size);
+        size_t next = 0;
+        for (size_t i = 0; i < size; i++) {
+
+            auto object = points->Get(
+                    context, i).ToLocalChecked().As<v8::Object>();
+
+            auto x = object->Get(context,
+                                 ConvertToV8String(isolate, "x")).ToLocalChecked()->NumberValue(
+                    context).ToChecked();
+            auto y = object->Get(context,
+                                 ConvertToV8String(isolate, "y")).ToLocalChecked()->NumberValue(
+                    context).ToChecked();
+            store[next] = (float) x;
+            store[next + 1] = (float) y;
+
+            next = i + 2;
+        }
+
+        rust::Slice<const float> buf(
+                store.data(),
+                store.size());
+
+        canvas_native_context_draw_points(
+                ptr->GetContext(), pointMode,
+                buf);
+        ptr->UpdateInvalidateState();
+    }
+}
+
+void CanvasRenderingContext2DImpl::DrawPaint(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+
+
+    auto color = ConvertFromV8String(isolate, args[0]);
+    canvas_native_context_draw_paint(
+            ptr->GetContext(),
+            rust::Str(color));
+    ptr->UpdateInvalidateState();
+}
+
+/* Non Standard 2D */
+
+
+void CanvasRenderingContext2DImpl::__MakeDirty(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    ptr->UpdateInvalidateState();
+}
+
+void CanvasRenderingContext2DImpl::__GetPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetEmptyString();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+
+    auto pointer = (intptr_t *) &ptr->GetContext();
+    auto ret = std::to_string((intptr_t) pointer);
+    args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
+}
+
+void CanvasRenderingContext2DImpl::__Resize(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    auto width = args[0]->NumberValue(context).ToChecked();
+    auto height = args[1]->NumberValue(context).ToChecked();
+    canvas_native_context_resize(
+            ptr->GetContext(),
+            static_cast<float>(width),
+            static_cast<float>(height));
+}
+
+
+void CanvasRenderingContext2DImpl::GetFilter(v8::Local<v8::String> property,
+                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto filter = canvas_native_context_get_filter(ptr->GetContext());
+    info.GetReturnValue().Set(ConvertToV8String(isolate, filter.c_str()));
+}
+
+void CanvasRenderingContext2DImpl::SetFilter(v8::Local<v8::String> property,
+                                             v8::Local<v8::Value> value,
+                                             const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto val = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_filter(ptr->GetContext(), rust::Str(val.c_str()));
+}
+
+void CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> property,
+                                           const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto filter = canvas_native_context_get_font(ptr->GetContext());
+    info.GetReturnValue().Set(ConvertToV8String(isolate, filter.c_str()));
+}
+
+void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> property,
+                                           v8::Local<v8::Value> value,
+                                           const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto val = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_font(ptr->GetContext(), rust::Str(val.c_str()));
+}
+
+void CanvasRenderingContext2DImpl::GetGlobalAlpha(v8::Local<v8::String> property,
+                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(1);
+        return;
+    }
+    auto alpha = canvas_native_context_get_global_alpha(ptr->GetContext());
+    info.GetReturnValue().Set((double) alpha);
+}
+
+void CanvasRenderingContext2DImpl::SetGlobalAlpha(v8::Local<v8::String> property,
+                                                  v8::Local<v8::Value> value,
+                                                  const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_context_set_global_alpha(ptr->GetContext(),
+                                           (float) value->NumberValue(context).ToChecked());
+}
+
+void CanvasRenderingContext2DImpl::GetImageSmoothingEnabled(v8::Local<v8::String> property,
+                                                            const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(false);
+        return;
+    }
+    auto enabled = canvas_native_context_get_image_smoothing_enabled(ptr->GetContext());
+    info.GetReturnValue().Set(enabled);
+}
+
+void CanvasRenderingContext2DImpl::SetImageSmoothingEnabled(v8::Local<v8::String> property,
+                                                            v8::Local<v8::Value> value,
+                                                            const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    canvas_native_context_set_image_smoothing_enabled(ptr->GetContext(),
+                                                      value->BooleanValue(isolate));
+}
+
+void CanvasRenderingContext2DImpl::GetImageSmoothingQuality(v8::Local<v8::String> property,
+                                                            const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto quality = canvas_native_context_get_image_smoothing_quality(ptr->GetContext());
+    info.GetReturnValue().Set(
+            ConvertToV8String(isolate, std::string(quality.data(), quality.size())));
+}
+
+void CanvasRenderingContext2DImpl::SetImageSmoothingQuality(v8::Local<v8::String> property,
+                                                            v8::Local<v8::Value> value,
+                                                            const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto quality = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_image_smoothing_quality(ptr->GetContext(), quality.c_str());
+}
+
+void CanvasRenderingContext2DImpl::GetLineDashOffset(v8::Local<v8::String> property,
+                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto offset = canvas_native_context_get_line_dash_offset(ptr->GetContext());
+    info.GetReturnValue().Set((double) offset);
+}
+
+void CanvasRenderingContext2DImpl::SetLineDashOffset(v8::Local<v8::String> property,
+                                                     v8::Local<v8::Value> value,
+                                                     const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_context_set_line_dash_offset(ptr->GetContext(),
+                                               (float) value->NumberValue(context).ToChecked());
+}
+
+
+void CanvasRenderingContext2DImpl::GetLineJoin(v8::Local<v8::String> property,
+                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto join = canvas_native_context_get_line_join(ptr->GetContext());
+    info.GetReturnValue().Set(ConvertToV8String(isolate, std::string(join.data(), join.size())));
+}
+
+void CanvasRenderingContext2DImpl::SetLineJoin(v8::Local<v8::String> property,
+                                               v8::Local<v8::Value> value,
+                                               const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto join = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_line_join(ptr->GetContext(), join);
+}
+
+void CanvasRenderingContext2DImpl::GetLineCap(v8::Local<v8::String> property,
+                                              const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto cap = canvas_native_context_get_line_cap(ptr->GetContext());
+    info.GetReturnValue().Set(ConvertToV8String(isolate, std::string(cap.data(), cap.size())));
+}
+
+void CanvasRenderingContext2DImpl::SetLineCap(v8::Local<v8::String> property,
+                                              v8::Local<v8::Value> value,
+                                              const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto cap = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_line_cap(ptr->GetContext(), cap);
+}
+
+
+void CanvasRenderingContext2DImpl::GetMiterLimit(v8::Local<v8::String> property,
+                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto limit = canvas_native_context_get_miter_limit(ptr->GetContext());
+    info.GetReturnValue().Set((double) limit);
+}
+
+void CanvasRenderingContext2DImpl::SetMiterLimit(v8::Local<v8::String> property,
+                                                 v8::Local<v8::Value> value,
+                                                 const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_context_set_miter_limit(ptr->GetContext(),
+                                          (float) value->NumberValue(context).ToChecked());
+}
+
+
+void CanvasRenderingContext2DImpl::GetShadowColor(v8::Local<v8::String> property,
+                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto color = canvas_native_context_get_shadow_color(ptr->GetContext());
+    info.GetReturnValue().Set(ConvertToV8String(isolate, color.c_str()));
+}
+
+void CanvasRenderingContext2DImpl::SetShadowColor(v8::Local<v8::String> property,
+                                                  v8::Local<v8::Value> value,
+                                                  const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto color = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_shadow_color(ptr->GetContext(), color);
+}
+
+
+void CanvasRenderingContext2DImpl::GetShadowBlur(v8::Local<v8::String> property,
+                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto blur = canvas_native_context_get_shadow_blur(ptr->GetContext());
+    info.GetReturnValue().Set((double) blur);
+}
+
+void CanvasRenderingContext2DImpl::SetShadowBlur(v8::Local<v8::String> property,
+                                                 v8::Local<v8::Value> value,
+                                                 const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_context_set_shadow_blur(ptr->GetContext(),
+                                          (float) value->NumberValue(context).ToChecked());
+}
+
+void CanvasRenderingContext2DImpl::GetShadowOffsetX(v8::Local<v8::String> property,
+                                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto x = canvas_native_context_get_shadow_offset_x(ptr->GetContext());
+    info.GetReturnValue().Set((double) x);
+}
+
+void CanvasRenderingContext2DImpl::SetShadowOffsetX(v8::Local<v8::String> property,
+                                                    v8::Local<v8::Value> value,
+                                                    const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_context_set_shadow_offset_x(ptr->GetContext(),
+                                              (float) value->NumberValue(context).ToChecked());
+}
+
+
+void CanvasRenderingContext2DImpl::GetShadowOffsetY(v8::Local<v8::String> property,
+                                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto y = canvas_native_context_get_shadow_offset_y(ptr->GetContext());
+    info.GetReturnValue().Set((double) y);
+}
+
+void CanvasRenderingContext2DImpl::SetShadowOffsetY(v8::Local<v8::String> property,
+                                                    v8::Local<v8::Value> value,
+                                                    const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    canvas_native_context_set_shadow_offset_y(ptr->GetContext(),
+                                              (float) value->NumberValue(context).ToChecked());
+}
+
+
+void CanvasRenderingContext2DImpl::GetTextAlign(v8::Local<v8::String> property,
+                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto alignment = canvas_native_context_get_text_align(ptr->GetContext());
+    info.GetReturnValue().Set(
+            ConvertToV8String(isolate, std::string(alignment.data(), alignment.size())));
+}
+
+void CanvasRenderingContext2DImpl::SetTextAlign(v8::Local<v8::String> property,
+                                                v8::Local<v8::Value> value,
+                                                const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto alignment = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_text_align(ptr->GetContext(), alignment.c_str());
+}
+
+
+void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::String> property,
+                                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto operation = canvas_native_context_get_global_composition(ptr->GetContext());
+    info.GetReturnValue().Set(
+            ConvertToV8String(info.GetIsolate(), std::string(operation.data(), operation.size())));
+}
+
+void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::String> property,
+                                                               v8::Local<v8::Value> value,
+                                                               const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto operation = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_global_composition(ptr->GetContext(), operation.c_str());
+}
+
+
+void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> property,
+                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto isolate = info.GetIsolate();
+
+    PaintStyleType type = canvas_native_context_get_current_fill_style_type(ptr->GetContext());
+
+    switch (type) {
+        case PaintStyleType::Color: {
+            auto color = canvas_native_paint_style_get_current_fill_color_string(
+                    ptr->GetContext());
+
+            auto value = new OneByteStringResource(std::move(color));
+            auto ret = v8::String::NewExternalOneByte(isolate, value);
+            info.GetReturnValue().Set(ret.ToLocalChecked());
+
+            //info.GetReturnValue().Set(ConvertToV8String(isolate, color.c_str()));
+            break;
+        }
+        case PaintStyleType::Gradient: {
+            auto style = new CanvasGradient(
+                    canvas_native_context_get_fill_style(ptr->GetContext()));
+
+            auto context = isolate->GetCurrentContext();
+
+            auto ret = CanvasGradient::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+            auto ext = v8::External::New(isolate, style);
+
+            ret->SetInternalField(0, ext);
+
+            SetNativeType(isolate, ret, NativeType::CanvasGradient);
+
+            info.GetReturnValue().Set(ret);
+
+            break;
+        }
+        case PaintStyleType::Pattern: {
+            auto style = new CanvasPattern(
+                    canvas_native_context_get_fill_style(ptr->GetContext()));
+
+
+            auto context = isolate->GetCurrentContext();
+
+            auto ret = CanvasPattern::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+            auto ext = v8::External::New(isolate, style);
+
+            ret->SetInternalField(0, ext);
+
+            SetNativeType(isolate, ret, NativeType::CanvasPattern);
+
+            info.GetReturnValue().Set(ret);
+            break;
+        }
+        case PaintStyleType::None: {
+            info.GetReturnValue().SetUndefined();
+            break;
+        }
+    }
+
+}
+
+void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
+                                                v8::Local<v8::Value> value,
+                                                const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (value->IsString()) {
+        auto style = ConvertFromV8String(isolate, value);
+        canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(),
+                                                               style.c_str());
+    } else if (value->IsObject()) {
+
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (!typeValue.IsEmpty()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+
+            switch (type) {
+                case NativeType::CanvasGradient: {
+                    auto gradient = CanvasGradient::GetPointer(value.As<v8::Object>());
+                    canvas_native_context_set_fill_style(ptr->GetContext(),
+                                                         gradient->GetPaintStyle());
+                }
+                    break;
+                case NativeType::CanvasPattern: {
+                    auto pattern = CanvasPattern::GetPointer(value.As<v8::Object>());
+                    canvas_native_context_set_fill_style(ptr->GetContext(),
+                                                         pattern->GetPaintStyle());
+                }
+                    break;
+                default:
+                    // noop
+                    break;
+            }
+        }
+    }
+}
+
+void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::String> property,
+                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetUndefined();
+        return;
+    }
+    auto isolate = info.GetIsolate();
+
+    PaintStyleType type = canvas_native_context_get_current_stroke_style_type(ptr->GetContext());
+
+    switch (type) {
+        case PaintStyleType::Color: {
+            auto color = canvas_native_paint_style_get_current_stroke_color_string(
+                    ptr->GetContext());
+
+            auto value = new OneByteStringResource(std::move(color));
+            auto ret = v8::String::NewExternalOneByte(isolate, value);
+            info.GetReturnValue().Set(ret.ToLocalChecked());
+
+            //info.GetReturnValue().Set(ConvertToV8String(isolate, color.c_str()));
+            break;
+        }
+        case PaintStyleType::Gradient: {
+            auto style = new CanvasGradient(
+                    canvas_native_context_get_stroke_style(ptr->GetContext()));
+
+            auto context = isolate->GetCurrentContext();
+
+            auto ret = CanvasGradient::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+            auto ext = v8::External::New(isolate, style);
+
+            ret->SetInternalField(0, ext);
+
+            SetNativeType(isolate, ret, NativeType::CanvasGradient);
+
+            info.GetReturnValue().Set(ret);
+
+            break;
+        }
+        case PaintStyleType::Pattern: {
+            auto style = new CanvasPattern(
+                    canvas_native_context_get_stroke_style(ptr->GetContext()));
+
+
+            auto context = isolate->GetCurrentContext();
+
+            auto ret = CanvasPattern::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+            auto ext = v8::External::New(isolate, style);
+
+            ret->SetInternalField(0, ext);
+
+            SetNativeType(isolate, ret, NativeType::CanvasPattern);
+
+            info.GetReturnValue().Set(ret);
+            break;
+        }
+        case PaintStyleType::None: {
+            info.GetReturnValue().SetUndefined();
+            break;
+        }
+    }
+
+}
+
+
+void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property,
+                                                  v8::Local<v8::Value> value,
+                                                  const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (value->IsString()) {
+        auto style = ConvertFromV8String(isolate, value);
+        canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(),
+                                                                 style.c_str());
+    } else if (value->IsObject()) {
+
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (!typeValue.IsEmpty()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+
+            switch (type) {
+                case NativeType::CanvasGradient: {
+                    auto gradient = CanvasGradient::GetPointer(value.As<v8::Object>());
+                    canvas_native_context_set_stroke_style(ptr->GetContext(),
+                                                           gradient->GetPaintStyle());
+                }
+                    break;
+                case NativeType::CanvasPattern: {
+                    auto pattern = CanvasPattern::GetPointer(value.As<v8::Object>());
+                    canvas_native_context_set_stroke_style(ptr->GetContext(),
+                                                           pattern->GetPaintStyle());
+                }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
+void CanvasRenderingContext2DImpl::GetLineWidth(v8::Local<v8::String> property,
+                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto isolate = info.GetIsolate();
+
+    auto lineWidth = canvas_native_context_get_line_width(ptr->GetContext());
+
+    info.GetReturnValue().Set((double) lineWidth);
+
+}
+
+
+void CanvasRenderingContext2DImpl::SetLineWidth(v8::Local<v8::String> property,
+                                                v8::Local<v8::Value> value,
+                                                const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto lineWidth = (float) value->NumberValue(context).ToChecked();
+    canvas_native_context_set_line_width(ptr->GetContext(), lineWidth);
+}
+
+void CanvasRenderingContext2DImpl::GetLineDash(v8::Local<v8::String> property,
+                                               const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto lineDash = canvas_native_context_get_line_dash(ptr->GetContext());
+    auto size = lineDash.size();
+    auto ret = v8::Array::New(isolate, (int) size);
+    for (size_t i = 0; i < size; i++) {
+        auto item = lineDash[i];
+        ret->Set(context, i, v8::Number::New(isolate, (double) item));
+    }
+
+}
+
+
+void CanvasRenderingContext2DImpl::SetLineDash(v8::Local<v8::String> property,
+                                               v8::Local<v8::Value> value,
+                                               const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (!value->IsNullOrUndefined() && value->IsObject()) {
+        auto lineDashObject = value.As<v8::Object>();
+        if (lineDashObject->IsArray()) {
+            auto lineDash = lineDashObject.As<v8::Array>();
+            auto size = lineDash->Length();
+            std::vector<float> dash;
+            dash.reserve(size);
+            for (size_t i = 0; i < size; ++i) {
+                auto val = lineDash->Get(context, i).ToLocalChecked();
+                dash[i] = (float) value->NumberValue(context).ToChecked();
+            }
+            canvas_native_context_set_line_dash(ptr->GetContext(),
+                                                rust::Slice<const float>(dash.data(),
+                                                                         dash.size()));
+        }
+    }
+}
+
+void CanvasRenderingContext2DImpl::AddHitRegion(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // todo
+//    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+//    if (ptr == nullptr) {
+//        return;
+//    }
+}
+
+void CanvasRenderingContext2DImpl::Arc(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto anti_clockwise = false;
+    if (args.Length() == 6) {
+        anti_clockwise = args[5]->BooleanValue(isolate);
+    }
+    canvas_native_context_arc(
+            ptr->GetContext(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[4]->NumberValue(context).ToChecked()),
+            anti_clockwise
+    );
+}
+
+void CanvasRenderingContext2DImpl::ArcTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto x1 = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+    auto y1 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+    auto x2 = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+    auto y2 = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+    auto radius = static_cast<float>(args[4]->NumberValue(context).ToChecked());
+    canvas_native_context_arc_to(
+            ptr->GetContext(),
+            x1,
+            y1,
+            x2,
+            y2,
+            radius
+    );
+}
+
+void CanvasRenderingContext2DImpl::BeginPath(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    canvas_native_context_begin_path(
+            ptr->GetContext()
+    );
+}
+
+void CanvasRenderingContext2DImpl::BezierCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    canvas_native_context_bezier_curve_to(
+            ptr->GetContext(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[4]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[5]->NumberValue(context).ToChecked())
+    );
+}
+
+void
+CanvasRenderingContext2DImpl::ClearHitRegions(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // TODO
+//    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+//    if (ptr == nullptr) {
+//        return;
+//    }
+}
+
+void CanvasRenderingContext2DImpl::ClearRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    canvas_native_context_clear_rect(
+            ptr->GetContext(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked())
+    );
+    ptr->UpdateInvalidateState();
+}
+
+void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+
+    if (args.Length() == 0) {
+        std::string rule("nonzero");
+        canvas_native_context_clip_rule(
+                ptr->GetContext(),
+                rust::Str(rule.c_str()));
+    } else if (args[0]->IsString()) {
+        auto val = ConvertFromV8String(isolate, args[0]);
+        canvas_native_context_clip_rule(
+                ptr->GetContext(),
+                rust::Str(val.c_str()));
+    }
+}
+
+void CanvasRenderingContext2DImpl::ClosePath(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    canvas_native_context_close_path(
+            ptr->GetContext());
+}
+
+void
+CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto count = args.Length();
+    auto value = args[0];
+    if (count == 1 && value->IsObject()) {
+
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+        auto object = ImageDataImpl::GetPointer(value.As<v8::Object>());
+
+        if (object != nullptr) {
+            auto width = canvas_native_image_data_get_width(
+                    object->GetImageData());
+            auto height = canvas_native_image_data_get_height(
+                    object->GetImageData());
+            auto data = new ImageDataImpl(
+                    canvas_native_image_data_create(
+                            width, height));
+            auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+            auto ext = v8::External::New(isolate, data);
+
+            ret->SetInternalField(0, ext);
+
+            SetNativeType(isolate, ret, NativeType::ImageData);
+
+            args.GetReturnValue().Set(ret);
+
+            return;
+        }
+
+    } else if (count > 1) {
+
+        auto width = (int) args[0]->NumberValue(context).ToChecked();
+        auto height = (int) args[1]->NumberValue(context).ToChecked();
+        auto data = new ImageDataImpl(
+                canvas_native_image_data_create(
+                        width, height));
+
+        auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+        auto ext = v8::External::New(isolate, data);
+
+        ret->SetInternalField(0, ext);
+
+        SetNativeType(isolate, ret, NativeType::ImageData);
+
+        args.GetReturnValue().Set(ret);
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void
+CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto value = args[0];
+        if (value->IsNullOrUndefined()) {
+            args.GetReturnValue().SetUndefined();
+            return;
+        }
+
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (typeValue->IsInt32()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+            switch (type) {
+                case NativeType::ImageAsset: {
+                    auto image_asset = ImageAssetImpl::GetPointer(value.As<v8::Object>());
+                    if (image_asset != nullptr) {
+                        auto rep = ConvertFromV8String(isolate, args[1]);
+                        rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(),
+                                rust::Str(
+                                        rep.c_str()));
+                        auto style_type = canvas_native_context_get_style_type(
+                                *pattern);
+                        if (style_type ==
+                            PaintStyleType::None) {
+                            args.GetReturnValue().SetUndefined();
+                        } else {
+                            auto data = new CanvasPattern(
+                                    std::move(
+                                            pattern));
+
+
+                            auto ret = CanvasPattern::GetCtor(isolate)->GetFunction(
+                                    context).ToLocalChecked()->NewInstance(
+                                    context).ToLocalChecked();
+
+                            auto ext = v8::External::New(isolate, data);
+
+                            ret->SetInternalField(0, ext);
+
+                            SetNativeType(isolate, ret, NativeType::CanvasPattern);
+
+                            args.GetReturnValue().Set(ret);
+                        }
+                    }
+                }
+                    break;
+                case NativeType::CanvasRenderingContext2D: {
+                    auto canvas_2d = CanvasRenderingContext2DImpl::GetPointer(
+                            value.As<v8::Object>());
+                    if (canvas_2d != nullptr) {
+                        auto rep = ConvertFromV8String(isolate, args[1]);
+                        rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
+                                canvas_2d->GetContext(),
+                                ptr->GetContext(),
+                                rust::Str(
+                                        rep.c_str()));
+                        auto style_type = canvas_native_context_get_style_type(
+                                *pattern);
+                        if (style_type ==
+                            PaintStyleType::None) {
+                            args.GetReturnValue().SetUndefined();
+                        } else {
+                            auto data = new CanvasPattern(
+                                    std::move(
+                                            pattern));
+
+                            auto ret = CanvasPattern::GetCtor(isolate)->GetFunction(
+                                    context).ToLocalChecked()->NewInstance(
+                                    context).ToLocalChecked();
+
+                            auto ext = v8::External::New(isolate, data);
+
+                            ret->SetInternalField(0, ext);
+
+                            SetNativeType(isolate, ret, NativeType::CanvasPattern);
+
+                            args.GetReturnValue().Set(ret);
+                        }
+                    }
+                }
+                    break;
+                case NativeType::WebGLRenderingContextBase: {
+
+                    // TODO
+                    /*
+                    auto webgl = getHostObject<WebGLRenderingContextBase>(
+                            runtime, object);
+                    if (webgl != nullptr) {
+                        auto rep = arguments[1].asString(
+                                runtime).utf8(runtime);
+                        auto pattern = canvas_native_context_create_pattern_webgl(
+                                webgl->GetState(),
+                                ptr->GetContext(),
+                                rust::Str(
+                                        rep.c_str()));
+                        auto type = canvas_native_context_get_style_type(
+                                *pattern);
+                        if (type ==
+                            PaintStyleType::None) {
+                            return jsi::Value::undefined();
+                        } else {
+                            auto ret = std::make_shared<CanvasPattern>(
+                                    std::move(
+                                            pattern));
+                            return jsi::Object::createFromHostObject(
+                                    runtime, ret);
+                        }
+                    }
+                    */
+                }
+                    break;
+                default:
+                    break;
+            }
+
+
+        }
+
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::CreateLinearGradient(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 4) {
+        auto x0 = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y0 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto x1 = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto y1 = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+
+        auto gradient = canvas_native_context_create_linear_gradient(
+                ptr->GetContext(), x0, y0, x1,
+                y1);
+
+        auto data = new CanvasGradient(
+                std::move(gradient));
+
+        auto ret = CanvasGradient::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+        auto ext = v8::External::New(isolate, data);
+
+        ret->SetInternalField(0, ext);
+
+        SetNativeType(isolate, ret, NativeType::CanvasGradient);
+
+        args.GetReturnValue().Set(ret);
+
+        return;
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void
+CanvasRenderingContext2DImpl::__CreatePatternWithNative(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    auto pointer = args[0]->ToBigInt(context).ToLocalChecked();
+
+    auto pattern = canvas_native_pattern_from_ptr(pointer->Int64Value());
+    auto type = canvas_native_context_get_style_type(
+            *pattern);
+    if (type == PaintStyleType::None) {
+        args.GetReturnValue().SetUndefined();
+    } else {
+        auto data = new CanvasPattern(
+                std::move(pattern));
+
+
+        auto ret = CanvasPattern::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+        auto ext = v8::External::New(isolate, data);
+
+        ret->SetInternalField(0, ext);
+
+        SetNativeType(isolate, ret, NativeType::CanvasPattern);
+
+        args.GetReturnValue().Set(ret);
+
+    }
+
+}
+
+void
+CanvasRenderingContext2DImpl::CreateRadialGradient(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 6) {
+        auto x0 = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y0 = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto r0 = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto x1 = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        auto y1 = static_cast<float>(args[4]->NumberValue(context).ToChecked());
+        auto r1 = static_cast<float>(args[5]->NumberValue(context).ToChecked());
+
+        auto gradient = canvas_native_context_create_radial_gradient(
+                ptr->GetContext(), x0, y0, r0,
+                x1, y1, r1);
+
+        auto data = new CanvasGradient(
+                std::move(gradient));
+
+        auto ret = CanvasGradient::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+        auto ext = v8::External::New(isolate, data);
+
+        ret->SetInternalField(0, ext);
+
+        SetNativeType(isolate, ret, NativeType::CanvasGradient);
+
+        args.GetReturnValue().Set(ret);
+    }
 }
 
 
 void
-CanvasRenderingContext2DImpl::set(jsi::Runtime &runtime, const jsi::PropNameID &name,
-                                  const jsi::Value &value) {
-    auto methodName = name.utf8(runtime);
+CanvasRenderingContext2DImpl::DrawFocusIfNeeded(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // TODO
+//    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+//    if (ptr == nullptr) {
+//        return;
+//    }
+}
 
-    if (methodName == "filter") {
-        auto val = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_filter(this->GetContext(), rust::Str(val.c_str()));
-    } else if (methodName == "font") {
-        auto val = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_font(this->GetContext(), rust::Str(val.c_str()));
-    } else if (methodName == "globalAlpha") {
-        auto alpha = (float) value.asNumber();
-        canvas_native_context_set_global_alpha(this->GetContext(), alpha);
-    } else if (methodName == "imageSmoothingEnabled") {
-        auto imageSmoothingEnabled = value.asBool();
-        canvas_native_context_set_image_smoothing_enabled(this->GetContext(),
-                                                          imageSmoothingEnabled);
-    } else if (methodName == "imageSmoothingQuality") {
-        auto imageSmoothingQuality = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_image_smoothing_quality(this->GetContext(),
-                                                          rust::Str(imageSmoothingQuality));
-    } else if (methodName == "lineDashOffset") {
-        auto lineDashOffset = (float) value.asNumber();
-        canvas_native_context_set_line_dash_offset(this->GetContext(), lineDashOffset);
-    } else if (methodName == "lineJoin") {
-        auto join = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_line_join(this->GetContext(),
-                                            rust::Str(join.c_str()));
-    } else if (methodName == "lineCap") {
-        auto cap = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_line_cap(this->GetContext(),
-                                           rust::Str(cap.c_str()));
-    } else if (methodName == "miterLimit") {
-        auto miterLimit = (float) value.asNumber();
-        canvas_native_context_set_miter_limit(this->GetContext(), miterLimit);
-    } else if (methodName == "shadowColor") {
-        auto shadowColor = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_shadow_color(this->GetContext(),
-                                               rust::Str(shadowColor.c_str()));
-    } else if (methodName == "shadowBlur") {
-        auto shadowBlur = (float) value.asNumber();
-        canvas_native_context_set_shadow_blur(this->GetContext(), shadowBlur);
-    } else if (methodName == "shadowOffsetX") {
-        auto shadowOffsetX = (float) value.asNumber();
-        canvas_native_context_set_shadow_offset_x(this->GetContext(), shadowOffsetX);
-    } else if (methodName == "shadowOffsetY") {
-        auto shadowOffsetY = (float) value.asNumber();
-        canvas_native_context_set_shadow_offset_y(this->GetContext(), shadowOffsetY);
-    } else if (methodName == "textAlign") {
-        auto textAlign = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_text_align(this->GetContext(),
-                                             rust::Str(textAlign.c_str()));
-    } else if (methodName == "globalCompositeOperation") {
-        auto globalCompositeOperation = value.asString(runtime).utf8(runtime);
-        canvas_native_context_set_global_composition(this->GetContext(),
-                                                     rust::Str(globalCompositeOperation.c_str()));
-    } else if (methodName == "fillStyle") {
-        if (value.isString()) {
-            auto style = value.asString(runtime).utf8(runtime);
-            canvas_native_paint_style_set_fill_color_with_c_string(this->GetContext(), style.c_str());
-        } else if (value.isObject()) {
 
-            try {
-                auto gradient = getHostObject<CanvasGradient>(runtime, value);
-                if (gradient != nullptr) {
-                    canvas_native_context_set_fill_style(this->GetContext(),
-                                                         gradient->GetPaintStyle());
-                    return;
+void
+CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto count = args.Length();
+    auto value = args[0];
+
+    if (value->IsNullOrUndefined() || !value->IsObject()) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto image = value.As<v8::Object>();
+    if (count == 3) {
+        auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+
+
+        auto typeValue = GetPrivateValue(isolate, image,
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (typeValue->IsInt32()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+            switch (type) {
+                case NativeType::ImageAsset: {
+                    auto image_asset = ImageAssetImpl::GetPointer(image);
+
+                    if (image_asset != nullptr) {
+                        canvas_native_context_draw_image_dx_dy_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(),
+                                dx, dy);
+                        ptr->UpdateInvalidateState();
+                    }
                 }
-            } catch (...) {}
-
-            try {
-                auto pattern = getHostObject<CanvasPattern>(runtime, value);
-
-                if (pattern != nullptr) {
-                    canvas_native_context_set_fill_style(this->GetContext(),
-                                                         pattern->GetPaintStyle());
-                    return;
+                    break;
+                case NativeType::ImageBitmap: {
+                    auto image_bitmap = ImageBitmapImpl::GetPointer(image);
+                    if (image_bitmap != nullptr) {
+                        canvas_native_context_draw_image_dx_dy_asset(
+                                ptr->GetContext(),
+                                image_bitmap->GetImageAsset(),
+                                dx, dy);
+                        ptr->UpdateInvalidateState();
+                    }
                 }
-            } catch (...) {}
+                    break;
+                case NativeType::CanvasRenderingContext2D: {
+                    auto image_canvas = CanvasRenderingContext2DImpl::GetPointer(image);
+                    if (image_canvas != nullptr) {
+                        canvas_native_context_draw_image_dx_dy_context(
+                                ptr->GetContext(),
+                                image_canvas->GetContext(),
+                                dx, dy);
+                        ptr->UpdateInvalidateState();
+                    }
+                }
+                    break;
+                default:
+                    break;
+            }
         }
-    } else if (methodName == "strokeStyle") {
-        if (value.isString()) {
-            auto style = value.asString(runtime).utf8(runtime);
-            canvas_native_paint_style_set_stroke_color_with_c_string(this->GetContext(),style.c_str());
-        } else if (value.isObject()) {
+    } else if (count == 5) {
+        auto dx = (float) args[1]->NumberValue(context).ToChecked();
+        auto dy = (float) args[2]->NumberValue(context).ToChecked();
+        auto dWidth = (float) args[3]->NumberValue(context).ToChecked();
+        auto dHeight = (float) args[4]->NumberValue(context).ToChecked();
 
-            try {
-                auto gradient = getHostObject<CanvasGradient>(runtime, value);
-                if (gradient != nullptr) {
-                    canvas_native_context_set_stroke_style(this->GetContext(),
-                                                           gradient->GetPaintStyle());
-                    return;
+        auto typeValue = GetPrivateValue(isolate, image,
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (typeValue->IsInt32()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+            switch (type) {
+                case NativeType::ImageAsset: {
+                    auto image_asset = ImageAssetImpl::GetPointer(image);
+
+                    if (image_asset != nullptr) {
+                        canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(),
+                                dx, dy,
+                                dWidth,
+                                dHeight);
+                        ptr->UpdateInvalidateState();
+                    }
                 }
-            } catch (...) {}
-
-            try {
-                auto pattern = getHostObject<CanvasPattern>(runtime, value);
-
-                if (pattern != nullptr) {
-                    canvas_native_context_set_stroke_style(this->GetContext(),
-                                                           pattern->GetPaintStyle());
-                    return;
+                    break;
+                case NativeType::ImageBitmap: {
+                    auto image_bitmap = ImageBitmapImpl::GetPointer(image);
+                    if (image_bitmap != nullptr) {
+                        canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                                ptr->GetContext(),
+                                image_bitmap->GetImageAsset(),
+                                dx, dy,
+                                dWidth,
+                                dHeight);
+                        ptr->UpdateInvalidateState();
+                    }
                 }
-            } catch (...) {}
+                    break;
+                case NativeType::CanvasRenderingContext2D: {
+                    auto image_canvas = CanvasRenderingContext2DImpl::GetPointer(image);
+                    if (image_canvas != nullptr) {
+                        canvas_native_context_draw_image_dx_dy_dw_dh_context(
+                                ptr->GetContext(),
+                                image_canvas->GetContext(),
+                                dx, dy,
+                                dWidth,
+                                dHeight);
+                        ptr->UpdateInvalidateState();
+                    }
+                }
+                    break;
+                default:
+                    break;
+            }
         }
-    } else if (methodName == "lineWidth") {
-        auto lineWidth = (float) value.asNumber();
-        canvas_native_context_set_line_width(this->GetContext(), lineWidth);
-    } else if (methodName == "lineDash") {
-        if (!value.isNull() && !value.isUndefined() && value.isObject()) {
-            auto lineDashObject = value.asObject(runtime);
-            if (lineDashObject.isArray(runtime)) {
-                auto lineDash = lineDashObject.asArray(runtime);
-                auto size = lineDash.size(runtime);
-                std::vector<float> dash;
-                dash.reserve(size);
-                for (size_t i = 0; i < size; ++i) {
-                    auto val = lineDash.getValueAtIndex(runtime, i);
-                    dash[i] = (float) value.asNumber();
+
+
+    } else if (count == 9) {
+        auto sx = (float) args[1]->NumberValue(context).ToChecked();
+        auto sy = (float) args[2]->NumberValue(context).ToChecked();
+        auto sWidth = (float) args[3]->NumberValue(context).ToChecked();
+        auto sHeight = (float) args[4]->NumberValue(context).ToChecked();
+        auto dx = (float) args[5]->NumberValue(context).ToChecked();
+        auto dy = (float) args[6]->NumberValue(context).ToChecked();
+        auto dWidth = (float) args[7]->NumberValue(context).ToChecked();
+        auto dHeight = (float) args[8]->NumberValue(context).ToChecked();
+
+        auto typeValue = GetPrivateValue(isolate, image,
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (typeValue->IsInt32()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+            switch (type) {
+                case NativeType::ImageAsset: {
+                    auto image_asset = ImageAssetImpl::GetPointer(image);
+
+                    if (image_asset != nullptr) {
+                        canvas_native_context_draw_image_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(),
+                                sx,
+                                sy, sWidth, sHeight,
+                                dx,
+                                dy, dWidth, dHeight);
+                        ptr->UpdateInvalidateState();
+                    }
                 }
-                canvas_native_context_set_line_dash(this->GetContext(),
-                                                    rust::Slice<const float>(dash.data(),
-                                                                             dash.size()));
+                    break;
+                case NativeType::ImageBitmap: {
+                    auto image_bitmap = ImageBitmapImpl::GetPointer(image);
+                    if (image_bitmap != nullptr) {
+                        canvas_native_context_draw_image_asset(
+                                ptr->GetContext(),
+                                image_bitmap->GetImageAsset(),
+                                sx,
+                                sy, sWidth, sHeight,
+                                dx,
+                                dy, dWidth, dHeight);
+                        ptr->UpdateInvalidateState();
+                    }
+                }
+                    break;
+                case NativeType::CanvasRenderingContext2D: {
+                    auto image_canvas = CanvasRenderingContext2DImpl::GetPointer(image);
+                    if (image_canvas != nullptr) {
+                        canvas_native_context_draw_image_context(
+                                ptr->GetContext(),
+                                image_canvas->GetContext(),
+                                sx,
+                                sy, sWidth, sHeight,
+                                dx,
+                                dy, dWidth, dHeight);
+                        ptr->UpdateInvalidateState();
+                    }
+                }
+                    break;
+                default:
+                    break;
             }
         }
     }
+}
+
+
+void
+CanvasRenderingContext2DImpl::Ellipse(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 8) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto radiusX = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto radiusY = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        auto rotation = static_cast<float>(args[4]->NumberValue(context).ToChecked());
+        auto startAngle = static_cast<float>(args[5]->NumberValue(context).ToChecked());
+        auto endAngle = static_cast<float>(args[6]->NumberValue(context).ToChecked());
+        auto anticlockwise = false;
+        if (args[7]->IsBoolean()) {
+            anticlockwise = args[7]->BooleanValue(isolate);
+        }
+        canvas_native_context_ellipse(
+                ptr->GetContext(), x, y,
+                radiusX,
+                radiusY, rotation,
+                startAngle, endAngle,
+                anticlockwise);
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+    auto value = args[0];
+    if (count == 2) {
+        auto type = GetNativeType(isolate, value.As<v8::Object>());
+        if (type == NativeType::Path2D) {
+            auto object = Path2D::GetPointer(value.As<v8::Object>());
+
+            if (object != nullptr) {
+                auto data = ConvertFromV8String(isolate, args[1]);
+                canvas_native_context_fill_with_path(
+                        ptr->GetContext(),
+                        object->GetPath(),
+                        data.c_str());
+                ptr->UpdateInvalidateState();
+            }
+        }
+
+    } else if (count == 1) {
+        if (value->IsString()) {
+            auto rule = ConvertFromV8String(isolate, value);
+            canvas_native_context_fill(
+                    ptr->GetContext(), rule.c_str());
+            ptr->UpdateInvalidateState();
+        } else if (value->IsObject()) {
+            auto type = GetNativeType(isolate, value.As<v8::Object>());
+            if (type == NativeType::Path2D) {
+                auto object = Path2D::GetPointer(value.As<v8::Object>());
+
+                std::string rule("nonzero");
+                canvas_native_context_fill_with_path(
+                        ptr->GetContext(),
+                        object->GetPath(),
+                        rust::Str(
+                                rule.c_str()));
+                ptr->UpdateInvalidateState();
+            }
+        }
+    } else {
+        std::string rule("nonzero");
+        canvas_native_context_fill(
+                ptr->GetContext(),
+                rust::Str(rule.c_str()));
+        ptr->UpdateInvalidateState();
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::FillRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+    auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+    auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+    auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+    canvas_native_context_fill_rect(
+            ptr->GetContext(), x, y, width,
+            height);
+    ptr->UpdateInvalidateState();
+}
+
+void
+CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto text = ConvertFromV8String(isolate, args[0]);
+
+    auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+    auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+    float width = -1;
+    if (args[3]->IsNumber()) {
+        width = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+    }
+    canvas_native_context_fill_text(
+            ptr->GetContext(),
+            rust::Str(text.c_str()), x,
+            y, width);
+    ptr->UpdateInvalidateState();
+
+}
+
+void
+CanvasRenderingContext2DImpl::GetImageData(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    if (args.Length() == 4) {
+        auto sx = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto sy = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto sw = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto sh = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        auto imageData = canvas_native_context_get_image_data(
+                ptr->GetContext(), sx, sy, sw,
+                sh);
+
+        auto data = new ImageDataImpl(
+                std::move(imageData));
+
+        auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+        auto ext = v8::External::New(isolate, data);
+
+        ret->SetInternalField(0, ext);
+
+        SetNativeType(isolate, ret, NativeType::ImageData);
+
+        args.GetReturnValue().Set(ret);
+        return;
+    }
+
+    args.GetReturnValue().SetUndefined();
 
 
 }
 
+void
+CanvasRenderingContext2DImpl::GetLineDash(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
 
-jsi::Value CanvasRenderingContext2DImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
+    auto isolate = args.GetIsolate();
 
-
-    if (methodName == "drawPaint") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         auto color = arguments[0].asString(
-                                                                 runtime).utf8(runtime);
-                                                         canvas_native_context_draw_paint(
-                                                                 this->GetContext(),
-                                                                 rust::Str(color));
-                                                         this->UpdateInvalidateState();
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "drawPoint") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         auto x = (float) arguments[0].asNumber();
-                                                         auto y = (float) arguments[1].asNumber();
-                                                         canvas_native_context_draw_point(
-                                                                 this->GetContext(), x, y);
-                                                         this->UpdateInvalidateState();
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "drawPoints") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         auto mode = arguments[0].asString(
-                                                                 runtime).utf8(
-                                                                 runtime);
-                                                         auto points = arguments[1].asObject(
-                                                                 runtime).getArray(
-                                                                 runtime);
-                                                         auto size = points.size(runtime);
+    if (ptr == nullptr) {
+        auto ret = v8::Array::New(isolate);
+        args.GetReturnValue().Set(ret);
+        return;
+    }
+    auto context = isolate->GetCurrentContext();
 
 
-                                                         if ((size % 2) == 0) {
-                                                             int32_t pointMode = -1;
-                                                             if (mode == "points") {
-                                                                 pointMode = 0;
-                                                             } else if (mode == "lines") {
-                                                                 pointMode = 1;
-                                                             } else if (mode == "polygon") {
-                                                                 pointMode = 2;
-                                                             }
-                                                             if (pointMode == -1) {
-                                                                 return jsi::Value::undefined();
-                                                             }
-                                                             rust::Vec<float> store;
-                                                             store.reserve(size);
-                                                             size_t next = 0;
-                                                             for (size_t i = 0; i < size; i++) {
-
-                                                                 auto object = points.getValueAtIndex(
-                                                                         runtime, i).asObject(
-                                                                         runtime);
-
-                                                                 auto x = object.getProperty(
-                                                                         runtime, "x").asNumber();
-                                                                 auto y = object.getProperty(
-                                                                         runtime, "y").asNumber();
-                                                                 store[next] = (float) x;
-                                                                 store[next + 1] = (float) y;
-
-                                                                 next = i + 2;
-                                                             }
-
-                                                             rust::Slice<const float> buf(
-                                                                     store.data(),
-                                                                     store.size());
-
-                                                             canvas_native_context_draw_points(
-                                                                     this->GetContext(), pointMode,
-                                                                     buf);
-                                                             this->UpdateInvalidateState();
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
+    auto dash = canvas_native_context_get_line_dash(
+            ptr->GetContext());
+    auto size = dash.size();
+    auto array = v8::Array::New(isolate, (int) size);
+    for (int i = 0; i < size; ++i) {
+        array->Set(context, i,
+                   v8::Number::New(isolate,
+                                   (double) dash[i]));
     }
 
-    if (methodName == "filter") {
-        auto filter = canvas_native_context_get_filter(this->GetContext());
-        return jsi::String::createFromAscii(runtime, filter.data(), filter.length());
-    }
+    args.GetReturnValue().Set(array);
+}
 
-    if (methodName == "__makeDirty") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         this->UpdateInvalidateState();
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    }
+void
+CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
 
-    if (methodName == "__getPointer") {
-        auto ptr = (intptr_t *) &this->GetContext();
-        auto ret = std::to_string((intptr_t) ptr);
-        return jsi::String::createFromAscii(runtime, ret);
-    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto count = args.Length();
 
-    if (methodName == "__resize") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         auto width = arguments[0].asNumber();
-                                                         auto height = arguments[1].asNumber();
-                                                         canvas_native_context_resize(
-                                                                 this->GetContext(),
-                                                                 static_cast<float>(width),
-                                                                 static_cast<float>(height));
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "font") {
-        auto font = canvas_native_context_get_font(this->GetContext());
-        return jsi::String::createFromAscii(runtime, font.data(), font.length());
-    } else if (methodName == "globalAlpha") {
-        return {(double) canvas_native_context_get_global_alpha(this->GetContext())};
-    } else if (methodName == "imageSmoothingEnabled") {
-        return {canvas_native_context_get_image_smoothing_enabled(this->GetContext())};
-    } else if (methodName == "imageSmoothingQuality") {
-        auto quality = canvas_native_context_get_image_smoothing_quality(this->GetContext());
-        return jsi::String::createFromAscii(runtime, quality.data(), quality.length());
-    } else if (methodName == "lineDashOffset") {
-        auto lineDashOffset = canvas_native_context_get_line_dash_offset(this->GetContext());
-        return {(double) lineDashOffset};
-    } else if (methodName == "lineJoin") {
-        auto join = canvas_native_context_get_line_join(this->GetContext());
-        return jsi::String::createFromAscii(runtime, join.data(), join.size());
-    } else if (methodName == "lineCap") {
-        auto cap = canvas_native_context_get_line_cap(this->GetContext());
-        return jsi::String::createFromAscii(runtime, cap.data(), cap.size());
-    } else if (methodName == "miterLimit") {
-        auto miterLimit = canvas_native_context_get_miter_limit(this->GetContext());
-        return {(double) miterLimit};
-    } else if (methodName == "shadowColor") {
-        auto shadowColor = canvas_native_context_get_shadow_color(this->GetContext());
-        return jsi::String::createFromAscii(runtime, shadowColor.data(), shadowColor.size());
-    } else if (methodName == "shadowBlur") {
-        return {(double) canvas_native_context_get_shadow_blur(this->GetContext())};
-    } else if (methodName == "shadowOffsetX") {
-        return {(double) canvas_native_context_get_shadow_offset_x(this->GetContext())};
-    } else if (methodName == "shadowOffsetY") {
-        return {(double) canvas_native_context_get_shadow_offset_y(this->GetContext())};
-    } else if (methodName == "textAlign") {
-        auto textAlign = canvas_native_context_get_text_align(this->GetContext());
-        return jsi::String::createFromAscii(runtime, textAlign.data(), textAlign.size());
-    } else if (methodName == "globalCompositeOperation") {
-        auto globalCompositeOperation = canvas_native_context_get_global_composition(
-                this->GetContext());
-        return jsi::String::createFromAscii(runtime, globalCompositeOperation.data(),
-                                            globalCompositeOperation.size());
-    } else if (methodName == "fillStyle") {
-        PaintStyleType type = canvas_native_context_get_current_fill_style_type(this->GetContext());
-        switch (type) {
-            case PaintStyleType::Color: {
-                auto color = canvas_native_paint_style_get_current_fill_color_string(
-                        this->GetContext());
-                return jsi::String::createFromAscii(runtime, color.data(), color.size());
-            }
-            case PaintStyleType::Gradient: {
-                auto style = std::make_shared<CanvasGradient>(
-                        canvas_native_context_get_fill_style(this->GetContext()));
-                return jsi::Object::createFromHostObject(runtime, style);
-            }
-            case PaintStyleType::Pattern: {
-                auto style = std::make_shared<CanvasPattern>(
-                        canvas_native_context_get_fill_style(this->GetContext()));
-                return jsi::Object::createFromHostObject(runtime, style);
-            }
-            case PaintStyleType::None: {
-                return jsi::Value::undefined();
+    if (count == 2) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        std::string rule("nonzero");
+        auto ret = canvas_native_context_is_point_in_path(
+                ptr->GetContext(), x, y,
+                rust::Str(rule.c_str()));
+        args.GetReturnValue().Set(ret);
+        return;
+    } else if (count == 3 &&
+               args[2]->IsString()) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto rule = ConvertFromV8String(isolate, args[2]);
+        auto ret = canvas_native_context_is_point_in_path(
+                ptr->GetContext(), x, y,
+                rust::Str(rule.c_str()));
+        args.GetReturnValue().Set(ret);
+        return;
+    } else if (count == 4 &&
+               args[0]->IsObject() &&
+               args[3]->IsString()) {
+
+
+        auto value = args[0];
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (!typeValue.IsEmpty()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+            if (type == NativeType::Path2D) {
+                auto path = Path2D::GetPointer(value.As<v8::Object>());
+                auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+                auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+                auto rule = ConvertFromV8String(isolate, args[3]);
+
+
+                if (path != nullptr) {
+                    auto ret = canvas_native_context_is_point_in_path_with_path(
+                            ptr->GetContext(),
+                            path->GetPath(), x, y,
+                            rust::Str(rule.c_str()));
+                    args.GetReturnValue().Set(ret);
+                    return;
+                }
             }
         }
-    } else if (methodName == "strokeStyle") {
-        PaintStyleType type = canvas_native_context_get_current_stroke_style_type(
-                this->GetContext());
-        switch (type) {
-            case PaintStyleType::Color: {
-                auto color = canvas_native_paint_style_get_current_stroke_color_string(
-                        this->GetContext());
-                return jsi::String::createFromAscii(runtime, color.data(), color.size());
-            }
-            case PaintStyleType::Gradient: {
-                auto style = std::make_shared<CanvasGradient>(
-                        canvas_native_context_get_stroke_style(this->GetContext()));
-                return jsi::Object::createFromHostObject(runtime, style);
-            }
-            case PaintStyleType::Pattern: {
-                auto style = std::make_shared<CanvasPattern>(
-                        canvas_native_context_get_stroke_style(this->GetContext()));
-                return jsi::Object::createFromHostObject(runtime, style);
-            }
-            case PaintStyleType::None: {
-                return jsi::Value::undefined();
-            }
-        }
-    } else if (methodName == "lineWidth") {
-        auto lineWidth = canvas_native_context_get_line_width(this->GetContext());
-        return {(double) lineWidth};
-    } else if (methodName == "lineDash") {
-        auto lineDash = canvas_native_context_get_line_dash(this->GetContext());
-        auto size = lineDash.size();
-        auto ret = jsi::Array(runtime, size);
-        for (size_t i = 0; i < size; i++) {
-            auto item = lineDash[i];
-            ret.setValueAtIndex(runtime, i, jsi::Value((double) item));
-        }
-        return ret;
-    } else if (methodName == "addHitRegion") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "arc") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
 
-
-                                                         auto anti_clockwise = false;
-                                                         if (count == 6) {
-                                                             anti_clockwise = arguments[5].asBool();
-                                                         }
-                                                         canvas_native_context_arc(
-                                                                 this->GetContext(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber()),
-                                                                 static_cast<float>(arguments[4].asNumber()),
-                                                                 anti_clockwise
-                                                         );
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "arcTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     5,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         auto x1 = static_cast<float>(arguments[0].asNumber());
-                                                         auto y1 = static_cast<float>(arguments[1].asNumber());
-                                                         auto x2 = static_cast<float>(arguments[2].asNumber());
-                                                         auto y2 = static_cast<float>(arguments[3].asNumber());
-                                                         auto radius = static_cast<float>(arguments[4].asNumber());
-                                                         canvas_native_context_arc_to(
-                                                                 this->GetContext(),
-                                                                 x1,
-                                                                 y1,
-                                                                 x2,
-                                                                 y2,
-                                                                 radius
-                                                         );
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "beginPath") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         canvas_native_context_begin_path(
-                                                                 this->GetContext());
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bezierCurveTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         canvas_native_context_bezier_curve_to(
-                                                                 this->GetContext(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber()),
-                                                                 static_cast<float>(arguments[4].asNumber()),
-                                                                 static_cast<float>(arguments[5].asNumber())
-                                                         );
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "clearHitRegions") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "clearRect") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         canvas_native_context_clear_rect(
-                                                                 this->GetContext(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber())
-                                                         );
-                                                         this->UpdateInvalidateState();
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "clip") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 0) {
-                                                             std::string rule("nonzero");
-                                                             canvas_native_context_clip_rule(
-                                                                     this->GetContext(),
-                                                                     rust::Str(rule.c_str()));
-                                                         } else if (arguments[0].isString()) {
-                                                             auto val = arguments[0].asString(
-                                                                     runtime).utf8(runtime);
-                                                             canvas_native_context_clip_rule(
-                                                                     this->GetContext(),
-                                                                     rust::Str(val.c_str()));
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "closePath") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         canvas_native_context_close_path(
-                                                                 this->GetContext());
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "createImageData") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-
-
-                                                         if (count == 1 &&
-                                                             arguments[0].isObject()) {
-
-                                                             auto object = getHostObject<ImageDataImpl>(
-                                                                     runtime, arguments[0]);
-
-                                                             if (object != nullptr) {
-                                                                 auto width = canvas_native_image_data_get_width(
-                                                                         object->GetImageData());
-                                                                 auto height = canvas_native_image_data_get_height(
-                                                                         object->GetImageData());
-                                                                 auto data = std::make_shared<ImageDataImpl>(
-                                                                         canvas_native_image_data_create(
-                                                                                 width, height));
-                                                                 return jsi::Object::createFromHostObject(
-                                                                         runtime, data);
-                                                             }
-
-                                                         } else if (count > 1) {
-
-                                                             auto width = (int) arguments[0].asNumber();
-                                                             auto height = (int) arguments[1].asNumber();
-                                                             auto data = std::make_shared<ImageDataImpl>(
-                                                                     canvas_native_image_data_create(
-                                                                             width, height));
-                                                             return jsi::Object::createFromHostObject(
-                                                                     runtime, data);
-                                                         }
-
-                                                         // todo throw ?
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "createLinearGradient") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count == 4) {
-                                                             auto x0 = static_cast<float>(arguments[0].asNumber());
-                                                             auto y0 = static_cast<float>(arguments[1].asNumber());
-                                                             auto x1 = static_cast<float>(arguments[2].asNumber());
-                                                             auto y1 = static_cast<float>(arguments[3].asNumber());
-
-                                                             auto gradient = canvas_native_context_create_linear_gradient(
-                                                                     this->GetContext(), x0, y0, x1,
-                                                                     y1);
-                                                             auto ret = std::make_shared<CanvasGradient>(
-                                                                     std::move(gradient));
-                                                             return jsi::Object::createFromHostObject(
-                                                                     runtime,
-                                                                     ret);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "createPattern") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             if (arguments[0].isNull() ||
-                                                                 arguments[0].isUndefined()) { return jsi::Value::undefined(); }
-
-                                                             auto object = arguments[0].asObject(
-                                                                     runtime);
-
-                                                             try {
-                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                         runtime, object);
-
-                                                                 if (image_asset != nullptr) {
-                                                                     auto rep = arguments[1].asString(
-                                                                             runtime).utf8(runtime);
-                                                                     rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_asset(
-                                                                             this->GetContext(),
-                                                                             image_asset->GetImageAsset(),
-                                                                             rust::Str(
-                                                                                     rep.c_str()));
-                                                                     auto type = canvas_native_context_get_style_type(
-                                                                             *pattern);
-                                                                     if (type ==
-                                                                         PaintStyleType::None) {
-                                                                         return jsi::Value::undefined();
-                                                                     } else {
-                                                                         auto ret = std::make_shared<CanvasPattern>(
-                                                                                 std::move(
-                                                                                         pattern));
-                                                                         return jsi::Object::createFromHostObject(
-                                                                                 runtime, ret);
-                                                                     }
-                                                                 }
-                                                             } catch (...) {}
-
-                                                             try {
-                                                                 auto canvas_2d = getHostObject<CanvasRenderingContext2DImpl>(
-                                                                         runtime, object);
-                                                                 if (canvas_2d != nullptr) {
-                                                                     auto rep = arguments[1].asString(
-                                                                             runtime).utf8(runtime);
-                                                                     rust::Box<PaintStyle> pattern = canvas_native_context_create_pattern_canvas2d(
-                                                                             canvas_2d->GetContext(),
-                                                                             this->GetContext(),
-                                                                             rust::Str(
-                                                                                     rep.c_str()));
-                                                                     auto type = canvas_native_context_get_style_type(
-                                                                             *pattern);
-                                                                     if (type ==
-                                                                         PaintStyleType::None) {
-                                                                         return jsi::Value::undefined();
-                                                                     } else {
-                                                                         auto ret = std::make_shared<CanvasPattern>(
-                                                                                 std::move(
-                                                                                         pattern));
-                                                                         return jsi::Object::createFromHostObject(
-                                                                                 runtime, ret);
-                                                                     }
-                                                                 }
-                                                             } catch (...) {}
-
-                                                             try {
-                                                                 auto webgl = getHostObject<WebGLRenderingContextBase>(
-                                                                         runtime, object);
-                                                                 if (webgl != nullptr) {
-                                                                     auto rep = arguments[1].asString(
-                                                                             runtime).utf8(runtime);
-                                                                     auto pattern = canvas_native_context_create_pattern_webgl(
-                                                                             webgl->GetState(),
-                                                                             this->GetContext(),
-                                                                             rust::Str(
-                                                                                     rep.c_str()));
-                                                                     auto type = canvas_native_context_get_style_type(
-                                                                             *pattern);
-                                                                     if (type ==
-                                                                         PaintStyleType::None) {
-                                                                         return jsi::Value::undefined();
-                                                                     } else {
-                                                                         auto ret = std::make_shared<CanvasPattern>(
-                                                                                 std::move(
-                                                                                         pattern));
-                                                                         return jsi::Object::createFromHostObject(
-                                                                                 runtime, ret);
-                                                                     }
-                                                                 }
-                                                             } catch (...) {}
-
-                                                         }
-
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-
-    } else if (methodName == "__createPatternWithNative") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-
-                                                         auto ptr = getPointerValue(runtime,
-                                                                                    arguments[0]);
-
-                                                         auto pattern = canvas_native_pattern_from_ptr(
-                                                                 ptr);
-                                                         auto type = canvas_native_context_get_style_type(
-                                                                 *pattern);
-                                                         if (type == PaintStyleType::None) {
-                                                             return jsi::Value::undefined();
-                                                         } else {
-                                                             auto ret = std::make_shared<CanvasPattern>(
-                                                                     std::move(pattern));
-                                                             return jsi::Object::createFromHostObject(
-                                                                     runtime, ret);
-                                                         }
-
-                                                     }
-        );
-
-    } else if (methodName == "createRadialGradient") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count == 6) {
-                                                             auto x0 = static_cast<float>(arguments[0].asNumber());
-                                                             auto y0 = static_cast<float>(arguments[1].asNumber());
-                                                             auto r0 = static_cast<float>(arguments[2].asNumber());
-                                                             auto x1 = static_cast<float>(arguments[3].asNumber());
-                                                             auto y1 = static_cast<float>(arguments[4].asNumber());
-                                                             auto r1 = static_cast<float>(arguments[5].asNumber());
-
-                                                             auto gradient = canvas_native_context_create_radial_gradient(
-                                                                     this->GetContext(), x0, y0, r0,
-                                                                     x1, y1, r1);
-                                                             auto ret = std::make_shared<CanvasGradient>(
-                                                                     std::move(gradient));
-                                                             return jsi::Object::createFromHostObject(
-                                                                     runtime, ret);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "drawFocusIfNeeded") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "drawImage") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     9,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count == 3) {
-                                                             auto image = arguments[0].asObject(
-                                                                     runtime);
-                                                             auto dx = static_cast<float>(arguments[1].asNumber());
-                                                             auto dy = static_cast<float>(arguments[2].asNumber());
-
-
-                                                             try {
-                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                         runtime, image);
-
-                                                                 if (image_asset != nullptr) {
-                                                                     canvas_native_context_draw_image_dx_dy_asset(
-                                                                             this->GetContext(),
-                                                                             image_asset->GetImageAsset(),
-                                                                             dx, dy);
-                                                                     this->UpdateInvalidateState();
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } catch (...) {}
-
-
-                                                             try {
-                                                                 auto image_bitmap = getHostObject<ImageBitmapImpl>(
-                                                                         runtime, image);
-                                                                 if (image_bitmap != nullptr) {
-                                                                     canvas_native_context_draw_image_dx_dy_asset(
-                                                                             this->GetContext(),
-                                                                             image_bitmap->GetImageAsset(),
-                                                                             dx, dy);
-                                                                     this->UpdateInvalidateState();
-                                                                 }
-                                                             } catch (...) {}
-
-
-                                                             try {
-                                                                 auto image_canvas = getHostObject<CanvasRenderingContext2DImpl>(
-                                                                         runtime, image);
-                                                                 if (image_canvas != nullptr) {
-                                                                     canvas_native_context_draw_image_dx_dy_context(
-                                                                             this->GetContext(),
-                                                                             image_canvas->GetContext(),
-                                                                             dx, dy);
-                                                                     this->UpdateInvalidateState();
-                                                                 }
-                                                             } catch (...) {}
-
-
-                                                         } else if (count == 5) {
-                                                             auto image = arguments[0].asObject(
-                                                                     runtime);
-                                                             auto dx = (float) arguments[1].asNumber();
-                                                             auto dy = (float) arguments[2].asNumber();
-                                                             auto dWidth = (float) arguments[3].asNumber();
-                                                             auto dHeight = (float) arguments[4].asNumber();
-
-                                                             try {
-                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                         runtime, image);
-                                                                 if (image_asset != nullptr) {
-                                                                     canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-                                                                             this->GetContext(),
-                                                                             image_asset->GetImageAsset(),
-                                                                             dx, dy,
-                                                                             dWidth,
-                                                                             dHeight);
-                                                                     this->UpdateInvalidateState();
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } catch (...) {}
-
-                                                             try {
-                                                                 auto image_bitmap = getHostObject<ImageBitmapImpl>(
-                                                                         runtime, image);
-                                                                 if (image_bitmap != nullptr) {
-                                                                     canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-                                                                             this->GetContext(),
-                                                                             image_bitmap->GetImageAsset(),
-                                                                             dx, dy,
-                                                                             dWidth,
-                                                                             dHeight);
-                                                                     this->UpdateInvalidateState();
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } catch (...) {}
-
-                                                             try {
-                                                                 auto image_canvas = getHostObject<CanvasRenderingContext2DImpl>(
-                                                                         runtime, image);
-                                                                 if (image_canvas != nullptr) {
-                                                                     canvas_native_context_draw_image_dx_dy_dw_dh_context(
-                                                                             this->GetContext(),
-                                                                             image_canvas->GetContext(),
-                                                                             dx, dy,
-                                                                             dWidth,
-                                                                             dHeight);
-                                                                     this->UpdateInvalidateState();
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } catch (...) {}
-
-
-                                                         } else if (count == 9) {
-                                                             auto image = arguments[0].asObject(
-                                                                     runtime);
-                                                             auto sx = (float) arguments[1].asNumber();
-                                                             auto sy = (float) arguments[2].asNumber();
-                                                             auto sWidth = (float) arguments[3].asNumber();
-                                                             auto sHeight = (float) arguments[4].asNumber();
-                                                             auto dx = (float) arguments[5].asNumber();
-                                                             auto dy = (float) arguments[6].asNumber();
-                                                             auto dWidth = (float) arguments[7].asNumber();
-                                                             auto dHeight = (float) arguments[8].asNumber();
-
-                                                             try {
-                                                                 auto image_asset = getHostObject<ImageAssetImpl>(
-                                                                         runtime, image);
-                                                                 if (image_asset != nullptr) {
-                                                                     canvas_native_context_draw_image_asset(
-                                                                             this->GetContext(),
-                                                                             image_asset->GetImageAsset(),
-                                                                             sx,
-                                                                             sy, sWidth, sHeight,
-                                                                             dx,
-                                                                             dy, dWidth, dHeight);
-                                                                     this->UpdateInvalidateState();
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } catch (...) {}
-
-                                                             try {
-                                                                 auto image_bitmap = getHostObject<ImageBitmapImpl>(
-                                                                         runtime, image);
-                                                                 if (image_bitmap != nullptr) {
-                                                                     canvas_native_context_draw_image_asset(
-                                                                             this->GetContext(),
-                                                                             image_bitmap->GetImageAsset(),
-                                                                             sx,
-                                                                             sy, sWidth, sHeight,
-                                                                             dx,
-                                                                             dy, dWidth, dHeight);
-                                                                     this->UpdateInvalidateState();
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } catch (...) {}
-
-                                                             try {
-                                                                 auto image_canvas = getHostObject<CanvasRenderingContext2DImpl>(
-                                                                         runtime, image);
-                                                                 if (image_canvas != nullptr) {
-                                                                     canvas_native_context_draw_image_context(
-                                                                             this->GetContext(),
-                                                                             image_canvas->GetContext(),
-                                                                             sx,
-                                                                             sy, sWidth, sHeight,
-                                                                             dx,
-                                                                             dy, dWidth, dHeight);
-                                                                     this->UpdateInvalidateState();
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } catch (...) {}
-
-
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "ellipse") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     8,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         if (count == 8) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             auto radiusX = static_cast<float>(arguments[2].asNumber());
-                                                             auto radiusY = static_cast<float>(arguments[3].asNumber());
-                                                             auto rotation = static_cast<float>(arguments[4].asNumber());
-                                                             auto startAngle = static_cast<float>(arguments[5].asNumber());
-                                                             auto endAngle = static_cast<float>(arguments[6].asNumber());
-                                                             auto anticlockwise = false;
-                                                             if (arguments[7].isBool()) {
-                                                                 anticlockwise = arguments[7].asBool();
-                                                             }
-                                                             canvas_native_context_ellipse(
-                                                                     this->GetContext(), x, y,
-                                                                     radiusX,
-                                                                     radiusY, rotation,
-                                                                     startAngle, endAngle,
-                                                                     anticlockwise);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "fill") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         if (count == 2) {
-                                                             auto object = getHostObject<Path2D>(
-                                                                     runtime, arguments[0]);
-
-                                                             if (object != nullptr) {
-                                                                 auto value = arguments[1].asString(
-                                                                         runtime).utf8(runtime);
-                                                                 canvas_native_context_fill_with_path(
-                                                                         this->GetContext(),
-                                                                         object->GetPath(),
-                                                                         rust::Str(value.c_str()));
-                                                                 this->UpdateInvalidateState();
-                                                             }
-                                                         } else if (count == 1) {
-                                                             if (arguments[0].isString()) {
-                                                                 auto value = arguments[0].asString(
-                                                                         runtime).utf8(runtime);
-                                                                 canvas_native_context_fill(
-                                                                         this->GetContext(),
-                                                                         rust::Str(value.c_str()));
-                                                                 this->UpdateInvalidateState();
-                                                             } else if (arguments[0].isObject()) {
-                                                                 auto object = getHostObject<Path2D>(
-                                                                         runtime, arguments[0]);
-                                                                 if (object != nullptr) {
-                                                                     std::string rule("nonzero");
-                                                                     canvas_native_context_fill_with_path(
-                                                                             this->GetContext(),
-                                                                             object->GetPath(),
-                                                                             rust::Str(
-                                                                                     rule.c_str()));
-                                                                     this->UpdateInvalidateState();
-                                                                 }
-                                                             }
-                                                         } else {
-                                                             std::string rule("nonzero");
-                                                             canvas_native_context_fill(
-                                                                     this->GetContext(),
-                                                                     rust::Str(rule.c_str()));
-                                                             this->UpdateInvalidateState();
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "fillRect") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto x = static_cast<float>(arguments[0].asNumber());
-                                                         auto y = static_cast<float>(arguments[1].asNumber());
-                                                         auto width = static_cast<float>(arguments[2].asNumber());
-                                                         auto height = static_cast<float>(arguments[3].asNumber());
-                                                         canvas_native_context_fill_rect(
-                                                                 this->GetContext(), x, y, width,
-                                                                 height);
-                                                         this->UpdateInvalidateState();
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "fillText") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto text = arguments[0].asString(
-                                                                 runtime).utf8(
-                                                                 runtime);
-                                                         auto x = static_cast<float>(arguments[1].asNumber());
-                                                         auto y = static_cast<float>(arguments[2].asNumber());
-                                                         float width = -1;
-                                                         if (arguments[3].isNumber()) {
-                                                             width = static_cast<float>(arguments[3].asNumber());
-                                                         }
-                                                         canvas_native_context_fill_text(
-                                                                 this->GetContext(),
-                                                                 rust::Str(text.c_str()), x,
-                                                                 y, width);
-                                                         this->UpdateInvalidateState();
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "getImageData") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 4) {
-                                                             auto sx = static_cast<float>(arguments[0].asNumber());
-                                                             auto sy = static_cast<float>(arguments[1].asNumber());
-                                                             auto sw = static_cast<float>(arguments[2].asNumber());
-                                                             auto sh = static_cast<float>(arguments[3].asNumber());
-                                                             auto data = canvas_native_context_get_image_data(
-                                                                     this->GetContext(), sx, sy, sw,
-                                                                     sh);
-                                                             auto object = std::make_shared<ImageDataImpl>(
-                                                                     std::move(data));
-                                                             return jsi::Object::createFromHostObject(
-                                                                     runtime, object);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "getLineDash") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto dash = canvas_native_context_get_line_dash(
-                                                                 this->GetContext());
-                                                         auto size = dash.size();
-                                                         auto array = jsi::Array(runtime, size);
-                                                         for (int i = 0; i < size; ++i) {
-                                                             array.setValueAtIndex(runtime, i,
-                                                                                   jsi::Value(
-                                                                                           (double) dash[i]));
-                                                         }
-                                                         return array;
-                                                     }
-        );
-    } else if (methodName == "isPointInPath") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 2) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             std::string rule("nonzero");
-                                                             auto ret = canvas_native_context_is_point_in_path(
-                                                                     this->GetContext(), x, y,
-                                                                     rust::Str(rule.c_str()));
-                                                             return {ret};
-                                                         } else if (count == 3 &&
-                                                                    arguments[2].isString()) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             auto rule = arguments[2].asString(
-                                                                     runtime).utf8(runtime);
-                                                             auto ret = canvas_native_context_is_point_in_path(
-                                                                     this->GetContext(), x, y,
-                                                                     rust::Str(rule.c_str()));
-                                                             return {ret};
-                                                         } else if (count == 4 &&
-                                                                    arguments[0].isObject() &&
-                                                                    arguments[3].isString()) {
-                                                             auto path = getHostObject<Path2D>(
-                                                                     runtime, arguments[0]);
-                                                             auto x = static_cast<float>(arguments[1].asNumber());
-                                                             auto y = static_cast<float>(arguments[2].asNumber());
-                                                             auto rule = arguments[3].asString(
-                                                                     runtime).utf8(runtime);
-
-
-                                                             if (path != nullptr) {
-                                                                 auto ret = canvas_native_context_is_point_in_path_with_path(
-                                                                         this->GetContext(),
-                                                                         path->GetPath(), x, y,
-                                                                         rust::Str(rule.c_str()));
-                                                                 return {ret};
-                                                             }
-                                                         }
-
-                                                         return {false};
-
-                                                     }
-        );
-    } else if (methodName == "isPointInStroke") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 2) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             auto ret = canvas_native_context_is_point_in_stroke(
-                                                                     this->GetContext(), x, y);
-                                                             return {ret};
-                                                         } else if (count == 3 &&
-                                                                    arguments[0].isObject()) {
-                                                             auto path = getHostObject<Path2D>(
-                                                                     runtime, arguments[0]);
-                                                             auto x = static_cast<float>(arguments[1].asNumber());
-                                                             auto y = static_cast<float>(arguments[2].asNumber());
-                                                             if (path != nullptr) {
-                                                                 auto ret = canvas_native_context_is_point_in_stroke_with_path(
-                                                                         this->GetContext(),
-                                                                         path->GetPath(), x,
-                                                                         y);
-                                                                 return {ret};
-                                                             }
-                                                         }
-
-                                                         return {false};
-
-                                                     }
-        );
-    } else if (methodName == "lineTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             canvas_native_context_line_to(
-                                                                     this->GetContext(), x, y);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "measureText") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto text = arguments[0].asString(
-                                                                 runtime).utf8(
-                                                                 runtime);
-                                                         auto metrics = canvas_native_context_measure_text(
-                                                                 this->GetContext(),
-                                                                 rust::Str(text.c_str()));
-
-                                                         auto object = std::make_shared<TextMetricsImpl>(
-                                                                 std::move(metrics));
-
-                                                         return jsi::Object::createFromHostObject(
-                                                                 runtime, object);
-                                                     }
-        );
-    } else if (methodName == "moveTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             canvas_native_context_move_to(
-                                                                     this->GetContext(), x, y);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "putImageData") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     7,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto imageData = getHostObject<ImageDataImpl>(
-                                                                 runtime, arguments[0]);
-                                                         if (count == 3) {
-                                                             auto dx = static_cast<float>(arguments[1].asNumber());
-                                                             auto dy = static_cast<float>(arguments[2].asNumber());
-                                                             float dirtyX = 0;
-                                                             float dirtyY = 0;
-                                                             auto dirtyWidth = (float) canvas_native_image_data_get_width(
-                                                                     imageData->GetImageData());
-                                                             auto dirtyHeight = (float) canvas_native_image_data_get_height(
-                                                                     imageData->GetImageData());
-                                                             canvas_native_context_put_image_data(
-                                                                     this->GetContext(),
-                                                                     imageData->GetImageData(), dx,
-                                                                     dy, dirtyX, dirtyY,
-                                                                     dirtyWidth, dirtyHeight);
-                                                             this->UpdateInvalidateState();
-                                                         } else if (count == 7) {
-                                                             auto dx = static_cast<float>(arguments[1].asNumber());
-                                                             auto dy = static_cast<float>(arguments[2].asNumber());
-                                                             auto dirtyX = static_cast<float>(arguments[3].asNumber());
-                                                             auto dirtyY = static_cast<float>(arguments[4].asNumber());
-                                                             auto dirtyWidth = static_cast<float>(arguments[5].asNumber());
-                                                             auto dirtyHeight = static_cast<float>(arguments[6].asNumber());
-                                                             canvas_native_context_put_image_data(
-                                                                     this->GetContext(),
-                                                                     imageData->GetImageData(), dx,
-                                                                     dy, dirtyX, dirtyY,
-                                                                     dirtyWidth, dirtyHeight);
-                                                             this->UpdateInvalidateState();
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "quadraticCurveTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 4) {
-                                                             auto cpx = static_cast<float>(arguments[0].asNumber());
-                                                             auto cpy = static_cast<float>(arguments[1].asNumber());
-                                                             auto x = static_cast<float>(arguments[2].asNumber());
-                                                             auto y = static_cast<float>(arguments[3].asNumber());
-                                                             canvas_native_context_quadratic_curve_to(
-                                                                     this->GetContext(), cpx, cpy,
-                                                                     x, y);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "roundRect") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 5) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             auto width = static_cast<float>(arguments[2].asNumber());
-                                                             auto height = static_cast<float>(arguments[3].asNumber());
-                                                             if (arguments[4].isObject()) {
-                                                                 auto radii = arguments[4].asObject(
-                                                                         runtime);
-                                                                 if (radii.isArray(runtime)) {
-                                                                     auto array = radii.getArray(
-                                                                             runtime);
-                                                                     auto size = array.size(
-                                                                             runtime);
-                                                                     if (size > 1) {
-                                                                         rust::Vec<float> store;
-                                                                         store.reserve(size);
-                                                                         for (int i = 0;
-                                                                              i < size; i++) {
-                                                                             store[i] = (float) array.getValueAtIndex(
-                                                                                     runtime,
-                                                                                     i).asNumber();
-                                                                         }
-
-                                                                         rust::Slice<const float> buf(
-                                                                                 store.data(),
-                                                                                 store.size());
-                                                                         canvas_native_context_round_rect(
-                                                                                 this->GetContext(),
-                                                                                 x, y,
-                                                                                 width,
-                                                                                 height, buf);
-
-                                                                     }
-                                                                 }
-                                                             } else {
-                                                                 auto radii = (float) arguments[4].asNumber();
-                                                                 canvas_native_context_round_rect_tl_tr_br_bl(
-                                                                         this->GetContext(), x, y,
-                                                                         width,
-                                                                         height, radii, radii,
-                                                                         radii, radii);
-
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "rect") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 4) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             auto width = static_cast<float>(arguments[2].asNumber());
-                                                             auto height = static_cast<float>(arguments[3].asNumber());
-                                                             canvas_native_context_rect(
-                                                                     this->GetContext(), x, y,
-                                                                     width,
-                                                                     height);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "removeHitRegion") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "resetTransform") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         canvas_native_context_reset_transform(
-                                                                 this->GetContext());
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "restore") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         canvas_native_context_restore(
-                                                                 this->GetContext());
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "rotate") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 1 &&
-                                                             arguments[0].isNumber()) {
-                                                             canvas_native_context_rotate(
-                                                                     this->GetContext(),
-                                                                     (float) arguments[0].asNumber());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "save") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         canvas_native_context_save(
-                                                                 this->GetContext());
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "scale") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 2) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             canvas_native_context_scale(
-                                                                     this->GetContext(), x, y);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "scrollPathIntoView") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "setLineDash") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 1 &&
-                                                             arguments[0].isObject()) {
-                                                             auto vecObject = arguments[0].asObject(
-                                                                     runtime);
-                                                             if (vecObject.isArray(
-                                                                     runtime)) {
-                                                                 auto segments = vecObject.getArray(
-                                                                         runtime);
-                                                                 auto len = segments.size(runtime);
-                                                                 std::vector<float> data;
-                                                                 for (int i = 0; i < len; ++i) {
-                                                                     auto item = segments.getValueAtIndex(
-                                                                             runtime, i);
-                                                                     data.push_back(
-                                                                             static_cast<float>(item.asNumber()));
-                                                                 }
-                                                                 rust::Slice<const float> slice{
-                                                                         data.data(), data.size()};
-                                                                 canvas_native_context_set_line_dash(
-                                                                         this->GetContext(), slice);
-                                                             }
-                                                         }
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "setTransform") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count == 1 &&
-                                                             arguments[0].isObject()) {
-                                                             auto matrix = getHostObject<MatrixImpl>(
-                                                                     runtime, arguments[0]);
-                                                             if (matrix != nullptr) {
-                                                                 canvas_native_context_set_transform_matrix(
-                                                                         this->GetContext(),
-                                                                         matrix->GetMatrix());
-                                                             }
-                                                         } else if (count == 6) {
-                                                             auto a = static_cast<float>(arguments[0].asNumber());
-                                                             auto b = static_cast<float>(arguments[1].asNumber());
-                                                             auto c = static_cast<float>(arguments[2].asNumber());
-                                                             auto d = static_cast<float>(arguments[3].asNumber());
-                                                             auto e = static_cast<float>(arguments[4].asNumber());
-                                                             auto f = static_cast<float>(arguments[5].asNumber());
-                                                             canvas_native_context_set_transform(
-                                                                     this->GetContext(), a, b, c, d,
-                                                                     e,
-                                                                     f);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "stroke") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 1 &&
-                                                             arguments[0].isObject()) {
-                                                             auto path = getHostObject<Path2D>(
-                                                                     runtime, arguments[0]);
-                                                             if (path != nullptr) {
-                                                                 canvas_native_context_stroke_with_path(
-                                                                         this->GetContext(),
-                                                                         path->GetPath());
-                                                                 this->UpdateInvalidateState();
-                                                             }
-                                                         } else {
-                                                             canvas_native_context_stroke(
-                                                                     this->GetContext());
-                                                             this->UpdateInvalidateState();
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "strokeRect") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 4) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             auto width = static_cast<float>(arguments[2].asNumber());
-                                                             auto height = static_cast<float>(arguments[3].asNumber());
-                                                             canvas_native_context_stroke_rect(
-                                                                     this->GetContext(), x, y,
-                                                                     width,
-                                                                     height);
-                                                             this->UpdateInvalidateState();
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "strokeText") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count >= 3) {
-                                                             auto text = arguments[0].asString(
-                                                                     runtime).utf8(runtime);
-                                                             auto x = static_cast<float>(arguments[1].asNumber());
-                                                             auto y = static_cast<float>(arguments[2].asNumber());
-                                                             float maxWidth = -1;
-
-                                                             if (count > 3) {
-                                                                 maxWidth = static_cast<float>(arguments[3].asNumber());
-                                                             }
-
-                                                             canvas_native_context_stroke_text(
-                                                                     this->GetContext(),
-                                                                     rust::Str(text.c_str()),
-                                                                     x, y, maxWidth);
-                                                             this->UpdateInvalidateState();
-                                                         }
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "transform") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 6) {
-                                                             auto a = static_cast<float>(arguments[0].asNumber());
-                                                             auto b = static_cast<float>(arguments[1].asNumber());
-                                                             auto c = static_cast<float>(arguments[2].asNumber());
-                                                             auto d = static_cast<float>(arguments[3].asNumber());
-                                                             auto e = static_cast<float>(arguments[4].asNumber());
-                                                             auto f = static_cast<float>(arguments[5].asNumber());
-                                                             canvas_native_context_transform(
-                                                                     this->GetContext(), a, b, c, d,
-                                                                     e,
-                                                                     f);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "translate") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 2) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             canvas_native_context_translate(
-                                                                     this->GetContext(), x, y);
-                                                         }
-
-                                                         return jsi::Value::undefined();
-
-                                                     }
-        );
-    } else if (methodName == "__toDataURL") {
-
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         std::string type("image/png");
-                                                         int quality = 92;
-                                                         if (arguments[0].isString()) {
-                                                             type = arguments[0].asString(
-                                                                     runtime).utf8(
-                                                                     runtime);
-                                                         }
-
-
-                                                         if (arguments[1].isNumber()) {
-                                                             quality = (int) arguments[1].asNumber();
-                                                         }
-
-
-                                                         rust::Str str(type);
-
-                                                         auto data = canvas_native_to_data_url(
-                                                                 this->GetContext(), str,
-                                                                 quality);
-                                                         return jsi::String::createFromAscii(
-                                                                 runtime,
-                                                                 data.data(),
-                                                                 data.size());
-                                                     }
-        );
     }
 
 
-    return jsi::Value::undefined();
+    args.GetReturnValue().Set(false);
+}
+
+void
+CanvasRenderingContext2DImpl::IsPointInStroke(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto count = args.Length();
+
+
+    if (count == 2) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto ret = canvas_native_context_is_point_in_stroke(
+                ptr->GetContext(), x, y);
+
+        args.GetReturnValue().Set(ret);
+        return;
+    } else if (count == 3 &&
+               args[0]->IsObject()) {
+
+
+        auto value = args[0];
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (!typeValue.IsEmpty()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+            if (type == NativeType::Path2D) {
+                auto path = Path2D::GetPointer(value.As<v8::Object>());
+                auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+                auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+                auto rule = ConvertFromV8String(isolate, args[3]);
+
+
+                if (path != nullptr) {
+                    auto ret = canvas_native_context_is_point_in_stroke_with_path(
+                            ptr->GetContext(),
+                            path->GetPath(), x, y);
+                    args.GetReturnValue().Set(ret);
+                    return;
+                }
+            }
+        }
+    }
+
+    args.GetReturnValue().Set(false);
+}
+
+void
+CanvasRenderingContext2DImpl::LineTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        canvas_native_context_line_to(
+                ptr->GetContext(), x, y);
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto text = ConvertFromV8String(isolate, args[0]);
+
+    auto metrics = canvas_native_context_measure_text(
+            ptr->GetContext(),
+            rust::Str(text.c_str()));
+
+    auto data = new TextMetricsImpl(
+            std::move(metrics));
+
+    auto ret = TextMetricsImpl::GetCtor(isolate)->GetFunction(
+            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+
+    auto ext = v8::External::New(isolate, data);
+
+    ret->SetInternalField(0, ext);
+
+    SetNativeType(isolate, ret, NativeType::TextMetrics);
+
+    args.GetReturnValue().Set(ret);
+
+}
+
+void
+CanvasRenderingContext2DImpl::MoveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        canvas_native_context_move_to(
+                ptr->GetContext(), x, y);
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::PutImageData(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    auto value = args[0];
+    auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                     ConvertToV8String(isolate, "__type"));
+    auto count = args.Length();
+    if (!typeValue.IsEmpty()) {
+        auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+        if (type == NativeType::ImageData) {
+
+
+            auto imageData = ImageDataImpl::GetPointer(value.As<v8::Object>());
+            if (count == 3) {
+                auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+                auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+                float dirtyX = 0;
+                float dirtyY = 0;
+                auto dirtyWidth = (float) canvas_native_image_data_get_width(
+                        imageData->GetImageData());
+                auto dirtyHeight = (float) canvas_native_image_data_get_height(
+                        imageData->GetImageData());
+                canvas_native_context_put_image_data(
+                        ptr->GetContext(),
+                        imageData->GetImageData(), dx,
+                        dy, dirtyX, dirtyY,
+                        dirtyWidth, dirtyHeight);
+                ptr->UpdateInvalidateState();
+            } else if (count == 7) {
+                auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+                auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+                auto dirtyX = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+                auto dirtyY = static_cast<float>(args[4]->NumberValue(context).ToChecked());
+                auto dirtyWidth = static_cast<float>(args[5]->NumberValue(context).ToChecked());
+                auto dirtyHeight = static_cast<float>(args[6]->NumberValue(context).ToChecked());
+                canvas_native_context_put_image_data(
+                        ptr->GetContext(),
+                        imageData->GetImageData(), dx,
+                        dy, dirtyX, dirtyY,
+                        dirtyWidth, dirtyHeight);
+                ptr->UpdateInvalidateState();
+            }
+        }
+    }
+
+}
+
+void
+CanvasRenderingContext2DImpl::QuadraticCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 4) {
+        auto cpx = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto cpy = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto x = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        canvas_native_context_quadratic_curve_to(
+                ptr->GetContext(), cpx, cpy,
+                x, y);
+    }
+
+}
+
+void
+CanvasRenderingContext2DImpl::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 5) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        if (args[4]->IsObject()) {
+            auto radii = args[4];
+            if (radii->IsArray()) {
+                auto array = radii.As<v8::Array>();
+                auto size = array->Length();
+                if (size > 1) {
+                    rust::Vec<float> store;
+                    store.reserve(size);
+                    for (int i = 0;
+                         i < size; i++) {
+                        store[i] = (float) array->Get(
+                                context,
+                                i).ToLocalChecked()->NumberValue(context).ToChecked();
+                    }
+
+                    rust::Slice<const float> buf(
+                            store.data(),
+                            store.size());
+                    canvas_native_context_round_rect(
+                            ptr->GetContext(),
+                            x, y,
+                            width,
+                            height, buf);
+
+                }
+            }
+        } else {
+            auto radii = (float) args[4]->NumberValue(context).ToChecked();
+            canvas_native_context_round_rect_tl_tr_br_bl(
+                    ptr->GetContext(), x, y,
+                    width,
+                    height, radii, radii,
+                    radii, radii);
+
+        }
+    }
+
+}
+
+void
+CanvasRenderingContext2DImpl::Rect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 4) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        canvas_native_context_rect(
+                ptr->GetContext(), x, y,
+                width,
+                height);
+    }
+
+}
+
+void
+CanvasRenderingContext2DImpl::RemoveHitRegion(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+}
+
+void
+CanvasRenderingContext2DImpl::ResetTransform(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    canvas_native_context_reset_transform(
+            ptr->GetContext());
+}
+
+void
+CanvasRenderingContext2DImpl::Restore(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    canvas_native_context_restore(
+            ptr->GetContext());
+}
+
+void
+CanvasRenderingContext2DImpl::Rotate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+
+    if (args.Length() == 1 && value->IsNumber()) {
+        canvas_native_context_rotate(
+                ptr->GetContext(),
+                (float) args[0]->NumberValue(context).ToChecked());
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::Save(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    canvas_native_context_save(
+            ptr->GetContext());
+}
+
+void
+CanvasRenderingContext2DImpl::Scale(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 2) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        canvas_native_context_scale(
+                ptr->GetContext(), x, y);
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::ScrollPathIntoView(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    // CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+}
+
+void
+CanvasRenderingContext2DImpl::SetLineDash(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+
+    if (args.Length() == 1 &&
+        args[0]->IsObject()) {
+        if (value->IsArray()) {
+            auto segments = value.As<v8::Array>();
+            auto len = segments->Length();
+            std::vector<float> data;
+            for (int i = 0; i < len; ++i) {
+                auto item = segments->Get(
+                        context, i).ToLocalChecked()->NumberValue(context).ToChecked();
+                data.push_back(
+                        static_cast<float>(item));
+            }
+            rust::Slice<const float> slice{
+                    data.data(), data.size()};
+            canvas_native_context_set_line_dash(
+                    ptr->GetContext(), slice);
+        }
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+    auto value = args[0];
+    if (count == 1 && value->IsObject()) {
+
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (!typeValue.IsEmpty()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+
+            if (type == NativeType::Matrix) {
+                auto matrix = MatrixImpl::GetPointer(value.As<v8::Object>());
+                if (matrix != nullptr) {
+                    canvas_native_context_set_transform_matrix(
+                            ptr->GetContext(),
+                            matrix->GetMatrix());
+                }
+            }
+
+        }
+    } else if (count == 6) {
+        auto a = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto b = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto c = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto d = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        auto e = static_cast<float>(args[4]->NumberValue(context).ToChecked());
+        auto f = static_cast<float>(args[5]->NumberValue(context).ToChecked());
+        canvas_native_context_set_transform(
+                ptr->GetContext(), a, b, c, d,
+                e,
+                f);
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::Stroke(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    if (args.Length() == 1 &&
+        args[0]->IsObject()) {
+
+        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
+                                         ConvertToV8String(isolate, "__type"));
+
+        if (!typeValue.IsEmpty()) {
+            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
+
+            if (type == NativeType::Path2D) {
+
+                auto path = Path2D::GetPointer(value.As<v8::Object>());
+                if (path != nullptr) {
+                    canvas_native_context_stroke_with_path(
+                            ptr->GetContext(),
+                            path->GetPath());
+                    ptr->UpdateInvalidateState();
+                }
+
+            }
+        }
+
+    } else {
+        canvas_native_context_stroke(
+                ptr->GetContext());
+        ptr->UpdateInvalidateState();
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::StrokeRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 4) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        canvas_native_context_stroke_rect(
+                ptr->GetContext(), x, y,
+                width,
+                height);
+        ptr->UpdateInvalidateState();
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+    if (count >= 3) {
+        auto text = ConvertFromV8String(isolate, args[0]);
+        auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        float maxWidth = -1;
+
+        if (count > 3) {
+            maxWidth = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        }
+
+        canvas_native_context_stroke_text(
+                ptr->GetContext(),
+                rust::Str(text.c_str()),
+                x, y, maxWidth);
+        ptr->UpdateInvalidateState();
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::Transform(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    if (args.Length() == 6) {
+        auto a = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto b = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto c = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto d = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        auto e = static_cast<float>(args[4]->NumberValue(context).ToChecked());
+        auto f = static_cast<float>(args[5]->NumberValue(context).ToChecked());
+        canvas_native_context_transform(
+                ptr->GetContext(), a, b, c, d,
+                e,
+                f);
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::Translate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    if (args.Length() == 2) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        canvas_native_context_translate(
+                ptr->GetContext(), x, y);
+    }
+}
+
+void
+CanvasRenderingContext2DImpl::__ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    std::string type("image/png");
+    int quality = 92;
+    if (args[0]->IsString()) {
+        type = ConvertFromV8String(isolate, args[0]);
+    }
+
+
+    if (args[1]->IsNumber()) {
+        quality = (int) args[1]->NumberValue(context).ToChecked();
+    }
+
+
+    rust::Str str(type);
+
+    auto data = canvas_native_to_data_url(
+            ptr->GetContext(), str,
+            quality);
+
+    auto value = new OneByteStringResource(std::move(data));
+    auto ret = v8::String::NewExternalOneByte(isolate, value);
+    args.GetReturnValue().Set(ret.ToLocalChecked());
+
+    // args.GetReturnValue().Set(ConvertToV8String(isolate, data.c_str()));
 }
 
 CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
@@ -1936,10 +2518,10 @@ void CanvasRenderingContext2DImpl::Flush() {
     auto state = (int) this->GetInvalidateState() & (int) InvalidateState::PENDING;
     if (state == (int) InvalidateState::PENDING) {
         this->SetInvalidateState(InvalidateState::INVALIDATING);
-     //   canvas_native_context_flush(this->GetContext());
+        //   canvas_native_context_flush(ptr->GetContext());
         canvas_native_context_render(this->GetContext());
-//        canvas_native_context_gl_make_current(this->GetContext());
-//        canvas_native_context_gl_swap_buffers(this->GetContext());
+//        canvas_native_context_gl_make_current(ptr->GetContext());
+//        canvas_native_context_gl_swap_buffers(ptr->GetContext());
         this->SetInvalidateState(InvalidateState::NONE);
     }
 }

@@ -6,21 +6,26 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "v8runtime/V8Runtime.h"
+#include "Common.h"
 #include <vector>
 
-using namespace facebook;
 using namespace org::nativescript::canvas;
 
-class JSI_EXPORT WebGLActiveInfoImpl : public jsi::HostObject {
+class WebGLActiveInfoImpl {
 public:
     WebGLActiveInfoImpl(rust::Box<WebGLActiveInfo> info);
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
-
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
-
     WebGLActiveInfo &GetWebGLActiveInfo();
+
+    static WebGLActiveInfoImpl *GetPointer(const v8::Local<v8::Object>& object);
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static void GetName(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetSize(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetType(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     rust::Box<WebGLActiveInfo> info_;

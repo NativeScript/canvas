@@ -7,12 +7,10 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "v8runtime/V8Runtime.h"
 
-using namespace facebook;
 
 template<typename T>
-struct VecMutableBuffer : jsi::MutableBuffer {
+struct VecMutableBuffer{
 public:
     VecMutableBuffer(rust::Vec<T> buffer) : vec_(std::move(buffer)) {
         this->buf_ = vec_.data();
@@ -28,15 +26,15 @@ public:
         return this->buffer_size_;
     }
 
-    uint8_t *data() override {
+    uint8_t *data() {
         return (uint8_t *) this->buf_;
     }
 
-    size_t size() const override {
+    size_t size() const {
         return this->size_;
     }
 
-    ~VecMutableBuffer() override {
+    ~VecMutableBuffer() {
         this->buf_ = nullptr;
     }
 

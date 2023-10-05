@@ -537,7 +537,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
-		//	fillRule(this.canvas);
+			fillRule(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -571,7 +571,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
-		patternWithCanvas(this.canvas);
+		//patternWithCanvas(this.canvas);
 		//isPointInStrokeTouch(this.canvas);
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);

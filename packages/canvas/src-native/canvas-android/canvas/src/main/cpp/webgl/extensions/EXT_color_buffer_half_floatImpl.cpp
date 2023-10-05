@@ -3,40 +3,39 @@
 //
 
 #include "EXT_color_buffer_half_floatImpl.h"
+#include "Caches.h"
+#include "Helpers.h"
 
-
-std::vector<jsi::PropNameID> EXT_color_buffer_half_floatImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(5);
-    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("RGBA16F_EXT")));
-    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("RGB16F_EXT")));
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT")));
-    ret.emplace_back(jsi::PropNameID::forUtf8(rt, std::string("UNSIGNED_NORMALIZED_EXT")));
-
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
-
-    return ret;
-}
-
-jsi::Value
-EXT_color_buffer_half_floatImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-
-    if (methodName == "ext_name") {
-        return jsi::String::createFromAscii(runtime,"EXT_color_buffer_half_float");
+v8::Local<v8::FunctionTemplate> EXT_color_buffer_half_floatImpl::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->EXT_color_buffer_half_floatTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
     }
 
-    if (methodName == "RGBA16F_EXT") {
-        return {0x881A};
-    } else if (methodName == "RGB16F_EXT") {
-        return {0x881B};
-    } else if (methodName == "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT") {
-        return {0x8211};
-    } else if (methodName == "UNSIGNED_NORMALIZED_EXT") {
-        return {0x8C17};
-    }
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "EXT_color_buffer_half_float"));
 
-    return jsi::Value::undefined();
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+
+    tmpl->Set(ConvertToV8String(isolate, "RGBA16F_EXT"),
+              v8::Number::New(isolate, 0x881A));
+
+    tmpl->Set(ConvertToV8String(isolate, "RGB16F_EXT"),
+              v8::Number::New(isolate, 0x881B));
+
+    tmpl->Set(ConvertToV8String(isolate, "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT"),
+              v8::Number::New(isolate, 0x8211));
+
+    tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_NORMALIZED_EXT"),
+              v8::Number::New(isolate, 0x8C17));
+
+    tmpl->Set(ConvertToV8String(isolate, "ext_name"),
+              ConvertToV8String(isolate, "EXT_color_buffer_half_float"));
+
+    cache->EXT_color_buffer_half_floatTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
 }

@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 
 import org.nativescript.canvas.*
@@ -130,7 +131,6 @@ class MainActivity : AppCompatActivity() {
 
 
         val offscreen = NSCCanvas(this)
-
         offscreen.listener = object : NSCCanvas.Listener {
             override fun contextReady() {
                 Log.d("com.test", "offscreen ready")
@@ -144,26 +144,37 @@ class MainActivity : AppCompatActivity() {
         //offscreen.setBackgroundColor(Color.GRAY)
         NSCCanvas.layoutView(500, 500, offscreen)
 
-
-
         val ctx = offscreen.create2DContext(
-            false,
-            false,
-            false,
-            false,
+            true,
+            true,
+					true,
+					true,
             "default",
-            false,
-            false,
-            false,
-            false,
-            false,
+					true,
+					true,
+					true,
+					true,
+					true,
             Color.BLACK
         )
 
-        NSCCanvas.context2DTest(ctx)
+			Log.d("com.test", "ctx $ctx")
 
-        /*
+			NSCCanvas.context2DPathTest(ctx)
 
+			val ss = offscreen.snapshot()?.let {
+				Log.d("com.test", "ctx ${it.width} ${it.height}")
+				val image = ImageView(this)
+				image.setImageBitmap(it)
+
+				val root = findViewById<ViewGroup>(android.R.id.content)
+
+				root.addView(image)
+			}
+
+
+
+/*
         val root = findViewById<ViewGroup>(android.R.id.content)
 
         root.addView(offscreen)
@@ -174,7 +185,8 @@ class MainActivity : AppCompatActivity() {
         NSCCanvas.layoutView(1000, 1000, offscreen)
 
 
-        */
+			NSCCanvas.context2DTest(ctx)
+			*/
         //offscreen.initContext("webgl")
 
 

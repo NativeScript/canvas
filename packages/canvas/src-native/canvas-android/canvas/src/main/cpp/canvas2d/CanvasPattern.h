@@ -10,18 +10,21 @@
 #include "MatrixImpl.h"
 #include <vector>
 
-using namespace facebook;
 using namespace org::nativescript::canvas;
 
-class JSI_EXPORT CanvasPattern : public jsi::HostObject {
+class CanvasPattern{
 public:
     CanvasPattern(rust::Box<PaintStyle> style);
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
-
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
-
     PaintStyle &GetPaintStyle();
+
+    static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
+
+    static CanvasPattern *GetPointer(const v8::Local<v8::Object> &object);
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static void SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     rust::Box<PaintStyle> style_;

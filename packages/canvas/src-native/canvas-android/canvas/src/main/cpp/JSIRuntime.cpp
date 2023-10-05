@@ -19,6 +19,6 @@ extern "C" void NSMain(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 
     auto rt = std::make_shared<rnv8::V8Runtime>(isolate);
-    CanvasJSIModule::install(*rt);
+    CanvasJSIModule::install(*rt, isolate);
     jsi_runtime = std::move(rt);
 }

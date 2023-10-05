@@ -16,11 +16,41 @@ WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state,
 
 }
 
-jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
+
+static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->WebGLRenderingContextTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
+    }
+
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLRenderingContext"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+
+    cache->WebGLRenderingContextTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}
+
+static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+    return static_cast<WebGLRenderingContext *>(ptr);
+}
+
+
+
+v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate * isolate,
                                                        uint32_t pnameValue,
                                                        rust::Box<WebGLResult> result) {
 
-
+v8::EscapableHandleScope scope(isolate);
     switch (pnameValue) {
         case GL_ACTIVE_TEXTURE:
         case GL_ALPHA_BITS:
@@ -86,18 +116,18 @@ jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
                  pnameValue == GL_RENDERBUFFER_BINDING ||
                  pnameValue == GL_FRAMEBUFFER_BINDING) &&
                 value == 0) {
-                return jsi::Value::null();
+                return scope.Escape(v8::Null(isolate));
             }
-            return {value};
+            return scope.Escape(v8::Number::New(isolate, (double )value));
         }
         case (uint32_t) GLConstants::UNPACK_COLORSPACE_CONVERSION_WEBGL:
-            return {canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
-                    this->GetState())};
+            return scope.Escape(v8::Number::New(isolate, (double )canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
+                    this->GetState())));
         case GL_ALIASED_LINE_WIDTH_RANGE:
         case GL_ALIASED_POINT_SIZE_RANGE:
         case GL_DEPTH_RANGE: {
             auto ret = canvas_native_webgl_result_get_f32_array(*result);
-            auto buf = std::make_shared<VecMutableBuffer<float>>(std::move(ret));
+            auto buf = new VecMutableBuffer<float>(std::move(ret));
             auto array = jsi::ArrayBuffer(runtime, buf);
 
             auto Float32Array = runtime.global()
@@ -115,7 +145,7 @@ jsi::Value WebGLRenderingContext::GetParameterInternal(jsi::Runtime &runtime,
         case GL_COLOR_CLEAR_VALUE: {
             auto ret = canvas_native_webgl_result_get_f32_array(*result);
 
-            auto buf = std::make_shared<VecMutableBuffer<float>>(std::move(ret));
+            auto buf = new VecMutableBuffer<float>(std::move(ret));
             auto array = jsi::ArrayBuffer(runtime, buf);
 
             auto Float32Array = runtime.global()
@@ -4225,6 +4255,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
 
 
                                                                  if (pixels.isHostObject(runtime)) {
+                                                                     /*
                                                                      try {
                                                                          auto image_asset = pixels.asHostObject<ImageAssetImpl>(
                                                                                  runtime);
@@ -4286,6 +4317,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                              return jsi::Value::undefined();
                                                                          }
                                                                      } catch (...) {}
+                                                                      */
 
 
                                                                      try {
@@ -4477,6 +4509,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                  auto pixels = arguments[6].asObject(
                                                                          runtime);
                                                                  if (pixels.isHostObject(runtime)) {
+                                                                     /*
                                                                      try {
                                                                          auto asset = pixels.asHostObject<ImageAssetImpl>(
                                                                                  runtime);
@@ -4536,6 +4569,7 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
                                                                          }
                                                                      } catch (...) {}
 
+                                                                      */
 
                                                                      try {
                                                                          auto webgl = pixels.asHostObject<WebGLRenderingContext>(

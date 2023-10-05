@@ -12,7 +12,6 @@
 #include "RafImpl.h"
 
 #include "canvas-cxx/src/lib.rs.h"
-#include "v8runtime/V8Runtime.h"
 #include "VecMutableBuffer.h"
 #include <cmath>
 #include "Helpers.h"
@@ -26,10 +25,9 @@
 #include "gl.h"
 
 
-using namespace facebook;
 using namespace org::nativescript::canvas;
 
-class JSI_EXPORT WebGL2RenderingContext : public WebGLRenderingContext {
+class WebGL2RenderingContext : public WebGLRenderingContext {
 public:
 
     WebGL2RenderingContext(rust::Box<WebGLState> state);

@@ -5,7 +5,6 @@
 #pragma once
 #pragma process_pending_includes
 
-#include "v8runtime/V8Runtime.h"
 #include "rust/cxx.h"
 #include <vector>
 #include <cstdint>
@@ -20,11 +19,10 @@ enum class WebGLRenderingVersion : uint8_t {
     V1,
     V2
 };
-
-using namespace facebook;
+;
 using namespace org::nativescript::canvas;
 
-class WebGLRenderingContextBase : public jsi::HostObject {
+class WebGLRenderingContextBase {
 public:
     WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version);
 

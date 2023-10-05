@@ -4,44 +4,77 @@
 
 #include "CanvasPattern.h"
 #include "canvas-cxx/src/lib.rs.h"
+#include "Helpers.h"
+#include "Caches.h"
 
 CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
 
-std::vector<jsi::PropNameID> CanvasPattern::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.push_back(jsi::PropNameID::forAscii(rt, std::string("setTransform")));
-    return ret;
+void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
+
+    auto ctor = GetCtor(isolate);
+    auto context = isolate->GetCurrentContext();
+    auto func = ctor->GetFunction(context).ToLocalChecked();
+
+    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasPattern"), func);
 }
 
-jsi::Value CanvasPattern::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-    if (methodName == "setTransform") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+    return static_cast<CanvasPattern *>(ptr);
+}
 
-
-                                                         if (!arguments[0].isUndefined() &&
-                                                             !arguments[0].isNull()) {
-                                                             auto matrix = arguments[0].asObject(
-                                                                     runtime).asHostObject<MatrixImpl>(
-                                                                     runtime);
-                                                             if (matrix != nullptr) {
-                                                                 canvas_native_pattern_set_transform(
-                                                                         this->GetPaintStyle(),
-                                                                         matrix->GetMatrix());
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     });
+v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->CanvasGradientTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
     }
 
-    return jsi::Value::undefined();
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "CanvasPattern"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+    tmpl->Set(
+            ConvertToV8String(isolate, "SetTransform"),
+            v8::FunctionTemplate::New(isolate, &SetTransform));
+
+    cache->CanvasGradientTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}
+
+void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasPattern *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+
+    if (!value->IsNullOrUndefined()) {
+        // todo
+//        auto matrix =
+//        if (matrix != nullptr) {
+//            canvas_native_pattern_set_transform(
+//                    ptr->GetPaintStyle(),
+//                    matrix->GetMatrix());
+//        }
+    }
+
+
+    args.GetReturnValue().SetUndefined();
 }
 
 PaintStyle &CanvasPattern::GetPaintStyle() {

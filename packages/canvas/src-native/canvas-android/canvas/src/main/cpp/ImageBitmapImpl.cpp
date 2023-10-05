@@ -5,66 +5,117 @@
 #include "ImageBitmapImpl.h"
 #include "ImageAssetImpl.h"
 #include "rust/cxx.h"
+#include "Caches.h"
 
 ImageBitmapImpl::ImageBitmapImpl(rust::Box<ImageAsset> asset)
         : bitmap_(std::move(asset)) {}
 
-jsi::Value ImageBitmapImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-    if (methodName == "width") {
-        if (this->closed_) {
-            return {0};
-        }
-        return {(int32_t) canvas_native_image_asset_width(this->GetImageAsset())};
-    } else if (methodName == "height") {
-        if (this->closed_) {
-            return {0};
-        }
-        return {(int32_t) canvas_native_image_asset_height(this->GetImageAsset())};
-    } else if (methodName == "close") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         this->closed_ = true;
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
+
+void ImageBitmapImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
+
+    auto ctor = GetCtor(isolate);
+    auto context = isolate->GetCurrentContext();
+    auto func = ctor->GetFunction(context).ToLocalChecked();
+
+    canvasModule->Set(context, ConvertToV8String(isolate, "ImageBitmap"), func);
+}
+
+ImageBitmapImpl *ImageBitmapImpl::GetPointer(v8::Local<v8::Object> object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
     }
-    return jsi::Value::undefined();
+    return static_cast<ImageBitmapImpl *>(ptr);
+}
+
+v8::Local<v8::FunctionTemplate> ImageBitmapImpl::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->ImageBitmapTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
+    }
+
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "ImageBitmap"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+    tmpl->SetInternalFieldCount(1);
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "width"), GetWidth);
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "height"), GetHeight);
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "close"), v8::FunctionTemplate::New(isolate, Close));
+
+
+    cache->ImageBitmapTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}
+
+void
+ImageBitmapImpl::GetWidth(v8::Local<v8::String> name,
+                          const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr && !ptr->closed_) {
+        auto ret = canvas_native_image_asset_width(ptr->GetImageAsset());
+        info.GetReturnValue().Set(ret);
+        return;
+    }
+    info.GetReturnValue().Set(0);
+}
+
+void
+ImageBitmapImpl::GetHeight(v8::Local<v8::String> name,
+                           const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr && !ptr->closed_) {
+        auto ret = canvas_native_image_asset_height(ptr->GetImageAsset());
+        info.GetReturnValue().Set(ret);
+        return;
+    }
+    info.GetReturnValue().Set(0);
 }
 
 
-std::vector<jsi::PropNameID> ImageBitmapImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(3);
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("width")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("height")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("close")));
-    return ret;
-}
+void ImageBitmapImpl::Close(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
 
+    ptr->closed_ = true;
+}
 
 Options
-ImageBitmapImpl::HandleOptions(jsi::Runtime &runtime, const jsi::Value &options) {
+ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> &options) {
     Options ret;
 
-    if (options.isObject()) {
-        auto config = options.asObject(runtime);
+    if (options->IsObject()) {
+        auto context = isolate->GetCurrentContext();
+        auto config = options.As<v8::Object>();
 
 
-        auto flipYValue = config.getProperty(runtime, "flipY");
-        if (flipYValue.isBool()) {
-            ret.flipY = flipYValue.asBool();
+        v8::Local<v8::Value> flipYValue;
+
+        config->Get(context, ConvertToV8String(isolate, "flipY")).ToLocal(&flipYValue);
+
+        if (flipYValue->IsBoolean()) {
+            ret.flipY = flipYValue->BooleanValue(isolate);
         }
 
-        auto premultiplyAlphaValue = config.getProperty(runtime, "premultiplyAlpha");
+        v8::Local<v8::Value> premultiplyAlphaValue;
+        config->Get(context, ConvertToV8String(isolate, "premultiplyAlpha")).ToLocal(
+                &premultiplyAlphaValue);
 
-        if (premultiplyAlphaValue.isString()) {
-            auto premultiplyAlpha = premultiplyAlphaValue.asString(runtime).utf8(runtime);
+        if (premultiplyAlphaValue->IsString()) {
+            auto premultiplyAlpha = ConvertFromV8String(isolate, premultiplyAlphaValue);
 
             if (premultiplyAlpha == "premultiply") {
                 ret.premultiplyAlpha = ImageBitmapPremultiplyAlpha::Premultiply;
@@ -75,20 +126,25 @@ ImageBitmapImpl::HandleOptions(jsi::Runtime &runtime, const jsi::Value &options)
             }
         }
 
-        auto colorSpaceConversionValue = config.getProperty(runtime, "colorSpaceConversion");
+        v8::Local<v8::Value> colorSpaceConversionValue;
+        config->Get(context, ConvertToV8String(isolate, "colorSpaceConversion")).ToLocal(
+                &colorSpaceConversionValue);
 
-        if (colorSpaceConversionValue.isString()) {
-            auto colorSpaceConversion = colorSpaceConversionValue.asString(runtime).utf8(runtime);
+        if (colorSpaceConversionValue->IsString()) {
+            auto colorSpaceConversion = ConvertFromV8String(isolate, colorSpaceConversionValue);
 
             if (colorSpaceConversion == "none") {
                 ret.colorSpaceConversion = ImageBitmapColorSpaceConversion::None;
             }
         }
 
-        auto resizeQualityValue = config.getProperty(runtime, "resizeQuality");
+        v8::Local<v8::Value> resizeQualityValue;
 
-        if (resizeQualityValue.isString()) {
-            auto resizeQuality = resizeQualityValue.asString(runtime).utf8(runtime);
+        config->Get(context, ConvertToV8String(isolate, "resizeQuality")).ToLocal(
+                &resizeQualityValue);
+
+        if (resizeQualityValue->IsString()) {
+            auto resizeQuality = ConvertFromV8String(isolate, resizeQualityValue);
 
             if (resizeQuality == "medium") {
                 ret.resizeQuality = ImageBitmapResizeQuality::Medium;
@@ -103,17 +159,21 @@ ImageBitmapImpl::HandleOptions(jsi::Runtime &runtime, const jsi::Value &options)
             }
         }
 
-        auto resizeWidthValue = config.getProperty(runtime, "resizeWidth");
+        v8::Local<v8::Value> resizeWidthValue;
+        config->Get(context, ConvertToV8String(isolate, "resizeWidth")).ToLocal(&resizeWidthValue);
 
-        if (resizeWidthValue.isNumber()) {
-            auto val = resizeWidthValue.asNumber();
+        if (resizeWidthValue->IsNumber()) {
+            auto val = resizeWidthValue->NumberValue(context).ToChecked();
             ret.resizeWidth = (float) val;
         }
 
-        auto resizeHeightValue = config.getProperty(runtime, "resizeHeight");
+        v8::Local<v8::Value> resizeHeightValue;
 
-        if (resizeHeightValue.isNumber()) {
-            auto val = resizeHeightValue.asNumber();
+        config->Get(context, ConvertToV8String(isolate, "resizeHeight")).ToLocal(
+                &resizeHeightValue);
+
+        if (resizeHeightValue->IsNumber()) {
+            auto val = resizeHeightValue->NumberValue(context).ToChecked();
             ret.resizeHeight = (float) val;
         }
     }

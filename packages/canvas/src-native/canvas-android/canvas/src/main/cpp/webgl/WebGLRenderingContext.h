@@ -8,7 +8,6 @@
 #include <vector>
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "v8runtime/V8Runtime.h"
 #include "VecMutableBuffer.h"
 
 #include "WebGLRenderingContextBase.h"
@@ -59,15 +58,19 @@
 #include "extensions/OES_fbo_render_mipmap.h"
 #include "gl.h"
 
-using namespace facebook;
 using namespace org::nativescript::canvas;
 
-class JSI_EXPORT WebGLRenderingContext : public WebGLRenderingContextBase {
+class WebGLRenderingContext : public WebGLRenderingContextBase {
 public:
 
     WebGLRenderingContext(rust::Box<WebGLState> state);
 
     WebGLRenderingContext(rust::Box<WebGLState> state, WebGLRenderingVersion version);
+
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object);
 
     jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
 

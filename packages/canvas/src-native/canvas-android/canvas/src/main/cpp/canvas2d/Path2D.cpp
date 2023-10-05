@@ -3,330 +3,456 @@
 //
 
 #include "Path2D.h"
-
+#include "Caches.h"
+#include "Helpers.h"
+#include "OneByteStringResource.h"
 
 Path2D::Path2D(rust::Box<Path> path)
         : path_(std::move(path)) {}
 
-std::vector<jsi::PropNameID> Path2D::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(11);
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("addPath")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arc")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("arcTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bezierCurveTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("closePath")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("ellipse")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("moveTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("quadraticCurveTo")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("rect")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("roundRect")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__toSVG")));
-    return ret;
+
+void Path2D::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
+
+    auto ctor = GetCtor(isolate);
+    auto context = isolate->GetCurrentContext();
+    auto func = ctor->GetFunction(context).ToLocalChecked();
+
+    canvasModule->Set(context, ConvertToV8String(isolate, "Path2D"), func);
 }
 
-jsi::Value Path2D::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-    if (methodName == "addPath") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         auto object = getHostObject<Path2D>(
-                                                                 runtime, arguments[0]);
-                                                         if (object != nullptr) {
-                                                             canvas_native_path_add_path(
-                                                                     this->GetPath(),
-                                                                     object->GetPath());
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "arc") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+Path2D *Path2D::GetPointer(const v8::Local<v8::Object> &object) {
+    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+    return static_cast<Path2D *>(ptr);
+}
+
+v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->Path2DTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
+    }
+
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "Path2D"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+
+    tmpl->SetInternalFieldCount(1);
+    tmpl->Set(
+            ConvertToV8String(isolate, "addPath"),
+            v8::FunctionTemplate::New(isolate, &AddPath));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "arc"),
+            v8::FunctionTemplate::New(isolate, &Arc));
 
 
-                                                         auto anti_clockwise = false;
-                                                         if (count == 6) {
-                                                             anti_clockwise = arguments[5].asBool();
-                                                         }
-
-                                                         canvas_native_path_arc(
-                                                                 this->GetPath(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber()),
-                                                                 static_cast<float>(arguments[4].asNumber()),
-                                                                 anti_clockwise
-                                                         );
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-
-    } else if (methodName == "arcTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     5,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    tmpl->Set(
+            ConvertToV8String(isolate, "arcTo"),
+            v8::FunctionTemplate::New(isolate, &ArcTo));
 
 
-                                                         canvas_native_path_arc_to(
-                                                                 this->GetPath(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber()),
-                                                                 static_cast<float>(arguments[4].asNumber())
-                                                         );
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-
-    } else if (methodName == "bezierCurveTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    tmpl->Set(
+            ConvertToV8String(isolate, "bezierCurveTo"),
+            v8::FunctionTemplate::New(isolate, &BezierCurveTo));
 
 
-                                                         canvas_native_path_bezier_curve_to(
-                                                                 this->GetPath(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber()),
-                                                                 static_cast<float>(arguments[4].asNumber()),
-                                                                 static_cast<float>(arguments[5].asNumber())
-                                                         );
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-
-    } else if (methodName == "closePath") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    tmpl->Set(
+            ConvertToV8String(isolate, "closePath"),
+            v8::FunctionTemplate::New(isolate, &ClosePath));
 
 
-                                                         canvas_native_path_close_path(
-                                                                 this->GetPath());
+    tmpl->Set(
+            ConvertToV8String(isolate, "ellipse"),
+            v8::FunctionTemplate::New(isolate, &Ellipse));
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-
-    } else if (methodName == "ellipse") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     7,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    tmpl->Set(
+            ConvertToV8String(isolate, "lineTo"),
+            v8::FunctionTemplate::New(isolate, &LineTo));
 
 
-                                                         auto anti_clockwise = false;
-                                                         if (count > 7) {
-                                                             anti_clockwise = arguments[7].asBool();
-                                                         }
-                                                         canvas_native_path_ellipse(
-                                                                 this->GetPath(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber()),
-                                                                 static_cast<float>(arguments[4].asNumber()),
-                                                                 static_cast<float>(arguments[5].asNumber()),
-                                                                 static_cast<float>(arguments[6].asNumber()),
-                                                                 anti_clockwise
-                                                         );
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-
-    } else if (methodName == "lineTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    tmpl->Set(
+            ConvertToV8String(isolate, "moveTo"),
+            v8::FunctionTemplate::New(isolate, &MoveTo));
 
 
-                                                         canvas_native_path_line_to(this->GetPath(),
-                                                                                    static_cast<float>(arguments[0].asNumber()),
-                                                                                    static_cast<float>(arguments[1].asNumber()));
+    tmpl->Set(
+            ConvertToV8String(isolate, "quadraticCurveTo"),
+            v8::FunctionTemplate::New(isolate, &QuadraticCurveTo));
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
+    tmpl->Set(
+            ConvertToV8String(isolate, "rect"),
+            v8::FunctionTemplate::New(isolate, &Rect));
 
-    } else if (methodName == "moveTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    tmpl->Set(
+            ConvertToV8String(isolate, "roundRect"),
+            v8::FunctionTemplate::New(isolate, &RoundRect));
 
-
-                                                         canvas_native_path_move_to(this->GetPath(),
-                                                                                    static_cast<float>(arguments[0].asNumber()),
-                                                                                    static_cast<float>(arguments[1].asNumber()));
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-
-    } else if (methodName == "quadraticCurveTo") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    tmpl->Set(
+            ConvertToV8String(isolate, "__toSVG"),
+            v8::FunctionTemplate::New(isolate, &__toSVG));
 
 
-                                                         canvas_native_path_quadratic_curve_to(
-                                                                 this->GetPath(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber())
-                                                         );
+    cache->Path2DTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
+void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto value = args[0];
+    auto isolate = args.GetIsolate();
 
-    } else if (methodName == "rect") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+    auto ret = args.This();
 
+    SetNativeType(isolate, ret, NativeType::Path2D);
 
-                                                         canvas_native_path_rect(
-                                                                 this->GetPath(),
-                                                                 static_cast<float>(arguments[0].asNumber()),
-                                                                 static_cast<float>(arguments[1].asNumber()),
-                                                                 static_cast<float>(arguments[2].asNumber()),
-                                                                 static_cast<float>(arguments[3].asNumber())
-                                                         );
+    if (count > 0) {
+        if (value->IsString()) {
+            auto d = ConvertFromV8String(isolate, value);
+            auto path = canvas_native_path_create_with_str(
+                    rust::Str(d.c_str()));
+            auto object = new Path2D(std::move(path));
 
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
+            auto ext = v8::External::New(isolate, object);
 
-    } else if (methodName == "roundRect") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+            ret->SetInternalField(0, ext);
 
-                                                         if (count == 5) {
-                                                             auto x = static_cast<float>(arguments[0].asNumber());
-                                                             auto y = static_cast<float>(arguments[1].asNumber());
-                                                             auto width = static_cast<float>(arguments[2].asNumber());
-                                                             auto height = static_cast<float>(arguments[3].asNumber());
-                                                             if (arguments[4].isObject()) {
-                                                                 auto radii = arguments[4].asObject(
-                                                                         runtime);
-                                                                 if (radii.isArray(runtime)) {
-                                                                     auto array = radii.getArray(
-                                                                             runtime);
-                                                                     auto size = array.size(
-                                                                             runtime);
-                                                                     if (size > 1) {
-                                                                         rust::Vec<float> store;
-                                                                         store.reserve(size);
-                                                                         for (int i = 0;
-                                                                              i < size; i++) {
-                                                                             store[i] = (float) array.getValueAtIndex(
-                                                                                     runtime,
-                                                                                     i).asNumber();
-                                                                         }
+            args.GetReturnValue().Set(ret);
 
-                                                                         rust::Slice<const float> buf(
-                                                                                 store.data(),
-                                                                                 store.size());
-                                                                         canvas_native_path_round_rect(
-                                                                                 this->GetPath(),
-                                                                                 x, y,
-                                                                                 width,
-                                                                                 height, buf);
+            return;
 
-                                                                     }
-                                                                 }
-                                                             } else {
-                                                                 auto radii = (float) arguments[4].asNumber();
-                                                                 canvas_native_path_round_rect_tl_tr_br_bl(
-                                                                         this->GetPath(), x, y,
-                                                                         width,
-                                                                         height, radii, radii,
-                                                                         radii, radii);
+        } else if (value->IsObject()) {
+            auto path_to_copy = GetPointer(value.As<v8::Object>());
+            if (path_to_copy != nullptr) {
+                auto path = canvas_native_path_create_with_path(
+                        path_to_copy->GetPath());
+                auto object = new Path2D(std::move(path));
 
-                                                             }
-                                                         }
+                auto ext = v8::External::New(isolate, object);
 
-                                                         return jsi::Value::undefined();
+                ret->SetInternalField(0, ext);
 
-                                                     }
-        );
-    } else if (methodName == "__toSVG") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
+                args.GetReturnValue().Set(ret);
+                return;
+            }
+        }
+    } else {
+        auto path = new Path2D(std::move(canvas_native_path_create()));
 
+        auto ext = v8::External::New(isolate, path);
 
-                                                         auto d = canvas_native_path_to_string(
-                                                                 this->GetPath());
-                                                         return jsi::String::createFromAscii(
-                                                                 runtime, d.data(), d.size());
-                                                     }
-        );
+        ret->SetInternalField(0, ext);
+
+        args.GetReturnValue().Set(ret);
+        return;
 
     }
 
-    return jsi::Value::undefined();
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::AddPath(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto value = args[0];
+    if (value->IsObject()) {
+        auto object = GetPointer(value.As<v8::Object>());
+        if (object != nullptr) {
+            canvas_native_path_add_path(
+                    ptr->GetPath(),
+                    object->GetPath());
+        }
+    }
+}
+
+void Path2D::Arc(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto anti_clockwise = false;
+    if (args.Length() == 6) {
+        anti_clockwise = args[5]->BooleanValue(isolate);
+    }
+
+    canvas_native_path_arc(
+            ptr->GetPath(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[4]->NumberValue(context).ToChecked()),
+            anti_clockwise
+    );
+
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::ArcTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    canvas_native_path_arc_to(
+            ptr->GetPath(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[4]->NumberValue(context).ToChecked())
+    );
+
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::BezierCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    canvas_native_path_bezier_curve_to(
+            ptr->GetPath(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[4]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[5]->NumberValue(context).ToChecked())
+    );
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::ClosePath(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    canvas_native_path_close_path(ptr->GetPath());
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::Ellipse(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    auto anti_clockwise = false;
+    if (args.Length() > 7) {
+        anti_clockwise = args[7]->BooleanValue(isolate);
+    }
+
+    canvas_native_path_ellipse(
+            ptr->GetPath(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[4]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[5]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[6]->NumberValue(context).ToChecked()),
+            anti_clockwise
+    );
+
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::LineTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    canvas_native_path_line_to(ptr->GetPath(),
+                               static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+                               static_cast<float>(args[1]->NumberValue(context).ToChecked()));
+
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::MoveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    canvas_native_path_move_to(ptr->GetPath(),
+                               static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+                               static_cast<float>(args[1]->NumberValue(context).ToChecked()));
+
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::QuadraticCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    canvas_native_path_quadratic_curve_to(
+            ptr->GetPath(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked())
+    );
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::Rect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    canvas_native_path_rect(
+            ptr->GetPath(),
+            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
+            static_cast<float>(args[3]->NumberValue(context).ToChecked())
+    );
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    if (args.Length() == 5) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        auto objectOrNumber = args[4];
+        if (objectOrNumber->IsObject()) {
+            auto radii = objectOrNumber.As<v8::Object>();
+            if (radii->IsArray()) {
+                auto array = radii.As<v8::Array>();
+                auto size = array->Length();
+
+                if (size > 1) {
+                    rust::Vec<float> store;
+                    store.reserve(size);
+                    for (int i = 0;
+                         i < size; i++) {
+                        store[i] = (float) array->Get(context, i).ToLocalChecked()->NumberValue(
+                                context).ToChecked();
+                    }
+
+                    rust::Slice<const float> buf(
+                            store.data(),
+                            store.size());
+                    canvas_native_path_round_rect(
+                            ptr->GetPath(),
+                            x, y,
+                            width,
+                            height, buf);
+
+                }
+            }
+        } else {
+            auto radii = (float) objectOrNumber->NumberValue(context).ToChecked();
+            canvas_native_path_round_rect_tl_tr_br_bl(
+                    ptr->GetPath(), x, y,
+                    width,
+                    height, radii, radii,
+                    radii, radii);
+
+        }
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void Path2D::__toSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetEmptyString();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+
+    auto d = canvas_native_path_to_string(
+            ptr->GetPath());
+
+//    args.GetReturnValue().Set(ConvertToV8String(isolate, d.c_str()));
+
+
+    auto value = new OneByteStringResource(std::move(d));
+    auto ret = v8::String::NewExternalOneByte(isolate, value);
+    args.GetReturnValue().Set(ret.ToLocalChecked());
 }
 
 Path &Path2D::GetPath() {

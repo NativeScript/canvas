@@ -3,27 +3,28 @@
 //
 
 #pragma once
+#include "Caches.h"
+#include "Common.h"
 
-#include "v8runtime/V8Runtime.h"
-
-using namespace facebook;
-
-class JSI_EXPORT EXT_shader_texture_lodImpl : public jsi::HostObject {
+class EXT_shader_texture_lodImpl {
 public:
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override {
-        std::vector<jsi::PropNameID> ret;
-        ret.emplace_back(
-                jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
-        return ret;
-    }
-
-    jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
-        auto methodName = name.utf8(runtime);
-
-        if (methodName == "ext_name") {
-            return jsi::String::createFromAscii(runtime, "EXT_shader_texture_lod");
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
+        auto cache = Caches::Get(isolate);
+        auto ctor = cache->EXT_shader_texture_lodTmpl.get();
+        if (ctor != nullptr) {
+            return ctor->Get(isolate);
         }
 
-        return jsi::Value::undefined();
+        v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+        ctorTmpl->SetClassName(ConvertToV8String(isolate, "EXT_shader_texture_lod"));
+
+        auto tmpl = ctorTmpl->InstanceTemplate();
+
+        tmpl->Set(ConvertToV8String(isolate, "ext_name"),
+                  ConvertToV8String(isolate, "EXT_shader_texture_lod"));
+
+        cache->EXT_shader_texture_lodTmpl =
+                std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+        return ctorTmpl;
     }
 };

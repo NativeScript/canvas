@@ -21,19 +21,27 @@ struct Options {
 };
 
 
-using namespace facebook;
-
-class JSI_EXPORT ImageBitmapImpl : public jsi::HostObject {
+class ImageBitmapImpl {
 public:
     ImageBitmapImpl(rust::Box<ImageAsset> asset);
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
-
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
-
-    static Options HandleOptions(jsi::Runtime &runtime, const jsi::Value &options);
+    static Options HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> &options);
 
     ImageAsset &GetImageAsset();
+
+    static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
+
+    static ImageBitmapImpl *GetPointer(v8::Local<v8::Object> object);
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static void GetWidth(v8::Local<v8::String> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetHeight(v8::Local<v8::String> name,
+                          const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void Close(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     rust::Box<ImageAsset> bitmap_;

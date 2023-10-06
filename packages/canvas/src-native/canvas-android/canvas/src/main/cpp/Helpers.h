@@ -21,7 +21,13 @@ enum class NativeType {
     ImageBitmap,
     TextMetrics,
 
-    WebGLQuery
+    WebGLQuery,
+    WebGLProgram,
+    WebGLShader,
+    WebGLBuffer,
+    WebGLFramebuffer,
+    WebGLRenderbuffer,
+    WebGLTexture
 };
 
 

@@ -67,7 +67,6 @@ public:
 
     WebGLRenderingContext(rust::Box<WebGLState> state, WebGLRenderingVersion version);
 
-
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
     static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object);
@@ -76,7 +75,7 @@ public:
 
     std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
 
-    jsi::Value GetParameterInternal(jsi::Runtime &runtime, uint32_t pnameValue,
+    v8::Local<v8::Value> GetParameterInternal(v8::Isolate * isolate, uint32_t pnameValue,
                                     rust::Box<WebGLResult> result);
 
     static inline jsi::Value GetProperty(const std::string &methodName) {

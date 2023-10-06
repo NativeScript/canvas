@@ -3,6 +3,7 @@
 //
 
 #include "WebGLRenderingContext.h"
+#include "OneByteStringResource.h"
 
 WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state)
         : WebGLRenderingContextBase(
@@ -45,12 +46,12 @@ static WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object) {
 }
 
 
+v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *isolate,
+                                                                 uint32_t pnameValue,
+                                                                 rust::Box<WebGLResult> result) {
 
-v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate * isolate,
-                                                       uint32_t pnameValue,
-                                                       rust::Box<WebGLResult> result) {
-
-v8::EscapableHandleScope scope(isolate);
+    auto context = isolate->GetCurrentContext();
+    v8::EscapableHandleScope scope(isolate);
     switch (pnameValue) {
         case GL_ACTIVE_TEXTURE:
         case GL_ALPHA_BITS:
@@ -118,52 +119,61 @@ v8::EscapableHandleScope scope(isolate);
                 value == 0) {
                 return scope.Escape(v8::Null(isolate));
             }
-            return scope.Escape(v8::Number::New(isolate, (double )value));
+            return scope.Escape(v8::Number::New(isolate, (double) value));
         }
         case (uint32_t) GLConstants::UNPACK_COLORSPACE_CONVERSION_WEBGL:
-            return scope.Escape(v8::Number::New(isolate, (double )canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
-                    this->GetState())));
+            return scope.Escape(v8::Number::New(isolate,
+                                                (double) canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
+                                                        this->GetState())));
         case GL_ALIASED_LINE_WIDTH_RANGE:
         case GL_ALIASED_POINT_SIZE_RANGE:
         case GL_DEPTH_RANGE: {
             auto ret = canvas_native_webgl_result_get_f32_array(*result);
             auto buf = new VecMutableBuffer<float>(std::move(ret));
-            auto array = jsi::ArrayBuffer(runtime, buf);
-
-            auto Float32Array = runtime.global()
-                    .getProperty(runtime,
-                                 "Float32Array")
-                    .asObject(runtime)
-                    .asFunction(runtime);
 
 
-            return Float32Array.callAsConstructor(
-                    runtime, array);
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+                                                          [](void *data, size_t length,
+                                                             void *deleter_data) {
+                                                              if (deleter_data != nullptr) {
+                                                                  delete (VecMutableBuffer<float> *) deleter_data;
+                                                              }
+                                                          },
+                                                          buf);
+
+            auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
+
+
+            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->size()));
         }
-            break;
         case GL_BLEND_COLOR:
         case GL_COLOR_CLEAR_VALUE: {
             auto ret = canvas_native_webgl_result_get_f32_array(*result);
 
             auto buf = new VecMutableBuffer<float>(std::move(ret));
-            auto array = jsi::ArrayBuffer(runtime, buf);
 
-            auto Float32Array = runtime.global()
-                    .getProperty(runtime,
-                                 "Float32Array")
-                    .asObject(runtime)
-                    .asFunction(runtime);
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+                                                          [](void *data, size_t length,
+                                                             void *deleter_data) {
+                                                              if (deleter_data != nullptr) {
+                                                                  delete (VecMutableBuffer<float> *) deleter_data;
+                                                              }
+                                                          },
+                                                          buf);
+
+            auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
 
 
-            return Float32Array.callAsConstructor(
-                    runtime, array);
+            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->size()));
 
         }
-            break;
         case (uint32_t) GLConstants::UNPACK_FLIP_Y_WEBGL:
-            return {canvas_native_webgl_state_get_flip_y(this->GetState())};
+            return scope.Escape(v8::Boolean::New(isolate, canvas_native_webgl_state_get_flip_y(
+                    this->GetState())));
         case (uint32_t) GLConstants::UNPACK_PREMULTIPLY_ALPHA_WEBGL:
-            return {canvas_native_webgl_state_get_premultiplied_alpha(this->GetState())};
+            return scope.Escape(v8::Boolean::New(isolate,
+                                                 canvas_native_webgl_state_get_premultiplied_alpha(
+                                                         this->GetState())));
         case GL_BLEND:
         case GL_CULL_FACE:
         case GL_DEPTH_TEST:
@@ -173,13 +183,15 @@ v8::EscapableHandleScope scope(isolate);
         case GL_SAMPLE_COVERAGE_INVERT:
         case GL_SCISSOR_TEST:
         case GL_STENCIL_TEST:
-            return {canvas_native_webgl_result_get_bool(*result)};
+            return scope.Escape(
+                    v8::Boolean::New(isolate, canvas_native_webgl_result_get_bool(*result)));
         case GL_COLOR_WRITEMASK: {
             auto ret = canvas_native_webgl_result_get_bool_array(*result);
             auto len = ret.size();
-            auto array = jsi::Array(runtime, len);
+            auto array = v8::Array::New(isolate, (int) len);
+
             for (int j = 0; j < len; ++j) {
-                array.setValueAtIndex(runtime, j, jsi::Value(ret[j] == 1));
+                array->Set(context, j, v8::Boolean::New(isolate, ret[j] == 1));
             }
             return array;
         }
@@ -188,39 +200,958 @@ v8::EscapableHandleScope scope(isolate);
         case GL_SCISSOR_BOX:
         case GL_VIEWPORT: {
             auto ret = canvas_native_webgl_result_get_i32_array(*result);
+            auto buf = new VecMutableBuffer<int32_t>(std::move(ret));
 
-            auto buf = std::make_shared<VecMutableBuffer<int32_t>>(std::move(ret));
-            auto array = jsi::ArrayBuffer(runtime, buf);
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+                                                          [](void *data, size_t length,
+                                                             void *deleter_data) {
+                                                              if (deleter_data != nullptr) {
+                                                                  delete (VecMutableBuffer<int32_t> *) deleter_data;
+                                                              }
+                                                          },
+                                                          buf);
 
-            auto Int32Array = runtime.global()
-                    .getProperty(runtime,
-                                 "Int32Array")
-                    .asObject(runtime)
-                    .asFunction(runtime);
+            auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
 
 
-            return Int32Array.callAsConstructor(
-                    runtime, array);
+            return scope.Escape(v8::Int32Array::New(arraybuffer, 0, buf->size()));
         }
-            break;
         case GL_DEPTH_CLEAR_VALUE:
         case GL_LINE_WIDTH:
         case GL_POLYGON_OFFSET_FACTOR:
         case GL_POLYGON_OFFSET_UNITS:
         case GL_SAMPLE_COVERAGE_VALUE: {
-            return {static_cast<double>(canvas_native_webgl_result_get_f32(*result))};
+            return scope.Escape(v8::Number::New(isolate,
+                                                static_cast<double>(canvas_native_webgl_result_get_f32(
+                                                        *result))));
         }
         case GL_RENDERER:
         case GL_SHADING_LANGUAGE_VERSION:
         case GL_VENDOR:
         case GL_VERSION: {
             auto ret = canvas_native_webgl_result_get_string(*result);
-            return jsi::String::createFromAscii(runtime, ret.data(), ret.size());
+
+
+            auto value = new OneByteStringResource(std::move(ret));
+            return scope.Escape(v8::String::NewExternalOneByte(isolate, value).ToLocalChecked());
         }
         default:
-            return jsi::Value::null();
+            return scope.Escape(v8::Null(isolate));
 
     }
+}
+
+
+void
+WebGLRenderingContext::GetDrawingBufferWidth(v8::Local<v8::String> name,
+                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto ret = canvas_native_webgl_state_get_drawing_buffer_width(ptr->GetState());
+        info.GetReturnValue().Set(ret);
+        return;
+    }
+    info.GetReturnValue().Set(0);
+}
+
+void
+WebGLRenderingContext::GetFlipY(v8::Local<v8::String> name,
+                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto ret = canvas_native_webgl_state_get_flip_y(ptr->GetState());
+        info.GetReturnValue().Set(ret);
+        return;
+    }
+    info.GetReturnValue().Set(false);
+}
+
+WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::String>
+name,
+const v8::PropertyCallbackInfo<v8::Value> &info
+) {
+auto ptr = GetPointer(info.This());
+if (ptr != nullptr) {
+auto ret = canvas_native_webgl_state_get_drawing_buffer_height(ptr->GetState());
+info.
+
+GetReturnValue()
+
+.
+Set(ret);
+return;
+}
+info.
+
+GetReturnValue()
+
+.Set(0);
+}
+
+void WebGLRenderingContext::__Resized(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    canvas_native_webgl_resized(
+            ptr->GetState());
+
+}
+
+void WebGLRenderingContext::__StartRaf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    ptr->StartRaf();
+
+}
+
+void WebGLRenderingContext::__StopRaf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    ptr->StopRaf();
+
+}
+
+void WebGLRenderingContext::ActiveTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto texture = (uint32_t) args[0]->NumberValue(context).ToChecked();
+    canvas_native_webgl_active_texture(texture,
+                                       this->GetState());
+}
+
+void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto programValue = args[0];
+    auto shaderValue = args[1];
+    if (programValue->IsObject() && shaderValue->IsObject()) {
+        WebGLProgram *program = nullptr;
+        WebGLShader *shader = nullptr;
+        if (GetNativeType(isolate, programValue.As<v8::Object>()) == NativeType::WebGLProgram) {
+            program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
+        }
+
+        if (GetNativeType(isolate, shaderValue.As<v8::Object>()) == NativeType::WebGLShader) {
+            shader = WebGLShader::GetPointer(shaderValue.As<v8::Object>());
+        }
+
+        if (program == nullptr) {
+            return;
+        }
+
+        if (shader == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_attach_shader(
+                program->GetProgram(),
+                shader->GetShader(),
+                ptr->GetState()
+        );
+
+    }
+}
+
+void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 2) {
+        auto programValue = args[0];
+
+        if(programValue->IsObject()){
+            auto type = GetNativeType(isolate, programValue.As<v8::Object>());
+            if(type == NativeType::WebGLProgram && args[1]->IsNumber() &&
+                                                   args[2]->IsString()){
+                auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
+
+                auto index = (uint32_t) args[1]->NumberValue(context).ToChecked();
+                auto name = ConvertFromV8String(isolate, args[2]);
+                canvas_native_webgl_bind_attrib_location(
+                        program->GetProgram(),
+                        index,
+                        rust::Str(name.c_str()),
+                        this->GetState()
+                );
+
+            }
+        }
+    }
+}
+
+void WebGLRenderingContext::BindBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        if (args[0]->IsNumber()) {
+            auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+            if (!args[1]->IsNull() &&
+                    args[1]->IsObject()) {
+                auto type = GetNativeType(isolate, args[1].As<v8::Object>());
+                if(type == NativeType::WebGLBuffer){
+                    auto buffer = WebGLBuffer::GetPointer(args[1].As<v8::Object>());
+                    if (buffer ==
+                        nullptr) { return; }
+                    canvas_native_webgl_bind_buffer(
+                            target,
+                            buffer->GetBuffer(),
+                            ptr->GetState()
+                    );
+                }
+
+            } else {
+                // unbind
+                // check for null or undefined ?
+                canvas_native_webgl_bind_buffer(
+                        target,
+                        0,
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+}
+
+void WebGLRenderingContext::BindFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        if (args[0]->IsNumber()) {
+            auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+            if (args[1]->IsObject()) {
+                auto type = GetNativeType(isolate, args[1].As<v8::Object>());
+                if(type == NativeType::WebGLFramebuffer){
+                    auto framebuffer = WebGLFramebuffer::GetPointer(args[1].As<v8::Object>());
+                    canvas_native_webgl_bind_frame_buffer(
+                            target,
+                            framebuffer->GetFrameBuffer(),
+                            ptr->GetState()
+                    );
+                }
+            } else {
+                // null value
+                // unbind
+                canvas_native_webgl_bind_frame_buffer(
+                        target,
+                        0,
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+}
+
+void WebGLRenderingContext::BindRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        if (args[0]->IsNumber()) {
+            auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+            if (args[1]->IsObject()) {
+                auto type = GetNativeType(isolate, args[1].As<v8::Object>());
+                if(type == NativeType::WebGLRenderbuffer){
+                    auto renderbuffer = WebGLRenderbuffer::GetPointer(args[1].As<v8::Object>());
+
+                    if (renderbuffer ==
+                        nullptr) { return;}
+                    canvas_native_webgl_bind_render_buffer(
+                            target,
+                            renderbuffer->GetRenderBuffer(),
+                            ptr->GetState()
+                    );
+                }
+            } else {
+                canvas_native_webgl_bind_render_buffer(
+                        target,
+                        0,
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+}
+
+void WebGLRenderingContext::BindTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        if (args[0]->IsNumber()) {
+            auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+            if (args[1]->IsObject()) {
+                auto type = GetNativeType(isolate, args[1].As<v8::Object>());
+                if(type == NativeType::WebGLTexture){
+                    auto texture = WebGLTexture::GetPointer(args[1].As<v8::Object>());
+                    canvas_native_webgl_bind_texture(
+                            target,
+                            texture->GetTexture(),
+                            ptr->GetState()
+                    );
+                }
+            } else {
+                canvas_native_webgl_bind_texture(
+                        target,
+                        0,
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+}
+
+void WebGLRenderingContext::BlendColor(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto red = args[0]->NumberValue(context).ToChecked();
+        auto green = args[1]->NumberValue(context).ToChecked();
+        auto blue = args[2]->NumberValue(context).ToChecked();
+        auto alpha = args[3]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_blend_color(
+                static_cast<float>(red),
+                static_cast<float>(green),
+                static_cast<float>(blue),
+                static_cast<float>(alpha),
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::BlendEquationSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto modeRGB = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto modeAlpha = (uint32_t) args[1]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_blend_equation_separate(
+                modeRGB,
+                modeAlpha,
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::BlendEquation(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto mode = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        canvas_native_webgl_blend_equation(
+                mode,
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::BlendFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto srcRGB = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto dstRGB = (uint32_t) args[1]->NumberValue(context).ToChecked();
+        auto srcAlpha = (uint32_t) args[2]->NumberValue(context).ToChecked();
+        auto dstAlpha = (uint32_t) args[3]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_blend_func_separate(
+                srcRGB,
+                dstRGB,
+                srcAlpha,
+                dstAlpha,
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::BlendFunc(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto sfactor = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto dfactor = (uint32_t) args[1]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_blend_func(
+                sfactor,
+                dfactor,
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+    if (count == 2) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto usage = (uint32_t) args[1]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_buffer_data_none(
+                target,
+                0,
+                usage,
+                ptr->GetState()
+        );
+    } else if (count == 3) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+
+        auto usage = (uint32_t) args[2]->NumberValue(context).ToChecked();
+
+        if (args[1]->IsObject()) {
+
+            auto sizeOrBuf = args[1];
+            if (sizeOrBuf->IsArrayBufferView()) {
+                if (sizeOrBuf->IsUint16Array()) {
+                    auto array = sizeOrBuf.As<v8::TypedArray>();
+                    auto buf = GetTypedArrayData<const uint16_t>(array);
+
+                    canvas_native_webgl_buffer_data_u16(
+                            target,
+                            buf,
+                            usage,
+                            ptr->GetState()
+                    );
+                } else if (sizeOrBuf->IsFloat32Array()) {
+                    auto array = sizeOrBuf.As<v8::TypedArray>();
+                    auto buf = GetTypedArrayData<const float>(array);
+                    canvas_native_webgl_buffer_data_f32(
+                            target,
+                            buf,
+                            usage,
+                            ptr->GetState()
+                    );
+                } else {
+                    auto array = sizeOrBuf.As<v8::TypedArray>();
+                    auto buf = GetTypedArrayData<const uint8_t>(array);
+                    canvas_native_webgl_buffer_data(
+                            target,
+                            buf,
+                            usage,
+                            ptr->GetState()
+                    );
+                }
+            } else if (sizeOrBuf->IsArrayBuffer()) {
+                auto buffer = sizeOrBuf.As<v8::ArrayBuffer>();
+                auto data = GetArrayBufferData<const uint8_t>(buffer);
+                canvas_native_webgl_buffer_data(
+                        target,
+                        data,
+                        usage,
+                        ptr->GetState()
+                );
+            }
+        } else {
+            auto sizeOrBuf = args[1]->NumberValue(context).ToChecked();
+            canvas_native_webgl_buffer_data_none(
+                    target,
+                    static_cast<ssize_t>(sizeOrBuf),
+                    usage,
+                    ptr->GetState()
+            );
+        }
+    }
+}
+
+void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+    if (count == 2) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto offset = args[1]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_buffer_sub_data_none(
+                target,
+                static_cast<ssize_t>(offset),
+                ptr->GetState()
+        );
+    } else if (count == 3) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto offset = args[1]->NumberValue(context).ToChecked();
+
+        if (args[2]->IsObject()) {
+            auto buf = args[2];
+
+            if (buf->IsTypedArray()) {
+                auto array = buf.As<v8::TypedArray>();
+                auto buff = GetTypedArrayData<const uint8_t>(array);
+                canvas_native_webgl_buffer_sub_data(
+                        target,
+                        static_cast<ssize_t>(offset),
+                        buff,
+                        ptr->GetState()
+                );
+            } else if (buf->IsArrayBuffer()) {
+                auto arrayBuffer = buf.As<v8::ArrayBuffer>();
+
+                auto data = GetArrayBufferData<const uint8_t>(arrayBuffer);
+
+                canvas_native_webgl_buffer_sub_data(
+                        target,
+                        static_cast<rust::isize>(offset),
+                        data,
+                        ptr->GetState()
+                );
+            }
+
+        }
+
+    }
+}
+
+void WebGLRenderingContext::CheckFramebufferStatus(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+    if (count > 0) {
+
+        if (args[0]->IsNumber()) {
+            auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+
+            auto ret = canvas_native_webgl_check_frame_buffer_status(
+                    target,
+                    ptr->GetState()
+            );
+
+            args.GetReturnValue().Set((int32_t) ret);
+            return;
+        }
+    }
+
+    args.GetReturnValue().Set(0);
+}
+
+void WebGLRenderingContext::ClearColor(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto red = args[0]->NumberValue(context).ToChecked();
+        auto green = args[1]->NumberValue(context).ToChecked();
+        auto blue = args[2]->NumberValue(context).ToChecked();
+        auto alpha = args[3]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_clear_color(
+                static_cast<float>(red),
+                static_cast<float>(green),
+                static_cast<float>(blue),
+                static_cast<float>(alpha),
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::ClearDepth(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto depth = args[0]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_clear_depth(
+                static_cast<float>(depth),
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::ClearStencil(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto stencil = (int32_t) args[0]->NumberValue(context).ToChecked();
+        canvas_native_webgl_clear_stencil(
+                stencil,
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::Clear(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    //if (count > 0) {
+    auto mask = (uint32_t) args[0]->NumberValue(context).ToChecked();
+
+    canvas_native_webgl_clear(
+            mask,
+            ptr->GetState()
+    );
+
+    this->UpdateInvalidateState();
+    // }
+}
+
+void WebGLRenderingContext::ColorMask(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+
+    if (args.Length() > 3) {
+        auto red = args[0]->BooleanValue(isolate);
+        auto green = args[1]->BooleanValue(isolate);
+        auto blue = args[2]->BooleanValue(isolate);
+        auto alpha = args[3]->BooleanValue(isolate);
+
+        canvas_native_webgl_color_mask(
+                red,
+                green,
+                blue,
+                alpha,
+                ptr->GetState()
+        );
+    }
+}
+
+void WebGLRenderingContext::Commit(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+}
+
+void WebGLRenderingContext::CompileShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto shader = WebGLShader::GetPointer(args[0].As<v8::Object>());
+        if (shader != nullptr) {
+            canvas_native_webgl_compile_shader(
+                    shader->GetShader(),
+                    ptr->GetState()
+            );
+        }
+    }
+}
+
+void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+    if (count == 6) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(context).ToChecked();
+        auto internalformat = (uint32_t) args[2]->NumberValue(context).ToChecked();
+        auto width = (int32_t) args[3]->NumberValue(context).ToChecked();
+        auto height = (int32_t) args[4]->NumberValue(context).ToChecked();
+        auto border = (int32_t) args[5]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_compressed_tex_image2d_none(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                ptr->GetState()
+        );
+    } else if (count > 6) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(context).ToChecked();
+        auto internalformat = (uint32_t) args[2]->NumberValue(context).ToChecked();
+        auto width = (int32_t) args[3]->NumberValue(context).ToChecked();
+        auto height = (int32_t) args[4]->NumberValue(context).ToChecked();
+        auto border = (int32_t) args[5]->NumberValue(context).ToChecked();
+        auto pixels = args[6];
+        if (pixels->IsObject()) {
+            if (pixels->IsTypedArray()) {
+                auto array = pixels.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const uint8_t>(array);
+                canvas_native_webgl_compressed_tex_image2d(
+                        target,
+                        level,
+                        internalformat,
+                        width,
+                        height,
+                        border,
+                        buf,
+                        ptr->GetState()
+                );
+            } else if (pixels->IsArrayBuffer()) {
+                auto ab = pixels.As<v8::ArrayBuffer>();
+                auto buf = GetArrayBufferData<const uint8_t>(ab);
+
+                canvas_native_webgl_compressed_tex_image2d(
+                        target,
+                        level,
+                        internalformat,
+                        width,
+                        height,
+                        border,
+                        buf,
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+}
+
+void WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+
+    if (count > 7) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(context).ToChecked();
+        auto xoffset = (int32_t) args[2]->NumberValue(context).ToChecked();
+        auto yoffset = (int32_t) args[3]->NumberValue(context).ToChecked();
+        auto width = (int32_t) args[4]->NumberValue(context).ToChecked();
+        auto height = (int32_t) args[5]->NumberValue(context).ToChecked();
+        auto format = (uint32_t) args[6]->NumberValue(context).ToChecked();
+        if (args[7]->IsObject()) {
+            auto pixels = args[7];
+            if (pixels->IsTypedArray()) {
+                auto px = pixels.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const uint8_t>(px);
+                canvas_native_webgl_compressed_tex_sub_image2d(
+                        target,
+                        level,
+                        xoffset,
+                        yoffset,
+                        width,
+                        height,
+                        format,
+                        buf,
+                        ptr->GetState()
+                );
+            } else if (pixels->IsArrayBuffer()) {
+                auto buffer = pixels.As<v8::ArrayBuffer>();
+                auto buf = GetArrayBufferData<const uint8_t>(buffer);
+
+                canvas_native_webgl_compressed_tex_sub_image2d(
+                        target,
+                        level,
+                        xoffset,
+                        yoffset,
+                        width,
+                        height,
+                        format,
+                        buf,
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+
+}
+
+void WebGLRenderingContext::CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+
+    if (count > 7) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(context).ToChecked();
+        auto internalformat = (uint32_t) args[2]->NumberValue(context).ToChecked();
+        auto x = (int32_t) args[3]->NumberValue(context).ToChecked();
+        auto y = (int32_t) args[4]->NumberValue(context).ToChecked();
+        auto width = (int32_t) args[5]->NumberValue(context).ToChecked();
+        auto height = (int32_t) args[6]->NumberValue(context).ToChecked();
+        auto border = (int32_t) args[7]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_copy_tex_image2d(
+                target,
+                level,
+                internalformat,
+                x,
+                y,
+                width,
+                height,
+                border,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void WebGLRenderingContext::CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+
+    if (count > 7) {
+        auto target = (uint32_t) args[0]->NumberValue(context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(context).ToChecked();
+        auto xoffset = (int32_t) args[2]->NumberValue(context).ToChecked();
+        auto yoffset = (int32_t) args[3]->NumberValue(context).ToChecked();
+        auto x = (int32_t) args[4]->NumberValue(context).ToChecked();
+        auto y = (int32_t) args[5]->NumberValue(context).ToChecked();
+        auto width = (int32_t) args[6]->NumberValue(context).ToChecked();
+        auto height = (int32_t) args[7]->NumberValue(context).ToChecked();
+
+        canvas_native_webgl_copy_tex_sub_image2d(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                x,
+                y,
+                width,
+                height,
+                ptr->GetState()
+        );
+    }
+
 }
 
 std::vector<jsi::PropNameID> WebGLRenderingContext::getPropertyNames(jsi::Runtime &rt) {
@@ -815,979 +1746,8 @@ jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropName
         return prop_return;
     }
 
-    if (methodName == "drawingBufferWidth") {
-        return {canvas_native_webgl_state_get_drawing_buffer_width(this->GetState())};
-    }
-    if (methodName == "drawingBufferHeight") {
-        return {canvas_native_webgl_state_get_drawing_buffer_height(this->GetState())};
-    }
-    if (methodName == "__flipY") {
-        return {canvas_native_webgl_state_get_flip_y(this->GetState())};
-    }
 
-    if (methodName == "__resized") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         // auto width = args[0];
-                                                         // auto height = args[1];
-                                                         // width->NumberValue(context).FromMaybe(1)
-                                                         // width->NumberValue(context).FromMaybe(1))
-                                                         canvas_native_webgl_resized(
-                                                                 this->GetState());
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    }
-
-    if (methodName == "__startRaf") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         this->StartRaf();
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    }
-
-    if (methodName == "__stopRaf") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         this->StartRaf();
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    }
-
-    if (methodName == "activeTexture") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         auto texture = (uint32_t) arguments[0].asNumber();
-                                                         canvas_native_webgl_active_texture(texture,
-                                                                                            this->GetState());
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "attachShader") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto program = arguments[0].asObject(
-                                                                 runtime).asHostObject<WebGLProgram>(
-                                                                 runtime);
-                                                         auto shader = arguments[1].asObject(
-                                                                 runtime).asHostObject<WebGLShader>(
-                                                                 runtime);
-
-                                                         if (program == nullptr) {
-                                                             return jsi::Value::undefined();
-                                                         }
-
-                                                         if (shader == nullptr) {
-                                                             return jsi::Value::undefined();
-                                                         }
-
-                                                         canvas_native_webgl_attach_shader(
-                                                                 program->GetProgram(),
-                                                                 shader->GetShader(),
-                                                                 this->GetState()
-                                                         );
-
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bindAttribLocation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2) {
-                                                             auto program = arguments[0].asObject(
-                                                                     runtime).asHostObject<WebGLProgram>(
-                                                                     runtime);
-
-                                                             if (program != nullptr &&
-                                                                 arguments[1].isNumber() &&
-                                                                 arguments[2].isString()) {
-                                                                 auto index = (uint32_t) arguments[1].asNumber();
-                                                                 auto name = arguments[2].asString(
-                                                                         runtime).utf8(runtime);
-                                                                 canvas_native_webgl_bind_attrib_location(
-                                                                         program->GetProgram(),
-                                                                         index,
-                                                                         rust::Str(name.c_str()),
-                                                                         this->GetState()
-                                                                 );
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bindBuffer") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-
-                                                             if (arguments[0].isNumber()) {
-                                                                 auto target = (uint32_t) arguments[0].asNumber();
-                                                                 if (!arguments[1].isNull() &&
-                                                                     arguments[1].isObject()) {
-                                                                     auto buffer = arguments[1].asObject(
-                                                                             runtime).asHostObject<WebGLBuffer>(
-                                                                             runtime);
-                                                                     if (buffer ==
-                                                                         nullptr) { return jsi::Value::undefined(); }
-                                                                     canvas_native_webgl_bind_buffer(
-                                                                             target,
-                                                                             buffer->GetBuffer(),
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else {
-                                                                     // unbind
-                                                                     // check for null or undefined ?
-                                                                     canvas_native_webgl_bind_buffer(
-                                                                             target,
-                                                                             0,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bindFramebuffer") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-
-                                                             if (arguments[0].isNumber()) {
-                                                                 auto target = (uint32_t) arguments[0].asNumber();
-                                                                 if (arguments[1].isObject()) {
-                                                                     auto framebuffer = arguments[1].asObject(
-                                                                             runtime).asHostObject<WebGLFramebuffer>(
-                                                                             runtime);
-                                                                     canvas_native_webgl_bind_frame_buffer(
-                                                                             target,
-                                                                             framebuffer->GetFrameBuffer(),
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else {
-                                                                     // null value
-                                                                     // unbind
-                                                                     canvas_native_webgl_bind_frame_buffer(
-                                                                             target,
-                                                                             0,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bindRenderbuffer") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             if (arguments[0].isNumber()) {
-                                                                 auto target = (uint32_t) arguments[0].asNumber();
-                                                                 if (arguments[1].isObject()) {
-                                                                     auto renderbuffer = arguments[1].asObject(
-                                                                             runtime).asHostObject<WebGLRenderbuffer>(
-                                                                             runtime);
-
-                                                                     if (renderbuffer ==
-                                                                         nullptr) { return jsi::Value::undefined(); }
-                                                                     canvas_native_webgl_bind_render_buffer(
-                                                                             target,
-                                                                             renderbuffer->GetRenderBuffer(),
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else {
-                                                                     canvas_native_webgl_bind_render_buffer(
-                                                                             target,
-                                                                             0,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bindTexture") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             if (arguments[0].isNumber()) {
-                                                                 auto target = (uint32_t) arguments[0].asNumber();
-                                                                 if (arguments[1].isObject()) {
-                                                                     auto texture = arguments[1].asObject(
-                                                                             runtime).asHostObject<WebGLTexture>(
-                                                                             runtime);
-                                                                     canvas_native_webgl_bind_texture(
-                                                                             target,
-                                                                             texture->GetTexture(),
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else {
-                                                                     canvas_native_webgl_bind_texture(
-                                                                             target,
-                                                                             0,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendColor") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3) {
-                                                             auto red = arguments[0].asNumber();
-                                                             auto green = arguments[1].asNumber();
-                                                             auto blue = arguments[2].asNumber();
-                                                             auto alpha = arguments[3].asNumber();
-
-                                                             canvas_native_webgl_blend_color(
-                                                                     static_cast<float>(red),
-                                                                     static_cast<float>(green),
-                                                                     static_cast<float>(blue),
-                                                                     static_cast<float>(alpha),
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquationSeparate") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto modeRGB = (uint32_t) arguments[0].asNumber();
-                                                             auto modeAlpha = (uint32_t) arguments[1].asNumber();
-
-                                                             canvas_native_webgl_blend_equation_separate(
-                                                                     modeRGB,
-                                                                     modeAlpha,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendEquation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             auto mode = (uint32_t) arguments[0].asNumber();
-                                                             canvas_native_webgl_blend_equation(
-                                                                     mode,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendFuncSeparate") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 3) {
-                                                             auto srcRGB = (uint32_t) arguments[0].asNumber();
-                                                             auto dstRGB = (uint32_t) arguments[1].asNumber();
-                                                             auto srcAlpha = (uint32_t) arguments[2].asNumber();
-                                                             auto dstAlpha = (uint32_t) arguments[3].asNumber();
-
-                                                             canvas_native_webgl_blend_func_separate(
-                                                                     srcRGB,
-                                                                     dstRGB,
-                                                                     srcAlpha,
-                                                                     dstAlpha,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "blendFunc") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 1) {
-                                                             auto sfactor = (uint32_t) arguments[0].asNumber();
-                                                             auto dfactor = (uint32_t) arguments[1].asNumber();
-
-                                                             canvas_native_webgl_blend_func(
-                                                                     sfactor,
-                                                                     dfactor,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bufferData") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 2) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto usage = (uint32_t) arguments[1].asNumber();
-
-                                                             canvas_native_webgl_buffer_data_none(
-                                                                     target,
-                                                                     0,
-                                                                     usage,
-                                                                     this->GetState()
-                                                             );
-                                                         } else if (count == 3) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-
-                                                             auto usage = (uint32_t) arguments[2].asNumber();
-
-                                                             if (arguments[1].isObject()) {
-                                                                 auto sizeOrBuf = arguments[1].asObject(
-                                                                         runtime);
-                                                                 if (sizeOrBuf.isArrayBufferView(
-                                                                         runtime)) {
-                                                                     if (sizeOrBuf.isUint16Array(
-                                                                             runtime)) {
-                                                                         auto array = sizeOrBuf.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const uint16_t>(
-                                                                                 runtime, array);
-
-                                                                         canvas_native_webgl_buffer_data_u16(
-                                                                                 target,
-                                                                                 buf,
-                                                                                 usage,
-                                                                                 this->GetState()
-                                                                         );
-                                                                     } else if (sizeOrBuf.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = sizeOrBuf.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_buffer_data_f32(
-                                                                                 target,
-                                                                                 buf,
-                                                                                 usage,
-                                                                                 this->GetState()
-                                                                         );
-                                                                     } else {
-                                                                         auto array = sizeOrBuf.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const uint8_t>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_buffer_data(
-                                                                                 target,
-                                                                                 buf,
-                                                                                 usage,
-                                                                                 this->GetState()
-                                                                         );
-                                                                     }
-                                                                 } else if (sizeOrBuf.isArrayBuffer(
-                                                                         runtime)) {
-                                                                     auto buffer = sizeOrBuf.getArrayBuffer(
-                                                                             runtime);
-                                                                     auto data = buffer.data(
-                                                                             runtime);
-                                                                     auto size = buffer.size(
-                                                                             runtime);
-                                                                     rust::Slice<const uint8_t> buf(
-                                                                             data, size);
-                                                                     canvas_native_webgl_buffer_data(
-                                                                             target,
-                                                                             buf,
-                                                                             usage,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             } else {
-                                                                 auto sizeOrBuf = arguments[1].asNumber();
-                                                                 canvas_native_webgl_buffer_data_none(
-                                                                         target,
-                                                                         static_cast<ssize_t>(sizeOrBuf),
-                                                                         usage,
-                                                                         this->GetState()
-                                                                 );
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "bufferSubData") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 2) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto offset = arguments[1].asNumber();
-
-                                                             canvas_native_webgl_buffer_sub_data_none(
-                                                                     target,
-                                                                     static_cast<ssize_t>(offset),
-                                                                     this->GetState()
-                                                             );
-                                                         } else if (count == 3) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto offset = arguments[1].asNumber();
-
-                                                             if (arguments[2].isObject()) {
-                                                                 auto buf = arguments[2].asObject(
-                                                                         runtime);
-
-                                                                 if (buf.isTypedArray(runtime)) {
-                                                                     auto array = arguments[2].asObject(
-                                                                             runtime).getTypedArray(
-                                                                             runtime);
-                                                                     auto buff = GetTypedArrayData<const uint8_t>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_buffer_sub_data(
-                                                                             target,
-                                                                             static_cast<ssize_t>(offset),
-                                                                             buff,
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else if (buf.isArrayBuffer(
-                                                                         runtime)) {
-                                                                     auto arrayBuffer = buf.getArrayBuffer(
-                                                                             runtime);
-
-                                                                     auto store = arrayBuffer.data(
-                                                                             runtime);
-                                                                     auto size = arrayBuffer.size(
-                                                                             runtime);
-                                                                     rust::Slice<const uint8_t> data(
-                                                                             store, size);
-                                                                     canvas_native_webgl_buffer_sub_data(
-                                                                             target,
-                                                                             static_cast<rust::isize>(offset),
-                                                                             data,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-
-                                                             }
-
-                                                         }
-
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "checkFramebufferStatus") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-
-                                                             if (arguments[0].isNumber()) {
-                                                                 auto target = (uint32_t) arguments[0].asNumber();
-
-                                                                 auto ret = canvas_native_webgl_check_frame_buffer_status(
-                                                                         target,
-                                                                         this->GetState()
-                                                                 );
-                                                                 return {(int32_t) ret};
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "clearColor") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 3) {
-                                                             auto red = arguments[0].asNumber();
-                                                             auto green = arguments[1].asNumber();
-                                                             auto blue = arguments[2].asNumber();
-                                                             auto alpha = arguments[3].asNumber();
-
-                                                             canvas_native_webgl_clear_color(
-                                                                     static_cast<float>(red),
-                                                                     static_cast<float>(green),
-                                                                     static_cast<float>(blue),
-                                                                     static_cast<float>(alpha),
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "clearDepth") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             auto depth = arguments[0].asNumber();
-
-                                                             canvas_native_webgl_clear_depth(
-                                                                     static_cast<float>(depth),
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "clearStencil") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             auto stencil = (int32_t) arguments[0].asNumber();
-                                                             canvas_native_webgl_clear_stencil(
-                                                                     stencil,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "clear") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         //if (count > 0) {
-                                                         auto mask = (uint32_t) arguments[0].asNumber();
-
-                                                         canvas_native_webgl_clear(
-                                                                 mask,
-                                                                 this->GetState()
-                                                         );
-
-                                                         this->UpdateInvalidateState();
-                                                         // }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "colorMask") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3) {
-                                                             auto red = arguments[0].asBool();
-                                                             auto green = arguments[1].asBool();
-                                                             auto blue = arguments[2].asBool();
-                                                             auto alpha = arguments[3].asBool();
-
-                                                             canvas_native_webgl_color_mask(
-                                                                     red,
-                                                                     green,
-                                                                     blue,
-                                                                     alpha,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "commit") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [](jsi::Runtime &runtime,
-                                                        const jsi::Value &thisValue,
-                                                        const jsi::Value *arguments,
-                                                        size_t count) -> jsi::Value {
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "compileShader") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             auto shader = arguments[0].asObject(
-                                                                     runtime).asHostObject<WebGLShader>(
-                                                                     runtime);
-                                                             if (shader != nullptr) {
-                                                                 canvas_native_webgl_compile_shader(
-                                                                         shader->GetShader(),
-                                                                         this->GetState()
-                                                                 );
-                                                             }
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "compressedTexImage2D") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     7,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count == 6) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto level = (int32_t) arguments[1].asNumber();
-                                                             auto internalformat = (uint32_t) arguments[2].asNumber();
-                                                             auto width = (int32_t) arguments[3].asNumber();
-                                                             auto height = (int32_t) arguments[4].asNumber();
-                                                             auto border = (int32_t) arguments[5].asNumber();
-
-                                                             canvas_native_webgl_compressed_tex_image2d_none(
-                                                                     target,
-                                                                     level,
-                                                                     internalformat,
-                                                                     width,
-                                                                     height,
-                                                                     border,
-                                                                     this->GetState()
-                                                             );
-                                                         } else if (count > 6) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto level = (int32_t) arguments[1].asNumber();
-                                                             auto internalformat = (uint32_t) arguments[2].asNumber();
-                                                             auto width = (int32_t) arguments[3].asNumber();
-                                                             auto height = (int32_t) arguments[4].asNumber();
-                                                             auto border = (int32_t) arguments[5].asNumber();
-                                                             if (arguments[6].isObject()) {
-                                                                 auto pixels = arguments[6].asObject(
-                                                                         runtime);
-                                                                 if (pixels.isTypedArray(runtime)) {
-                                                                     auto array = pixels.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const uint8_t>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_compressed_tex_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             internalformat,
-                                                                             width,
-                                                                             height,
-                                                                             border,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else if (pixels.isArrayBuffer(
-                                                                         runtime)) {
-                                                                     auto ab = pixels.getArrayBuffer(
-                                                                             runtime);
-                                                                     auto size = ab.size(runtime);
-                                                                     auto data = ab.data(runtime);
-                                                                     rust::Slice<const uint8_t> buf(
-                                                                             data, size);
-
-                                                                     canvas_native_webgl_compressed_tex_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             internalformat,
-                                                                             width,
-                                                                             height,
-                                                                             border,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "compressedTexSubImage2D") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     8,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 7) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto level = (int32_t) arguments[1].asNumber();
-                                                             auto xoffset = (int32_t) arguments[2].asNumber();
-                                                             auto yoffset = (int32_t) arguments[3].asNumber();
-                                                             auto width = (int32_t) arguments[4].asNumber();
-                                                             auto height = (int32_t) arguments[5].asNumber();
-                                                             auto format = (uint32_t) arguments[6].asNumber();
-
-                                                             if (arguments[7].isObject()) {
-                                                                 auto pixels = arguments[7].asObject(
-                                                                         runtime);
-                                                                 if (pixels.isTypedArray(runtime)) {
-                                                                     auto px = pixels.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const uint8_t>(
-                                                                             runtime, px);
-                                                                     canvas_native_webgl_compressed_tex_sub_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             xoffset,
-                                                                             yoffset,
-                                                                             width,
-                                                                             height,
-                                                                             format,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else if (pixels.isArrayBuffer(
-                                                                         runtime)) {
-                                                                     auto buffer = pixels.getArrayBuffer(
-                                                                             runtime);
-                                                                     auto size = buffer.size(
-                                                                             runtime);
-                                                                     auto data = buffer.data(
-                                                                             runtime);
-                                                                     rust::Slice<const uint8_t> buf(
-                                                                             data, size);
-
-                                                                     canvas_native_webgl_compressed_tex_sub_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             xoffset,
-                                                                             yoffset,
-                                                                             width,
-                                                                             height,
-                                                                             format,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "copyTexImage2D") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     8,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 7) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto level = (int32_t) arguments[1].asNumber();
-                                                             auto internalformat = (uint32_t) arguments[2].asNumber();
-                                                             auto x = (int32_t) arguments[3].asNumber();
-                                                             auto y = (int32_t) arguments[4].asNumber();
-                                                             auto width = (int32_t) arguments[5].asNumber();
-                                                             auto height = (int32_t) arguments[6].asNumber();
-                                                             auto border = (int32_t) arguments[7].asNumber();
-
-                                                             canvas_native_webgl_copy_tex_image2d(
-                                                                     target,
-                                                                     level,
-                                                                     internalformat,
-                                                                     x,
-                                                                     y,
-                                                                     width,
-                                                                     height,
-                                                                     border,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "copyTexSubImage2D") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     8,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 7) {
-                                                             auto target = (uint32_t) arguments[0].asNumber();
-                                                             auto level = (int32_t) arguments[1].asNumber();
-                                                             auto xoffset = (int32_t) arguments[2].asNumber();
-                                                             auto yoffset = (int32_t) arguments[3].asNumber();
-                                                             auto x = (int32_t) arguments[4].asNumber();
-                                                             auto y = (int32_t) arguments[5].asNumber();
-                                                             auto width = (int32_t) arguments[6].asNumber();
-                                                             auto height = (int32_t) arguments[7].asNumber();
-
-                                                             canvas_native_webgl_copy_tex_sub_image2d(
-                                                                     target,
-                                                                     level,
-                                                                     xoffset,
-                                                                     yoffset,
-                                                                     x,
-                                                                     y,
-                                                                     width,
-                                                                     height,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "createBuffer") {
+  if (methodName == "createBuffer") {
         return jsi::Function::createFromHostFunction(runtime,
                                                      jsi::PropNameID::forAscii(runtime, methodName),
                                                      0,

@@ -6,13 +6,38 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "v8runtime/V8Runtime.h"
+#include "Helpers.h"
 
-using namespace facebook;
-
-class JSI_EXPORT WebGLShader : public jsi::HostObject {
+class WebGLShader {
 public:
     WebGLShader(uint32_t shader) : shader_(shader) {}
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
+        auto cache = Caches::Get(isolate);
+        auto ctor = cache->WebGLShaderTmpl.get();
+        if (ctor != nullptr) {
+            return ctor->Get(isolate);
+        }
+
+        v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLShader"));
+
+        auto tmpl = ctorTmpl->InstanceTemplate();
+        tmpl->SetInternalFieldCount(1);
+
+        cache->WebGLShaderTmpl =
+                std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+        return ctorTmpl;
+    }
+
+    static WebGLShader *GetPointer(const v8::Local<v8::Object> &object) {
+        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+        return static_cast<WebGLShader *>(ptr);
+    }
 
     uint32_t GetShader() {
         return this->shader_;

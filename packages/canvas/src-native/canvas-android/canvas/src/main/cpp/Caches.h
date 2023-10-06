@@ -97,6 +97,21 @@ public:
     std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGL2RenderingContextTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLProgramTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLShaderTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLFramebufferTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLRenderbufferTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLTextureTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
 
 private:
     static std::shared_ptr <ConcurrentMap<v8::Isolate *,

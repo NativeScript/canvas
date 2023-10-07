@@ -32,6 +32,17 @@ public:
         return ctorTmpl;
     }
 
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, WebGLBuffer *buffer) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = WebGLBuffer::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::WebGLBuffer);
+        auto ext = v8::External::New(isolate, buffer);
+        object->SetInternalField(0, ext);
+        return scope.Escape(object);
+    }
+
     static WebGLBuffer *GetPointer(const v8::Local<v8::Object> &object) {
         auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
         if (ptr == nullptr) {

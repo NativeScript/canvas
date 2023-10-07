@@ -21,7 +21,6 @@ public:
 
     v8::Local<v8::Context> GetContext();
 
-
     std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> TextDecoderTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
@@ -111,6 +110,67 @@ public:
 
     std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WebGLTextureTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_fbo_render_mipmapTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> EXT_sRGBTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> EXT_texture_filter_anisotropicTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_element_index_uintTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_standard_derivativesTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_texture_floatTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_texture_float_linearTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_texture_half_float_linearTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_texture_half_floatTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_color_buffer_floatTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> OES_vertex_array_objectTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_compressed_texture_atcTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_compressed_texture_etc1Tmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_compressed_texture_s3tcTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_compressed_texture_s3tc_srgbTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_compressed_texture_etcTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_compressed_texture_pvrtcTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_lose_contextTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_depth_textureTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr <v8::Persistent<v8::FunctionTemplate>> WEBGL_draw_buffersTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
 
 
 private:

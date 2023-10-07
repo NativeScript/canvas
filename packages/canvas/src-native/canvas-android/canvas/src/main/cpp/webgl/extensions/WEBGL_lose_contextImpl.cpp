@@ -8,57 +8,26 @@
 WEBGL_lose_contextImpl::WEBGL_lose_contextImpl(rust::Box<WEBGL_lose_context> context) : context_(
         std::move(context)) {}
 
-std::vector<jsi::PropNameID> WEBGL_lose_contextImpl::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(3);
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("loseContext")));
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("restoreContext")));
 
-    ret.emplace_back(
-            jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
+void WEBGL_lose_contextImpl::LoseContext(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WEBGL_lose_contextImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
 
-    return ret;
+    canvas_native_webgl_lose_context_lose_context(
+            ptr->GetContext());
 }
 
 
-jsi::Value WEBGL_lose_contextImpl::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-
-    if (methodName == "ext_name") {
-        return jsi::String::createFromAscii(runtime, "WEBGL_lose_context");
+void WEBGL_lose_contextImpl::RestoreContext(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WEBGL_lose_contextImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
     }
 
-    if (methodName == "loseContext") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         canvas_native_webgl_lose_context_lose_context(
-                                                                 this->GetContext());
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "restoreContext") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         canvas_native_webgl_lose_context_restore_context(
-                                                                 this->GetContext());
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    }
-    return jsi::Value::undefined();
+    canvas_native_webgl_lose_context_restore_context(
+            ptr->GetContext());
 }

@@ -5,26 +5,48 @@
 #pragma once
 
 #include "rust/cxx.h"
-#include "v8runtime/V8Runtime.h"
 
-using namespace facebook;
 
-class JSI_EXPORT OES_fbo_render_mipmapImpl : public jsi::HostObject {
+class OES_fbo_render_mipmapImpl {
 public:
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override {
-        std::vector<jsi::PropNameID> ret;
-        ret.emplace_back(
-                jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
-        return ret;
-    }
-
-    jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
-        auto methodName = name.utf8(runtime);
-
-        if (methodName == "ext_name") {
-            return jsi::String::createFromAscii(runtime, "OES_fbo_render_mipmap");
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
+        auto cache = Caches::Get(isolate);
+        auto ctor = cache->OES_fbo_render_mipmapTmpl.get();
+        if (ctor != nullptr) {
+            return ctor->Get(isolate);
         }
 
-        return jsi::Value::undefined();
+        v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->SetClassName(ConvertToV8String(isolate, "OES_fbo_render_mipmap"));
+
+        auto tmpl = ctorTmpl->InstanceTemplate();
+        tmpl->SetInternalFieldCount(1);
+
+        cache->OES_fbo_render_mipmapTmpl =
+                std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+        return ctorTmpl;
+    }
+
+    static v8::Local<v8::Object>
+    NewInstance(v8::Isolate *isolate, OES_fbo_render_mipmapImpl *texture) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = OES_fbo_render_mipmapImpl::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::OES_fbo_render_mipmap);
+        auto ext = v8::External::New(isolate, texture);
+        object->SetInternalField(0, ext);
+        object->Set(context, ConvertToV8String(isolate, "ext_name"),
+                    ConvertToV8String(isolate, "OES_fbo_render_mipmap"));
+        return scope.Escape(object);
+    }
+
+    static OES_fbo_render_mipmapImpl *GetPointer(const v8::Local<v8::Object> &object) {
+        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+        return static_cast<OES_fbo_render_mipmapImpl *>(ptr);
     }
 };

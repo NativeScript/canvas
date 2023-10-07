@@ -30,6 +30,18 @@ public:
         return ctorTmpl;
     }
 
+    static v8::Local<v8::Object>
+    NewInstance(v8::Isolate *isolate, WebGLVertexArrayObject *vertexArrayObject) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = WebGLVertexArrayObject::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::WebGLVertexArrayObject);
+        auto ext = v8::External::New(isolate, vertexArrayObject);
+        object->SetInternalField(0, ext);
+        return scope.Escape(object);
+    }
+
     static WebGLVertexArrayObject *GetPointer(const v8::Local<v8::Object> &object) {
         auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
         if (ptr == nullptr) {

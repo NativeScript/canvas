@@ -78,6 +78,15 @@ public:
     v8::Local<v8::Value> GetParameterInternal(v8::Isolate * isolate, uint32_t pnameValue,
                                     rust::Box<WebGLResult> result);
 
+    static void  GetDrawingBufferWidth(v8::Local<v8::String> name,
+                                                 const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void  GetFlipY(v8::Local<v8::String> name,
+                                       const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void  GetDrawingBufferHeight(v8::Local<v8::String> name,
+                                       const v8::PropertyCallbackInfo<v8::Value> &info);
+
     static inline jsi::Value GetProperty(const std::string &methodName) {
         if (methodName == "DEPTH_BUFFER_BIT") { return {0x00000100}; }
 

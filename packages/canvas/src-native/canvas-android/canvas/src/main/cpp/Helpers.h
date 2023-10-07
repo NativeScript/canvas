@@ -7,6 +7,7 @@
 #include <memory>
 #include "rust/cxx.h"
 #include "Common.h"
+#include "OneByteStringResource.h"
 
 enum class NativeType {
     None,
@@ -27,7 +28,34 @@ enum class NativeType {
     WebGLBuffer,
     WebGLFramebuffer,
     WebGLRenderbuffer,
-    WebGLTexture
+    WebGLTexture,
+    WebGLActiveInfo,
+    OES_fbo_render_mipmap,
+    EXT_blend_minmax,
+    EXT_color_buffer_half_float,
+    EXT_disjoint_timer_query,
+    EXT_sRGB,
+    EXT_shader_texture_lod,
+    EXT_texture_filter_anisotropic,
+    OES_element_index_uint,
+    OES_standard_derivatives,
+    OES_texture_float,
+    OES_texture_float_linear,
+    OES_texture_half_float_linear,
+    OES_texture_half_float,
+    WEBGL_color_buffer_float,
+    OES_vertex_array_object,
+    WebGLVertexArrayObject,
+    WEBGL_compressed_texture_atc,
+    WEBGL_compressed_texture_etc1,
+    WEBGL_compressed_texture_s3tc,
+    WEBGL_compressed_texture_s3tc_srgb,
+    WEBGL_compressed_texture_etc,
+    WEBGL_compressed_texture_pvrtc,
+    WEBGL_lose_context,
+    ANGLE_instanced_arrays,
+    WEBGL_depth_texture,
+    WEBGL_draw_buffers
 };
 
 
@@ -67,6 +95,13 @@ private:
     rust::Vec<T> vec_;
 };
 
+
+inline static v8::Local<v8::String>
+ConvertToV8OneByteString(v8::Isolate *isolate, rust::String string) {
+    auto value = new OneByteStringResource(std::move(string));
+    auto ret = v8::String::NewExternalOneByte(isolate, value);
+    return ret.ToLocalChecked();
+}
 
 inline static v8::Local<v8::String>
 ConvertToV8String(v8::Isolate *isolate, const std::string &string) {
@@ -132,15 +167,19 @@ static void SetNativeType(v8::Isolate *isolate, const v8::Local<v8::Object> &obj
     SetPrivateValue(isolate, obj, name, typeValue);
 }
 
-inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8::Object> &obj) {
-    v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
-    auto ret = GetPrivateValue(isolate, obj, name);
+inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
+    if (obj->IsObject()) {
+        v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
+        auto ret = GetPrivateValue(isolate, obj.As<v8::Object>(), name);
 
-    auto context = isolate->GetCurrentContext();
-    if (ret->IsNumber()) {
-        auto value = (int) ret->NumberValue(context).ToChecked();
-        if (value >= (int) NativeType::CanvasGradient && value <= (int) NativeType::TextMetrics) {
-            return (NativeType) value;
+        auto context = isolate->GetCurrentContext();
+
+        if (ret->IsNumber()) {
+            auto value = (int) ret->NumberValue(context).ToChecked();
+            if (value >= (int) NativeType::CanvasGradient &&
+                value <= (int) NativeType::TextMetrics) {
+                return (NativeType) value;
+            }
         }
     }
 

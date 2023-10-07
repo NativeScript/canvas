@@ -3,6 +3,7 @@
 //
 
 #pragma once
+
 #include "Caches.h"
 #include "Common.h"
 
@@ -26,5 +27,25 @@ public:
         cache->EXT_shader_texture_lodTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
         return ctorTmpl;
+    }
+
+    static v8::Local<v8::Object>
+    NewInstance(v8::Isolate *isolate, EXT_shader_texture_lodImpl *texture) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = EXT_shader_texture_lodImpl::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::EXT_shader_texture_lod);
+        auto ext = v8::External::New(isolate, texture);
+        object->SetInternalField(0, ext);
+        return scope.Escape(object);
+    }
+
+    static EXT_shader_texture_lodImpl *GetPointer(const v8::Local<v8::Object> &object) {
+        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+        return static_cast<EXT_shader_texture_lodImpl *>(ptr);
     }
 };

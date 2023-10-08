@@ -6,7 +6,6 @@
 #include "JSICallback.h"
 #include "JSIRuntime.h"
 #include "Helpers.h"
-#include "JSIReadFileCallback.h"
 
 void CanvasJSIModule::install(v8::Isolate *isolate) {
 
@@ -48,7 +47,6 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         canvasMod->Set(context, ConvertToV8String(isolate, "readFile"),
                        v8::FunctionTemplate::New(isolate, &ReadFile)->GetFunction(
                                context).ToLocalChecked());
-
 
         canvasMod->Set(context, ConvertToV8String(isolate, "createWebGLContext"),
                        v8::FunctionTemplate::New(isolate, &CreateWebGLContext)->GetFunction(
@@ -702,7 +700,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 //                          func.call(rt, {std::move(error), jsi::Value::null()});
 //                      }
 
-                      delete static_cast<JSIReadFileCallback *>(data);
+                      delete static_cast<JSICallback *>(data);
                       return 0;
                   }, jsi_callback);
 
@@ -762,7 +760,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
     thread.detach();
 }
 
-static void CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto configValue = args[0];
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
@@ -954,7 +952,7 @@ static void CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args) 
     args.GetReturnValue().SetNull();
 }
 
-static void CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto configValue = args[0];
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();

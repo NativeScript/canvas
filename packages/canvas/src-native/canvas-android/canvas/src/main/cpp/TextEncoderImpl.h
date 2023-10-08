@@ -6,7 +6,6 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#import "v8runtime/V8Runtime.h"
 #include "VecMutableBuffer.h"
 #include <vector>
 

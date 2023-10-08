@@ -6,7 +6,6 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "v8runtime/V8Runtime.h"
 #include "MatrixImpl.h"
 #include <vector>
 

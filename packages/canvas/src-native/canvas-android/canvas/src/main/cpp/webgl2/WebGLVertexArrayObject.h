@@ -6,6 +6,7 @@
 
 #include "Caches.h"
 #include "Common.h"
+#include "Helpers.h"
 
 class WebGLVertexArrayObject {
 public:

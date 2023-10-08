@@ -7,9 +7,7 @@
 #include <android/looper.h>
 #include <unistd.h>
 #include <fcntl.h>
-#import "v8runtime/V8Runtime.h"
 
-using namespace facebook;
 
 struct JSIReadFileCallback {
     int fd_[2];

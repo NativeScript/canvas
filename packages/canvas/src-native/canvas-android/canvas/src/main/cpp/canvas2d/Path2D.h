@@ -6,7 +6,6 @@
 
 #include "rust/cxx.h"
 #include "canvas-cxx/src/lib.rs.h"
-#include "v8runtime/V8Runtime.h"
 #include "Helpers.h"
 #include "v8-fast-api-calls.h"
 #include <vector>

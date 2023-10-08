@@ -8,7 +8,7 @@
 
 TextEncoderImpl::TextEncoderImpl(rust::Box<TextEncoder> encoder) : encoder_(std::move(encoder)) {}
 
-void TextEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+void TextEncoderImpl::Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);

@@ -36,6 +36,18 @@ public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
+    static v8::Local<v8::Object>
+    NewInstance(v8::Isolate *isolate, WebGL2RenderingContext *renderingContext) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = WebGL2RenderingContext::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::WebGLRenderingContext);
+        auto ext = v8::External::New(isolate, renderingContext);
+        object->SetInternalField(0, ext);
+        return scope.Escape(object);
+    }
+
     static WebGL2RenderingContext *GetPointer(const v8::Local<v8::Object> &object);
 
     static void SetConstants(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl);
@@ -217,5 +229,5 @@ public:
     static void VertexAttribI4ui(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void VertexAttribI4uiv(const v8::FunctionCallbackInfo<v8::Value> &args);
-                                                                                                                                                                                                                                                                                                                                               
+
 };

@@ -117,17 +117,6 @@ add_library(
 
         src/main/cpp/OneByteStringResource.cpp
 
-        src/main/cpp/jsi/jsi.cpp
-        src/main/cpp/jsi/jsilib-posix.cpp
-        src/main/cpp/jsi/jsilib-windows.cpp
-
-
-        src/main/cpp/v8runtime/HostProxy.cpp
-        src/main/cpp/v8runtime/JSIV8ValueConverter.cpp
-        src/main/cpp/v8runtime/V8PointerValue.cpp
-        src/main/cpp/v8runtime/V8Runtime.cpp
-        src/main/cpp/v8runtime/V8RuntimeFactory.cpp
-
         src/main/cpp/OnRafCallback.cpp
 
         src/main/cpp/RafImpl.cpp
@@ -158,20 +147,7 @@ add_library(
         src/main/cpp/webgl/extensions/EXT_blend_minmaxImpl.cpp
         src/main/cpp/webgl/extensions/EXT_color_buffer_half_floatImpl.cpp
         src/main/cpp/webgl/extensions/EXT_disjoint_timer_queryImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_sRGBImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_texture_filter_anisotropicImpl.cpp
-        src/main/cpp/webgl/extensions/OES_element_index_uintImpl.cpp
-        src/main/cpp/webgl/extensions/OES_standard_derivativesImpl.cpp
-        src/main/cpp/webgl/extensions/OES_texture_half_floatImpl.cpp
         src/main/cpp/webgl/extensions/OES_vertex_array_objectImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_color_buffer_floatImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_atcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_etc1Impl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_etcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_pvrtcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_s3tc_srgbImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_compressed_texture_s3tcImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_depth_textureImpl.cpp
         src/main/cpp/webgl/extensions/WEBGL_draw_buffersImpl.cpp
         src/main/cpp/webgl/extensions/WEBGL_lose_contextImpl.cpp
 

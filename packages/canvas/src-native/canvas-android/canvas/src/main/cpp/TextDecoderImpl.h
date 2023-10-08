@@ -17,7 +17,7 @@ public:
 
     TextDecoder &GetTextDecoder();
 
-    static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
+    static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
 
     static TextDecoderImpl *GetPointer(v8::Local<v8::Object> object);
 

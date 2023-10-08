@@ -30,5 +30,8 @@ public:
     static void CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void Create2DContext(const v8::FunctionCallbackInfo<v8::Value> &args);
     static void Create2DContextWithPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Value> &args);
 };
 

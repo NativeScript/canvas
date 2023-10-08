@@ -9,7 +9,7 @@
 
 TextDecoderImpl::TextDecoderImpl(rust::Box<TextDecoder> decoder) : decoder_(std::move(decoder)) {}
 
-void TextDecoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+void TextDecoderImpl::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);

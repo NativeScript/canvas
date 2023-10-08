@@ -8,6 +8,7 @@
 #include "canvas-cxx/src/lib.rs.h"
 #include "VecMutableBuffer.h"
 #include <vector>
+#include "Common.h"
 
 using namespace org::nativescript::canvas;
 
@@ -18,7 +19,7 @@ public:
 
     TextEncoder &GetTextEncoder();
 
-    static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
+    static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
 
     static TextEncoderImpl *GetPointer(v8::Local<v8::Object> object);
 
@@ -28,7 +29,8 @@ public:
 
     static void Encode(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+    static void
+    Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     rust::Box<TextEncoder> encoder_;

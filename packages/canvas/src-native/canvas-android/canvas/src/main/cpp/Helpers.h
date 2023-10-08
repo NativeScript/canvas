@@ -55,7 +55,13 @@ enum class NativeType {
     WEBGL_lose_context,
     ANGLE_instanced_arrays,
     WEBGL_depth_texture,
-    WEBGL_draw_buffers
+    WEBGL_draw_buffers,
+    WebGLShaderPrecisionFormat,
+    WebGLUniformLocation,
+    WebGLRenderingContext,
+    WebGLSampler,
+    WebGLTransformFeedback,
+    WebGLSync
 };
 
 

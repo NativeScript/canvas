@@ -18,7 +18,7 @@ WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state,
 }
 
 
-v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
+v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
     auto ctor = cache->WebGLRenderingContextTmpl.get();
     if (ctor != nullptr) {
@@ -32,12 +32,748 @@ v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
 
+    SetConstants(isolate, tmpl);
+
+    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferWidth"), &GetDrawingBufferWidth);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferHeight"), &GetDrawingBufferHeight);
+
+    tmpl->SetAccessor(ConvertToV8String(isolate, "__flipY"), &GetFlipY);
+
+    tmpl->Set(ConvertToV8String(isolate, "__resized"),
+              v8::FunctionTemplate::New(isolate, &__Resized));
+    tmpl->Set(ConvertToV8String(isolate, "__startRaf"),
+              v8::FunctionTemplate::New(isolate, &__StartRaf));
+    tmpl->Set(ConvertToV8String(isolate, "__stopRaf"),
+              v8::FunctionTemplate::New(isolate, &__StopRaf));
+
+    tmpl->Set(ConvertToV8String(isolate, "__toDataURL"),
+              v8::FunctionTemplate::New(isolate, &__ToDataURL));
+
+    tmpl->Set(ConvertToV8String(isolate, "__getSupportedExtensions"),
+              v8::FunctionTemplate::New(isolate, &__GetSupportedExtensions));
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "activeTexture"),
+            v8::FunctionTemplate::New(isolate, &ActiveTexture)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "attachShader"),
+            v8::FunctionTemplate::New(isolate, &AttachShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindAttribLocation"),
+            v8::FunctionTemplate::New(isolate, &BindAttribLocation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindBuffer"),
+            v8::FunctionTemplate::New(isolate, &BindBuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &BindFramebuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &BindRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindTexture"),
+            v8::FunctionTemplate::New(isolate, &BindTexture)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendColor"),
+            v8::FunctionTemplate::New(isolate, &BlendColor)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendEquationSeparate"),
+            v8::FunctionTemplate::New(isolate, &BlendEquationSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendEquation"),
+            v8::FunctionTemplate::New(isolate, &BlendEquation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendFuncSeparate"),
+            v8::FunctionTemplate::New(isolate, &BlendFuncSeparate)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendFunc"),
+            v8::FunctionTemplate::New(isolate, &BlendFunc)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bufferData"),
+            v8::FunctionTemplate::New(isolate, &BufferData)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bufferSubData"),
+            v8::FunctionTemplate::New(isolate, &BufferSubData)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "checkFramebufferStatus"),
+            v8::FunctionTemplate::New(isolate, &CheckFramebufferStatus)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clearColor"),
+            v8::FunctionTemplate::New(isolate, &ClearColor)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clearDepth"),
+            v8::FunctionTemplate::New(isolate, &ClearDepth)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clearStencil"),
+            v8::FunctionTemplate::New(isolate, &ClearStencil)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clear"),
+            v8::FunctionTemplate::New(isolate, &Clear)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "colorMask"),
+            v8::FunctionTemplate::New(isolate, &ColorMask)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "commit"),
+            v8::FunctionTemplate::New(isolate, &Commit)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "compileShader"),
+            v8::FunctionTemplate::New(isolate, &CompileShader)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "compressedTexImage2D"),
+            v8::FunctionTemplate::New(isolate, &CompressedTexImage2D)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "compressedTexSubImage2D"),
+            v8::FunctionTemplate::New(isolate, &CompressedTexSubImage2D)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "copyTexImage2D"),
+            v8::FunctionTemplate::New(isolate, &CopyTexImage2D)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "copyTexSubImage2D"),
+            v8::FunctionTemplate::New(isolate, &CopyTexSubImage2D)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createBuffer"),
+            v8::FunctionTemplate::New(isolate, &CreateBuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &CreateFramebuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createProgram"),
+            v8::FunctionTemplate::New(isolate, &CreateProgram)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &CreateRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createShader"),
+            v8::FunctionTemplate::New(isolate, &CreateShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createTexture"),
+            v8::FunctionTemplate::New(isolate, &CreateTexture)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "cullFace"),
+            v8::FunctionTemplate::New(isolate, &CullFace)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteBuffer"),
+            v8::FunctionTemplate::New(isolate, &DeleteBuffer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &DeleteFramebuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteProgram"),
+            v8::FunctionTemplate::New(isolate, &DeleteProgram)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &DeleteRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteShader"),
+            v8::FunctionTemplate::New(isolate, &DeleteShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteTexture"),
+            v8::FunctionTemplate::New(isolate, &DeleteTexture)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "depthFunc"),
+            v8::FunctionTemplate::New(isolate, &DepthFunc)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "depthMask"),
+            v8::FunctionTemplate::New(isolate, &DepthMask)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "depthRange"),
+            v8::FunctionTemplate::New(isolate, &DepthRange)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "detachShader"),
+            v8::FunctionTemplate::New(isolate, &DetachShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "disableVertexAttribArray"),
+            v8::FunctionTemplate::New(isolate, &DisableVertexAttribArray)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "disable"),
+            v8::FunctionTemplate::New(isolate, &Disable)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "drawArrays"),
+            v8::FunctionTemplate::New(isolate, &DrawArrays)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "drawElements"),
+            v8::FunctionTemplate::New(isolate, &DrawElements)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "enableVertexAttribArray"),
+            v8::FunctionTemplate::New(isolate, &EnableVertexAttribArray)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "enable"),
+            v8::FunctionTemplate::New(isolate, &Enable)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "finish"),
+            v8::FunctionTemplate::New(isolate, &Finish)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "flush"),
+            v8::FunctionTemplate::New(isolate, &Flush)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "framebufferRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &FramebufferRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "framebufferTexture2D"),
+            v8::FunctionTemplate::New(isolate, &FramebufferTexture2D)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "frontFace"),
+            v8::FunctionTemplate::New(isolate, &FrontFace)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "generateMipmap"),
+            v8::FunctionTemplate::New(isolate, &GenerateMipmap)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getActiveAttrib"),
+            v8::FunctionTemplate::New(isolate, &GetActiveAttrib)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getActiveUniform"),
+            v8::FunctionTemplate::New(isolate, &GetActiveUniform)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getAttachedShaders"),
+            v8::FunctionTemplate::New(isolate, &GetAttachedShaders)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getAttribLocation"),
+            v8::FunctionTemplate::New(isolate, &GetAttribLocation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getBufferParameter"),
+            v8::FunctionTemplate::New(isolate, &GetBufferParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getContextAttributes"),
+            v8::FunctionTemplate::New(isolate, &GetContextAttributes)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getError"),
+            v8::FunctionTemplate::New(isolate, &GetError)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getExtension"),
+            v8::FunctionTemplate::New(isolate, &GetExtension)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getFramebufferAttachmentParameter"),
+            v8::FunctionTemplate::New(isolate, &GetFramebufferAttachmentParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getParameter"),
+            v8::FunctionTemplate::New(isolate, &GetParameter)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getProgramInfoLog"),
+            v8::FunctionTemplate::New(isolate, &GetProgramInfoLog)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getProgramParameter"),
+            v8::FunctionTemplate::New(isolate, &GetProgramParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getRenderbufferParameter"),
+            v8::FunctionTemplate::New(isolate, &GetRenderbufferParameter)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderInfoLog"),
+            v8::FunctionTemplate::New(isolate, &GetShaderInfoLog)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderParameter"),
+            v8::FunctionTemplate::New(isolate, &GetShaderParameter)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderPrecisionFormat"),
+            v8::FunctionTemplate::New(isolate, &GetShaderPrecisionFormat)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderSource"),
+            v8::FunctionTemplate::New(isolate, &GetShaderSource)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getSupportedExtensions"),
+            v8::FunctionTemplate::New(isolate, &GetSupportedExtensions)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getTexParameter"),
+            v8::FunctionTemplate::New(isolate, &GetTexParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getUniformLocation"),
+            v8::FunctionTemplate::New(isolate, &GetUniformLocation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getUniform"),
+            v8::FunctionTemplate::New(isolate, &GetUniform)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getVertexAttribOffset"),
+            v8::FunctionTemplate::New(isolate, &GetVertexAttribOffset)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getVertexAttrib"),
+            v8::FunctionTemplate::New(isolate, &GetVertexAttrib)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "hint"),
+            v8::FunctionTemplate::New(isolate, &Hint)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isBuffer"),
+            v8::FunctionTemplate::New(isolate, &IsBuffer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isContextLost"),
+            v8::FunctionTemplate::New(isolate, &IsContextLost)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isEnabled"),
+            v8::FunctionTemplate::New(isolate, &IsEnabled)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &IsFramebuffer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isProgram"),
+            v8::FunctionTemplate::New(isolate, &IsProgram)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &IsRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isShader"),
+            v8::FunctionTemplate::New(isolate, &IsShader)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isTexture"),
+            v8::FunctionTemplate::New(isolate, &IsTexture)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "lineWidth"),
+            v8::FunctionTemplate::New(isolate, &LineWidth)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "linkProgram"),
+            v8::FunctionTemplate::New(isolate, &LinkProgram)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "pixelStorei"),
+            v8::FunctionTemplate::New(isolate, &PixelStorei)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "polygonOffset"),
+            v8::FunctionTemplate::New(isolate, &PolygonOffset)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "readPixels"),
+            v8::FunctionTemplate::New(isolate, &ReadPixels)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "renderbufferStorage"),
+            v8::FunctionTemplate::New(isolate, &RenderbufferStorage)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "sampleCoverage"),
+            v8::FunctionTemplate::New(isolate, &SampleCoverage)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "scissor"),
+            v8::FunctionTemplate::New(isolate, &Scissor)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "shaderSource"),
+            v8::FunctionTemplate::New(isolate, &ShaderSource)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilFuncSeparate"),
+            v8::FunctionTemplate::New(isolate, &StencilFuncSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilFunc"),
+            v8::FunctionTemplate::New(isolate, &StencilFunc)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilMaskSeparate"),
+            v8::FunctionTemplate::New(isolate, &StencilMaskSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilMask"),
+            v8::FunctionTemplate::New(isolate, &StencilMask)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilOpSeparate"),
+            v8::FunctionTemplate::New(isolate, &StencilOpSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilOp"),
+            v8::FunctionTemplate::New(isolate, &StencilOp)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texImage2D"),
+            v8::FunctionTemplate::New(isolate, &TexImage2D)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texParameterf"),
+            v8::FunctionTemplate::New(isolate, &TexParameterf)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texParameteri"),
+            v8::FunctionTemplate::New(isolate, &TexParameteri)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texSubImage2D"),
+            v8::FunctionTemplate::New(isolate, &TexSubImage2D)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib1f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib1f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib1fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib1fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib2f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib2f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib2fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib2fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib3f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib3f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib3fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib3fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib4f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib4f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib4fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib4fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttribPointer"),
+            v8::FunctionTemplate::New(isolate, &VertexAttribPointer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1f"),
+            v8::FunctionTemplate::New(isolate, &Uniform1f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform1iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform1fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1i"),
+            v8::FunctionTemplate::New(isolate, &Uniform1i)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2f"),
+            v8::FunctionTemplate::New(isolate, &Uniform2f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform2iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform2fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2i"),
+            v8::FunctionTemplate::New(isolate, &Uniform2i)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3f"),
+            v8::FunctionTemplate::New(isolate, &Uniform3f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform3iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform3fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3i"),
+            v8::FunctionTemplate::New(isolate, &Uniform3i)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4f"),
+            v8::FunctionTemplate::New(isolate, &Uniform4f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform4iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform4fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4i"),
+            v8::FunctionTemplate::New(isolate, &Uniform4i)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniformMatrix2fv"),
+            v8::FunctionTemplate::New(isolate, &UniformMatrix2fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniformMatrix3fv"),
+            v8::FunctionTemplate::New(isolate, &UniformMatrix3fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniformMatrix4fv"),
+            v8::FunctionTemplate::New(isolate, &UniformMatrix4fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "useProgram"),
+            v8::FunctionTemplate::New(isolate, &UseProgram)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "validateProgram"),
+            v8::FunctionTemplate::New(isolate, &ValidateProgram)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "viewport"),
+            v8::FunctionTemplate::New(isolate, &Viewport)
+    );
+
+
     cache->WebGLRenderingContextTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }
 
-WebGLRenderingContext *GetPointer(const v8::Local<v8::Object> &object) {
+WebGLRenderingContext *WebGLRenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
         return nullptr;
@@ -254,17 +990,6 @@ WebGLRenderingContext::GetDrawingBufferWidth(v8::Local<v8::String> name,
     info.GetReturnValue().Set(0);
 }
 
-void
-WebGLRenderingContext::GetFlipY(v8::Local<v8::String> name,
-                                const v8::PropertyCallbackInfo<v8::Value> &info) {
-    auto ptr = GetPointer(info.This());
-    if (ptr != nullptr) {
-        auto ret = canvas_native_webgl_state_get_flip_y(ptr->GetState());
-        info.GetReturnValue().Set(ret);
-        return;
-    }
-    info.GetReturnValue().Set(false);
-}
 
 void WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::String> name,
                                                    const v8::PropertyCallbackInfo<v8::Value> &info
@@ -276,6 +1001,18 @@ void WebGLRenderingContext::GetDrawingBufferHeight(v8::Local<v8::String> name,
         return;
     }
     info.GetReturnValue().Set(0);
+}
+
+void
+WebGLRenderingContext::GetFlipY(v8::Local<v8::String> name,
+                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto ret = canvas_native_webgl_state_get_flip_y(ptr->GetState());
+        info.GetReturnValue().Set(ret);
+        return;
+    }
+    info.GetReturnValue().Set(false);
 }
 
 void WebGLRenderingContext::__Resized(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -319,7 +1056,7 @@ void WebGLRenderingContext::ActiveTexture(const v8::FunctionCallbackInfo<v8::Val
     auto context = isolate->GetCurrentContext();
     auto texture = (uint32_t) args[0]->NumberValue(context).ToChecked();
     canvas_native_webgl_active_texture(texture,
-                                       this->GetState());
+                                       ptr->GetState());
 }
 
 void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -385,7 +1122,7 @@ void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8
                         program->GetProgram(),
                         index,
                         rust::Str(name.c_str()),
-                        this->GetState()
+                        ptr->GetState()
                 );
 
             }
@@ -890,7 +1627,7 @@ void WebGLRenderingContext::Clear(const v8::FunctionCallbackInfo<v8::Value> &arg
             ptr->GetState()
     );
 
-    this->UpdateInvalidateState();
+    ptr->UpdateInvalidateState();
     // }
 }
 
@@ -1362,7 +2099,7 @@ void WebGLRenderingContext::DeleteFramebuffer(const v8::FunctionCallbackInfo<v8:
         if (buffer != nullptr) {
             canvas_native_webgl_delete_framebuffer(
                     buffer->GetFrameBuffer(),
-                    this->GetState()
+                    ptr->GetState()
             );
         }
     }
@@ -1626,7 +2363,7 @@ void WebGLRenderingContext::DrawArrays(const v8::FunctionCallbackInfo<v8::Value>
             count,
             ptr->GetState()
     );
-    this->UpdateInvalidateState();
+    ptr->UpdateInvalidateState();
 }
 
 void WebGLRenderingContext::DrawElements(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -1649,9 +2386,9 @@ void WebGLRenderingContext::DrawElements(const v8::FunctionCallbackInfo<v8::Valu
             count,
             type,
             static_cast<ssize_t>(offset),
-            this->GetState()
+            ptr->GetState()
     );
-    this->UpdateInvalidateState();
+    ptr->UpdateInvalidateState();
 }
 
 void
@@ -1800,7 +2537,7 @@ void WebGLRenderingContext::GenerateMipmap(const v8::FunctionCallbackInfo<v8::Va
 
     canvas_native_webgl_generate_mipmap(
             target,
-            this->GetState()
+            ptr->GetState()
     );
 }
 
@@ -1854,7 +2591,7 @@ void WebGLRenderingContext::GetActiveUniform(const v8::FunctionCallbackInfo<v8::
             auto info = canvas_native_webgl_get_active_uniform(
                     program->GetProgram(),
                     index,
-                    this->GetState()
+                    ptr->GetState()
             );
             auto ret = WebGLActiveInfoImpl::NewInstance(isolate, new WebGLActiveInfoImpl(
                     std::move(info)));
@@ -1963,35 +2700,6 @@ void WebGLRenderingContext::GetBufferParameter(const v8::FunctionCallbackInfo<v8
 
 }
 
-void WebGLRenderingContext::GetBufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    WebGLRenderingContext *ptr = GetPointer(args.This());
-    if (ptr == nullptr) {
-        return;
-    }
-
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-
-    if (args.Length() > 1) {
-        auto target = (uint32_t) args[0]->NumberValue(
-                context).ToChecked();
-        auto pname = (uint32_t) args[1]->NumberValue(
-                context).ToChecked();
-
-        auto param = canvas_native_webgl_get_buffer_parameter(
-                target,
-                pname,
-                ptr->GetState()
-        );
-
-        args.GetReturnValue().Set(param);
-        return;
-    }
-
-    args.GetReturnValue().SetUndefined();
-
-}
-
 void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<v8::Value> &args) {
     WebGLRenderingContext *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
@@ -2003,7 +2711,7 @@ void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<
     auto context = isolate->GetCurrentContext();
 
     auto attr = canvas_native_webgl_get_context_attributes(
-            this->GetState());
+            ptr->GetState());
 
     auto ret = v8::Object::New(isolate);
 
@@ -2083,7 +2791,7 @@ void WebGLRenderingContext::GetError(const v8::FunctionCallbackInfo<v8::Value> &
     auto context = isolate->GetCurrentContext();
 
     auto ret = canvas_native_webgl_get_error(
-            this->GetState());
+            ptr->GetState());
 
     args.GetReturnValue().Set((int32_t) ret);
 
@@ -2173,7 +2881,7 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
         }
         case WebGLExtensionType::OES_standard_derivatives: {
             auto ret = OES_standard_derivativesImpl::NewInstance(
-                    new OES_standard_derivativesImpl());
+                    isolate, new OES_standard_derivativesImpl());
             args.GetReturnValue().Set(ret);
             return;
         }
@@ -2212,7 +2920,7 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
         case WebGLExtensionType::WEBGL_color_buffer_float: {
             auto ret = WEBGL_color_buffer_floatImpl::NewInstance(isolate,
                                                                  new WEBGL_color_buffer_floatImpl());
-            if (this->GetVersion() ==
+            if (ptr->GetVersion() ==
                 WebGLRenderingVersion::V2) {
                 ret->Set(context, ConvertToV8String(isolate, "ext_name"),
                          ConvertToV8String(isolate, "EXT_color_buffer_float"));
@@ -2373,10 +3081,10 @@ void WebGLRenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Valu
                 pname,
                 ptr->GetState());
 
-        auto ret = GetParameterInternal(isolate,
-                                        pname,
-                                        std::move(
-                                                result));
+        auto ret = ptr->GetParameterInternal(isolate,
+                                             pname,
+                                             std::move(
+                                                     result));
 
         args.GetReturnValue().Set(ret);
         return;
@@ -2470,35 +3178,8 @@ void WebGLRenderingContext::GetProgramParameter(const v8::FunctionCallbackInfo<v
     args.GetReturnValue().SetNull();
 }
 
-void WebGLRenderingContext::GetRenderbufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    WebGLRenderingContext *ptr = GetPointer(args.This());
-    if (ptr == nullptr) {
-        args.GetReturnValue().SetNull();
-        return;
-    }
-
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-
-    if (args.Length() > 1) {
-        auto target = (uint32_t) args[0]->NumberValue(
-                context).ToChecked();
-        auto pname = (uint32_t) args[1]->NumberValue(
-                context).ToChecked();
-        auto ret = canvas_native_webgl_get_renderbuffer_parameter(
-                target,
-                pname,
-                ptr->GetState()
-        );
-        args.GetReturnValue().Set(ret);
-        return;
-    }
-
-    // todo check return
-    args.GetReturnValue().SetNull();
-}
-
-void WebGLRenderingContext::GetRenderbufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void
+WebGLRenderingContext::GetRenderbufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
     WebGLRenderingContext *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         args.GetReturnValue().SetNull();
@@ -2547,9 +3228,9 @@ void WebGLRenderingContext::GetShaderInfoLog(const v8::FunctionCallbackInfo<v8::
                         ptr->GetState()
                 );
 
-                 args.GetReturnValue().Set(ConvertToV8OneByteString(isolate, std::move(log)));
+                args.GetReturnValue().Set(ConvertToV8OneByteString(isolate, std::move(log)));
 
-                 return;
+                return;
             }
         }
     }
@@ -2558,3592 +3239,3244 @@ void WebGLRenderingContext::GetShaderInfoLog(const v8::FunctionCallbackInfo<v8::
     args.GetReturnValue().SetEmptyString();
 }
 
+void WebGLRenderingContext::GetShaderParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
 
-std::vector<jsi::PropNameID> WebGLRenderingContext::getPropertyNames(jsi::Runtime &rt) {
-    std::vector<jsi::PropNameID> ret;
-    ret.reserve(436);
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "__resized"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "__startRaf"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "__stopRaf"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("activeTexture")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("attachShader")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindAttribLocation")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindBuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindFramebuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindRenderbuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bindTexture")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendColor")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendEquationSeparate")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendEquation")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendFuncSeparate")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("blendFunc")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bufferData")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("bufferSubData")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("checkFramebufferStatus")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearColor")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearDepth")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clearStencil")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("clear")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("colorMask")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("commit")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("compileShader")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("compressedTexImage2D")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("compressedTexSubImage2D")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("copyTexImage2D")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("copyTexSubImage2D")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createBuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createFramebuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createProgram")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createRenderbuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createShader")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("createTexture")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("cullFace")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteBuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteFramebuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteProgram")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteRenderbuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteShader")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("deleteTexture")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("depthFunc")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("depthMask")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("depthRange")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("detachShader")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("disableVertexAttribArray")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("disable")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawArrays")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("drawElements")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("enableVertexAttribArray")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("enable")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("finish")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("flush")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("framebufferRenderbuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("framebufferTexture2D")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("frontFace")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("generateMipmap")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getActiveAttrib")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getActiveUniform")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getAttachedShaders")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getAttribLocation")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getBufferParameter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getContextAttributes")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getError")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getExtension")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getFramebufferAttachmentParameter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getParameter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getProgramInfoLog")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getProgramParameter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getRenderbufferParameter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderInfoLog")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderParameter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderPrecisionFormat")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getShaderSource")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getSupportedExtensions")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getTexParameter")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getUniformLocation")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getUniform")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getVertexAttribOffset")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("getVertexAttrib")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("hint")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isBuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isContextLost")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isEnabled")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isFramebuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isProgram")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isRenderbuffer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isShader")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("isTexture")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("lineWidth")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("linkProgram")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("pixelStorei")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("polygonOffset")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("readPixels")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("renderbufferStorage")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("sampleCoverage")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("scissor")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("shaderSource")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilFuncSeparate")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilFunc")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilMaskSeparate")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilMask")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilOpSeparate")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("stencilOp")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texImage2D")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texParameterf")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texParameteri")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("texSubImage2D")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1iv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform1i")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2iv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform2i")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3iv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform3i")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4iv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniform4i")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix2fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix3fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("uniformMatrix4fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("useProgram")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("validateProgram")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib1f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib1fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib2f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib2fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib3f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib3fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib4f")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttrib4fv")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("vertexAttribPointer")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("viewport")));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, std::string("__toDataURL")));
+    if (args.Length() > 1) {
+        auto value = args[0];
+        auto type = GetNativeType(isolate, value);
+        auto pname = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        if (type == NativeType::WebGLShader) {
+            auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
+            if (shader != nullptr) {
+                auto ret = canvas_native_webgl_get_shader_parameter(
+                        shader->GetShader(),
+                        pname,
+                        ptr->GetState()
+                );
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_BUFFER_BIT"));
+                if (canvas_native_webgl_result_get_is_none(
+                        *ret)) {
+                    args.GetReturnValue().SetNull();
+                    return;
+                }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BUFFER_BIT"));
+                if (pname ==
+                    GL_DELETE_STATUS ||
+                    pname ==
+                    GL_COMPILE_STATUS) {
+                    args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
+                            *ret));
+                    return;
+                }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_BUFFER_BIT"));
+                args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
+                        *ret));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "POINTS"));
+                return;
+            }
+        }
+    }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINES"));
+    // todo check return
+    args.GetReturnValue().SetNull();
+}
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINE_LOOP"));
+void
+WebGLRenderingContext::GetShaderPrecisionFormat(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINE_STRIP"));
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TRIANGLES"));
+    if (args.Length() > 1) {
+        auto shaderType = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto precisionType = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto ret = canvas_native_webgl_get_shader_precision_format(
+                shaderType,
+                precisionType,
+                ptr->GetState()
+        );
+        auto shader = WebGLShaderPrecisionFormatImpl::NewInstance(isolate,
+                                                                  new WebGLShaderPrecisionFormatImpl(
+                                                                          std::move(ret)));
+        args.GetReturnValue().Set(shader);
+        return;
+    }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TRIANGLE_STRIP"));
+    // todo check return
+    args.GetReturnValue().SetNull();
+}
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TRIANGLE_FAN"));
+void WebGLRenderingContext::GetShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ZERO"));
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE"));
+    if (args.Length() > 0) {
+        auto value = args[0];
+        auto type = GetNativeType(isolate, value);
+        if (type == NativeType::WebGLShader) {
+            auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SRC_COLOR"));
+            if (shader != nullptr) {
+                auto source = canvas_native_webgl_get_shader_source(
+                        shader->GetShader(),
+                        ptr->GetState()
+                );
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_SRC_COLOR"));
+                args.GetReturnValue().Set(ConvertToV8OneByteString(isolate, std::move(source)));
+                return;
+            }
+        }
+    }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SRC_ALPHA"));
+    // todo check return
+    args.GetReturnValue().SetEmptyString();
+}
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_SRC_ALPHA"));
+void
+WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    auto isolate = args.GetIsolate();
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(v8::Array::New(isolate));
+        return;
+    }
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DST_ALPHA"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_DST_ALPHA"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DST_COLOR"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_DST_COLOR"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SRC_ALPHA_SATURATE"));
+    auto context = isolate->GetCurrentContext();
 
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CONSTANT_COLOR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_CONSTANT_COLOR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CONSTANT_ALPHA"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ONE_MINUS_CONSTANT_ALPHA"));
+    auto exts = canvas_native_webgl_get_supported_extensions(
+            ptr->GetState());
+    auto len = exts.size();
+    auto array = v8::Array::New(isolate, (int) len);
+    for (int i = 0; i < len; ++i) {
+        auto item = exts[i];
+        array->Set(context, i, ConvertToV8OneByteString(isolate, std::move(item)));
+    }
+
+    args.GetReturnValue().Set(array);
+}
+
+void
+WebGLRenderingContext::__GetSupportedExtensions(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetEmptyString();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    auto exts = canvas_native_webgl_get_supported_extensions_to_string(
+            ptr->GetState());
+
+    args.GetReturnValue().Set(ConvertToV8OneByteString(isolate, std::move(exts)));
+}
+
+void
+WebGLRenderingContext::GetTexParameter(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto target = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto pname = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto ret = canvas_native_webgl_get_tex_parameter(
+                target,
+                pname,
+                ptr->GetState()
+        );
+        args.GetReturnValue().Set(ret);
+        return;
+    }
+
+    // todo check return
+    args.GetReturnValue().SetNull();
+}
+
+void
+WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto programValue = args[0];
+        auto type = GetNativeType(isolate, programValue);
+        auto nameValue = args[1];
+        if (type == NativeType::WebGLProgram && nameValue->IsString()) {
+            auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
+            if (program != nullptr) {
+                auto name = ConvertFromV8String(isolate, args[1]);
+
+                auto ret = canvas_native_webgl_get_uniform_location(
+                        program->GetProgram(),
+                        rust::Str(
+                                name.c_str()),
+                        ptr->GetState()
+                );
+
+                auto location = WebGLUniformLocation::NewInstance(isolate, new WebGLUniformLocation(
+                        ret));
+
+                return;
+            }
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().SetNull();
+}
+
+void
+WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto programValue = args[0];
+        auto programType = GetNativeType(isolate, programValue);
+        auto locationValue = args[1];
+        auto locationType = GetNativeType(isolate, locationValue);
+        if (programType == NativeType::WebGLProgram &&
+            locationType == NativeType::WebGLUniformLocation) {
+
+            auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
+            auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+
+            if (program != nullptr &&
+                location != nullptr) {
+
+                auto val = canvas_native_webgl_get_uniform(
+                        program->GetProgram(),
+                        location->GetUniformLocation(),
+                        ptr->GetState());
+
+                switch (canvas_native_webgl_result_get_type(
+                        *val)) {
+                    case WebGLResultType::Boolean:
+                        args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
+                                *val));
+                        return;
+                    case WebGLResultType::None:
+                        args.GetReturnValue().SetNull();
+                        return;
+                    case WebGLResultType::String: {
+                        auto str = canvas_native_webgl_result_get_string(
+                                *val);
+
+                        args.GetReturnValue().Set(
+                                ConvertToV8OneByteString(isolate, std::move(str)));
+                        return;
+                    }
+                    case WebGLResultType::BooleanArray: {
+                        auto ret = canvas_native_webgl_result_get_bool_array(
+                                *val);
+                        auto len = ret.size();
+                        auto array = v8::Array::New(
+                                isolate, (int) len);
+                        for (int i = 0;
+                             i < len; ++i) {
+                            auto item = ret[i];
+                            array->Set(
+                                    context, i,
+                                    v8::Boolean::New(isolate,
+                                                     item ==
+                                                     1));
+                        }
+                        args.GetReturnValue().Set(array);
+                        return;
+                    }
+                    case WebGLResultType::F32Array: {
+                        auto ret = canvas_native_webgl_result_get_f32_array(
+                                *val);
+
+                        auto buf = new VecMutableBuffer<float>(
+                                std::move(
+                                        ret));
+
+                        auto store = v8::ArrayBuffer::NewBackingStore(buf->data(),
+                                                                      buf->buffer_size(),
+                                                                      [](void *data, size_t length,
+                                                                         void *deleter_data) {
+                                                                          if (deleter_data !=
+                                                                              nullptr) {
+                                                                              delete (VecMutableBuffer<float> *) deleter_data;
+                                                                          }
+                                                                      },
+                                                                      buf);
+
+                        auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
+
+
+                        args.GetReturnValue().Set(
+                                v8::Float32Array::New(arraybuffer, 0, buf->size())
+                        );
+
+                        return;
+                    }
+                    case WebGLResultType::I32Array: {
+                        auto ret = canvas_native_webgl_result_get_i32_array(
+                                *val);
+
+                        auto buf = new VecMutableBuffer<int32_t>(
+                                std::move(
+                                        ret));
+
+
+                        auto store = v8::ArrayBuffer::NewBackingStore(buf->data(),
+                                                                      buf->buffer_size(),
+                                                                      [](void *data, size_t length,
+                                                                         void *deleter_data) {
+                                                                          if (deleter_data !=
+                                                                              nullptr) {
+                                                                              delete (VecMutableBuffer<int32_t> *) deleter_data;
+                                                                          }
+                                                                      },
+                                                                      buf);
+
+                        auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
+
+
+                        args.GetReturnValue().Set(
+                                v8::Int32Array::New(arraybuffer, 0, buf->size())
+                        );
+                        return;
+                    }
+                    case WebGLResultType::U32Array: {
+                        auto ret = canvas_native_webgl_result_get_u32_array(
+                                *val);
+
+                        auto buf = new VecMutableBuffer<uint32_t>(
+                                std::move(
+                                        ret));
+
+
+                        auto store = v8::ArrayBuffer::NewBackingStore(buf->data(),
+                                                                      buf->buffer_size(),
+                                                                      [](void *data, size_t length,
+                                                                         void *deleter_data) {
+                                                                          if (deleter_data !=
+                                                                              nullptr) {
+                                                                              delete (VecMutableBuffer<uint32_t> *) deleter_data;
+                                                                          }
+                                                                      },
+                                                                      buf);
+
+                        auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
+
+
+                        args.GetReturnValue().Set(
+                                v8::Uint32Array::New(arraybuffer, 0, buf->size())
+                        );
+                        return;
+
+
+                    }
+                    case WebGLResultType::F32:
+                        args.GetReturnValue().Set((double) canvas_native_webgl_result_get_f32(
+                                *val));
+                        return;
+                    case WebGLResultType::I32:
+                        args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
+                                *val));
+                        return;
+                    case WebGLResultType::U32:
+                        args.GetReturnValue().Set((int32_t) canvas_native_webgl_result_get_u32(
+                                *val));
+                        return;
+                }
+            }
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().SetNull();
+}
+
+void
+WebGLRenderingContext::GetVertexAttribOffset(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto pname = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto ret = canvas_native_webgl_get_vertex_attrib_offset(
+                index,
+                pname,
+                ptr->GetState());
+        args.GetReturnValue().Set(static_cast<double>(ret));
+        return;
+    }
+
+    // todo check return
+    args.GetReturnValue().SetNull();
+}
+
+void
+WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    if (args.Length() > 1) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto pname = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto ret = canvas_native_webgl_get_vertex_attrib(
+                index,
+                pname,
+                ptr->GetState());
+
+        if (pname ==
+            GL_CURRENT_VERTEX_ATTRIB) {
+            auto val = canvas_native_webgl_result_get_f32_array(
+                    *ret);
+
+            auto buf = new VecMutableBuffer<float>(
+                    std::move(val));
+
+
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+                                                          [](void *data, size_t length,
+                                                             void *deleter_data) {
+                                                              if (deleter_data != nullptr) {
+                                                                  delete (VecMutableBuffer<float> *) deleter_data;
+                                                              }
+                                                          },
+                                                          buf);
+
+            auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
+
+
+            args.GetReturnValue().Set(
+                    v8::Float32Array::New(arraybuffer, 0, buf->size())
+            );
+
+            return;
+        } else if (pname ==
+                   GL_VERTEX_ATTRIB_ARRAY_ENABLED ||
+                   pname ==
+                   GL_VERTEX_ATTRIB_ARRAY_NORMALIZED) {
+            args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
+                    *ret));
+            return;
+        } else {
+            args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
+                    *ret));
+            return;
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().SetNull();
+}
+
+void
+WebGLRenderingContext::Hint(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto target = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto mode = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_hint(target,
+                                 mode,
+                                 ptr->GetState());
+    }
+}
+
+void
+WebGLRenderingContext::IsBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLBuffer) {
+        auto buffer = WebGLBuffer::GetPointer(value.As<v8::Object>());
+        if (buffer != nullptr) {
+            auto ret = canvas_native_webgl_is_buffer(
+                    buffer->GetBuffer(),
+                    ptr->GetState());
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().Set(false);
+}
+
+void
+WebGLRenderingContext::IsContextLost(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto ret = canvas_native_webgl_get_is_context_lost(
+            ptr->GetState());
+    args.GetReturnValue().Set(ret);
+}
+
+void
+WebGLRenderingContext::IsEnabled(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto cap = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto ret = canvas_native_webgl_is_enabled(
+                cap, ptr->GetState());
+        args.GetReturnValue().Set(ret);
+        return;
+    }
+    args.GetReturnValue().Set(false);
+}
+
+void
+WebGLRenderingContext::IsFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLFramebuffer) {
+        auto framebuffer = WebGLFramebuffer::GetPointer(value.As<v8::Object>());
+        if (framebuffer != nullptr) {
+            auto ret = canvas_native_webgl_is_framebuffer(
+                    framebuffer->GetFrameBuffer(),
+                    ptr->GetState());
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().Set(false);
+}
+
+void
+WebGLRenderingContext::IsProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLProgram) {
+        auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
+        if (program != nullptr) {
+            auto ret = canvas_native_webgl_is_program(
+                    program->GetProgram(),
+                    ptr->GetState());
+
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().Set(false);
+}
+
+void
+WebGLRenderingContext::IsRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLRenderbuffer) {
+        auto renderbuffer = WebGLRenderbuffer::GetPointer(value.As<v8::Object>());
+        if (renderbuffer != nullptr) {
+            auto ret = canvas_native_webgl_is_renderbuffer(
+                    renderbuffer->GetRenderBuffer(),
+                    ptr->GetState());
+
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().Set(false);
+}
+
+void
+WebGLRenderingContext::IsShader(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLShader) {
+        auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
+        if (shader != nullptr) {
+            auto ret = canvas_native_webgl_is_shader(
+                    shader->GetShader(),
+                    ptr->GetState());
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().Set(false);
+}
+
+void
+WebGLRenderingContext::IsTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().Set(false);
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLTexture) {
+        auto texture = WebGLTexture::GetPointer(value.As<v8::Object>());
+        if (texture != nullptr) {
+            auto ret = canvas_native_webgl_is_texture(
+                    texture->GetTexture(),
+                    ptr->GetState());
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    // todo check return
+    args.GetReturnValue().Set(false);
+}
+
+void
+WebGLRenderingContext::LineWidth(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto width = args[0]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_line_width(
+                static_cast<float>(width),
+                ptr->GetState());
+    }
+
+}
+
+void
+WebGLRenderingContext::LinkProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLProgram) {
+        auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
+        if (program != nullptr) {
+            canvas_native_webgl_link_program(
+                    program->GetProgram(),
+                    ptr->GetState());
+        }
+    }
+}
+
+void
+WebGLRenderingContext::PixelStorei(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto pname = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        if (args[1]->IsBoolean()) {
+            auto param = args[1]->BooleanValue(isolate);
+            canvas_native_webgl_pixel_storei(
+                    pname,
+                    param ? 1 : 0,
+                    ptr->GetState()
+            );
+        } else {
+            auto param = (int32_t) args[1]->NumberValue(
+                    context).ToChecked();
+            canvas_native_webgl_pixel_storei(
+                    pname,
+                    param,
+                    ptr->GetState()
+            );
+        }
+
+    }
+}
+
+void
+WebGLRenderingContext::PolygonOffset(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto factor = args[0]->NumberValue(
+                context).ToChecked();
+        auto units = args[1]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_polygon_offset(
+                static_cast<float>(factor),
+                static_cast<float>(units),
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::ReadPixels(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    if (args.Length() > 6) {
+        auto x = (int32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto y = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto width = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto height = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        auto format = (uint32_t) args[4]->NumberValue(
+                context).ToChecked();
+        auto type = (uint32_t) args[5]->NumberValue(
+                context).ToChecked();
+
+        auto pixels = args[6];
+        if (pixels->IsTypedArray()) {
+            auto buf = pixels.As<v8::TypedArray>();
+            auto slice = GetTypedArrayData<uint8_t>(buf);
+            canvas_native_webgl_read_pixels_u8(
+                    x,
+                    y,
+                    width,
+                    height,
+                    format,
+                    type,
+                    slice,
+                    ptr->GetState()
+            );
+            return;
+        }
+
+
+        if (pixels->IsArrayBuffer()) {
+            auto buf = pixels.As<v8::ArrayBuffer>();
+            auto slice = GetArrayBufferData<uint8_t>(buf);
+            canvas_native_webgl_read_pixels_u8(
+                    x,
+                    y,
+                    width,
+                    height,
+                    format,
+                    type,
+                    slice,
+                    ptr->GetState()
+            );
+        }
+    }
+
+}
+
+void
+WebGLRenderingContext::RenderbufferStorage(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto target = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto internalFormat = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto width = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto height = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_renderbuffer_storage(
+                target,
+                internalFormat,
+                width,
+                height,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::SampleCoverage(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto value = args[0]->NumberValue(
+                context).ToChecked();
+        auto invert = args[1]->BooleanValue(isolate);
+        canvas_native_webgl_sample_coverage(
+                static_cast<float>(value),
+                invert,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::Scissor(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto x = (int32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto y = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto width = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto height = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_scissor(
+                x,
+                y,
+                width,
+                height,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::ShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    auto sourceValue = args[1];
+    if (type == NativeType::WebGLShader && sourceValue->IsString()) {
+        auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
+        auto source = ConvertFromV8String(isolate, sourceValue);
+        if (shader != nullptr) {
+            canvas_native_webgl_shader_source(
+                    shader->GetShader(),
+                    rust::Str(
+                            source.c_str()),
+                    ptr->GetState());
+        }
+    }
+
+}
+
+void
+WebGLRenderingContext::StencilFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto face = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto func = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto ref = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto mask = (uint32_t) args[3]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_stencil_func_separate(
+                face,
+                func,
+                ref,
+                mask,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::StencilFunc(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 2) {
+        auto func = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto ref = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto mask = (uint32_t) args[2]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_stencil_func(
+                func,
+                ref,
+                mask,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::StencilMaskSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto face = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto mask = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_stencil_mask_separate(
+                face,
+                mask,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::StencilMask(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto mask = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_stencil_mask(
+                mask,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::StencilOpSeparate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    if (args.Length() > 3) {
+        auto face = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto fail = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto zfail = (uint32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto zpass = (uint32_t) args[3]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_stencil_op_separate(
+                face,
+                fail,
+                zfail,
+                zpass,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::StencilOp(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 2) {
+        auto fail = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto zfail = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto zpass = (uint32_t) args[2]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_stencil_op(
+                fail,
+                zfail,
+                zpass,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+
+
+    // TODO tidy
+
+    if (count == 5) {
+        auto target = (int32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto internalformat = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto format = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        auto type = (int32_t) args[4]->NumberValue(
+                context).ToChecked();
+
+        canvas_native_webgl_tex_image2d_image_none(
+                target,
+                level,
+                internalformat,
+                format,
+                type,
+                ptr->GetState()
+        );
+
+    } else if (count == 6) {
+        auto target = (int32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto internalformat = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto format = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        auto type = (int32_t) args[4]->NumberValue(
+                context).ToChecked();
+
+        auto pixels = args[5];
+        auto pixelsType = GetNativeType(isolate, pixels);
+
+        switch (pixelsType) {
+            case NativeType::ImageAsset: {
+                auto image_asset = ImageAssetImpl::GetPointer(pixels.As<v8::Object>());
+
+                if (image_asset !=
+                    nullptr) {
+
+                    canvas_native_webgl_tex_image2d_image_asset(
+                            target,
+                            level,
+                            internalformat,
+                            format,
+                            type,
+                            image_asset->GetImageAsset(),
+                            ptr->GetState()
+                    );
+                }
+                return;
+            }
+            case NativeType::ImageBitmap: {
+                auto image_bitmap = ImageBitmapImpl::GetPointer(pixels.As<v8::Object>());
+
+                if (image_bitmap !=
+                    nullptr) {
+                    canvas_native_webgl_tex_image2d_image_asset(
+                            target,
+                            level,
+                            internalformat,
+                            format,
+                            type,
+                            image_bitmap->GetImageAsset(),
+                            ptr->GetState()
+                    );
+                }
+                return;
+            }
+            case NativeType::CanvasRenderingContext2D: {
+                auto canvas_2d = CanvasRenderingContext2DImpl::GetPointer(
+                        pixels.As<v8::Object>());
+
+                if (canvas_2d != nullptr) {
+                    canvas_native_webgl_tex_image2d_canvas2d(
+                            target,
+                            level,
+                            internalformat,
+                            format,
+                            type,
+                            canvas_2d->GetContext(),
+                            ptr->GetState()
+                    );
+                }
+
+                return;
+            }
+            case NativeType::WebGLRenderingContext: {
+                auto gl = WebGLRenderingContext::GetPointer(pixels.As<v8::Object>());
+
+                if (gl != nullptr) {
+                    canvas_native_webgl_tex_image2d_webgl(
+                            target,
+                            level,
+                            internalformat,
+                            format,
+                            type,
+                            gl->GetState(),
+                            ptr->GetState()
+                    );
+                }
+                return;
+            }
+            default:
+                break;
+        }
+    } else if (count == 8) {
+        auto target = (int32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto internalformat = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto width = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        auto height = (int32_t) args[4]->NumberValue(
+                context).ToChecked();
+        auto border = (int32_t) args[5]->NumberValue(
+                context).ToChecked();
+        auto format = (int32_t) args[6]->NumberValue(
+                context).ToChecked();
+        auto type = (int32_t) args[7]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_tex_image2d_none(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                border,
+                format,
+                type,
+                ptr->GetState()
+        );
+    } else if (count == 9) {
+        auto target = (int32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto internalformat = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto width = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        auto height = (int32_t) args[4]->NumberValue(
+                context).ToChecked();
+        auto border = (int32_t) args[5]->NumberValue(
+                context).ToChecked();
+        auto format = (int32_t) args[6]->NumberValue(
+                context).ToChecked();
+        auto type = (int32_t) args[7]->NumberValue(
+                context).ToChecked();
+
+
+        auto value = args[8];
+        if (value->IsNullOrUndefined()) {
+            canvas_native_webgl_tex_image2d_none(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    border,
+                    format,
+                    type,
+                    ptr->GetState()
+            );
+        } else if (value->IsTypedArray()) {
+            auto typedArray = value.As<v8::TypedArray>();
+            auto buf = GetTypedArrayData<uint8_t>(typedArray);
+            canvas_native_webgl_tex_image2d(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    border,
+                    format,
+                    type,
+                    buf,
+                    ptr->GetState()
+            );
+            return;
+        } else if (value->IsArrayBuffer()) {
+            auto array = value.As<v8::ArrayBuffer>();
+            auto buf = GetArrayBufferData<uint8_t>(array);
+            canvas_native_webgl_tex_image2d(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    border,
+                    format,
+                    type,
+                    buf,
+                    ptr->GetState()
+            );
+            return;
+        }
+
+    }
+}
+
+void
+WebGLRenderingContext::TexParameterf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 2) {
+        auto target = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto pname = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto param = args[2]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_tex_parameterf(
+                target,
+                pname,
+                static_cast<float>(param),
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::TexParameteri(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 2) {
+        auto target = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto pname = (uint32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto param = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_tex_parameteri(
+                target,
+                pname,
+                param,
+                ptr->GetState()
+        );
+    }
+
+}
+
+void
+WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto count = args.Length();
+    if (count == 7) {
+        auto target = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto xoffset = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto yoffset = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        auto format = (uint32_t) args[4]->NumberValue(
+                context).ToChecked();
+        auto type = (int32_t) args[5]->NumberValue(
+                context).ToChecked();
+
+
+        auto pixels = args[6];
+        auto pixelsType = GetNativeType(isolate, pixels);
+
+        switch (pixelsType) {
+            case NativeType::ImageAsset: {
+                auto asset = ImageAssetImpl::GetPointer(pixels.As<v8::Object>());
+                if (asset != nullptr) {
+                    canvas_native_webgl_tex_sub_image2d_asset(
+                            target,
+                            level,
+                            xoffset,
+                            yoffset,
+                            format,
+                            type,
+                            asset->GetImageAsset(),
+                            ptr->GetState()
+                    );
+                }
+                return;
+            }
+            case NativeType::ImageBitmap: {
+                auto bitmap = ImageBitmapImpl::GetPointer(pixels.As<v8::Object>());
+
+                if (bitmap != nullptr) {
+                    canvas_native_webgl_tex_sub_image2d_asset(
+                            target,
+                            level,
+                            xoffset,
+                            yoffset,
+                            format,
+                            type,
+                            bitmap->GetImageAsset(),
+                            ptr->GetState()
+                    );
+                }
+                return;
+            }
+            case NativeType::CanvasRenderingContext2D: {
+                auto canvas2d = CanvasRenderingContext2DImpl::GetPointer(pixels.As<v8::Object>());
+
+                if (canvas2d != nullptr) {
+                    canvas_native_webgl_tex_sub_image2d_canvas2d(
+                            target,
+                            level,
+                            xoffset,
+                            yoffset,
+                            format,
+                            type,
+                            canvas2d->GetContext(),
+                            ptr->GetState()
+                    );
+                }
+                return;
+            }
+            case NativeType::WebGLRenderingContext: {
+
+                auto webgl = WebGLRenderingContext::GetPointer(pixels.As<v8::Object>());
+
+                if (webgl != nullptr) {
+                    canvas_native_webgl_tex_sub_image2d_webgl(
+                            target,
+                            level,
+                            xoffset,
+                            yoffset,
+                            format,
+                            type,
+                            webgl->GetState(),
+                            ptr->GetState()
+                    );
+                }
+                return;
+            }
+            default:
+                break;
+        }
+
+    } else if (count == 9) {
+        auto target = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto level = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto xoffset = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto yoffset = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        auto width = (int32_t) args[4]->NumberValue(
+                context).ToChecked();
+        auto height = (int32_t) args[5]->NumberValue(
+                context).ToChecked();
+        auto format = (uint32_t) args[6]->NumberValue(
+                context).ToChecked();
+        auto type = (int32_t) args[7]->NumberValue(
+                context).ToChecked();
+
+        auto pixels = args[8];
+
+
+        if (pixels->IsTypedArray()) {
+            auto array = pixels.As<v8::TypedArray>();
+            auto buf = GetTypedArrayData<const uint8_t>(array);
+            canvas_native_webgl_tex_sub_image2d(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width,
+                    height,
+                    format,
+                    type,
+                    buf,
+                    ptr->GetState()
+            );
+        } else if (pixels->IsArrayBuffer()) {
+            auto array = pixels.As<v8::ArrayBuffer>();
+            auto buf = GetArrayBufferData<const uint8_t>(array);
+            canvas_native_webgl_tex_sub_image2d(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width,
+                    height,
+                    format,
+                    type,
+                    buf,
+                    ptr->GetState()
+            );
+        }
+    }
+
+}
+
+
+void
+WebGLRenderingContext::VertexAttrib1f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto v0 = static_cast<float>(args[1]->NumberValue(
+                context).ToChecked());
+        canvas_native_webgl_vertex_attrib1f(
+                index, v0, ptr->GetState());
+    }
+
+}
+
+void
+WebGLRenderingContext::VertexAttrib2f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 2) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto v0 = static_cast<float>(args[1]->NumberValue(
+                context).ToChecked());
+        auto v1 = static_cast<float>(args[2]->NumberValue(
+                context).ToChecked());
+        canvas_native_webgl_vertex_attrib2f(
+                index, v0, v1,
+                ptr->GetState());
+    }
+
+}
+
+void
+WebGLRenderingContext::VertexAttrib3f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto v0 = static_cast<float>(args[1]->NumberValue(
+                context).ToChecked());
+        auto v1 = static_cast<float>(args[2]->NumberValue(
+                context).ToChecked());
+        auto v2 = static_cast<float>(args[3]->NumberValue(
+                context).ToChecked());
+        canvas_native_webgl_vertex_attrib3f(
+                index, v0, v1, v2,
+                ptr->GetState());
+    }
+
+}
+
+void
+WebGLRenderingContext::VertexAttrib4f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 4) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto v0 = static_cast<float>(args[1]->NumberValue(
+                context).ToChecked());
+        auto v1 = static_cast<float>(args[2]->NumberValue(
+                context).ToChecked());
+        auto v2 = static_cast<float>(args[3]->NumberValue(
+                context).ToChecked());
+        auto v3 = static_cast<float>(args[4]->NumberValue(
+                context).ToChecked());
+        canvas_native_webgl_vertex_attrib4f(
+                index, v0, v1, v2, v3,
+                ptr->GetState());
+    }
+
+}
+
+void
+WebGLRenderingContext::VertexAttrib1fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+
+        auto value = args[1];
+        if (value->IsFloat32Array()) {
+            auto array = value.As<v8::TypedArray>();
+            auto buf = GetTypedArrayData<const float>(array);
+            canvas_native_webgl_vertex_attrib1fv(
+                    index, buf,
+                    ptr->GetState());
+        }
+    }
+}
+
+void
+WebGLRenderingContext::VertexAttrib2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+
+        auto value = args[1];
+        if (value->IsFloat32Array()) {
+            auto array = value.As<v8::TypedArray>();
+            auto buf = GetTypedArrayData<const float>(array);
+            canvas_native_webgl_vertex_attrib2fv(
+                    index, buf,
+                    ptr->GetState());
+        }
+    }
+}
+
+void
+WebGLRenderingContext::VertexAttrib3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+
+        auto value = args[1];
+        if (value->IsFloat32Array()) {
+            auto array = value.As<v8::TypedArray>();
+            auto buf = GetTypedArrayData<const float>(array);
+            canvas_native_webgl_vertex_attrib3fv(
+                    index, buf,
+                    ptr->GetState());
+        }
+    }
+}
+
+void
+WebGLRenderingContext::VertexAttrib4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 1) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+
+        auto value = args[1];
+        if (value->IsFloat32Array()) {
+            auto array = value.As<v8::TypedArray>();
+            auto buf = GetTypedArrayData<const float>(array);
+            canvas_native_webgl_vertex_attrib4fv(
+                    index, buf,
+                    ptr->GetState());
+        }
+    }
+}
+
+void
+WebGLRenderingContext::VertexAttribPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 5) {
+        auto index = (uint32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto size = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto type = (uint32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto normalized = args[3]->BooleanValue(isolate);
+        auto stride = (int32_t) args[4]->NumberValue(
+                context).ToChecked();
+        auto offset = static_cast<ssize_t>(args[5]->NumberValue(
+                context).ToChecked());
+        canvas_native_webgl_vertex_attrib_pointer(
+                index, size, type, normalized,
+                stride, offset,
+                ptr->GetState());
+    }
+}
+
+void
+WebGLRenderingContext::Uniform1f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform1f(
+                location->GetUniformLocation(),
+                static_cast<float>(v0),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform2f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    auto v1 = args[2]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform2f(
+                location->GetUniformLocation(),
+                static_cast<float>(v0),
+                static_cast<float>(v1),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform3f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    auto v1 = args[2]->NumberValue(
+            context).ToChecked();
+    auto v2 = args[3]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform3f(
+                location->GetUniformLocation(),
+                static_cast<float>(v0),
+                static_cast<float>(v1),
+                static_cast<float>(v2),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform4f(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    auto v1 = args[2]->NumberValue(
+            context).ToChecked();
+    auto v2 = args[3]->NumberValue(
+            context).ToChecked();
+    auto v3 = args[4]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform4f(
+                location->GetUniformLocation(),
+                static_cast<float>(v0),
+                static_cast<float>(v1),
+                static_cast<float>(v2),
+                static_cast<float>(v3),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform1fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsFloat32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const float>(array);
+                canvas_native_webgl_uniform1fv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+                    if (!item->IsNumber()) {
+                        buf.push_back(
+                                nanf(""));
+                    } else {
+                        auto value = item->NumberValue(
+                                context).ToChecked();
+                        buf.push_back(
+                                static_cast<float>(value));
+                    }
+                }
+                rust::Slice<const float> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform1fv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::Uniform2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsFloat32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const float>(array);
+                canvas_native_webgl_uniform2fv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+                    if (!item->IsNumber()) {
+                        buf.push_back(
+                                nanf(""));
+                    } else {
+                        auto value = item->NumberValue(
+                                context).ToChecked();
+                        buf.push_back(
+                                static_cast<float>(value));
+                    }
+                }
+                rust::Slice<const float> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform2fv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::Uniform3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsFloat32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const float>(array);
+                canvas_native_webgl_uniform3fv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+                    if (!item->IsNumber()) {
+                        buf.push_back(
+                                nanf(""));
+                    } else {
+                        auto value = item->NumberValue(
+                                context).ToChecked();
+                        buf.push_back(
+                                static_cast<float>(value));
+                    }
+                }
+                rust::Slice<const float> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform3fv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsFloat32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const float>(array);
+                canvas_native_webgl_uniform4fv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+                    if (!item->IsNumber()) {
+                        buf.push_back(
+                                nanf(""));
+                    } else {
+                        auto value = item->NumberValue(
+                                context).ToChecked();
+                        buf.push_back(
+                                static_cast<float>(value));
+                    }
+                }
+                rust::Slice<const float> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform4fv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::Uniform1i(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform1i(
+                location->GetUniformLocation(),
+                static_cast<int32_t>(v0),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform2i(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    auto v1 = args[2]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform2i(
+                location->GetUniformLocation(),
+                static_cast<int32_t>(v0),
+                static_cast<int32_t>(v1),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform3i(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    auto v1 = args[2]->NumberValue(
+            context).ToChecked();
+    auto v2 = args[3]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform3i(
+                location->GetUniformLocation(),
+                static_cast<int32_t>(v0),
+                static_cast<int32_t>(v1),
+                static_cast<int32_t>(v2),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform4i(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    //if (count > 1) {
+    //   if (args[0].isObject()) {
+    auto location = WebGLUniformLocation::GetPointer(value.As<v8::Object>());
+    auto v0 = args[1]->NumberValue(
+            context).ToChecked();
+    auto v1 = args[2]->NumberValue(
+            context).ToChecked();
+    auto v2 = args[3]->NumberValue(
+            context).ToChecked();
+    auto v3 = args[4]->NumberValue(
+            context).ToChecked();
+    if (location != nullptr) {
+        canvas_native_webgl_uniform4i(
+                location->GetUniformLocation(),
+                static_cast<int32_t>(v0),
+                static_cast<int32_t>(v1),
+                static_cast<int32_t>(v2),
+                static_cast<int32_t>(v3),
+                ptr->GetState()
+        );
+    }
+    //   }
+    // }
+}
+
+void
+WebGLRenderingContext::Uniform1iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsInt32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const int32_t>(array);
+                canvas_native_webgl_uniform1iv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+
+                    auto value = item->NumberValue(
+                            context).ToChecked();
+                    buf.push_back(
+                            static_cast<int32_t>(value));
+                }
+                rust::Slice<const int32_t> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform1iv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::Uniform2iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsInt32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const int32_t>(array);
+                canvas_native_webgl_uniform2iv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+
+                    auto value = item->NumberValue(
+                            context).ToChecked();
+                    buf.push_back(
+                            static_cast<int32_t>(value));
+                }
+                rust::Slice<const int32_t> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform2iv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::Uniform3iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsInt32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const int32_t>(array);
+                canvas_native_webgl_uniform3iv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+
+                    auto value = item->NumberValue(
+                            context).ToChecked();
+                    buf.push_back(
+                            static_cast<int32_t>(value));
+                }
+                rust::Slice<const int32_t> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform3iv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::Uniform4iv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto type = GetNativeType(isolate, locationValue);
+    auto v0Value = args[1];
+
+
+    if (type == NativeType::WebGLUniformLocation) {
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+
+        if (location != nullptr) {
+            if (v0Value->IsInt32Array()) {
+                auto array = v0Value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const int32_t>(array);
+                canvas_native_webgl_uniform4iv(
+                        location->GetUniformLocation(),
+                        buf,
+                        ptr->GetState());
+            } else if (v0Value->IsArray()) {
+                auto array = v0Value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<int32_t> buf;
+                buf.reserve(len);
+                for (int i = 0;
+                     i < len; ++i) {
+                    auto item = array->Get(
+                            context, i).ToLocalChecked();
+
+                    auto value = item->NumberValue(
+                            context).ToChecked();
+                    buf.push_back(
+                            static_cast<int32_t>(value));
+                }
+                rust::Slice<const int32_t> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform4iv(
+                        location->GetUniformLocation(),
+                        slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::UniformMatrix2fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto locationType = GetNativeType(isolate, locationValue);
+    auto value = args[2];
+    if (locationType == NativeType::WebGLUniformLocation) {
+
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+        auto transpose = args[1]->BooleanValue(isolate);
+
+        if (location != nullptr) {
+            if (value->IsFloat32Array()) {
+                auto array = value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const float>(array);
+                canvas_native_webgl_uniform_matrix2fv(
+                        location->GetUniformLocation(),
+                        transpose, buf,
+                        ptr->GetState());
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.reserve(len);
+
+                for (int i = 0;
+                     i < len; i++) {
+                    auto item = array->Get(context, i).ToLocalChecked();
+                    if (item->IsNumber()) {
+                        buf.push_back(
+                                static_cast<float>(item->NumberValue(
+                                        context).ToChecked()));
+                    } else {
+                        buf.push_back(
+                                std::nanf(
+                                        ""));
+                    }
+                }
+
+                rust::Slice<const float> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform_matrix2fv(
+                        location->GetUniformLocation(),
+                        transpose, slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto locationType = GetNativeType(isolate, locationValue);
+    auto value = args[2];
+    if (locationType == NativeType::WebGLUniformLocation) {
+
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+        auto transpose = args[1]->BooleanValue(isolate);
+
+        if (location != nullptr) {
+            if (value->IsFloat32Array()) {
+                auto array = value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const float>(array);
+                canvas_native_webgl_uniform_matrix3fv(
+                        location->GetUniformLocation(),
+                        transpose, buf,
+                        ptr->GetState());
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.reserve(len);
+
+                for (int i = 0;
+                     i < len; i++) {
+                    auto item = array->Get(context, i).ToLocalChecked();
+                    if (item->IsNumber()) {
+                        buf.push_back(
+                                static_cast<float>(item->NumberValue(
+                                        context).ToChecked()));
+                    } else {
+                        buf.push_back(
+                                std::nanf(
+                                        ""));
+                    }
+                }
+
+                rust::Slice<const float> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform_matrix3fv(
+                        location->GetUniformLocation(),
+                        transpose, slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto locationValue = args[0];
+    auto locationType = GetNativeType(isolate, locationValue);
+    auto value = args[2];
+    if (locationType == NativeType::WebGLUniformLocation) {
+
+        auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
+        auto transpose = args[1]->BooleanValue(isolate);
+
+        if (location != nullptr) {
+            if (value->IsFloat32Array()) {
+                auto array = value.As<v8::TypedArray>();
+                auto buf = GetTypedArrayData<const float>(array);
+                canvas_native_webgl_uniform_matrix4fv(
+                        location->GetUniformLocation(),
+                        transpose, buf,
+                        ptr->GetState());
+            } else if (value->IsArray()) {
+                auto array = value.As<v8::Array>();
+                auto len = array->Length();
+                std::vector<float> buf;
+                buf.reserve(len);
+
+                for (int i = 0;
+                     i < len; i++) {
+                    auto item = array->Get(context, i).ToLocalChecked();
+                    if (item->IsNumber()) {
+                        buf.push_back(
+                                static_cast<float>(item->NumberValue(
+                                        context).ToChecked()));
+                    } else {
+                        buf.push_back(
+                                std::nanf(
+                                        ""));
+                    }
+                }
+
+                rust::Slice<const float> slice(
+                        buf.data(),
+                        buf.size());
+                canvas_native_webgl_uniform_matrix4fv(
+                        location->GetUniformLocation(),
+                        transpose, slice,
+                        ptr->GetState());
+            }
+        }
+    }
+}
+
+void
+WebGLRenderingContext::UseProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 0) {
+        auto value = args[0];
+        if (value->IsNull()) {
+            canvas_native_webgl_use_program(0,
+                                            ptr->GetState());
+
+            return;
+        }
+
+        auto type = GetNativeType(isolate, value);
+        if (type == NativeType::WebGLProgram) {
+            auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
+            if (program != nullptr) {
+                canvas_native_webgl_use_program(
+                        program->GetProgram(),
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+
+}
+
+void
+WebGLRenderingContext::ValidateProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto value = args[0];
+    auto type = GetNativeType(isolate, value);
+    if (type == NativeType::WebGLProgram) {
+        auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
+        if (program != nullptr) {
+            canvas_native_webgl_validate_program(
+                    program->GetProgram(),
+                    ptr->GetState()
+            );
+        }
+    }
+
+}
+
+void
+WebGLRenderingContext::Viewport(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() > 3) {
+        auto x = (int32_t) args[0]->NumberValue(
+                context).ToChecked();
+        auto y = (int32_t) args[1]->NumberValue(
+                context).ToChecked();
+        auto width = (int32_t) args[2]->NumberValue(
+                context).ToChecked();
+        auto height = (int32_t) args[3]->NumberValue(
+                context).ToChecked();
+        canvas_native_webgl_viewport(x, y,
+                                     width,
+                                     height,
+                                     ptr->GetState());
+    }
+
+}
+
+void
+WebGLRenderingContext::__ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    WebGLRenderingContext *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetEmptyString();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    std::string type("image/png");
+    int quality = 92;
+    if (args[0]->IsString()) {
+        type = ConvertFromV8String(isolate, args[0]);
+    }
+
+
+    if (args[1]->IsNumber()) {
+        quality = (int) args[1]->NumberValue(
+                context).ToChecked();
+    }
+
+
+    auto data = canvas_native_webgl_to_data_url(
+            ptr->GetState(),
+            rust::Str(type.c_str()),
+            quality);
+    args.GetReturnValue().Set(ConvertToV8OneByteString(isolate, std::move(data)));
+
+}
+
+void WebGLRenderingContext::SetConstants(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& tmpl) {
+    tmpl->Set(isolate, "DEPTH_BUFFER_BIT", v8::Uint32::New(isolate, 0x00000100));
+
+    tmpl->Set(isolate, "STENCIL_BUFFER_BIT", v8::Uint32::New(isolate, 0x00000400));
+
+    tmpl->Set(isolate, "COLOR_BUFFER_BIT", v8::Uint32::New(isolate, 0x00004000));
+
+    tmpl->Set(isolate, "POINTS", v8::Uint32::New(isolate, 0x0000));
+
+    tmpl->Set(isolate, "LINES", v8::Uint32::New(isolate, 0x0001));
+
+    tmpl->Set(isolate, "LINE_LOOP", v8::Uint32::New(isolate, 0x0002));
+
+    tmpl->Set(isolate, "LINE_STRIP", v8::Uint32::New(isolate, 0x0003));
+
+    tmpl->Set(isolate, "TRIANGLES", v8::Uint32::New(isolate, 0x0004));
+
+    tmpl->Set(isolate, "TRIANGLE_STRIP", v8::Uint32::New(isolate, 0x0005));
+
+    tmpl->Set(isolate, "TRIANGLE_FAN", v8::Uint32::New(isolate, 0x0006));
+
+    tmpl->Set(isolate, "ZERO", v8::Uint32::New(isolate, 0));
+
+    tmpl->Set(isolate, "ONE", v8::Uint32::New(isolate, 1));
+
+    tmpl->Set(isolate, "SRC_COLOR", v8::Uint32::New(isolate, 0x0300));
+
+    tmpl->Set(isolate, "ONE_MINUS_SRC_COLOR", v8::Uint32::New(isolate, 0x0301));
+
+    tmpl->Set(isolate, "SRC_ALPHA", v8::Uint32::New(isolate, 0x0302));
+
+    tmpl->Set(isolate, "ONE_MINUS_SRC_ALPHA", v8::Uint32::New(isolate, 0x0303));
+
+    tmpl->Set(isolate, "DST_ALPHA", v8::Uint32::New(isolate, 0x0304));
+
+    tmpl->Set(isolate, "ONE_MINUS_DST_ALPHA", v8::Uint32::New(isolate, 0x0305));
+
+    tmpl->Set(isolate, "DST_COLOR", v8::Uint32::New(isolate, 0x0306));
+
+    tmpl->Set(isolate, "ONE_MINUS_DST_COLOR", v8::Uint32::New(isolate, 0x0307));
+
+    tmpl->Set(isolate, "SRC_ALPHA_SATURATE", v8::Uint32::New(isolate, 0x0308));
+
+
+    tmpl->Set(isolate, "CONSTANT_COLOR", v8::Uint32::New(isolate, 0x8001));
+    tmpl->Set(isolate, "ONE_MINUS_CONSTANT_COLOR", v8::Uint32::New(isolate, 0x8002));
+    tmpl->Set(isolate, "CONSTANT_ALPHA", v8::Uint32::New(isolate, 0x8003));
+    tmpl->Set(isolate, "ONE_MINUS_CONSTANT_ALPHA", v8::Uint32::New(isolate, 0x8004));
 
 
     /* Blending equations */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FUNC_ADD"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FUNC_SUBTRACT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FUNC_REVERSE_SUBTRACT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_EQUATION"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_EQUATION_RGB"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_EQUATION_ALPHA"));
+    tmpl->Set(isolate, "FUNC_ADD", v8::Uint32::New(isolate, 0x8006));
+    tmpl->Set(isolate, "FUNC_SUBTRACT", v8::Uint32::New(isolate, 0x800A));
+    tmpl->Set(isolate, "FUNC_REVERSE_SUBTRACT", v8::Uint32::New(isolate, 0x800B));
+    tmpl->Set(isolate, "BLEND_EQUATION", v8::Uint32::New(isolate, 0x8009));
+    tmpl->Set(isolate, "BLEND_EQUATION_RGB", v8::Uint32::New(isolate, 0x8009));
+    tmpl->Set(isolate, "BLEND_EQUATION_ALPHA", v8::Uint32::New(isolate, 0x883D));
 
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_DST_RGB"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_SRC_RGB"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_DST_ALPHA"));
+    tmpl->Set(isolate, "BLEND_DST_RGB", v8::Uint32::New(isolate, 0x80C8));
+    tmpl->Set(isolate, "BLEND_SRC_RGB", v8::Uint32::New(isolate, 0x80C9));
+    tmpl->Set(isolate, "BLEND_DST_ALPHA", v8::Uint32::New(isolate, 0x80CA));
 
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_SRC_ALPHA"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND_COLOR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ARRAY_BUFFER_BINDING"));
+    tmpl->Set(isolate, "BLEND_SRC_ALPHA", v8::Uint32::New(isolate, 0x80CB));
+    tmpl->Set(isolate, "BLEND_COLOR", v8::Uint32::New(isolate, 0x8005));
+    tmpl->Set(isolate, "ARRAY_BUFFER_BINDING", v8::Uint32::New(isolate, 0x8894));
 
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ELEMENT_ARRAY_BUFFER_BINDING"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINE_WIDTH"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALIASED_POINT_SIZE_RANGE"));
+    tmpl->Set(isolate, "ELEMENT_ARRAY_BUFFER_BINDING", v8::Uint32::New(isolate, 0x8895));
+    tmpl->Set(isolate, "LINE_WIDTH", v8::Uint32::New(isolate, 0x0B21));
+    tmpl->Set(isolate, "ALIASED_POINT_SIZE_RANGE", v8::Uint32::New(isolate, 0x846D));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALIASED_LINE_WIDTH_RANGE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CULL_FACE_MODE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRONT_FACE"));
+    tmpl->Set(isolate, "ALIASED_LINE_WIDTH_RANGE", v8::Uint32::New(isolate, 0x846E));
+    tmpl->Set(isolate, "CULL_FACE_MODE", v8::Uint32::New(isolate, 0x0B45));
+    tmpl->Set(isolate, "FRONT_FACE", v8::Uint32::New(isolate, 0x0B46));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_RANGE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_WRITEMASK"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_CLEAR_VALUE"));
+    tmpl->Set(isolate, "DEPTH_RANGE", v8::Uint32::New(isolate, 0x0B70));
+    tmpl->Set(isolate, "DEPTH_WRITEMASK", v8::Uint32::New(isolate, 0x0B72));
+    tmpl->Set(isolate, "DEPTH_CLEAR_VALUE", v8::Uint32::New(isolate, 0x0B73));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_FUNC"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_CLEAR_VALUE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_FUNC"));
+    tmpl->Set(isolate, "DEPTH_FUNC", v8::Uint32::New(isolate, 0x0B74));
+    tmpl->Set(isolate, "STENCIL_CLEAR_VALUE", v8::Uint32::New(isolate, 0x0B91));
+    tmpl->Set(isolate, "STENCIL_FUNC", v8::Uint32::New(isolate, 0x0B92));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_FAIL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_PASS_DEPTH_FAIL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_PASS_DEPTH_PASS"));
+    tmpl->Set(isolate, "STENCIL_FAIL", v8::Uint32::New(isolate, 0x0B94));
+    tmpl->Set(isolate, "STENCIL_PASS_DEPTH_FAIL", v8::Uint32::New(isolate, 0x0B95));
+    tmpl->Set(isolate, "STENCIL_PASS_DEPTH_PASS", v8::Uint32::New(isolate, 0x0B96));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_REF"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_VALUE_MASK"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_WRITEMASK"));
+    tmpl->Set(isolate, "STENCIL_REF", v8::Uint32::New(isolate, 0x0B97));
+    tmpl->Set(isolate, "STENCIL_VALUE_MASK", v8::Uint32::New(isolate, 0x0B93));
+    tmpl->Set(isolate, "STENCIL_WRITEMASK", v8::Uint32::New(isolate, 0x0B98));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_FUNC"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_FAIL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_PASS_DEPTH_FAIL"));
+    tmpl->Set(isolate, "STENCIL_BACK_FUNC", v8::Uint32::New(isolate, 0x8800));
+    tmpl->Set(isolate, "STENCIL_BACK_FAIL", v8::Uint32::New(isolate, 0x8801));
+    tmpl->Set(isolate, "STENCIL_BACK_PASS_DEPTH_FAIL", v8::Uint32::New(isolate, 0x8802));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_PASS_DEPTH_PASS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_REF"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_VALUE_MASK"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BACK_WRITEMASK"));
+    tmpl->Set(isolate, "STENCIL_BACK_PASS_DEPTH_PASS", v8::Uint32::New(isolate, 0x8803));
+    tmpl->Set(isolate, "STENCIL_BACK_REF", v8::Uint32::New(isolate, 0x8CA3));
+    tmpl->Set(isolate, "STENCIL_BACK_VALUE_MASK", v8::Uint32::New(isolate, 0x8CA4));
+    tmpl->Set(isolate, "STENCIL_BACK_WRITEMASK", v8::Uint32::New(isolate, 0x8CA5));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VIEWPORT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SCISSOR_BOX"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_CLEAR_VALUE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_WRITEMASK"));
+    tmpl->Set(isolate, "VIEWPORT", v8::Uint32::New(isolate, 0x0BA2));
+    tmpl->Set(isolate, "SCISSOR_BOX", v8::Uint32::New(isolate, 0x0C10));
+    tmpl->Set(isolate, "COLOR_CLEAR_VALUE", v8::Uint32::New(isolate, 0x0C22));
+    tmpl->Set(isolate, "COLOR_WRITEMASK", v8::Uint32::New(isolate, 0x0C23));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_ALIGNMENT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "PACK_ALIGNMENT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_TEXTURE_SIZE"));
-
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VIEWPORT_DIMS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SUBPIXEL_BITS"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RED_BITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "GREEN_BITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLUE_BITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALPHA_BITS"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_BITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "POLYGON_OFFSET_UNITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "POLYGON_OFFSET_FACTOR"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_BINDING_2D"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_BUFFERS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLES"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_COVERAGE_VALUE"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_COVERAGE_INVERT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "COMPRESSED_TEXTURE_FORMATS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VENDOR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERER"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERSION"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "IMPLEMENTATION_COLOR_READ_TYPE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "IMPLEMENTATION_COLOR_READ_FORMAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BROWSER_DEFAULT_WEBGL"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STATIC_DRAW"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STREAM_DRAW"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DYNAMIC_DRAW"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ARRAY_BUFFER"));
-
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ELEMENT_ARRAY_BUFFER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BUFFER_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BUFFER_USAGE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CURRENT_VERTEX_ATTRIB"));
+    tmpl->Set(isolate, "UNPACK_ALIGNMENT", v8::Uint32::New(isolate, 0x0CF5));
+    tmpl->Set(isolate, "PACK_ALIGNMENT", v8::Uint32::New(isolate, 0x0D05));
+    tmpl->Set(isolate, "MAX_TEXTURE_SIZE", v8::Uint32::New(isolate, 0x0D33));
 
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_ENABLED"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_STRIDE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_TYPE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_NORMALIZED"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_POINTER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_ATTRIB_ARRAY_BUFFER_BINDING"));
+    tmpl->Set(isolate, "MAX_VIEWPORT_DIMS", v8::Uint32::New(isolate, 0x0D3A));
+    tmpl->Set(isolate, "SUBPIXEL_BITS", v8::Uint32::New(isolate, 0x0D50));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CULL_FACE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRONT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BACK"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRONT_AND_BACK"));
+    tmpl->Set(isolate, "RED_BITS", v8::Uint32::New(isolate, 0x0D52));
+    tmpl->Set(isolate, "GREEN_BITS", v8::Uint32::New(isolate, 0x0D53));
+    tmpl->Set(isolate, "BLUE_BITS", v8::Uint32::New(isolate, 0x0D54));
+    tmpl->Set(isolate, "ALPHA_BITS", v8::Uint32::New(isolate, 0x0D55));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BLEND"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_TEST"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DITHER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "POLYGON_OFFSET_FILL"));
+    tmpl->Set(isolate, "STENCIL_BITS", v8::Uint32::New(isolate, 0x0D57));
+    tmpl->Set(isolate, "POLYGON_OFFSET_UNITS", v8::Uint32::New(isolate, 0x2A00));
+    tmpl->Set(isolate, "POLYGON_OFFSET_FACTOR", v8::Uint32::New(isolate, 0x8038));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_ALPHA_TO_COVERAGE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLE_COVERAGE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SCISSOR_TEST"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_TEST"));
+    tmpl->Set(isolate, "TEXTURE_BINDING_2D", v8::Uint32::New(isolate, 0x8069));
+    tmpl->Set(isolate, "SAMPLE_BUFFERS", v8::Uint32::New(isolate, 0x80A8));
+    tmpl->Set(isolate, "SAMPLES", v8::Uint32::New(isolate, 0x80A9));
+    tmpl->Set(isolate, "SAMPLE_COVERAGE_VALUE", v8::Uint32::New(isolate, 0x80AA));
+
+    tmpl->Set(isolate, "SAMPLE_COVERAGE_INVERT", v8::Uint32::New(isolate, 0x80AB));
+    tmpl->Set(isolate, "COMPRESSED_TEXTURE_FORMATS", v8::Uint32::New(isolate, 0x86A3));
+    tmpl->Set(isolate, "VENDOR", v8::Uint32::New(isolate, 0x1F00));
+    tmpl->Set(isolate, "RENDERER", v8::Uint32::New(isolate, 0x1F01));
+
+    tmpl->Set(isolate, "VERSION", v8::Uint32::New(isolate, 0x1F02));
+    tmpl->Set(isolate, "IMPLEMENTATION_COLOR_READ_TYPE", v8::Uint32::New(isolate, 0x8B9A));
+    tmpl->Set(isolate, "IMPLEMENTATION_COLOR_READ_FORMAT", v8::Uint32::New(isolate, 0x8B9B));
+    tmpl->Set(isolate, "BROWSER_DEFAULT_WEBGL", v8::Uint32::New(isolate, 0x9244));
+
+    tmpl->Set(isolate, "STATIC_DRAW", v8::Uint32::New(isolate, 0x88E4));
+    tmpl->Set(isolate, "STREAM_DRAW", v8::Uint32::New(isolate, 0x88E0));
+    tmpl->Set(isolate, "DYNAMIC_DRAW", v8::Uint32::New(isolate, 0x88E8));
+    tmpl->Set(isolate, "ARRAY_BUFFER", v8::Uint32::New(isolate, 0x8892));
+
+    tmpl->Set(isolate, "ELEMENT_ARRAY_BUFFER", v8::Uint32::New(isolate, 0x8893));
+    tmpl->Set(isolate, "BUFFER_SIZE", v8::Uint32::New(isolate, 0x8764));
+    tmpl->Set(isolate, "BUFFER_USAGE", v8::Uint32::New(isolate, 0x8765));
+    tmpl->Set(isolate, "CURRENT_VERTEX_ATTRIB", v8::Uint32::New(isolate, 0x8626));
+
+
+    tmpl->Set(isolate, "VERTEX_ATTRIB_ARRAY_ENABLED", v8::Uint32::New(isolate, 0x8622));
+    tmpl->Set(isolate, "VERTEX_ATTRIB_ARRAY_SIZE", v8::Uint32::New(isolate, 0x8623));
+    tmpl->Set(isolate, "VERTEX_ATTRIB_ARRAY_STRIDE", v8::Uint32::New(isolate, 0x8624));
+    tmpl->Set(isolate, "VERTEX_ATTRIB_ARRAY_TYPE", v8::Uint32::New(isolate, 0x8625));
+    tmpl->Set(isolate, "VERTEX_ATTRIB_ARRAY_NORMALIZED", v8::Uint32::New(isolate, 0x886A));
+    tmpl->Set(isolate, "VERTEX_ATTRIB_ARRAY_POINTER", v8::Uint32::New(isolate, 0x8645));
+    tmpl->Set(isolate, "VERTEX_ATTRIB_ARRAY_BUFFER_BINDING", v8::Uint32::New(isolate, 0x889F));
+
+    tmpl->Set(isolate, "CULL_FACE", v8::Uint32::New(isolate, 0x0B44));
+    tmpl->Set(isolate, "FRONT", v8::Uint32::New(isolate, 0x0404));
+    tmpl->Set(isolate, "BACK", v8::Uint32::New(isolate, 0x0405));
+    tmpl->Set(isolate, "FRONT_AND_BACK", v8::Uint32::New(isolate, 0x0408));
+
+    tmpl->Set(isolate, "BLEND", v8::Uint32::New(isolate, 0x0BE2));
+    tmpl->Set(isolate, "DEPTH_TEST", v8::Uint32::New(isolate, 0x0B71));
+    tmpl->Set(isolate, "DITHER", v8::Uint32::New(isolate, 0x0BD0));
+    tmpl->Set(isolate, "POLYGON_OFFSET_FILL", v8::Uint32::New(isolate, 0x8037));
+
+    tmpl->Set(isolate, "SAMPLE_ALPHA_TO_COVERAGE", v8::Uint32::New(isolate, 0x809E));
+    tmpl->Set(isolate, "SAMPLE_COVERAGE", v8::Uint32::New(isolate, 0x80A0));
+    tmpl->Set(isolate, "SCISSOR_TEST", v8::Uint32::New(isolate, 0x0C11));
+    tmpl->Set(isolate, "STENCIL_TEST", v8::Uint32::New(isolate, 0x0B90));
 
 
     /* Errors */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NO_ERROR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_ENUM"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_VALUE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_OPERATION"));
+    tmpl->Set(isolate, "NO_ERROR", v8::Uint32::New(isolate, 0));
+    tmpl->Set(isolate, "INVALID_ENUM", v8::Uint32::New(isolate, 0x0500));
+    tmpl->Set(isolate, "INVALID_VALUE", v8::Uint32::New(isolate, 0x0501));
+    tmpl->Set(isolate, "INVALID_OPERATION", v8::Uint32::New(isolate, 0x0502));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "OUT_OF_MEMORY"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CONTEXT_LOST_WEBGL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CW"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CCW"));
+    tmpl->Set(isolate, "OUT_OF_MEMORY", v8::Uint32::New(isolate, 0x0505));
+    tmpl->Set(isolate, "CONTEXT_LOST_WEBGL", v8::Uint32::New(isolate, 0x9242));
+    tmpl->Set(isolate, "CW", v8::Uint32::New(isolate, 0x0900));
+    tmpl->Set(isolate, "CCW", v8::Uint32::New(isolate, 0x0901));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DONT_CARE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FASTEST"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NICEST"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "GENERATE_MIPMAP_HINT"));
+    tmpl->Set(isolate, "DONT_CARE", v8::Uint32::New(isolate, 0x1100));
+    tmpl->Set(isolate, "FASTEST", v8::Uint32::New(isolate, 0x1101));
+    tmpl->Set(isolate, "NICEST", v8::Uint32::New(isolate, 0x1102));
+    tmpl->Set(isolate, "GENERATE_MIPMAP_HINT", v8::Uint32::New(isolate, 0x8192));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BYTE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_BYTE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SHORT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT"));
+    tmpl->Set(isolate, "BYTE", v8::Uint32::New(isolate, 0x1400));
+    tmpl->Set(isolate, "UNSIGNED_BYTE", v8::Uint32::New(isolate, 0x1401));
+    tmpl->Set(isolate, "SHORT", v8::Uint32::New(isolate, 0x1402));
+    tmpl->Set(isolate, "UNSIGNED_SHORT", v8::Uint32::New(isolate, 0x1403));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_INT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_COMPONENT"));
+    tmpl->Set(isolate, "BYTE", v8::Uint32::New(isolate, 0x1400));
+    tmpl->Set(isolate, "UNSIGNED_BYTE", v8::Uint32::New(isolate, 0x1401));
+    tmpl->Set(isolate, "SHORT", v8::Uint32::New(isolate, 0x1402));
+    tmpl->Set(isolate, "UNSIGNED_SHORT", v8::Uint32::New(isolate, 0x1403));
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALPHA"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGB"));
+    tmpl->Set(isolate, "INT", v8::Uint32::New(isolate, 0x1404));
+    tmpl->Set(isolate, "UNSIGNED_INT", v8::Uint32::New(isolate, 0x1405));
+    tmpl->Set(isolate, "FLOAT", v8::Uint32::New(isolate, 0x1406));
+    tmpl->Set(isolate, "DEPTH_COMPONENT", v8::Uint32::New(isolate, 0x1902));
+
+    tmpl->Set(isolate, "ALPHA", v8::Uint32::New(isolate, 0x1906));
+    tmpl->Set(isolate, "RGB", v8::Uint32::New(isolate, 0x1907));
 
     /* Clearing buffers */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGBA"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LUMINANCE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LUMINANCE_ALPHA"));
+    tmpl->Set(isolate, "RGBA", v8::Uint32::New(isolate, 0x1908));
+    tmpl->Set(isolate, "LUMINANCE", v8::Uint32::New(isolate, 0x1909));
+    tmpl->Set(isolate, "LUMINANCE_ALPHA", v8::Uint32::New(isolate, 0x190A));
 
     /* Clearing buffers */
 
     /* Rendering primitives */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT_4_4_4_4"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT_5_5_5_1"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNSIGNED_SHORT_5_6_5"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAGMENT_SHADER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VERTEX_SHADER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "COMPILE_STATUS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DELETE_STATUS"));
+    tmpl->Set(isolate, "UNSIGNED_SHORT_4_4_4_4", v8::Uint32::New(isolate, 0x8033));
+    tmpl->Set(isolate, "UNSIGNED_SHORT_5_5_5_1", v8::Uint32::New(isolate, 0x8034));
+    tmpl->Set(isolate, "UNSIGNED_SHORT_5_6_5", v8::Uint32::New(isolate, 0x8363));
+    tmpl->Set(isolate, "FRAGMENT_SHADER", v8::Uint32::New(isolate, 0x8B30));
+    tmpl->Set(isolate, "VERTEX_SHADER", v8::Uint32::New(isolate, 0x8B31));
+    tmpl->Set(isolate, "COMPILE_STATUS", v8::Uint32::New(isolate, 0x8B81));
+    tmpl->Set(isolate, "DELETE_STATUS", v8::Uint32::New(isolate, 0x8B80));
 
     /* Rendering primitives */
 
     /* Blending modes */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINK_STATUS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "VALIDATE_STATUS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ATTACHED_SHADERS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ACTIVE_ATTRIBUTES"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ACTIVE_UNIFORMS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VERTEX_ATTRIBS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VERTEX_UNIFORM_VECTORS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VARYING_VECTORS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_COMBINED_TEXTURE_IMAGE_UNITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_VERTEX_TEXTURE_IMAGE_UNITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_TEXTURE_IMAGE_UNITS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_FRAGMENT_UNIFORM_VECTORS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SHADER_TYPE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SHADING_LANGUAGE_VERSION"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CURRENT_PROGRAM"));
+    tmpl->Set(isolate, "LINK_STATUS", v8::Uint32::New(isolate, 0x8B82));
+    tmpl->Set(isolate, "VALIDATE_STATUS", v8::Uint32::New(isolate, 0x8B83));
+    tmpl->Set(isolate, "ATTACHED_SHADERS", v8::Uint32::New(isolate, 0x8B85));
+    tmpl->Set(isolate, "ACTIVE_ATTRIBUTES", v8::Uint32::New(isolate, 0x8B89));
+    tmpl->Set(isolate, "ACTIVE_UNIFORMS", v8::Uint32::New(isolate, 0x8B86));
+    tmpl->Set(isolate, "MAX_VERTEX_ATTRIBS", v8::Uint32::New(isolate, 0x8869));
+    tmpl->Set(isolate, "MAX_VERTEX_UNIFORM_VECTORS", v8::Uint32::New(isolate, 0x8DFB));
+    tmpl->Set(isolate, "MAX_VARYING_VECTORS", v8::Uint32::New(isolate, 0x8DFC));
+    tmpl->Set(isolate, "MAX_COMBINED_TEXTURE_IMAGE_UNITS", v8::Uint32::New(isolate, 0x8B4D));
+    tmpl->Set(isolate, "MAX_VERTEX_TEXTURE_IMAGE_UNITS", v8::Uint32::New(isolate, 0x8B4C));
+    tmpl->Set(isolate, "MAX_TEXTURE_IMAGE_UNITS", v8::Uint32::New(isolate, 0x8872));
+    tmpl->Set(isolate, "MAX_FRAGMENT_UNIFORM_VECTORS", v8::Uint32::New(isolate, 0x8DFD));
+    tmpl->Set(isolate, "SHADER_TYPE", v8::Uint32::New(isolate, 0x8B4F));
+    tmpl->Set(isolate, "SHADING_LANGUAGE_VERSION", v8::Uint32::New(isolate, 0x8B8C));
+    tmpl->Set(isolate, "CURRENT_PROGRAM", v8::Uint32::New(isolate, 0x8B8D));
 
     /* Blending modes */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEVER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LESS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "EQUAL"));
+    tmpl->Set(isolate, "NEVER", v8::Uint32::New(isolate, 0x0200));
+    tmpl->Set(isolate, "LESS", v8::Uint32::New(isolate, 0x0201));
+    tmpl->Set(isolate, "EQUAL", v8::Uint32::New(isolate, 0x0202));
 
     /* Blending equations */
 
     /* Getting GL parameter information */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LEQUAL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "GREATER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NOTEQUAL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "GEQUAL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ALWAYS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "KEEP"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "REPLACE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INCR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DECR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVERT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INCR_WRAP"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DECR_WRAP"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEAREST"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINEAR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEAREST_MIPMAP_NEAREST"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINEAR_MIPMAP_NEAREST"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NEAREST_MIPMAP_LINEAR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LINEAR_MIPMAP_LINEAR"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_MAG_FILTER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_MIN_FILTER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_WRAP_S"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_WRAP_T"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_2D"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_BINDING_CUBE_MAP"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_POSITIVE_X"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_NEGATIVE_X"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_POSITIVE_Y"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_NEGATIVE_Y"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_POSITIVE_Z"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE_CUBE_MAP_NEGATIVE_Z"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_CUBE_MAP_TEXTURE_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE0"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE1"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE2"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE3"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE4"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE5"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE6"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE7"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE8"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE9"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE10"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE11"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE12"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE13"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE14"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE15"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE16"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE17"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE18"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE19"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE20"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE21"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE22"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE23"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE24"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE25"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE26"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE27"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE28"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE29"));
+    tmpl->Set(isolate, "LEQUAL", v8::Uint32::New(isolate, 0x0203));
+    tmpl->Set(isolate, "GREATER", v8::Uint32::New(isolate, 0x0204));
+    tmpl->Set(isolate, "NOTEQUAL", v8::Uint32::New(isolate, 0x0205));
+    tmpl->Set(isolate, "GEQUAL", v8::Uint32::New(isolate, 0x0206));
+    tmpl->Set(isolate, "ALWAYS", v8::Uint32::New(isolate, 0x0207));
+    tmpl->Set(isolate, "KEEP", v8::Uint32::New(isolate, 0x1E00));
+    tmpl->Set(isolate, "REPLACE", v8::Uint32::New(isolate, 0x1E01));
+    tmpl->Set(isolate, "INCR", v8::Uint32::New(isolate, 0x1E02));
+    tmpl->Set(isolate, "DECR", v8::Uint32::New(isolate, 0x1E03));
+    tmpl->Set(isolate, "INVERT", v8::Uint32::New(isolate, 0x150A));
+    tmpl->Set(isolate, "INCR_WRAP", v8::Uint32::New(isolate, 0x8507));
+    tmpl->Set(isolate, "DECR_WRAP", v8::Uint32::New(isolate, 0x8508));
+    tmpl->Set(isolate, "NEAREST", v8::Uint32::New(isolate, 0x2600));
+    tmpl->Set(isolate, "LINEAR", v8::Uint32::New(isolate, 0x2601));
+    tmpl->Set(isolate, "NEAREST_MIPMAP_NEAREST", v8::Uint32::New(isolate, 0x2700));
+    tmpl->Set(isolate, "LINEAR_MIPMAP_NEAREST", v8::Uint32::New(isolate, 0x2701));
+    tmpl->Set(isolate, "NEAREST_MIPMAP_LINEAR", v8::Uint32::New(isolate, 0x2702));
+    tmpl->Set(isolate, "LINEAR_MIPMAP_LINEAR", v8::Uint32::New(isolate, 0x2703));
+    tmpl->Set(isolate, "TEXTURE_MAG_FILTER", v8::Uint32::New(isolate, 0x2800));
+    tmpl->Set(isolate, "TEXTURE_MIN_FILTER", v8::Uint32::New(isolate, 0x2801));
+    tmpl->Set(isolate, "TEXTURE_WRAP_S", v8::Uint32::New(isolate, 0x2802));
+    tmpl->Set(isolate, "TEXTURE_WRAP_T", v8::Uint32::New(isolate, 0x2803));
+    tmpl->Set(isolate, "TEXTURE_2D", v8::Uint32::New(isolate, 0x0DE1));
+    tmpl->Set(isolate, "TEXTURE", v8::Uint32::New(isolate, 0x1702));
+    tmpl->Set(isolate, "TEXTURE_CUBE_MAP", v8::Uint32::New(isolate, 0x8513));
+    tmpl->Set(isolate, "TEXTURE_BINDING_CUBE_MAP", v8::Uint32::New(isolate, 0x8514));
+    tmpl->Set(isolate, "TEXTURE_CUBE_MAP_POSITIVE_X", v8::Uint32::New(isolate, 0x8515));
+    tmpl->Set(isolate, "TEXTURE_CUBE_MAP_NEGATIVE_X", v8::Uint32::New(isolate, 0x8516));
+    tmpl->Set(isolate, "TEXTURE_CUBE_MAP_POSITIVE_Y", v8::Uint32::New(isolate, 0x8517));
+    tmpl->Set(isolate, "TEXTURE_CUBE_MAP_NEGATIVE_Y", v8::Uint32::New(isolate, 0x8518));
+    tmpl->Set(isolate, "TEXTURE_CUBE_MAP_POSITIVE_Z", v8::Uint32::New(isolate, 0x8519));
+    tmpl->Set(isolate, "TEXTURE_CUBE_MAP_NEGATIVE_Z", v8::Uint32::New(isolate, 0x851A));
+    tmpl->Set(isolate, "MAX_CUBE_MAP_TEXTURE_SIZE", v8::Uint32::New(isolate, 0x851C));
+    tmpl->Set(isolate, "TEXTURE0", v8::Uint32::New(isolate, 0x84C0));
+    tmpl->Set(isolate, "TEXTURE1", v8::Uint32::New(isolate, 0x84C1));
+    tmpl->Set(isolate, "TEXTURE2", v8::Uint32::New(isolate, 0x84C2));
+    tmpl->Set(isolate, "TEXTURE3", v8::Uint32::New(isolate, 0x84C3));
+    tmpl->Set(isolate, "TEXTURE4", v8::Uint32::New(isolate, 0x84C4));
+    tmpl->Set(isolate, "TEXTURE5", v8::Uint32::New(isolate, 0x84C5));
+    tmpl->Set(isolate, "TEXTURE6", v8::Uint32::New(isolate, 0x84C6));
+    tmpl->Set(isolate, "TEXTURE7", v8::Uint32::New(isolate, 0x84C7));
+    tmpl->Set(isolate, "TEXTURE8", v8::Uint32::New(isolate, 0x84C8));
+    tmpl->Set(isolate, "TEXTURE9", v8::Uint32::New(isolate, 0x84C9));
+    tmpl->Set(isolate, "TEXTURE10", v8::Uint32::New(isolate, 0x84CA));
+    tmpl->Set(isolate, "TEXTURE11", v8::Uint32::New(isolate, 0x84CB));
+    tmpl->Set(isolate, "TEXTURE12", v8::Uint32::New(isolate, 0x84CC));
+    tmpl->Set(isolate, "TEXTURE13", v8::Uint32::New(isolate, 0x84CD));
+    tmpl->Set(isolate, "TEXTURE14", v8::Uint32::New(isolate, 0x84CE));
+    tmpl->Set(isolate, "TEXTURE15", v8::Uint32::New(isolate, 0x84CF));
+    tmpl->Set(isolate, "TEXTURE16", v8::Uint32::New(isolate, 0x84D0));
+    tmpl->Set(isolate, "TEXTURE17", v8::Uint32::New(isolate, 0x84D1));
+    tmpl->Set(isolate, "TEXTURE18", v8::Uint32::New(isolate, 0x84D2));
+    tmpl->Set(isolate, "TEXTURE19", v8::Uint32::New(isolate, 0x84D3));
+    tmpl->Set(isolate, "TEXTURE20", v8::Uint32::New(isolate, 0x84D4));
+    tmpl->Set(isolate, "TEXTURE21", v8::Uint32::New(isolate, 0x84D5));
+    tmpl->Set(isolate, "TEXTURE22", v8::Uint32::New(isolate, 0x84D6));
+    tmpl->Set(isolate, "TEXTURE23", v8::Uint32::New(isolate, 0x84D7));
+    tmpl->Set(isolate, "TEXTURE24", v8::Uint32::New(isolate, 0x84D8));
+    tmpl->Set(isolate, "TEXTURE25", v8::Uint32::New(isolate, 0x84D9));
+    tmpl->Set(isolate, "TEXTURE26", v8::Uint32::New(isolate, 0x84DA));
+    tmpl->Set(isolate, "TEXTURE27", v8::Uint32::New(isolate, 0x84DB));
+    tmpl->Set(isolate, "TEXTURE28", v8::Uint32::New(isolate, 0x84DC));
+    tmpl->Set(isolate, "TEXTURE29", v8::Uint32::New(isolate, 0x84DD));
 
     /* Getting GL parameter information */
 
     /* Buffers */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE30"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "TEXTURE31"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "ACTIVE_TEXTURE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "REPEAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "CLAMP_TO_EDGE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MIRRORED_REPEAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_VEC2"));
+    tmpl->Set(isolate, "TEXTURE30", v8::Uint32::New(isolate, 0x84DE));
+    tmpl->Set(isolate, "TEXTURE31", v8::Uint32::New(isolate, 0x84DF));
+    tmpl->Set(isolate, "ACTIVE_TEXTURE", v8::Uint32::New(isolate, 0x84E0));
+    tmpl->Set(isolate, "REPEAT", v8::Uint32::New(isolate, 0x2901));
+    tmpl->Set(isolate, "CLAMP_TO_EDGE", v8::Uint32::New(isolate, 0x812F));
+    tmpl->Set(isolate, "MIRRORED_REPEAT", v8::Uint32::New(isolate, 0x8370));
+    tmpl->Set(isolate, "FLOAT_VEC2", v8::Uint32::New(isolate, 0x8B50));
 
     /* Buffers */
 
     /* Vertex attributes */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_VEC3"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_VEC4"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT_VEC2"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT_VEC3"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INT_VEC4"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL_VEC2"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL_VEC3"));
+    tmpl->Set(isolate, "FLOAT_VEC3", v8::Uint32::New(isolate, 0x8B51));
+    tmpl->Set(isolate, "FLOAT_VEC4", v8::Uint32::New(isolate, 0x8B52));
+    tmpl->Set(isolate, "INT_VEC2", v8::Uint32::New(isolate, 0x8B53));
+    tmpl->Set(isolate, "INT_VEC3", v8::Uint32::New(isolate, 0x8B54));
+    tmpl->Set(isolate, "INT_VEC4", v8::Uint32::New(isolate, 0x8B55));
+    tmpl->Set(isolate, "BOOL", v8::Uint32::New(isolate, 0x8B56));
+    tmpl->Set(isolate, "BOOL_VEC2", v8::Uint32::New(isolate, 0x8B57));
+    tmpl->Set(isolate, "BOOL_VEC3", v8::Uint32::New(isolate, 0x8B58));
 
     /* Vertex attributes */
 
     /* Culling */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "BOOL_VEC4"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_MAT2"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_MAT3"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FLOAT_MAT4"));
+    tmpl->Set(isolate, "BOOL_VEC4", v8::Uint32::New(isolate, 0x8B59));
+    tmpl->Set(isolate, "FLOAT_MAT2", v8::Uint32::New(isolate, 0x8B5A));
+    tmpl->Set(isolate, "FLOAT_MAT3", v8::Uint32::New(isolate, 0x8B5B));
+    tmpl->Set(isolate, "FLOAT_MAT4", v8::Uint32::New(isolate, 0x8B5C));
 
     /* Culling */
 
     /* Enabling and disabling */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLER_2D"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "SAMPLER_CUBE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LOW_FLOAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MEDIUM_FLOAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "HIGH_FLOAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "LOW_INT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MEDIUM_INT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "HIGH_INT"));
+    tmpl->Set(isolate, "SAMPLER_2D", v8::Uint32::New(isolate, 0x8B5E));
+    tmpl->Set(isolate, "SAMPLER_CUBE", v8::Uint32::New(isolate, 0x8B60));
+    tmpl->Set(isolate, "LOW_FLOAT", v8::Uint32::New(isolate, 0x8DF0));
+    tmpl->Set(isolate, "MEDIUM_FLOAT", v8::Uint32::New(isolate, 0x8DF1));
+    tmpl->Set(isolate, "HIGH_FLOAT", v8::Uint32::New(isolate, 0x8DF2));
+    tmpl->Set(isolate, "LOW_INT", v8::Uint32::New(isolate, 0x8DF3));
+    tmpl->Set(isolate, "MEDIUM_INT", v8::Uint32::New(isolate, 0x8DF4));
+    tmpl->Set(isolate, "HIGH_INT", v8::Uint32::New(isolate, 0x8DF5));
 
     /* Enabling and disabling */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGBA4"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGB5_A1"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RGB565"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_COMPONENT16"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_INDEX8"));
+    tmpl->Set(isolate, "FRAMEBUFFER", v8::Uint32::New(isolate, 0x8D40));
+    tmpl->Set(isolate, "RENDERBUFFER", v8::Uint32::New(isolate, 0x8D41));
+    tmpl->Set(isolate, "RGBA4", v8::Uint32::New(isolate, 0x8056));
+    tmpl->Set(isolate, "RGB5_A1", v8::Uint32::New(isolate, 0x8057));
+    tmpl->Set(isolate, "RGB565", v8::Uint32::New(isolate, 0x8D62));
+    tmpl->Set(isolate, "DEPTH_COMPONENT16", v8::Uint32::New(isolate, 0x81A5));
+    tmpl->Set(isolate, "STENCIL_INDEX8", v8::Uint32::New(isolate, 0x8D48));
 
     /* Errors */
 
     /* Front face directions */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_STENCIL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_WIDTH"));
+    tmpl->Set(isolate, "DEPTH_STENCIL", v8::Uint32::New(isolate, 0x84F9));
+    tmpl->Set(isolate, "RENDERBUFFER_WIDTH", v8::Uint32::New(isolate, 0x8D42));
 
     /* Front face directions */
 
     /* Hints */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_HEIGHT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_INTERNAL_FORMAT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_RED_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_GREEN_SIZE"));
+    tmpl->Set(isolate, "RENDERBUFFER_HEIGHT", v8::Uint32::New(isolate, 0x8D43));
+    tmpl->Set(isolate, "RENDERBUFFER_INTERNAL_FORMAT", v8::Uint32::New(isolate, 0x8D44));
+    tmpl->Set(isolate, "RENDERBUFFER_RED_SIZE", v8::Uint32::New(isolate, 0x8D50));
+    tmpl->Set(isolate, "RENDERBUFFER_GREEN_SIZE", v8::Uint32::New(isolate, 0x8D51));
 
     /* Hints */
 
     /* Data types */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_BLUE_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_ALPHA_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_DEPTH_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_STENCIL_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_OBJECT_NAME"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL"));
+    tmpl->Set(isolate, "RENDERBUFFER_BLUE_SIZE", v8::Uint32::New(isolate, 0x8D52));
+    tmpl->Set(isolate, "RENDERBUFFER_ALPHA_SIZE", v8::Uint32::New(isolate, 0x8D53));
+    tmpl->Set(isolate, "RENDERBUFFER_DEPTH_SIZE", v8::Uint32::New(isolate, 0x8D54));
+    tmpl->Set(isolate, "RENDERBUFFER_STENCIL_SIZE", v8::Uint32::New(isolate, 0x8D55));
+    tmpl->Set(isolate, "FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE", v8::Uint32::New(isolate, 0x8CD0));
+    tmpl->Set(isolate, "FRAMEBUFFER_ATTACHMENT_OBJECT_NAME", v8::Uint32::New(isolate, 0x8CD1));
+    tmpl->Set(isolate, "FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL", v8::Uint32::New(isolate, 0x8CD2));
 
     /* Data types */
 
     /* Pixel formats */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "COLOR_ATTACHMENT0"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_ATTACHMENT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "STENCIL_ATTACHMENT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "DEPTH_STENCIL_ATTACHMENT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "NONE"));
+    tmpl->Set(isolate, "FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE",
+              v8::Uint32::New(isolate, 0x8CD3));
+    tmpl->Set(isolate, "COLOR_ATTACHMENT0", v8::Uint32::New(isolate, 0x8CE0));
+    tmpl->Set(isolate, "DEPTH_ATTACHMENT", v8::Uint32::New(isolate, 0x8D00));
+    tmpl->Set(isolate, "STENCIL_ATTACHMENT", v8::Uint32::New(isolate, 0x8D20));
+    tmpl->Set(isolate, "DEPTH_STENCIL_ATTACHMENT", v8::Uint32::New(isolate, 0x821A));
+    tmpl->Set(isolate, "NONE", v8::Uint32::New(isolate, 0));
 
     /* Pixel formats */
 
     /* Pixel types */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_COMPLETE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_INCOMPLETE_ATTACHMENT"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"));
+    tmpl->Set(isolate, "FRAMEBUFFER_COMPLETE", v8::Uint32::New(isolate, 0x8CD5));
+    tmpl->Set(isolate, "FRAMEBUFFER_INCOMPLETE_ATTACHMENT", v8::Uint32::New(isolate, 0x8CD6));
+    tmpl->Set(isolate, "FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT",
+              v8::Uint32::New(isolate, 0x8CD7));
 
     /* Pixel types */
 
     /* Shaders */
 
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_INCOMPLETE_DIMENSIONS"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_UNSUPPORTED"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "FRAMEBUFFER_BINDING"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "RENDERBUFFER_BINDING"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "MAX_RENDERBUFFER_SIZE"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "INVALID_FRAMEBUFFER_OPERATION"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_FLIP_Y_WEBGL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_PREMULTIPLY_ALPHA_WEBGL"));
-    ret.push_back(jsi::PropNameID::forUtf8(rt, "UNPACK_COLORSPACE_CONVERSION_WEBGL"));
-
-    return ret;
+    tmpl->Set(isolate, "FRAMEBUFFER_INCOMPLETE_DIMENSIONS", v8::Uint32::New(isolate, 0x8CD9));
+    tmpl->Set(isolate, "FRAMEBUFFER_UNSUPPORTED", v8::Uint32::New(isolate, 0x8CDD));
+    tmpl->Set(isolate, "FRAMEBUFFER_BINDING", v8::Uint32::New(isolate, 0x8CA6));
+    tmpl->Set(isolate, "RENDERBUFFER_BINDING", v8::Uint32::New(isolate, 0x8CA7));
+    tmpl->Set(isolate, "MAX_RENDERBUFFER_SIZE", v8::Uint32::New(isolate, 0x84E8));
+    tmpl->Set(isolate, "INVALID_FRAMEBUFFER_OPERATION", v8::Uint32::New(isolate, 0x0506));
+    tmpl->Set(isolate, "UNPACK_FLIP_Y_WEBGL", v8::Uint32::New(isolate, 0x9240));
+    tmpl->Set(isolate, "UNPACK_PREMULTIPLY_ALPHA_WEBGL", v8::Uint32::New(isolate, 0x9241));
+    tmpl->Set(isolate, "UNPACK_COLORSPACE_CONVERSION_WEBGL", v8::Uint32::New(isolate, 0x9243));
 }
 
-jsi::Value WebGLRenderingContext::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-    auto methodName = name.utf8(runtime);
-
-    auto prop_return = GetProperty(methodName);
-
-    if (!prop_return.isUndefined()) {
-        return prop_return;
-    }
-
-
-    if (methodName == "getShaderParameter") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto pname = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             if (args[0].isObject()) {
-                                                                 auto shader = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLShader>(
-                                                                         runtime);
-                                                                 if (shader != nullptr) {
-                                                                     auto ret = canvas_native_webgl_get_shader_parameter(
-                                                                             shader->GetShader(),
-                                                                             pname,
-                                                                             this->GetState()
-                                                                     );
-
-                                                                     if (canvas_native_webgl_result_get_is_none(
-                                                                             *ret)) {
-                                                                         return jsi::Value::null();
-                                                                     }
-
-                                                                     if (pname ==
-                                                                         GL_DELETE_STATUS ||
-                                                                         pname ==
-                                                                         GL_COMPILE_STATUS) {
-                                                                         return {canvas_native_webgl_result_get_bool(
-                                                                                 *ret)};
-                                                                     }
-
-                                                                     return {canvas_native_webgl_result_get_i32(
-                                                                             *ret)};
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::null();
-                                                     }
-        );
-    } else if (methodName == "getShaderPrecisionFormat") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 1) {
-                                                             auto shaderType = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto precisionType = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto ret = canvas_native_webgl_get_shader_precision_format(
-                                                                     shaderType,
-                                                                     precisionType,
-                                                                     this->GetState()
-                                                             );
-                                                             auto shader = std::make_shared<WebGLShaderPrecisionFormatImpl>(
-                                                                     std::move(ret));
-                                                             return jsi::Object::createFromHostObject(
-                                                                     runtime, shader);
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::null();
-                                                     }
-        );
-    } else if (methodName == "getShaderSource") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto shader = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLShader>(
-                                                                         runtime);
-
-                                                                 if (shader != nullptr) {
-                                                                     auto source = canvas_native_webgl_get_shader_source(
-                                                                             shader->GetShader(),
-                                                                             this->GetState()
-                                                                     );
-
-                                                                     return jsi::String::createFromAscii(
-                                                                             runtime, source.data(),
-                                                                             source.size());
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::String::createFromAscii(
-                                                                 runtime, "");
-                                                     }
-        );
-    } else if (methodName == "getSupportedExtensions") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto exts = canvas_native_webgl_get_supported_extensions(
-                                                                 this->GetState());
-                                                         auto len = exts.size();
-                                                         auto array = jsi::Array(runtime, len);
-                                                         for (int i = 0; i < len; ++i) {
-                                                             auto item = exts[i];
-                                                             array.setValueAtIndex(runtime, i,
-                                                                                   jsi::String::createFromAscii(
-                                                                                           runtime,
-                                                                                           item.data(),
-                                                                                           item.size()));
-                                                         }
-                                                         return array;
-                                                     }
-        );
-    } else if (methodName == "__getSupportedExtensions") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         auto exts = canvas_native_webgl_get_supported_extensions_to_string(
-                                                                 this->GetState());
-
-                                                         return jsi::String::createFromAscii(
-                                                                 runtime, exts.data(), exts.size());
-                                                     }
-        );
-    } else if (methodName == "getTexParameter") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto target = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto pname = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto ret = canvas_native_webgl_get_tex_parameter(
-                                                                     target,
-                                                                     pname,
-                                                                     this->GetState()
-                                                             );
-                                                             return {ret};
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::null();
-                                                     }
-        );
-    } else if (methodName == "getUniformLocation") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             if (args[0].isObject() &&
-                                                                 args[1].isString()) {
-                                                                 auto program = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLProgram>(
-                                                                         runtime);
-                                                                 if (program != nullptr) {
-                                                                     auto name = args[1].asString(
-                                                                             runtime).utf8(runtime);
-
-                                                                     auto ret = canvas_native_webgl_get_uniform_location(
-                                                                             program->GetProgram(),
-                                                                             rust::Str(
-                                                                                     name.c_str()),
-                                                                             this->GetState()
-                                                                     );
-
-                                                                     auto location = std::make_shared<WebGLUniformLocation>(
-                                                                             ret);
-
-                                                                     return jsi::Object::createFromHostObject(
-                                                                             runtime, location);
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::null();
-                                                     }
-        );
-    } else if (methodName == "getUniform") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             if (args[0].isObject() &&
-                                                                 args[1].isObject()) {
-
-                                                                 auto program = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLProgram>(
-                                                                         runtime);
-                                                                 auto location = args[1].asObject(
-                                                                         runtime).asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-
-
-                                                                 if (program != nullptr &&
-                                                                     location != nullptr) {
-
-                                                                     auto val = canvas_native_webgl_get_uniform(
-                                                                             program->GetProgram(),
-                                                                             location->GetUniformLocation(),
-                                                                             this->GetState());
-
-                                                                     switch (canvas_native_webgl_result_get_type(
-                                                                             *val)) {
-                                                                         case WebGLResultType::Boolean:
-                                                                             return {canvas_native_webgl_result_get_bool(
-                                                                                     *val)};
-                                                                         case WebGLResultType::None:
-                                                                             return jsi::Value::null();
-                                                                         case WebGLResultType::String: {
-                                                                             auto str = canvas_native_webgl_result_get_string(
-                                                                                     *val);
-                                                                             return jsi::String::createFromAscii(
-                                                                                     runtime,
-                                                                                     str.data(),
-                                                                                     str.size());
-                                                                         }
-                                                                             break;
-                                                                         case WebGLResultType::BooleanArray: {
-                                                                             auto ret = canvas_native_webgl_result_get_bool_array(
-                                                                                     *val);
-                                                                             auto len = ret.size();
-                                                                             auto array = jsi::Array(
-                                                                                     runtime, len);
-                                                                             for (int i = 0;
-                                                                                  i < len; ++i) {
-                                                                                 auto item = ret[i];
-                                                                                 array.setValueAtIndex(
-                                                                                         runtime, i,
-                                                                                         jsi::Value(
-                                                                                                 item ==
-                                                                                                 1));
-                                                                             }
-                                                                             return array;
-                                                                         }
-                                                                             break;
-                                                                         case WebGLResultType::F32Array: {
-                                                                             auto ret = canvas_native_webgl_result_get_f32_array(
-                                                                                     *val);
-
-                                                                             auto buf = std::make_shared<VecMutableBuffer<float>>(
-                                                                                     std::move(
-                                                                                             ret));
-                                                                             auto array = jsi::ArrayBuffer(
-                                                                                     runtime, buf);
-
-                                                                             auto Float32Array = runtime.global()
-                                                                                     .getProperty(
-                                                                                             runtime,
-                                                                                             "Float32Array")
-                                                                                     .asObject(
-                                                                                             runtime)
-                                                                                     .asFunction(
-                                                                                             runtime);
-
-
-                                                                             return Float32Array.callAsConstructor(
-                                                                                     runtime,
-                                                                                     array);
-                                                                         }
-                                                                             break;
-                                                                         case WebGLResultType::I32Array: {
-                                                                             auto ret = canvas_native_webgl_result_get_i32_array(
-                                                                                     *val);
-
-                                                                             auto buf = std::make_shared<VecMutableBuffer<int32_t>>(
-                                                                                     std::move(
-                                                                                             ret));
-                                                                             auto array = jsi::ArrayBuffer(
-                                                                                     runtime, buf);
-
-                                                                             auto Int32Array = runtime.global()
-                                                                                     .getProperty(
-                                                                                             runtime,
-                                                                                             "Int32Array")
-                                                                                     .asObject(
-                                                                                             runtime)
-                                                                                     .asFunction(
-                                                                                             runtime);
-
-
-                                                                             return Int32Array.callAsConstructor(
-                                                                                     runtime,
-                                                                                     array);
-                                                                         }
-                                                                             break;
-                                                                         case WebGLResultType::U32Array: {
-                                                                             auto ret = canvas_native_webgl_result_get_u32_array(
-                                                                                     *val);
-
-                                                                             auto buf = std::make_shared<VecMutableBuffer<uint32_t>>(
-                                                                                     std::move(
-                                                                                             ret));
-                                                                             auto array = jsi::ArrayBuffer(
-                                                                                     runtime, buf);
-
-                                                                             auto Uint32Array = runtime.global()
-                                                                                     .getProperty(
-                                                                                             runtime,
-                                                                                             "Uint32Array")
-                                                                                     .asObject(
-                                                                                             runtime)
-                                                                                     .asFunction(
-                                                                                             runtime);
-
-
-                                                                             return Uint32Array.callAsConstructor(
-                                                                                     runtime,
-                                                                                     array);
-                                                                         }
-                                                                             break;
-                                                                         case WebGLResultType::F32:
-                                                                             return {(double) canvas_native_webgl_result_get_f32(
-                                                                                     *val)};
-                                                                         case WebGLResultType::I32:
-                                                                             return {canvas_native_webgl_result_get_i32(
-                                                                                     *val)};
-                                                                         case WebGLResultType::U32:
-                                                                             return {(int32_t) canvas_native_webgl_result_get_u32(
-                                                                                     *val)};
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::null();
-                                                     }
-        );
-    } else if (methodName == "getVertexAttribOffset") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto pname = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto ret = canvas_native_webgl_get_vertex_attrib_offset(
-                                                                     index,
-                                                                     pname,
-                                                                     this->GetState());
-                                                             return {static_cast<double>(ret)};
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::null();
-                                                     }
-        );
-    } else if (methodName == "getVertexAttrib") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto pname = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto ret = canvas_native_webgl_get_vertex_attrib(
-                                                                     index,
-                                                                     pname,
-                                                                     this->GetState());
-
-                                                             if (pname ==
-                                                                 GL_CURRENT_VERTEX_ATTRIB) {
-                                                                 auto val = canvas_native_webgl_result_get_f32_array(
-                                                                         *ret);
-
-                                                                 auto buf = std::make_shared<VecMutableBuffer<float>>(
-                                                                         std::move(val));
-                                                                 auto array = jsi::ArrayBuffer(
-                                                                         runtime, buf);
-
-                                                                 auto Float32Array = runtime.global()
-                                                                         .getProperty(runtime,
-                                                                                      "Float32Array")
-                                                                         .asObject(runtime)
-                                                                         .asFunction(runtime);
-
-
-                                                                 return Float32Array.callAsConstructor(
-                                                                         runtime, array);
-                                                             } else if (pname ==
-                                                                        GL_VERTEX_ATTRIB_ARRAY_ENABLED ||
-                                                                        pname ==
-                                                                        GL_VERTEX_ATTRIB_ARRAY_NORMALIZED) {
-                                                                 return {canvas_native_webgl_result_get_bool(
-                                                                         *ret)};
-                                                             } else {
-                                                                 return {canvas_native_webgl_result_get_i32(
-                                                                         *ret)};
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::null();
-                                                     }
-        );
-    } else if (methodName == "hint") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 1) {
-                                                             auto target = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto mode = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_hint(target,
-                                                                                      mode,
-                                                                                      this->GetState());
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "isBuffer") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto buffer = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLBuffer>(
-                                                                         runtime);
-                                                                 if (buffer != nullptr) {
-                                                                     auto ret = canvas_native_webgl_is_buffer(
-                                                                             buffer->GetBuffer(),
-                                                                             this->GetState());
-
-                                                                     return {ret};
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return {false};
-                                                     }
-        );
-    } else if (methodName == "isContextLost") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     0,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         auto ret = canvas_native_webgl_get_is_context_lost(
-                                                                 this->GetState());
-                                                         return {ret};
-                                                     }
-        );
-    } else if (methodName == "isEnabled") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             auto cap = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto ret = canvas_native_webgl_is_enabled(
-                                                                     cap, this->GetState());
-                                                             return {ret};
-                                                         }
-                                                         return {false};
-                                                     }
-        );
-    } else if (methodName == "isFramebuffer") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto framebuffer = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLFramebuffer>(
-                                                                         runtime);
-                                                                 if (framebuffer != nullptr) {
-                                                                     auto ret = canvas_native_webgl_is_framebuffer(
-                                                                             framebuffer->GetFrameBuffer(),
-                                                                             this->GetState());
-
-                                                                     return {ret};
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return {false};
-                                                     }
-        );
-    } else if (methodName == "isProgram") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto program = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLProgram>(
-                                                                         runtime);
-                                                                 if (program != nullptr) {
-                                                                     auto ret = canvas_native_webgl_is_program(
-                                                                             program->GetProgram(),
-                                                                             this->GetState());
-
-                                                                     return {ret};
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return {false};
-                                                     }
-        );
-    } else if (methodName == "isRenderbuffer") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto renderbuffer = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLRenderbuffer>(
-                                                                         runtime);
-                                                                 if (renderbuffer != nullptr) {
-                                                                     auto ret = canvas_native_webgl_is_renderbuffer(
-                                                                             renderbuffer->GetRenderBuffer(),
-                                                                             this->GetState());
-
-                                                                     return {ret};
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "isShader") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto shader = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLShader>(
-                                                                         runtime);
-                                                                 if (shader != nullptr) {
-                                                                     auto ret = canvas_native_webgl_is_shader(
-                                                                             shader->GetShader(),
-                                                                             this->GetState());
-                                                                     return {ret};
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return {false};
-                                                     }
-        );
-    } else if (methodName == "isTexture") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto texture = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLTexture>(
-                                                                         runtime);
-                                                                 if (texture != nullptr) {
-                                                                     auto ret = canvas_native_webgl_is_texture(
-                                                                             texture->GetTexture(),
-                                                                             this->GetState());
-                                                                     return {ret};
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         // todo check return
-                                                         return {false};
-                                                     }
-        );
-    } else if (methodName == "lineWidth") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             auto width = args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_line_width(
-                                                                     static_cast<float>(width),
-                                                                     this->GetState());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "linkProgram") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             if (args[0].isObject()) {
-                                                                 auto program = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLProgram>(
-                                                                         runtime);
-                                                                 if (program != nullptr) {
-                                                                     canvas_native_webgl_link_program(
-                                                                             program->GetProgram(),
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "pixelStorei") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto pname = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             if (args[1].isBool()) {
-                                                                 auto param = args[1].asBool();
-                                                                 canvas_native_webgl_pixel_storei(
-                                                                         pname,
-                                                                         param ? 1 : 0,
-                                                                         this->GetState()
-                                                                 );
-                                                             } else {
-                                                                 auto param = (int32_t) args[1]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 canvas_native_webgl_pixel_storei(
-                                                                         pname,
-                                                                         param,
-                                                                         this->GetState()
-                                                                 );
-                                                             }
-
-                                                         }
-
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "polygonOffset") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto factor = args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto units = args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_polygon_offset(
-                                                                     static_cast<float>(factor),
-                                                                     static_cast<float>(units),
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "readPixels") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     7,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 6) {
-                                                             auto x = (int32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto y = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto width = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto height = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto format = (uint32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (uint32_t) args[5]->NumberValue(
-                                                                     context).ToChecked();
-
-                                                             if (args[6].isObject()) {
-                                                                 auto pixels = args[6].asObject(
-                                                                         runtime);
-                                                                 if (pixels.isTypedArray(runtime)) {
-                                                                     auto buf = pixels.getTypedArray(
-                                                                             runtime);
-                                                                     auto slice = GetTypedArrayData<uint8_t>(
-                                                                             runtime, buf);
-                                                                     canvas_native_webgl_read_pixels_u8(
-                                                                             x,
-                                                                             y,
-                                                                             width,
-                                                                             height,
-                                                                             format,
-                                                                             type,
-                                                                             slice,
-                                                                             this->GetState()
-                                                                     );
-                                                                     return jsi::Value::undefined();
-                                                                 }
-
-
-                                                                 if (pixels.isArrayBuffer(
-                                                                         runtime)) {
-                                                                     auto buf = pixels.getArrayBuffer(
-                                                                             runtime);
-                                                                     auto size = buf.size(runtime);
-                                                                     auto data = buf.data(runtime);
-                                                                     auto slice = rust::Slice<uint8_t>(
-                                                                             data, size);
-                                                                     canvas_native_webgl_read_pixels_u8(
-                                                                             x,
-                                                                             y,
-                                                                             width,
-                                                                             height,
-                                                                             format,
-                                                                             type,
-                                                                             slice,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "renderbufferStorage") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-                                                         if (count > 3) {
-                                                             auto target = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto internalFormat = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto width = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto height = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_renderbuffer_storage(
-                                                                     target,
-                                                                     internalFormat,
-                                                                     width,
-                                                                     height,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "sampleCoverage") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto value = args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto invert = args[1].asBool();
-                                                             canvas_native_webgl_sample_coverage(
-                                                                     static_cast<float>(value),
-                                                                     invert,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "scissor") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3) {
-                                                             auto x = (int32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto y = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto width = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto height = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_scissor(
-                                                                     x,
-                                                                     y,
-                                                                     width,
-                                                                     height,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "shaderSource") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             if (args[0].isObject() &&
-                                                                 args[1].isString()) {
-                                                                 auto shader = args[0].asObject(
-                                                                         runtime).asHostObject<WebGLShader>(
-                                                                         runtime);
-                                                                 auto source = args[1].asString(
-                                                                         runtime).utf8(runtime);
-                                                                 if (shader != nullptr) {
-                                                                     canvas_native_webgl_shader_source(
-                                                                             shader->GetShader(),
-                                                                             rust::Str(
-                                                                                     source.c_str()),
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "stencilFuncSeparate") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3) {
-                                                             auto face = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto func = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto ref = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto mask = (uint32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_stencil_func_separate(
-                                                                     face,
-                                                                     func,
-                                                                     ref,
-                                                                     mask,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "stencilFunc") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2) {
-                                                             auto func = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto ref = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto mask = (uint32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_stencil_func(
-                                                                     func,
-                                                                     ref,
-                                                                     mask,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "stencilMaskSeparate") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto face = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto mask = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_stencil_mask_separate(
-                                                                     face,
-                                                                     mask,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "stencilMask") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             auto mask = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_stencil_mask(
-                                                                     mask,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "stencilOpSeparate") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3) {
-                                                             auto face = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto fail = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto zfail = (uint32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto zpass = (uint32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_stencil_op_separate(
-                                                                     face,
-                                                                     fail,
-                                                                     zfail,
-                                                                     zpass,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "stencilOp") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2) {
-                                                             auto fail = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto zfail = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto zpass = (uint32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_stencil_op(
-                                                                     fail,
-                                                                     zfail,
-                                                                     zpass,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "texImage2D") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     9,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         // TODO tidy
-
-                                                         if (count == 5) {
-                                                             auto target = (int32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto level = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto internalformat = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto format = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (int32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-
-                                                             canvas_native_webgl_tex_image2d_image_none(
-                                                                     target,
-                                                                     level,
-                                                                     internalformat,
-                                                                     format,
-                                                                     type,
-                                                                     this->GetState()
-                                                             );
-
-                                                         } else if (count == 6) {
-                                                             auto target = (int32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto level = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto internalformat = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto format = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (int32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-
-                                                             if (args[5].isObject()) {
-                                                                 auto pixels = args[5].asObject(
-                                                                         runtime);
-
-
-                                                                 if (pixels.isHostObject(runtime)) {
-                                                                     /*
-                                                                     try {
-                                                                         auto image_asset = pixels.asHostObject<ImageAssetImpl>(
-                                                                                 runtime);
-
-                                                                         if (image_asset !=
-                                                                             nullptr) {
-
-                                                                             canvas_native_webgl_tex_image2d_image_asset(
-                                                                                     target,
-                                                                                     level,
-                                                                                     internalformat,
-                                                                                     format,
-                                                                                     type,
-                                                                                     image_asset->GetImageAsset(),
-                                                                                     this->GetState()
-                                                                             );
-
-
-                                                                             return jsi::Value::undefined();
-                                                                         }
-                                                                     } catch (...) {}
-
-
-                                                                     try {
-                                                                         // try ImageBitmapImpl
-                                                                         auto image_bitmap = pixels.asHostObject<ImageBitmapImpl>(
-                                                                                 runtime);
-
-                                                                         if (image_bitmap !=
-                                                                             nullptr) {
-                                                                             canvas_native_webgl_tex_image2d_image_asset(
-                                                                                     target,
-                                                                                     level,
-                                                                                     internalformat,
-                                                                                     format,
-                                                                                     type,
-                                                                                     image_bitmap->GetImageAsset(),
-                                                                                     this->GetState()
-                                                                             );
-                                                                         }
-
-                                                                     } catch (...) {}
-
-
-                                                                     try {
-                                                                         auto canvas_2d = pixels.asHostObject<CanvasRenderingContext2DImpl>(
-                                                                                 runtime);
-
-                                                                         if (canvas_2d != nullptr) {
-                                                                             canvas_native_webgl_tex_image2d_canvas2d(
-                                                                                     target,
-                                                                                     level,
-                                                                                     internalformat,
-                                                                                     format,
-                                                                                     type,
-                                                                                     canvas_2d->GetContext(),
-                                                                                     this->GetState()
-                                                                             );
-                                                                             return jsi::Value::undefined();
-                                                                         }
-                                                                     } catch (...) {}
-                                                                      */
-
-
-                                                                     try {
-                                                                         auto gl = pixels.asHostObject<WebGLRenderingContext>(
-                                                                                 runtime);
-
-                                                                         if (gl != nullptr) {
-                                                                             canvas_native_webgl_tex_image2d_webgl(
-                                                                                     target,
-                                                                                     level,
-                                                                                     internalformat,
-                                                                                     format,
-                                                                                     type,
-                                                                                     gl->GetState(),
-                                                                                     this->GetState()
-                                                                             );
-
-                                                                             return jsi::Value::undefined();
-                                                                         }
-                                                                     } catch (...) {}
-
-
-                                                                 }
-
-                                                             }
-                                                         } else if (count == 8) {
-                                                             auto target = (int32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto level = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto internalformat = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto width = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto height = (int32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto border = (int32_t) args[5]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto format = (int32_t) args[6]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (int32_t) args[7]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_tex_image2d_none(
-                                                                     target,
-                                                                     level,
-                                                                     internalformat,
-                                                                     width,
-                                                                     height,
-                                                                     border,
-                                                                     format,
-                                                                     type,
-                                                                     this->GetState()
-                                                             );
-                                                         } else if (count == 9) {
-                                                             auto target = (int32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto level = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto internalformat = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto width = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto height = (int32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto border = (int32_t) args[5]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto format = (int32_t) args[6]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (int32_t) args[7]->NumberValue(
-                                                                     context).ToChecked();
-
-
-                                                             if (args[8].isObject()) {
-                                                                 auto pixels = args[8].asObject(
-                                                                         runtime);
-                                                                 if (pixels.isTypedArray(runtime)) {
-                                                                     auto typedArray = pixels.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<uint8_t>(
-                                                                             runtime, typedArray);
-                                                                     canvas_native_webgl_tex_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             internalformat,
-                                                                             width,
-                                                                             height,
-                                                                             border,
-                                                                             format,
-                                                                             type,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                     return jsi::Value::undefined();
-                                                                 } else if (pixels.isArrayBuffer(
-                                                                         runtime)) {
-                                                                     auto array = pixels.getArrayBuffer(
-                                                                             runtime);
-                                                                     auto data = array.data(
-                                                                             runtime);
-                                                                     auto size = array.size(
-                                                                             runtime);
-                                                                     rust::Slice<uint8_t> buf(data,
-                                                                                              size);
-                                                                     canvas_native_webgl_tex_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             internalformat,
-                                                                             width,
-                                                                             height,
-                                                                             border,
-                                                                             format,
-                                                                             type,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                     return jsi::Value::undefined();
-                                                                 }
-                                                             } else if (args[8].isNull() ||
-                                                                        args[8].isUndefined()) {
-                                                                 canvas_native_webgl_tex_image2d_none(
-                                                                         target,
-                                                                         level,
-                                                                         internalformat,
-                                                                         width,
-                                                                         height,
-                                                                         border,
-                                                                         format,
-                                                                         type,
-                                                                         this->GetState()
-                                                                 );
-                                                             }
-
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "texParameterf") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2) {
-                                                             auto target = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto pname = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto param = args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_tex_parameterf(
-                                                                     target,
-                                                                     pname,
-                                                                     static_cast<float>(param),
-                                                                     this->GetState()
-                                                             );
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "texParameteri") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2) {
-                                                             auto target = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto pname = (uint32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto param = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_tex_parameteri(
-                                                                     target,
-                                                                     pname,
-                                                                     param,
-                                                                     this->GetState()
-                                                             );
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "texSubImage2D") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     9,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count == 7) {
-                                                             auto target = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto level = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto xoffset = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto yoffset = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto format = (uint32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (int32_t) args[5]->NumberValue(
-                                                                     context).ToChecked();
-
-
-                                                             if (args[6].isObject()) {
-                                                                 auto pixels = args[6].asObject(
-                                                                         runtime);
-                                                                 if (pixels.isHostObject(runtime)) {
-                                                                     /*
-                                                                     try {
-                                                                         auto asset = pixels.asHostObject<ImageAssetImpl>(
-                                                                                 runtime);
-                                                                         if (asset != nullptr) {
-                                                                             canvas_native_webgl_tex_sub_image2d_asset(
-                                                                                     target,
-                                                                                     level,
-                                                                                     xoffset,
-                                                                                     yoffset,
-                                                                                     format,
-                                                                                     type,
-                                                                                     asset->GetImageAsset(),
-                                                                                     this->GetState()
-                                                                             );
-                                                                             return jsi::Value::undefined();
-                                                                         }
-                                                                     } catch (...) {}
-
-                                                                     try {
-                                                                         auto bitmap = pixels.asHostObject<ImageBitmapImpl>(
-                                                                                 runtime);
-
-                                                                         if (bitmap != nullptr) {
-                                                                             canvas_native_webgl_tex_sub_image2d_asset(
-                                                                                     target,
-                                                                                     level,
-                                                                                     xoffset,
-                                                                                     yoffset,
-                                                                                     format,
-                                                                                     type,
-                                                                                     bitmap->GetImageAsset(),
-                                                                                     this->GetState()
-                                                                             );
-
-                                                                             return jsi::Value::undefined();
-                                                                         }
-                                                                     } catch (...) {}
-
-
-                                                                     try {
-                                                                         auto canvas2d = pixels.asHostObject<CanvasRenderingContext2DImpl>(
-                                                                                 runtime);
-
-                                                                         if (canvas2d != nullptr) {
-                                                                             canvas_native_webgl_tex_sub_image2d_canvas2d(
-                                                                                     target,
-                                                                                     level,
-                                                                                     xoffset,
-                                                                                     yoffset,
-                                                                                     format,
-                                                                                     type,
-                                                                                     canvas2d->GetContext(),
-                                                                                     this->GetState()
-                                                                             );
-
-                                                                             return jsi::Value::undefined();
-                                                                         }
-                                                                     } catch (...) {}
-
-                                                                      */
-
-                                                                     try {
-                                                                         auto webgl = pixels.asHostObject<WebGLRenderingContext>(
-                                                                                 runtime);
-
-                                                                         if (webgl != nullptr) {
-                                                                             canvas_native_webgl_tex_sub_image2d_webgl(
-                                                                                     target,
-                                                                                     level,
-                                                                                     xoffset,
-                                                                                     yoffset,
-                                                                                     format,
-                                                                                     type,
-                                                                                     webgl->GetState(),
-                                                                                     this->GetState()
-                                                                             );
-
-                                                                             return jsi::Value::undefined();
-                                                                         }
-                                                                     } catch (...) {}
-
-                                                                 }
-                                                             }
-
-                                                         } else if (count == 9) {
-                                                             auto target = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto level = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto xoffset = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto yoffset = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto width = (int32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto height = (int32_t) args[5]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto format = (uint32_t) args[6]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (int32_t) args[7]->NumberValue(
-                                                                     context).ToChecked();
-
-                                                             if (args[8].isObject()) {
-                                                                 auto pixels = args[8].asObject(
-                                                                         runtime);
-
-                                                                 if (pixels.isTypedArray(runtime)) {
-                                                                     auto array = pixels.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const uint8_t>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_tex_sub_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             xoffset,
-                                                                             yoffset,
-                                                                             width,
-                                                                             height,
-                                                                             format,
-                                                                             type,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                 } else if (pixels.isArrayBuffer(
-                                                                         runtime)) {
-                                                                     auto array = pixels.getArrayBuffer(
-                                                                             runtime);
-                                                                     auto data = array.data(
-                                                                             runtime);
-                                                                     auto size = array.size(
-                                                                             runtime);
-                                                                     rust::Slice<const uint8_t> buf(
-                                                                             data, size);
-                                                                     canvas_native_webgl_tex_sub_image2d(
-                                                                             target,
-                                                                             level,
-                                                                             xoffset,
-                                                                             yoffset,
-                                                                             width,
-                                                                             height,
-                                                                             format,
-                                                                             type,
-                                                                             buf,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib1f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto v0 = static_cast<float>(args[1]->NumberValue(
-                                                                     context).ToChecked());
-                                                             canvas_native_webgl_vertex_attrib1f(
-                                                                     index, v0, this->GetState());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib1fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             if (args[1].isObject()) {
-                                                                 auto v0 = args[1].asObject(
-                                                                         runtime);
-                                                                 if (v0.isFloat32Array(runtime)) {
-                                                                     auto array = v0.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const float>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_vertex_attrib1fv(
-                                                                             index, buf,
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib2f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto v0 = static_cast<float>(args[1]->NumberValue(
-                                                                     context).ToChecked());
-                                                             auto v1 = static_cast<float>(args[2]->NumberValue(
-                                                                     context).ToChecked());
-                                                             canvas_native_webgl_vertex_attrib2f(
-                                                                     index, v0, v1,
-                                                                     this->GetState());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib2fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             if (args[1].isObject()) {
-                                                                 auto v0 = args[1].asObject(
-                                                                         runtime);
-                                                                 if (v0.isFloat32Array(runtime)) {
-                                                                     auto array = v0.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const float>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_vertex_attrib2fv(
-                                                                             index, buf,
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib3f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto v0 = static_cast<float>(args[1]->NumberValue(
-                                                                     context).ToChecked());
-                                                             auto v1 = static_cast<float>(args[2]->NumberValue(
-                                                                     context).ToChecked());
-                                                             auto v2 = static_cast<float>(args[3]->NumberValue(
-                                                                     context).ToChecked());
-                                                             canvas_native_webgl_vertex_attrib3f(
-                                                                     index, v0, v1, v2,
-                                                                     this->GetState());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib3fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             if (args[1].isObject()) {
-                                                                 auto v0 = args[1].asObject(
-                                                                         runtime);
-                                                                 if (v0.isFloat32Array(runtime)) {
-                                                                     auto array = v0.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const float>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_vertex_attrib3fv(
-                                                                             index, buf,
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib4f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     5,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 4) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto v0 = static_cast<float>(args[1]->NumberValue(
-                                                                     context).ToChecked());
-                                                             auto v1 = static_cast<float>(args[2]->NumberValue(
-                                                                     context).ToChecked());
-                                                             auto v2 = static_cast<float>(args[3]->NumberValue(
-                                                                     context).ToChecked());
-                                                             auto v3 = static_cast<float>(args[4]->NumberValue(
-                                                                     context).ToChecked());
-                                                             canvas_native_webgl_vertex_attrib4f(
-                                                                     index, v0, v1, v2, v3,
-                                                                     this->GetState());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttrib4fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             if (args[1].isObject()) {
-                                                                 auto v0 = args[1].asObject(
-                                                                         runtime);
-                                                                 if (v0.isFloat32Array(runtime)) {
-                                                                     auto array = v0.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const float>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_vertex_attrib4fv(
-                                                                             index, buf,
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "vertexAttribPointer") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     6,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 5) {
-                                                             auto index = (uint32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto size = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto type = (uint32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto normalized = args[3].asBool();
-                                                             auto stride = (int32_t) args[4]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto offset = static_cast<ssize_t>(args[5]->NumberValue(
-                                                                     context).ToChecked());
-                                                             canvas_native_webgl_vertex_attrib_pointer(
-                                                                     index, size, type, normalized,
-                                                                     stride, offset,
-                                                                     this->GetState());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform1f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         //if (count > 1) {
-                                                         //   if (args[0].isObject()) {
-                                                         auto location = args[0].asObject(
-                                                                 runtime).asHostObject<WebGLUniformLocation>(
-                                                                 runtime);
-                                                         auto v0 = args[1]->NumberValue(
-                                                                 context).ToChecked();
-                                                         if (location != nullptr) {
-                                                             canvas_native_webgl_uniform1f(
-                                                                     location->GetUniformLocation(),
-                                                                     static_cast<float>(v0),
-                                                                     this->GetState()
-                                                             );
-                                                         }
-                                                         //   }
-                                                         // }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform1iv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1) {
-                                                             if (args[0].isObject() &&
-                                                                 args[1].isObject()) {
-                                                                 auto locationObject = args[0].asObject(
-                                                                         runtime);
-                                                                 if (locationObject.isHostObject(
-                                                                         runtime)) {
-                                                                     auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                             runtime);
-                                                                     auto v0 = args[1].asObject(
-                                                                             runtime);
-
-                                                                     if (location != nullptr) {
-                                                                         if (v0.isInt32Array(
-                                                                                 runtime)) {
-                                                                             auto array = v0.getTypedArray(
-                                                                                     runtime);
-                                                                             auto buf = GetTypedArrayData<const int32_t>(
-                                                                                     runtime,
-                                                                                     array);
-                                                                             canvas_native_webgl_uniform1iv(
-                                                                                     location->GetUniformLocation(),
-                                                                                     buf,
-                                                                                     this->GetState());
-                                                                         } else if (v0.isArray(
-                                                                                 runtime)) {
-                                                                             auto array = v0.getArray(
-                                                                                     runtime);
-                                                                             auto len = array.size(
-                                                                                     runtime);
-
-                                                                             std::vector<int32_t> buf;
-                                                                             buf.reserve(len);
-                                                                             for (int i = 0;
-                                                                                  i < len; ++i) {
-                                                                                 auto item = array.getValueAtIndex(
-                                                                                         runtime,
-                                                                                         (uint32_t) i)->NumberValue(
-                                                                                         context).ToChecked();
-                                                                                 buf.push_back(
-                                                                                         static_cast<int32_t>(item));
-                                                                             }
-                                                                             rust::Slice<const int32_t> slice(
-                                                                                     buf.data(),
-                                                                                     buf.size());
-                                                                             canvas_native_webgl_uniform1iv(
-                                                                                     location->GetUniformLocation(),
-                                                                                     slice,
-                                                                                     this->GetState());
-                                                                         }
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform1fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1 && args[0].isObject() &&
-                                                             args[1].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             auto v0 = args[1].asObject(
-                                                                     runtime);
-
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 if (location != nullptr) {
-                                                                     if (v0.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = v0.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform1fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 buf,
-                                                                                 this->GetState());
-                                                                     } else if (v0.isArray(
-                                                                             runtime)) {
-                                                                         auto array = v0.getArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-                                                                         std::vector<float> buf;
-                                                                         buf.reserve(len);
-                                                                         for (int i = 0;
-                                                                              i < len; ++i) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime, i);
-                                                                             if (!item.isNumber()) {
-                                                                                 buf.push_back(
-                                                                                         nanf(""));
-                                                                             } else {
-                                                                                 auto value = item->NumberValue(
-                                                                                         context).ToChecked();
-                                                                                 buf.push_back(
-                                                                                         static_cast<float>(value));
-                                                                             }
-                                                                         }
-                                                                         rust::Slice<const float> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform1fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform1i") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1 && args[0].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = (int32_t) args[1]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 if (location != nullptr) {
-                                                                     canvas_native_webgl_uniform1i(
-                                                                             location->GetUniformLocation(),
-                                                                             v0,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform2f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2) {
-                                                             if (args[0].isObject()) {
-                                                                 auto locationObject = args[0].asObject(
-                                                                         runtime);
-                                                                 if (locationObject.isHostObject(
-                                                                         runtime)) {
-                                                                     auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                             runtime);
-                                                                     auto v0 = args[1]->NumberValue(
-                                                                             context).ToChecked();
-                                                                     auto v1 = args[2]->NumberValue(
-                                                                             context).ToChecked();
-                                                                     if (location != nullptr) {
-                                                                         canvas_native_webgl_uniform2f(
-                                                                                 location->GetUniformLocation(),
-                                                                                 static_cast<float>(v0),
-                                                                                 static_cast<float>(v1),
-                                                                                 this->GetState()
-                                                                         );
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform2iv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1 && args[0].isObject() &&
-                                                             args[1].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = args[1].asObject(
-                                                                         runtime);
-                                                                 if (location != nullptr) {
-                                                                     if (v0.isInt32Array(runtime)) {
-                                                                         auto array = v0.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const int32_t>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform2iv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 buf,
-                                                                                 this->GetState());
-                                                                     } else if (v0.isArray(
-                                                                             runtime)) {
-                                                                         auto array = v0.asArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-
-                                                                         std::vector<int32_t> buf;
-                                                                         buf.reserve(len);
-                                                                         for (size_t i = 0;
-                                                                              i < len; ++i) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime,
-                                                                                     i)->NumberValue(
-                                                                                     context).ToChecked();
-                                                                             buf.push_back(
-                                                                                     static_cast<int32_t>(item));
-                                                                         }
-                                                                         rust::Slice<const int32_t> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform2iv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform2fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1 && args[0].isObject() &&
-                                                             args[1].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = args[1].asObject(
-                                                                         runtime);
-                                                                 if (location != nullptr) {
-                                                                     if (v0.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = v0.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform2fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 buf,
-                                                                                 this->GetState());
-                                                                     } else if (v0.isArray(
-                                                                             runtime)) {
-                                                                         auto array = v0.asArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-
-                                                                         std::vector<float> buf;
-                                                                         buf.reserve(len);
-                                                                         for (size_t i = 0;
-                                                                              i < len; ++i) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime,
-                                                                                     i)->NumberValue(
-                                                                                     context).ToChecked();
-                                                                             buf.push_back(
-                                                                                     static_cast<float>(item));
-                                                                         }
-                                                                         rust::Slice<const float> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform2fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform2i") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2 && args[0].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = (int32_t) args[1]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v1 = (int32_t) args[2]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 if (location != nullptr) {
-                                                                     canvas_native_webgl_uniform2i(
-                                                                             location->GetUniformLocation(),
-                                                                             v0,
-                                                                             v1,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform3f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3 && args[0].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = args[1]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v1 = args[2]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v2 = args[3]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 if (location != nullptr) {
-                                                                     canvas_native_webgl_uniform3f(
-                                                                             location->GetUniformLocation(),
-                                                                             static_cast<float>(v0),
-                                                                             static_cast<float>(v1),
-                                                                             static_cast<float>(v2),
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform3iv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-
-                                                         if (count > 1 && args[0].isObject() &&
-                                                             args[1].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = args[1].asObject(
-                                                                         runtime);
-
-                                                                 if (location != nullptr) {
-                                                                     if (v0.isInt32Array(runtime)) {
-                                                                         auto array = v0.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const int32_t>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform3iv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 buf,
-                                                                                 this->GetState());
-                                                                     } else if (v0.isArray(
-                                                                             runtime)) {
-                                                                         auto array = v0.asArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-
-                                                                         std::vector<int32_t> buf;
-                                                                         buf.reserve(len);
-                                                                         for (int i = 0;
-                                                                              i < len; ++i) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime,
-                                                                                     (uint32_t) i)->NumberValue(
-                                                                                     context).ToChecked();
-                                                                             buf.push_back(
-                                                                                     static_cast<int32_t>(item));
-                                                                         }
-                                                                         rust::Slice<const int32_t> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform3iv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform3fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1 && args[0].isObject() &&
-                                                             args[1].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             auto v0 = args[1].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-
-                                                                 if (location != nullptr) {
-
-
-                                                                     if (v0.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = v0.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform3fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 buf,
-                                                                                 this->GetState());
-                                                                     } else if (v0.isArray(
-                                                                             runtime)) {
-                                                                         auto array = v0.getArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-                                                                         std::vector<float> buf;
-                                                                         buf.reserve(len);
-                                                                         for (int i = 0;
-                                                                              i < len; ++i) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime, i);
-                                                                             if (!item.isNumber()) {
-                                                                                 buf.push_back(
-                                                                                         nanf(""));
-                                                                             } else {
-                                                                                 auto value = item->NumberValue(
-                                                                                         context).ToChecked();
-                                                                                 buf.push_back(
-                                                                                         static_cast<float>(value));
-                                                                             }
-                                                                         }
-                                                                         rust::Slice<const float> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform3fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform3i") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3 && args[0].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = (int32_t) args[1]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v1 = (int32_t) args[2]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v2 = (int32_t) args[3]->NumberValue(
-                                                                         context).ToChecked();
-
-                                                                 if (location != nullptr) {
-                                                                     canvas_native_webgl_uniform3i(
-                                                                             location->GetUniformLocation(),
-                                                                             v0,
-                                                                             v1,
-                                                                             v2,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform4f") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     5,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 4 && args[0].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = args[1]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v1 = args[2]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v2 = args[3]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v3 = args[4]->NumberValue(
-                                                                         context).ToChecked();
-
-                                                                 if (location != nullptr) {
-                                                                     canvas_native_webgl_uniform4f(
-                                                                             location->GetUniformLocation(),
-                                                                             static_cast<float>(v0),
-                                                                             static_cast<float>(v1),
-                                                                             static_cast<float>(v2),
-                                                                             static_cast<float>(v3),
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform4iv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1 && args[0].isObject() &&
-                                                             args[1].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             auto v0 = args[1].asObject(
-                                                                     runtime);
-
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 if (location != nullptr) {}
-                                                                 if (v0.isInt32Array(runtime)) {
-                                                                     auto array = v0.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const int32_t>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_uniform4iv(
-                                                                             location->GetUniformLocation(),
-                                                                             buf,
-                                                                             this->GetState());
-                                                                 } else if (v0.isArray(runtime)) {
-                                                                     auto array = v0.getArray(
-                                                                             runtime);
-                                                                     auto len = array.size(runtime);
-
-                                                                     std::vector<int32_t> buf;
-                                                                     buf.reserve(len);
-                                                                     for (int i = 0; i < len; ++i) {
-                                                                         auto item = array.getValueAtIndex(
-                                                                                 runtime,
-                                                                                 (uint32_t) i)->NumberValue(
-                                                                                 context).ToChecked();
-                                                                         buf.push_back(
-                                                                                 static_cast<int32_t>(item));
-                                                                     }
-                                                                     rust::Slice<const int32_t> slice(
-                                                                             buf.data(),
-                                                                             buf.size());
-                                                                     canvas_native_webgl_uniform4iv(
-                                                                             location->GetUniformLocation(),
-                                                                             slice,
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform4fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 1 && args[0].isObject() &&
-                                                             args[1].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             auto v0 = args[1].asObject(
-                                                                     runtime);
-
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 if (location != nullptr) {
-                                                                     if (v0.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = v0.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform4fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 buf,
-                                                                                 this->GetState());
-                                                                     } else if (v0.isArray(
-                                                                             runtime)) {
-                                                                         auto array = v0.getArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-
-                                                                         std::vector<float> buf;
-                                                                         buf.reserve(len);
-                                                                         for (int i = 0;
-                                                                              i < len; ++i) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime,
-                                                                                     (uint32_t) i)->NumberValue(
-                                                                                     context).ToChecked();
-                                                                             buf.push_back(
-                                                                                     static_cast<float>(item));
-                                                                         }
-                                                                         rust::Slice<const float> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform4fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-                                                             }
-
-                                                         }
-
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniform4i") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     5,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 4 && args[0].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto v0 = (int32_t) args[1]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v1 = (int32_t) args[2]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v2 = (int32_t) args[3]->NumberValue(
-                                                                         context).ToChecked();
-                                                                 auto v3 = (int32_t) args[4]->NumberValue(
-                                                                         context).ToChecked();
-
-                                                                 if (location != nullptr) {
-                                                                     canvas_native_webgl_uniform4i(
-                                                                             location->GetUniformLocation(),
-                                                                             v0,
-                                                                             v1,
-                                                                             v2,
-                                                                             v3,
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniformMatrix2fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2 && args[0].isObject() &&
-                                                             args[2].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto transpose = args[1].asBool();
-                                                                 auto value = args[2].asObject(
-                                                                         runtime);
-
-                                                                 if (location != nullptr) {
-                                                                     if (value.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = value.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform_matrix2fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 transpose, buf,
-                                                                                 this->GetState());
-                                                                     } else if (value.isArray(
-                                                                             runtime)) {
-                                                                         auto array = value.getArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-                                                                         std::vector<float> buf;
-                                                                         buf.reserve(len);
-
-                                                                         for (int i = 0;
-                                                                              i < len; i++) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime, i);
-                                                                             if (item.isNumber()) {
-                                                                                 buf.push_back(
-                                                                                         static_cast<float>(item->NumberValue(
-                                                                                                 context).ToChecked()));
-                                                                             } else {
-                                                                                 buf.push_back(
-                                                                                         std::nanf(
-                                                                                                 ""));
-                                                                             }
-                                                                         }
-
-                                                                         rust::Slice<const float> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform_matrix2fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 transpose, slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniformMatrix3fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2 && args[0].isObject() &&
-                                                             args[2].isObject()) {
-                                                             auto locationObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (locationObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto location = locationObject.asHostObject<WebGLUniformLocation>(
-                                                                         runtime);
-                                                                 auto transpose = args[1].asBool();
-                                                                 auto value = args[2].asObject(
-                                                                         runtime);
-
-                                                                 if (location != nullptr) {
-                                                                     if (value.isFloat32Array(
-                                                                             runtime)) {
-                                                                         auto array = value.getTypedArray(
-                                                                                 runtime);
-                                                                         auto buf = GetTypedArrayData<const float>(
-                                                                                 runtime, array);
-                                                                         canvas_native_webgl_uniform_matrix3fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 transpose, buf,
-                                                                                 this->GetState());
-                                                                     } else if (value.isArray(
-                                                                             runtime)) {
-                                                                         auto array = value.getArray(
-                                                                                 runtime);
-                                                                         auto len = array.size(
-                                                                                 runtime);
-                                                                         std::vector<float> buf;
-                                                                         buf.reserve(len);
-
-                                                                         for (int i = 0;
-                                                                              i < len; i++) {
-                                                                             auto item = array.getValueAtIndex(
-                                                                                     runtime, i);
-                                                                             if (item.isNumber()) {
-                                                                                 buf.push_back(
-                                                                                         static_cast<float>(item->NumberValue(
-                                                                                                 context).ToChecked()));
-                                                                             } else {
-                                                                                 buf.push_back(
-                                                                                         std::nanf(
-                                                                                                 ""));
-                                                                             }
-                                                                         }
-
-                                                                         rust::Slice<const float> slice(
-                                                                                 buf.data(),
-                                                                                 buf.size());
-                                                                         canvas_native_webgl_uniform_matrix3fv(
-                                                                                 location->GetUniformLocation(),
-                                                                                 transpose, slice,
-                                                                                 this->GetState());
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "uniformMatrix4fv") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     3,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 2 && args[0].isObject() &&
-                                                             args[2].isObject()) {
-                                                             auto location = getHostObject<WebGLUniformLocation>(
-                                                                     runtime, args[0]);
-                                                             if (location != nullptr) {
-                                                                 auto transpose = args[1].asBool();
-                                                                 auto value = args[2].asObject(
-                                                                         runtime);
-
-                                                                 if (value.isFloat32Array(
-                                                                         runtime)) {
-                                                                     auto array = value.getTypedArray(
-                                                                             runtime);
-                                                                     auto buf = GetTypedArrayData<const float>(
-                                                                             runtime, array);
-                                                                     canvas_native_webgl_uniform_matrix4fv(
-                                                                             location->GetUniformLocation(),
-                                                                             transpose, buf,
-                                                                             this->GetState());
-                                                                 } else if (value.isArray(
-                                                                         runtime)) {
-                                                                     auto array = value.getArray(
-                                                                             runtime);
-                                                                     auto len = array.size(
-                                                                             runtime);
-                                                                     std::vector<float> buf;
-                                                                     buf.reserve(len);
-
-                                                                     for (int i = 0;
-                                                                          i < len; i++) {
-                                                                         auto item = array.getValueAtIndex(
-                                                                                 runtime, i);
-                                                                         if (item.isNumber()) {
-                                                                             buf.push_back(
-                                                                                     static_cast<float>(item->NumberValue(
-                                                                                             context).ToChecked()));
-                                                                         } else {
-                                                                             buf.push_back(
-                                                                                     std::nanf(
-                                                                                             ""));
-                                                                         }
-                                                                     }
-
-                                                                     rust::Slice<const float> slice(
-                                                                             buf.data(),
-                                                                             buf.size());
-                                                                     canvas_native_webgl_uniform_matrix4fv(
-                                                                             location->GetUniformLocation(),
-                                                                             transpose, slice,
-                                                                             this->GetState());
-                                                                 }
-                                                             }
-                                                         }
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "useProgram") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0) {
-                                                             if (args[0].isNull()) {
-                                                                 canvas_native_webgl_use_program(0,
-                                                                                                 this->GetState());
-
-                                                                 return jsi::Value::undefined();
-                                                             }
-
-                                                             if (args[0].isObject()) {
-                                                                 auto programObject = args[0].asObject(
-                                                                         runtime);
-                                                                 if (programObject.isHostObject(
-                                                                         runtime)) {
-                                                                     auto program = programObject.asHostObject<WebGLProgram>(
-                                                                             runtime);
-                                                                     if (program != nullptr) {
-                                                                         canvas_native_webgl_use_program(
-                                                                                 program->GetProgram(),
-                                                                                 this->GetState()
-                                                                         );
-                                                                     }
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "validateProgram") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     1,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 0 && args[0].isObject()) {
-                                                             auto programObject = args[0].asObject(
-                                                                     runtime);
-                                                             if (programObject.isHostObject(
-                                                                     runtime)) {
-                                                                 auto program = programObject.asHostObject<WebGLProgram>(
-                                                                         runtime);
-                                                                 if (program != nullptr) {
-                                                                     canvas_native_webgl_validate_program(
-                                                                             program->GetProgram(),
-                                                                             this->GetState()
-                                                                     );
-                                                                 }
-                                                             }
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "viewport") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     4,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         if (count > 3) {
-                                                             auto x = (int32_t) args[0]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto y = (int32_t) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto width = (int32_t) args[2]->NumberValue(
-                                                                     context).ToChecked();
-                                                             auto height = (int32_t) args[3]->NumberValue(
-                                                                     context).ToChecked();
-                                                             canvas_native_webgl_viewport(x, y,
-                                                                                          width,
-                                                                                          height,
-                                                                                          this->GetState());
-                                                         }
-
-                                                         return jsi::Value::undefined();
-                                                     }
-        );
-    } else if (methodName == "__toDataURL") {
-        return jsi::Function::createFromHostFunction(runtime,
-                                                     jsi::PropNameID::forAscii(runtime, methodName),
-                                                     2,
-                                                     [this](jsi::Runtime &runtime,
-                                                            const jsi::Value &thisValue,
-                                                            const jsi::Value *arguments,
-                                                            size_t count) -> jsi::Value {
-
-                                                         std::string type("image/png");
-                                                         int quality = 92;
-                                                         if (args[0].isString()) {
-                                                             type = args[0].asString(
-                                                                     runtime).utf8(
-                                                                     runtime);
-                                                         }
-
-
-                                                         if (args[1].isNumber()) {
-                                                             quality = (int) args[1]->NumberValue(
-                                                                     context).ToChecked();
-                                                         }
-
-
-                                                         auto data = canvas_native_webgl_to_data_url(
-                                                                 this->GetState(),
-                                                                 rust::Str(type.c_str()),
-                                                                 quality);
-                                                         return jsi::String::createFromAscii(
-                                                                 runtime,
-                                                                 data.data(),
-                                                                 data.size());
-                                                     }
-        );
-    }
-
-
-    return jsi::Value::undefined();
-}
 
 

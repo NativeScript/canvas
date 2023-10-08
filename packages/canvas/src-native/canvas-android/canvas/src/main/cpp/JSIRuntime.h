@@ -4,6 +4,4 @@
 
 #include "CanvasJSIModule.h"
 
-std::shared_ptr<rnv8::V8Runtime> jsi_runtime;
-
 extern "C" void NSMain(const v8::FunctionCallbackInfo <v8::Value> &args);

@@ -44,7 +44,7 @@ public:
     SetProps(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &webgl2RenderingContextTpl);
 
     static void SetMethods(v8::Isolate *isolate,
-                           const v8::Local<v8::ObjectTemplate> &webgl2RenderingContextTpl);
+                           const v8::Local<v8::ObjectTemplate> &tmpl);
 
     static void BeginQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 

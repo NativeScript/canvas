@@ -31,17 +31,6 @@ export class Path2D {
 		return this._native;
 	}
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.native[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-		return cached;
-	}
 
 	addPath(path: Path2D, transform?: DOMMatrix): void {
 		//const addPath = this._getMethod('addPath');

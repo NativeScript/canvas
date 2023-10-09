@@ -30,7 +30,12 @@ v8::Local<v8::FunctionTemplate> WebGL2RenderingContext::GetCtor(v8::Isolate *iso
     tmpl->SetInternalFieldCount(1);
     WebGLRenderingContext::SetConstants(isolate, tmpl);
     SetConstants(isolate, tmpl);
+
+    WebGLRenderingContext::SetMethods(isolate, tmpl);
     SetMethods(isolate, tmpl);
+
+    WebGLRenderingContext::SetProps(isolate, tmpl);
+    SetProps(isolate, tmpl);
     cache->WebGL2RenderingContextTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
@@ -1086,7 +1091,7 @@ void WebGL2RenderingContext::GetActiveUniformBlockParameter(
                             std::move(value));
 
 
-                    auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+                    auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
                                                                   [](void *data, size_t length,
                                                                      void *deleter_data) {
                                                                       if (deleter_data != nullptr) {
@@ -1096,7 +1101,7 @@ void WebGL2RenderingContext::GetActiveUniformBlockParameter(
                                                                   buf);
 
                     auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
-                    args.GetReturnValue().Set(v8::Uint32Array::New(arraybuffer, 0, buf->size()));
+                    args.GetReturnValue().Set(v8::Uint32Array::New(arraybuffer, 0, buf->buffer_size()));
                     return;
                 }
                 case GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER:
@@ -1391,7 +1396,7 @@ void WebGL2RenderingContext::GetInternalformatParameter(
                 auto buf = new VecMutableBuffer<int32_t>(
                         std::move(value));
 
-                auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+                auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
                                                               [](void *data, size_t length,
                                                                  void *deleter_data) {
                                                                   if (deleter_data != nullptr) {
@@ -1401,7 +1406,7 @@ void WebGL2RenderingContext::GetInternalformatParameter(
                                                               buf);
 
                 auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
-                args.GetReturnValue().Set(v8::Int32Array::New(arraybuffer, 0, buf->size()));
+                args.GetReturnValue().Set(v8::Int32Array::New(arraybuffer, 0, buf->buffer_size()));
                 return;
             }
             case GL_R8:
@@ -1448,7 +1453,7 @@ void WebGL2RenderingContext::GetInternalformatParameter(
             auto buf = new VecMutableBuffer<int32_t>(
                     std::move(value));
 
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
@@ -1458,7 +1463,7 @@ void WebGL2RenderingContext::GetInternalformatParameter(
                                                           buf);
 
             auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
-            args.GetReturnValue().Set(v8::Int32Array::New(arraybuffer, 0, buf->size()));
+            args.GetReturnValue().Set(v8::Int32Array::New(arraybuffer, 0, buf->buffer_size()));
 
             return;
         } else {

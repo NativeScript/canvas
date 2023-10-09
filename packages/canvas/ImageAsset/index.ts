@@ -2,10 +2,11 @@ import { File, knownFolders, path as filePath, Utils } from '@nativescript/core'
 import { Helpers } from '../helpers';
 
 let ctor;
+// store ref if loading
+const loaders = new Map<ImageAsset, number>();
 export class ImageAsset {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasModule.ImageAsset;
 	}
 
 	_native;
@@ -13,7 +14,7 @@ export class ImageAsset {
 		return this._native;
 	}
 	constructor(native?) {
-		this._native = native || new ctor();
+		this._native = native || new global.CanvasModule.ImageAsset();
 	}
 
 	get width() {
@@ -28,40 +29,42 @@ export class ImageAsset {
 		return this.native.error;
 	}
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.native[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	fromUrlSync(url: string): boolean {
-		// const fromUrlSync = this._getMethod('fromUrlSync');
-		// return fromUrlSync(url);
 		return this.native.fromUrlSync(url);
 	}
 
+	private _incrementStrongRef() {
+		let count = 0;
+		if (loaders.has(this)) {
+			count = loaders.get(this);
+		}
+		count++;
+		loaders.set(this, count);
+	}
+
+	private _decrementStrongRefAndRemove() {
+		const count = loaders.get(this) - 1;
+
+		if (count <= 0) {
+			loaders.delete(this);
+		}
+	}
+
 	fromUrl(url: string) {
-		//const fromUrlCb = this._getMethod('fromUrlCb');
 		return new Promise((resolve, reject) => {
+			this._incrementStrongRef();
 			this.native.fromUrlCb(url, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
 					resolve(success);
 				}
+				this._decrementStrongRefAndRemove();
 			});
 		});
 	}
 
 	fromFileSync(path: string): boolean {
-	//	const fromFileSync = this._getMethod('fromFileSync');
 		let realPath = path;
 		if (typeof realPath === 'string') {
 			if (realPath.startsWith('~/')) {
@@ -73,7 +76,6 @@ export class ImageAsset {
 	}
 
 	fromFile(path: string) {
-		//const fromFileCb = this._getMethod('fromFileCb');
 		return new Promise((resolve, reject) => {
 			if (typeof path === 'string') {
 				if (path.startsWith('~/')) {
@@ -81,12 +83,16 @@ export class ImageAsset {
 				}
 			}
 
+			this._incrementStrongRef();
+
 			this.native.fromFileCb(path, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
 					resolve(success);
 				}
+
+				this._decrementStrongRefAndRemove();
 			});
 		});
 	}
@@ -116,51 +122,44 @@ export class ImageAsset {
     */
 
 	loadFromBytesSync(bytes: Uint8Array | Uint8ClampedArray) {
-		//const fromBytesSync = this._getMethod('fromBytesSync');
 		return this.native.fromBytesSync(bytes);
 	}
 
 	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
-		//const fromBytesCb = this._getMethod('fromBytesCb');
 		return new Promise((resolve, reject) => {
-			const callback = new org.nativescript.canvas.TNSImageAsset.Callback({
-				onError(error) {
-					reject(error);
-				},
-				onSuccess(success) {
-					resolve(success);
-				},
-			});
-
+			this._incrementStrongRef();
 			this.native.fromBytesCb(bytes, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
 					resolve(success);
 				}
+
+				this._decrementStrongRefAndRemove();
 			});
 		});
 	}
 
 	scale(x: number, y: number) {
-		//const scale = this._getMethod('scale');
 		this.native.scale(x, y);
 	}
 
 	saveSync(path: string, format: ImageAssetSaveFormat): boolean {
-		//const saveSync = this._getMethod('saveSync');
 		return this.native.saveSync(path, format);
 	}
 
 	save(path: string, format: ImageAssetSaveFormat): Promise<boolean> {
-		//const saveCb = this._getMethod('saveCb');
 		return new Promise((resolve, reject) => {
+			this._incrementStrongRef();
+
 			this.native.saveCb(path, format, (success, error) => {
 				if (error) {
 					reject(error);
 				} else {
 					resolve(success);
 				}
+
+				this._decrementStrongRefAndRemove();
 			});
 		});
 	}

@@ -33,740 +33,8 @@ v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isol
     tmpl->SetInternalFieldCount(1);
 
     SetConstants(isolate, tmpl);
-
-    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferWidth"), &GetDrawingBufferWidth);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferHeight"), &GetDrawingBufferHeight);
-
-    tmpl->SetAccessor(ConvertToV8String(isolate, "__flipY"), &GetFlipY);
-
-    tmpl->Set(ConvertToV8String(isolate, "__resized"),
-              v8::FunctionTemplate::New(isolate, &__Resized));
-    tmpl->Set(ConvertToV8String(isolate, "__startRaf"),
-              v8::FunctionTemplate::New(isolate, &__StartRaf));
-    tmpl->Set(ConvertToV8String(isolate, "__stopRaf"),
-              v8::FunctionTemplate::New(isolate, &__StopRaf));
-
-    tmpl->Set(ConvertToV8String(isolate, "__toDataURL"),
-              v8::FunctionTemplate::New(isolate, &__ToDataURL));
-
-    tmpl->Set(ConvertToV8String(isolate, "__getSupportedExtensions"),
-              v8::FunctionTemplate::New(isolate, &__GetSupportedExtensions));
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "activeTexture"),
-            v8::FunctionTemplate::New(isolate, &ActiveTexture)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "attachShader"),
-            v8::FunctionTemplate::New(isolate, &AttachShader)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindAttribLocation"),
-            v8::FunctionTemplate::New(isolate, &BindAttribLocation)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindBuffer"),
-            v8::FunctionTemplate::New(isolate, &BindBuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &BindFramebuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &BindRenderbuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindTexture"),
-            v8::FunctionTemplate::New(isolate, &BindTexture)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "blendColor"),
-            v8::FunctionTemplate::New(isolate, &BlendColor)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "blendEquationSeparate"),
-            v8::FunctionTemplate::New(isolate, &BlendEquationSeparate)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "blendEquation"),
-            v8::FunctionTemplate::New(isolate, &BlendEquation)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "blendFuncSeparate"),
-            v8::FunctionTemplate::New(isolate, &BlendFuncSeparate)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "blendFunc"),
-            v8::FunctionTemplate::New(isolate, &BlendFunc)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "bufferData"),
-            v8::FunctionTemplate::New(isolate, &BufferData)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "bufferSubData"),
-            v8::FunctionTemplate::New(isolate, &BufferSubData)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "checkFramebufferStatus"),
-            v8::FunctionTemplate::New(isolate, &CheckFramebufferStatus)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearColor"),
-            v8::FunctionTemplate::New(isolate, &ClearColor)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearDepth"),
-            v8::FunctionTemplate::New(isolate, &ClearDepth)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearStencil"),
-            v8::FunctionTemplate::New(isolate, &ClearStencil)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "clear"),
-            v8::FunctionTemplate::New(isolate, &Clear)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "colorMask"),
-            v8::FunctionTemplate::New(isolate, &ColorMask)
-    );
-    tmpl->Set(
-            ConvertToV8String(isolate, "commit"),
-            v8::FunctionTemplate::New(isolate, &Commit)
-    );
-    tmpl->Set(
-            ConvertToV8String(isolate, "compileShader"),
-            v8::FunctionTemplate::New(isolate, &CompileShader)
-    );
-    tmpl->Set(
-            ConvertToV8String(isolate, "compressedTexImage2D"),
-            v8::FunctionTemplate::New(isolate, &CompressedTexImage2D)
-    );
-    tmpl->Set(
-            ConvertToV8String(isolate, "compressedTexSubImage2D"),
-            v8::FunctionTemplate::New(isolate, &CompressedTexSubImage2D)
-    );
-    tmpl->Set(
-            ConvertToV8String(isolate, "copyTexImage2D"),
-            v8::FunctionTemplate::New(isolate, &CopyTexImage2D)
-    );
-    tmpl->Set(
-            ConvertToV8String(isolate, "copyTexSubImage2D"),
-            v8::FunctionTemplate::New(isolate, &CopyTexSubImage2D)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "createBuffer"),
-            v8::FunctionTemplate::New(isolate, &CreateBuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "createFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &CreateFramebuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "createProgram"),
-            v8::FunctionTemplate::New(isolate, &CreateProgram)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "createRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &CreateRenderbuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "createShader"),
-            v8::FunctionTemplate::New(isolate, &CreateShader)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "createTexture"),
-            v8::FunctionTemplate::New(isolate, &CreateTexture)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "cullFace"),
-            v8::FunctionTemplate::New(isolate, &CullFace)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteBuffer"),
-            v8::FunctionTemplate::New(isolate, &DeleteBuffer)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &DeleteFramebuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteProgram"),
-            v8::FunctionTemplate::New(isolate, &DeleteProgram)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &DeleteRenderbuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteShader"),
-            v8::FunctionTemplate::New(isolate, &DeleteShader)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteTexture"),
-            v8::FunctionTemplate::New(isolate, &DeleteTexture)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "depthFunc"),
-            v8::FunctionTemplate::New(isolate, &DepthFunc)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "depthMask"),
-            v8::FunctionTemplate::New(isolate, &DepthMask)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "depthRange"),
-            v8::FunctionTemplate::New(isolate, &DepthRange)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "detachShader"),
-            v8::FunctionTemplate::New(isolate, &DetachShader)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "disableVertexAttribArray"),
-            v8::FunctionTemplate::New(isolate, &DisableVertexAttribArray)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "disable"),
-            v8::FunctionTemplate::New(isolate, &Disable)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawArrays"),
-            v8::FunctionTemplate::New(isolate, &DrawArrays)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawElements"),
-            v8::FunctionTemplate::New(isolate, &DrawElements)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "enableVertexAttribArray"),
-            v8::FunctionTemplate::New(isolate, &EnableVertexAttribArray)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "enable"),
-            v8::FunctionTemplate::New(isolate, &Enable)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "finish"),
-            v8::FunctionTemplate::New(isolate, &Finish)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "flush"),
-            v8::FunctionTemplate::New(isolate, &Flush)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "framebufferRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &FramebufferRenderbuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "framebufferTexture2D"),
-            v8::FunctionTemplate::New(isolate, &FramebufferTexture2D)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "frontFace"),
-            v8::FunctionTemplate::New(isolate, &FrontFace)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "generateMipmap"),
-            v8::FunctionTemplate::New(isolate, &GenerateMipmap)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getActiveAttrib"),
-            v8::FunctionTemplate::New(isolate, &GetActiveAttrib)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getActiveUniform"),
-            v8::FunctionTemplate::New(isolate, &GetActiveUniform)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getAttachedShaders"),
-            v8::FunctionTemplate::New(isolate, &GetAttachedShaders)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getAttribLocation"),
-            v8::FunctionTemplate::New(isolate, &GetAttribLocation)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getBufferParameter"),
-            v8::FunctionTemplate::New(isolate, &GetBufferParameter)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getContextAttributes"),
-            v8::FunctionTemplate::New(isolate, &GetContextAttributes)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getError"),
-            v8::FunctionTemplate::New(isolate, &GetError)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getExtension"),
-            v8::FunctionTemplate::New(isolate, &GetExtension)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getFramebufferAttachmentParameter"),
-            v8::FunctionTemplate::New(isolate, &GetFramebufferAttachmentParameter)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getParameter"),
-            v8::FunctionTemplate::New(isolate, &GetParameter)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getProgramInfoLog"),
-            v8::FunctionTemplate::New(isolate, &GetProgramInfoLog)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getProgramParameter"),
-            v8::FunctionTemplate::New(isolate, &GetProgramParameter)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getRenderbufferParameter"),
-            v8::FunctionTemplate::New(isolate, &GetRenderbufferParameter)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getShaderInfoLog"),
-            v8::FunctionTemplate::New(isolate, &GetShaderInfoLog)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getShaderParameter"),
-            v8::FunctionTemplate::New(isolate, &GetShaderParameter)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getShaderPrecisionFormat"),
-            v8::FunctionTemplate::New(isolate, &GetShaderPrecisionFormat)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getShaderSource"),
-            v8::FunctionTemplate::New(isolate, &GetShaderSource)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getSupportedExtensions"),
-            v8::FunctionTemplate::New(isolate, &GetSupportedExtensions)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getTexParameter"),
-            v8::FunctionTemplate::New(isolate, &GetTexParameter)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getUniformLocation"),
-            v8::FunctionTemplate::New(isolate, &GetUniformLocation)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getUniform"),
-            v8::FunctionTemplate::New(isolate, &GetUniform)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getVertexAttribOffset"),
-            v8::FunctionTemplate::New(isolate, &GetVertexAttribOffset)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "getVertexAttrib"),
-            v8::FunctionTemplate::New(isolate, &GetVertexAttrib)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "hint"),
-            v8::FunctionTemplate::New(isolate, &Hint)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isBuffer"),
-            v8::FunctionTemplate::New(isolate, &IsBuffer)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isContextLost"),
-            v8::FunctionTemplate::New(isolate, &IsContextLost)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isEnabled"),
-            v8::FunctionTemplate::New(isolate, &IsEnabled)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &IsFramebuffer)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isProgram"),
-            v8::FunctionTemplate::New(isolate, &IsProgram)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &IsRenderbuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isShader"),
-            v8::FunctionTemplate::New(isolate, &IsShader)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isTexture"),
-            v8::FunctionTemplate::New(isolate, &IsTexture)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "lineWidth"),
-            v8::FunctionTemplate::New(isolate, &LineWidth)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "linkProgram"),
-            v8::FunctionTemplate::New(isolate, &LinkProgram)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "pixelStorei"),
-            v8::FunctionTemplate::New(isolate, &PixelStorei)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "polygonOffset"),
-            v8::FunctionTemplate::New(isolate, &PolygonOffset)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "readPixels"),
-            v8::FunctionTemplate::New(isolate, &ReadPixels)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "renderbufferStorage"),
-            v8::FunctionTemplate::New(isolate, &RenderbufferStorage)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "sampleCoverage"),
-            v8::FunctionTemplate::New(isolate, &SampleCoverage)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "scissor"),
-            v8::FunctionTemplate::New(isolate, &Scissor)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "shaderSource"),
-            v8::FunctionTemplate::New(isolate, &ShaderSource)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilFuncSeparate"),
-            v8::FunctionTemplate::New(isolate, &StencilFuncSeparate)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilFunc"),
-            v8::FunctionTemplate::New(isolate, &StencilFunc)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilMaskSeparate"),
-            v8::FunctionTemplate::New(isolate, &StencilMaskSeparate)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilMask"),
-            v8::FunctionTemplate::New(isolate, &StencilMask)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilOpSeparate"),
-            v8::FunctionTemplate::New(isolate, &StencilOpSeparate)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilOp"),
-            v8::FunctionTemplate::New(isolate, &StencilOp)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "texImage2D"),
-            v8::FunctionTemplate::New(isolate, &TexImage2D)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "texParameterf"),
-            v8::FunctionTemplate::New(isolate, &TexParameterf)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "texParameteri"),
-            v8::FunctionTemplate::New(isolate, &TexParameteri)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "texSubImage2D"),
-            v8::FunctionTemplate::New(isolate, &TexSubImage2D)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib1f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib1f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib1fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib1fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib2f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib2f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib2fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib2fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib3f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib3f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib3fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib3fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib4f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib4f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib4fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib4fv)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribPointer"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribPointer)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1f"),
-            v8::FunctionTemplate::New(isolate, &Uniform1f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform1iv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform1fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1i"),
-            v8::FunctionTemplate::New(isolate, &Uniform1i)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2f"),
-            v8::FunctionTemplate::New(isolate, &Uniform2f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform2iv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform2fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2i"),
-            v8::FunctionTemplate::New(isolate, &Uniform2i)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3f"),
-            v8::FunctionTemplate::New(isolate, &Uniform3f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform3iv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform3fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3i"),
-            v8::FunctionTemplate::New(isolate, &Uniform3i)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4f"),
-            v8::FunctionTemplate::New(isolate, &Uniform4f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform4iv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform4fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4i"),
-            v8::FunctionTemplate::New(isolate, &Uniform4i)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix2fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix2fv)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix3fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix3fv)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix4fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix4fv)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "useProgram"),
-            v8::FunctionTemplate::New(isolate, &UseProgram)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "validateProgram"),
-            v8::FunctionTemplate::New(isolate, &ValidateProgram)
-    );
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "viewport"),
-            v8::FunctionTemplate::New(isolate, &Viewport)
-    );
-
+    SetProps(isolate, tmpl);
+    SetMethods(isolate, tmpl);
 
     cache->WebGLRenderingContextTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -865,10 +133,10 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
         case GL_ALIASED_POINT_SIZE_RANGE:
         case GL_DEPTH_RANGE: {
             auto ret = canvas_native_webgl_result_get_f32_array(*result);
+
             auto buf = new VecMutableBuffer<float>(std::move(ret));
 
-
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
@@ -879,8 +147,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
 
             auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
 
-
-            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->size()));
+            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->buffer_size()));
         }
         case GL_BLEND_COLOR:
         case GL_COLOR_CLEAR_VALUE: {
@@ -888,7 +155,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
 
             auto buf = new VecMutableBuffer<float>(std::move(ret));
 
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
@@ -900,8 +167,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
 
 
-            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->size()));
-
+            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->buffer_size()));
         }
         case (uint32_t) GLConstants::UNPACK_FLIP_Y_WEBGL:
             return scope.Escape(v8::Boolean::New(isolate, canvas_native_webgl_state_get_flip_y(
@@ -929,7 +195,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             for (int j = 0; j < len; ++j) {
                 array->Set(context, j, v8::Boolean::New(isolate, ret[j] == 1));
             }
-            return array;
+            return scope.Escape(array);
         }
         case GL_COMPRESSED_TEXTURE_FORMATS:
         case GL_MAX_VIEWPORT_DIMS:
@@ -938,7 +204,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             auto ret = canvas_native_webgl_result_get_i32_array(*result);
             auto buf = new VecMutableBuffer<int32_t>(std::move(ret));
 
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
@@ -950,7 +216,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
 
 
-            return scope.Escape(v8::Int32Array::New(arraybuffer, 0, buf->size()));
+            return scope.Escape(v8::Int32Array::New(arraybuffer, 0, buf->buffer_size()));
         }
         case GL_DEPTH_CLEAR_VALUE:
         case GL_LINE_WIDTH:
@@ -966,14 +232,11 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
         case GL_VENDOR:
         case GL_VERSION: {
             auto ret = canvas_native_webgl_result_get_string(*result);
-
-
             auto value = new OneByteStringResource(std::move(ret));
             return scope.Escape(v8::String::NewExternalOneByte(isolate, value).ToLocalChecked());
         }
         default:
             return scope.Escape(v8::Null(isolate));
-
     }
 }
 
@@ -2236,7 +1499,6 @@ void WebGLRenderingContext::DepthMask(const v8::FunctionCallbackInfo<v8::Value> 
 
     auto isolate = args.GetIsolate();
 
-
     auto value = args[0];
 
     if (args.Length() > 0) {
@@ -3455,6 +2717,7 @@ WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8::Val
                 auto location = WebGLUniformLocation::NewInstance(isolate, new WebGLUniformLocation(
                         ret));
 
+                args.GetReturnValue().Set(location);
                 return;
             }
         }
@@ -3539,7 +2802,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                         ret));
 
                         auto store = v8::ArrayBuffer::NewBackingStore(buf->data(),
-                                                                      buf->buffer_size(),
+                                                                      buf->size(),
                                                                       [](void *data, size_t length,
                                                                          void *deleter_data) {
                                                                           if (deleter_data !=
@@ -3553,7 +2816,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
                         args.GetReturnValue().Set(
-                                v8::Float32Array::New(arraybuffer, 0, buf->size())
+                                v8::Float32Array::New(arraybuffer, 0, buf->buffer_size())
                         );
 
                         return;
@@ -3568,7 +2831,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
                         auto store = v8::ArrayBuffer::NewBackingStore(buf->data(),
-                                                                      buf->buffer_size(),
+                                                                      buf->size(),
                                                                       [](void *data, size_t length,
                                                                          void *deleter_data) {
                                                                           if (deleter_data !=
@@ -3582,7 +2845,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
                         args.GetReturnValue().Set(
-                                v8::Int32Array::New(arraybuffer, 0, buf->size())
+                                v8::Int32Array::New(arraybuffer, 0, buf->buffer_size())
                         );
                         return;
                     }
@@ -3596,7 +2859,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
                         auto store = v8::ArrayBuffer::NewBackingStore(buf->data(),
-                                                                      buf->buffer_size(),
+                                                                      buf->size(),
                                                                       [](void *data, size_t length,
                                                                          void *deleter_data) {
                                                                           if (deleter_data !=
@@ -3610,7 +2873,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
                         args.GetReturnValue().Set(
-                                v8::Uint32Array::New(arraybuffer, 0, buf->size())
+                                v8::Uint32Array::New(arraybuffer, 0, buf->buffer_size())
                         );
                         return;
 
@@ -3696,7 +2959,7 @@ WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value>
                     std::move(val));
 
 
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->buffer_size(),
+            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
@@ -3709,7 +2972,7 @@ WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value>
 
 
             args.GetReturnValue().Set(
-                    v8::Float32Array::New(arraybuffer, 0, buf->size())
+                    v8::Float32Array::New(arraybuffer, 0, buf->buffer_size())
             );
 
             return;
@@ -4496,7 +3759,7 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
 
                 return;
             }
-            case NativeType::WebGLRenderingContext: {
+            case NativeType::WebGLRenderingContextBase: {
                 auto gl = WebGLRenderingContext::GetPointer(pixels.As<v8::Object>());
 
                 if (gl != nullptr) {
@@ -4746,7 +4009,7 @@ WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &
                 }
                 return;
             }
-            case NativeType::WebGLRenderingContext: {
+            case NativeType::WebGLRenderingContextBase: {
 
                 auto webgl = WebGLRenderingContext::GetPointer(pixels.As<v8::Object>());
 
@@ -6035,7 +5298,8 @@ WebGLRenderingContext::__ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &ar
 
 }
 
-void WebGLRenderingContext::SetConstants(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate>& tmpl) {
+void WebGLRenderingContext::SetConstants(v8::Isolate *isolate,
+                                         const v8::Local<v8::ObjectTemplate> &tmpl) {
     tmpl->Set(isolate, "DEPTH_BUFFER_BIT", v8::Uint32::New(isolate, 0x00000100));
 
     tmpl->Set(isolate, "STENCIL_BUFFER_BIT", v8::Uint32::New(isolate, 0x00000400));
@@ -6478,5 +5742,744 @@ void WebGLRenderingContext::SetConstants(v8::Isolate *isolate, const v8::Local<v
     tmpl->Set(isolate, "UNPACK_COLORSPACE_CONVERSION_WEBGL", v8::Uint32::New(isolate, 0x9243));
 }
 
+void WebGLRenderingContext::SetProps(v8::Isolate *isolate,
+                                     const v8::Local<v8::ObjectTemplate> &tmpl) {
+
+    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferWidth"), &GetDrawingBufferWidth);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "drawingBufferHeight"), &GetDrawingBufferHeight);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "__flipY"), &GetFlipY);
+}
 
 
+void
+WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::ObjectTemplate> &tmpl) {
+
+    tmpl->Set(ConvertToV8String(isolate, "__resized"),
+              v8::FunctionTemplate::New(isolate, &__Resized));
+    tmpl->Set(ConvertToV8String(isolate, "__startRaf"),
+              v8::FunctionTemplate::New(isolate, &__StartRaf));
+    tmpl->Set(ConvertToV8String(isolate, "__stopRaf"),
+              v8::FunctionTemplate::New(isolate, &__StopRaf));
+
+    tmpl->Set(ConvertToV8String(isolate, "__toDataURL"),
+              v8::FunctionTemplate::New(isolate, &__ToDataURL));
+
+    tmpl->Set(ConvertToV8String(isolate, "__getSupportedExtensions"),
+              v8::FunctionTemplate::New(isolate, &__GetSupportedExtensions));
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "activeTexture"),
+            v8::FunctionTemplate::New(isolate, &ActiveTexture)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "attachShader"),
+            v8::FunctionTemplate::New(isolate, &AttachShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindAttribLocation"),
+            v8::FunctionTemplate::New(isolate, &BindAttribLocation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindBuffer"),
+            v8::FunctionTemplate::New(isolate, &BindBuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &BindFramebuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &BindRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bindTexture"),
+            v8::FunctionTemplate::New(isolate, &BindTexture)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendColor"),
+            v8::FunctionTemplate::New(isolate, &BlendColor)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendEquationSeparate"),
+            v8::FunctionTemplate::New(isolate, &BlendEquationSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendEquation"),
+            v8::FunctionTemplate::New(isolate, &BlendEquation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendFuncSeparate"),
+            v8::FunctionTemplate::New(isolate, &BlendFuncSeparate)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "blendFunc"),
+            v8::FunctionTemplate::New(isolate, &BlendFunc)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bufferData"),
+            v8::FunctionTemplate::New(isolate, &BufferData)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "bufferSubData"),
+            v8::FunctionTemplate::New(isolate, &BufferSubData)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "checkFramebufferStatus"),
+            v8::FunctionTemplate::New(isolate, &CheckFramebufferStatus)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clearColor"),
+            v8::FunctionTemplate::New(isolate, &ClearColor)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clearDepth"),
+            v8::FunctionTemplate::New(isolate, &ClearDepth)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clearStencil"),
+            v8::FunctionTemplate::New(isolate, &ClearStencil)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "clear"),
+            v8::FunctionTemplate::New(isolate, &Clear)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "colorMask"),
+            v8::FunctionTemplate::New(isolate, &ColorMask)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "commit"),
+            v8::FunctionTemplate::New(isolate, &Commit)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "compileShader"),
+            v8::FunctionTemplate::New(isolate, &CompileShader)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "compressedTexImage2D"),
+            v8::FunctionTemplate::New(isolate, &CompressedTexImage2D)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "compressedTexSubImage2D"),
+            v8::FunctionTemplate::New(isolate, &CompressedTexSubImage2D)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "copyTexImage2D"),
+            v8::FunctionTemplate::New(isolate, &CopyTexImage2D)
+    );
+    tmpl->Set(
+            ConvertToV8String(isolate, "copyTexSubImage2D"),
+            v8::FunctionTemplate::New(isolate, &CopyTexSubImage2D)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createBuffer"),
+            v8::FunctionTemplate::New(isolate, &CreateBuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &CreateFramebuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createProgram"),
+            v8::FunctionTemplate::New(isolate, &CreateProgram)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &CreateRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createShader"),
+            v8::FunctionTemplate::New(isolate, &CreateShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createTexture"),
+            v8::FunctionTemplate::New(isolate, &CreateTexture)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "cullFace"),
+            v8::FunctionTemplate::New(isolate, &CullFace)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteBuffer"),
+            v8::FunctionTemplate::New(isolate, &DeleteBuffer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &DeleteFramebuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteProgram"),
+            v8::FunctionTemplate::New(isolate, &DeleteProgram)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &DeleteRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteShader"),
+            v8::FunctionTemplate::New(isolate, &DeleteShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "deleteTexture"),
+            v8::FunctionTemplate::New(isolate, &DeleteTexture)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "depthFunc"),
+            v8::FunctionTemplate::New(isolate, &DepthFunc)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "depthMask"),
+            v8::FunctionTemplate::New(isolate, &DepthMask)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "depthRange"),
+            v8::FunctionTemplate::New(isolate, &DepthRange)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "detachShader"),
+            v8::FunctionTemplate::New(isolate, &DetachShader)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "disableVertexAttribArray"),
+            v8::FunctionTemplate::New(isolate, &DisableVertexAttribArray)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "disable"),
+            v8::FunctionTemplate::New(isolate, &Disable)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "drawArrays"),
+            v8::FunctionTemplate::New(isolate, &DrawArrays)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "drawElements"),
+            v8::FunctionTemplate::New(isolate, &DrawElements)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "enableVertexAttribArray"),
+            v8::FunctionTemplate::New(isolate, &EnableVertexAttribArray)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "enable"),
+            v8::FunctionTemplate::New(isolate, &Enable)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "finish"),
+            v8::FunctionTemplate::New(isolate, &Finish)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "flush"),
+            v8::FunctionTemplate::New(isolate, &Flush)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "framebufferRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &FramebufferRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "framebufferTexture2D"),
+            v8::FunctionTemplate::New(isolate, &FramebufferTexture2D)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "frontFace"),
+            v8::FunctionTemplate::New(isolate, &FrontFace)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "generateMipmap"),
+            v8::FunctionTemplate::New(isolate, &GenerateMipmap)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getActiveAttrib"),
+            v8::FunctionTemplate::New(isolate, &GetActiveAttrib)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getActiveUniform"),
+            v8::FunctionTemplate::New(isolate, &GetActiveUniform)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getAttachedShaders"),
+            v8::FunctionTemplate::New(isolate, &GetAttachedShaders)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getAttribLocation"),
+            v8::FunctionTemplate::New(isolate, &GetAttribLocation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getBufferParameter"),
+            v8::FunctionTemplate::New(isolate, &GetBufferParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getContextAttributes"),
+            v8::FunctionTemplate::New(isolate, &GetContextAttributes)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getError"),
+            v8::FunctionTemplate::New(isolate, &GetError)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getExtension"),
+            v8::FunctionTemplate::New(isolate, &GetExtension)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getFramebufferAttachmentParameter"),
+            v8::FunctionTemplate::New(isolate, &GetFramebufferAttachmentParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getParameter"),
+            v8::FunctionTemplate::New(isolate, &GetParameter)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getProgramInfoLog"),
+            v8::FunctionTemplate::New(isolate, &GetProgramInfoLog)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getProgramParameter"),
+            v8::FunctionTemplate::New(isolate, &GetProgramParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getRenderbufferParameter"),
+            v8::FunctionTemplate::New(isolate, &GetRenderbufferParameter)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderInfoLog"),
+            v8::FunctionTemplate::New(isolate, &GetShaderInfoLog)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderParameter"),
+            v8::FunctionTemplate::New(isolate, &GetShaderParameter)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderPrecisionFormat"),
+            v8::FunctionTemplate::New(isolate, &GetShaderPrecisionFormat)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getShaderSource"),
+            v8::FunctionTemplate::New(isolate, &GetShaderSource)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getSupportedExtensions"),
+            v8::FunctionTemplate::New(isolate, &GetSupportedExtensions)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getTexParameter"),
+            v8::FunctionTemplate::New(isolate, &GetTexParameter)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getUniformLocation"),
+            v8::FunctionTemplate::New(isolate, &GetUniformLocation)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getUniform"),
+            v8::FunctionTemplate::New(isolate, &GetUniform)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getVertexAttribOffset"),
+            v8::FunctionTemplate::New(isolate, &GetVertexAttribOffset)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "getVertexAttrib"),
+            v8::FunctionTemplate::New(isolate, &GetVertexAttrib)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "hint"),
+            v8::FunctionTemplate::New(isolate, &Hint)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isBuffer"),
+            v8::FunctionTemplate::New(isolate, &IsBuffer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isContextLost"),
+            v8::FunctionTemplate::New(isolate, &IsContextLost)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isEnabled"),
+            v8::FunctionTemplate::New(isolate, &IsEnabled)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isFramebuffer"),
+            v8::FunctionTemplate::New(isolate, &IsFramebuffer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isProgram"),
+            v8::FunctionTemplate::New(isolate, &IsProgram)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isRenderbuffer"),
+            v8::FunctionTemplate::New(isolate, &IsRenderbuffer)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isShader"),
+            v8::FunctionTemplate::New(isolate, &IsShader)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "isTexture"),
+            v8::FunctionTemplate::New(isolate, &IsTexture)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "lineWidth"),
+            v8::FunctionTemplate::New(isolate, &LineWidth)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "linkProgram"),
+            v8::FunctionTemplate::New(isolate, &LinkProgram)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "pixelStorei"),
+            v8::FunctionTemplate::New(isolate, &PixelStorei)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "polygonOffset"),
+            v8::FunctionTemplate::New(isolate, &PolygonOffset)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "readPixels"),
+            v8::FunctionTemplate::New(isolate, &ReadPixels)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "renderbufferStorage"),
+            v8::FunctionTemplate::New(isolate, &RenderbufferStorage)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "sampleCoverage"),
+            v8::FunctionTemplate::New(isolate, &SampleCoverage)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "scissor"),
+            v8::FunctionTemplate::New(isolate, &Scissor)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "shaderSource"),
+            v8::FunctionTemplate::New(isolate, &ShaderSource)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilFuncSeparate"),
+            v8::FunctionTemplate::New(isolate, &StencilFuncSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilFunc"),
+            v8::FunctionTemplate::New(isolate, &StencilFunc)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilMaskSeparate"),
+            v8::FunctionTemplate::New(isolate, &StencilMaskSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilMask"),
+            v8::FunctionTemplate::New(isolate, &StencilMask)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilOpSeparate"),
+            v8::FunctionTemplate::New(isolate, &StencilOpSeparate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "stencilOp"),
+            v8::FunctionTemplate::New(isolate, &StencilOp)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texImage2D"),
+            v8::FunctionTemplate::New(isolate, &TexImage2D)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texParameterf"),
+            v8::FunctionTemplate::New(isolate, &TexParameterf)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texParameteri"),
+            v8::FunctionTemplate::New(isolate, &TexParameteri)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "texSubImage2D"),
+            v8::FunctionTemplate::New(isolate, &TexSubImage2D)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib1f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib1f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib1fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib1fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib2f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib2f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib2fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib2fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib3f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib3f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib3fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib3fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib4f"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib4f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttrib4fv"),
+            v8::FunctionTemplate::New(isolate, &VertexAttrib4fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "vertexAttribPointer"),
+            v8::FunctionTemplate::New(isolate, &VertexAttribPointer)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1f"),
+            v8::FunctionTemplate::New(isolate, &Uniform1f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform1iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform1fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform1i"),
+            v8::FunctionTemplate::New(isolate, &Uniform1i)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2f"),
+            v8::FunctionTemplate::New(isolate, &Uniform2f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform2iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform2fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform2i"),
+            v8::FunctionTemplate::New(isolate, &Uniform2i)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3f"),
+            v8::FunctionTemplate::New(isolate, &Uniform3f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform3iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform3fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform3i"),
+            v8::FunctionTemplate::New(isolate, &Uniform3i)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4f"),
+            v8::FunctionTemplate::New(isolate, &Uniform4f)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4iv"),
+            v8::FunctionTemplate::New(isolate, &Uniform4iv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4fv"),
+            v8::FunctionTemplate::New(isolate, &Uniform4fv)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniform4i"),
+            v8::FunctionTemplate::New(isolate, &Uniform4i)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniformMatrix2fv"),
+            v8::FunctionTemplate::New(isolate, &UniformMatrix2fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniformMatrix3fv"),
+            v8::FunctionTemplate::New(isolate, &UniformMatrix3fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "uniformMatrix4fv"),
+            v8::FunctionTemplate::New(isolate, &UniformMatrix4fv)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "useProgram"),
+            v8::FunctionTemplate::New(isolate, &UseProgram)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "validateProgram"),
+            v8::FunctionTemplate::New(isolate, &ValidateProgram)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "viewport"),
+            v8::FunctionTemplate::New(isolate, &Viewport)
+    );
+
+}

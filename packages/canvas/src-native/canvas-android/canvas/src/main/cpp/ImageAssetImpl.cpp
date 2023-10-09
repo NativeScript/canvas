@@ -24,7 +24,7 @@ void ImageAssetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
     canvasModule->Set(context, ConvertToV8String(isolate, "ImageAsset"), func);
 }
 
-ImageAssetImpl *ImageAssetImpl::GetPointer(const v8::Local<v8::Object>& object) {
+ImageAssetImpl *ImageAssetImpl::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
     if (ptr == nullptr) {
         return nullptr;
@@ -199,6 +199,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
     if (ptr == nullptr) {
         return;
     }
+
     auto isolate = args.GetIsolate();
 
     if (args.Length() < 2) {
@@ -227,7 +228,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
                       v8::Isolate *isolate = cb->isolate_;
                       v8::Locker locker(isolate);
-
+                      v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
                       v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();
@@ -239,6 +240,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
                       callback->Call(context, context->Global(), 1,
                                      args);  // ignore JS return value
+
 
                       delete static_cast<JSICallback *>(data);
                       return 0;
@@ -319,7 +321,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
 
                       v8::Isolate *isolate = cb->isolate_;
                       v8::Locker locker(isolate);
-
+                      v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
                       v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();
@@ -427,7 +429,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
                       v8::Isolate *isolate = cb->isolate_;
                       v8::Locker locker(isolate);
-
+                      v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
                       v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();
@@ -516,7 +518,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                       v8::Isolate *isolate = cb->isolate_;
                       v8::Locker locker(isolate);
-
+                      v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
                       v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();

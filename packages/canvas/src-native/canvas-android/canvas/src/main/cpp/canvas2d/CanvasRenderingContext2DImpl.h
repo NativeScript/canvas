@@ -34,9 +34,21 @@ public:
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
-    static CanvasRenderingContext2DImpl *GetPointer(const v8::Local<v8::Object>& object);
+    static CanvasRenderingContext2DImpl *GetPointer(const v8::Local<v8::Object> &object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static v8::Local<v8::Object>
+    NewInstance(v8::Isolate *isolate, CanvasRenderingContext2DImpl *renderingContext) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::CanvasRenderingContext2D);
+        auto ext = v8::External::New(isolate, renderingContext);
+        object->SetInternalField(0, ext);
+        return scope.Escape(object);
+    }
 
     static void DrawPoint(const v8::FunctionCallbackInfo<v8::Value> &args);
 

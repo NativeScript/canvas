@@ -80,24 +80,14 @@ void CanvasJSIModule::Create2DContext(const v8::FunctionCallbackInfo<v8::Value> 
                                                       samples, alpha,
                                                       font_color, ppi, direction);
 
-    auto ctx = new CanvasRenderingContext2DImpl(
-            std::move(context_2d));
-
-    auto ret = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
-            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-
-    auto data = v8::External::New(isolate, ctx);
-
-    ret->SetInternalField(0, data);
-
-    SetNativeType(isolate, ret, NativeType::CanvasRenderingContext2D);
+    auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
+            std::move(context_2d)));
 
     args.GetReturnValue().Set(ret);
 }
 
 void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto count = args.Length();
-    auto value = args[0];
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
@@ -133,7 +123,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                        v8::Undefined(isolate)};
 
         cb.As<v8::Function>()->Call(context, context->Global(), 2, ret);
-
+        return;
     }
 
     if (len >= 4 && (sw->IsNumber() && sw->IsNumber() == 0)) {
@@ -156,8 +146,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
     }
 
 
-    if (args[0]->IsObject()) {
-        auto imageObject = args[0].As<v8::Object>();
+    if (image->IsObject()) {
+        auto imageObject = image.As<v8::Object>();
         auto isArrayBuffer = imageObject->IsArrayBuffer();
         auto isTypedArray = imageObject->IsTypedArray();
         if (isArrayBuffer || isTypedArray) {
@@ -190,9 +180,10 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                   read(fd, &done,
                                        sizeof(bool));
 
+
                                   v8::Isolate *isolate = cb->isolate_;
                                   v8::Locker locker(isolate);
-
+                                  v8::Isolate::Scope isolate_scope(isolate);
                                   v8::HandleScope handle_scope(isolate);
                                   v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
                                   v8::Local<v8::External> cbData = cb->data_.Get(
@@ -220,6 +211,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                       args[1] = v8::Null(isolate);
                                   }
 
+
                                   callback->Call(context, context->Global(), 2, args);
 
                                   delete static_cast<JSICallback *>(data);
@@ -227,12 +219,10 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                               }, jsi_callback);
 
                 ALooper_wake(jsi_callback->looper_);
-                auto bufferValue = args[0];
-                v8::Global<v8::Value> ab(isolate, bufferValue);
+                v8::Global<v8::Value> ab(isolate, imageObject);
 
                 if (isArrayBuffer) {
-
-                    auto arrayBuffer = bufferValue.As<v8::ArrayBuffer>();
+                    auto arrayBuffer = imageObject.As<v8::ArrayBuffer>();
                     auto dataBuffer = (uint8_t *) arrayBuffer->GetBackingStore()->Data();
 
                     std::thread thread(
@@ -262,35 +252,34 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     return;
                 }
 
-                if (isTypedArray) {
 
-                    auto ta = bufferValue.As<v8::TypedArray>();
-                    auto typedArray = GetTypedArrayData<const uint8_t>(ta);
+                auto ta = imageObject.As<v8::TypedArray>();
+                auto typedArray = GetTypedArrayData<const uint8_t>(ta);
 
-                    std::thread thread(
-                            [&typedArray, jsi_callback, &options](
-                                    rust::Box<ImageAsset> asset, v8::Global<v8::Value> ab) {
+                std::thread thread(
+                        [jsi_callback, &options](
+                                rust::Box<ImageAsset> asset, v8::Global<v8::Value> ab,
+                                rust::Slice<const uint8_t> typedArray) {
+
+                            auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+                                    typedArray,
+                                    options.flipY,
+                                    options.premultiplyAlpha,
+                                    options.colorSpaceConversion,
+                                    options.resizeQuality,
+                                    options.resizeWidth,
+                                    options.resizeHeight,
+                                    *asset);
+
+                            write(jsi_callback->fd_[1],
+                                  &done,
+                                  sizeof(bool));
 
 
-                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
-                                        typedArray,
-                                        options.flipY,
-                                        options.premultiplyAlpha,
-                                        options.colorSpaceConversion,
-                                        options.resizeQuality,
-                                        options.resizeWidth,
-                                        options.resizeHeight,
-                                        *asset);
+                        }, std::move(shared_asset), std::move(ab), typedArray);
+                thread.detach();
 
-                                write(jsi_callback->fd_[1],
-                                      &done,
-                                      sizeof(bool));
-
-
-                            }, std::move(shared_asset), std::move(ab));
-                    thread.detach();
-
-                }
+                return;
             } else if (len == 5 || len == 6) {
                 auto asset = canvas_native_image_asset_create();
 
@@ -323,7 +312,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                                   v8::Isolate *isolate = cb->isolate_;
                                   v8::Locker locker(isolate);
-
+                                  v8::Isolate::Scope isolate_scope(isolate);
                                   v8::HandleScope handle_scope(isolate);
                                   v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
                                   v8::Local<v8::External> cbData = cb->data_.Get(
@@ -408,47 +397,43 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     return;
                 }
 
-                if (isTypedArray) {
-                    auto ta = bufferValue.As<v8::TypedArray>();
-                    auto typedArray = GetTypedArrayData<const uint8_t>(ta);
+                auto ta = bufferValue.As<v8::TypedArray>();
+                auto typedArray = GetTypedArrayData<const uint8_t>(ta);
+                std::thread thread(
+                        [jsi_callback, &options](
+                                rust::Box<ImageAsset> asset,
+                                float sx_or_options,
+                                float sy,
+                                float sw,
+                                float sh,
+                                v8::Global<v8::Value> ab,
+                                rust::Slice<const uint8_t> typedArray
+                        ) {
 
-                    std::thread thread(
-                            [&typedArray, jsi_callback, &options](
-                                    rust::Box<ImageAsset> asset,
-                                    float sx_or_options,
-                                    float sy,
-                                    float sw,
-                                    float sh,
-                                    v8::Global<v8::Value> ab
-                            ) {
-
-                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
-                                        typedArray,
-                                        sx_or_options,
-                                        sy,
-                                        sw,
-                                        sh,
-                                        options.flipY,
-                                        options.premultiplyAlpha,
-                                        options.colorSpaceConversion,
-                                        options.resizeQuality,
-                                        options.resizeWidth,
-                                        options.resizeHeight, *asset);
+                            auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+                                    typedArray,
+                                    sx_or_options,
+                                    sy,
+                                    sw,
+                                    sh,
+                                    options.flipY,
+                                    options.premultiplyAlpha,
+                                    options.colorSpaceConversion,
+                                    options.resizeQuality,
+                                    options.resizeWidth,
+                                    options.resizeHeight, *asset);
 
 
-                                write(jsi_callback->fd_[1],
-                                      &done,
-                                      sizeof(bool));
+                            write(jsi_callback->fd_[1],
+                                  &done,
+                                  sizeof(bool));
 
-                            }, std::move(shared_asset),
-                            (float) sx_or_options->NumberValue(context).ToChecked(),
-                            (float) sy->NumberValue(context).ToChecked(),
-                            (float) sw->NumberValue(context).ToChecked(),
-                            (float) sh->NumberValue(context).ToChecked(), std::move(ab));
-
-                    thread.detach();
-
-                }
+                        }, std::move(shared_asset),
+                        (float) sx_or_options->NumberValue(context).ToChecked(),
+                        (float) sy->NumberValue(context).ToChecked(),
+                        (float) sw->NumberValue(context).ToChecked(),
+                        (float) sh->NumberValue(context).ToChecked(), std::move(ab), typedArray);
+                thread.detach();
 
 
                 return;
@@ -623,24 +608,13 @@ void CanvasJSIModule::Create2DContextWithPointer(const v8::FunctionCallbackInfo<
 
     auto context_2d = canvas_native_context_create_with_pointer(ptr);
 
-    auto ctx = new CanvasRenderingContext2DImpl(
-            std::move(context_2d));
-
-    auto ret = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
-            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-
-    auto data = v8::External::New(isolate, ctx);
-
-    ret->SetInternalField(0, data);
-
+    auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
+            std::move(context_2d)));
     args.GetReturnValue().Set(ret);
 }
 
 void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-
-
     auto file = ConvertFromV8String(isolate, args[0]);
     v8::Global<v8::Function> cbFunc(isolate, args[1].As<v8::Function>());
     auto jsi_callback = new JSICallback(isolate, std::move(cbFunc));
@@ -657,31 +631,36 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                       read(fd, &done,
                            sizeof(bool));
 
-
-                      v8::Isolate *isolate = cb->isolate_;
-                      v8::Locker locker(isolate);
-
-                      v8::HandleScope handle_scope(isolate);
-                      v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
-
-                      auto cbData = cb->data_.Get(
-                              isolate);
-                      v8::Local<v8::Context> context = callback->GetCreationContextChecked();
-                      v8::Context::Scope context_scope(context);
-
-
-                      v8::Local<v8::Value> args[2];
-
-                      if (done) {
-                          args[0] = v8::Null(isolate);
-                          args[1] = cbData.As<v8::ArrayBuffer>();
-                      } else {
-                          auto error = cbData->ToString(context).ToLocalChecked();
-                          args[0] = v8::Exception::Error(error);
-                          args[1] = v8::Null(isolate);
+                      while (cb->data_.IsEmpty()) {
+                          return 1;
                       }
 
-                      callback->Call(context, context->Global(), 2, args);
+                      {
+                          v8::Isolate *isolate = cb->isolate_;
+                          v8::Locker locker(isolate);
+                          v8::Isolate::Scope isolate_scope(isolate);
+                          v8::HandleScope handle_scope(isolate);
+                          v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
+                          auto cbData = cb->data_.Get(
+                                  isolate);
+                          v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                          v8::Context::Scope context_scope(context);
+
+
+                          v8::Local<v8::Value> args[2];
+
+                          if (done) {
+                              args[0] = v8::Null(isolate);
+                              args[1] = v8::ArrayBuffer::New(isolate,
+                                                             cbData.As<v8::ArrayBuffer>()->GetBackingStore());
+                          } else {
+                              auto error = cbData->ToString(context).ToLocalChecked();
+                              args[0] = v8::Exception::Error(error);
+                              args[1] = v8::Null(isolate);
+                          }
+
+                          callback->Call(context, context->Global(), 2, args);
+                      }
 
 
 //                      auto func = cb->value_->asObject(
@@ -725,7 +704,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
                     // testing if isolate needs to be current
                     auto store = v8::ArrayBuffer::NewBackingStore(vec_buffer->data(),
-                                                                  vec_buffer->buffer_size(),
+                                                                  vec_buffer->size(),
                                                                   [](void *data, size_t length,
                                                                      void *deleter_data) {
                                                                       if (deleter_data != nullptr) {
@@ -782,67 +761,73 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
 
         config->Get(context, ConvertToV8String(isolate, "version")).ToLocal(&versionValue);
 
-        if (versionValue->IsString()) {
+        if (!versionValue.IsEmpty() && versionValue->IsString()) {
             version = ConvertFromV8String(isolate, versionValue);
         }
 
         v8::Local<v8::Value> alphaValue;
 
-        config->Get(context, ConvertToV8String(isolate, "alpha"));
-        if (alphaValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "alpha")).ToLocal(&alphaValue);
+        if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
             alpha = alphaValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> antialiasValue;
-        config->Get(context, ConvertToV8String(isolate, "antialias"));
-        if (antialiasValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "antialias")).ToLocal(&antialiasValue);
+        if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
             antialias = antialiasValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "failIfMajorPerformanceCaveat"));
-        if (failIfMajorPerformanceCaveatValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "failIfMajorPerformanceCaveat")).ToLocal(
+                &failIfMajorPerformanceCaveatValue);
+        if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
+            failIfMajorPerformanceCaveatValue->IsBoolean()) {
             fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
                     isolate);
         }
 
         v8::Local<v8::Value> powerPreferenceValue;
-        config->Get(context, ConvertToV8String(isolate, "powerPreference"));
-        if (powerPreferenceValue->IsString()) {
+        config->Get(context, ConvertToV8String(isolate, "powerPreference")).ToLocal(
+                &powerPreferenceValue);
+        if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
             power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
         }
 
         v8::Local<v8::Value> premultipliedAlphaValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "premultipliedAlpha"));
-        if (premultipliedAlphaValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "premultipliedAlpha")).ToLocal(
+                &premultipliedAlphaValue);
+        if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
             premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> preserveDrawingBufferValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "preserveDrawingBuffer"));
-        if (preserveDrawingBufferValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "preserveDrawingBuffer")).ToLocal(
+                &preserveDrawingBufferValue);
+        if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
             preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> stencilValue;
-        config->Get(context, ConvertToV8String(isolate, "stencil"));
-        if (stencilValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "stencil")).ToLocal(&stencilValue);
+        if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
             stencil = stencilValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> desynchronizedValue;
-        config->Get(context, ConvertToV8String(isolate, "desynchronized"));
-        if (desynchronizedValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "desynchronized")).ToLocal(
+                &desynchronizedValue);
+        if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
             desynchronized = desynchronizedValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> xrCompatibleValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "xrCompatible"));
-        if (xrCompatibleValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "xrCompatible")).ToLocal(&xrCompatibleValue);
+        if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
             xr_compatible = xrCompatibleValue->BooleanValue(isolate);
         }
 
@@ -974,67 +959,73 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
 
         config->Get(context, ConvertToV8String(isolate, "version")).ToLocal(&versionValue);
 
-        if (versionValue->IsString()) {
+        if (!versionValue.IsEmpty() && versionValue->IsString()) {
             version = ConvertFromV8String(isolate, versionValue);
         }
 
         v8::Local<v8::Value> alphaValue;
 
-        config->Get(context, ConvertToV8String(isolate, "alpha"));
-        if (alphaValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "alpha")).ToLocal(&alphaValue);
+        if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
             alpha = alphaValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> antialiasValue;
-        config->Get(context, ConvertToV8String(isolate, "antialias"));
-        if (antialiasValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "antialias")).ToLocal(&antialiasValue);
+        if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
             antialias = antialiasValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "failIfMajorPerformanceCaveat"));
-        if (failIfMajorPerformanceCaveatValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "failIfMajorPerformanceCaveat")).ToLocal(
+                &failIfMajorPerformanceCaveatValue);
+        if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
+            failIfMajorPerformanceCaveatValue->IsBoolean()) {
             fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
                     isolate);
         }
 
         v8::Local<v8::Value> powerPreferenceValue;
-        config->Get(context, ConvertToV8String(isolate, "powerPreference"));
-        if (powerPreferenceValue->IsString()) {
+        config->Get(context, ConvertToV8String(isolate, "powerPreference")).ToLocal(
+                &powerPreferenceValue);
+        if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
             power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
         }
 
         v8::Local<v8::Value> premultipliedAlphaValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "premultipliedAlpha"));
-        if (premultipliedAlphaValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "premultipliedAlpha")).ToLocal(
+                &premultipliedAlphaValue);
+        if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
             premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> preserveDrawingBufferValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "preserveDrawingBuffer"));
-        if (preserveDrawingBufferValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "preserveDrawingBuffer")).ToLocal(
+                &preserveDrawingBufferValue);
+        if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
             preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> stencilValue;
-        config->Get(context, ConvertToV8String(isolate, "stencil"));
-        if (stencilValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "stencil")).ToLocal(&stencilValue);
+        if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
             stencil = stencilValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> desynchronizedValue;
-        config->Get(context, ConvertToV8String(isolate, "desynchronized"));
-        if (desynchronizedValue->IsBoolean()) {
+        config->Get(context, ConvertToV8String(isolate, "desynchronized")).ToLocal(
+                &desynchronizedValue);
+        if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
             desynchronized = desynchronizedValue->BooleanValue(isolate);
         }
 
         v8::Local<v8::Value> xrCompatibleValue;
         config->Get(context,
-                    ConvertToV8String(isolate, "xrCompatible"));
-        if (xrCompatibleValue->IsBoolean()) {
+                    ConvertToV8String(isolate, "xrCompatible")).ToLocal(&xrCompatibleValue);
+        if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
             xr_compatible = xrCompatibleValue->BooleanValue(isolate);
         }
 
@@ -1046,10 +1037,11 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
             auto count = args.Length();
             if (count == 6) {
                 auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-                auto density = args[2]->NumberValue(context).ToChecked();
-                auto fontColor = args[3]->NumberValue(context).ToChecked();
-                auto ppi = args[4]->NumberValue(context).ToChecked();
-                auto direction = args[5]->NumberValue(context).ToChecked();
+//                auto density = args[2]->NumberValue(context).ToChecked();
+//                auto fontColor = args[3]->NumberValue(context).ToChecked();
+//                auto ppi = args[4]->NumberValue(context).ToChecked();
+//                auto direction = args[5]->NumberValue(context).ToChecked();
+
                 auto webgl = canvas_native_webgl_create(
                         ctx,
                         rust::Str(
@@ -1072,6 +1064,7 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
                                                                                     std::move(
                                                                                             webgl),
                                                                                     WebGLRenderingVersion::V2));
+
                 args.GetReturnValue().Set(renderingContext);
                 return;
 
@@ -1079,10 +1072,10 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
                        7) {
                 auto width = args[1]->NumberValue(context).ToChecked();
                 auto height = args[2]->NumberValue(context).ToChecked();
-                auto density = args[3]->NumberValue(context).ToChecked();
-                auto fontColor = args[4]->NumberValue(context).ToChecked();
-                auto ppi = args[5]->NumberValue(context).ToChecked();
-                auto direction = args[6]->NumberValue(context).ToChecked();
+//                auto density = args[3]->NumberValue(context).ToChecked();
+//                auto fontColor = args[4]->NumberValue(context).ToChecked();
+//                auto ppi = args[5]->NumberValue(context).ToChecked();
+//                auto direction = args[6]->NumberValue(context).ToChecked();
                 auto ctx = canvas_native_webgl_create_no_window(
                         (int32_t) width,
                         (int32_t) height,

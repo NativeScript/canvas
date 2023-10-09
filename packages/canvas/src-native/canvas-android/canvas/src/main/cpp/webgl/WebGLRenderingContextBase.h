@@ -18,13 +18,20 @@
 enum class WebGLRenderingVersion : uint8_t {
     V1,
     V2
-};
-;
+};;
 using namespace org::nativescript::canvas;
 
 class WebGLRenderingContextBase {
 public:
     WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version);
+
+    static WebGLRenderingContextBase *GetPointer(const v8::Local<v8::Object> &object) {
+        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+        return static_cast<WebGLRenderingContextBase *>(ptr);
+    }
 
     ~WebGLRenderingContextBase();
 

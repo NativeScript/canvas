@@ -504,7 +504,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	// Unmoved square
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
-		//filterBlur(this.canvas);
+		filterBlur(this.canvas);
 		//handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
@@ -537,7 +537,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
-			fillRule(this.canvas);
+		//fillRule(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -584,7 +584,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
 		//this.solar(this.canvas);
-
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -610,7 +609,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//touchParticles(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
-		//drawModes(this.canvas,'triangles')
+		//drawModes(this.canvas,'triangles');
 		//drawElements(this.canvas)
 		// ctx = canvas.getContext("2d") as any;
 		//swarm(this.canvas);
@@ -623,7 +622,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
-		// imageFilter(this.canvas);
+		//imageFilter(this.canvas);
 		//interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
@@ -673,7 +672,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		console.log(asset.error);
 		console.log(asset.width, asset.height);
 		function draw() {
-			ctx.drawImage(asset, 0, 0, 300 * Screen.mainScreen.scale,300 * Screen.mainScreen.scale);
+			ctx.drawImage(asset, 0, 0, 300 * Screen.mainScreen.scale, 300 * Screen.mainScreen.scale);
 			requestAnimationFrame(draw);
 		}
 		draw();
@@ -1488,8 +1487,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		//glViewport(0,0,50,50);
 		// Give the pattern a width and height of 50
-		patternCanvas.width = 50;
-		patternCanvas.height = 50;
+		patternCanvas.width = size;
+		patternCanvas.height = size;
 
 		//  patternCanvas.getContext('2d') as any;
 		// Give the pattern a background color and draw an arc
@@ -1499,18 +1498,18 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		patternContext.arc(0, 0, size, 0, 0.5 * Math.PI);
 		patternContext.stroke();
 
-		var vp = interop.alloc(16);
+		if (global.isIOS) {
+			var vp = interop.alloc(16);
 
-		glGetIntegerv(0x0ba2, vp);
+			glGetIntegerv(0x0ba2, vp);
 
-		const x = new interop.Reference<number>(interop.types.int32, vp);
-		const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
-		const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
-		const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
+			const x = new interop.Reference<number>(interop.types.int32, vp);
+			const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
+			const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
+			const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
 
-		console.log(x.value, y.value, w.value, h.value);
-
-		console.log(patternCanvas.toDataURL());
+			console.log(x.value, y.value, w.value, h.value);
+		}
 
 		// Create our primary canvas and fill it with the pattern
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -1743,7 +1742,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var earth = new global.ImageAsset();
 
 		await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
-
 		//	 sun.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png');
 		//	 moon.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png');
 		//	 earth.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');

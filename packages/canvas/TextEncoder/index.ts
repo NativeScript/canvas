@@ -12,21 +12,9 @@ export class TextEncoder {
 	get native() {
 		return this._native;
 	}
-	_encode;
-
-	_getMethod(name: string) {
-		if (this._encode === undefined) {
-			const ret = this.native[name];
-			this._encode = ret;
-			return ret;
-		}
-
-		return this._encode;
-	}
 
 	constructor(encoding: string = 'utf8') {
 		this._native = new ctor(encoding);
-		//this._getMethod('encode');
 	}
 
 	get encoding(): string {

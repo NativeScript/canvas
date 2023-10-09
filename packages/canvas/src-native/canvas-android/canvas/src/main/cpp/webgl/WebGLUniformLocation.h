@@ -41,7 +41,7 @@ public:
     NewInstance(v8::Isolate *isolate, WebGLUniformLocation *uniformLocation) {
         auto context = isolate->GetCurrentContext();
         v8::EscapableHandleScope scope(isolate);
-        auto object = WebGLRenderbuffer::GetCtor(isolate)->GetFunction(
+        auto object = WebGLUniformLocation::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(isolate, object, NativeType::WebGLUniformLocation);
         auto ext = v8::External::New(isolate, uniformLocation);

@@ -4,13 +4,9 @@ import { Canvas } from '../Canvas';
 import { ImageSource } from '@nativescript/core';
 
 import { Helpers } from '../helpers';
-
-let ctor;
-
 export class ImageBitmap {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasJSIModule.createImageBitmap;
 	}
 
 	_native;
@@ -22,19 +18,6 @@ export class ImageBitmap {
 		this._native = bitmap;
 	}
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.native[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	get width(): number {
 		return this.native.width;
 	}
@@ -43,8 +26,7 @@ export class ImageBitmap {
 	}
 
 	close() {
-		const close = this._getMethod('close');
-		close();
+		this.native.close();
 	}
 
 	static fromNative(value) {
@@ -86,7 +68,7 @@ export class ImageBitmap {
 				}
 			}
 
-			ctor(realSource, options, (error, value) => {
+			global.CanvasModule.createImageBitmap(realSource, options, (error, value) => {
 				if (value) {
 					resolve(ImageBitmap.fromNative(value));
 				} else {
@@ -128,7 +110,7 @@ export class ImageBitmap {
 				}
 			}
 
-			ctor(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {
+			global.CanvasModule.createImageBitmap(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {
 				if (value) {
 					resolve(ImageBitmap.fromNative(value));
 				} else {

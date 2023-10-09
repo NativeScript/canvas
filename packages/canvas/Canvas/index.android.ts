@@ -41,22 +41,6 @@ export class Canvas extends CanvasBase {
 	private _contextType = ContextType.None;
 	private _is2D = false;
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		if (this.__native__context === undefined) {
-			return undefined;
-		}
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.__native__context[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	constructor() {
 		super();
 		const activity = Application.android.foregroundActivity || Application.android.startActivity;
@@ -222,12 +206,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		//const toDataURL = this._getMethod('__toDataURL');
-
-		// if (toDataURL === undefined) {
-		// 	return 'data:,';
-		// }
-
 		return this.native.__toDataURL(type, encoderOptions);
 	}
 
@@ -323,7 +301,6 @@ export class Canvas extends CanvasBase {
 					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
 					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
-
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
 					this._webglContext._type = 'webgl';

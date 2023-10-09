@@ -27,6 +27,7 @@ import { webgl_shadowmap } from './examples/webgl_shadowmap';
 import { webgl_shadowmap_performance } from './examples/webgl_shadowmap_performance';
 import { webgl_shadowmap_pointlight } from './examples/webgl_shadowmap_pointlight';
 import { webgl_shadowmap_vsm } from './examples/webgl_shadowmap_vsm';
+import { setTimeout } from '@nativescript/core/timer';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -72,7 +73,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
 		
@@ -86,7 +87,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// 	console.log(NSString.alloc().initWithDataEncoding(base, NSUTF8StringEncoding));
 		// }, 10000);
 		//this.threeCube(this.canvas);
-		//this.threeCar(this.canvas);
+		this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
@@ -97,26 +98,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.gtlfTonemapping(this.canvas);
 		//this.bufferGeo(this.canvas);
 		//this.birds(this.canvas);
-		//this.renderVideo();
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 	}
 
-	renderVideo() {
-		const ctx = this.canvas.getContext('webgl2');
-		const video = document.createElement('video');
-		video.loop = true;
-		video.autoplay = true;
-		video.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4';
-		function update() {
-			//@ts-ignore
-			video.requestVideoFrameCallback(update);
-			//@ts-ignore
-			video._video.getCurrentFrame(ctx.native);
-		}
-		//@ts-ignore
-		video.requestVideoFrameCallback(update);
-	}
 
 	gtlfLoader(canvas) {
 		var container, controls, context, width, height;
@@ -170,6 +155,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					render();
 				});
 			});
+			
+	
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
@@ -1572,7 +1559,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const loader = new GLTFLoader();
 			loader.setDRACOLoader(dracoLoader);
 
-			loader.load(root + '/models/gltf/ferrari.glb', function (gltf) {
+			loader.setPath(root + '/models/gltf/').load('ferrari.glb', function (gltf) {
 				const carModel: any = gltf.scene.children[0];
 
 				carModel.getObjectByName('body').material = bodyMaterial;
@@ -1602,6 +1589,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				scene.add(carModel);
 			});
+
 
 			renderer.setAnimationLoop(render);
 

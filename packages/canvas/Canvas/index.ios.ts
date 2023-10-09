@@ -45,21 +45,6 @@ export class Canvas extends CanvasBase {
 	private _is2D = false;
 
 	_didLayout = false;
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		if (this.__native__context === undefined) {
-			return undefined;
-		}
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.__native__context[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
 
 	constructor() {
 		super();
@@ -84,19 +69,17 @@ export class Canvas extends CanvasBase {
 		this._readyListener = listener.new();
 		this._canvas.setListener(this._readyListener);
 		this._canvas.enterBackgroundListener = () => {
-			const __stopRaf = this._getMethod('__stopRaf');
-			if (__stopRaf === undefined) {
+			if (!this.native) {
 				return;
 			}
-			__stopRaf();
+			this.native.__stopRaf();
 		};
 
 		this._canvas.becomeActiveListener = () => {
-			const __startRaf = this._getMethod('__startRaf');
-			if (__startRaf === undefined) {
+			if (!this.native) {
 				return;
 			}
-			__startRaf();
+			this.native.__startRaf();
 		};
 	}
 
@@ -336,11 +319,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		const toDataURL = this._getMethod('__toDataURL');
-		if (toDataURL === undefined) {
-			return 'data:,';
-		}
-		return toDataURL(type, encoderOptions);
+		return this.native.toDataURL(type, encoderOptions);
 	}
 
 	snapshot(flip: boolean = false): ImageSource | null {

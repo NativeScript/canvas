@@ -42,7 +42,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGL2RenderingContext::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLRenderingContext);
+        SetNativeType(isolate, object, NativeType::WebGLRenderingContextBase);
         auto ext = v8::External::New(isolate, renderingContext);
         object->SetInternalField(0, ext);
         return scope.Escape(object);

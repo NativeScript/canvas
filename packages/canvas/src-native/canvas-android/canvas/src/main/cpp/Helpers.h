@@ -9,6 +9,37 @@
 #include "Common.h"
 #include "OneByteStringResource.h"
 
+const char *LOG_TAG = "JS";
+int m_maxLogcatObjectSize = 4096;
+
+static void sendToADBLogcat(const std::string &message, android_LogPriority logPriority) {
+    // limit the size of the message that we send to logcat using the predefined value in package.json
+    auto messageToLog = message;
+    if (messageToLog.length() > m_maxLogcatObjectSize) {
+        messageToLog = messageToLog.erase(m_maxLogcatObjectSize, std::string::npos);
+        messageToLog = messageToLog + "...";
+    }
+
+    // split strings into chunks of 4000 characters
+    // __android_log_write can't send more than 4000 to the stdout at a time
+    auto messageLength = messageToLog.length();
+    int maxStringLength = 4000;
+
+    if (messageLength < maxStringLength) {
+        __android_log_write(logPriority, LOG_TAG, messageToLog.c_str());
+    } else {
+        for (int i = 0; i < messageLength; i += maxStringLength) {
+            auto messagePart = messageToLog.substr(i, maxStringLength);
+
+            __android_log_write(logPriority, LOG_TAG, messagePart.c_str());
+        }
+    }
+}
+
+static void LogToConsole(const std::string &message) {
+    sendToADBLogcat(message, android_LogPriority::ANDROID_LOG_INFO);
+}
+
 enum class NativeType {
     None,
     CanvasGradient,
@@ -58,7 +89,6 @@ enum class NativeType {
     WEBGL_draw_buffers,
     WebGLShaderPrecisionFormat,
     WebGLUniformLocation,
-    WebGLRenderingContext,
     WebGLSampler,
     WebGLTransformFeedback,
     WebGLSync
@@ -143,7 +173,6 @@ static void SetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &o
     v8::Local<v8::Context> context;
     obj->GetCreationContext().ToLocal(&context);
     v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, propName);
-
     obj->SetPrivate(context, privateKey, value);
 }
 
@@ -174,16 +203,15 @@ static void SetNativeType(v8::Isolate *isolate, const v8::Local<v8::Object> &obj
 }
 
 inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
-    if (obj->IsObject()) {
+    if (!obj->IsNullOrUndefined() && obj->IsObject()) {
         v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
         auto ret = GetPrivateValue(isolate, obj.As<v8::Object>(), name);
-
         auto context = isolate->GetCurrentContext();
 
-        if (ret->IsNumber()) {
+        if (!ret.IsEmpty() && ret->IsNumber()) {
             auto value = (int) ret->NumberValue(context).ToChecked();
             if (value >= (int) NativeType::CanvasGradient &&
-                value <= (int) NativeType::TextMetrics) {
+                value <= (int) NativeType::WebGLSync) {
                 return (NativeType) value;
             }
         }
@@ -214,3 +242,4 @@ GetTypedArrayData(v8::Local<v8::TypedArray> &array) {
                          (size / sizeof(T)));
     return std::move(slice);
 }
+

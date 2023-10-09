@@ -18,19 +18,6 @@ export abstract class WebGLRenderingContextBase implements CanvasRenderingContex
 		this._native = context;
 	}
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.native[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	_native: any;
 
 	get native() {

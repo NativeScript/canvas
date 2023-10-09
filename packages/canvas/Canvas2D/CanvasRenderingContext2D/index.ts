@@ -13,7 +13,7 @@ let ctor;
 declare const NSCCanvasRenderingContext2D;
 
 export class CanvasRenderingContext2D {
-	public static isDebug = false;
+	public static isDebug = true;
 	private context;
 
 	static {
@@ -252,21 +252,7 @@ export class CanvasRenderingContext2D {
 		this.context.lineWidth = width;
 	}
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.context[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	__toDataURL(type: string = 'image/jpg', quality: number = 92) {
-		//const __toDataURL = this._getMethod('__toDataURL');
 		return this.context.__toDataURL(type, quality);
 	}
 
@@ -274,25 +260,21 @@ export class CanvasRenderingContext2D {
 
 	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
 		this._ensureLayoutBeforeDraw();
-		//const arc = this._getMethod('arc');
 		this.context.arc(x, y, radius, startAngle, endAngle, anticlockwise);
 	}
 
 	arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void {
 		this._ensureLayoutBeforeDraw();
-		//const arcTo = this._getMethod('arcTo');
 		this.context.arcTo(x1, y1, x2, y2, radius);
 	}
 
 	beginPath(): void {
 		this._ensureLayoutBeforeDraw();
-		//const beginPath = this._getMethod('beginPath');
 		this.context.beginPath();
 	}
 
 	bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void {
 		this._ensureLayoutBeforeDraw();
-		//const bezierCurveTo = this._getMethod('bezierCurveTo');
 		this.context.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
 	}
 
@@ -300,7 +282,6 @@ export class CanvasRenderingContext2D {
 
 	clearRect(x: number, y: number, width: number, height: number): void {
 		this._ensureLayoutBeforeDraw();
-		//const clearRect = this._getMethod('clearRect');
 		this.context.clearRect(x, y, width, height);
 	}
 
@@ -312,7 +293,6 @@ export class CanvasRenderingContext2D {
 
 	clip(...args: any): void {
 		this._ensureLayoutBeforeDraw();
-		//const clip = this._getMethod('clip');
 		if (typeof args[0] === 'string') {
 			this.context.clip(args[0]);
 		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
@@ -326,7 +306,6 @@ export class CanvasRenderingContext2D {
 
 	closePath(): void {
 		this._ensureLayoutBeforeDraw();
-		//const closePath = this._getMethod('closePath');
 		this.context.closePath();
 	}
 
@@ -344,7 +323,6 @@ export class CanvasRenderingContext2D {
 
 	createLinearGradient(x0: number, y0: number, x1: number, y1: number) {
 		this._ensureLayoutBeforeDraw();
-		//const createLinearGradient = this._getMethod('createLinearGradient');
 		return CanvasGradient.fromNative(this.context.createLinearGradient(x0, y0, x1, y1));
 	}
 

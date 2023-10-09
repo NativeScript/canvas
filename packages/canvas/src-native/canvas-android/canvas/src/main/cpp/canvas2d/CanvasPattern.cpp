@@ -29,9 +29,20 @@ CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
     return static_cast<CanvasPattern *>(ptr);
 }
 
+static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, CanvasPattern *pattern) {
+    auto context = isolate->GetCurrentContext();
+    v8::EscapableHandleScope scope(isolate);
+    auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
+            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+    SetNativeType(isolate, object, NativeType::CanvasPattern);
+    auto ext = v8::External::New(isolate, pattern);
+    object->SetInternalField(0, ext);
+    return scope.Escape(object);
+}
+
 v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->CanvasGradientTmpl.get();
+    auto ctor = cache->CanvasPatternTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
@@ -46,7 +57,7 @@ v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "SetTransform"),
             v8::FunctionTemplate::New(isolate, &SetTransform));
 
-    cache->CanvasGradientTmpl =
+    cache->CanvasPatternTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }
@@ -59,18 +70,18 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
+    auto type = GetNativeType(isolate, value);
 
-    if (!value->IsNullOrUndefined()) {
-        // todo
-//        auto matrix =
-//        if (matrix != nullptr) {
-//            canvas_native_pattern_set_transform(
-//                    ptr->GetPaintStyle(),
-//                    matrix->GetMatrix());
-//        }
+    if (type == NativeType::Matrix) {
+
+        auto matrix = MatrixImpl::GetPointer(value.As<v8::Object>());
+        if (matrix != nullptr) {
+            canvas_native_pattern_set_transform(
+                    ptr->GetPaintStyle(),
+                    matrix->GetMatrix());
+        }
     }
 
 

@@ -42,11 +42,18 @@ export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
 	valueConverter: booleanConverter,
 });
 
+export const upscaleProperty = new Property<CanvasBase, boolean>({
+	name: 'upscale',
+	defaultValue: false,
+	valueConverter: booleanConverter,
+});
+
 let pointerId = 0;
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
 	ignorePixelScaling: boolean;
+	upscaleProperty: boolean;
 	_isCustom: boolean = false;
 
 	_classList: Set<any>;
@@ -693,3 +700,5 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 }
 
 ignorePixelScalingProperty.register(CanvasBase);
+
+upscaleProperty.register(CanvasBase);

@@ -237,7 +237,6 @@ GetTypedArrayData(v8::Local<v8::TypedArray> &array) {
     auto buf = array->Buffer();
     auto offset = array->ByteOffset();
     auto size = buf->ByteLength();
-
     rust::Slice<T> slice(reinterpret_cast<T *>(buf->GetBackingStore()->Data()) + offset,
                          (size / sizeof(T)));
     return std::move(slice);

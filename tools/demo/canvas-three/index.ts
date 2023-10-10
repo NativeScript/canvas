@@ -89,6 +89,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCube(this.canvas);
 		this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
+		
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -1453,6 +1454,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 	threeCar(canvas) {
 		const context = canvas.getContext('webgl2') as any;
+		const width = context.drawingBufferWidth;
+		const height = context.drawingBufferHeight;
 		let camera, scene, renderer;
 		let stats;
 
@@ -1466,7 +1469,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		function init(root) {
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setSize(width, height);
 
 			grid = new THREE.GridHelper(100, 40, 0x000000, 0x000000);
 			grid.material.opacity = 0.1;
@@ -1479,7 +1482,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			window.addEventListener('resize', onWindowResize, false);
 
 			//
-			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+			camera = new THREE.PerspectiveCamera(75,width / height, 0.1, 1000);
 			camera.position.set(4.25, 1.4, -7);
 
 			controls = new OrbitControls(camera, canvas);
@@ -1643,7 +1646,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
-		const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+		const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
 		camera.position.set(5, 2, 8);
 
 		const controls = new OrbitControls(camera, canvas);

@@ -71,7 +71,7 @@ export class Svg extends View {
 		super();
 		if (global.isAndroid) {
 			const activity = Application.android.foregroundActivity || Application.android.startActivity;
-			this._svg = new org.nativescript.canvas.TNSSVG(activity);
+			this._svg = new org.nativescript.canvas.NSCSVG(activity);
 		} else if (global.isIOS) {
 			this._svg = TNSSVG.alloc().initWithFrame(CGRectZero);
 			this._svg.backgroundColor = UIColor.clearColor;

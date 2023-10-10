@@ -4,6 +4,7 @@ import { Canvas } from '../Canvas';
 import { ImageSource } from '@nativescript/core';
 
 import { Helpers } from '../helpers';
+
 export class ImageBitmap {
 	static {
 		Helpers.initialize();
@@ -37,8 +38,10 @@ export class ImageBitmap {
 	}
 
 	static createFrom(source: any, options: any) {
-		return new Promise((resolve, reject) => {
+		return new Promise(function (resolve, reject) {
 			let realSource;
+			let isBuffer = false;
+			const id = Date.now();
 			if (source instanceof Canvas) {
 				realSource = (source as any).native;
 			} else if (source instanceof ImageBitmap) {
@@ -50,6 +53,7 @@ export class ImageBitmap {
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source) as Uint8Array;
 				realSource = bytes;
+				isBuffer = true;
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string') {
 				if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
 					realSource = source._asset.native;
@@ -62,18 +66,19 @@ export class ImageBitmap {
 				if (global.isAndroid) {
 					realSource = source.android; // todo
 				}
-
 				if (global.isIOS) {
 					realSource = source.ios; // todo
 				}
 			}
 
-			global.CanvasModule.createImageBitmap(realSource, options, (error, value) => {
-				if (value) {
-					resolve(ImageBitmap.fromNative(value));
-				} else {
-					reject(new Error(error));
-				}
+			setTimeout(() => {
+				global.CanvasModule.createImageBitmap(realSource, options, (error, value) => {
+					if (value) {
+						resolve(ImageBitmap.fromNative(value));
+					} else {
+						reject(new Error(error));
+					}
+				});
 			});
 		});
 	}

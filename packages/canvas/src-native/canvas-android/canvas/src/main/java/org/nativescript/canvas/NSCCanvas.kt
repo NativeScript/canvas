@@ -40,6 +40,12 @@ class NSCCanvas : FrameLayout {
 	}
 
 
+	var upscale: Boolean = false
+		set(value) {
+			field = value
+			updateParams(width, height)
+		}
+
 	var ignorePixelScaling: Boolean
 		set(value) {
 			if (surfaceType == SurfaceType.Surface) {
@@ -399,8 +405,38 @@ class NSCCanvas : FrameLayout {
 		isAttachedToWindow = true
 	}
 
+	private fun updateParams(w: Int, h: Int) {
+		if (upscale) {
+			val density = resources.displayMetrics.density
+			if (surfaceType == SurfaceType.Surface) {
+				surfaceView.layoutParams = LayoutParams((w / density).toInt(), (h / density).toInt())
+			} else {
+				textureView.layoutParams = LayoutParams((w / density).toInt(), (h / density).toInt())
+			}
+			clipChildren = true
+			clipToPadding = true
+			ignorePixelScaling = true
+		} else {
+			if (surfaceType == SurfaceType.Surface) {
+				surfaceView.layoutParams = LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT
+				)
+			} else {
+				textureView.layoutParams = LayoutParams(
+					ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT
+				)
+			}
+			clipChildren = false
+			clipToPadding = false
+			ignorePixelScaling = false
+		}
+	}
+
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
+		updateParams(w, h)
 		listener?.surfaceResize(w, h)
 	}
 

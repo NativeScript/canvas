@@ -211,9 +211,9 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
     auto asset = canvas_native_image_asset_shared_clone(
             ptr->GetImageAsset());
 
-    v8::Global<v8::Function> callback(isolate, args[1].As<v8::Function>());
+    auto callback = args[1].As<v8::Function>();
 
-    auto jsi_callback = new JSICallback(isolate, std::move(callback));
+    auto jsi_callback = new JSICallback(isolate, callback);
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
@@ -230,7 +230,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
                       v8::Locker locker(isolate);
                       v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
-                      v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
+                      v8::Local<v8::Function> callback = cb->callback_->Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                       v8::Context::Scope context_scope(context);
 
@@ -303,10 +303,10 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto asset = canvas_native_image_asset_shared_clone(
             ptr->GetImageAsset());
 
-    v8::Global<v8::Function> callback(isolate, args[1].As<v8::Function>());
+    auto callback = args[1].As<v8::Function>();
 
 
-    auto jsi_callback = new JSICallback(isolate, std::move(callback));
+    auto jsi_callback = new JSICallback(isolate, callback);
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
@@ -323,7 +323,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
                       v8::Locker locker(isolate);
                       v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
-                      v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
+                      v8::Local<v8::Function> callback = cb->callback_->Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                       v8::Context::Scope context_scope(context);
 
@@ -412,9 +412,9 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     auto asset = canvas_native_image_asset_shared_clone(
             ptr->GetImageAsset());
 
-    v8::Global<v8::Function> callback(isolate, args[1].As<v8::Function>());
+    auto callback = args[1].As<v8::Function>();
 
-    auto jsi_callback = new JSICallback(isolate, std::move(callback));
+    auto jsi_callback = new JSICallback(isolate, callback);
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
@@ -431,7 +431,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
                       v8::Locker locker(isolate);
                       v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
-                      v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
+                      v8::Local<v8::Function> callback = cb->callback_->Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                       v8::Context::Scope context_scope(context);
 
@@ -501,9 +501,9 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto asset = canvas_native_image_asset_shared_clone(
             ptr->GetImageAsset());
 
-    v8::Global<v8::Function> callback(isolate, args[1].As<v8::Function>());
+    auto callback = args[1].As<v8::Function>();
 
-    auto jsi_callback = new JSICallback(isolate, std::move(callback));
+    auto jsi_callback = new JSICallback(isolate, callback);
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
@@ -520,7 +520,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
                       v8::Locker locker(isolate);
                       v8::Isolate::Scope isolate_scope(isolate);
                       v8::HandleScope handle_scope(isolate);
-                      v8::Local<v8::Function> callback = cb->callback_.Get(isolate);
+                      v8::Local<v8::Function> callback = cb->callback_->Get(isolate);
                       v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                       v8::Context::Scope context_scope(context);
 

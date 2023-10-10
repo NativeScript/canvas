@@ -1,4 +1,4 @@
-import { CanvasBase, ignorePixelScalingProperty } from './common';
+import { CanvasBase, ignorePixelScalingProperty, upscaleProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -46,6 +46,10 @@ export class Canvas extends CanvasBase {
 		const activity = Application.android.foregroundActivity || Application.android.startActivity;
 		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 		(global as any).__canvasLoaded = true;
+	}
+
+	[upscaleProperty.setNative](value: boolean) {
+		this._canvas.setUpscale(value);
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {

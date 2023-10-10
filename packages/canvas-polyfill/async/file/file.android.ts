@@ -27,11 +27,10 @@ export class FileManager {
 		//const opts = new com.github.triniwiz.async.Async2.FileManager.Options();
 		//opts.asStream = options.asStream;
 		if (this._readFile === undefined) {
-			//this._readFile = global?.CanvasModule?.readFile;
+			this._readFile = !!global?.CanvasModule?.readFile;
 		}
 		if (global?.CanvasModule?.readFile) {
-			global?.CanvasModule?.readFile(path, (error, buffer) => {
-				console.log(buffer);
+			global?.CanvasModule?.readFile(path, (error, buffer: ArrayBuffer) => {
 				if (error) {
 					callback(new Error(error), null);
 				} else {

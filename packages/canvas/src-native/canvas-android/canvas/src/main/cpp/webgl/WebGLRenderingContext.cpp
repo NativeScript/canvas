@@ -372,23 +372,20 @@ void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8
 
     if (args.Length() > 2) {
         auto programValue = args[0];
+        auto type = GetNativeType(isolate, programValue);
+        if (type == NativeType::WebGLProgram && args[1]->IsNumber() &&
+            args[2]->IsString()) {
+            auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
 
-        if (programValue->IsObject()) {
-            auto type = GetNativeType(isolate, programValue.As<v8::Object>());
-            if (type == NativeType::WebGLProgram && args[1]->IsNumber() &&
-                args[2]->IsString()) {
-                auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
+            auto index = (uint32_t) args[1]->NumberValue(context).ToChecked();
+            auto name = ConvertFromV8String(isolate, args[2]);
+            canvas_native_webgl_bind_attrib_location(
+                    program->GetProgram(),
+                    index,
+                    rust::Str(name.c_str()),
+                    ptr->GetState()
+            );
 
-                auto index = (uint32_t) args[1]->NumberValue(context).ToChecked();
-                auto name = ConvertFromV8String(isolate, args[2]);
-                canvas_native_webgl_bind_attrib_location(
-                        program->GetProgram(),
-                        index,
-                        rust::Str(name.c_str()),
-                        ptr->GetState()
-                );
-
-            }
         }
     }
 }

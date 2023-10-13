@@ -81,7 +81,7 @@ fi
 
 export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
 export DYLD_LIBRARY_PATH="$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH:$DYLD_FALLBACK_LIBRARY_PATH"
-
+export RUST_BUILD_TARGET="$RUST_BUILD_TARGET"
 
 cbindgen --config "$CWD/canvas-ios/cbindgen.toml"  "$CWD/canvas-ios/src/lib.rs" -l c >"$SRCROOT/CanvasNative/include/canvas_native.h"
 

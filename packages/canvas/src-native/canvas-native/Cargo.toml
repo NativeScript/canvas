@@ -11,7 +11,8 @@ members = [
     "canvas-ios",
 #    "canvas-ffi",
     "playground",
-    "canvas-cxx"
+    "canvas-cxx",
+    "canvas-c"
 ]
 
 [profile.release]

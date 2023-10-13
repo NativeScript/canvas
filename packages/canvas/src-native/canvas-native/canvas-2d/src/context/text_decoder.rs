@@ -17,12 +17,12 @@ impl TextDecoder {
         Self { inner: decoder }
     }
 
-    pub fn decode_to_string(&mut self, data: &[u8]) -> String {
+    pub fn decode_to_string(&self, data: &[u8]) -> String {
         let (res, _) = self.inner.decode_with_bom_removal(data);
         res.to_string()
     }
 
-    pub fn decode(&mut self, data: *const u8, len: usize) -> CString {
+    pub fn decode(&self, data: *const u8, len: usize) -> CString {
         let txt = unsafe { std::slice::from_raw_parts(data, len) };
         let (res, _) = self.inner.decode_with_bom_removal(txt);
         // let utf8_src = res.as_bytes();
@@ -35,7 +35,7 @@ impl TextDecoder {
         CString::new(res.to_string()).unwrap()
     }
 
-    pub fn decode_as_bytes(&mut self, data: *const u8, len: usize) -> Vec<u8> {
+    pub fn decode_as_bytes(&self, data: *const u8, len: usize) -> Vec<u8> {
         let txt = unsafe { std::slice::from_raw_parts(data, len) };
         let (res, _) = self.inner.decode_with_bom_removal(txt);
         let utf8_src = res.as_bytes();
@@ -48,7 +48,7 @@ impl TextDecoder {
         utf8_src.to_vec()
     }
 
-    pub(crate) fn decode_to_bytes(&mut self, txt: &str) -> Vec<u8> {
+    pub(crate) fn decode_to_bytes(&self, txt: &str) -> Vec<u8> {
         let (res, _) = self.inner.decode_with_bom_removal(txt.as_bytes());
 
         // let mut utf8_src = res.as_bytes();

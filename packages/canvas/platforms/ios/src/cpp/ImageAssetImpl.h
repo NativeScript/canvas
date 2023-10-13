@@ -8,22 +8,52 @@
 #include "canvas-cxx/src/lib.rs.h"
 #include <unistd.h>
 #include <thread>
-#include <NativeScript/JSIRuntime.h>
 #include <vector>
+#include "Helpers.h"
 
 using namespace org::nativescript::canvas;
 
-using namespace facebook;
-
-class JSI_EXPORT ImageAssetImpl : public jsi::HostObject {
+class ImageAssetImpl{
 public:
     ImageAssetImpl(rust::Box<ImageAsset> asset);
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
-
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
-
     ImageAsset &GetImageAsset();
+
+    static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
+
+    static ImageAssetImpl *GetPointer(const v8::Local<v8::Object>& object);
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static void Ctor(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void GetWidth(v8::Local<v8::String> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetHeight(v8::Local<v8::String> name,
+                          const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetError(v8::Local<v8::String> name,
+                          const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromUrlSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromFileSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromBytesSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 
 private:
     rust::Box<ImageAsset> asset_;

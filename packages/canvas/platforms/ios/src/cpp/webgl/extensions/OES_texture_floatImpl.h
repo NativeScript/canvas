@@ -5,26 +5,50 @@
 #pragma once
 
 #include "rust/cxx.h"
-#import <NativeScript/JSIRuntime.h>
+#include "Common.h"
+#include "Helpers.h"
 
-using namespace facebook;
 
-class JSI_EXPORT OES_texture_floatImpl : public jsi::HostObject {
+class OES_texture_floatImpl {
 public:
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override {
-        std::vector<jsi::PropNameID> ret;
-        ret.emplace_back(
-                jsi::PropNameID::forUtf8(rt, std::string("ext_name")));
-        return ret;
-    }
-
-    jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
-        auto methodName = name.utf8(runtime);
-
-        if (methodName == "ext_name") {
-            return jsi::String::createFromAscii(runtime, "OES_texture_float");
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
+        auto cache = Caches::Get(isolate);
+        auto ctor = cache->OES_texture_floatTmpl.get();
+        if (ctor != nullptr) {
+            return ctor->Get(isolate);
         }
 
-        return jsi::Value::undefined();
+        v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->SetClassName(ConvertToV8String(isolate, "OES_texture_float"));
+
+        auto tmpl = ctorTmpl->InstanceTemplate();
+        tmpl->SetInternalFieldCount(1);
+        tmpl->Set(ConvertToV8String(isolate, "ext_name"),
+                  ConvertToV8String(isolate, "OES_texture_float"));
+
+        cache->OES_texture_floatTmpl =
+                std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+        return ctorTmpl;
     }
+
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, OES_texture_floatImpl *texture) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = WebGLShader::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::OES_texture_float);
+        auto ext = v8::External::New(isolate, texture);
+        object->SetInternalField(0, ext);
+        return scope.Escape(object);
+    }
+
+    static OES_texture_floatImpl *GetPointer(const v8::Local<v8::Object> &object) {
+        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+        return static_cast<OES_texture_floatImpl *>(ptr);
+    }
+
 };

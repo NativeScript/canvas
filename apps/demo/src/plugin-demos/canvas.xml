@@ -121,6 +121,5 @@
     <canvas:Canvas row="1" col="1"  id="canvas4" width="100%" height="100%" ready="{{ canvasLoaded }}"/> -->
 
     <!-- Multi Canvas -->
-
   </GridLayout>
 </Page>

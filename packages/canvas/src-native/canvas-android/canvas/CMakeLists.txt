@@ -78,6 +78,8 @@ else ()
 endif ()
 
 
+set (CPP_DIR ../../../platforms/ios/src/cpp)
+
 include_directories(
         canvasnativev8
 
@@ -87,9 +89,7 @@ include_directories(
 
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
-        ${PROJECT_SOURCE_DIR}/src/main/cpp
-        ${PROJECT_SOURCE_DIR}/src/main/jsi
-        ${PROJECT_SOURCE_DIR}/src/main/v8runtime
+        ../../../platforms/ios/src/cpp
 )
 
 set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
@@ -112,54 +112,54 @@ add_library(
 
         ${GL3STUB_SRC}
 
-        src/main/cpp/rust/cxx.cc
-        src/main/cpp/Caches.cpp
+        ${CPP_DIR}/rust/cxx.cc
+         ${CPP_DIR}/Caches.cpp
 
-        src/main/cpp/OneByteStringResource.cpp
+         ${CPP_DIR}/OneByteStringResource.cpp
 
-        src/main/cpp/OnRafCallback.cpp
+         ${CPP_DIR}/OnRafCallback.cpp
 
-        src/main/cpp/RafImpl.cpp
+         ${CPP_DIR}/RafImpl.cpp
 
-        src/main/cpp/canvas2d/CanvasRenderingContext2DImpl.cpp
-        src/main/cpp/canvas2d/CanvasGradient.cpp
-        src/main/cpp/canvas2d/CanvasPattern.cpp
+         ${CPP_DIR}/canvas2d/CanvasRenderingContext2DImpl.cpp
+         ${CPP_DIR}/canvas2d/CanvasGradient.cpp
+         ${CPP_DIR}/canvas2d/CanvasPattern.cpp
 
-        src/main/cpp/canvas2d/MatrixImpl.cpp
+         ${CPP_DIR}/canvas2d/MatrixImpl.cpp
 
-        src/main/cpp/canvas2d/ImageDataImpl.cpp
+         ${CPP_DIR}/canvas2d/ImageDataImpl.cpp
 
-        src/main/cpp/canvas2d/Path2D.cpp
+         ${CPP_DIR}/canvas2d/Path2D.cpp
 
-        src/main/cpp/canvas2d/TextMetricsImpl.cpp
+         ${CPP_DIR}/canvas2d/TextMetricsImpl.cpp
 
-        src/main/cpp/ImageAssetImpl.cpp
-        src/main/cpp/ImageBitmapImpl.cpp
-        src/main/cpp/TextDecoderImpl.cpp
-        src/main/cpp/TextEncoderImpl.cpp
-
-
-        src/main/cpp/webgl/WebGLActiveInfoImpl.cpp
-        src/main/cpp/webgl/WebGLShaderPrecisionFormatImpl.cpp
+         ${CPP_DIR}/ImageAssetImpl.cpp
+         ${CPP_DIR}/ImageBitmapImpl.cpp
+         ${CPP_DIR}/TextDecoderImpl.cpp
+         ${CPP_DIR}/TextEncoderImpl.cpp
 
 
-        src/main/cpp/webgl/extensions/ANGLE_instanced_arraysImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_blend_minmaxImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_color_buffer_half_floatImpl.cpp
-        src/main/cpp/webgl/extensions/EXT_disjoint_timer_queryImpl.cpp
-        src/main/cpp/webgl/extensions/OES_vertex_array_objectImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_draw_buffersImpl.cpp
-        src/main/cpp/webgl/extensions/WEBGL_lose_contextImpl.cpp
+         ${CPP_DIR}/webgl/WebGLActiveInfoImpl.cpp
+         ${CPP_DIR}/webgl/WebGLShaderPrecisionFormatImpl.cpp
 
 
-        src/main/cpp/webgl/WebGLRenderingContextBase.cpp
-        src/main/cpp/webgl/WebGLRenderingContext.cpp
+         ${CPP_DIR}/webgl/extensions/ANGLE_instanced_arraysImpl.cpp
+         ${CPP_DIR}/webgl/extensions/EXT_blend_minmaxImpl.cpp
+         ${CPP_DIR}/webgl/extensions/EXT_color_buffer_half_floatImpl.cpp
+         ${CPP_DIR}/webgl/extensions/EXT_disjoint_timer_queryImpl.cpp
+         ${CPP_DIR}/webgl/extensions/OES_vertex_array_objectImpl.cpp
+         ${CPP_DIR}/webgl/extensions/WEBGL_draw_buffersImpl.cpp
+         ${CPP_DIR}/webgl/extensions/WEBGL_lose_contextImpl.cpp
 
-        src/main/cpp/webgl2/WebGL2RenderingContext.cpp
 
-        src/main/cpp/CanvasJSIModule.cpp
+         ${CPP_DIR}/webgl/WebGLRenderingContextBase.cpp
+         ${CPP_DIR}/webgl/WebGLRenderingContext.cpp
 
-        src/main/cpp/JSIRuntime.cpp
+         ${CPP_DIR}/webgl2/WebGL2RenderingContext.cpp
+
+         ${CPP_DIR}/CanvasJSIModule.cpp
+
+         ${CPP_DIR}/JSIRuntime.cpp
 
         ${CANVAS_ANDROID_BRIDGE_CPP}
 )

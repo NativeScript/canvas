@@ -32,6 +32,16 @@ JSI
   JS: CONSOLE TIME: TextDecoder: 0.646ms
 */
 
+// const call = `
+// function f(x, y) { return global.divide(x, y); }
+// %PrepareFunctionForOptimization(f);
+// f(100,50);
+// %OptimizeFunctionOnNextCall(f);
+// f(100,50);
+// `;
+
+// eval(call);
+
 // : CONSOLE TIME: data: 4.250ms image data
 Application.on('launch', (args) => {
 	require('@nativescript/canvas-polyfill');

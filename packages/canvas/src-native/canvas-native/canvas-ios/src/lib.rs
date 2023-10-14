@@ -18,8 +18,8 @@ use canvas_2d::utils::image::from_image_slice;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
-use canvas_cxx::CanvasRenderingContext2D;
-use canvas_cxx::PaintStyle;
+use canvas_c::CanvasRenderingContext2D;
+use canvas_c::PaintStyle;
 
 
 #[allow(non_camel_case_types)]
@@ -449,6 +449,7 @@ pub extern "C" fn canvas_native_imageasset_load_from_bytes(
     asset.load_from_bytes(bytes)
 }
 
+/*
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern(
     context: i64,
@@ -482,6 +483,8 @@ pub extern "C" fn canvas_native_context_create_pattern(
 
     0
 }
+
+*/
 
 fn draw_image(
     context: i64,

@@ -1,17 +1,6 @@
 #![allow(non_snake_case)]
 
-use std::borrow::Cow;
-use std::cell::{Ref, RefCell, RefMut};
-use std::ffi::{CStr, CString};
-use std::fs::read;
-use std::io::{Read, Write};
-use std::os::raw::c_ulong;
-use std::os::raw::c_void;
-use std::os::raw::{c_char, c_int, c_uint};
-use std::pin::Pin;
-use std::rc::Rc;
-use std::{CStr, CString};
-
+use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U16Buffer, U32Buffer, U8Buffer};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -28,31 +17,33 @@ use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy,
 };
 use canvas_core::image_asset::OutputFormat;
-use canvas_webgl::prelude::{WebGLExtensionType, WebGLVersion};
+use canvas_webgl::prelude::WebGLVersion;
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
+use std::borrow::Cow;
+use std::cell::{Ref, RefCell, RefMut};
+use std::ffi::{CStr, CString};
+use std::io::{Read, Write};
+use std::os::raw::c_ulong;
+use std::os::raw::c_void;
+use std::os::raw::{c_char, c_int, c_uint};
+use std::rc::Rc;
 
 /* Utils */
-
-pub fn console_log(_text: *const c_char) {}
-
-pub fn str_to_buf(value: *const c_char) -> Vec<u8> {
-    value.as_bytes().to_vec()
-}
 
 #[cfg(target_os = "android")]
 pub static API_LEVEL: OnceCell<i32> = OnceCell::new();
 
 #[cfg(target_os = "android")]
-pub mod choregrapher;
+pub mod choreographer;
 
+mod buffers;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod raf;
 
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[derive(Clone)]
-#[repr(C)]
 pub struct Raf(raf::Raf);
 /* Raf */
 
@@ -125,25 +116,28 @@ pub enum WebGLResultType {
 }
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct ImageFilter(canvas_2d::context::filters::ImageFilter);
 
 /* Helpers */
 
 #[derive(Clone, Default)]
-#[repr(C)]
 pub struct FileHelper {
-    data: Option<Vec<u8>>,
+    data: Option<U8Buffer>,
     error: Option<String>,
 }
 
 #[no_mangle]
-extern "C" fn canvas_native_helper_read_file(path: *const c_char) -> *mut FileHelper {
+pub extern "C" fn canvas_native_helper_read_file(path: *const c_char) -> *mut FileHelper {
+    assert!(path.is_null());
+    let path = unsafe { CStr::from_ptr(path) };
+    let path = path.to_string_lossy();
     let mut ret = FileHelper::default();
-    match std::fs::File::open(path) {
+    match std::fs::File::open(path.as_ref()) {
         Ok(mut file) => {
-            let mut buf = Vec::new();
+            let size = file.metadata().map(|meta| meta.len()).unwrap_or(0) as usize;
+            let mut buf = Vec::with_capacity(size);
             let _ = file.read_to_end(&mut buf);
+            let buf = U8Buffer::from(buf);
             ret.data = Some(buf);
         }
         Err(error) => ret.error = Some(error.to_string()),
@@ -161,15 +155,16 @@ unsafe extern "C" fn canvas_native_helper_read_file_has_error(file: *const FileH
 }
 
 #[no_mangle]
-unsafe extern "C" fn canvas_native_helper_read_file_get_data(file: *mut FileHelper) -> Vec<u8> {
-    if file.is_null() {
-        return false;
-    };
+unsafe extern "C" fn canvas_native_helper_read_file_get_data(
+    file: *mut FileHelper,
+) -> *mut U8Buffer {
+    assert!(file.is_null());
     let file = &*file;
-    match file.data {
-        None => Vec::new(),
-        Some(data) => data,
-    }
+    let data = match &file.data {
+        None => U8Buffer::default(),
+        Some(data) => data.clone(),
+    };
+    Box::into_raw(Box::new(data))
 }
 
 #[no_mangle]
@@ -182,7 +177,7 @@ unsafe extern "C" fn canvas_native_helper_read_file_get_error(
     let file = &*file;
     match file.error.as_ref() {
         None => std::ptr::null(),
-        Some(data) => CString::new(data).unwrap().into_raw(),
+        Some(data) => CString::new(data.as_str()).unwrap().into_raw(),
     }
 }
 
@@ -192,20 +187,17 @@ unsafe extern "C" fn canvas_native_helper_read_file_get_error(
 
 /* TextEncoder */
 #[derive(Clone)]
-#[repr(C)]
 pub struct TextEncoder(canvas_2d::context::text_encoder::TextEncoder);
 /* TextEncoder */
 
 /* TextDecoder */
 #[derive(Clone)]
-#[repr(C)]
 pub struct TextDecoder(canvas_2d::context::text_decoder::TextDecoder);
 /* TextDecoder */
 
 /* CanvasRenderingContext2D */
 
 #[allow(dead_code)]
-#[repr(C)]
 pub struct CanvasRenderingContext2D {
     context: ContextWrapper,
     gl_context: canvas_core::gl::GLContext,
@@ -264,7 +256,6 @@ impl CanvasRenderingContext2D {
 }
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct PaintStyle(Option<canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle>);
 
 impl PaintStyle {
@@ -278,7 +269,14 @@ impl PaintStyle {
     }
 
     pub fn new_with_color(color: *const c_char) -> Self {
-        Self(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::new_color_str(color))
+        assert!(color.is_null());
+        let color = unsafe { CStr::from_ptr(color) };
+        let color = color.to_string_lossy();
+        Self(
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::new_color_str(
+                color.as_ref(),
+            ),
+        )
     }
 
     pub fn new(
@@ -312,44 +310,49 @@ impl PaintStyle {
 }
 
 #[derive(Clone, Copy)]
-#[repr(C)]
 pub struct TextMetrics(canvas_2d::context::drawing_text::text_metrics::TextMetrics);
 
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[no_mangle]
-pub extern "C" fn canvas_native_raf_create(callback: isize) -> *mut Raf {
+pub extern "C" fn canvas_native_raf_create(
+    callback: isize,
+    on_frame_callback: Option<extern "C" fn(callback: isize, ts: i64)>,
+) -> *mut Raf {
     Box::into_raw(Box::new(Raf(raf::Raf::new(Some(Box::new(move |ts| {
-        OnRafCallbackOnFrame(callback, ts);
+        if let Some(on_frame_callback) = on_frame_callback {
+            on_frame_callback(callback, ts)
+        }
     }))))))
 }
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[no_mangle]
-pub extern "C" fn canvas_native_raf_start(raf: *const Raf) {
+pub extern "C" fn canvas_native_raf_start(raf: *mut Raf) {
     if raf.is_null() {
         return;
     }
-    let raf = &*raf;
+    let raf = unsafe { &mut *raf };
     raf.0.start();
 }
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[no_mangle]
-pub extern "C" fn canvas_native_raf_stop(raf: &mut Raf) {
+pub extern "C" fn canvas_native_raf_stop(raf: *mut Raf) {
     if raf.is_null() {
         return;
     }
+    let raf = unsafe { &mut *raf };
     raf.0.stop()
 }
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[no_mangle]
-pub extern "C" fn canvas_native_raf_get_started(raf: &Raf) -> bool {
+pub extern "C" fn canvas_native_raf_get_started(raf: *const Raf) -> bool {
     if raf.is_null() {
         return false;
     }
-    let raf = &*raf;
+    let raf = unsafe { &*raf };
     raf.0.started()
 }
 /* Raf */
@@ -488,7 +491,8 @@ pub extern "C" fn canvas_native_context_create_gl(
 pub extern "C" fn canvas_native_context_create_with_pointer(
     pointer: i64,
 ) -> *mut CanvasRenderingContext2D {
-    unsafe { Box::from_raw(pointer as *mut CanvasRenderingContext2D) }
+    assert!(pointer != 0);
+    pointer as *mut CanvasRenderingContext2D
 }
 
 #[cfg(feature = "webgl")]
@@ -760,6 +764,7 @@ pub extern "C" fn canvas_native_context_set_miter_limit(
 pub extern "C" fn canvas_native_context_get_shadow_color(
     context: *const CanvasRenderingContext2D,
 ) -> *const c_char {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     let value = context.get_context().shadow_color();
     let ret = to_parsed_color(value);
@@ -769,9 +774,13 @@ pub extern "C" fn canvas_native_context_get_shadow_color(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_shadow_color_buf(
     context: *const CanvasRenderingContext2D,
-) -> Vec<u8> {
+) -> *mut U8Buffer {
+    assert!(context.is_null());
+    let context = unsafe { &*context };
     let value = context.get_context().shadow_color();
-    to_parsed_color(value).into_bytes()
+    Box::into_raw(Box::new(U8Buffer::from(
+        to_parsed_color(value).into_bytes(),
+    )))
 }
 
 #[no_mangle]
@@ -782,6 +791,7 @@ pub extern "C" fn canvas_native_context_get_shadow_color_rgba(
     b: &mut u8,
     a: &mut u8,
 ) {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.get_context().shadow_color_rgba(r, g, b, a);
 }
@@ -791,9 +801,8 @@ pub extern "C" fn canvas_native_context_set_shadow_color(
     context: *mut CanvasRenderingContext2D,
     color: *const c_char,
 ) {
-    if color.is_null() {
-        return;
-    }
+    assert!(context.is_null());
+    assert!(color.is_null());
     let context = unsafe { &mut *context };
     let mut lock = context.get_context_mut();
     let color = unsafe { CStr::from_ptr(color) };
@@ -810,6 +819,7 @@ pub extern "C" fn canvas_native_context_set_shadow_color_rgba(
     b: u8,
     a: u8,
 ) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     let mut lock = context.get_context_mut();
     lock.set_shadow_color_rgba(r, g, b, a);
@@ -819,6 +829,7 @@ pub extern "C" fn canvas_native_context_set_shadow_color_rgba(
 pub extern "C" fn canvas_native_context_get_shadow_blur(
     context: *const CanvasRenderingContext2D,
 ) -> f32 {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.get_context().shadow_blur()
 }
@@ -828,6 +839,7 @@ pub extern "C" fn canvas_native_context_set_shadow_blur(
     context: *mut CanvasRenderingContext2D,
     blur: f32,
 ) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     context.get_context_mut().set_shadow_blur(blur)
 }
@@ -836,6 +848,7 @@ pub extern "C" fn canvas_native_context_set_shadow_blur(
 pub extern "C" fn canvas_native_context_get_shadow_offset_x(
     context: *const CanvasRenderingContext2D,
 ) -> f32 {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.get_context().shadow_offset_x()
 }
@@ -845,6 +858,7 @@ pub extern "C" fn canvas_native_context_set_shadow_offset_x(
     context: *mut CanvasRenderingContext2D,
     x: f32,
 ) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     context.get_context_mut().set_shadow_offset_x(x)
 }
@@ -853,6 +867,7 @@ pub extern "C" fn canvas_native_context_set_shadow_offset_x(
 pub extern "C" fn canvas_native_context_get_shadow_offset_y(
     context: *const CanvasRenderingContext2D,
 ) -> f32 {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.get_context().shadow_offset_y()
 }
@@ -1040,6 +1055,7 @@ pub extern "C" fn canvas_native_paint_style_get_color_string(
 pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_string(
     context: *const CanvasRenderingContext2D,
 ) -> *const c_char {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     let lock = context.get_context();
     match lock.stroke_style() {
@@ -1058,10 +1074,10 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_string(
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_buf(
     context: *const CanvasRenderingContext2D,
-) -> Vec<u8> {
+) -> *mut U8Buffer {
     let context = unsafe { &*context };
     let lock = context.get_context();
-    match lock.stroke_style() {
+    let ret = match lock.stroke_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke).into_bytes()
         }
@@ -1071,7 +1087,9 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_buf(
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             Vec::with_capacity(0)
         }
-    }
+    };
+
+    Box::into_raw(Box::new(U8Buffer::from(ret)))
 }
 
 #[no_mangle]
@@ -1122,6 +1140,7 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_r_g_b_a(
 pub extern "C" fn canvas_native_paint_style_get_current_fill_color_string(
     context: *const CanvasRenderingContext2D,
 ) -> *const c_char {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     let lock = context.get_context();
     match lock.fill_style() {
@@ -1140,9 +1159,11 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_string(
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_fill_color_buf(
     context: *mut CanvasRenderingContext2D,
-) -> Vec<u8> {
+) -> *mut U8Buffer {
+    assert!(context.is_null());
+    let context = unsafe { &*context };
     let lock = context.get_context();
-    match lock.fill_style() {
+    let ret = match lock.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke).into_bytes()
         }
@@ -1152,11 +1173,14 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_buf(
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
             Vec::with_capacity(0)
         }
-    }
+    };
+    Box::into_raw(Box::new(U8Buffer::from(ret)))
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_style_type(style: *const PaintStyle) -> PaintStyleType {
+    assert!(style.is_null());
+    let style = unsafe { &*style };
     style.style_type()
 }
 
@@ -1164,6 +1188,8 @@ pub extern "C" fn canvas_native_context_get_style_type(style: *const PaintStyle)
 pub extern "C" fn canvas_native_context_get_current_fill_style_type(
     context: *mut CanvasRenderingContext2D,
 ) -> PaintStyleType {
+    assert!(context.is_null());
+    let context = unsafe { &*context };
     let lock = context.get_context();
     return match lock.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
@@ -1182,6 +1208,8 @@ pub extern "C" fn canvas_native_context_get_current_fill_style_type(
 pub extern "C" fn canvas_native_context_get_current_stroke_style_type(
     context: *mut CanvasRenderingContext2D,
 ) -> PaintStyleType {
+    assert!(context.is_null());
+    let context = unsafe { &*context };
     let lock = context.get_context();
     return match lock.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
@@ -1201,6 +1229,8 @@ pub extern "C" fn canvas_native_context_get_current_stroke_style_type(
 pub extern "C" fn canvas_native_context_get_fill_style(
     context: *const CanvasRenderingContext2D,
 ) -> *mut PaintStyle {
+    assert!(context.is_null());
+    let context = unsafe { &*context };
     Box::into_raw(Box::new(PaintStyle(Some(
         context.get_context().fill_style().clone(),
     ))))
@@ -1212,10 +1242,9 @@ pub extern "C" fn canvas_native_context_set_fill_style(
     context: *mut CanvasRenderingContext2D,
     style: *const PaintStyle,
 ) {
+    assert!(context.is_null());
+    assert!(style.is_null());
     let context = unsafe { &mut *context };
-    if style.is_null() {
-        return;
-    }
     let style = unsafe { &*style };
     if !style.is_empty() {
         context
@@ -1229,6 +1258,8 @@ pub extern "C" fn canvas_native_context_set_fill_style(
 pub extern "C" fn canvas_native_context_get_stroke_style(
     context: *const CanvasRenderingContext2D,
 ) -> *mut PaintStyle {
+    assert!(context.is_null());
+    let context = unsafe { &*context };
     Box::into_raw(Box::new(PaintStyle(Some(
         context.get_context().stroke_style().clone(),
     ))))
@@ -1240,10 +1271,9 @@ pub extern "C" fn canvas_native_context_set_stroke_style(
     context: *mut CanvasRenderingContext2D,
     style: *const PaintStyle,
 ) {
+    assert!(context.is_null());
+    assert!(style.is_null());
     let context = unsafe { &mut *context };
-    if style.is_null() {
-        return;
-    }
     let style = unsafe { &*style };
     if !style.is_empty() {
         context
@@ -1256,6 +1286,7 @@ pub extern "C" fn canvas_native_context_set_stroke_style(
 pub extern "C" fn canvas_native_context_get_line_width(
     context: *const CanvasRenderingContext2D,
 ) -> f32 {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.get_context().line_width()
 }
@@ -1265,6 +1296,7 @@ pub extern "C" fn canvas_native_context_set_line_width(
     context: *mut CanvasRenderingContext2D,
     width: f32,
 ) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     context.get_context_mut().set_line_width(width);
 }
@@ -1273,6 +1305,7 @@ pub extern "C" fn canvas_native_context_set_line_width(
 pub extern "C" fn canvas_native_context_get_line_dash_offset(
     context: *const CanvasRenderingContext2D,
 ) -> f32 {
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.get_context().line_dash_offset()
 }
@@ -1282,6 +1315,7 @@ pub extern "C" fn canvas_native_context_set_line_dash_offset(
     context: *mut CanvasRenderingContext2D,
     offset: f32,
 ) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     context.get_context_mut().set_line_dash_offset(offset)
 }
@@ -1289,18 +1323,24 @@ pub extern "C" fn canvas_native_context_set_line_dash_offset(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_line_dash(
     context: *const CanvasRenderingContext2D,
-) -> Vec<f32> {
+) -> *mut F32Buffer {
+    assert!(context.is_null());
     let context = unsafe { &*context };
-    context.get_context().line_dash().to_vec()
+    Box::into_raw(Box::new(F32Buffer::from(
+        context.get_context().line_dash().to_vec(),
+    )))
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_line_dash(
     context: *mut CanvasRenderingContext2D,
-    dash: &[f32],
+    dash: *const F32Buffer,
 ) {
+    assert!(context.is_null());
+    assert!(dash.is_null());
     let context = unsafe { &mut *context };
-    context.get_context_mut().set_line_dash(dash)
+    let dash = unsafe { &*dash };
+    context.get_context_mut().set_line_dash(dash.get_buffer())
 }
 
 #[no_mangle]
@@ -1313,6 +1353,7 @@ pub extern "C" fn canvas_native_context_arc(
     end_angle: f32,
     anticlockwise: bool,
 ) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     context
         .get_context_mut()
@@ -1371,13 +1412,12 @@ pub extern "C" fn canvas_native_context_clear_rect(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_clip(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     rule: *const c_char,
 ) {
-    if rule.is_null() {
-        return;
-    }
+    assert!(rule.is_null());
     let rule = unsafe { CStr::from_ptr(rule) };
+    let path = unsafe { &mut *path };
     if let Ok(rule) = FillRule::try_from(rule.to_string_lossy().as_ref()) {
         let context = unsafe { &mut *context };
         context.make_current();
@@ -1392,12 +1432,11 @@ pub extern "C" fn canvas_native_context_clip_rule(
     context: *mut CanvasRenderingContext2D,
     rule: *const c_char,
 ) {
-    if rule.is_null() {
-        return;
-    }
+    assert!(context.is_null());
+    assert!(rule.is_null());
+    let context = unsafe { &mut *context };
     let rule = unsafe { CStr::from_ptr(rule) };
     if let Ok(rule) = FillRule::try_from(rule.to_string_lossy().as_ref()) {
-        let context = unsafe { &mut *context };
         context.make_current();
         context.get_context_mut().clip(None, Some(rule));
     }
@@ -1406,6 +1445,7 @@ pub extern "C" fn canvas_native_context_clip_rule(
 #[inline(always)]
 #[no_mangle]
 pub extern "C" fn canvas_native_context_close_path(context: *mut CanvasRenderingContext2D) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     context.get_context_mut().close_path()
 }
@@ -1424,13 +1464,15 @@ pub extern "C" fn canvas_native_context_create_image_data(
 pub extern "C" fn canvas_native_context_create_image_data_with_data(
     width: i32,
     height: i32,
-    data: &[u8],
+    data: *const U8Buffer,
 ) -> *mut ImageData {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     Box::into_raw(Box::new(ImageData::new(
         canvas_2d::context::pixel_manipulation::image_data::ImageData::new_with_data(
             width,
             height,
-            data.to_vec(),
+            data.get_buffer().to_vec(),
         ),
     )))
 }
@@ -1443,6 +1485,8 @@ pub extern "C" fn canvas_native_context_create_linear_gradient(
     x1: f32,
     y1: f32,
 ) -> *mut PaintStyle {
+    assert!(context.is_null());
+    let context = unsafe { &mut *context };
     Box::into_raw(Box::new(PaintStyle(Some(
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
             context.get_context().create_linear_gradient(x0, y0, x1, y1),
@@ -1453,18 +1497,20 @@ pub extern "C" fn canvas_native_context_create_linear_gradient(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     width: i32,
     height: i32,
     repetition: *const c_char,
 ) -> *mut PaintStyle {
-    if repetition.is_null() {
-        return Box::into_raw(Box::new(PaintStyle::new(None)));
-    }
+    assert!(context.is_null());
+    assert!(repetition.is_null());
+    assert!(data.is_null());
+    let context = unsafe { &mut *context };
+    let data = unsafe { &*data };
     let repetition = unsafe { CStr::from_ptr(repetition) };
     Box::into_raw(Box::new(PaintStyle(
         Repetition::try_from(repetition.to_string_lossy().as_ref()).map_or(None, |repetition| {
-            from_image_slice(data, width, height).map(|image| {
+            from_image_slice(data.get_buffer(), width, height).map(|image| {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
@@ -1479,10 +1525,11 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
     asset: *mut ImageAsset,
     repetition: *const c_char,
 ) -> *mut PaintStyle {
-    if repetition.is_null() {
-        return Box::into_raw(Box::new(PaintStyle::new(None)));
-    };
-
+    assert!(context.is_null());
+    assert!(asset.is_null());
+    assert!(repetition.is_null());
+    let context = unsafe { &*context };
+    let asset = unsafe { &*asset };
     let repetition = unsafe { CStr::from_ptr(repetition) };
     let repetition = repetition.to_string_lossy();
     let has_alpha = asset.get_channels() == 4;
@@ -1520,18 +1567,19 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern_encoded(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     repetition: *const c_char,
 ) -> *mut PaintStyle {
-    if repetition.is_null() {
-        return Box::into_raw(Box::new(PaintStyle::new(None)));
-    };
+    assert!(context.is_null());
+    assert!(repetition.is_null());
+    assert!(data.is_null());
+    let context = unsafe { &*context };
     let repetition = unsafe { CStr::from_ptr(repetition) };
     let repetition = repetition.to_string_lossy();
-
+    let data = unsafe { &*data };
     Box::into_raw(Box::new(PaintStyle(
         Repetition::try_from(repetition.as_ref()).map_or(None, |repetition| {
-            from_image_slice_encoded(data).map(|image| {
+            from_image_slice_encoded(data.get_buffer()).map(|image| {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
@@ -1546,9 +1594,11 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
     context: *mut CanvasRenderingContext2D,
     repetition: *const c_char,
 ) -> *mut PaintStyle {
-    if repetition.is_null() {
-        return Box::into_raw(Box::new(PaintStyle::new(None)));
-    };
+    assert!(source.is_null());
+    assert!(context.is_null());
+    assert!(repetition.is_null());
+    let source = unsafe { &*source };
+    let context = unsafe { &*context };
     let repetition = unsafe { CStr::from_ptr(repetition) };
     let repetition = repetition.to_string_lossy();
 
@@ -1606,7 +1656,7 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
                 context.make_current();
             }
 
-            let ret = from_image_slice(buf.as_slice(), width as i32, height as i32).map(|image| {
+            let ret = from_image_slice(buf.as_slice(), width, height).map(|image| {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
@@ -1626,6 +1676,8 @@ pub extern "C" fn canvas_native_context_create_radial_gradient(
     y1: f32,
     r1: f32,
 ) -> *mut PaintStyle {
+    assert!(context.is_null());
+    let context = unsafe { &*context };
     Box::into_raw(Box::new(PaintStyle(Some(
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
             context
@@ -1636,9 +1688,7 @@ pub extern "C" fn canvas_native_context_create_radial_gradient(
 }
 
 fn canvas_native_context_draw_paint(context: *mut CanvasRenderingContext2D, color: *const c_char) {
-    if color.is_null() {
-        return;
-    }
+    assert!(color.is_null());
     let color = unsafe { CStr::from_ptr(color) };
     let color = color.to_string_lossy();
     let context = unsafe { &mut *context };
@@ -1655,19 +1705,21 @@ fn canvas_native_context_draw_point(context: *mut CanvasRenderingContext2D, x: f
 fn canvas_native_context_draw_points(
     context: *mut CanvasRenderingContext2D,
     mode: i32,
-    points: &[f32],
+    points: *const F32Buffer,
 ) {
+    assert!(points.is_null());
+    let points = unsafe { &*points };
     let context = unsafe { &mut *context };
     context.make_current();
     context
         .get_context_mut()
-        .draw_points(mode.try_into().unwrap(), points);
+        .draw_points(mode.try_into().unwrap(), points.get_buffer());
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     width: f32,
     height: f32,
     dx: f32,
@@ -1682,7 +1734,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     width: f32,
     height: f32,
     dx: f32,
@@ -1699,7 +1751,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     width: f32,
     height: f32,
     sx: f32,
@@ -1711,7 +1763,9 @@ pub extern "C" fn canvas_native_context_draw_image(
     d_width: f32,
     d_height: f32,
 ) {
-    if let Some(image) = from_image_slice(data, width as i32, height as i32) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
+    if let Some(image) = from_image_slice(data.get_buffer(), width as i32, height as i32) {
         let context = unsafe { &mut *context };
         context.make_current();
         context.get_context_mut().draw_image_src_xywh_dst_xywh(
@@ -1723,11 +1777,13 @@ pub extern "C" fn canvas_native_context_draw_image(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     dx: f32,
     dy: f32,
 ) {
-    if let Some(image) = from_image_slice_encoded(data) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
+    if let Some(image) = from_image_slice_encoded(data.get_buffer()) {
         let context = unsafe { &mut *context };
         context.make_current();
         let width = image.width() as f32;
@@ -1741,13 +1797,15 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     dx: f32,
     dy: f32,
     d_width: f32,
     d_height: f32,
 ) {
-    if let Some(image) = from_image_slice_encoded(data) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
+    if let Some(image) = from_image_slice_encoded(data.get_buffer()) {
         let context = unsafe { &mut *context };
         context.make_current();
         let width = image.width() as f32;
@@ -1761,7 +1819,7 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded(
     context: *mut CanvasRenderingContext2D,
-    data: &[u8],
+    data: *const U8Buffer,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -1771,7 +1829,9 @@ pub extern "C" fn canvas_native_context_draw_image_encoded(
     d_width: f32,
     d_height: f32,
 ) {
-    if let Some(image) = from_image_slice_encoded(data) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
+    if let Some(image) = from_image_slice_encoded(data.get_buffer()) {
         let context = unsafe { &mut *context };
         context.make_current();
         context.get_context_mut().draw_image_src_xywh_dst_xywh(
@@ -1787,9 +1847,14 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_asset(
     dx: f32,
     dy: f32,
 ) {
-    let context = unsafe { &mut *context };
-    let width = asset.width() as f32;
-    let height = asset.height() as f32;
+    let width: f32;
+    let height: f32;
+    {
+        let asset = unsafe { &*asset };
+        width = asset.width() as f32;
+        height = asset.height() as f32;
+    }
+
     canvas_native_context_draw_image_asset(
         context, asset, 0.0, 0.0, width, height, dx, dy, width, height,
     );
@@ -1804,9 +1869,14 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_asset(
     d_width: f32,
     d_height: f32,
 ) {
-    let context = unsafe { &mut *context };
-    let width = asset.width() as f32;
-    let height = asset.height() as f32;
+    assert!(asset.is_null());
+    let width: f32;
+    let height: f32;
+    {
+        let asset = unsafe { &*asset };
+        width = asset.width() as f32;
+        height = asset.height() as f32;
+    }
     canvas_native_context_draw_image_asset(
         context, asset, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
     );
@@ -1825,7 +1895,10 @@ pub extern "C" fn canvas_native_context_draw_image_asset(
     d_width: f32,
     d_height: f32,
 ) {
+    assert!(context.is_null());
+    assert!(asset.is_null());
     let context = unsafe { &mut *context };
+    let asset = unsafe { &*asset };
 
     let width = asset.width();
     let height = asset.height();
@@ -1856,9 +1929,10 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_context(
     dx: f32,
     dy: f32,
 ) {
-    let context = unsafe { &mut *context };
+    assert!(source.is_null());
     let device;
     {
+        let source = unsafe { &*source };
         let source_ctx = source.get_context();
         device = *source_ctx.device();
     }
@@ -1880,9 +1954,12 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
     d_width: f32,
     d_height: f32,
 ) {
-    let context = unsafe { &mut *context };
+    assert!(context.is_null());
+    assert!(source.is_null());
+
     let device;
     {
+        let source = unsafe { &*source };
         let source_ctx = source.get_context();
         device = *source_ctx.device();
     }
@@ -1907,6 +1984,10 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     d_width: f32,
     d_height: f32,
 ) {
+    assert!(context.is_null());
+    assert!(source.is_null());
+    let context = unsafe { &mut *context };
+    let source = unsafe { &*source };
     source.make_current();
     let source_ctx = source.get_context_mut();
     let width = source_ctx.device().width;
@@ -2212,14 +2293,18 @@ pub extern "C" fn canvas_native_context_rect(
     context.get_context_mut().rect(x, y, width, height)
 }
 
-fn canvas_native_context_round_rect(
+#[no_mangle]
+pub extern "C" fn canvas_native_context_round_rect(
     context: *mut CanvasRenderingContext2D,
     x: f32,
     y: f32,
     width: f32,
     height: f32,
-    radii: &[f32],
+    radii: *const F32Buffer,
 ) {
+    assert!(radii.is_null());
+    let radii = unsafe { &*radii };
+    let radii = radii.get_buffer();
     let context = unsafe { &mut *context };
     if radii.len() == 8 {
         context
@@ -2228,7 +2313,8 @@ fn canvas_native_context_round_rect(
     }
 }
 
-fn canvas_native_context_round_rect_tl_tr_br_bl(
+#[no_mangle]
+pub extern "C" fn canvas_native_context_round_rect_tl_tr_br_bl(
     context: *mut CanvasRenderingContext2D,
     x: f32,
     y: f32,
@@ -2497,7 +2583,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_asset_src_rect(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
-    bytes: &[u8],
+    bytes: *const U8Buffer,
     flip_y: bool,
     premultiply_alpha: ImageBitmapPremultiplyAlpha,
     color_space_conversion: ImageBitmapColorSpaceConversion,
@@ -2505,9 +2591,11 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
     resize_width: f32,
     resize_height: f32,
 ) -> *mut ImageAsset {
+    assert!(bytes.is_null());
+    let bytes = unsafe { &*bytes };
     Box::into_raw(Box::new(ImageAsset(
         canvas_2d::image_bitmap::create_image_asset_encoded(
-            bytes,
+            bytes.get_buffer(),
             None,
             flip_y,
             premultiply_alpha.into(),
@@ -2521,7 +2609,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
-    bytes: &[u8],
+    bytes: *const U8Buffer,
     flip_y: bool,
     premultiply_alpha: ImageBitmapPremultiplyAlpha,
     color_space_conversion: ImageBitmapColorSpaceConversion,
@@ -2530,12 +2618,12 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_outp
     resize_height: f32,
     output: *mut ImageAsset,
 ) -> bool {
-    if output.is_null() {
-        return false;
-    }
+    assert!(output.is_null());
+    assert!(bytes.is_null());
+    let bytes = unsafe { &*bytes };
     let output = unsafe { &mut *output };
     canvas_2d::image_bitmap::create_image_asset_with_output(
-        bytes,
+        bytes.get_buffer(),
         None,
         flip_y,
         premultiply_alpha.into(),
@@ -2551,7 +2639,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_outp
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
-    bytes: &[u8],
+    bytes: *const U8Buffer,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -2563,9 +2651,11 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
     resize_width: f32,
     resize_height: f32,
 ) -> *mut ImageAsset {
+    assert!(bytes.is_null());
+    let bytes = unsafe { &*bytes };
     Box::into_raw(Box::new(ImageAsset(
         canvas_2d::image_bitmap::create_image_asset_encoded(
-            bytes,
+            bytes.get_buffer(),
             Some((sx, sy, s_width, s_height).into()),
             flip_y,
             premultiply_alpha.into(),
@@ -2579,7 +2669,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
-    bytes: &[u8],
+    bytes: *const U8Buffer,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -2592,12 +2682,12 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_
     resize_height: f32,
     output: *mut ImageAsset,
 ) -> bool {
-    if output.is_null() {
-        return false;
-    }
+    assert!(output.is_null());
+    assert!(bytes.is_null());
+    let bytes = unsafe { &*bytes };
     let output = unsafe { &mut *output };
     canvas_2d::image_bitmap::create_image_asset_with_output(
-        bytes,
+        bytes.get_buffer(),
         Some((sx, sy, s_width, s_height).into()),
         flip_y,
         premultiply_alpha.into(),
@@ -2615,7 +2705,6 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_
 
 /* Path2D */
 #[derive(Clone)]
-#[repr(C)]
 pub struct Path(canvas_2d::context::paths::path::Path);
 
 impl Default for Path {
@@ -2826,11 +2915,12 @@ pub extern "C" fn canvas_native_path_round_rect(
     y: f32,
     width: f32,
     height: f32,
-    radii: &[f32],
+    radii: *const F32Buffer,
 ) {
-    if path.is_null() {
-        return;
-    }
+    assert!(path.is_null());
+    assert!(radii.is_null());
+    let radii = unsafe { &*radii };
+    let radii = radii.get_buffer();
     let path = unsafe { &mut *path };
 
     let size = radii.len();
@@ -2910,9 +3000,7 @@ pub extern "C" fn canvas_native_path_round_rect_tl_tr_br_bl(
     bottom_right: f32,
     bottom_left: f32,
 ) {
-    if path.is_null() {
-        return;
-    }
+    assert!(path.is_null());
     let path = unsafe { &mut *path };
 
     path.0.round_rect(
@@ -2948,7 +3036,6 @@ pub extern "C" fn canvas_native_path_to_string(path: *const Path) -> *const c_ch
 
 /* DOMMatrix */
 #[derive(Clone)]
-#[repr(C)]
 pub struct Matrix(canvas_2d::context::matrix::Matrix);
 
 impl Matrix {
@@ -2967,13 +3054,13 @@ pub extern "C" fn canvas_native_matrix_create() -> *mut Matrix {
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_update(matrix: *mut Matrix, slice: &[f32]) {
-    if matrix.is_null() {
-        return;
-    }
+pub extern "C" fn canvas_native_matrix_update(matrix: *mut Matrix, slice: *const F32Buffer) {
+    assert!(matrix.is_null());
+    assert!(slice.is_null());
+    let slice = unsafe { &*slice };
     let matrix = unsafe { &mut *matrix };
     let mut affine = [0f32; 6];
-    affine.copy_from_slice(slice);
+    affine.copy_from_slice(slice.get_buffer());
     matrix.inner_mut().set_affine(&affine);
 }
 
@@ -3013,7 +3100,7 @@ pub extern "C" fn canvas_native_matrix_get_a(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_a(matrix: *mut Matrix, a: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_a(a)
 }
 
@@ -3025,7 +3112,7 @@ pub extern "C" fn canvas_native_matrix_get_b(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_b(matrix: *mut Matrix, b: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_b(b)
 }
 
@@ -3037,7 +3124,7 @@ pub extern "C" fn canvas_native_matrix_get_c(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_c(matrix: *mut Matrix, c: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_c(c)
 }
 
@@ -3049,7 +3136,7 @@ pub extern "C" fn canvas_native_matrix_get_d(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_d(matrix: *mut Matrix, d: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_d(d)
 }
 
@@ -3061,7 +3148,7 @@ pub extern "C" fn canvas_native_matrix_get_e(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_e(matrix: *mut Matrix, e: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_e(e)
 }
 
@@ -3073,7 +3160,7 @@ pub extern "C" fn canvas_native_matrix_get_f(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_f(matrix: *mut Matrix, f: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_f(f)
 }
 
@@ -3085,7 +3172,7 @@ pub extern "C" fn canvas_native_matrix_get_m11(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m11(matrix: *mut Matrix, m11: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m11(m11)
 }
 
@@ -3097,7 +3184,7 @@ pub extern "C" fn canvas_native_matrix_get_m12(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m12(matrix: *mut Matrix, m12: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m12(m12)
 }
 
@@ -3109,7 +3196,7 @@ pub extern "C" fn canvas_native_matrix_get_m13(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m13(matrix: *mut Matrix, m13: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m13(m13)
 }
 
@@ -3121,7 +3208,7 @@ pub extern "C" fn canvas_native_matrix_get_m14(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m14(matrix: *mut Matrix, m14: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m14(m14)
 }
 
@@ -3133,7 +3220,7 @@ pub extern "C" fn canvas_native_matrix_get_m21(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m21(matrix: *mut Matrix, m21: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m21(m21)
 }
 
@@ -3145,7 +3232,7 @@ pub extern "C" fn canvas_native_matrix_get_m22(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m22(matrix: *mut Matrix, m22: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m22(m22)
 }
 
@@ -3157,7 +3244,7 @@ pub extern "C" fn canvas_native_matrix_get_m23(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m23(matrix: *mut Matrix, m23: f32) {
-    let mut matrix = unsafe { &*matrix };
+    let mut matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m23(m23)
 }
 
@@ -3318,7 +3405,6 @@ pub extern "C" fn canvas_native_image_data_get_shared_instance(
 /* ImageAsset */
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct ImageAsset(pub(crate) canvas_core::image_asset::ImageAsset);
 
 impl ImageAsset {
@@ -3451,13 +3537,12 @@ pub extern "C" fn canvas_native_image_asset_load_from_path(
 #[no_mangle]
 pub extern "C" fn canvas_native_image_asset_load_from_raw(
     asset: *mut ImageAsset,
-    array: &[u8],
+    array: *const U8Buffer,
 ) -> bool {
-    if asset.is_null() {
-        return false;
-    }
+    assert!(array.is_null());
+    let array = unsafe { &*array };
     let asset = unsafe { &mut *asset };
-    asset.load_from_bytes(array)
+    asset.load_from_bytes(array.get_buffer())
 }
 
 #[no_mangle]
@@ -3511,7 +3596,7 @@ pub(crate) fn canvas_native_image_asset_load_from_url_internal(
 }
 
 // #[no_mangle]
-//pub extern "C" fn canvas_native_image_asset_get_bytes(asset: *mut ImageAsset) -> Option<&[u8]> {
+//pub extern "C" fn canvas_native_image_asset_get_bytes(asset: *mut ImageAsset) -> Option<*const U8Buffer> {
 //     asset.get_bytes()
 // }
 
@@ -3585,7 +3670,6 @@ pub extern "C" fn canvas_native_image_asset_save_path(
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-#[repr(C)]
 struct ThreadCallbackData {
     id: i64,
     done: bool,
@@ -3747,10 +3831,14 @@ pub extern "C" fn canvas_native_paint_style_from_bytes(
     repetition: i32,
     width: i32,
     height: i32,
-    bytes: &[u8],
+    bytes: *const U8Buffer,
 ) -> *mut PaintStyle {
+    assert!(context.is_null());
+    assert!(bytes.is_null());
+    let context = unsafe { &*context };
+    let bytes = unsafe { &*bytes };
     Box::into_raw(Box::new(PaintStyle(
-        from_image_slice(bytes, width, height).map(|image| {
+        from_image_slice(bytes.get_buffer(), width, height).map(|image| {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                 context.get_context().create_pattern(
                     image,
@@ -3824,9 +3912,7 @@ pub extern "C" fn canvas_native_pattern_set_transform(
 /* TextDecoder */
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_create(decoding: *const c_char) -> *mut TextDecoder {
-    if decoding.is_null() {
-        return std::ptr::null_mut();
-    }
+    assert!(decoding.is_null());
     let decoding = unsafe { CStr::from_ptr(decoding) };
     let decoding = decoding.to_string_lossy();
     Box::into_raw(Box::new(TextDecoder(
@@ -3836,22 +3922,24 @@ pub extern "C" fn canvas_native_text_decoder_create(decoding: *const c_char) -> 
 
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_decode(
-    decoder: *mut TextDecoder,
-    data: &[u8],
+    decoder: *const TextDecoder,
+    data: *const U8Buffer,
 ) -> *const c_char {
-    if decoder.is_null() {
-        return std::ptr::null_mut();
-    }
+    assert!(decoder.is_null());
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let decoder = unsafe { &*decoder };
-    CString::new(decoder.0.decode_to_string(data))
+    CString::new(decoder.0.decode_to_string(data.get_buffer()))
         .unwrap()
         .into_raw()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_get_encoding(
-    decoder: &mut TextDecoder,
+    decoder: *const TextDecoder,
 ) -> *const c_char {
+    assert!(decoder.is_null());
+    let decoder = unsafe { &*decoder };
     CString::new(decoder.0.encoding().to_string().to_lowercase())
         .unwrap()
         .into_raw()
@@ -3861,9 +3949,7 @@ pub extern "C" fn canvas_native_text_decoder_get_encoding(
 /* TextEncoder */
 #[no_mangle]
 pub extern "C" fn canvas_native_text_encoder_create(encoding: *const c_char) -> *mut TextEncoder {
-    if encoding.is_null() {
-        return std::ptr::null_mut();
-    }
+    assert!(encoding.is_null());
     let encoding = unsafe { CStr::from_ptr(encoding) };
     let encoding = encoding.to_string_lossy();
 
@@ -3874,16 +3960,24 @@ pub extern "C" fn canvas_native_text_encoder_create(encoding: *const c_char) -> 
 
 #[no_mangle]
 pub extern "C" fn canvas_native_text_encoder_encode(
-    encoder: &mut TextEncoder,
+    encoder: *const TextEncoder,
     text: *const c_char,
-) -> Vec<u8> {
-    encoder.0.encode(text)
+) -> *mut U8Buffer {
+    assert!(encoder.is_null());
+    assert!(text.is_null());
+    let encoder = unsafe { &*encoder };
+    let text = unsafe { CStr::from_ptr(text) };
+    let text = text.to_string_lossy();
+    let encoded = encoder.0.encode(text.as_ref());
+    Box::into_raw(Box::new(U8Buffer::from(encoded)))
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_text_encoder_get_encoding(
-    encoder: &mut TextEncoder,
+    encoder: *const TextEncoder,
 ) -> *const c_char {
+    assert!(encoder.is_null());
+    let encoder = unsafe { &*encoder };
     CString::new(encoder.0.encoding().to_string().to_lowercase())
         .unwrap()
         .into_raw()
@@ -3896,9 +3990,7 @@ pub extern "C" fn canvas_native_text_encoder_get_encoding(
 pub extern "C" fn canvas_native_context_gl_make_current(
     context: *const CanvasRenderingContext2D,
 ) -> bool {
-    if context.is_null() {
-        return false;
-    }
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.make_current()
 }
@@ -3907,16 +3999,45 @@ pub extern "C" fn canvas_native_context_gl_make_current(
 pub extern "C" fn canvas_native_context_gl_swap_buffers(
     context: *const CanvasRenderingContext2D,
 ) -> bool {
-    if context.is_null() {
-        return false;
-    }
+    assert!(context.is_null());
     let context = unsafe { &*context };
     context.swap_buffers()
 }
 /* GL */
 
-#[repr(C)]
 pub struct GLContext(canvas_core::gl::GLContext);
+
+#[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
+#[repr(C)]
+pub enum WebGLExtensionType {
+    EXT_blend_minmax,
+    EXT_color_buffer_half_float,
+    EXT_disjoint_timer_query,
+    EXT_sRGB,
+    EXT_shader_texture_lod,
+    EXT_texture_filter_anisotropic,
+    OES_element_index_uint,
+    OES_standard_derivatives,
+    OES_texture_float,
+    OES_texture_float_linear,
+    OES_texture_half_float,
+    OES_texture_half_float_linear,
+    OES_vertex_array_object,
+    WEBGL_color_buffer_float,
+    WEBGL_compressed_texture_atc,
+    WEBGL_compressed_texture_etc1,
+    WEBGL_compressed_texture_s3tc,
+    WEBGL_compressed_texture_s3tc_srgb,
+    WEBGL_compressed_texture_etc,
+    WEBGL_compressed_texture_pvrtc,
+    WEBGL_lose_context,
+    ANGLE_instanced_arrays,
+    WEBGL_depth_texture,
+    WEBGL_draw_buffers,
+    OES_fbo_render_mipmap,
+    None,
+}
 
 impl Into<WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
     fn into(self) -> WebGLExtensionType {
@@ -3992,7 +4113,9 @@ impl Into<WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
                 WebGLExtensionType::WEBGL_draw_buffers
             }
             canvas_webgl::prelude::WebGLExtensionType::None => WebGLExtensionType::None,
-            WebGLExtensionType::OES_fbo_render_mipmap => WebGLExtensionType::OES_fbo_render_mipmap,
+            canvas_webgl::prelude::WebGLExtensionType::OES_fbo_render_mipmap => {
+                WebGLExtensionType::OES_fbo_render_mipmap
+            }
         }
     }
 }
@@ -4003,11 +4126,13 @@ pub extern "C" fn canvas_native_context_create_pattern_webgl(
     context: *mut CanvasRenderingContext2D,
     repetition: *const c_char,
 ) -> *mut PaintStyle {
-    if repetition.is_null() {
-        return Box::into_raw(Box::new(PaintStyle::new(None)));
-    }
+    assert!(context.is_null());
+    assert!(repetition.is_null());
+    assert!(source.is_null());
+    let context = unsafe { &mut *context };
     let repetition = unsafe { CStr::from_ptr(repetition) };
     let repetition = repetition.to_string_lossy();
+    let source = unsafe { &*source };
     Box::into_raw(Box::new(PaintStyle(
         Repetition::try_from(repetition.as_ref()).map_or(None, |repetition| {
             context.remove_if_current();
@@ -4047,18 +4172,14 @@ pub extern "C" fn canvas_native_context_create_pattern_webgl(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_make_current(state: *mut WebGLState) -> bool {
-    if state.is_null() {
-        return false;
-    }
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     state.get_inner().make_current()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_swap_buffers(state: *mut WebGLState) -> bool {
-    if state.is_null() {
-        return false;
-    }
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     state.get_inner().swap_buffers()
 }
@@ -4075,9 +4196,8 @@ fn canvas_native_webgl_to_data_url(
     format: *const c_char,
     quality: u32,
 ) -> *const c_char {
-    if state.is_null() || format.is_null() {
-        return std::ptr::null_mut();
-    }
+    assert!(state.is_null());
+    assert!(format.is_null());
     let format = unsafe { CStr::from_ptr(format) };
     let format = format.to_string_lossy();
     let state = unsafe { &mut *state };
@@ -4092,8 +4212,8 @@ fn canvas_native_webgl_to_data_url(
         gl_bindings::ReadPixels(
             0,
             0,
-            width as i32,
-            height as i32,
+            width,
+            height,
             gl_bindings::RGBA,
             gl_bindings::UNSIGNED_BYTE,
             buffer.as_mut_ptr() as *mut c_void,
@@ -4112,7 +4232,6 @@ fn canvas_native_webgl_to_data_url(
 }
 
 #[derive(Debug)]
-#[repr(C)]
 pub struct WebGLState(canvas_webgl::prelude::WebGLState);
 
 impl WebGLState {
@@ -4158,7 +4277,6 @@ impl WebGLState {
     }
 }
 
-#[repr(C)]
 pub struct WebGLActiveInfo(canvas_webgl::prelude::WebGLActiveInfo);
 
 impl WebGLActiveInfo {
@@ -4179,7 +4297,6 @@ impl WebGLActiveInfo {
     }
 }
 
-#[repr(C)]
 pub struct ContextAttributes(canvas_webgl::prelude::ContextAttributes);
 
 impl ContextAttributes {
@@ -4215,7 +4332,6 @@ impl ContextAttributes {
     }
 }
 
-#[repr(C)]
 pub struct WebGLFramebufferAttachmentParameter(
     canvas_webgl::prelude::WebGLFramebufferAttachmentParameter,
 );
@@ -4234,7 +4350,6 @@ impl WebGLFramebufferAttachmentParameter {
     }
 }
 
-#[repr(C)]
 pub struct WebGLShaderPrecisionFormat(canvas_webgl::prelude::WebGLShaderPrecisionFormat);
 
 impl WebGLShaderPrecisionFormat {
@@ -4251,7 +4366,6 @@ impl WebGLShaderPrecisionFormat {
     }
 }
 
-#[repr(C)]
 pub struct WebGLExtension(Option<Box<dyn canvas_webgl::prelude::WebGLExtension>>);
 
 impl WebGLExtension {
@@ -4301,104 +4415,103 @@ impl WebGLExtension {
 }
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct EXT_blend_minmax(canvas_webgl::prelude::EXT_blend_minmax);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct EXT_color_buffer_half_float(canvas_webgl::prelude::EXT_color_buffer_half_float);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct EXT_disjoint_timer_query(canvas_webgl::prelude::EXT_disjoint_timer_query);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct EXT_sRGB(canvas_webgl::prelude::EXT_sRGB);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct EXT_shader_texture_lod(canvas_webgl::prelude::EXT_shader_texture_lod);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct EXT_texture_filter_anisotropic(canvas_webgl::prelude::EXT_texture_filter_anisotropic);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct OES_element_index_uint(canvas_webgl::prelude::OES_element_index_uint);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct OES_standard_derivatives(canvas_webgl::prelude::OES_standard_derivatives);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct OES_texture_float(canvas_webgl::prelude::OES_texture_float);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct OES_texture_float_linear(canvas_webgl::prelude::OES_texture_float_linear);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct OES_texture_half_float(canvas_webgl::prelude::OES_texture_half_float);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct OES_texture_half_float_linear(canvas_webgl::prelude::OES_texture_half_float_linear);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct OES_vertex_array_object(canvas_webgl::prelude::OES_vertex_array_object);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_color_buffer_float(canvas_webgl::prelude::WEBGL_color_buffer_float);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_compressed_texture_atc(canvas_webgl::prelude::WEBGL_compressed_texture_atc);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_compressed_texture_etc1(canvas_webgl::prelude::WEBGL_compressed_texture_etc1);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_compressed_texture_s3tc(canvas_webgl::prelude::WEBGL_compressed_texture_s3tc);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_compressed_texture_s3tc_srgb(
     canvas_webgl::prelude::WEBGL_compressed_texture_s3tc_srgb,
 );
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_compressed_texture_etc(canvas_webgl::prelude::WEBGL_compressed_texture_etc);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_compressed_texture_pvrtc(canvas_webgl::prelude::WEBGL_compressed_texture_pvrtc);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_lose_context(canvas_webgl::prelude::WEBGL_lose_context);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct ANGLE_instanced_arrays(canvas_webgl::prelude::ANGLE_instanced_arrays);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_depth_texture(canvas_webgl::prelude::WEBGL_depth_texture);
 
 #[allow(non_camel_case_types)]
-#[repr(C)]
+
 pub struct WEBGL_draw_buffers(canvas_webgl::prelude::WEBGL_draw_buffers);
 
-#[repr(C)]
 pub struct WebGLResult(canvas_webgl::prelude::WebGLResult);
 
 /* WebGLActiveInfo */
@@ -4602,9 +4715,8 @@ pub extern "C" fn canvas_native_webgl_context_attribute_get_get_xr_compatible(
 pub extern "C" fn canvas_native_webgl_context_extension_is_none(
     extension: *const WebGLExtension,
 ) -> bool {
-    if extension.is_null() {
-        return true;
-    }
+    assert!(extension.is_null());
+    let extension = unsafe { &*extension };
     extension.is_none()
 }
 
@@ -4618,41 +4730,41 @@ pub extern "C" fn canvas_native_webgl_context_extension_get_type(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(
-    extension: *const WebGLExtension,
+    extension: *mut WebGLExtension,
 ) -> *mut EXT_disjoint_timer_query {
-    let extension = unsafe { &*extension };
+    let extension = unsafe { Box::from_raw(&mut *extension) };
     Box::into_raw(extension.into_ext_disjoint_timer_query())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_context_extension_to_angle_instanced_arrays(
-    extension: *const WebGLExtension,
+    extension: *mut WebGLExtension,
 ) -> *mut ANGLE_instanced_arrays {
-    let extension = unsafe { &*extension };
+    let extension = unsafe { Box::from_raw(&mut *extension) };
     Box::into_raw(extension.into_angle_instanced_arrays())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_context_extension_to_lose_context(
-    extension: *const WebGLExtension,
+    extension: *mut WebGLExtension,
 ) -> *mut WEBGL_lose_context {
-    let extension = unsafe { &*extension };
+    let extension = unsafe { Box::from_raw(&mut *extension) };
     Box::into_raw(extension.into_lose_context())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_context_extension_to_draw_buffers(
-    extension: *const WebGLExtension,
+    extension: *mut WebGLExtension,
 ) -> *mut WEBGL_draw_buffers {
-    let extension = unsafe { &*extension };
+    let extension = unsafe { Box::from_raw(&mut *extension) };
     Box::into_raw(extension.into_draw_buffers())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_context_extension_to_oes_vertex_array_object(
-    extension: *const WebGLExtension,
+    extension: *mut WebGLExtension,
 ) -> *mut OES_vertex_array_object {
-    let extension = unsafe { &*extension };
+    let extension = unsafe { Box::from_raw(&mut *extension) };
     Box::into_raw(extension.into_oes_vertex_array_object())
 }
 
@@ -4683,38 +4795,38 @@ fn canvas_native_webgl_result_get_bool(result: *const WebGLResult) -> bool {
     }
 }
 
-fn canvas_native_webgl_result_get_i32_array(result: *const WebGLResult) -> Vec<i32> {
+fn canvas_native_webgl_result_get_i32_array(result: *const WebGLResult) -> *mut I32Buffer {
     let result = unsafe { &*result };
-    match &result.0 {
+    Box::into_raw(Box::new(I32Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::I32Array(value) => value.to_vec(),
         _ => Vec::new(),
-    }
+    })))
 }
 
-fn canvas_native_webgl_result_get_u32_array(result: *const WebGLResult) -> Vec<u32> {
+fn canvas_native_webgl_result_get_u32_array(result: *const WebGLResult) -> *mut U32Buffer {
     let result = unsafe { &*result };
-    match &result.0 {
+    Box::into_raw(Box::new(U32Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::U32Array(value) => value.to_vec(),
         _ => Vec::new(),
-    }
+    })))
 }
 
-fn canvas_native_webgl_result_get_f32_array(result: *const WebGLResult) -> Vec<f32> {
+fn canvas_native_webgl_result_get_f32_array(result: *const WebGLResult) -> *mut F32Buffer {
     let result = unsafe { &*result };
-    match &result.0 {
+    Box::into_raw(Box::new(F32Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::F32Array(value) => value.to_vec(),
         _ => Vec::new(),
-    }
+    })))
 }
 
-fn canvas_native_webgl_result_get_bool_array(result: *const WebGLResult) -> Vec<u8> {
+fn canvas_native_webgl_result_get_bool_array(result: *const WebGLResult) -> *mut U8Buffer {
     let result = unsafe { &*result };
-    match &result.0 {
+    Box::into_raw(Box::new(U8Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::BooleanArray(value) => unsafe {
             std::slice::from_raw_parts(value.as_ptr() as *const u8, value.len()).to_vec()
         },
         _ => Vec::new(),
-    }
+    })))
 }
 
 fn canvas_native_webgl_result_get_u32(result: *const WebGLResult) -> u32 {
@@ -4950,11 +5062,14 @@ fn canvas_native_webgl_lose_context_restore_context(context: *const WEBGL_lose_c
 /* WEBGL_draw_buffers */
 
 fn canvas_native_webgl_draw_buffers_draw_buffers_webgl(
-    buffers: &[u32],
+    buffers: *const U32Buffer,
     context: *const WEBGL_draw_buffers,
 ) {
+    assert!(buffers.is_null());
+    assert!(context.is_null());
+    let buffers = unsafe { &*buffers };
     let context = unsafe { &*context };
-    context.0.draw_buffers_webgl(buffers);
+    context.0.draw_buffers_webgl(buffers.get_buffer());
 }
 
 /* WEBGL_draw_buffers */
@@ -5091,8 +5206,7 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
     )))
 }
 
-#[no_mangle]
-pub extern "C" fn canvas_native_webgl_create_no_window_internal(
+fn canvas_native_webgl_create_no_window_internal(
     width: i32,
     height: i32,
     version: &str,
@@ -5304,14 +5418,17 @@ pub extern "C" fn canvas_native_webgl_blend_func(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data(
     target: u32,
-    src_data: &[u8],
+    src_data: *const U8Buffer,
     usage: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(src_data.is_null());
+    let src_data = unsafe { &*src_data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data(
         target,
-        src_data,
+        src_data.get_buffer(),
         usage,
         state.get_inner_mut(),
     )
@@ -5320,14 +5437,17 @@ pub extern "C" fn canvas_native_webgl_buffer_data(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data_u16(
     target: u32,
-    src_data: &[u16],
+    src_data: *const U16Buffer,
     usage: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(src_data.is_null());
+    let src_data = unsafe { &*src_data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data_u16(
         target,
-        src_data,
+        src_data.get_buffer(),
         usage,
         state.get_inner_mut(),
     )
@@ -5336,14 +5456,16 @@ pub extern "C" fn canvas_native_webgl_buffer_data_u16(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data_f32(
     target: u32,
-    src_data: &[f32],
+    src_data: *const F32Buffer,
     usage: u32,
     state: *mut WebGLState,
 ) {
+    assert!(src_data.is_null());
+    let src_data = unsafe { &*src_data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data_f32(
         target,
-        src_data,
+        src_data.get_buffer(),
         usage,
         state.get_inner_mut(),
     )
@@ -5369,14 +5491,17 @@ pub extern "C" fn canvas_native_webgl_buffer_data_none(
 pub extern "C" fn canvas_native_webgl_buffer_sub_data(
     target: u32,
     offset: isize,
-    src_data: &[u8],
+    src_data: *const U8Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(src_data.is_null());
+    let src_data = unsafe { &*src_data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data(
         target,
         offset,
-        src_data,
+        src_data.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -5480,9 +5605,12 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_image2d(
     width: i32,
     height: i32,
     border: i32,
-    pixels: &[u8],
+    pixels: *const U8Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(pixels.is_null());
+    let pixels = unsafe { &*pixels };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_compressed_tex_image2d(
         target,
@@ -5491,7 +5619,7 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_image2d(
         width,
         height,
         border,
-        pixels,
+        pixels.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -5527,9 +5655,12 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_sub_image2d(
     width: i32,
     height: i32,
     format: u32,
-    pixels: &[u8],
+    pixels: *const U8Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(pixels.is_null());
+    let pixels = unsafe { &*pixels };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_compressed_tex_sub_image2d(
         target,
@@ -5539,7 +5670,7 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_sub_image2d(
         width,
         height,
         format,
-        pixels,
+        pixels.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -5879,9 +6010,14 @@ pub extern "C" fn canvas_native_webgl_get_active_uniform(
 pub extern "C" fn canvas_native_webgl_get_attached_shaders(
     program: u32,
     state: *mut WebGLState,
-) -> Vec<u32> {
+) -> *mut U32Buffer {
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_get_attached_shaders(program, state.get_inner_mut())
+    Box::into_raw(Box::new(U32Buffer::from(
+        canvas_webgl::webgl::canvas_native_webgl_get_attached_shaders(
+            program,
+            state.get_inner_mut(),
+        ),
+    )))
 }
 
 #[no_mangle]
@@ -5890,10 +6026,13 @@ pub extern "C" fn canvas_native_webgl_get_attrib_location(
     name: *const c_char,
     state: *mut WebGLState,
 ) -> i32 {
+    assert!(state.is_null());
+    let name = unsafe { CStr::from_ptr(name) };
+    let name = name.to_string_lossy();
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_get_attrib_location(
         program,
-        name,
+        name.as_ref(),
         state.get_inner_mut(),
     )
 }
@@ -5933,10 +6072,16 @@ pub extern "C" fn canvas_native_webgl_get_extension(
     name: *const c_char,
     state: *mut WebGLState,
 ) -> *const WebGLExtension {
+    assert!(state.is_null());
+    let name = unsafe { CStr::from_ptr(name) };
+    let name = name.to_string_lossy();
     let state = unsafe { &mut *state };
-    Box::new(WebGLExtension(
-        canvas_webgl::webgl::canvas_native_webgl_get_extension(name, state.get_inner_mut()),
-    ))
+    Box::into_raw(Box::new(WebGLExtension(
+        canvas_webgl::webgl::canvas_native_webgl_get_extension(
+            name.as_ref(),
+            state.get_inner_mut(),
+        ),
+    )))
 }
 
 #[no_mangle]
@@ -5961,6 +6106,8 @@ pub extern "C" fn canvas_native_webgl_get_framebuffer_attachment_parameter(
 pub extern "C" fn canvas_native_webgl_framebuffer_attachment_parameter_get_is_texture(
     param: *const WebGLFramebufferAttachmentParameter,
 ) -> bool {
+    assert!(param.is_null());
+    let param = unsafe { &*param };
     param.get_is_texture()
 }
 
@@ -5968,6 +6115,9 @@ pub extern "C" fn canvas_native_webgl_framebuffer_attachment_parameter_get_is_te
 pub extern "C" fn canvas_native_webgl_framebuffer_attachment_parameter_get_is_renderbuffer(
     param: *const WebGLFramebufferAttachmentParameter,
 ) -> bool {
+    assert!(param.is_null());
+    let param = unsafe { &*param };
+
     param.get_is_renderbuffer()
 }
 
@@ -5975,6 +6125,8 @@ pub extern "C" fn canvas_native_webgl_framebuffer_attachment_parameter_get_is_re
 pub extern "C" fn canvas_native_webgl_framebuffer_attachment_parameter_get_value(
     param: *const WebGLFramebufferAttachmentParameter,
 ) -> i32 {
+    assert!(param.is_null());
+    let param = unsafe { &*param };
     param.get_value()
 }
 
@@ -6093,9 +6245,11 @@ pub extern "C" fn canvas_native_webgl_get_shader_source(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_get_supported_extensions(
     state: *mut WebGLState,
-) -> Vec<String> {
+) -> *mut StringBuffer {
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_get_supported_extensions(state.get_inner_mut())
+    Box::into_raw(Box::new(StringBuffer::from(
+        canvas_webgl::webgl::canvas_native_webgl_get_supported_extensions(state.get_inner_mut()),
+    )))
 }
 
 #[no_mangle]
@@ -6105,7 +6259,8 @@ pub extern "C" fn canvas_native_webgl_get_supported_extensions_to_string(
     let state = unsafe { &mut *state };
     let ret =
         canvas_webgl::webgl::canvas_native_webgl_get_supported_extensions(state.get_inner_mut());
-    ret.join(",").to_string()
+
+    CString::new(ret.join(",").to_string()).unwrap().into_raw()
 }
 
 #[no_mangle]
@@ -6124,10 +6279,14 @@ pub extern "C" fn canvas_native_webgl_get_uniform_location(
     name: *const c_char,
     state: *mut WebGLState,
 ) -> i32 {
+    assert!(state.is_null());
+    assert!(name.is_null());
+    let name = unsafe { CStr::from_ptr(name) };
+    let name = name.to_string_lossy();
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_get_uniform_location(
         program,
-        name,
+        name.as_ref(),
         state.get_inner_mut(),
     )
 }
@@ -6263,6 +6422,7 @@ pub extern "C" fn canvas_native_webgl_polygon_offset(
     units: f32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_polygon_offset(factor, units, state.get_inner_mut())
 }
@@ -6278,6 +6438,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u8(
     pixels: &mut [u8],
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_u8(
         x,
@@ -6302,6 +6463,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u16(
     pixels: &mut [u16],
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_u16(
         x,
@@ -6326,6 +6488,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_f32(
     pixels: &mut [f32],
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_f32(
         x,
@@ -6347,6 +6510,7 @@ pub extern "C" fn canvas_native_webgl_renderbuffer_storage(
     height: i32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_renderbuffer_storage(
         target,
@@ -6363,6 +6527,8 @@ pub extern "C" fn canvas_native_webgl_sample_coverage(
     invert: bool,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_sample_coverage(value, invert, state.get_inner_mut())
 }
 
@@ -6374,6 +6540,7 @@ pub extern "C" fn canvas_native_webgl_scissor(
     height: i32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_scissor(x, y, width, height, state.get_inner_mut())
 }
@@ -6384,7 +6551,16 @@ pub extern "C" fn canvas_native_webgl_shader_source(
     source: *const c_char,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_shader_source(shader, source, state.get_inner_mut())
+    assert!(state.is_null());
+    assert!(source.is_null());
+    let source = unsafe { CStr::from_ptr(source) };
+    let source = source.to_string_lossy();
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_shader_source(
+        shader,
+        source.as_ref(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -6394,6 +6570,7 @@ pub extern "C" fn canvas_native_webgl_stencil_func(
     mask: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_stencil_func(
         func,
@@ -6423,6 +6600,8 @@ pub extern "C" fn canvas_native_webgl_stencil_func_separate(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_stencil_mask(mask: u32, state: *mut WebGLState) {
+    assert!(state.is_null());
+    let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_stencil_mask(mask, state.get_inner_mut())
 }
 
@@ -6432,6 +6611,8 @@ pub extern "C" fn canvas_native_webgl_stencil_mask_separate(
     mask: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_stencil_mask_separate(
         face,
         mask,
@@ -6446,6 +6627,8 @@ pub extern "C" fn canvas_native_webgl_stencil_op(
     zpass: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_stencil_op(fail, zfail, zpass, state.get_inner())
 }
 
@@ -6496,6 +6679,9 @@ fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas: *mut CanvasRenderingContext2D,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(state.is_null());
+    let canvas = unsafe { &mut *canvas };
     let state = unsafe { &mut *state };
     {
         let context = &mut state.0;
@@ -6547,6 +6733,8 @@ fn canvas_native_webgl_tex_image2d_webgl(
     webgl: *mut WebGLState,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(webgl.is_null());
     let state = unsafe { &mut *state };
     let webgl = unsafe { &mut *webgl };
     let mut pixels =
@@ -6583,6 +6771,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d(
     buf: &mut [u8],
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
@@ -6610,6 +6799,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_none(
     image_type: i32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d_none(
         target,
@@ -6633,6 +6823,9 @@ fn canvas_native_webgl_tex_image2d_image_asset(
     image_asset: *mut ImageAsset,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(image_asset.is_null());
+    let image_asset = unsafe { &*image_asset };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d_asset(
         target,
@@ -6652,7 +6845,8 @@ pub extern "C" fn canvas_native_webgl_tex_parameterf(
     param: f32,
     state: *mut WebGLState,
 ) {
-    let state = unsafe { &mut *state };
+    assert!(state.is_null());
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_tex_parameterf(target, pname, param, state.get_inner())
 }
 
@@ -6663,7 +6857,8 @@ pub extern "C" fn canvas_native_webgl_tex_parameteri(
     param: i32,
     state: *mut WebGLState,
 ) {
-    let state = unsafe { &mut *state };
+    assert!(state.is_null());
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_tex_parameteri(target, pname, param, state.get_inner())
 }
 
@@ -6678,7 +6873,10 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_asset(
     asset: *mut ImageAsset,
     state: *mut WebGLState,
 ) {
-    let state = unsafe { &mut *state };
+    assert!(state.is_null());
+    assert!(asset.is_null());
+    let asset = unsafe { &*asset };
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d_asset(
         target,
         level,
@@ -6702,6 +6900,10 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
     canvas: *mut CanvasRenderingContext2D,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(canvas.is_null());
+    let state = unsafe { &mut *state };
+    let canvas = unsafe { &mut *canvas };
     {
         let context = &mut state.0;
         context.remove_if_current();
@@ -6754,6 +6956,10 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgl(
     webgl: *mut WebGLState,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(webgl.is_null());
+    let state = unsafe { &mut *state };
+    let webgl = unsafe { &mut *webgl };
     {
         let state = &state.0;
         state.remove_if_current();
@@ -6792,9 +6998,12 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d(
     height: i32,
     format: u32,
     image_type: i32,
-    buf: &[u8],
+    buf: *const U8Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(buf.is_null());
+    let buf = unsafe { &*buf };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
         target,
@@ -6805,37 +7014,57 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d(
         height,
         format,
         image_type,
-        buf,
+        buf.get_buffer(),
         state.get_inner(),
     )
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1f(location: i32, v0: f32, state: *mut WebGLState) {
+    assert!(state.is_null());
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform1f(location, v0, state.get_inner())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1fv(
     location: i32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform1fv(location, value, state.get_inner())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &*state };
+    canvas_webgl::webgl::canvas_native_webgl_uniform1fv(
+        location,
+        value.get_buffer(),
+        state.get_inner(),
+    )
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1i(location: i32, v0: i32, state: *mut WebGLState) {
+    assert!(state.is_null());
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform1i(location, v0, state.get_inner())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1iv(
     location: i32,
-    value: &[i32],
+    value: *const I32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform1iv(location, value, state.get_inner())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &*state };
+    canvas_webgl::webgl::canvas_native_webgl_uniform1iv(
+        location,
+        value.get_buffer(),
+        state.get_inner(),
+    )
 }
 
 #[no_mangle]
@@ -6845,16 +7074,27 @@ pub extern "C" fn canvas_native_webgl_uniform2f(
     v1: f32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform2f(location, v0, v1, state.get_inner())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2fv(
     location: i32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform2fv(location, value, state.get_inner())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &*state };
+
+    canvas_webgl::webgl::canvas_native_webgl_uniform2fv(
+        location,
+        value.get_buffer(),
+        state.get_inner(),
+    )
 }
 
 #[no_mangle]
@@ -6864,16 +7104,26 @@ pub extern "C" fn canvas_native_webgl_uniform2i(
     v1: i32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform2i(location, v0, v1, state.get_inner())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2iv(
     location: i32,
-    value: &[i32],
+    value: *const I32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform2iv(location, value, state.get_inner())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &*state };
+    canvas_webgl::webgl::canvas_native_webgl_uniform2iv(
+        location,
+        value.get_buffer(),
+        state.get_inner(),
+    )
 }
 
 #[no_mangle]
@@ -6891,10 +7141,18 @@ pub extern "C" fn canvas_native_webgl_uniform3f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3fv(
     location: i32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform3fv(location, value, state.get_inner())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &*state };
+    canvas_webgl::webgl::canvas_native_webgl_uniform3fv(
+        location,
+        value.get_buffer(),
+        state.get_inner(),
+    )
 }
 
 #[no_mangle]
@@ -6912,10 +7170,18 @@ pub extern "C" fn canvas_native_webgl_uniform3i(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3iv(
     location: i32,
-    value: &[i32],
+    value: *const I32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform3iv(location, value, state.get_inner())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &*state };
+    canvas_webgl::webgl::canvas_native_webgl_uniform3iv(
+        location,
+        value.get_buffer(),
+        state.get_inner(),
+    )
 }
 
 #[no_mangle]
@@ -6934,10 +7200,18 @@ pub extern "C" fn canvas_native_webgl_uniform4f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform4fv(
     location: i32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform4fv(location, value, state.get_inner_mut())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_uniform4fv(
+        location,
+        value.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -6963,24 +7237,34 @@ pub extern "C" fn canvas_native_webgl_uniform4i(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform4iv(
     location: i32,
-    value: &[i32],
+    value: *const I32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl::canvas_native_webgl_uniform4iv(location, value, state.get_inner_mut())
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_uniform4iv(
+        location,
+        value.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform_matrix2fv(
     location: i32,
     transpose: bool,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform_matrix2fv(
         location,
         transpose,
-        value,
+        value.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -6989,14 +7273,16 @@ pub extern "C" fn canvas_native_webgl_uniform_matrix2fv(
 pub extern "C" fn canvas_native_webgl_uniform_matrix3fv(
     location: i32,
     transpose: bool,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform_matrix3fv(
         location,
         transpose,
-        value,
+        value.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -7005,14 +7291,16 @@ pub extern "C" fn canvas_native_webgl_uniform_matrix3fv(
 pub extern "C" fn canvas_native_webgl_uniform_matrix4fv(
     location: i32,
     transpose: bool,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform_matrix4fv(
         location,
         transpose,
-        value,
+        value.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -7038,11 +7326,17 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib1f(index: u32, v0: f32, state
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib1fv(
     index: u32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib1fv(index, value, state.get_inner_mut())
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib1fv(
+        index,
+        value.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -7059,11 +7353,17 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib2f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib2fv(
     index: u32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib2fv(index, value, state.get_inner_mut())
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib2fv(
+        index,
+        value.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -7087,11 +7387,17 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib3f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib3fv(
     index: u32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib3fv(index, value, state.get_inner_mut())
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib3fv(
+        index,
+        value.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -7117,11 +7423,17 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib4f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib4fv(
     index: u32,
-    value: &[f32],
+    value: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib4fv(index, value, state.get_inner_mut())
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib4fv(
+        index,
+        value.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -7253,6 +7565,8 @@ pub extern "C" fn canvas_native_webgl2_bind_sampler(
     sampler: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_bind_sampler(unit, sampler, state.get_inner_mut())
 }
 
@@ -7262,6 +7576,7 @@ pub extern "C" fn canvas_native_webgl2_bind_transform_feedback(
     transform_feedback: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_bind_sampler(
         target,
@@ -7275,6 +7590,7 @@ pub extern "C" fn canvas_native_webgl2_bind_vertex_array(
     vertex_array: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_bind_vertex_array(
         vertex_array,
@@ -7296,6 +7612,7 @@ pub extern "C" fn canvas_native_webgl2_blit_framebuffer(
     filter: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_blit_framebuffer(
         src_x0,
@@ -7320,6 +7637,7 @@ pub extern "C" fn canvas_native_webgl2_clear_bufferfi(
     stencil: i32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_clear_bufferfi(
         buffer,
@@ -7334,14 +7652,17 @@ pub extern "C" fn canvas_native_webgl2_clear_bufferfi(
 pub extern "C" fn canvas_native_webgl2_clear_bufferfv(
     buffer: u32,
     drawbuffer: i32,
-    values: &[f32],
+    values: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(values.is_null());
+    let values = unsafe { &*values };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_clear_bufferfv(
         buffer,
         drawbuffer,
-        values,
+        values.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -7350,14 +7671,17 @@ pub extern "C" fn canvas_native_webgl2_clear_bufferfv(
 pub extern "C" fn canvas_native_webgl2_clear_bufferiv(
     buffer: u32,
     drawbuffer: i32,
-    values: &[i32],
+    values: *const I32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(values.is_null());
+    let values = unsafe { &*values };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_clear_bufferiv(
         buffer,
         drawbuffer,
-        values,
+        values.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -7366,14 +7690,17 @@ pub extern "C" fn canvas_native_webgl2_clear_bufferiv(
 pub extern "C" fn canvas_native_webgl2_clear_bufferuiv(
     buffer: u32,
     drawbuffer: i32,
-    values: &[u32],
+    values: *const U32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(values.is_null());
+    let values = unsafe { &*values };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_clear_bufferuiv(
         buffer,
         drawbuffer,
-        values,
+        values.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -7437,11 +7764,13 @@ pub extern "C" fn canvas_native_webgl2_compressed_tex_sub_image3d(
     height: i32,
     depth: i32,
     format: u32,
-    src: &[u8],
+    src: *const U8Buffer,
     src_offset: usize,
     src_length_override: usize,
     state: *mut WebGLState,
 ) {
+    assert!(src.is_null());
+    let src = unsafe { &*src };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_compressed_tex_sub_image3d(
         target,
@@ -7453,7 +7782,7 @@ pub extern "C" fn canvas_native_webgl2_compressed_tex_sub_image3d(
         height,
         depth,
         format,
-        src,
+        src.get_buffer(),
         src_offset,
         src_length_override,
         state.get_inner_mut(),
@@ -7602,9 +7931,18 @@ pub extern "C" fn canvas_native_webgl2_draw_arrays_instanced(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgl2_draw_buffers(buffers: &[u32], state: *mut WebGLState) {
+pub extern "C" fn canvas_native_webgl2_draw_buffers(
+    buffers: *const U32Buffer,
+    state: *mut WebGLState,
+) {
+    assert!(state.is_null());
+    assert!(buffers.is_null());
+    let buffers = unsafe { &*buffers };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_draw_buffers(buffers, state.get_inner_mut())
+    canvas_webgl::webgl2::canvas_native_webgl2_draw_buffers(
+        buffers.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -7736,15 +8074,18 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniform_block_parameter(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_get_active_uniforms(
     program: u32,
-    uniform_indices: &[u32],
+    uniform_indices: *const U32Buffer,
     pname: u32,
     state: *mut WebGLState,
 ) -> *mut WebGLResult {
+    assert!(state.is_null());
+    assert!(uniform_indices.is_null());
+    let uniform_indices = unsafe { &*uniform_indices };
     let state = unsafe { &mut *state };
     Box::into_raw(Box::new(WebGLResult(
         canvas_webgl::webgl2::canvas_native_webgl2_get_active_uniforms(
             program,
-            uniform_indices,
+            uniform_indices.get_buffer(),
             pname,
             state.get_inner_mut(),
         ),
@@ -7777,10 +8118,13 @@ pub extern "C" fn canvas_native_webgl2_get_frag_data_location(
     name: *const c_char,
     state: *mut WebGLState,
 ) -> i32 {
+    assert!(name.is_null());
+    let name = unsafe { CStr::from_ptr(name) };
+    let name = name.to_string_lossy();
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_get_frag_data_location(
         program,
-        name,
+        name.as_ref(),
         state.get_inner_mut(),
     )
 }
@@ -7880,6 +8224,9 @@ pub extern "C" fn canvas_native_webgl2_get_sync_parameter(
     pname: u32,
     state: *mut WebGLState,
 ) -> *mut WebGLResult {
+    assert!(sync.is_null());
+    assert!(state.is_null());
+    let sync = unsafe { &*sync };
     let state = unsafe { &mut *state };
     Box::into_raw(Box::new(WebGLResult(
         canvas_webgl::webgl2::canvas_native_webgl2_get_sync_parameter(
@@ -7912,10 +8259,13 @@ pub extern "C" fn canvas_native_webgl2_get_uniform_block_index(
     uniform_block_name: *const c_char,
     state: *mut WebGLState,
 ) -> u32 {
+    assert!(uniform_block_name.is_null());
+    let uniform_block_name = unsafe { CStr::from_ptr(uniform_block_name) };
+    let uniform_block_name = uniform_block_name.to_string_lossy();
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_block_index(
         program,
-        uniform_block_name,
+        uniform_block_name.as_ref(),
         state.get_inner_mut(),
     )
 }
@@ -7925,26 +8275,31 @@ pub extern "C" fn canvas_native_webgl2_get_uniform_indices(
     program: u32,
     uniform_names: &[&str],
     state: *mut WebGLState,
-) -> Vec<u32> {
+) -> *mut U32Buffer {
     let state = unsafe { &mut *state };
     let uniform_names: Vec<String> = uniform_names.iter().map(|i| i.to_string()).collect();
-    canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_indices(
-        program,
-        uniform_names.as_slice(),
-        state.get_inner_mut(),
-    )
+    Box::into_raw(Box::new(U32Buffer::from(
+        canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_indices(
+            program,
+            uniform_names.as_slice(),
+            state.get_inner_mut(),
+        ),
+    )))
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_invalidate_framebuffer(
     target: u32,
-    attachments: &[u32],
+    attachments: *const U32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(attachments.is_null());
+    let attachments = unsafe { &*attachments };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_invalidate_framebuffer(
         target,
-        attachments,
+        attachments.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -7952,17 +8307,20 @@ pub extern "C" fn canvas_native_webgl2_invalidate_framebuffer(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_invalidate_sub_framebuffer(
     target: u32,
-    attachments: &[u32],
+    attachments: *const U32Buffer,
     x: i32,
     y: i32,
     width: i32,
     height: i32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(attachments.is_null());
+    let attachments = unsafe { &*attachments };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_invalidate_sub_framebuffer(
         target,
-        attachments,
+        attachments.get_buffer(),
         x,
         y,
         width,
@@ -8151,9 +8509,11 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d(
     border: i32,
     format: u32,
     type_: u32,
-    buf: &[u8],
+    buf: *const U8Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(buf.is_null());
+    let buf = unsafe { &*buf };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d(
         target,
@@ -8165,7 +8525,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d(
         border,
         format,
         type_,
-        buf,
+        buf.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8181,10 +8541,12 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_offset(
     border: i32,
     format: u32,
     type_: u32,
-    buf: &[u8],
+    buf: *const U8Buffer,
     offset: usize,
     state: *mut WebGLState,
 ) {
+    assert!(buf.is_null());
+    let buf = unsafe { &*buf };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d_offset(
         target,
@@ -8196,7 +8558,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_offset(
         border,
         format,
         type_,
-        buf,
+        buf.get_buffer(),
         offset,
         state.get_inner_mut(),
     )
@@ -8288,9 +8650,11 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d(
     depth: i32,
     format: u32,
     type_: u32,
-    buf: &[u8],
+    buf: *const U8Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(buf.is_null());
+    let buf = unsafe { &*buf };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d(
         target,
@@ -8303,7 +8667,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d(
         depth,
         format,
         type_,
-        buf,
+        buf.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8352,10 +8716,12 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_offset(
     depth: i32,
     format: u32,
     type_: u32,
-    buf: &[u8],
+    buf: *const U8Buffer,
     offset: usize,
     state: *mut WebGLState,
 ) {
+    assert!(buf.is_null());
+    let buf = unsafe { &*buf };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d_offset(
         target,
@@ -8368,7 +8734,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_offset(
         depth,
         format,
         type_,
-        buf,
+        buf.get_buffer(),
         offset,
         state.get_inner_mut(),
     )
@@ -8400,11 +8766,18 @@ pub extern "C" fn canvas_native_webgl2_uniform1ui(location: i32, v0: u32, state:
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform1uiv(
     location: i32,
-    data: &[u32],
+    data: *const U32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform1uiv(location, data, state.get_inner_mut())
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform1uiv(
+        location,
+        data.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -8421,11 +8794,18 @@ pub extern "C" fn canvas_native_webgl2_uniform2ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform2uiv(
     location: i32,
-    data: &[u32],
+    data: *const U32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform2uiv(location, data, state.get_inner_mut())
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform2uiv(
+        location,
+        data.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -8449,10 +8829,18 @@ pub extern "C" fn canvas_native_webgl2_uniform3ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform3uiv(
     location: i32,
-    data: &[u32],
+    data: *const U32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform3uiv(location, data, state.get_inner_mut())
+    assert!(state.is_null());
+    assert!(data.is_null());
+    let data = unsafe { &*data };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform3uiv(
+        location,
+        data.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -8478,10 +8866,18 @@ pub extern "C" fn canvas_native_webgl2_uniform4ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform4uiv(
     location: i32,
-    data: &[u32],
+    data: *const U32Buffer,
     state: *mut WebGLState,
 ) {
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform4uiv(location, data, state.get_inner_mut())
+    assert!(state.is_null());
+    assert!(data.is_null());
+    let data = unsafe { &*data };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform4uiv(
+        location,
+        data.get_buffer(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -8504,14 +8900,16 @@ pub extern "C" fn canvas_native_webgl2_uniform_block_binding(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix2x3fv(
     location: i32,
     transpose: bool,
-    data: &[f32],
+    data: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix2x3fv(
         location,
         transpose,
-        data,
+        data.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8520,14 +8918,16 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix2x3fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix2x4fv(
     location: i32,
     transpose: bool,
-    data: &[f32],
+    data: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix2x4fv(
         location,
         transpose,
-        data,
+        data.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8536,14 +8936,16 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix2x4fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix3x2fv(
     location: i32,
     transpose: bool,
-    data: &[f32],
+    data: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix3x2fv(
         location,
         transpose,
-        data,
+        data.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8552,14 +8954,16 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix3x2fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix3x4fv(
     location: i32,
     transpose: bool,
-    data: &[f32],
+    data: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix3x4fv(
         location,
         transpose,
-        data,
+        data.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8568,14 +8972,16 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix3x4fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix4x2fv(
     location: i32,
     transpose: bool,
-    data: &[f32],
+    data: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix4x2fv(
         location,
         transpose,
-        data,
+        data.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8584,14 +8990,16 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix4x2fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix4x3fv(
     location: i32,
     transpose: bool,
-    data: &[f32],
+    data: *const F32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(data.is_null());
+    let data = unsafe { &*data };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix4x3fv(
         location,
         transpose,
-        data,
+        data.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8633,12 +9041,16 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4i(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4iv(
     index: u32,
-    value: &[i32],
+    value: *const I32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
+    let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_vertex_attrib_i4iv(
         index,
-        value,
+        value.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8666,13 +9078,16 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4uiv(
     index: u32,
-    value: &[u32],
+    value: *const U32Buffer,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(value.is_null());
+    let value = unsafe { &*value };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_vertex_attrib_i4uiv(
         index,
-        value,
+        value.get_buffer(),
         state.get_inner_mut(),
     )
 }

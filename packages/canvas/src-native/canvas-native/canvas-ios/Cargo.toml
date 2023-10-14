@@ -14,7 +14,7 @@ crate-type = ["staticlib"]
 canvas-core = { path = "../canvas-core", features = ["2d"] }
 canvas-2d = { path = "../canvas-2d", features = ["gl"] }
 canvas-webgl = { path = "../canvas-webgl" }
-canvas-cxx = { path = "../canvas-cxx", features = ["2d", "webgl"] }
+canvas-c = { path = "../canvas-c", features = ["2d", "webgl"] }
 gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.5.0"
 ureq = "2.5.0"

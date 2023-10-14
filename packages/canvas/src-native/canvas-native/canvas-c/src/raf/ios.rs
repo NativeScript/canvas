@@ -6,7 +6,6 @@ use display_link::DisplayLink;
 
 type RafCallback = Option<Box<dyn Fn(i64)>>;
 
-#[repr(transparent)]
 struct RafInner {
     started: bool,
     dl: Option<DisplayLink>,
@@ -17,7 +16,6 @@ unsafe impl Send for RafInner {}
 
 unsafe impl Sync for RafInner {}
 
-#[repr(C)]
 pub struct Raf {
     inner: Arc<parking_lot::RwLock<RafInner>>,
 }

@@ -10,7 +10,7 @@ gl = ["skia-safe/gl"]
 [dependencies]
 canvas-core = { path = "../canvas-core", features = ["2d"] }
 parking_lot = "0.12.1"
-regex = "1.5.4"
+regex = "1.10.0"
 base64 = "0.21.0"
 encoding_rs = "0.8.32"
 gl-bindings = { path = "../gl-bindings" }
@@ -19,6 +19,6 @@ csscolorparser = { git = "https://github.com/triniwiz/csscolorparser-rs.git", re
 rgb = { version = "0.8.32", features = ["argb"] }
 log = "0.4.8"
 once_cell = "1.8.0"
-skia-bindings = { version = "0.66.2", features = ["gl", "svg"] }
-skia-safe = { version = "0.66.2", features = ["gl", "svg"] }
-image = {version = "0.24.5" , features = ["png", "jpeg", "gif"]}
+skia-bindings = { version = "0.66.3", features = ["gl", "svg"] }
+skia-safe = { version = "0.66.3", features = ["gl", "svg"] }
+image = {version = "0.24.7" , features = ["png", "jpeg", "gif"]}

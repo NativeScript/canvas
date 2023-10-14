@@ -3,8 +3,6 @@ use std::ffi::{c_int, c_long, c_void};
 use std::fmt::{Debug, Formatter};
 use std::ptr::NonNull;
 use std::rc::Rc;
-use std::sync::Once;
-
 use core_foundation::base::TCFType;
 use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
 use core_foundation::string::CFString;
@@ -17,7 +15,7 @@ use icrate::objc2::{
 };
 use icrate::Foundation::{NSData, NSInteger, NSObject, NSUInteger};
 use skia_safe::wrapper::PointerWrapper;
-use skia_safe::Shader;
+
 
 use crate::context_attributes::ContextAttributes;
 

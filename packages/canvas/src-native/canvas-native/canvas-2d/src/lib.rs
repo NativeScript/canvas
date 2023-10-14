@@ -1,8 +1,6 @@
 extern crate core;
 
 use std::ffi::c_uint;
-use std::os::raw::c_int;
-
 use base64::Engine;
 use image::EncodableLayout;
 use skia_safe::image::CachingHint;

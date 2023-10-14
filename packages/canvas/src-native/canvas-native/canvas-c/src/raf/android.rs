@@ -1,7 +1,7 @@
 use std::ffi::c_long;
 use std::sync::Arc;
 
-use crate::choregrapher::{
+use crate::choreographer::{
     AChoreographer_getInstance,
     AChoreographer_postFrameCallback,
     // AChoreographer_postFrameCallback64,
@@ -9,14 +9,11 @@ use crate::choregrapher::{
 
 type RafCallback = Option<Box<dyn Fn(i64)>>;
 
-#[repr(transparent)]
 struct RafInner {
     started: bool,
     callback: RafCallback,
     use_deprecated: bool,
 }
-
-#[repr(C)]
 pub struct Raf {
     inner: Arc<parking_lot::RwLock<RafInner>>,
 }

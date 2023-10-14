@@ -3,6 +3,8 @@
     <words>
       <w>aarch</w>
       <w>bgra</w>
+      <w>dfactor</w>
+      <w>drawbuffer</w>
       <w>evenodd</w>
       <w>gles</w>
       <w>heic</w>
@@ -16,6 +18,7 @@
       <w>polyshape</w>
       <w>qual</w>
       <w>renderable</w>
+      <w>sfactor</w>
       <w>sharegroup</w>
       <w>srgba</w>
       <w>triniwiz</w>

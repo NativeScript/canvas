@@ -1,13 +1,20 @@
 #![allow(non_snake_case)]
 
-use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U16Buffer, U32Buffer, U8Buffer};
+use std::borrow::Cow;
+use std::cell::{Ref, RefCell, RefMut};
+use std::ffi::{CStr, CString};
+use std::io::{Read, Write};
+use std::os::raw::c_ulong;
+use std::os::raw::c_void;
+use std::os::raw::{c_char, c_int, c_uint};
+use std::rc::Rc;
+
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 pub use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
-use canvas_2d::context::line_styles::line_cap::LineCap::CapSquare;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
@@ -20,14 +27,11 @@ use canvas_core::image_asset::OutputFormat;
 use canvas_webgl::prelude::WebGLVersion;
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
-use std::borrow::Cow;
-use std::cell::{Ref, RefCell, RefMut};
-use std::ffi::{CStr, CString};
-use std::io::{Read, Write};
-use std::os::raw::c_ulong;
-use std::os::raw::c_void;
-use std::os::raw::{c_char, c_int, c_uint};
-use std::rc::Rc;
+
+use crate::buffers::{
+    F32Buffer, I32Buffer, StringBuffer, StringRefBuffer, U16Buffer, U32Buffer, U8Buffer,
+    U8BufferMut,
+};
 
 /* Utils */
 
@@ -59,60 +63,60 @@ enum GLConstants {
 
 #[repr(C)]
 pub enum InvalidateState {
-    NONE,
-    PENDING,
-    INVALIDATING,
+    InvalidateStateNONE,
+    InvalidateStatePENDING,
+    InvalidateStateINVALIDATING,
 }
 
 #[repr(C)]
 pub enum PaintStyleType {
-    None,
-    Color,
-    Gradient,
-    Pattern,
+    PaintStyleTypeNone,
+    PaintStyleTypeColor,
+    PaintStyleTypeGradient,
+    PaintStyleTypePattern,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum ImageBitmapPremultiplyAlpha {
-    Default,
-    Premultiply,
-    None,
+    ImageBitmapPremultiplyAlphaDefault,
+    ImageBitmapPremultiplyAlphaPremultiply,
+    ImageBitmapPremultiplyAlphaNone,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum ImageBitmapColorSpaceConversion {
-    Default,
-    None,
+    ImageBitmapColorSpaceConversionDefault,
+    ImageBitmapColorSpaceConversionNone,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum ImageBitmapResizeQuality {
-    Low,
-    Medium,
-    High,
-    Pixelated,
+    ImageBitmapResizeQualityLow,
+    ImageBitmapResizeQualityMedium,
+    ImageBitmapResizeQualityHigh,
+    ImageBitmapResizeQualityPixelated,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum WebGLResultType {
-    Boolean,
-    I32Array,
-    U32Array,
-    F32Array,
-    BooleanArray,
-    U32,
-    I32,
-    F32,
-    String,
-    None,
+    WebGLResultTypeBoolean,
+    WebGLResultTypeI32Array,
+    WebGLResultTypeU32Array,
+    WebGLResultTypeF32Array,
+    WebGLResultTypeBooleanArray,
+    WebGLResultTypeU32,
+    WebGLResultTypeI32,
+    WebGLResultTypeF32,
+    WebGLResultTypeString,
+    WebGLResultTypeNone,
 }
 
 #[derive(Clone)]
@@ -295,17 +299,17 @@ impl PaintStyle {
         if let Some(style) = self.0.as_ref() {
             return match style {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
-                    PaintStyleType::Color
+                    PaintStyleType::PaintStyleTypeColor
                 }
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
-                    PaintStyleType::Gradient
+                    PaintStyleType::PaintStyleTypeGradient
                 }
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
-                    PaintStyleType::Pattern
+                    PaintStyleType::PaintStyleTypePattern
                 }
             };
         }
-        return PaintStyleType::None;
+        return PaintStyleType::PaintStyleTypeNone;
     }
 }
 
@@ -359,9 +363,9 @@ pub extern "C" fn canvas_native_raf_get_started(raf: *const Raf) -> bool {
 
 impl Into<i32> for ImageBitmapPremultiplyAlpha {
     fn into(self) -> i32 {
-        if self == ImageBitmapPremultiplyAlpha::Premultiply {
+        if self == ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaPremultiply {
             return 1;
-        } else if self == ImageBitmapPremultiplyAlpha::None {
+        } else if self == ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaNone {
             return 2;
         }
         return 0;
@@ -370,7 +374,7 @@ impl Into<i32> for ImageBitmapPremultiplyAlpha {
 
 impl Into<i32> for ImageBitmapColorSpaceConversion {
     fn into(self) -> i32 {
-        if self == ImageBitmapColorSpaceConversion::None {
+        if self == ImageBitmapColorSpaceConversion::ImageBitmapColorSpaceConversionNone {
             return 1;
         }
         0
@@ -379,11 +383,11 @@ impl Into<i32> for ImageBitmapColorSpaceConversion {
 
 impl Into<i32> for ImageBitmapResizeQuality {
     fn into(self) -> i32 {
-        if self == ImageBitmapResizeQuality::Medium {
+        if self == ImageBitmapResizeQuality::ImageBitmapResizeQualityMedium {
             return 1;
-        } else if self == ImageBitmapResizeQuality::High {
+        } else if self == ImageBitmapResizeQuality::ImageBitmapResizeQualityHigh {
             return 2;
-        } else if self == ImageBitmapResizeQuality::Pixelated {
+        } else if self == ImageBitmapResizeQuality::ImageBitmapResizeQualityPixelated {
             return 3;
         }
         0
@@ -491,7 +495,7 @@ pub extern "C" fn canvas_native_context_create_gl(
 pub extern "C" fn canvas_native_context_create_with_pointer(
     pointer: i64,
 ) -> *mut CanvasRenderingContext2D {
-    assert!(pointer != 0);
+    assert_ne!(pointer, 0);
     pointer as *mut CanvasRenderingContext2D
 }
 
@@ -1193,13 +1197,13 @@ pub extern "C" fn canvas_native_context_get_current_fill_style_type(
     let lock = context.get_context();
     return match lock.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
-            PaintStyleType::Color
+            PaintStyleType::PaintStyleTypeColor
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
-            PaintStyleType::Gradient
+            PaintStyleType::PaintStyleTypeGradient
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
-            PaintStyleType::Pattern
+            PaintStyleType::PaintStyleTypePattern
         }
     };
 }
@@ -1213,13 +1217,13 @@ pub extern "C" fn canvas_native_context_get_current_stroke_style_type(
     let lock = context.get_context();
     return match lock.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
-            PaintStyleType::Color
+            PaintStyleType::PaintStyleTypeColor
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
-            PaintStyleType::Gradient
+            PaintStyleType::PaintStyleTypeGradient
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
-            PaintStyleType::Pattern
+            PaintStyleType::PaintStyleTypePattern
         }
     };
 }
@@ -1472,7 +1476,7 @@ pub extern "C" fn canvas_native_context_create_image_data_with_data(
         canvas_2d::context::pixel_manipulation::image_data::ImageData::new_with_data(
             width,
             height,
-            data.get_buffer().to_vec(),
+            data.get_buffer(),
         ),
     )))
 }
@@ -3065,10 +3069,12 @@ pub extern "C" fn canvas_native_matrix_update(matrix: *mut Matrix, slice: *const
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_update_3d(matrix: *mut Matrix, slice: &[f32; 16]) {
-    if matrix.is_null() {
-        return;
-    }
+pub extern "C" fn canvas_native_matrix_update_3d(matrix: *mut Matrix, slice: *const F32Buffer) {
+    assert!(matrix.is_null());
+    assert!(slice.is_null());
+    let slice = unsafe { &*slice };
+    let slice = slice.get_buffer();
+    assert_eq!(slice.len(), 16);
     let matrix = unsafe { &mut *matrix };
     let matrix = matrix.inner_mut();
     matrix.set_m11(slice[0]);
@@ -3389,8 +3395,10 @@ pub extern "C" fn canvas_native_image_data_get_height(image_data: &ImageData) ->
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_data_get_data(image_data: &mut ImageData) -> &mut [u8] {
-    image_data.0.data_mut()
+pub extern "C" fn canvas_native_image_data_get_data(
+    image_data: &mut ImageData,
+) -> *mut U8BufferMut {
+    Box::into_raw(Box::new(U8BufferMut::from(image_data.0.data_mut())))
 }
 
 #[no_mangle]
@@ -4011,110 +4019,114 @@ pub struct GLContext(canvas_core::gl::GLContext);
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum WebGLExtensionType {
-    EXT_blend_minmax,
-    EXT_color_buffer_half_float,
-    EXT_disjoint_timer_query,
-    EXT_sRGB,
-    EXT_shader_texture_lod,
-    EXT_texture_filter_anisotropic,
-    OES_element_index_uint,
-    OES_standard_derivatives,
-    OES_texture_float,
-    OES_texture_float_linear,
-    OES_texture_half_float,
-    OES_texture_half_float_linear,
-    OES_vertex_array_object,
-    WEBGL_color_buffer_float,
-    WEBGL_compressed_texture_atc,
-    WEBGL_compressed_texture_etc1,
-    WEBGL_compressed_texture_s3tc,
-    WEBGL_compressed_texture_s3tc_srgb,
-    WEBGL_compressed_texture_etc,
-    WEBGL_compressed_texture_pvrtc,
-    WEBGL_lose_context,
-    ANGLE_instanced_arrays,
-    WEBGL_depth_texture,
-    WEBGL_draw_buffers,
-    OES_fbo_render_mipmap,
-    None,
+    WebGLExtensionTypeEXT_blend_minmax,
+    WebGLExtensionTypeEXT_color_buffer_half_float,
+    WebGLExtensionTypeEXT_disjoint_timer_query,
+    WebGLExtensionTypeEXT_sRGB,
+    WebGLExtensionTypeEXT_shader_texture_lod,
+    WebGLExtensionTypeEXT_texture_filter_anisotropic,
+    WebGLExtensionTypeOES_element_index_uint,
+    WebGLExtensionTypeOES_standard_derivatives,
+    WebGLExtensionTypeOES_texture_float,
+    WebGLExtensionTypeOES_texture_float_linear,
+    WebGLExtensionTypeOES_texture_half_float,
+    WebGLExtensionTypeOES_texture_half_float_linear,
+    WebGLExtensionTypeOES_vertex_array_object,
+    WebGLExtensionTypeWEBGL_color_buffer_float,
+    WebGLExtensionTypeWEBGL_compressed_texture_atc,
+    WebGLExtensionTypeWEBGL_compressed_texture_etc1,
+    WebGLExtensionTypeWEBGL_compressed_texture_s3tc,
+    WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb,
+    WebGLExtensionTypeWEBGL_compressed_texture_etc,
+    WebGLExtensionTypeWEBGL_compressed_texture_pvrtc,
+    WebGLExtensionTypeWEBGL_lose_context,
+    WebGLExtensionTypeANGLE_instanced_arrays,
+    WebGLExtensionTypeWEBGL_depth_texture,
+    WebGLExtensionTypeWEBGL_draw_buffers,
+    WebGLExtensionTypeOES_fbo_render_mipmap,
+    WebGLExtensionTypeNone,
 }
 
 impl Into<WebGLExtensionType> for canvas_webgl::prelude::WebGLExtensionType {
     fn into(self) -> WebGLExtensionType {
         match self {
             canvas_webgl::prelude::WebGLExtensionType::EXT_blend_minmax => {
-                WebGLExtensionType::EXT_blend_minmax
+                WebGLExtensionType::WebGLExtensionTypeEXT_blend_minmax
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_color_buffer_half_float => {
-                WebGLExtensionType::EXT_color_buffer_half_float
+                WebGLExtensionType::WebGLExtensionTypeEXT_color_buffer_half_float
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_disjoint_timer_query => {
-                WebGLExtensionType::EXT_disjoint_timer_query
+                WebGLExtensionType::WebGLExtensionTypeEXT_disjoint_timer_query
             }
-            canvas_webgl::prelude::WebGLExtensionType::EXT_sRGB => WebGLExtensionType::EXT_sRGB,
+            canvas_webgl::prelude::WebGLExtensionType::EXT_sRGB => {
+                WebGLExtensionType::WebGLExtensionTypeEXT_sRGB
+            }
             canvas_webgl::prelude::WebGLExtensionType::EXT_shader_texture_lod => {
-                WebGLExtensionType::EXT_shader_texture_lod
+                WebGLExtensionType::WebGLExtensionTypeEXT_shader_texture_lod
             }
             canvas_webgl::prelude::WebGLExtensionType::EXT_texture_filter_anisotropic => {
-                WebGLExtensionType::EXT_texture_filter_anisotropic
+                WebGLExtensionType::WebGLExtensionTypeEXT_texture_filter_anisotropic
             }
             canvas_webgl::prelude::WebGLExtensionType::OES_element_index_uint => {
-                WebGLExtensionType::OES_element_index_uint
+                WebGLExtensionType::WebGLExtensionTypeOES_element_index_uint
             }
             canvas_webgl::prelude::WebGLExtensionType::OES_standard_derivatives => {
-                WebGLExtensionType::OES_standard_derivatives
+                WebGLExtensionType::WebGLExtensionTypeOES_standard_derivatives
             }
             canvas_webgl::prelude::WebGLExtensionType::OES_texture_float => {
-                WebGLExtensionType::OES_texture_float
+                WebGLExtensionType::WebGLExtensionTypeOES_texture_float
             }
             canvas_webgl::prelude::WebGLExtensionType::OES_texture_float_linear => {
-                WebGLExtensionType::OES_texture_float_linear
+                WebGLExtensionType::WebGLExtensionTypeOES_texture_float_linear
             }
             canvas_webgl::prelude::WebGLExtensionType::OES_texture_half_float => {
-                WebGLExtensionType::OES_texture_half_float
+                WebGLExtensionType::WebGLExtensionTypeOES_texture_half_float
             }
             canvas_webgl::prelude::WebGLExtensionType::OES_texture_half_float_linear => {
-                WebGLExtensionType::OES_texture_half_float_linear
+                WebGLExtensionType::WebGLExtensionTypeOES_texture_half_float_linear
             }
             canvas_webgl::prelude::WebGLExtensionType::OES_vertex_array_object => {
-                WebGLExtensionType::OES_vertex_array_object
+                WebGLExtensionType::WebGLExtensionTypeOES_vertex_array_object
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_color_buffer_float => {
-                WebGLExtensionType::WEBGL_color_buffer_float
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_color_buffer_float
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_atc => {
-                WebGLExtensionType::WEBGL_compressed_texture_atc
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_atc
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_etc1 => {
-                WebGLExtensionType::WEBGL_compressed_texture_etc1
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_etc1
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_s3tc => {
-                WebGLExtensionType::WEBGL_compressed_texture_s3tc
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_s3tc
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb => {
-                WebGLExtensionType::WEBGL_compressed_texture_s3tc_srgb
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_etc => {
-                WebGLExtensionType::WEBGL_compressed_texture_etc
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_etc
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_compressed_texture_pvrtc => {
-                WebGLExtensionType::WEBGL_compressed_texture_pvrtc
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_pvrtc
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_lose_context => {
-                WebGLExtensionType::WEBGL_lose_context
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_lose_context
             }
             canvas_webgl::prelude::WebGLExtensionType::ANGLE_instanced_arrays => {
-                WebGLExtensionType::ANGLE_instanced_arrays
+                WebGLExtensionType::WebGLExtensionTypeANGLE_instanced_arrays
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_depth_texture => {
-                WebGLExtensionType::WEBGL_depth_texture
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_depth_texture
             }
             canvas_webgl::prelude::WebGLExtensionType::WEBGL_draw_buffers => {
-                WebGLExtensionType::WEBGL_draw_buffers
+                WebGLExtensionType::WebGLExtensionTypeWEBGL_draw_buffers
             }
-            canvas_webgl::prelude::WebGLExtensionType::None => WebGLExtensionType::None,
+            canvas_webgl::prelude::WebGLExtensionType::None => {
+                WebGLExtensionType::WebGLExtensionTypeNone
+            }
             canvas_webgl::prelude::WebGLExtensionType::OES_fbo_render_mipmap => {
-                WebGLExtensionType::OES_fbo_render_mipmap
+                WebGLExtensionType::WebGLExtensionTypeOES_fbo_render_mipmap
             }
         }
     }
@@ -4375,7 +4387,7 @@ impl WebGLExtension {
 
     pub fn extension_type(&self) -> WebGLExtensionType {
         if self.is_none() {
-            return WebGLExtensionType::None;
+            return WebGLExtensionType::WebGLExtensionTypeNone;
         }
         self.0.as_ref().unwrap().extension_type().into()
     }
@@ -4774,16 +4786,18 @@ pub extern "C" fn canvas_native_webgl_context_extension_to_oes_vertex_array_obje
 fn canvas_native_webgl_result_get_type(result: *const WebGLResult) -> WebGLResultType {
     let result = unsafe { &*result };
     match result.0 {
-        canvas_webgl::prelude::WebGLResult::Boolean(_) => WebGLResultType::Boolean,
-        canvas_webgl::prelude::WebGLResult::I32Array(_) => WebGLResultType::I32Array,
-        canvas_webgl::prelude::WebGLResult::U32Array(_) => WebGLResultType::U32Array,
-        canvas_webgl::prelude::WebGLResult::F32Array(_) => WebGLResultType::F32Array,
-        canvas_webgl::prelude::WebGLResult::BooleanArray(_) => WebGLResultType::BooleanArray,
-        canvas_webgl::prelude::WebGLResult::U32(_) => WebGLResultType::U32,
-        canvas_webgl::prelude::WebGLResult::I32(_) => WebGLResultType::I32,
-        canvas_webgl::prelude::WebGLResult::F32(_) => WebGLResultType::F32,
-        canvas_webgl::prelude::WebGLResult::String(_) => WebGLResultType::String,
-        canvas_webgl::prelude::WebGLResult::None => WebGLResultType::None,
+        canvas_webgl::prelude::WebGLResult::Boolean(_) => WebGLResultType::WebGLResultTypeBoolean,
+        canvas_webgl::prelude::WebGLResult::I32Array(_) => WebGLResultType::WebGLResultTypeI32Array,
+        canvas_webgl::prelude::WebGLResult::U32Array(_) => WebGLResultType::WebGLResultTypeU32Array,
+        canvas_webgl::prelude::WebGLResult::F32Array(_) => WebGLResultType::WebGLResultTypeF32Array,
+        canvas_webgl::prelude::WebGLResult::BooleanArray(_) => {
+            WebGLResultType::WebGLResultTypeBooleanArray
+        }
+        canvas_webgl::prelude::WebGLResult::U32(_) => WebGLResultType::WebGLResultTypeU32,
+        canvas_webgl::prelude::WebGLResult::I32(_) => WebGLResultType::WebGLResultTypeI32,
+        canvas_webgl::prelude::WebGLResult::F32(_) => WebGLResultType::WebGLResultTypeF32,
+        canvas_webgl::prelude::WebGLResult::String(_) => WebGLResultType::WebGLResultTypeString,
+        canvas_webgl::prelude::WebGLResult::None => WebGLResultType::WebGLResultTypeNone,
     }
 }
 
@@ -6191,9 +6205,13 @@ pub extern "C" fn canvas_native_webgl_get_renderbuffer_parameter(
 pub extern "C" fn canvas_native_webgl_get_shader_info_log(
     shader: u32,
     state: *mut WebGLState,
-) -> String {
+) -> *const c_char {
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut())
+    CString::new(
+        canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut()),
+    )
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]
@@ -7487,14 +7505,14 @@ pub struct WebGLIndexedParameter(canvas_webgl::prelude::WebGLIndexedParameter);
 pub extern "C" fn canvas_native_webgl2_indexed_parameter_get_value(
     param: &WebGLIndexedParameter,
 ) -> isize {
-    param.0.get_value() as isize
+    param.0.get_value()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_indexed_parameter_get_buffer_value(
     param: &WebGLIndexedParameter,
 ) -> isize {
-    param.0.get_buffer_value() as isize
+    param.0.get_buffer_value()
 }
 
 #[no_mangle]
@@ -8273,11 +8291,18 @@ pub extern "C" fn canvas_native_webgl2_get_uniform_block_index(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_get_uniform_indices(
     program: u32,
-    uniform_names: &[&str],
+    uniform_names: *const StringRefBuffer,
     state: *mut WebGLState,
 ) -> *mut U32Buffer {
+    assert!(state.is_null());
+    assert!(uniform_names.is_null());
+    let uniform_names = unsafe { &*uniform_names };
     let state = unsafe { &mut *state };
-    let uniform_names: Vec<String> = uniform_names.iter().map(|i| i.to_string()).collect();
+    let uniform_names: Vec<String> = uniform_names
+        .get_buffer()
+        .iter()
+        .map(|i| i.to_string())
+        .collect();
     Box::into_raw(Box::new(U32Buffer::from(
         canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_indices(
             program,
@@ -8743,12 +8768,19 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_offset(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_transform_feedback_varyings(
     program: u32,
-    varyings: &[&str],
+    varyings: *const StringRefBuffer,
     buffer_mode: u32,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(varyings.is_null());
+    let varyings = unsafe { &*varyings };
     let state = unsafe { &mut *state };
-    let varyings: Vec<String> = varyings.iter().map(|i| i.to_string()).collect();
+    let varyings: Vec<String> = varyings
+        .get_buffer()
+        .iter()
+        .map(|i| i.to_string())
+        .collect();
     canvas_webgl::webgl2::canvas_native_webgl2_transform_feedback_varyings(
         program,
         varyings.as_slice(),

@@ -7,7 +7,6 @@
 #include <memory>
 #include <array>
 #include "canvas2d/CanvasRenderingContext2DImpl.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 
 #include "ImageAssetImpl.h"
@@ -19,7 +18,7 @@
 #include "webgl/WebGLRenderingContextBase.h"
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
-
+#include "<#header#>"
 using namespace org::nativescript::canvas;
 
 

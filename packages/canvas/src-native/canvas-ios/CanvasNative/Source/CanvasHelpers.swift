@@ -42,7 +42,7 @@ public class CanvasHelpers: NSObject {
         let width = Int32(image.size.width * UIScreen.main.scale)
         let height = Int32(image.size.width * UIScreen.main.scale)
         let repetition = (repetition as NSString).utf8String
-        return canvas_native_context_create_pattern(context, width, height, &bytes, UInt(bytes.count), repetition)
+        return canvas_native_context_create_pattern_raw(context, width, height, &bytes, UInt(bytes.count), repetition)
     }
     
     public static func loadImageAssetWithContext(_ asset: Int64, _ image: UIImage) -> Bool {
@@ -87,6 +87,7 @@ public class CanvasHelpers: NSObject {
         let power_preference = (power_preference as NSString).utf8String
         
         
+    
         return canvas_native_init_ios_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
     }
     

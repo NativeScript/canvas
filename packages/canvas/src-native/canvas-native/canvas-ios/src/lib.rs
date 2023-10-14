@@ -322,7 +322,7 @@ pub extern "C" fn canvas_native_create_2d_context(
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let mut ctx_2d = CanvasRenderingContext2D::new(
+    let ctx_2d = CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -449,9 +449,9 @@ pub extern "C" fn canvas_native_imageasset_load_from_bytes(
     asset.load_from_bytes(bytes)
 }
 
-/*
+
 #[no_mangle]
-pub extern "C" fn canvas_native_context_create_pattern(
+pub extern "C" fn canvas_native_context_create_pattern_raw(
     context: i64,
     width: i32,
     height: i32,
@@ -483,8 +483,6 @@ pub extern "C" fn canvas_native_context_create_pattern(
 
     0
 }
-
-*/
 
 fn draw_image(
     context: i64,

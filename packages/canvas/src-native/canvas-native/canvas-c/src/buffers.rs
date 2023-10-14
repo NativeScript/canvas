@@ -8,6 +8,14 @@ impl Default for U8BufferMut {
     }
 }
 
+impl<'a> From<&'a mut [u8]> for U8BufferMut {
+    fn from(value: &mut [u8]) -> Self {
+        let mut bytes = BytesMut::with_capacity(value.len());
+        bytes.extend_from_slice(value);
+        U8BufferMut(bytes)
+    }
+}
+
 #[derive(Clone)]
 pub struct U8Buffer(Bytes);
 
@@ -110,9 +118,16 @@ impl From<Vec<u32>> for U32Buffer {
 }
 
 pub struct StringBuffer(Vec<String>);
-
 impl From<Vec<String>> for StringBuffer {
     fn from(value: Vec<String>) -> Self {
         Self(value)
+    }
+}
+
+pub struct StringRefBuffer<'a>(&'a [&'a str]);
+
+impl<'a> StringRefBuffer<'a> {
+    pub fn get_buffer(&self) -> &[&str] {
+        self.0
     }
 }

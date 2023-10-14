@@ -27,14 +27,14 @@ impl Context {
             None,
         );
         let row_bytes = info.width() * 4;
-        let mut slice = vec![0u8; (row_bytes * info.height()) as usize];
+        let mut slice = bytes::BytesMut::zeroed((row_bytes * info.height()) as usize);
         let _ = self.surface.canvas().read_pixels(
             &info,
-            slice.as_mut_slice(),
+            slice.as_mut(),
             row_bytes as usize,
             IPoint::new(sx as i32, sy as i32),
         );
-        ImageData::new_with_data(info.width(), info.height(), slice)
+        ImageData::new_with_buffer(info.width(), info.height(), slice)
     }
 
     pub fn put_image_data(

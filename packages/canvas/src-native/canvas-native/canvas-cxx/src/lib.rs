@@ -4057,7 +4057,7 @@ pub fn canvas_native_context_create_image_data_with_data(
         canvas_2d::context::pixel_manipulation::image_data::ImageData::new_with_data(
             width,
             height,
-            data.to_vec(),
+            data,
         ),
     ))
 }

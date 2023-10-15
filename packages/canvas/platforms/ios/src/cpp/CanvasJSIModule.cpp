@@ -785,8 +785,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
     std::thread thread(
             [jsi_callback](const std::string &file) {
                 bool done = false;
-                auto ret = canvas_native_helper_read_file(
-                        rust::Str(file.c_str()));
+                auto ret = canvas_native_helper_read_file(file.c_str());
 
                 if (!canvas_native_helper_read_file_has_error(*ret)) {
                     auto buf = canvas_native_helper_read_file_get_data(
@@ -920,14 +919,12 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
 //                auto direction = args[5]->NumberValue(context).ToChecked();
                 auto webgl = canvas_native_webgl_create(
                         ctx,
-                        rust::Str(
-                                version.c_str()),
+                        version.c_str(),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(
-                                power_preference.c_str()),
+                        power_preference.c_str(),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -952,14 +949,12 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
                 auto ctx = canvas_native_webgl_create_no_window(
                         (int32_t) width,
                         (int32_t) height,
-                        rust::Str(
-                                version.c_str()),
+                        version.c_str(),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(
-                                power_preference.c_str()),
+                        power_preference.c_str(),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -982,14 +977,12 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
                 auto ctx = canvas_native_webgl_create_no_window(
                         width,
                         height,
-                        rust::Str(
-                                version.c_str()),
+                         version.c_str(),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(
-                                power_preference.c_str()),
+                        power_preference.c_str(),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -1119,14 +1112,12 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
 
                 auto webgl = canvas_native_webgl_create(
                         ctx,
-                        rust::Str(
-                                version.c_str()),
+                        version.c_str(),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(
-                                power_preference.c_str()),
+                        power_preference.c_str(),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -1154,14 +1145,12 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
                 auto ctx = canvas_native_webgl_create_no_window(
                         (int32_t) width,
                         (int32_t) height,
-                        rust::Str(
-                                version.c_str()),
+                        version.c_str(),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(
-                                power_preference.c_str()),
+                        power_preference.c_str(),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,
@@ -1184,14 +1173,12 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
                 auto ctx = canvas_native_webgl_create_no_window(
                         width,
                         height,
-                        rust::Str(
-                                version.c_str()),
+                        version.c_str(),
                         alpha,
                         antialias,
                         depth,
                         fail_if_major_performance_caveat,
-                        rust::Str(
-                                power_preference.c_str()),
+                        power_preference.c_str(),
                         premultiplied_alpha,
                         preserve_drawing_buffer,
                         stencil,

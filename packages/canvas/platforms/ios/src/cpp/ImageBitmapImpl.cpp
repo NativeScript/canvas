@@ -4,11 +4,14 @@
 
 #include "ImageBitmapImpl.h"
 #include "ImageAssetImpl.h"
-#include "rust/cxx.h"
 #include "Caches.h"
 
-ImageBitmapImpl::ImageBitmapImpl(rust::Box<ImageAsset> asset)
-        : bitmap_(std::move(asset)) {}
+ImageBitmapImpl::ImageBitmapImpl(ImageAsset* asset)
+        : bitmap_(asset) {}
+
+ImageBitmapImpl::~ImageBitmapImpl(){
+    canvas_native_image_asset_destroy(bitmap_);
+}
 
 
 void ImageBitmapImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
@@ -118,11 +121,11 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
             auto premultiplyAlpha = ConvertFromV8String(isolate, premultiplyAlphaValue);
 
             if (premultiplyAlpha == "premultiply") {
-                ret.premultiplyAlpha = ImageBitmapPremultiplyAlpha::Premultiply;
+                ret.premultiplyAlpha = ImageBitmapPremultiplyAlphaPremultiply;
             }
 
             if (premultiplyAlpha == "none") {
-                ret.premultiplyAlpha = ImageBitmapPremultiplyAlpha::None;
+                ret.premultiplyAlpha = ImageBitmapPremultiplyAlphaNone;
             }
         }
 
@@ -134,7 +137,7 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
             auto colorSpaceConversion = ConvertFromV8String(isolate, colorSpaceConversionValue);
 
             if (colorSpaceConversion == "none") {
-                ret.colorSpaceConversion = ImageBitmapColorSpaceConversion::None;
+                ret.colorSpaceConversion = ImageBitmapColorSpaceConversionNone;
             }
         }
 
@@ -147,15 +150,15 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
             auto resizeQuality = ConvertFromV8String(isolate, resizeQualityValue);
 
             if (resizeQuality == "medium") {
-                ret.resizeQuality = ImageBitmapResizeQuality::Medium;
+                ret.resizeQuality = ImageBitmapResizeQualityMedium;
             }
 
             if (resizeQuality == "high") {
-                ret.resizeQuality = ImageBitmapResizeQuality::High;
+                ret.resizeQuality = ImageBitmapResizeQualityHigh;
             }
 
             if (resizeQuality == "pixelated") {
-                ret.resizeQuality = ImageBitmapResizeQuality::Pixelated;
+                ret.resizeQuality = ImageBitmapResizeQualityPixelated;
             }
         }
 
@@ -181,6 +184,6 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
     return ret;
 }
 
-ImageAsset &ImageBitmapImpl::GetImageAsset() {
-    return *this->bitmap_;
+ImageAsset* ImageBitmapImpl::GetImageAsset() {
+    return this->bitmap_;
 }

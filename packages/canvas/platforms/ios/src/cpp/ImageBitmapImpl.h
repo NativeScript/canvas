@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 #include <vector>
-using namespace org::nativescript::canvas;
 
 struct Options {
     bool flipY = false;
@@ -22,11 +19,12 @@ struct Options {
 
 class ImageBitmapImpl {
 public:
-    ImageBitmapImpl(rust::Box<ImageAsset> asset);
+    ImageBitmapImpl(ImageAsset* asset);
+    ~ImageBitmapImpl();
 
     static Options HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> &options);
 
-    ImageAsset &GetImageAsset();
+    ImageAsset* GetImageAsset();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -43,6 +41,6 @@ public:
     static void Close(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    rust::Box<ImageAsset> bitmap_;
+    ImageAsset* bitmap_;
     bool closed_ = false;
 };

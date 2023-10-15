@@ -6,12 +6,9 @@
 #pragma process_pending_includes
 
 #include <vector>
-#include "rust/cxx.h"
 
-#include "canvas2d/CanvasRenderingContext2DImpl.h"
+#include "CanvasRenderingContext2DImpl.h"
 #include "RafImpl.h"
-
-#include "canvas-cxx/src/lib.rs.h"
 #include "VecMutableBuffer.h"
 #include <cmath>
 #include "Helpers.h"
@@ -25,14 +22,12 @@
 #include "gl.h"
 
 
-using namespace org::nativescript::canvas;
-
 class WebGL2RenderingContext : public WebGLRenderingContext {
 public:
 
-    WebGL2RenderingContext(rust::Box<WebGLState> state);
+    WebGL2RenderingContext(WebGLState* state);
 
-    WebGL2RenderingContext(rust::Box<WebGLState> state, WebGLRenderingVersion version);
+    WebGL2RenderingContext(WebGLState* state, WebGLRenderingVersion version);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 

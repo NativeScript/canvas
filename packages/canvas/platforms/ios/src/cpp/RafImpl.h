@@ -5,23 +5,25 @@
 #pragma once
 #pragma process_pending_includes
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <cstdint>
 #include "OnRafCallback.h"
-
-using namespace org::nativescript::canvas;
+#include "Common.h"
 
 class RafImpl {
 public:
-    RafImpl(OnRafCallback *rafCallback, intptr_t callback, rust::Box<Raf> raf);
+    RafImpl(OnRafCallback *rafCallback, intptr_t callback, Raf* raf);
+    
+    ~RafImpl(){
+        canvas_native_raf_destroy(this->GetRaf());
+        this->raf_ = nullptr;
+    }
 
-    Raf &GetRaf() {
-        return *this->raf_;
+    Raf *GetRaf() {
+        return this->raf_;
     }
 
 private:
     OnRafCallback *rafCallback_;
     intptr_t callback_;
-    rust::Box<Raf> raf_;
+    Raf* raf_;
 };

@@ -7,7 +7,7 @@
 #include "Helpers.h"
 #include "Caches.h"
 
-CanvasPattern::CanvasPattern(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
+CanvasPattern::CanvasPattern(PaintStyle* style) : style_(style) {}
 
 void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -65,7 +65,6 @@ v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {
 void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args) {
     CanvasPattern *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -84,10 +83,8 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
         }
     }
 
-
-    args.GetReturnValue().SetUndefined();
 }
 
-PaintStyle &CanvasPattern::GetPaintStyle() {
-    return *this->style_;
+PaintStyle* CanvasPattern::GetPaintStyle() {
+    return this->style_;
 }

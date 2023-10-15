@@ -4,7 +4,6 @@
 
 #pragma
 
-#include "rust/cxx.h"
 #include "gl.h"
 #include <vector>
 #include "Helpers.h"

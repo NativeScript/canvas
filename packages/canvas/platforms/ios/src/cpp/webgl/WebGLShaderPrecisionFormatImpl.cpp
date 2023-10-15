@@ -5,8 +5,7 @@
 #include "WebGLShaderPrecisionFormatImpl.h"
 
 WebGLShaderPrecisionFormatImpl::WebGLShaderPrecisionFormatImpl(
-        rust::Box<WebGLShaderPrecisionFormat> shader) : shader_(
-        std::move(shader)) {}
+                                                               WebGLShaderPrecisionFormat* shader) : shader_(shader) {}
 
 
 void WebGLShaderPrecisionFormatImpl::GetRangeMin(v8::Local<v8::String> property,

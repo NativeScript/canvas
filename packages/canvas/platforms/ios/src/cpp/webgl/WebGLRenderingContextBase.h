@@ -5,25 +5,23 @@
 #pragma once
 #pragma process_pending_includes
 
-#include "../rust/cxx.h"
 #include <vector>
 #include <cstdint>
 #include <memory>
-#include "canvas-cxx/src/lib.rs.h"
 
 #include "Helpers.h"
 #include "RafImpl.h"
 #include "OnRafCallback.h"
+#include "Common.h"
 
 enum class WebGLRenderingVersion : uint8_t {
     V1,
     V2
-};;
-using namespace org::nativescript::canvas;
+};
 
 class WebGLRenderingContextBase {
 public:
-    WebGLRenderingContextBase(rust::Box<WebGLState> state, WebGLRenderingVersion version);
+    WebGLRenderingContextBase(WebGLState* state, WebGLRenderingVersion version);
 
     static WebGLRenderingContextBase *GetPointer(const v8::Local<v8::Object> &object) {
         auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
@@ -47,7 +45,7 @@ public:
 
     static void Flush(intptr_t context);
 
-    WebGLState &GetState();
+    WebGLState* GetState();
 
     void SetRaf(std::shared_ptr<RafImpl> raf);
 
@@ -60,11 +58,11 @@ public:
     void StopRaf();
 
 private:
-    rust::Box<WebGLState> state_;
+    WebGLState* state_;
 
     WebGLRenderingVersion version_;
 
-    int invalidateState_ = static_cast<int>(InvalidateState::NONE);
+    int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
 
     std::shared_ptr<RafImpl> raf_;
 };

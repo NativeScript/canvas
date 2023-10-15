@@ -15,7 +15,11 @@ using namespace org::nativescript::canvas;
 
 class OES_vertex_array_objectImpl {
 public:
-    OES_vertex_array_objectImpl(rust::Box<OES_vertex_array_object> object);
+    OES_vertex_array_objectImpl(OES_vertex_array_object* object);
+    ~OES_vertex_array_objectImpl(){
+        canvas_native_webgl_OES_vertex_array_object_destroy(this->GetVertexArrayObject());
+        this->object_ = nullptr;
+    }
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -78,10 +82,10 @@ public:
     static void BindVertexArrayOES(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-    OES_vertex_array_object &GetVertexArrayObject() {
-        return *this->object_;
+    OES_vertex_array_object * GetVertexArrayObject() {
+        return this->object_;
     }
 
 private:
-    rust::Box<OES_vertex_array_object> object_;
+    OES_vertex_array_object* object_;
 };

@@ -4,14 +4,14 @@
 
 #include "WebGL2RenderingContext.h"
 
-WebGL2RenderingContext::WebGL2RenderingContext(rust::Box<WebGLState> state) : WebGLRenderingContext(
-        std::move(state), WebGLRenderingVersion::V2) {
+WebGL2RenderingContext::WebGL2RenderingContext(WebGLState* state) : WebGLRenderingContext(
+        state, WebGLRenderingVersion::V2) {
 }
 
 
-WebGL2RenderingContext::WebGL2RenderingContext(rust::Box<WebGLState> state,
+WebGL2RenderingContext::WebGL2RenderingContext(WebGLState* state,
                                                WebGLRenderingVersion version)
-        : WebGLRenderingContext(std::move(state), version) {
+        : WebGLRenderingContext(state, version) {
 }
 
 

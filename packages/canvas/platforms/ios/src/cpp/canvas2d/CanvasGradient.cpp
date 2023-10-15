@@ -6,7 +6,7 @@
 #include "Helpers.h"
 #include "Caches.h"
 
-CanvasGradient::CanvasGradient(rust::Box<PaintStyle> style) : style_(std::move(style)) {}
+CanvasGradient::CanvasGradient(PaintStyle* style) : style_(style) {}
 
 void CanvasGradient::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -53,7 +53,6 @@ v8::Local<v8::FunctionTemplate> CanvasGradient::GetCtor(v8::Isolate *isolate) {
 void CanvasGradient::AddColorStop(const v8::FunctionCallbackInfo<v8::Value> &args) {
     CanvasGradient *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -63,13 +62,10 @@ void CanvasGradient::AddColorStop(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto stop = (float) args[0]->NumberValue(context).ToChecked();
     auto color = ConvertFromV8String(isolate, args[1]);
     canvas_native_gradient_add_color_stop(
-            ptr->GetPaintStyle(), stop,
-            rust::Str(color.c_str()));
-
-    args.GetReturnValue().SetUndefined();
+            ptr->GetPaintStyle(), stop, color.c_str());
 }
 
-PaintStyle &CanvasGradient::GetPaintStyle() {
-    return *this->style_;
+PaintStyle *CanvasGradient::GetPaintStyle() {
+    return this->style_;
 }
 

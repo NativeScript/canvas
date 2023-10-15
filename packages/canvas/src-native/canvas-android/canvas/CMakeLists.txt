@@ -34,22 +34,11 @@ get_filename_component(PROJECT_NATIVE_ROOT_DIR ${PROJECT_ROOT_DIR} DIRECTORY)
 
 set(PROJECT_NATIVE_ROOT_DIR ${PROJECT_NATIVE_ROOT_DIR}/canvas-native)
 
-
 set(CARGO_MANIFEST ${PROJECT_NATIVE_ROOT_DIR}/Cargo.toml)
 set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
-
-set(CANVAS_ANDROID_SOURCE_FILE
-        ${PROJECT_NATIVE_ROOT_DIR}/canvas-cxx/src/lib.rs
-        ${PROJECT_NATIVE_ROOT_DIR}/canvas-core/src/lib.rs
-        ${PROJECT_NATIVE_ROOT_DIR}/canvas-core/src/gl/android.rs
-        ${PROJECT_NATIVE_ROOT_DIR}/canvas-android/src/lib.rs
-        )
-set(CANVAS_ANDROID_BRIDGE_CPP ${CARGO_TARGET_DIR}/cxxbridge/canvas-cxx/src/lib.rs.cc)
-
 set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH")
-
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(RUST_BUILD_TYPE)
@@ -85,8 +74,6 @@ include_directories(
 
         PUBLIC
 
-        ${CARGO_TARGET_DIR}/cxxbridge
-
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
         ../../../platforms/ios/src/cpp
@@ -96,11 +83,11 @@ set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
 
 # Add a custom command that builds the rust crate and generates C++ bridge code
 add_custom_command(
-        OUTPUT ${CANVAS_ANDROID_BRIDGE_CPP} ${CANVAS_ANDROID_LIB}
+        OUTPUT "" ${CANVAS_ANDROID_LIB}
         # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
+#        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
         USES_TERMINAL
 )
 
@@ -112,7 +99,6 @@ add_library(
 
         ${GL3STUB_SRC}
 
-        ${CPP_DIR}/rust/cxx.cc
          ${CPP_DIR}/Caches.cpp
 
          ${CPP_DIR}/OneByteStringResource.cpp
@@ -160,8 +146,6 @@ add_library(
          ${CPP_DIR}/CanvasJSIModule.cpp
 
          ${CPP_DIR}/JSIRuntime.cpp
-
-        ${CANVAS_ANDROID_BRIDGE_CPP}
 )
 
 
@@ -172,22 +156,6 @@ set_target_properties(
         POSITION_INDEPENDENT_CODE ON
         LINK_FLAGS -Wl,--allow-multiple-definition
 )
-
-
-MESSAGE("# General cmake Info")
-MESSAGE("# PROJECT_SOURCE_DIR: " ${PROJECT_SOURCE_DIR})
-MESSAGE("# CMAKE_VERSION: " ${CMAKE_VERSION})
-MESSAGE("# CMAKE_C_COMPILER_ID: " ${CMAKE_C_COMPILER_ID})
-MESSAGE("# CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID})
-MESSAGE("# CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS})
-MESSAGE("# CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS})
-
-MESSAGE("# CARGO_MANIFEST: " ${CARGO_MANIFEST})
-MESSAGE("# CARGO_TARGET_DIR: " ${CARGO_TARGET_DIR})
-MESSAGE("# CURRENT_TARGET_DIR: " ${CURRENT_TARGET_DIR})
-MESSAGE("# CANVAS_ANDROID_SOURCE_FILE: " ${CANVAS_ANDROID_SOURCE_FILE})
-MESSAGE("# CANVAS_ANDROID_BRIDGE_CPP: " ${CANVAS_ANDROID_BRIDGE_CPP})
-MESSAGE("# ANDROID_NDK_ROOT: " ${ANDROID_NDK_ROOT})
 
 find_library(system-log log)
 find_library(system-z z)
@@ -223,10 +191,10 @@ else ()
 endif ()
 
 
-add_custom_command(TARGET canvasnativev8
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CANVAS_ANDROID_LIB}
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasandroid.so
-        )
+#add_custom_command(TARGET canvasnativev8
+#        POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy
+#        ${CANVAS_ANDROID_LIB}
+#        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasandroid.so
+#        )
 

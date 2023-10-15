@@ -4,20 +4,21 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 #include "Common.h"
 #include "webgl2/WebGLQuery.h"
 #include <vector>
 
-using namespace org::nativescript::canvas;
-
 class EXT_disjoint_timer_queryImpl {
 public:
-    EXT_disjoint_timer_queryImpl(rust::Box<EXT_disjoint_timer_query> query);
+    EXT_disjoint_timer_queryImpl(EXT_disjoint_timer_query* query);
+    
+    ~EXT_disjoint_timer_queryImpl(){
+        canvas_native_webgl_EXT_disjoint_timer_query_destroy(this->GetQuery());
+        this->query_ = nullptr;
+    }
 
-    EXT_disjoint_timer_query &GetQuery();
+    EXT_disjoint_timer_query* GetQuery();
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
@@ -57,5 +58,5 @@ public:
 
 
 private:
-    rust::Box<EXT_disjoint_timer_query> query_;
+    EXT_disjoint_timer_query* query_;
 };

@@ -4,9 +4,9 @@
 
 #include "WebGLRenderingContextBase.h"
 
-WebGLRenderingContextBase::WebGLRenderingContextBase(rust::Box<WebGLState> state,
+WebGLRenderingContextBase::WebGLRenderingContextBase(WebGLState* state,
                                                      WebGLRenderingVersion version)
-        : state_(std::move(state)), version_(version) {
+        : state_(state), version_(version) {
 
 
     auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
@@ -60,16 +60,16 @@ void WebGLRenderingContextBase::UpdateInvalidateState() {
         }
     }
     auto state = this->GetInvalidateState();
-    this->SetInvalidateState(state | (int) InvalidateState::PENDING);
+    this->SetInvalidateState(state | (int) InvalidateState::InvalidateStatePending);
 }
 
 void WebGLRenderingContextBase::Flush() {
-    auto state = this->GetInvalidateState() & (int) InvalidateState::PENDING;
-    if (state == (int) InvalidateState::PENDING) {
-        this->SetInvalidateState((int) InvalidateState::INVALIDATING);
+    auto state = this->GetInvalidateState() & (int) InvalidateState::InvalidateStatePending;
+    if (state == (int) InvalidateState::InvalidateStatePending) {
+        this->SetInvalidateState((int) InvalidateState::InvalidateStateInvalidating);
         canvas_native_webgl_make_current(this->GetState());
         canvas_native_webgl_swap_buffers(this->GetState());
-        this->SetInvalidateState((int) InvalidateState::NONE);
+        this->SetInvalidateState((int) InvalidateState::InvalidateStateNone);
     }
 }
 
@@ -80,8 +80,8 @@ void WebGLRenderingContextBase::Flush(intptr_t context) {
     }
 }
 
-WebGLState &WebGLRenderingContextBase::GetState() {
-    return *this->state_;
+WebGLState* WebGLRenderingContextBase::GetState() {
+    return this->state_;
 }
 
 void WebGLRenderingContextBase::SetRaf(std::shared_ptr<RafImpl> raf) {
@@ -115,4 +115,8 @@ WebGLRenderingContextBase::~WebGLRenderingContextBase() {
         canvas_native_raf_stop(
                 _raf->GetRaf());
     }
+    canvas_native_raf_destroy(_raf->GetRaf());
+    this->raf_ = nullptr;
+    canvas_native_webgl_state_destroy(this->GetState());
+    this->state_ = nullptr;
 }

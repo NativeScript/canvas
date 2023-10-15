@@ -7,8 +7,8 @@
 #include "Helpers.h"
 #include "OneByteStringResource.h"
 
-Path2D::Path2D(rust::Box<Path> path)
-        : path_(std::move(path)) {}
+Path2D::Path2D(Path* path)
+        : path_(path) {}
 
 
 void Path2D::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
@@ -117,8 +117,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (count > 0) {
         if (value->IsString()) {
             auto d = ConvertFromV8String(isolate, value);
-            auto path = canvas_native_path_create_with_str(
-                    rust::Str(d.c_str()));
+            auto path = canvas_native_path_create_with_string(d.c_str());
             auto object = new Path2D(std::move(path));
 
             auto ext = v8::External::New(isolate, object);
@@ -134,7 +133,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
             if (path_to_copy != nullptr) {
                 auto path = canvas_native_path_create_with_path(
                         path_to_copy->GetPath());
-                auto object = new Path2D(std::move(path));
+                auto object = new Path2D(path);
 
                 auto ext = v8::External::New(isolate, object);
 
@@ -145,7 +144,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
             }
         }
     } else {
-        auto path = new Path2D(std::move(canvas_native_path_create()));
+        auto path = new Path2D(canvas_native_path_create());
 
         auto ext = v8::External::New(isolate, path);
 
@@ -260,14 +259,11 @@ void Path2D::ClosePath(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 
     canvas_native_path_close_path(ptr->GetPath());
-
-    args.GetReturnValue().SetUndefined();
 }
 
 void Path2D::Ellipse(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Path2D *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -299,7 +295,6 @@ void Path2D::Ellipse(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void Path2D::LineTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Path2D *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -318,7 +313,6 @@ void Path2D::LineTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void Path2D::MoveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Path2D *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -337,7 +331,6 @@ void Path2D::MoveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void Path2D::QuadraticCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Path2D *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -359,7 +352,6 @@ void Path2D::QuadraticCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void Path2D::Rect(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Path2D *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -381,7 +373,6 @@ void Path2D::Rect(const v8::FunctionCallbackInfo<v8::Value> &args) {
 void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Path2D *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
         return;
     }
 
@@ -402,7 +393,7 @@ void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 auto size = array->Length();
 
                 if (size > 1) {
-                    rust::Vec<float> store;
+                    std::vector<float> store;
                     store.reserve(size);
                     for (int i = 0;
                          i < size; i++) {
@@ -410,14 +401,15 @@ void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
                                 context).ToChecked();
                     }
 
-                    rust::Slice<const float> buf(
-                            store.data(),
-                            store.size());
+                    auto buf = canvas_native_f32_buffer_create_with_reference(store.data(),
+                                                                              store.size());
                     canvas_native_path_round_rect(
                             ptr->GetPath(),
                             x, y,
                             width,
                             height, buf);
+                    
+                    canvas_native_f32_buffer_destroy(buf);
 
                 }
             }
@@ -449,13 +441,12 @@ void Path2D::__toSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 //    args.GetReturnValue().Set(ConvertToV8String(isolate, d.c_str()));
 
-
-    auto value = new OneByteStringResource(std::move(d));
+    auto value = new OneByteStringResource((char *)d);
     auto ret = v8::String::NewExternalOneByte(isolate, value);
     args.GetReturnValue().Set(ret.ToLocalChecked());
 }
 
-Path &Path2D::GetPath() {
-    return *this->path_;
+Path* Path2D::GetPath() {
+    return this->path_;
 }
 

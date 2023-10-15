@@ -7,14 +7,16 @@
 #include "OneByteStringResource.h"
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
-        rust::Box<CanvasRenderingContext2D> context) : context_(
-        std::move(context)) {
+                                                           CanvasRenderingContext2D* context) : context_(context) {
 
     auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
     auto raf_callback = new OnRafCallback(ctx_ptr, 0);
     auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
-    auto raf = canvas_native_raf_create(raf_callback_ptr);
-    this->SetRaf(std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, std::move(raf)));
+                                                               auto raf = canvas_native_raf_create(raf_callback_ptr, [](intptr_t callback, int64_t ts){
+                                                                   OnRafCallbackOnFrame(callback, ts);
+                                                               });
+                                                               
+    this->SetRaf(std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, raf));
 
     auto _raf = this->GetRaf();
 
@@ -208,7 +210,7 @@ void CanvasRenderingContext2DImpl::DrawPoint(const v8::FunctionCallbackInfo<v8::
 
     auto x = (float) args[0]->NumberValue(context).ToChecked();
     auto y = (float) args[1]->NumberValue(context).ToChecked();
-
+    
     canvas_native_context_draw_point(
             ptr->GetContext(), x, y);
     ptr->UpdateInvalidateState();
@@ -241,7 +243,7 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
         if (pointMode == -1) {
             return;
         }
-        rust::Vec<float> store;
+        std::vector<float> store;
         store.reserve(size);
         size_t next = 0;
         for (size_t i = 0; i < size; i++) {
@@ -261,13 +263,15 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
             next = i + 2;
         }
 
-        rust::Slice<const float> buf(
-                store.data(),
-                store.size());
-
+        auto buf = canvas_native_f32_buffer_create_with_reference(store.data(),
+                                                                      store.size());
+       
         canvas_native_context_draw_points(
                 ptr->GetContext(), pointMode,
                 buf);
+        
+        canvas_native_f32_buffer_destroy(buf);
+        
         ptr->UpdateInvalidateState();
     }
 }
@@ -283,8 +287,7 @@ void CanvasRenderingContext2DImpl::DrawPaint(const v8::FunctionCallbackInfo<v8::
 
     auto color = ConvertFromV8String(isolate, args[0]);
     canvas_native_context_draw_paint(
-            ptr->GetContext(),
-            rust::Str(color));
+            ptr->GetContext(), color.c_str());
     ptr->UpdateInvalidateState();
 }
 

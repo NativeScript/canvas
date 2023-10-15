@@ -4,18 +4,19 @@
 
 #pragma once
 
-#include "../rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <vector>
 #include "Helpers.h"
 
-using namespace org::nativescript::canvas;
-
 class TextMetricsImpl {
 public:
-    TextMetricsImpl(rust::Box<TextMetrics> metrics);
+    TextMetricsImpl(TextMetrics* metrics);
+    
+    ~TextMetricsImpl(){
+        canvas_native_text_metrics_destroy(this->GetTextMetrics());
+        this->metrics_ = nullptr;
+    }
 
-    TextMetrics &GetTextMetrics();
+    TextMetrics* GetTextMetrics();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -61,6 +62,6 @@ public:
                                    const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    rust::Box<TextMetrics> metrics_;
+    TextMetrics* metrics_;
 };
 

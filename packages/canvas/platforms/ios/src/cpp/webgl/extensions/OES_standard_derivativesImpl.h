@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "rust/cxx.h"
 #include "gl.h"
 #include <vector>
 #include "Caches.h"

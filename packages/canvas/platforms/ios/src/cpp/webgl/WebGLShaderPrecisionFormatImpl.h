@@ -4,18 +4,20 @@
 
 #pragma once
 
-#include "../rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <vector>
 #include "Helpers.h"
 #include "Caches.h"
 #include "Common.h"
 
-using namespace org::nativescript::canvas;
 
 class WebGLShaderPrecisionFormatImpl {
 public:
-    WebGLShaderPrecisionFormatImpl(rust::Box<WebGLShaderPrecisionFormat> shader);
+    WebGLShaderPrecisionFormatImpl(WebGLShaderPrecisionFormat* shader);
+    
+    ~WebGLShaderPrecisionFormatImpl() {
+        canvas_native_webgl_shader_precision_format_destroy(this->GetShaderPrecisionFormat());
+        this->shader_ = nullptr;
+    }
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -73,9 +75,9 @@ public:
     static void GetPrecision(v8::Local<v8::String> property,
                              const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    WebGLShaderPrecisionFormat &GetShaderPrecisionFormat();
+    WebGLShaderPrecisionFormat* GetShaderPrecisionFormat();
 
 private:
-    rust::Box<WebGLShaderPrecisionFormat> shader_;
+    WebGLShaderPrecisionFormat* shader_;
 };
 

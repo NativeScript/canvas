@@ -6,8 +6,7 @@
 #include "Caches.h"
 #include "Helpers.h"
 
-WebGLActiveInfoImpl::WebGLActiveInfoImpl(rust::Box<WebGLActiveInfo> info) : info_(
-        std::move(info)) {}
+WebGLActiveInfoImpl::WebGLActiveInfoImpl(WebGLActiveInfo* info) : info_(info) {}
 
 WebGLActiveInfoImpl *WebGLActiveInfoImpl::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
@@ -87,7 +86,7 @@ WebGLActiveInfoImpl::GetType(v8::Local<v8::String> name,
 }
 
 
-WebGLActiveInfo &WebGLActiveInfoImpl::GetWebGLActiveInfo() {
-    return *this->info_;
+WebGLActiveInfo* WebGLActiveInfoImpl::GetWebGLActiveInfo() {
+    return this->info_;
 }
 

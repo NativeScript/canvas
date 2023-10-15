@@ -6,9 +6,7 @@
 #pragma process_pending_includes
 
 #include <vector>
-#include "../rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
-#include "VecMutableBuffer.h"
+#include "Common.h"
 
 #include "WebGLRenderingContextBase.h"
 
@@ -58,14 +56,12 @@
 #include "extensions/OES_fbo_render_mipmap.h"
 #include "gl.h"
 
-using namespace org::nativescript::canvas;
-
 class WebGLRenderingContext : public WebGLRenderingContextBase {
 public:
 
-    WebGLRenderingContext(rust::Box<WebGLState> state);
+    WebGLRenderingContext(WebGLState* state);
 
-    WebGLRenderingContext(rust::Box<WebGLState> state, WebGLRenderingVersion version);
+    WebGLRenderingContext(WebGLState* state, WebGLRenderingVersion version);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
@@ -94,7 +90,7 @@ public:
 
 
     v8::Local<v8::Value> GetParameterInternal(v8::Isolate *isolate, uint32_t pnameValue,
-                                              rust::Box<WebGLResult> result);
+                                              WebGLResult* result);
 
     static void GetDrawingBufferWidth(v8::Local<v8::String> name,
                                       const v8::PropertyCallbackInfo<v8::Value> &info);

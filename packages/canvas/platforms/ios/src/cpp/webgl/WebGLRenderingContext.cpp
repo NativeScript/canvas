@@ -5,15 +5,15 @@
 #include "WebGLRenderingContext.h"
 #include "OneByteStringResource.h"
 
-WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state)
+WebGLRenderingContext::WebGLRenderingContext(WebGLState* state)
         : WebGLRenderingContextBase(
         std::move(state), WebGLRenderingVersion::V1) {
 
 }
 
-WebGLRenderingContext::WebGLRenderingContext(rust::Box<WebGLState> state,
+WebGLRenderingContext::WebGLRenderingContext(WebGLState* state,
                                              WebGLRenderingVersion version)
-        : WebGLRenderingContextBase(std::move(state), version) {
+        : WebGLRenderingContextBase(state, version) {
 
 }
 
@@ -52,7 +52,7 @@ WebGLRenderingContext *WebGLRenderingContext::GetPointer(const v8::Local<v8::Obj
 
 v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *isolate,
                                                                  uint32_t pnameValue,
-                                                                 rust::Box<WebGLResult> result) {
+                                                                 WebGLResult* result) {
 
     auto context = isolate->GetCurrentContext();
     v8::EscapableHandleScope scope(isolate);
@@ -113,7 +113,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
         case GL_TEXTURE_BINDING_2D:
         case GL_TEXTURE_BINDING_CUBE_MAP:
         case GL_UNPACK_ALIGNMENT: {
-            auto value = canvas_native_webgl_result_get_i32(*result);
+            auto value = canvas_native_webgl_result_get_i32(result);
             if ((pnameValue == GL_CURRENT_PROGRAM || pnameValue == GL_ARRAY_BUFFER_BINDING ||
                  pnameValue == GL_ELEMENT_ARRAY_BUFFER_BINDING ||
                  pnameValue == GL_TEXTURE_BINDING_2D ||

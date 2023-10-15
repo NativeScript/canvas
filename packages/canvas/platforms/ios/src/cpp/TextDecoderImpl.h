@@ -3,19 +3,19 @@
 //
 
 #pragma once
-
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <vector>
 #include "Common.h"
 
-using namespace org::nativescript::canvas;
-
 class TextDecoderImpl {
 public:
-    TextDecoderImpl(rust::Box<TextDecoder> decoder);
+    TextDecoderImpl(TextDecoder* decoder);
+    
+    ~TextDecoderImpl(){
+        canvas_native_text_decoder_destroy(this->GetTextDecoder());
+        this->decoder_ = nullptr;
+    }
 
-    TextDecoder &GetTextDecoder();
+    TextDecoder* GetTextDecoder();
 
     static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
 
@@ -30,5 +30,5 @@ public:
     static void Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    rust::Box<TextDecoder> decoder_;
+    TextDecoder* decoder_;
 };

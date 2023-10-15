@@ -5,18 +5,17 @@
 #pragma once
 
 #include <memory>
-#include "rust/cxx.h"
 #include "Common.h"
 #include "OneByteStringResource.h"
 
-#ifdef __APPLE__
-#ifdef __OBJC__
-#include <Foundation/Foundation.h>
-#else
-#include <CoreFoundation/CoreFoundation.h>
-extern "C" void NSLog(CFStringRef format, ...);
-#endif
-#endif
+//#ifdef __APPLE__
+//#ifdef __OBJC__
+//#include <Foundation/Foundation.h>
+//#else
+//#include <CoreFoundation/CoreFoundation.h>
+//extern "C" void NSLog(CFStringRef format, ...);
+//#endif
+//#endif
 
 
 
@@ -49,13 +48,13 @@ static void sendToADBLogcat(const std::string &message, android_LogPriority logP
 }
 #endif
 
-#ifdef __APPLE__
-#ifndef __OBJC__
-#define Log(fmt, ...) NSLog(CFSTR(fmt), ##__VA_ARGS__)
-#else
-#define Log(...) NSLog(__VA_ARGS__)
-#endif
-#endif
+//#ifdef __APPLE__
+//#ifndef __OBJC__
+//#define Log(fmt, ...) NSLog(CFSTR(fmt), ##__VA_ARGS__)
+//#else
+//#define Log(...) NSLog(__VA_ARGS__)
+//#endif
+//#endif
 
 
 
@@ -126,46 +125,9 @@ enum class NativeType {
 };
 
 
-template<typename T>
-struct VecBuffer {
-public:
-    VecBuffer(rust::Vec<T> buffer) : vec_(std::move(buffer)) {
-        this->buf_ = vec_.data();
-        this->buffer_size_ = vec_.size();
-        this->size_ = vec_.size() * sizeof(T);
-    }
-
-    T *buffer_data() {
-        return this->buf_;
-    }
-
-    size_t buffer_size() const {
-        return this->buffer_size_;
-    }
-
-    uint8_t *data() {
-        return (uint8_t *) this->buf_;
-    }
-
-    size_t size() const {
-        return this->size_;
-    }
-
-    ~VecBuffer() {
-        this->buf_ = nullptr;
-    }
-
-private:
-    T *buf_;
-    size_t size_;
-    size_t buffer_size_;
-    rust::Vec<T> vec_;
-};
-
-
 inline static v8::Local<v8::String>
-ConvertToV8OneByteString(v8::Isolate *isolate, rust::String string) {
-    auto value = new OneByteStringResource(std::move(string));
+ConvertToV8OneByteString(v8::Isolate *isolate, char* string) {
+    auto value = new OneByteStringResource(string);
     auto ret = v8::String::NewExternalOneByte(isolate, value);
     return ret.ToLocalChecked();
 }

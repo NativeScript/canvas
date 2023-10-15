@@ -4,20 +4,19 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <unistd.h>
 #include <thread>
 #include <vector>
 #include "Helpers.h"
-
-using namespace org::nativescript::canvas;
+#include "Common.h"
 
 class ImageAssetImpl{
 public:
-    ImageAssetImpl(rust::Box<ImageAsset> asset);
+    ImageAssetImpl(ImageAsset* asset);
+    
+    ~ImageAssetImpl();
 
-    ImageAsset &GetImageAsset();
+    ImageAsset* GetImageAsset();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -56,5 +55,5 @@ public:
 
 
 private:
-    rust::Box<ImageAsset> asset_;
+    ImageAsset* asset_;
 };

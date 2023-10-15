@@ -5,9 +5,8 @@
 #include "OES_vertex_array_objectImpl.h"
 
 
-OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(rust::Box<OES_vertex_array_object> object)
-        : object_(
-        std::move(object)) {
+OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(OES_vertex_array_object* object)
+        : object_(object) {
 
 }
 

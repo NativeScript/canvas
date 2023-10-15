@@ -6,8 +6,7 @@
 #include "Caches.h"
 
 EXT_disjoint_timer_queryImpl::EXT_disjoint_timer_queryImpl(
-        rust::Box<EXT_disjoint_timer_query> query) : query_(
-        std::move(query)) {}
+                                                           EXT_disjoint_timer_query* query) : query_(query) {}
 
 
 v8::Local<v8::FunctionTemplate> EXT_disjoint_timer_queryImpl::GetCtor(v8::Isolate *isolate) {
@@ -313,6 +312,6 @@ void EXT_disjoint_timer_queryImpl::GetQueryParameterExt(
 }
 
 
-EXT_disjoint_timer_query &EXT_disjoint_timer_queryImpl::GetQuery() {
-    return *this->query_;
+EXT_disjoint_timer_query* EXT_disjoint_timer_queryImpl::GetQuery() {
+    return this->query_;
 }

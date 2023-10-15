@@ -11,6 +11,7 @@ use std::rc::Rc;
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
+use canvas_2d::context::fill_and_stroke_styles::gradient::Gradient;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 pub use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
@@ -29,8 +30,8 @@ use canvas_webgl::prelude::WebGLVersion;
 use once_cell::sync::OnceCell;
 
 use crate::buffers::{
-    F32Buffer, I32Buffer, StringBuffer, StringRefBuffer, U16Buffer, U32Buffer, U8Buffer,
-    U8BufferMut,
+    F32Buffer, F32BufferMut, I32Buffer, StringBuffer, StringRefBuffer, U16Buffer, U16BufferMut,
+    U32Buffer, U8Buffer, U8BufferMut,
 };
 
 /* Utils */
@@ -52,20 +53,19 @@ pub struct Raf(raf::Raf);
 /* Raf */
 
 #[allow(non_camel_case_types)]
-#[repr(u32)]
-enum GLConstants {
-    UNPACK_FLIP_Y_WEBGL = 0x9240,
-
-    UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241,
-
-    UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243,
+#[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
+#[repr(C)]
+pub enum GLConstants {
+UNPACK_FLIP_Y_WEBGL = 0x9240,
+UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241,
+UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243
 }
 
 #[repr(C)]
 pub enum InvalidateState {
-    InvalidateStateNONE,
-    InvalidateStatePENDING,
-    InvalidateStateINVALIDATING,
+    InvalidateStateNone,
+    InvalidateStatePending,
+    InvalidateStateInvalidating,
 }
 
 #[repr(C)]
@@ -122,12 +122,28 @@ pub enum WebGLResultType {
 #[derive(Clone)]
 pub struct ImageFilter(canvas_2d::context::filters::ImageFilter);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_image_filter_destroy(value: *mut ImageFilter) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 /* Helpers */
 
 #[derive(Clone, Default)]
 pub struct FileHelper {
     data: Option<U8Buffer>,
     error: Option<String>,
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_helper_destroy(value: *mut FileHelper) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
 }
 
 #[no_mangle]
@@ -150,7 +166,7 @@ pub extern "C" fn canvas_native_helper_read_file(path: *const c_char) -> *mut Fi
 }
 
 #[no_mangle]
-unsafe extern "C" fn canvas_native_helper_read_file_has_error(file: *const FileHelper) -> bool {
+pub unsafe extern "C" fn canvas_native_helper_read_file_has_error(file: *const FileHelper) -> bool {
     if file.is_null() {
         return false;
     };
@@ -159,7 +175,7 @@ unsafe extern "C" fn canvas_native_helper_read_file_has_error(file: *const FileH
 }
 
 #[no_mangle]
-unsafe extern "C" fn canvas_native_helper_read_file_get_data(
+pub unsafe extern "C" fn canvas_native_helper_read_file_get_data(
     file: *mut FileHelper,
 ) -> *mut U8Buffer {
     assert!(file.is_null());
@@ -172,7 +188,7 @@ unsafe extern "C" fn canvas_native_helper_read_file_get_data(
 }
 
 #[no_mangle]
-unsafe extern "C" fn canvas_native_helper_read_file_get_error(
+pub unsafe extern "C" fn canvas_native_helper_read_file_get_error(
     file: *const FileHelper,
 ) -> *const c_char {
     if file.is_null() {
@@ -192,11 +208,29 @@ unsafe extern "C" fn canvas_native_helper_read_file_get_error(
 /* TextEncoder */
 #[derive(Clone)]
 pub struct TextEncoder(canvas_2d::context::text_encoder::TextEncoder);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_text_encoder_destroy(value: *mut TextEncoder) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 /* TextEncoder */
 
 /* TextDecoder */
 #[derive(Clone)]
 pub struct TextDecoder(canvas_2d::context::text_decoder::TextDecoder);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_text_decoder_destroy(value: *mut TextDecoder) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 /* TextDecoder */
 
 /* CanvasRenderingContext2D */
@@ -206,6 +240,14 @@ pub struct CanvasRenderingContext2D {
     context: ContextWrapper,
     gl_context: canvas_core::gl::GLContext,
     alpha: bool,
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_destroy(value: *mut CanvasRenderingContext2D) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
 }
 
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: u32) -> String {
@@ -313,8 +355,24 @@ impl PaintStyle {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn canvas_native_paint_style_destroy(value: *mut PaintStyle) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[derive(Clone, Copy)]
 pub struct TextMetrics(canvas_2d::context::drawing_text::text_metrics::TextMetrics);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_text_metrics_destroy(value: *mut TextMetrics) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -328,6 +386,15 @@ pub extern "C" fn canvas_native_raf_create(
             on_frame_callback(callback, ts)
         }
     }))))))
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_raf_destroy(value: *mut Raf) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
 }
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -1700,17 +1767,25 @@ fn canvas_native_context_draw_paint(context: *mut CanvasRenderingContext2D, colo
     context.get_context_mut().draw_paint(color.as_ref());
 }
 
-fn canvas_native_context_draw_point(context: *mut CanvasRenderingContext2D, x: f32, y: f32) {
+#[no_mangle]
+pub extern "C" fn canvas_native_context_draw_point(
+    context: *mut CanvasRenderingContext2D,
+    x: f32,
+    y: f32,
+) {
+    assert!(context.is_null());
     let context = unsafe { &mut *context };
     context.make_current();
     context.get_context_mut().draw_point(x, y);
 }
 
-fn canvas_native_context_draw_points(
+#[no_mangle]
+pub extern "C" fn canvas_native_context_draw_points(
     context: *mut CanvasRenderingContext2D,
     mode: i32,
     points: *const F32Buffer,
 ) {
+    assert!(context.is_null());
     assert!(points.is_null());
     let points = unsafe { &*points };
     let context = unsafe { &mut *context };
@@ -4246,6 +4321,14 @@ fn canvas_native_webgl_to_data_url(
 #[derive(Debug)]
 pub struct WebGLState(canvas_webgl::prelude::WebGLState);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
+    if state.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(state) };
+}
+
 impl WebGLState {
     pub fn new_with_context(
         context: canvas_core::gl::GLContext,
@@ -4291,6 +4374,14 @@ impl WebGLState {
 
 pub struct WebGLActiveInfo(canvas_webgl::prelude::WebGLActiveInfo);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_active_info_destroy(info: *mut WebGLActiveInfo) {
+    if info.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(info) };
+}
+
 impl WebGLActiveInfo {
     pub fn get_name(&self) -> &str {
         self.0.get_name()
@@ -4310,6 +4401,14 @@ impl WebGLActiveInfo {
 }
 
 pub struct ContextAttributes(canvas_webgl::prelude::ContextAttributes);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_attributes_destroy(attr: *mut ContextAttributes) {
+    if attr.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(attr) };
+}
 
 impl ContextAttributes {
     pub fn get_alpha(&self) -> bool {
@@ -4348,6 +4447,16 @@ pub struct WebGLFramebufferAttachmentParameter(
     canvas_webgl::prelude::WebGLFramebufferAttachmentParameter,
 );
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_framebuffer_attachment_parameter_destroy(
+    parameter: *mut WebGLFramebufferAttachmentParameter,
+) {
+    if parameter.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(parameter) };
+}
+
 impl WebGLFramebufferAttachmentParameter {
     pub fn get_is_texture(&self) -> bool {
         self.0.get_is_texture()
@@ -4364,6 +4473,16 @@ impl WebGLFramebufferAttachmentParameter {
 
 pub struct WebGLShaderPrecisionFormat(canvas_webgl::prelude::WebGLShaderPrecisionFormat);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_shader_precision_format_destroy(
+    value: *mut WebGLFramebufferAttachmentParameter,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 impl WebGLShaderPrecisionFormat {
     pub fn get_precision(&self) -> i32 {
         self.0.get_precision()
@@ -4379,6 +4498,14 @@ impl WebGLShaderPrecisionFormat {
 }
 
 pub struct WebGLExtension(Option<Box<dyn canvas_webgl::prelude::WebGLExtension>>);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_extension_destroy(value: *mut WebGLExtension) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 impl WebGLExtension {
     pub fn is_none(&self) -> bool {
@@ -4430,69 +4557,233 @@ impl WebGLExtension {
 
 pub struct EXT_blend_minmax(canvas_webgl::prelude::EXT_blend_minmax);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_EXT_blend_minmax_destroy(value: *mut EXT_blend_minmax) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct EXT_color_buffer_half_float(canvas_webgl::prelude::EXT_color_buffer_half_float);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_EXT_color_buffer_half_float_destroy(
+    value: *mut EXT_color_buffer_half_float,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct EXT_disjoint_timer_query(canvas_webgl::prelude::EXT_disjoint_timer_query);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_EXT_disjoint_timer_query_destroy(
+    value: *mut EXT_disjoint_timer_query,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct EXT_sRGB(canvas_webgl::prelude::EXT_sRGB);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_EXT_sRGB_destroy(value: *mut EXT_disjoint_timer_query) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct EXT_shader_texture_lod(canvas_webgl::prelude::EXT_shader_texture_lod);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_EXT_shader_texture_lod_destroy(
+    value: *mut EXT_shader_texture_lod,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct EXT_texture_filter_anisotropic(canvas_webgl::prelude::EXT_texture_filter_anisotropic);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_EXT_texture_filter_anisotropic_destroy(
+    value: *mut EXT_texture_filter_anisotropic,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct OES_element_index_uint(canvas_webgl::prelude::OES_element_index_uint);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_OES_element_index_uint_destroy(
+    value: *mut OES_element_index_uint,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct OES_standard_derivatives(canvas_webgl::prelude::OES_standard_derivatives);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_OES_standard_derivatives_destroy(
+    value: *mut OES_standard_derivatives,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct OES_texture_float(canvas_webgl::prelude::OES_texture_float);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_OES_texture_float_destroy(value: *mut OES_texture_float) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct OES_texture_float_linear(canvas_webgl::prelude::OES_texture_float_linear);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_OES_texture_float_linear_destroy(
+    value: *mut OES_texture_float_linear,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct OES_texture_half_float(canvas_webgl::prelude::OES_texture_half_float);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_OES_texture_half_float_destroy(
+    value: *mut OES_texture_half_float,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct OES_texture_half_float_linear(canvas_webgl::prelude::OES_texture_half_float_linear);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_OES_texture_half_float_linear_destroy(
+    value: *mut OES_texture_half_float_linear,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct OES_vertex_array_object(canvas_webgl::prelude::OES_vertex_array_object);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_OES_vertex_array_object_destroy(
+    value: *mut OES_vertex_array_object,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_color_buffer_float(canvas_webgl::prelude::WEBGL_color_buffer_float);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_color_buffer_float_destroy(
+    value: *mut WEBGL_color_buffer_float,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_compressed_texture_atc(canvas_webgl::prelude::WEBGL_compressed_texture_atc);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_atc_destroy(
+    value: *mut WEBGL_compressed_texture_atc,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_compressed_texture_etc1(canvas_webgl::prelude::WEBGL_compressed_texture_etc1);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc1_destroy(
+    value: *mut WEBGL_compressed_texture_etc1,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_compressed_texture_s3tc(canvas_webgl::prelude::WEBGL_compressed_texture_s3tc);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_destroy(
+    value: *mut WEBGL_compressed_texture_s3tc,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
@@ -4500,31 +4791,103 @@ pub struct WEBGL_compressed_texture_s3tc_srgb(
     canvas_webgl::prelude::WEBGL_compressed_texture_s3tc_srgb,
 );
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_srgb_destroy(
+    value: *mut WEBGL_compressed_texture_s3tc_srgb,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_compressed_texture_etc(canvas_webgl::prelude::WEBGL_compressed_texture_etc);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc_destroy(
+    value: *mut WEBGL_compressed_texture_etc,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_compressed_texture_pvrtc(canvas_webgl::prelude::WEBGL_compressed_texture_pvrtc);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_pvrtc_destroy(
+    value: *mut WEBGL_compressed_texture_pvrtc,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_lose_context(canvas_webgl::prelude::WEBGL_lose_context);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_lose_context_destroy(value: *mut WEBGL_lose_context) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct ANGLE_instanced_arrays(canvas_webgl::prelude::ANGLE_instanced_arrays);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_ANGLE_instanced_arrays_destroy(
+    value: *mut ANGLE_instanced_arrays,
+) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_depth_texture(canvas_webgl::prelude::WEBGL_depth_texture);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_depth_texture_destroy(value: *mut WEBGL_depth_texture) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 #[allow(non_camel_case_types)]
 
 pub struct WEBGL_draw_buffers(canvas_webgl::prelude::WEBGL_draw_buffers);
 
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WEBGL_draw_buffers_destroy(value: *mut WEBGL_draw_buffers) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
 pub struct WebGLResult(canvas_webgl::prelude::WebGLResult);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_WebGLResult_destroy(value: *mut WebGLResult) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
 
 /* WebGLActiveInfo */
 
@@ -6453,11 +6816,13 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u8(
     height: i32,
     format: u32,
     pixel_type: u32,
-    pixels: &mut [u8],
+    pixels: *mut U8BufferMut,
     state: *mut WebGLState,
 ) {
+    assert!(pixels.is_null());
     assert!(state.is_null());
     let state = unsafe { &mut *state };
+    let pixels = unsafe { &mut *pixels };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_u8(
         x,
         y,
@@ -6465,7 +6830,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u8(
         height,
         format,
         pixel_type,
-        pixels,
+        pixels.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -6478,11 +6843,13 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u16(
     height: i32,
     format: u32,
     pixel_type: u32,
-    pixels: &mut [u16],
+    pixels: *mut U16BufferMut,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
+    assert!(pixels.is_null());
     let state = unsafe { &mut *state };
+    let pixels = unsafe { &mut *pixels };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_u16(
         x,
         y,
@@ -6490,7 +6857,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u16(
         height,
         format,
         pixel_type,
-        pixels,
+        pixels.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -6503,11 +6870,13 @@ pub extern "C" fn canvas_native_webgl_read_pixels_f32(
     height: i32,
     format: u32,
     pixel_type: u32,
-    pixels: &mut [f32],
+    pixels: *mut F32BufferMut,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
+    assert!(pixels.is_null());
     let state = unsafe { &mut *state };
+    let pixels = unsafe { &mut *pixels };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_f32(
         x,
         y,
@@ -6515,7 +6884,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_f32(
         height,
         format,
         pixel_type,
-        pixels,
+        pixels.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -6786,11 +7155,13 @@ pub extern "C" fn canvas_native_webgl_tex_image2d(
     border: i32,
     format: i32,
     image_type: i32,
-    buf: &mut [u8],
+    buf: *mut U8BufferMut,
     state: *mut WebGLState,
 ) {
+    assert!(buf.is_null());
     assert!(state.is_null());
     let state = unsafe { &mut *state };
+    let buf = unsafe { &mut *buf };
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
@@ -6800,7 +7171,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d(
         border,
         format,
         image_type,
-        buf,
+        buf.get_buffer(),
         state.get_inner_mut(),
     )
 }
@@ -8114,16 +8485,19 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniforms(
 pub extern "C" fn canvas_native_webgl2_get_buffer_sub_data(
     target: u32,
     src_byte_offset: isize,
-    dst_data: &mut [u8],
+    dst_data: *mut U8BufferMut,
     dst_offset: usize,
     length: usize,
     state: *mut WebGLState,
 ) {
+    assert!(state.is_null());
+    assert!(dst_data.is_null());
     let state = unsafe { &mut *state };
+    let dst_data = unsafe { &mut *dst_data };
     canvas_webgl::webgl2::canvas_native_webgl2_get_buffer_sub_data(
         target,
         src_byte_offset,
-        dst_data,
+        dst_data.get_buffer(),
         dst_offset,
         length,
         state.get_inner_mut(),
@@ -9127,3 +9501,139 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4uiv(
 /* WebGL2 */
 
 /* WEBGL2 IMPL */
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_destroy(asset: *mut ImageAsset) {
+    if asset.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(asset) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u8_buffer_mut_create_with_reference(
+    value: *mut u8,
+    size: usize,
+) -> *mut U8BufferMut {
+    Box::into_raw(Box::new(U8BufferMut::new_with_reference(value, size)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u8_buffer_mut_destroy(value: *mut U8BufferMut) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u8_buffer_create_with_reference(
+    value: *const u8,
+    size: usize,
+) -> *mut U8Buffer {
+    Box::into_raw(Box::new(U8Buffer::new_with_reference(value, size)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u8_buffer_destroy(value: *mut U8Buffer) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u16_buffer_create_with_reference(
+    value: *const u16,
+    size: usize,
+) -> *mut U16Buffer {
+    Box::into_raw(Box::new(U16Buffer::new_with_reference(value, size)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u16_buffer_destroy(value: *mut U16Buffer) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_f32_buffer_create_with_reference(
+    value: *const f32,
+    size: usize,
+) -> *mut F32Buffer {
+    Box::into_raw(Box::new(F32Buffer::new_with_reference(value, size)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_f32_buffer_destroy(value: *mut F32Buffer) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u32_buffer_create_with_reference(
+    value: *const u32,
+    size: usize,
+) -> *mut U32Buffer {
+    Box::into_raw(Box::new(U32Buffer::new_with_reference(value, size)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u32_buffer_destroy(value: *mut U32Buffer) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_i32_buffer_create_with_reference(
+    value: *const i32,
+    size: usize,
+) -> *mut I32Buffer {
+    Box::into_raw(Box::new(I32Buffer::new_with_reference(value, size)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_i32_buffer_destroy(value: *mut I32Buffer) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_string_destroy(value: *mut c_char) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { CString::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_data_destroy(value: *mut ImageData) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_destroy(value: *mut Matrix) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_path_destroy(value: *mut Path) {
+    if value.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(value) };
+}

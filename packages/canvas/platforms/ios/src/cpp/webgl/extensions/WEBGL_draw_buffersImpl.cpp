@@ -4,8 +4,7 @@
 
 #include "WEBGL_draw_buffersImpl.h"
 
-WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(rust::Box <WEBGL_draw_buffers> buffers) : buffers_(
-        std::move(buffers)) {
+WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(WEBGL_draw_buffers* buffers) : buffers_(buffers) {
 
 }
 
@@ -22,7 +21,7 @@ void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(
     if (value->IsArray()) {
         auto buffers = value.As<v8::Array>();
         auto len = buffers->Length();
-        rust::Vec <uint32_t> buf;
+        std::vector<uint32_t> buf;
         buf.reserve(len);
         for (int j = 0; j < len; ++j) {
             auto item = buffers->Get(context, j).ToLocalChecked();

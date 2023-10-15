@@ -3,18 +3,19 @@
 //
 
 #pragma once
-#include "rust/cxx.h"
 #include "Common.h"
-#include "canvas-cxx/src/lib.rs.h"
 
 class OneByteStringResource : public v8::String::ExternalOneByteStringResource {
 public:
-    OneByteStringResource(rust::String string);
+    OneByteStringResource(char* string);
+    
+    ~OneByteStringResource();
 
     const char* data() const override;
     size_t length() const override;
 
 private:
-    rust::String string_;
+    const char* string_;
+    size_t length_;
 };
 

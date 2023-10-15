@@ -4,19 +4,20 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
+#include "Common.h"
 #include "Helpers.h"
 #include "v8-fast-api-calls.h"
 #include <vector>
 
-using namespace org::nativescript::canvas;
-
 class Path2D {
 public:
-    Path2D(rust::Box<Path> path);
+    Path2D(Path* path);
+    ~Path2D(){
+        canvas_native_path_destroy(this->GetPath());
+        this->path_ = nullptr;
+    }
 
-    Path &GetPath();
+    Path* GetPath();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -52,5 +53,5 @@ public:
 
 
 private:
-    rust::Box<Path> path_;
+    Path* path_;
 };

@@ -7,7 +7,7 @@
 #include "Helpers.h"
 #include "OneByteStringResource.h"
 
-TextDecoderImpl::TextDecoderImpl(rust::Box<TextDecoder> decoder) : decoder_(std::move(decoder)) {}
+TextDecoderImpl::TextDecoderImpl(TextDecoder* decoder) : decoder_(decoder) {}
 
 void TextDecoderImpl::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -29,8 +29,8 @@ TextDecoderImpl *TextDecoderImpl::GetPointer(v8::Local<v8::Object> object) {
     return static_cast<TextDecoderImpl *>(ptr);
 }
 
-TextDecoder &TextDecoderImpl::GetTextDecoder() {
-    return *this->decoder_;
+TextDecoder* TextDecoderImpl::GetTextDecoder() {
+    return this->decoder_;
 }
 
 v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
@@ -74,12 +74,11 @@ void TextDecoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (count == 1) {
         encoding = ConvertFromV8String(isolate, value);
     }
-    auto encoder = canvas_native_text_decoder_create(
-            rust::Str(encoding.c_str()));
+    auto encoder = canvas_native_text_decoder_create(encoding.c_str());
 
     auto ret = args.This();
 
-    auto decoder = new TextDecoderImpl(std::move(encoder));
+    auto decoder = new TextDecoderImpl(encoder);
 
     auto ext = v8::External::New(isolate, decoder);
 
@@ -96,7 +95,7 @@ TextDecoderImpl::Encoding(v8::Local<v8::String> name,
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto encoding = canvas_native_text_decoder_get_encoding(ptr->GetTextDecoder());
-        info.GetReturnValue().Set(ConvertToV8String(isolate, encoding.c_str()));
+        info.GetReturnValue().Set(ConvertToV8String(isolate, encoding));
         return;
     }
     info.GetReturnValue().SetEmptyString();
@@ -130,14 +129,13 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
             auto data = static_cast<u_int8_t *>(buffer->GetBackingStore()->Data());
             auto size = buffer->ByteLength();
-            rust::Slice<const uint8_t> slice{
-                    data,
-                    size};
+            auto slice = canvas_native_u8_buffer_create_with_reference(data, size);
             auto decoded = canvas_native_text_decoder_decode(
                     ptr->GetTextDecoder(),
                     slice);
+            canvas_u8_buffer_destroy(slice);
             //args.GetReturnValue().Set(ConvertToV8String(isolate, decoded.c_str()));
-            auto returnValue = new OneByteStringResource(std::move(decoded));
+            auto returnValue = new OneByteStringResource((char *)decoded);
             auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
             args.GetReturnValue().Set(ret.ToLocalChecked());
 
@@ -152,17 +150,16 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto store = buffer->Buffer()->GetBackingStore();
             auto buffer_data = static_cast<u_int8_t *>(store->Data()) + buffer->ByteOffset();
             auto len = buffer->Length();
-
-            rust::Slice<const uint8_t> data{
-                    buffer_data,
-                    len};
+            auto data = canvas_native_u8_buffer_create_with_reference(buffer_data, len);
 
             auto decoded = canvas_native_text_decoder_decode(
                     ptr->GetTextDecoder(),
                     data);
+            
+            canvas_u8_buffer_destroy(data);
 
             // args.GetReturnValue().Set(ConvertToV8String(isolate, decoded.c_str()));
-            auto returnValue = new OneByteStringResource(std::move(decoded));
+            auto returnValue = new OneByteStringResource((char*) decoded);
             auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
             args.GetReturnValue().Set(ret.ToLocalChecked());
             return;

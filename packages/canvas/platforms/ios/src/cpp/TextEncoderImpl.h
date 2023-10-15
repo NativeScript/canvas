@@ -4,20 +4,21 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "VecMutableBuffer.h"
 #include <vector>
 #include "Common.h"
 
-using namespace org::nativescript::canvas;
 
 class TextEncoderImpl {
 
 public:
-    TextEncoderImpl(rust::Box<TextEncoder> encoder);
+    TextEncoderImpl(TextEncoder* encoder);
+    ~TextEncoderImpl() {
+        canvas_native_text_encoder_destroy(this->GetTextEncoder());
+        this->encoder_ = nullptr;
+    }
 
-    TextEncoder &GetTextEncoder();
+    TextEncoder* GetTextEncoder();
 
     static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
 
@@ -33,5 +34,5 @@ public:
     Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    rust::Box<TextEncoder> encoder_;
+    TextEncoder* encoder_;
 };

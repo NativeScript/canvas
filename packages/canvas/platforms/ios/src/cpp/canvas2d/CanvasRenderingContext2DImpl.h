@@ -5,7 +5,6 @@
 #pragma once
 #pragma process_pending_includes
 
-#include "rust/cxx.h"
 #include <vector>
 #include <cstdint>
 #include <memory>
@@ -13,7 +12,6 @@
 #include "RafImpl.h"
 #include "OnRafCallback.h"
 
-#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 
 #include "CanvasGradient.h"
@@ -26,11 +24,9 @@
 #include "webgl/WebGLRenderingContextBase.h"
 #include "Helpers.h"
 
-using namespace org::nativescript::canvas;
-
 class CanvasRenderingContext2DImpl {
 public:
-    CanvasRenderingContext2DImpl(rust::Box<CanvasRenderingContext2D> context);
+    CanvasRenderingContext2DImpl(CanvasRenderingContext2D* context);
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -311,10 +307,10 @@ public:
 
     RafImpl *GetRaf();
 
-    CanvasRenderingContext2D &GetContext();
+    CanvasRenderingContext2D* GetContext();
 
 private:
-    rust::Box<CanvasRenderingContext2D> context_;
+    CanvasRenderingContext2D* context_;
 
     int invalidateState_ = static_cast<int>(InvalidateState::NONE);
 

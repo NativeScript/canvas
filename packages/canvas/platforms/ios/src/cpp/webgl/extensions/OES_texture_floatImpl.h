@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "rust/cxx.h"
 #include "Common.h"
 #include "Helpers.h"
 

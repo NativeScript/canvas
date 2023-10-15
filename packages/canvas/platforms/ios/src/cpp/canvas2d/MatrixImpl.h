@@ -4,18 +4,18 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <vector>
 #include "Helpers.h"
 
-using namespace org::nativescript::canvas;
-
 class MatrixImpl {
 public:
-    MatrixImpl(rust::Box<Matrix> matrix);
+    MatrixImpl(Matrix* matrix);
+    ~MatrixImpl(){
+        canvas_native_matrix_destroy(this->GetMatrix());
+        this->matrix_ = nullptr;
+    }
 
-    Matrix &GetMatrix();
+    Matrix* GetMatrix();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -184,5 +184,5 @@ public:
                        const v8::PropertyCallbackInfo<void> &info);
 
 private:
-    rust::Box<Matrix> matrix_;
+    Matrix* matrix_;
 };

@@ -4,16 +4,20 @@
 
 #include "OneByteStringResource.h"
 
-OneByteStringResource::OneByteStringResource(rust::String string) : string_(std::move(string)) {
+OneByteStringResource::OneByteStringResource(char* string) : string_(string),length_(strlen(string)) {
 
+}
+
+OneByteStringResource::~OneByteStringResource() {
+    canvas_native_string_destroy(this->string_);
 }
 
 const char *OneByteStringResource::data() const {
-    return this->string_.data();
+    return this->string_;
 }
 
 size_t OneByteStringResource::length() const {
-    return this->string_.size();
+    return this->length_;
 }
 
 

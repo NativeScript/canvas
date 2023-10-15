@@ -21,6 +21,7 @@ use canvas_core::image_asset::ImageAsset;
 use canvas_c::CanvasRenderingContext2D;
 use canvas_c::PaintStyle;
 
+pub use canvas_c::*;
 
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {

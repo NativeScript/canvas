@@ -3,17 +3,12 @@
 //
 
 #pragma once
-
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Common.h"
 #include "Caches.h"
 
-using namespace org::nativescript::canvas;
-
 class WebGLSyncImpl {
 public:
-    WebGLSyncImpl(rust::Box<WebGLSync> sync) : sync_(std::move(sync)) {}
+    WebGLSyncImpl(WebGLSync* sync) : sync_(sync) {}
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -53,10 +48,10 @@ public:
         return static_cast<WebGLSyncImpl *>(ptr);
     }
 
-    WebGLSync &GetSync() {
-        return *this->sync_;
+    WebGLSync * GetSync() {
+        return this->sync_;
     }
 
 private:
-    rust::Box<WebGLSync> sync_;
+    WebGLSync* sync_;
 };

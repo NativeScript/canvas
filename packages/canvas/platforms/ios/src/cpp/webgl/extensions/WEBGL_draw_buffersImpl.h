@@ -4,20 +4,18 @@
 
 #pragma once
 
-#include "canvas-cxx/src/lib.rs.h"
-
-#include "rust/cxx.h"
 #include "gl.h"
 #include <vector>
 #include "Common.h"
 #include "Caches.h"
 #include "Helpers.h"
 
-using namespace org::nativescript::canvas;
-
 class WEBGL_draw_buffersImpl {
 public:
-    WEBGL_draw_buffersImpl(rust::Box<WEBGL_draw_buffers> buffers);
+    WEBGL_draw_buffersImpl(WEBGL_draw_buffers* buffers);
+    ~WEBGL_draw_buffersImpl() {
+    // todo
+    }
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -136,10 +134,10 @@ public:
 
     static void DrawBuffersWEBGL(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    WEBGL_draw_buffers &GetDrawBuffers() {
-        return *this->buffers_;
+    WEBGL_draw_buffers* GetDrawBuffers() {
+        return this->buffers_;
     }
 
 private:
-    rust::Box<WEBGL_draw_buffers> buffers_;
+    WEBGL_draw_buffers* buffers_;
 };

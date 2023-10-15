@@ -4,14 +4,11 @@
 
 #pragma once
 
-#include "canvas-cxx/src/lib.rs.h"
 
 #ifdef __ANDROID__
-
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include "gles3jni.h"
-
 #endif
 
 #ifdef __APPLE__

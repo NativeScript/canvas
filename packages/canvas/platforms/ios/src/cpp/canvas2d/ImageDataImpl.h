@@ -4,16 +4,18 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <vector>
 #include "Common.h"
 
-using namespace org::nativescript::canvas;
 
 class ImageDataImpl {
 public:
-    ImageDataImpl(rust::Box<ImageData> imageData);
+    ImageDataImpl(ImageData* imageData);
+    
+    ~ImageDataImpl(){
+        canvas_native_image_data_destroy(this->GetImageData());
+        this->imageData_ = nullptr;
+    }
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -32,10 +34,10 @@ public:
     static void GetData(v8::Local<v8::String> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    ImageData &GetImageData() {
-        return *this->imageData_;
+    ImageData* GetImageData() {
+        return this->imageData_;
     }
 
 private:
-    rust::Box<ImageData> imageData_;
+    ImageData* imageData_;
 };

@@ -5,7 +5,7 @@
 #include "MatrixImpl.h"
 #include "Caches.h"
 
-MatrixImpl::MatrixImpl(rust::Box<Matrix> matrix) : matrix_(std::move(matrix)) {}
+MatrixImpl::MatrixImpl(Matrix* matrix) : matrix_(matrix) {}
 
 void MatrixImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -202,18 +202,17 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
             if (size == 6) {
                 auto matrix = canvas_native_matrix_create();
-                rust::Vec<float> buf;
-                buf.reserve(size);
+                std::array<float, 6> buf{};
                 for (int i = 0; i < size; i++) {
                     auto item = array->Get(context, i).ToLocalChecked()->NumberValue(
                             context).ToChecked();
-                    buf.emplace_back((float) item);
+                    buf[i] = (float) item;
                 }
-                rust::Slice<const float> slice(buf.data(), buf.size());
+                auto slice = canvas_native_f32_buffer_mut_create_with_reference(buf.data(), buf.size());
+    
+                canvas_native_matrix_update(matrix, slice);
 
-                canvas_native_matrix_update(*matrix, slice);
-
-                auto object = new MatrixImpl(std::move(matrix));
+                auto object = new MatrixImpl(matrix);
 
                 auto ext = v8::External::New(isolate, object);
 
@@ -233,7 +232,9 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             context).ToChecked();
                     buf[i] = (float) item;
                 }
-                canvas_native_matrix_update_3d(*matrix, buf);
+                auto slice = canvas_native_f32_buffer_mut_create_with_reference(buf.data(), buf.size());
+                
+                canvas_native_matrix_update_3d(matrix, slice);
 
                 auto object = new MatrixImpl(std::move(matrix));
 
@@ -248,7 +249,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         }
     } else {
         auto matrix = canvas_native_matrix_create();
-        auto object = new MatrixImpl(std::move(matrix));
+        auto object = new MatrixImpl(matrix);
 
         auto ext = v8::External::New(isolate, object);
 

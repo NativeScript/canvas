@@ -79,8 +79,6 @@
 		F1A87C74255D00BA00394387 /* NSCCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NSCCanvas.xib; sourceTree = "<group>"; };
 		F1D1AE252ADAAEAA005C140B /* canvas_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = canvas_ios.h; path = CanvasNative/include/canvas_ios.h; sourceTree = "<group>"; };
 		F1DE2E4E2612F7CA0000D48F /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
-		F1FF57C2271E6BF0001CBF6D /* libcanvasnative.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcanvasnative.a; path = "CanvasNative/libs/arm64-iphoneos/libcanvasnative.a"; sourceTree = "<group>"; };
-		F1FF57C4271E6C01001CBF6D /* libcanvasnative.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcanvasnative.a; path = CanvasNative/libs/iphonesimulator/libcanvasnative.a; sourceTree = "<group>"; };
 		F1FF6A3425248CFE001DAE0D /* NSCCanvasListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NSCCanvasListener.swift; path = CanvasNative/Source/NSCCanvasListener.swift; sourceTree = "<group>"; };
 		F1FF6A4025248CFE001DAE0D /* NSCCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NSCCanvas.swift; path = CanvasNative/Source/NSCCanvas.swift; sourceTree = "<group>"; };
 		F1FF6A4A25248CFE001DAE0D /* GLUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GLUtils.swift; path = CanvasNative/Source/GLUtils.swift; sourceTree = "<group>"; };
@@ -180,8 +178,6 @@
 				F134FE5729CE18DF0051057B /* GLKit.framework */,
 				F134FE5829CE18DF0051057B /* OpenGLES.framework */,
 				F134FE4F29CCD5480051057B /* libresolv.tbd */,
-				F1FF57C4271E6C01001CBF6D /* libcanvasnative.a */,
-				F1FF57C2271E6BF0001CBF6D /* libcanvasnative.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -526,7 +522,10 @@
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/target\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../canvas-native/target\"",
+					"\"$(SRCROOT)/CanvasNative/include\"",
+				);
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -539,7 +538,6 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "";
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
@@ -551,7 +549,6 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
-					"-Wl,-U,_cxxbridge1$OnRafCallbackOnFrame",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
@@ -563,7 +560,6 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
-					"-Wl,-U,_cxxbridge1$OnRafCallbackOnFrame",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
@@ -575,7 +571,6 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
-					"-Wl,-U,_cxxbridge1$OnRafCallbackOnFrame",
 				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
@@ -610,7 +605,10 @@
 					"GLES_SILENCE_DEPRECATION=1",
 					"CI_SILENCE_GL_DEPRECATION=1",
 				);
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../canvas-native/target\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../canvas-native/target\"",
+					"\"$(SRCROOT)/CanvasNative/include\"",
+				);
 				INFOPLIST_FILE = CanvasNative/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -623,8 +621,6 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "";
-				"LIBRARY_SEARCH_PATHS[arch=*]" = "";
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
 					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios/release\"",
@@ -635,7 +631,6 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
-					"-Wl,-U,_cxxbridge1$OnRafCallbackOnFrame",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
@@ -647,7 +642,6 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
-					"-Wl,-U,_cxxbridge1$OnRafCallbackOnFrame",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
@@ -659,7 +653,6 @@
 					"-framework",
 					OpenGLES,
 					"-lc++",
-					"-Wl,-U,_cxxbridge1$OnRafCallbackOnFrame",
 				);
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;

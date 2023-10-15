@@ -3,20 +3,15 @@
 //
 
 #pragma once
-
-#include "../rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Common.h"
 #include "Helpers.h"
 #include <vector>
 
-using namespace org::nativescript::canvas;
-
 class WebGLActiveInfoImpl {
 public:
-    WebGLActiveInfoImpl(rust::Box<WebGLActiveInfo> info);
+    WebGLActiveInfoImpl(WebGLActiveInfo* info);
 
-    WebGLActiveInfo &GetWebGLActiveInfo();
+    WebGLActiveInfo* GetWebGLActiveInfo();
 
     static WebGLActiveInfoImpl *GetPointer(const v8::Local<v8::Object> &object);
 
@@ -43,6 +38,6 @@ public:
     GetType(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    rust::Box<WebGLActiveInfo> info_;
+    WebGLActiveInfo* info_;
 };
 

@@ -18,9 +18,6 @@
 #include "webgl/WebGLRenderingContextBase.h"
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
-#include "<#header#>"
-using namespace org::nativescript::canvas;
-
 
 
 class CanvasJSIModule {

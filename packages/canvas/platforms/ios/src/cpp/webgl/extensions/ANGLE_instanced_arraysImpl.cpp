@@ -5,9 +5,8 @@
 #include "ANGLE_instanced_arraysImpl.h"
 #include "Caches.h"
 
-ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(rust::Box<ANGLE_instanced_arrays> arrays)
-        : arrays_(
-        std::move(arrays)) {}
+ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays * arrays)
+        : arrays_(arrays) {}
 
 ANGLE_instanced_arraysImpl *
 ANGLE_instanced_arraysImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -122,6 +121,6 @@ v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate 
     return ctorTmpl;
 }
 
-ANGLE_instanced_arrays &ANGLE_instanced_arraysImpl::GetArrays() {
-    return *this->arrays_;
+ANGLE_instanced_arrays* ANGLE_instanced_arraysImpl::GetArrays() {
+    return this->arrays_;
 }

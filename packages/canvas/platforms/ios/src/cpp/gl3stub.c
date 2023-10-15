@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#ifdef __ANDROID__
+
 #include "gl3stub.h"
 
 #include <EGL/egl.h>
@@ -420,3 +422,4 @@ GL_APICALL void (*GL_APIENTRY glGetInternalformativ)(GLenum target,
 GLenum pname,
         GLsizei bufSize,
 GLint* params);
+#endif

@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "rust/cxx.h"
 
 
 class OES_fbo_render_mipmapImpl {

@@ -4,19 +4,20 @@
 
 #pragma once
 
-#include "rust/cxx.h"
 #include "gl.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include <vector>
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
 
-using namespace org::nativescript::canvas;
 
 class WEBGL_lose_contextImpl {
 public:
-    WEBGL_lose_contextImpl(rust::Box<WEBGL_lose_context> context);
+    WEBGL_lose_contextImpl(WEBGL_lose_context* context);
+    ~WEBGL_lose_contextImpl() {
+        canvas_native_webgl_WEBGL_lose_context_destroy(this->GetContext());
+        this->context_ = nullptr;
+    }
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -69,11 +70,11 @@ public:
 
     static void RestoreContext(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    WEBGL_lose_context &GetContext() {
-        return *this->context_;
+    WEBGL_lose_context* GetContext() {
+        return this->context_;
     }
 
 
 private:
-    rust::Box<WEBGL_lose_context> context_;
+    WEBGL_lose_context* context_;
 };

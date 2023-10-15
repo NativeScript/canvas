@@ -3,10 +3,9 @@
 //
 
 #include "TextMetricsImpl.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Caches.h"
 
-TextMetricsImpl::TextMetricsImpl(rust::Box<TextMetrics> metrics) : metrics_(std::move(metrics)) {}
+TextMetricsImpl::TextMetricsImpl(TextMetrics* metrics) : metrics_(metrics) {}
 
 void TextMetricsImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -249,6 +248,6 @@ void TextMetricsImpl::GetIdeographicBaseline(v8::Local<v8::String> property,
             (double) canvas_native_text_metrics_get_ideographic_baseline(ptr->GetTextMetrics()));
 }
 
-TextMetrics &TextMetricsImpl::GetTextMetrics() {
-    return *this->metrics_;
+TextMetrics* TextMetricsImpl::GetTextMetrics() {
+    return this->metrics_;
 }

@@ -6,7 +6,7 @@
 #include "Caches.h"
 #include "Helpers.h"
 
-TextEncoderImpl::TextEncoderImpl(rust::Box<TextEncoder> encoder) : encoder_(std::move(encoder)) {}
+TextEncoderImpl::TextEncoderImpl(TextEncoder* encoder) : encoder_(encoder) {}
 
 void TextEncoderImpl::Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -72,8 +72,7 @@ void TextEncoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (count == 1) {
         encoding = ConvertFromV8String(isolate, value);
     }
-    auto encoder = canvas_native_text_encoder_create(
-            rust::Str(encoding.c_str()));
+    auto encoder = canvas_native_text_encoder_create(encoding.c_str());
 
     auto ret = args.This();
 
@@ -111,22 +110,21 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto text = args[0];
 
-    auto encoded = canvas_native_text_encoder_encode(
-            ptr->GetTextEncoder(),
-            rust::Str(ConvertFromV8String(isolate, text).c_str()));
-
-    auto data = new VecBuffer(std::move(encoded));
-
+    auto encoded = canvas_native_text_encoder_encode(ptr->GetTextEncoder(), ConvertFromV8String(isolate, text).c_str());
+    
+    auto data = canvas_u8_buffer_get_bytes(encoded);
+    
+    auto length = canvas_u8_buffer_get_length(encoded);
 
     auto length = data->size();
-    auto store = v8::ArrayBuffer::NewBackingStore(data->data(), length,
+    auto store = v8::ArrayBuffer::NewBackingStore(data, length,
                                                   [](void *data, size_t length,
                                                      void *deleter_data) {
                                                       if (deleter_data != nullptr) {
-                                                          delete (VecBuffer<uint8_t> *) deleter_data;
+                                                          delete (U8Buffer *) encoded;
                                                       }
                                                   },
-                                                  data);
+                                                  encoded);
     auto buf = v8::ArrayBuffer::New(isolate, std::move(store));
 
     auto ret = v8::Uint8ClampedArray::New(buf, 0, length);
@@ -135,6 +133,6 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
     args.GetReturnValue().Set(ret);
 }
 
-TextEncoder &TextEncoderImpl::GetTextEncoder() {
-    return *this->encoder_;
+TextEncoder* TextEncoderImpl::GetTextEncoder() {
+    return this->encoder_;
 }

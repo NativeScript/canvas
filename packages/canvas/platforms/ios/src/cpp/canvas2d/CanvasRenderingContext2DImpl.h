@@ -21,7 +21,7 @@
 #include "ImageAssetImpl.h"
 #include "ImageBitmapImpl.h"
 #include "Path2D.h"
-#include "webgl/WebGLRenderingContextBase.h"
+#include "WebGLRenderingContextBase.h"
 #include "Helpers.h"
 
 class CanvasRenderingContext2DImpl {
@@ -312,7 +312,7 @@ public:
 private:
     CanvasRenderingContext2D* context_;
 
-    int invalidateState_ = static_cast<int>(InvalidateState::NONE);
+    int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
 
     std::shared_ptr<RafImpl> raf_;
 

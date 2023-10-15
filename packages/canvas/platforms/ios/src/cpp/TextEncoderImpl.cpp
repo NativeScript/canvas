@@ -5,6 +5,7 @@
 #include "TextEncoderImpl.h"
 #include "Caches.h"
 #include "Helpers.h"
+#include "Common.h"
 
 TextEncoderImpl::TextEncoderImpl(TextEncoder* encoder) : encoder_(encoder) {}
 
@@ -94,7 +95,8 @@ TextEncoderImpl::Encoding(v8::Local<v8::String> name,
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
         auto encoding = canvas_native_text_encoder_get_encoding(ptr->GetTextEncoder());
-        info.GetReturnValue().Set(ConvertToV8String(isolate, encoding.c_str()));
+        info.GetReturnValue().Set(ConvertToV8String(isolate, encoding));
+        canvas_native_string_destroy((char*)encoding);
         return;
     }
     info.GetReturnValue().SetEmptyString();
@@ -112,16 +114,15 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto encoded = canvas_native_text_encoder_encode(ptr->GetTextEncoder(), ConvertFromV8String(isolate, text).c_str());
     
-    auto data = canvas_u8_buffer_get_bytes(encoded);
+    auto data = canvas_native_u8_buffer_get_bytes_mut(encoded);
     
-    auto length = canvas_u8_buffer_get_length(encoded);
+    auto length = canvas_native_u8_buffer_get_length(encoded);
 
-    auto length = data->size();
     auto store = v8::ArrayBuffer::NewBackingStore(data, length,
                                                   [](void *data, size_t length,
                                                      void *deleter_data) {
                                                       if (deleter_data != nullptr) {
-                                                          delete (U8Buffer *) encoded;
+                                                          canvas_native_u8_buffer_destroy((U8Buffer *)deleter_data);
                                                       }
                                                   },
                                                   encoded);

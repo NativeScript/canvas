@@ -16,8 +16,8 @@
 struct JSIReadFileCallback {
     v8::Isolate *isolate_;
     v8::Global<v8::Function> callback_;
-    std::shared_ptr<rust::Vec<uint8_t>> data_;
-    std::shared_ptr<rust::String> error_;
+    U8Buffer* data_;
+    char* error_;
     std::mutex lock_;
 
     JSIReadFileCallback(v8::Isolate *isolate, v8::Local<v8::Function> callback) : isolate_(isolate),
@@ -26,19 +26,22 @@ struct JSIReadFileCallback {
                                                                                                   isolate,
                                                                                                   callback)) {}
 
-    void SetData(rust::Vec<uint8_t> data) {
+    void SetData(U8Buffer* data) {
         std::lock_guard<std::mutex> lock(lock_);
-        data_ = std::make_shared<rust::Vec<uint8_t>>(data);
+        data_ = data;
     }
 
-    void SetError(rust::String error) {
+    void SetError(char* error) {
         std::lock_guard<std::mutex> lock(lock_);
-        error_ = std::make_shared<rust::String>(error);
+        error_ = error;
     }
 
     ~JSIReadFileCallback() {
         callback_.Reset();
+        canvas_native_u8_buffer_destroy(data_);
         data_ = nullptr;
+        
+        canvas_native_string_destroy(error_);
         error_ = nullptr;
     }
 };
@@ -51,8 +54,8 @@ struct JSIReadFileCallback {
     ALooper *looper_;
     v8::Isolate *isolate_;
     v8::Global<v8::Function> callback_;
-    std::shared_ptr<rust::Vec<uint8_t>> data_;
-    std::shared_ptr<rust::String> error_;
+    U8Buffer* data_;
+    char* error_;
     std::mutex lock_;
 
     JSIReadFileCallback(v8::Isolate *isolate, v8::Local<v8::Function> callback) : isolate_(isolate),
@@ -68,14 +71,14 @@ struct JSIReadFileCallback {
         ALooper_acquire(looper_);
     }
 
-    void SetData(rust::Vec<uint8_t> data) {
+    void SetData(U8Buffer* data) {
         std::lock_guard<std::mutex> lock(lock_);
-        data_ = std::make_shared<rust::Vec<uint8_t>>(data);
+        data_ = data;
     }
 
-    void SetError(rust::String error) {
+    void SetError(char* error) {
         std::lock_guard<std::mutex> lock(lock_);
-        error_ = std::make_shared<rust::String>(error);
+        error_ = error;
     }
 
     ~JSIReadFileCallback() {
@@ -83,7 +86,10 @@ struct JSIReadFileCallback {
         close(fd_[0]);
         ALooper_release(looper_);
         callback_.Reset();
+        canvas_native_u8_buffer_destroy(data_);
         data_ = nullptr;
+        
+        canvas_native_string_destroy(error_);
         error_ = nullptr;
     }
 };

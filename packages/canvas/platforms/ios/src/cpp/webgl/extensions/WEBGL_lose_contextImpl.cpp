@@ -5,7 +5,7 @@
 #include "WEBGL_lose_contextImpl.h"
 
 
-WEBGL_lose_contextImpl::WEBGL_lose_contextImpl(WEBGL_lose_context* context) : context_(context)) {}
+WEBGL_lose_contextImpl::WEBGL_lose_contextImpl(WEBGL_lose_context* context) : context_(context){}
 
 
 void WEBGL_lose_contextImpl::LoseContext(

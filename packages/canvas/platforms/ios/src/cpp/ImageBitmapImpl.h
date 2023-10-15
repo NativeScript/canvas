@@ -9,9 +9,9 @@
 
 struct Options {
     bool flipY = false;
-    ImageBitmapPremultiplyAlpha premultiplyAlpha = ImageBitmapPremultiplyAlpha::Default;
-    ImageBitmapColorSpaceConversion colorSpaceConversion = ImageBitmapColorSpaceConversion::Default;
-    ImageBitmapResizeQuality resizeQuality = ImageBitmapResizeQuality::Low;
+    ImageBitmapPremultiplyAlpha premultiplyAlpha = ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaDefault;
+    ImageBitmapColorSpaceConversion colorSpaceConversion = ImageBitmapColorSpaceConversion::ImageBitmapColorSpaceConversionDefault;
+    ImageBitmapResizeQuality resizeQuality = ImageBitmapResizeQuality::ImageBitmapResizeQualityLow;
     float resizeWidth = 0;
     float resizeHeight = 0;
 };

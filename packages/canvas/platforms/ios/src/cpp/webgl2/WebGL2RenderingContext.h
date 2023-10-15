@@ -9,11 +9,10 @@
 
 #include "CanvasRenderingContext2DImpl.h"
 #include "RafImpl.h"
-#include "VecMutableBuffer.h"
 #include <cmath>
 #include "Helpers.h"
-#include "webgl/WebGLRenderingContextBase.h"
-#include "webgl/WebGLRenderingContext.h"
+#include "WebGLRenderingContextBase.h"
+#include "WebGLRenderingContext.h"
 #include "WebGLQuery.h"
 #include "WebGLSampler.h"
 #include "WebGLSyncImpl.h"

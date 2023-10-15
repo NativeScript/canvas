@@ -6,8 +6,7 @@
 #include "OneByteStringResource.h"
 
 WebGLRenderingContext::WebGLRenderingContext(WebGLState* state)
-        : WebGLRenderingContextBase(
-        std::move(state), WebGLRenderingVersion::V1) {
+        : WebGLRenderingContextBase(state, WebGLRenderingVersion::V1) {
 
 }
 
@@ -131,43 +130,27 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
                                                         this->GetState())));
         case GL_ALIASED_LINE_WIDTH_RANGE:
         case GL_ALIASED_POINT_SIZE_RANGE:
-        case GL_DEPTH_RANGE: {
-            auto ret = canvas_native_webgl_result_get_f32_array(*result);
-
-            auto buf = new VecMutableBuffer<float>(std::move(ret));
-
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
-                                                          [](void *data, size_t length,
-                                                             void *deleter_data) {
-                                                              if (deleter_data != nullptr) {
-                                                                  delete (VecMutableBuffer<float> *) deleter_data;
-                                                              }
-                                                          },
-                                                          buf);
-
-            auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
-
-            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->buffer_size()));
-        }
         case GL_BLEND_COLOR:
-        case GL_COLOR_CLEAR_VALUE: {
-            auto ret = canvas_native_webgl_result_get_f32_array(*result);
+        case GL_COLOR_CLEAR_VALUE:
+        case GL_DEPTH_RANGE: {
+            auto ret = canvas_native_webgl_result_get_f32_array(result);
+            auto buf = (uint8_t*)canvas_native_f32_buffer_get_bytes(ret);
+            auto size = canvas_native_f32_buffer_get_length(ret);
+            auto bytes_size = size * sizeof(float);
 
-            auto buf = new VecMutableBuffer<float>(std::move(ret));
-
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
+            
+            auto store = v8::ArrayBuffer::NewBackingStore(buf, bytes_size,
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
-                                                                  delete (VecMutableBuffer<float> *) deleter_data;
+                                                                  canvas_native_f32_buffer_destroy((F32Buffer *) deleter_data);
                                                               }
                                                           },
-                                                          buf);
+                                                          ret);
 
             auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
 
-
-            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, buf->buffer_size()));
+            return scope.Escape(v8::Float32Array::New(arraybuffer, 0, size));
         }
         case (uint32_t) GLConstants::UNPACK_FLIP_Y_WEBGL:
             return scope.Escape(v8::Boolean::New(isolate, canvas_native_webgl_state_get_flip_y(
@@ -186,14 +169,15 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
         case GL_SCISSOR_TEST:
         case GL_STENCIL_TEST:
             return scope.Escape(
-                    v8::Boolean::New(isolate, canvas_native_webgl_result_get_bool(*result)));
+                    v8::Boolean::New(isolate, canvas_native_webgl_result_get_bool(result)));
         case GL_COLOR_WRITEMASK: {
-            auto ret = canvas_native_webgl_result_get_bool_array(*result);
-            auto len = ret.size();
+            auto ret = canvas_native_webgl_result_get_bool_array(result);
+            auto len = canvas_native_u8_buffer_get_length(ret);
+            auto buf = canvas_native_u8_buffer_get_bytes(ret);
             auto array = v8::Array::New(isolate, (int) len);
 
             for (int j = 0; j < len; ++j) {
-                array->Set(context, j, v8::Boolean::New(isolate, ret[j] == 1));
+                array->Set(context, j, v8::Boolean::New(isolate, buf[j] == 1));
             }
             return scope.Escape(array);
         }
@@ -201,14 +185,18 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
         case GL_MAX_VIEWPORT_DIMS:
         case GL_SCISSOR_BOX:
         case GL_VIEWPORT: {
-            auto ret = canvas_native_webgl_result_get_i32_array(*result);
-            auto buf = new VecMutableBuffer<int32_t>(std::move(ret));
+            auto ret = canvas_native_webgl_result_get_i32_array(result);
+            
+            auto buf = (uint8_t*)canvas_native_i32_buffer_get_bytes(ret);
+            auto size = canvas_native_i32_buffer_get_length(ret);
+            auto bytes_size = size * sizeof(int32_t);
+      
 
-            auto store = v8::ArrayBuffer::NewBackingStore(buf->data(), buf->size(),
+            auto store = v8::ArrayBuffer::NewBackingStore(buf, bytes_size,
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
-                                                                  delete (VecMutableBuffer<int32_t> *) deleter_data;
+                                                                  canvas_native_i32_buffer_destroy((I32Buffer *) deleter_data);
                                                               }
                                                           },
                                                           buf);
@@ -216,7 +204,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
 
 
-            return scope.Escape(v8::Int32Array::New(arraybuffer, 0, buf->buffer_size()));
+            return scope.Escape(v8::Int32Array::New(arraybuffer, 0, size));
         }
         case GL_DEPTH_CLEAR_VALUE:
         case GL_LINE_WIDTH:
@@ -225,14 +213,14 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
         case GL_SAMPLE_COVERAGE_VALUE: {
             return scope.Escape(v8::Number::New(isolate,
                                                 static_cast<double>(canvas_native_webgl_result_get_f32(
-                                                        *result))));
+                                                        result))));
         }
         case GL_RENDERER:
         case GL_SHADING_LANGUAGE_VERSION:
         case GL_VENDOR:
         case GL_VERSION: {
-            auto ret = canvas_native_webgl_result_get_string(*result);
-            auto value = new OneByteStringResource(std::move(ret));
+            auto ret = canvas_native_webgl_result_get_string(result);
+            auto value = new OneByteStringResource((char*)ret);
             return scope.Escape(v8::String::NewExternalOneByte(isolate, value).ToLocalChecked());
         }
         default:
@@ -2340,10 +2328,9 @@ void WebGLRenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Valu
                 pname,
                 ptr->GetState());
 
-        auto ret = ptr->GetParameterInternal(isolate,
-                                             pname,
-                                             std::move(
-                                                     result));
+        auto ret = ptr->GetParameterInternal(isolate, pname, result);
+        
+        canvas_native_webgl_WebGLResult_destroy(result);
 
         args.GetReturnValue().Set(ret);
         return;

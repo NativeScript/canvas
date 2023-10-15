@@ -45,6 +45,6 @@ void WebGLShaderPrecisionFormatImpl::GetPrecision(v8::Local<v8::String> property
             ptr->GetShaderPrecisionFormat()));
 }
 
-WebGLShaderPrecisionFormat &WebGLShaderPrecisionFormatImpl::GetShaderPrecisionFormat() {
-    return *this->shader_;
+WebGLShaderPrecisionFormat* WebGLShaderPrecisionFormatImpl::GetShaderPrecisionFormat() {
+    return this->shader_;
 }

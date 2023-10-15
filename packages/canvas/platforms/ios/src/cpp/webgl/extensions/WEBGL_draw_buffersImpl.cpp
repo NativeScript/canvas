@@ -34,11 +34,9 @@ void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(
             }
 
         }
-        rust::Slice<const uint32_t> slice(
-                buf.data(), buf.size());
-        canvas_native_webgl_draw_buffers_draw_buffers_webgl(
-                slice,
-                ptr->GetDrawBuffers());
+        
+        
+        canvas_native_webgl_draw_buffers_draw_buffers_webgl(buf.data(), buf.size(),ptr->GetDrawBuffers());
 
     }
 

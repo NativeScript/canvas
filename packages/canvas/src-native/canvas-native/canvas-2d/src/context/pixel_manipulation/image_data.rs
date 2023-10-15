@@ -66,6 +66,10 @@ impl ImageData {
     pub unsafe fn data_raw(&mut self) -> *mut u8 {
         self.0.data.as_mut_ptr()
     }
+
+    pub fn bytes_mut(&self) -> BytesMut {
+        self.0.data.clone()
+    }
 }
 
 impl From<&ImageData> for ImageData {

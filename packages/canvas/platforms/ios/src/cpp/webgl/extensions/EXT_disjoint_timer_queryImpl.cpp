@@ -267,17 +267,21 @@ void EXT_disjoint_timer_queryImpl::GetQueryObjectExt(
             pname,
             ptr->GetQuery()
     );
+    
 
     // GL_QUERY_RESULT_AVAILABLE_EXT
     if (pname == 0x8867) {
         args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
-                *ret));
+                ret));
+        canvas_native_webgl_WebGLResult_destroy(ret);
         return;
     }
 
 
     args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
-            *ret));
+            ret));
+    
+    canvas_native_webgl_WebGLResult_destroy(ret);
 }
 
 
@@ -303,12 +307,14 @@ void EXT_disjoint_timer_queryImpl::GetQueryParameterExt(
     // GL_QUERY_RESULT_AVAILABLE_EXT
     if (pname == 0x8867) {
         args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
-                *ret));
+                ret));
+        canvas_native_webgl_WebGLResult_destroy(ret);
         return;
     }
 
     args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
-            *ret));
+            ret));
+    canvas_native_webgl_WebGLResult_destroy(ret);
 }
 
 

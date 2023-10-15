@@ -96,6 +96,7 @@ TextDecoderImpl::Encoding(v8::Local<v8::String> name,
         auto isolate = info.GetIsolate();
         auto encoding = canvas_native_text_decoder_get_encoding(ptr->GetTextDecoder());
         info.GetReturnValue().Set(ConvertToV8String(isolate, encoding));
+        canvas_native_string_destroy((char*)encoding);
         return;
     }
     info.GetReturnValue().SetEmptyString();
@@ -129,11 +130,9 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
             auto data = static_cast<u_int8_t *>(buffer->GetBackingStore()->Data());
             auto size = buffer->ByteLength();
-            auto slice = canvas_native_u8_buffer_create_with_reference(data, size);
             auto decoded = canvas_native_text_decoder_decode(
                     ptr->GetTextDecoder(),
-                    slice);
-            canvas_u8_buffer_destroy(slice);
+                    data, size);
             //args.GetReturnValue().Set(ConvertToV8String(isolate, decoded.c_str()));
             auto returnValue = new OneByteStringResource((char *)decoded);
             auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
@@ -150,13 +149,10 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto store = buffer->Buffer()->GetBackingStore();
             auto buffer_data = static_cast<u_int8_t *>(store->Data()) + buffer->ByteOffset();
             auto len = buffer->Length();
-            auto data = canvas_native_u8_buffer_create_with_reference(buffer_data, len);
-
             auto decoded = canvas_native_text_decoder_decode(
                     ptr->GetTextDecoder(),
-                    data);
-            
-            canvas_u8_buffer_destroy(data);
+                                                             buffer_data, len);
+        
 
             // args.GetReturnValue().Set(ConvertToV8String(isolate, decoded.c_str()));
             auto returnValue = new OneByteStringResource((char*) decoded);

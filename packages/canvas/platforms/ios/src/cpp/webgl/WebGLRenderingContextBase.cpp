@@ -14,14 +14,13 @@ WebGLRenderingContextBase::WebGLRenderingContextBase(WebGLState* state,
             ctx_ptr,
             version == WebGLRenderingVersion::V2 ? 2 : 1);
     auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
-    auto raf = canvas_native_raf_create(
-            raf_callback_ptr);
+    auto raf = canvas_native_raf_create(raf_callback_ptr, [](intptr_t callback, int64_t ts){
+                OnRafCallbackOnFrame(callback, ts);
+            });
     this->SetRaf(
             std::make_shared<RafImpl>(
                     raf_callback,
-                    raf_callback_ptr,
-                    std::move(
-                            raf)));
+                    raf_callback_ptr, raf));
 
     auto _raf = this->GetRaf();
 

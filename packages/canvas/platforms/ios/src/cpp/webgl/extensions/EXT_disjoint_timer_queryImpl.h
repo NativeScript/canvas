@@ -6,7 +6,7 @@
 
 #include "Helpers.h"
 #include "Common.h"
-#include "webgl2/WebGLQuery.h"
+#include "WebGLQuery.h"
 #include <vector>
 
 class EXT_disjoint_timer_queryImpl {

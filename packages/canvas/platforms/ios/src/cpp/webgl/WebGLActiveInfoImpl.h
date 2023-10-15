@@ -10,6 +10,11 @@
 class WebGLActiveInfoImpl {
 public:
     WebGLActiveInfoImpl(WebGLActiveInfo* info);
+    
+    ~WebGLActiveInfoImpl(){
+        canvas_native_webgl_active_info_destroy(this->info_);
+        this->info_ = nullptr;
+    }
 
     WebGLActiveInfo* GetWebGLActiveInfo();
 

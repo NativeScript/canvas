@@ -11,7 +11,6 @@ use std::rc::Rc;
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
-use canvas_2d::context::fill_and_stroke_styles::gradient::Gradient;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 pub use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
@@ -29,10 +28,7 @@ use canvas_webgl::prelude::WebGLVersion;
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
 
-use crate::buffers::{
-    F32Buffer, F32BufferMut, I32Buffer, StringBuffer, StringRefBuffer, U16Buffer, U16BufferMut,
-    U32Buffer, U8Buffer, U8BufferMut,
-};
+use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, StringRefBuffer, U32Buffer, U8Buffer};
 
 /* Utils */
 
@@ -56,9 +52,9 @@ pub struct Raf(raf::Raf);
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum GLConstants {
-UNPACK_FLIP_Y_WEBGL = 0x9240,
-UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241,
-UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243
+    UNPACK_FLIP_Y_WEBGL = 0x9240,
+    UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241,
+    UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243,
 }
 
 #[repr(C)]
@@ -1405,13 +1401,14 @@ pub extern "C" fn canvas_native_context_get_line_dash(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_line_dash(
     context: *mut CanvasRenderingContext2D,
-    dash: *const F32Buffer,
+    dash: *const f32,
+    size: usize,
 ) {
     assert!(context.is_null());
     assert!(dash.is_null());
     let context = unsafe { &mut *context };
-    let dash = unsafe { &*dash };
-    context.get_context_mut().set_line_dash(dash.get_buffer())
+    let dash = unsafe { std::slice::from_raw_parts(dash, size) };
+    context.get_context_mut().set_line_dash(dash)
 }
 
 #[no_mangle]
@@ -1535,15 +1532,14 @@ pub extern "C" fn canvas_native_context_create_image_data(
 pub extern "C" fn canvas_native_context_create_image_data_with_data(
     width: i32,
     height: i32,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
 ) -> *mut ImageData {
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     Box::into_raw(Box::new(ImageData::new(
         canvas_2d::context::pixel_manipulation::image_data::ImageData::new_with_data(
-            width,
-            height,
-            data.get_buffer(),
+            width, height, data,
         ),
     )))
 }
@@ -1568,7 +1564,8 @@ pub extern "C" fn canvas_native_context_create_linear_gradient(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     width: i32,
     height: i32,
     repetition: *const c_char,
@@ -1577,11 +1574,11 @@ pub extern "C" fn canvas_native_context_create_pattern(
     assert!(repetition.is_null());
     assert!(data.is_null());
     let context = unsafe { &mut *context };
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let repetition = unsafe { CStr::from_ptr(repetition) };
     Box::into_raw(Box::new(PaintStyle(
         Repetition::try_from(repetition.to_string_lossy().as_ref()).map_or(None, |repetition| {
-            from_image_slice(data.get_buffer(), width, height).map(|image| {
+            from_image_slice(data, width, height).map(|image| {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
@@ -1638,7 +1635,8 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern_encoded(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     repetition: *const c_char,
 ) -> *mut PaintStyle {
     assert!(context.is_null());
@@ -1647,10 +1645,10 @@ pub extern "C" fn canvas_native_context_create_pattern_encoded(
     let context = unsafe { &*context };
     let repetition = unsafe { CStr::from_ptr(repetition) };
     let repetition = repetition.to_string_lossy();
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     Box::into_raw(Box::new(PaintStyle(
         Repetition::try_from(repetition.as_ref()).map_or(None, |repetition| {
-            from_image_slice_encoded(data.get_buffer()).map(|image| {
+            from_image_slice_encoded(data).map(|image| {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(image, repetition),
                 )
@@ -1758,7 +1756,11 @@ pub extern "C" fn canvas_native_context_create_radial_gradient(
     ))))
 }
 
-fn canvas_native_context_draw_paint(context: *mut CanvasRenderingContext2D, color: *const c_char) {
+#[no_mangle]
+pub extern "C" fn canvas_native_context_draw_paint(
+    context: *mut CanvasRenderingContext2D,
+    color: *const c_char,
+) {
     assert!(color.is_null());
     let color = unsafe { CStr::from_ptr(color) };
     let color = color.to_string_lossy();
@@ -1783,22 +1785,24 @@ pub extern "C" fn canvas_native_context_draw_point(
 pub extern "C" fn canvas_native_context_draw_points(
     context: *mut CanvasRenderingContext2D,
     mode: i32,
-    points: *const F32Buffer,
+    points: *const f32,
+    size: usize,
 ) {
     assert!(context.is_null());
     assert!(points.is_null());
-    let points = unsafe { &*points };
+    let points = unsafe { std::slice::from_raw_parts(points, size) };
     let context = unsafe { &mut *context };
     context.make_current();
     context
         .get_context_mut()
-        .draw_points(mode.try_into().unwrap(), points.get_buffer());
+        .draw_points(mode.try_into().unwrap(), points);
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     width: f32,
     height: f32,
     dx: f32,
@@ -1806,14 +1810,15 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy(
 ) {
     let context = unsafe { &mut *context };
     canvas_native_context_draw_image(
-        context, data, width, height, 0.0, 0.0, width, height, dx, dy, width, height,
+        context, data, size, width, height, 0.0, 0.0, width, height, dx, dy, width, height,
     );
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     width: f32,
     height: f32,
     dx: f32,
@@ -1823,14 +1828,15 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh(
 ) {
     let context = unsafe { &mut *context };
     canvas_native_context_draw_image(
-        context, data, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
+        context, data, size, width, height, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
     )
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     width: f32,
     height: f32,
     sx: f32,
@@ -1843,8 +1849,8 @@ pub extern "C" fn canvas_native_context_draw_image(
     d_height: f32,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
-    if let Some(image) = from_image_slice(data.get_buffer(), width as i32, height as i32) {
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
+    if let Some(image) = from_image_slice(data, width as i32, height as i32) {
         let context = unsafe { &mut *context };
         context.make_current();
         context.get_context_mut().draw_image_src_xywh_dst_xywh(
@@ -1856,13 +1862,14 @@ pub extern "C" fn canvas_native_context_draw_image(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     dx: f32,
     dy: f32,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
-    if let Some(image) = from_image_slice_encoded(data.get_buffer()) {
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
+    if let Some(image) = from_image_slice_encoded(data) {
         let context = unsafe { &mut *context };
         context.make_current();
         let width = image.width() as f32;
@@ -1876,15 +1883,16 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     dx: f32,
     dy: f32,
     d_width: f32,
     d_height: f32,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
-    if let Some(image) = from_image_slice_encoded(data.get_buffer()) {
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
+    if let Some(image) = from_image_slice_encoded(data) {
         let context = unsafe { &mut *context };
         context.make_current();
         let width = image.width() as f32;
@@ -1898,7 +1906,8 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded(
     context: *mut CanvasRenderingContext2D,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -1909,8 +1918,8 @@ pub extern "C" fn canvas_native_context_draw_image_encoded(
     d_height: f32,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
-    if let Some(image) = from_image_slice_encoded(data.get_buffer()) {
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
+    if let Some(image) = from_image_slice_encoded(data) {
         let context = unsafe { &mut *context };
         context.make_current();
         context.get_context_mut().draw_image_src_xywh_dst_xywh(
@@ -2379,11 +2388,11 @@ pub extern "C" fn canvas_native_context_round_rect(
     y: f32,
     width: f32,
     height: f32,
-    radii: *const F32Buffer,
+    radii: *const f32,
+    size: usize,
 ) {
     assert!(radii.is_null());
-    let radii = unsafe { &*radii };
-    let radii = radii.get_buffer();
+    let radii = unsafe { std::slice::from_raw_parts(radii, size) };
     let context = unsafe { &mut *context };
     if radii.len() == 8 {
         context
@@ -2662,7 +2671,8 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_asset_src_rect(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
-    bytes: *const U8Buffer,
+    bytes: *const u8,
+    size: usize,
     flip_y: bool,
     premultiply_alpha: ImageBitmapPremultiplyAlpha,
     color_space_conversion: ImageBitmapColorSpaceConversion,
@@ -2671,10 +2681,10 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
     resize_height: f32,
 ) -> *mut ImageAsset {
     assert!(bytes.is_null());
-    let bytes = unsafe { &*bytes };
+    let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
     Box::into_raw(Box::new(ImageAsset(
         canvas_2d::image_bitmap::create_image_asset_encoded(
-            bytes.get_buffer(),
+            bytes,
             None,
             flip_y,
             premultiply_alpha.into(),
@@ -2688,7 +2698,8 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
-    bytes: *const U8Buffer,
+    bytes: *const u8,
+    size: usize,
     flip_y: bool,
     premultiply_alpha: ImageBitmapPremultiplyAlpha,
     color_space_conversion: ImageBitmapColorSpaceConversion,
@@ -2699,10 +2710,10 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_outp
 ) -> bool {
     assert!(output.is_null());
     assert!(bytes.is_null());
-    let bytes = unsafe { &*bytes };
+    let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
     let output = unsafe { &mut *output };
     canvas_2d::image_bitmap::create_image_asset_with_output(
-        bytes.get_buffer(),
+        bytes,
         None,
         flip_y,
         premultiply_alpha.into(),
@@ -2718,7 +2729,8 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_outp
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
-    bytes: *const U8Buffer,
+    bytes: *const u8,
+    size: usize,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -2731,10 +2743,10 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
     resize_height: f32,
 ) -> *mut ImageAsset {
     assert!(bytes.is_null());
-    let bytes = unsafe { &*bytes };
+    let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
     Box::into_raw(Box::new(ImageAsset(
         canvas_2d::image_bitmap::create_image_asset_encoded(
-            bytes.get_buffer(),
+            bytes,
             Some((sx, sy, s_width, s_height).into()),
             flip_y,
             premultiply_alpha.into(),
@@ -2748,7 +2760,8 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
-    bytes: *const U8Buffer,
+    bytes: *const u8,
+    size: usize,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -2763,10 +2776,10 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_
 ) -> bool {
     assert!(output.is_null());
     assert!(bytes.is_null());
-    let bytes = unsafe { &*bytes };
+    let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
     let output = unsafe { &mut *output };
     canvas_2d::image_bitmap::create_image_asset_with_output(
-        bytes.get_buffer(),
+        bytes,
         Some((sx, sy, s_width, s_height).into()),
         flip_y,
         premultiply_alpha.into(),
@@ -2994,12 +3007,12 @@ pub extern "C" fn canvas_native_path_round_rect(
     y: f32,
     width: f32,
     height: f32,
-    radii: *const F32Buffer,
+    radii: *const f32,
+    size: usize,
 ) {
     assert!(path.is_null());
     assert!(radii.is_null());
-    let radii = unsafe { &*radii };
-    let radii = radii.get_buffer();
+    let radii = unsafe { std::slice::from_raw_parts(radii, size) };
     let path = unsafe { &mut *path };
 
     let size = radii.len();
@@ -3133,22 +3146,25 @@ pub extern "C" fn canvas_native_matrix_create() -> *mut Matrix {
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_update(matrix: *mut Matrix, slice: *const F32Buffer) {
+pub extern "C" fn canvas_native_matrix_update(matrix: *mut Matrix, slice: *const f32, size: usize) {
     assert!(matrix.is_null());
     assert!(slice.is_null());
-    let slice = unsafe { &*slice };
+    let slice = unsafe { std::slice::from_raw_parts(slice, size) };
     let matrix = unsafe { &mut *matrix };
     let mut affine = [0f32; 6];
-    affine.copy_from_slice(slice.get_buffer());
+    affine.copy_from_slice(slice);
     matrix.inner_mut().set_affine(&affine);
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_update_3d(matrix: *mut Matrix, slice: *const F32Buffer) {
+pub extern "C" fn canvas_native_matrix_update_3d(
+    matrix: *mut Matrix,
+    slice: *const f32,
+    size: usize,
+) {
     assert!(matrix.is_null());
     assert!(slice.is_null());
-    let slice = unsafe { &*slice };
-    let slice = slice.get_buffer();
+    let slice = unsafe { std::slice::from_raw_parts(slice, size) };
     assert_eq!(slice.len(), 16);
     let matrix = unsafe { &mut *matrix };
     let matrix = matrix.inner_mut();
@@ -3470,10 +3486,8 @@ pub extern "C" fn canvas_native_image_data_get_height(image_data: &ImageData) ->
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_data_get_data(
-    image_data: &mut ImageData,
-) -> *mut U8BufferMut {
-    Box::into_raw(Box::new(U8BufferMut::from(image_data.0.data_mut())))
+pub extern "C" fn canvas_native_image_data_get_data(image_data: &mut ImageData) -> *mut U8Buffer {
+    Box::into_raw(Box::new(U8Buffer::from(image_data.0.bytes_mut())))
 }
 
 #[no_mangle]
@@ -3620,12 +3634,13 @@ pub extern "C" fn canvas_native_image_asset_load_from_path(
 #[no_mangle]
 pub extern "C" fn canvas_native_image_asset_load_from_raw(
     asset: *mut ImageAsset,
-    array: *const U8Buffer,
+    array: *const u8,
+    size: usize,
 ) -> bool {
     assert!(array.is_null());
-    let array = unsafe { &*array };
+    let array = unsafe { std::slice::from_raw_parts(array, size) };
     let asset = unsafe { &mut *asset };
-    asset.load_from_bytes(array.get_buffer())
+    asset.load_from_bytes(array)
 }
 
 #[no_mangle]
@@ -3914,14 +3929,15 @@ pub extern "C" fn canvas_native_paint_style_from_bytes(
     repetition: i32,
     width: i32,
     height: i32,
-    bytes: *const U8Buffer,
+    bytes: *const u8,
+    size: usize,
 ) -> *mut PaintStyle {
     assert!(context.is_null());
     assert!(bytes.is_null());
     let context = unsafe { &*context };
-    let bytes = unsafe { &*bytes };
+    let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
     Box::into_raw(Box::new(PaintStyle(
-        from_image_slice(bytes.get_buffer(), width, height).map(|image| {
+        from_image_slice(bytes, width, height).map(|image| {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                 context.get_context().create_pattern(
                     image,
@@ -4006,13 +4022,14 @@ pub extern "C" fn canvas_native_text_decoder_create(decoding: *const c_char) -> 
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_decode(
     decoder: *const TextDecoder,
-    data: *const U8Buffer,
+    data: *const u8,
+    size: usize,
 ) -> *const c_char {
     assert!(decoder.is_null());
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let decoder = unsafe { &*decoder };
-    CString::new(decoder.0.decode_to_string(data.get_buffer()))
+    CString::new(decoder.0.decode_to_string(data))
         .unwrap()
         .into_raw()
 }
@@ -4274,11 +4291,13 @@ pub extern "C" fn canvas_native_webgl_swap_buffers(state: *mut WebGLState) -> bo
 
 /* WebGL */
 
-fn canvas_native_webgl_resized(_state: *mut WebGLState) {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_resized(_state: *mut WebGLState) {
     //state.get_inner_mut().resized();
 }
 
-fn canvas_native_webgl_to_data_url(
+#[no_mangle]
+pub extern "C" fn  canvas_native_webgl_to_data_url(
     state: *mut WebGLState,
     format: *const c_char,
     quality: u32,
@@ -4475,7 +4494,7 @@ pub struct WebGLShaderPrecisionFormat(canvas_webgl::prelude::WebGLShaderPrecisio
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_shader_precision_format_destroy(
-    value: *mut WebGLFramebufferAttachmentParameter,
+    value: *mut WebGLShaderPrecisionFormat,
 ) {
     if value.is_null() {
         return;
@@ -5146,7 +5165,11 @@ pub extern "C" fn canvas_native_webgl_context_extension_to_oes_vertex_array_obje
 /* WebGLExtension */
 
 /* WebGLResult */
-fn canvas_native_webgl_result_get_type(result: *const WebGLResult) -> WebGLResultType {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_type(
+    result: *const WebGLResult,
+) -> WebGLResultType {
+    assert!(result.is_null());
     let result = unsafe { &*result };
     match result.0 {
         canvas_webgl::prelude::WebGLResult::Boolean(_) => WebGLResultType::WebGLResultTypeBoolean,
@@ -5164,7 +5187,8 @@ fn canvas_native_webgl_result_get_type(result: *const WebGLResult) -> WebGLResul
     }
 }
 
-fn canvas_native_webgl_result_get_bool(result: *const WebGLResult) -> bool {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_bool(result: *const WebGLResult) -> bool {
     let result = unsafe { &*result };
     match result.0 {
         canvas_webgl::prelude::WebGLResult::Boolean(value) => value,
@@ -5172,7 +5196,10 @@ fn canvas_native_webgl_result_get_bool(result: *const WebGLResult) -> bool {
     }
 }
 
-fn canvas_native_webgl_result_get_i32_array(result: *const WebGLResult) -> *mut I32Buffer {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_i32_array(
+    result: *const WebGLResult,
+) -> *mut I32Buffer {
     let result = unsafe { &*result };
     Box::into_raw(Box::new(I32Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::I32Array(value) => value.to_vec(),
@@ -5180,7 +5207,10 @@ fn canvas_native_webgl_result_get_i32_array(result: *const WebGLResult) -> *mut 
     })))
 }
 
-fn canvas_native_webgl_result_get_u32_array(result: *const WebGLResult) -> *mut U32Buffer {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_u32_array(
+    result: *const WebGLResult,
+) -> *mut U32Buffer {
     let result = unsafe { &*result };
     Box::into_raw(Box::new(U32Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::U32Array(value) => value.to_vec(),
@@ -5188,7 +5218,10 @@ fn canvas_native_webgl_result_get_u32_array(result: *const WebGLResult) -> *mut 
     })))
 }
 
-fn canvas_native_webgl_result_get_f32_array(result: *const WebGLResult) -> *mut F32Buffer {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_f32_array(
+    result: *const WebGLResult,
+) -> *mut F32Buffer {
     let result = unsafe { &*result };
     Box::into_raw(Box::new(F32Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::F32Array(value) => value.to_vec(),
@@ -5196,7 +5229,10 @@ fn canvas_native_webgl_result_get_f32_array(result: *const WebGLResult) -> *mut 
     })))
 }
 
-fn canvas_native_webgl_result_get_bool_array(result: *const WebGLResult) -> *mut U8Buffer {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_bool_array(
+    result: *const WebGLResult,
+) -> *mut U8Buffer {
     let result = unsafe { &*result };
     Box::into_raw(Box::new(U8Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::BooleanArray(value) => unsafe {
@@ -5206,7 +5242,8 @@ fn canvas_native_webgl_result_get_bool_array(result: *const WebGLResult) -> *mut
     })))
 }
 
-fn canvas_native_webgl_result_get_u32(result: *const WebGLResult) -> u32 {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_u32(result: *const WebGLResult) -> u32 {
     let result = unsafe { &*result };
     match result.0 {
         canvas_webgl::prelude::WebGLResult::U32(value) => value,
@@ -5214,7 +5251,8 @@ fn canvas_native_webgl_result_get_u32(result: *const WebGLResult) -> u32 {
     }
 }
 
-fn canvas_native_webgl_result_get_i32(result: *const WebGLResult) -> i32 {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_i32(result: *const WebGLResult) -> i32 {
     let result = unsafe { &*result };
     match result.0 {
         canvas_webgl::prelude::WebGLResult::I32(value) => value,
@@ -5222,7 +5260,8 @@ fn canvas_native_webgl_result_get_i32(result: *const WebGLResult) -> i32 {
     }
 }
 
-fn canvas_native_webgl_result_get_f32(result: *const WebGLResult) -> f32 {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_f32(result: *const WebGLResult) -> f32 {
     let result = unsafe { &*result };
     match result.0 {
         canvas_webgl::prelude::WebGLResult::F32(value) => value,
@@ -5230,7 +5269,10 @@ fn canvas_native_webgl_result_get_f32(result: *const WebGLResult) -> f32 {
     }
 }
 
-fn canvas_native_webgl_result_get_string(result: *const WebGLResult) -> *const c_char {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_string(
+    result: *const WebGLResult,
+) -> *const c_char {
     let result = unsafe { &*result };
     let ret;
     match result.0 {
@@ -5254,7 +5296,8 @@ fn canvas_native_webgl_result_get_string(result: *const WebGLResult) -> *const c
     ret
 }
 
-fn canvas_native_webgl_result_get_is_none(result: *const WebGLResult) -> bool {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_get_is_none(result: *const WebGLResult) -> bool {
     let result = unsafe { &*result };
     match result.0 {
         canvas_webgl::prelude::WebGLResult::None => true,
@@ -5386,7 +5429,8 @@ pub extern "C" fn canvas_native_webgl_ext_disjoint_timer_query_get_query_object_
 /* EXT_disjoint_timer_query */
 
 /* ANGLE_instanced_arrays */
-fn canvas_native_webgl_angle_instanced_arrays_draw_arrays_instanced_angle(
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_angle_instanced_arrays_draw_arrays_instanced_angle(
     mode: u32,
     first: i32,
     count: i32,
@@ -5399,7 +5443,8 @@ fn canvas_native_webgl_angle_instanced_arrays_draw_arrays_instanced_angle(
         .draw_arrays_instanced_angle(mode, first, count, primcount)
 }
 
-fn canvas_native_webgl_angle_instanced_arrays_draw_elements_instanced_angle(
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_angle_instanced_arrays_draw_elements_instanced_angle(
     mode: u32,
     count: i32,
     type_: u32,
@@ -5413,7 +5458,8 @@ fn canvas_native_webgl_angle_instanced_arrays_draw_elements_instanced_angle(
         .draw_elements_instanced_angle(mode, count, type_, offset, primcount)
 }
 
-fn canvas_native_webgl_angle_instanced_arrays_vertex_attrib_divisor_angle(
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_angle_instanced_arrays_vertex_attrib_divisor_angle(
     index: u32,
     divisor: u32,
     arrays: *const ANGLE_instanced_arrays,
@@ -5424,13 +5470,15 @@ fn canvas_native_webgl_angle_instanced_arrays_vertex_attrib_divisor_angle(
 /* ANGLE_instanced_arrays */
 
 /* WEBGL_lose_context */
-fn canvas_native_webgl_lose_context_lose_context(context: *const WEBGL_lose_context) {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_lose_context_lose_context(context: *const WEBGL_lose_context) {
     let context = unsafe { &*context };
 
     context.0.lose_context()
 }
 
-fn canvas_native_webgl_lose_context_restore_context(context: *const WEBGL_lose_context) {
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_lose_context_restore_context(context: *const WEBGL_lose_context) {
     let context = unsafe { &*context };
     context.0.restore_context()
 }
@@ -5438,29 +5486,33 @@ fn canvas_native_webgl_lose_context_restore_context(context: *const WEBGL_lose_c
 
 /* WEBGL_draw_buffers */
 
-fn canvas_native_webgl_draw_buffers_draw_buffers_webgl(
-    buffers: *const U32Buffer,
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_draw_buffers_draw_buffers_webgl(
+    buffers: *const u32,
+    size: usize,
     context: *const WEBGL_draw_buffers,
 ) {
     assert!(buffers.is_null());
     assert!(context.is_null());
-    let buffers = unsafe { &*buffers };
+    let buffers = unsafe { std::slice::from_raw_parts(buffers, size) };
     let context = unsafe { &*context };
-    context.0.draw_buffers_webgl(buffers.get_buffer());
+    context.0.draw_buffers_webgl(buffers);
 }
 
 /* WEBGL_draw_buffers */
 
 /* OES_vertex_array_object */
 
-fn canvas_native_webgl_oes_vertex_array_object_create_vertex_array_oes(
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_oes_vertex_array_object_create_vertex_array_oes(
     object: *const OES_vertex_array_object,
 ) -> u32 {
     let object = unsafe { &*object };
     object.0.create_vertex_array_oes()
 }
 
-fn canvas_native_webgl_oes_vertex_array_object_delete_vertex_array_oes(
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_oes_vertex_array_object_delete_vertex_array_oes(
     array_object: u32,
     object: *const OES_vertex_array_object,
 ) {
@@ -5468,7 +5520,8 @@ fn canvas_native_webgl_oes_vertex_array_object_delete_vertex_array_oes(
     object.0.delete_vertex_array_oes(array_object)
 }
 
-fn canvas_native_webgl_oes_vertex_array_object_is_vertex_array_oes(
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_oes_vertex_array_object_is_vertex_array_oes(
     array_object: u32,
     object: *const OES_vertex_array_object,
 ) -> bool {
@@ -5476,7 +5529,8 @@ fn canvas_native_webgl_oes_vertex_array_object_is_vertex_array_oes(
     object.0.is_vertex_array_oes(array_object)
 }
 
-fn canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(
     array_object: u32,
     object: *const OES_vertex_array_object,
 ) {
@@ -5795,17 +5849,18 @@ pub extern "C" fn canvas_native_webgl_blend_func(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data(
     target: u32,
-    src_data: *const U8Buffer,
+    src_data: *const u8,
+    size: usize,
     usage: u32,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(src_data.is_null());
-    let src_data = unsafe { &*src_data };
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data(
         target,
-        src_data.get_buffer(),
+        src_data,
         usage,
         state.get_inner_mut(),
     )
@@ -5814,17 +5869,18 @@ pub extern "C" fn canvas_native_webgl_buffer_data(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data_u16(
     target: u32,
-    src_data: *const U16Buffer,
+    src_data: *const u16,
+    size: usize,
     usage: u32,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(src_data.is_null());
-    let src_data = unsafe { &*src_data };
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data_u16(
         target,
-        src_data.get_buffer(),
+        src_data,
         usage,
         state.get_inner_mut(),
     )
@@ -5833,16 +5889,17 @@ pub extern "C" fn canvas_native_webgl_buffer_data_u16(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data_f32(
     target: u32,
-    src_data: *const F32Buffer,
+    src_data: *const f32,
+    size: usize,
     usage: u32,
     state: *mut WebGLState,
 ) {
     assert!(src_data.is_null());
-    let src_data = unsafe { &*src_data };
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data_f32(
         target,
-        src_data.get_buffer(),
+        src_data,
         usage,
         state.get_inner_mut(),
     )
@@ -5868,17 +5925,18 @@ pub extern "C" fn canvas_native_webgl_buffer_data_none(
 pub extern "C" fn canvas_native_webgl_buffer_sub_data(
     target: u32,
     offset: isize,
-    src_data: *const U8Buffer,
+    src_data: *const u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(src_data.is_null());
-    let src_data = unsafe { &*src_data };
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data(
         target,
         offset,
-        src_data.get_buffer(),
+        src_data,
         state.get_inner_mut(),
     )
 }
@@ -5982,12 +6040,13 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_image2d(
     width: i32,
     height: i32,
     border: i32,
-    pixels: *const U8Buffer,
+    pixels: *const u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(pixels.is_null());
-    let pixels = unsafe { &*pixels };
+    let pixels = unsafe { std::slice::from_raw_parts(pixels, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_compressed_tex_image2d(
         target,
@@ -5996,7 +6055,7 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_image2d(
         width,
         height,
         border,
-        pixels.get_buffer(),
+        pixels,
         state.get_inner_mut(),
     )
 }
@@ -6032,12 +6091,13 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_sub_image2d(
     width: i32,
     height: i32,
     format: u32,
-    pixels: *const U8Buffer,
+    pixels: *const u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(pixels.is_null());
-    let pixels = unsafe { &*pixels };
+    let pixels = unsafe { std::slice::from_raw_parts(pixels, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_compressed_tex_sub_image2d(
         target,
@@ -6047,7 +6107,7 @@ pub extern "C" fn canvas_native_webgl_compressed_tex_sub_image2d(
         width,
         height,
         format,
-        pixels.get_buffer(),
+        pixels,
         state.get_inner_mut(),
     )
 }
@@ -6816,13 +6876,14 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u8(
     height: i32,
     format: u32,
     pixel_type: u32,
-    pixels: *mut U8BufferMut,
+    pixels: *mut u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(pixels.is_null());
     assert!(state.is_null());
     let state = unsafe { &mut *state };
-    let pixels = unsafe { &mut *pixels };
+    let pixels = unsafe { std::slice::from_raw_parts_mut(pixels, size) };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_u8(
         x,
         y,
@@ -6830,7 +6891,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u8(
         height,
         format,
         pixel_type,
-        pixels.get_buffer(),
+        pixels,
         state.get_inner_mut(),
     )
 }
@@ -6843,13 +6904,14 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u16(
     height: i32,
     format: u32,
     pixel_type: u32,
-    pixels: *mut U16BufferMut,
+    pixels: *mut u16,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(pixels.is_null());
     let state = unsafe { &mut *state };
-    let pixels = unsafe { &mut *pixels };
+    let pixels = unsafe { std::slice::from_raw_parts_mut(pixels, size) };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_u16(
         x,
         y,
@@ -6857,7 +6919,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_u16(
         height,
         format,
         pixel_type,
-        pixels.get_buffer(),
+        pixels,
         state.get_inner_mut(),
     )
 }
@@ -6870,13 +6932,14 @@ pub extern "C" fn canvas_native_webgl_read_pixels_f32(
     height: i32,
     format: u32,
     pixel_type: u32,
-    pixels: *mut F32BufferMut,
+    pixels: *mut f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(pixels.is_null());
     let state = unsafe { &mut *state };
-    let pixels = unsafe { &mut *pixels };
+    let pixels = unsafe { std::slice::from_raw_parts_mut(pixels, size) };
     canvas_webgl::webgl::canvas_native_webgl_read_pixels_f32(
         x,
         y,
@@ -6884,7 +6947,7 @@ pub extern "C" fn canvas_native_webgl_read_pixels_f32(
         height,
         format,
         pixel_type,
-        pixels.get_buffer(),
+        pixels,
         state.get_inner_mut(),
     )
 }
@@ -7155,13 +7218,14 @@ pub extern "C" fn canvas_native_webgl_tex_image2d(
     border: i32,
     format: i32,
     image_type: i32,
-    buf: *mut U8BufferMut,
+    buf: *const u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(buf.is_null());
     assert!(state.is_null());
     let state = unsafe { &mut *state };
-    let buf = unsafe { &mut *buf };
+    let buf = unsafe { std::slice::from_raw_parts(buf, size) };
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
@@ -7171,7 +7235,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d(
         border,
         format,
         image_type,
-        buf.get_buffer(),
+        buf,
         state.get_inner_mut(),
     )
 }
@@ -7387,12 +7451,13 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d(
     height: i32,
     format: u32,
     image_type: i32,
-    buf: *const U8Buffer,
+    buf: *const u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(buf.is_null());
-    let buf = unsafe { &*buf };
+    let buf = unsafe { std::slice::from_raw_parts(buf, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
         target,
@@ -7403,7 +7468,7 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d(
         height,
         format,
         image_type,
-        buf.get_buffer(),
+        buf,
         state.get_inner(),
     )
 }
@@ -7418,18 +7483,15 @@ pub extern "C" fn canvas_native_webgl_uniform1f(location: i32, v0: f32, state: *
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1fv(
     location: i32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &*state };
-    canvas_webgl::webgl::canvas_native_webgl_uniform1fv(
-        location,
-        value.get_buffer(),
-        state.get_inner(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform1fv(location, value, state.get_inner())
 }
 
 #[no_mangle]
@@ -7442,18 +7504,15 @@ pub extern "C" fn canvas_native_webgl_uniform1i(location: i32, v0: i32, state: *
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1iv(
     location: i32,
-    value: *const I32Buffer,
+    value: *const i32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &*state };
-    canvas_webgl::webgl::canvas_native_webgl_uniform1iv(
-        location,
-        value.get_buffer(),
-        state.get_inner(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform1iv(location, value, state.get_inner())
 }
 
 #[no_mangle]
@@ -7471,19 +7530,16 @@ pub extern "C" fn canvas_native_webgl_uniform2f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2fv(
     location: i32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &*state };
 
-    canvas_webgl::webgl::canvas_native_webgl_uniform2fv(
-        location,
-        value.get_buffer(),
-        state.get_inner(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform2fv(location, value, state.get_inner())
 }
 
 #[no_mangle]
@@ -7501,18 +7557,15 @@ pub extern "C" fn canvas_native_webgl_uniform2i(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2iv(
     location: i32,
-    value: *const I32Buffer,
+    value: *const i32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &*state };
-    canvas_webgl::webgl::canvas_native_webgl_uniform2iv(
-        location,
-        value.get_buffer(),
-        state.get_inner(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform2iv(location, value, state.get_inner())
 }
 
 #[no_mangle]
@@ -7530,18 +7583,15 @@ pub extern "C" fn canvas_native_webgl_uniform3f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3fv(
     location: i32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &*state };
-    canvas_webgl::webgl::canvas_native_webgl_uniform3fv(
-        location,
-        value.get_buffer(),
-        state.get_inner(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform3fv(location, value, state.get_inner())
 }
 
 #[no_mangle]
@@ -7559,18 +7609,15 @@ pub extern "C" fn canvas_native_webgl_uniform3i(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3iv(
     location: i32,
-    value: *const I32Buffer,
+    value: *const i32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &*state };
-    canvas_webgl::webgl::canvas_native_webgl_uniform3iv(
-        location,
-        value.get_buffer(),
-        state.get_inner(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform3iv(location, value, state.get_inner())
 }
 
 #[no_mangle]
@@ -7589,18 +7636,15 @@ pub extern "C" fn canvas_native_webgl_uniform4f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform4fv(
     location: i32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_uniform4fv(
-        location,
-        value.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform4fv(location, value, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -7626,34 +7670,32 @@ pub extern "C" fn canvas_native_webgl_uniform4i(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform4iv(
     location: i32,
-    value: *const I32Buffer,
+    value: *const i32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_uniform4iv(
-        location,
-        value.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_uniform4iv(location, value, state.get_inner_mut())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform_matrix2fv(
     location: i32,
     transpose: bool,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform_matrix2fv(
         location,
         transpose,
-        value.get_buffer(),
+        value,
         state.get_inner_mut(),
     )
 }
@@ -7662,16 +7704,17 @@ pub extern "C" fn canvas_native_webgl_uniform_matrix2fv(
 pub extern "C" fn canvas_native_webgl_uniform_matrix3fv(
     location: i32,
     transpose: bool,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform_matrix3fv(
         location,
         transpose,
-        value.get_buffer(),
+        value,
         state.get_inner_mut(),
     )
 }
@@ -7680,16 +7723,17 @@ pub extern "C" fn canvas_native_webgl_uniform_matrix3fv(
 pub extern "C" fn canvas_native_webgl_uniform_matrix4fv(
     location: i32,
     transpose: bool,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform_matrix4fv(
         location,
         transpose,
-        value.get_buffer(),
+        value,
         state.get_inner_mut(),
     )
 }
@@ -7715,17 +7759,14 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib1f(index: u32, v0: f32, state
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib1fv(
     index: u32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib1fv(
-        index,
-        value.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib1fv(index, value, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -7742,17 +7783,14 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib2f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib2fv(
     index: u32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib2fv(
-        index,
-        value.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib2fv(index, value, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -7776,17 +7814,14 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib3f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib3fv(
     index: u32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib3fv(
-        index,
-        value.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib3fv(index, value, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -7812,17 +7847,14 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib4f(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib4fv(
     index: u32,
-    value: *const F32Buffer,
+    value: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib4fv(
-        index,
-        value.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl::canvas_native_webgl_vertex_attrib4fv(index, value, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -8041,17 +8073,18 @@ pub extern "C" fn canvas_native_webgl2_clear_bufferfi(
 pub extern "C" fn canvas_native_webgl2_clear_bufferfv(
     buffer: u32,
     drawbuffer: i32,
-    values: *const F32Buffer,
+    values: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(values.is_null());
-    let values = unsafe { &*values };
+    let values = unsafe { std::slice::from_raw_parts(values, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_clear_bufferfv(
         buffer,
         drawbuffer,
-        values.get_buffer(),
+        values,
         state.get_inner_mut(),
     )
 }
@@ -8060,17 +8093,18 @@ pub extern "C" fn canvas_native_webgl2_clear_bufferfv(
 pub extern "C" fn canvas_native_webgl2_clear_bufferiv(
     buffer: u32,
     drawbuffer: i32,
-    values: *const I32Buffer,
+    values: *const i32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(values.is_null());
-    let values = unsafe { &*values };
+    let values = unsafe { std::slice::from_raw_parts(values, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_clear_bufferiv(
         buffer,
         drawbuffer,
-        values.get_buffer(),
+        values,
         state.get_inner_mut(),
     )
 }
@@ -8079,17 +8113,18 @@ pub extern "C" fn canvas_native_webgl2_clear_bufferiv(
 pub extern "C" fn canvas_native_webgl2_clear_bufferuiv(
     buffer: u32,
     drawbuffer: i32,
-    values: *const U32Buffer,
+    values: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(values.is_null());
-    let values = unsafe { &*values };
+    let values = unsafe { std::slice::from_raw_parts(values, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_clear_bufferuiv(
         buffer,
         drawbuffer,
-        values.get_buffer(),
+        values,
         state.get_inner_mut(),
     )
 }
@@ -8153,13 +8188,14 @@ pub extern "C" fn canvas_native_webgl2_compressed_tex_sub_image3d(
     height: i32,
     depth: i32,
     format: u32,
-    src: *const U8Buffer,
+    src: *const u8,
+    size: usize,
     src_offset: usize,
     src_length_override: usize,
     state: *mut WebGLState,
 ) {
     assert!(src.is_null());
-    let src = unsafe { &*src };
+    let src = unsafe { std::slice::from_raw_parts(src, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_compressed_tex_sub_image3d(
         target,
@@ -8171,7 +8207,7 @@ pub extern "C" fn canvas_native_webgl2_compressed_tex_sub_image3d(
         height,
         depth,
         format,
-        src.get_buffer(),
+        src,
         src_offset,
         src_length_override,
         state.get_inner_mut(),
@@ -8321,17 +8357,15 @@ pub extern "C" fn canvas_native_webgl2_draw_arrays_instanced(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_draw_buffers(
-    buffers: *const U32Buffer,
+    buffers: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(buffers.is_null());
-    let buffers = unsafe { &*buffers };
+    let buffers = unsafe { std::slice::from_raw_parts(buffers, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_draw_buffers(
-        buffers.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl2::canvas_native_webgl2_draw_buffers(buffers, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -8463,18 +8497,19 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniform_block_parameter(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_get_active_uniforms(
     program: u32,
-    uniform_indices: *const U32Buffer,
+    uniform_indices: *const u32,
+    size: usize,
     pname: u32,
     state: *mut WebGLState,
 ) -> *mut WebGLResult {
     assert!(state.is_null());
     assert!(uniform_indices.is_null());
-    let uniform_indices = unsafe { &*uniform_indices };
+    let uniform_indices = unsafe { std::slice::from_raw_parts(uniform_indices, size) };
     let state = unsafe { &mut *state };
     Box::into_raw(Box::new(WebGLResult(
         canvas_webgl::webgl2::canvas_native_webgl2_get_active_uniforms(
             program,
-            uniform_indices.get_buffer(),
+            uniform_indices,
             pname,
             state.get_inner_mut(),
         ),
@@ -8485,7 +8520,8 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniforms(
 pub extern "C" fn canvas_native_webgl2_get_buffer_sub_data(
     target: u32,
     src_byte_offset: isize,
-    dst_data: *mut U8BufferMut,
+    dst_data: *mut u8,
+    size: usize,
     dst_offset: usize,
     length: usize,
     state: *mut WebGLState,
@@ -8493,11 +8529,11 @@ pub extern "C" fn canvas_native_webgl2_get_buffer_sub_data(
     assert!(state.is_null());
     assert!(dst_data.is_null());
     let state = unsafe { &mut *state };
-    let dst_data = unsafe { &mut *dst_data };
+    let dst_data = unsafe { std::slice::from_raw_parts_mut(dst_data, size) };
     canvas_webgl::webgl2::canvas_native_webgl2_get_buffer_sub_data(
         target,
         src_byte_offset,
-        dst_data.get_buffer(),
+        dst_data,
         dst_offset,
         length,
         state.get_inner_mut(),
@@ -8665,22 +8701,18 @@ pub extern "C" fn canvas_native_webgl2_get_uniform_block_index(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_get_uniform_indices(
     program: u32,
-    uniform_names: *const StringRefBuffer,
+    uniform_names: *const *const c_char,
+    size: usize,
     state: *mut WebGLState,
 ) -> *mut U32Buffer {
     assert!(state.is_null());
     assert!(uniform_names.is_null());
-    let uniform_names = unsafe { &*uniform_names };
     let state = unsafe { &mut *state };
-    let uniform_names: Vec<String> = uniform_names
-        .get_buffer()
-        .iter()
-        .map(|i| i.to_string())
-        .collect();
     Box::into_raw(Box::new(U32Buffer::from(
-        canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_indices(
+        canvas_webgl::webgl2::canvas_native_webgl2_get_uniform_indices_raw(
             program,
-            uniform_names.as_slice(),
+            uniform_names,
+            size,
             state.get_inner_mut(),
         ),
     )))
@@ -8689,16 +8721,17 @@ pub extern "C" fn canvas_native_webgl2_get_uniform_indices(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_invalidate_framebuffer(
     target: u32,
-    attachments: *const U32Buffer,
+    attachments: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(attachments.is_null());
-    let attachments = unsafe { &*attachments };
+    let attachments = unsafe { std::slice::from_raw_parts(attachments, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_invalidate_framebuffer(
         target,
-        attachments.get_buffer(),
+        attachments,
         state.get_inner_mut(),
     )
 }
@@ -8706,7 +8739,8 @@ pub extern "C" fn canvas_native_webgl2_invalidate_framebuffer(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_invalidate_sub_framebuffer(
     target: u32,
-    attachments: *const U32Buffer,
+    attachments: *const u32,
+    size: usize,
     x: i32,
     y: i32,
     width: i32,
@@ -8715,11 +8749,11 @@ pub extern "C" fn canvas_native_webgl2_invalidate_sub_framebuffer(
 ) {
     assert!(state.is_null());
     assert!(attachments.is_null());
-    let attachments = unsafe { &*attachments };
+    let attachments = unsafe { std::slice::from_raw_parts(attachments, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_invalidate_sub_framebuffer(
         target,
-        attachments.get_buffer(),
+        attachments,
         x,
         y,
         width,
@@ -8908,11 +8942,12 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d(
     border: i32,
     format: u32,
     type_: u32,
-    buf: *const U8Buffer,
+    buf: *const u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(buf.is_null());
-    let buf = unsafe { &*buf };
+    let buf = unsafe { std::slice::from_raw_parts(buf, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d(
         target,
@@ -8924,7 +8959,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d(
         border,
         format,
         type_,
-        buf.get_buffer(),
+        buf,
         state.get_inner_mut(),
     )
 }
@@ -8940,12 +8975,13 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_offset(
     border: i32,
     format: u32,
     type_: u32,
-    buf: *const U8Buffer,
+    buf: *const u8,
+    size: usize,
     offset: usize,
     state: *mut WebGLState,
 ) {
     assert!(buf.is_null());
-    let buf = unsafe { &*buf };
+    let buf = unsafe { std::slice::from_raw_parts(buf, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d_offset(
         target,
@@ -8957,7 +8993,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_offset(
         border,
         format,
         type_,
-        buf.get_buffer(),
+        buf,
         offset,
         state.get_inner_mut(),
     )
@@ -9049,11 +9085,12 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d(
     depth: i32,
     format: u32,
     type_: u32,
-    buf: *const U8Buffer,
+    buf: *const u8,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(buf.is_null());
-    let buf = unsafe { &*buf };
+    let buf = unsafe { std::slice::from_raw_parts(buf, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d(
         target,
@@ -9066,7 +9103,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d(
         depth,
         format,
         type_,
-        buf.get_buffer(),
+        buf,
         state.get_inner_mut(),
     )
 }
@@ -9115,12 +9152,13 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_offset(
     depth: i32,
     format: u32,
     type_: u32,
-    buf: *const U8Buffer,
+    buf: *const u8,
+    size: usize,
     offset: usize,
     state: *mut WebGLState,
 ) {
     assert!(buf.is_null());
-    let buf = unsafe { &*buf };
+    let buf = unsafe { std::slice::from_raw_parts(buf, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d_offset(
         target,
@@ -9133,7 +9171,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_offset(
         depth,
         format,
         type_,
-        buf.get_buffer(),
+        buf,
         offset,
         state.get_inner_mut(),
     )
@@ -9142,22 +9180,18 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_offset(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_transform_feedback_varyings(
     program: u32,
-    varyings: *const StringRefBuffer,
+    varyings: *const *const c_char,
+    size: usize,
     buffer_mode: u32,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(varyings.is_null());
-    let varyings = unsafe { &*varyings };
     let state = unsafe { &mut *state };
-    let varyings: Vec<String> = varyings
-        .get_buffer()
-        .iter()
-        .map(|i| i.to_string())
-        .collect();
-    canvas_webgl::webgl2::canvas_native_webgl2_transform_feedback_varyings(
+    canvas_webgl::webgl2::canvas_native_webgl2_transform_feedback_varyings_raw(
         program,
-        varyings.as_slice(),
+        varyings,
+        size,
         buffer_mode,
         state.get_inner_mut(),
     )
@@ -9172,18 +9206,15 @@ pub extern "C" fn canvas_native_webgl2_uniform1ui(location: i32, v0: u32, state:
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform1uiv(
     location: i32,
-    data: *const U32Buffer,
+    data: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform1uiv(
-        location,
-        data.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform1uiv(location, data, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -9200,18 +9231,15 @@ pub extern "C" fn canvas_native_webgl2_uniform2ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform2uiv(
     location: i32,
-    data: *const U32Buffer,
+    data: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform2uiv(
-        location,
-        data.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform2uiv(location, data, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -9235,18 +9263,15 @@ pub extern "C" fn canvas_native_webgl2_uniform3ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform3uiv(
     location: i32,
-    data: *const U32Buffer,
+    data: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform3uiv(
-        location,
-        data.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform3uiv(location, data, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -9272,18 +9297,15 @@ pub extern "C" fn canvas_native_webgl2_uniform4ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform4uiv(
     location: i32,
-    data: *const U32Buffer,
+    data: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
-    canvas_webgl::webgl2::canvas_native_webgl2_uniform4uiv(
-        location,
-        data.get_buffer(),
-        state.get_inner_mut(),
-    )
+    canvas_webgl::webgl2::canvas_native_webgl2_uniform4uiv(location, data, state.get_inner_mut())
 }
 
 #[no_mangle]
@@ -9306,16 +9328,17 @@ pub extern "C" fn canvas_native_webgl2_uniform_block_binding(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix2x3fv(
     location: i32,
     transpose: bool,
-    data: *const F32Buffer,
+    data: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix2x3fv(
         location,
         transpose,
-        data.get_buffer(),
+        data,
         state.get_inner_mut(),
     )
 }
@@ -9324,16 +9347,17 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix2x3fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix2x4fv(
     location: i32,
     transpose: bool,
-    data: *const F32Buffer,
+    data: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix2x4fv(
         location,
         transpose,
-        data.get_buffer(),
+        data,
         state.get_inner_mut(),
     )
 }
@@ -9342,16 +9366,17 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix2x4fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix3x2fv(
     location: i32,
     transpose: bool,
-    data: *const F32Buffer,
+    data: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix3x2fv(
         location,
         transpose,
-        data.get_buffer(),
+        data,
         state.get_inner_mut(),
     )
 }
@@ -9360,16 +9385,17 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix3x2fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix3x4fv(
     location: i32,
     transpose: bool,
-    data: *const F32Buffer,
+    data: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix3x4fv(
         location,
         transpose,
-        data.get_buffer(),
+        data,
         state.get_inner_mut(),
     )
 }
@@ -9378,16 +9404,17 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix3x4fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix4x2fv(
     location: i32,
     transpose: bool,
-    data: *const F32Buffer,
+    data: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix4x2fv(
         location,
         transpose,
-        data.get_buffer(),
+        data,
         state.get_inner_mut(),
     )
 }
@@ -9396,16 +9423,17 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix4x2fv(
 pub extern "C" fn canvas_native_webgl2_uniform_matrix4x3fv(
     location: i32,
     transpose: bool,
-    data: *const F32Buffer,
+    data: *const f32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(data.is_null());
-    let data = unsafe { &*data };
+    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_uniform_matrix4x3fv(
         location,
         transpose,
-        data.get_buffer(),
+        data,
         state.get_inner_mut(),
     )
 }
@@ -9447,16 +9475,17 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4i(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4iv(
     index: u32,
-    value: *const I32Buffer,
+    value: *const i32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_vertex_attrib_i4iv(
         index,
-        value.get_buffer(),
+        value,
         state.get_inner_mut(),
     )
 }
@@ -9484,16 +9513,17 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4ui(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4uiv(
     index: u32,
-    value: *const U32Buffer,
+    value: *const u32,
+    size: usize,
     state: *mut WebGLState,
 ) {
     assert!(state.is_null());
     assert!(value.is_null());
-    let value = unsafe { &*value };
+    let value = unsafe { std::slice::from_raw_parts(value, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl2::canvas_native_webgl2_vertex_attrib_i4uiv(
         index,
-        value.get_buffer(),
+        value,
         state.get_inner_mut(),
     )
 }
@@ -9508,102 +9538,6 @@ pub extern "C" fn canvas_native_image_asset_destroy(asset: *mut ImageAsset) {
         return;
     }
     let _ = unsafe { Box::from_raw(asset) };
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u8_buffer_mut_create_with_reference(
-    value: *mut u8,
-    size: usize,
-) -> *mut U8BufferMut {
-    Box::into_raw(Box::new(U8BufferMut::new_with_reference(value, size)))
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u8_buffer_mut_destroy(value: *mut U8BufferMut) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Box::from_raw(value) };
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u8_buffer_create_with_reference(
-    value: *const u8,
-    size: usize,
-) -> *mut U8Buffer {
-    Box::into_raw(Box::new(U8Buffer::new_with_reference(value, size)))
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u8_buffer_destroy(value: *mut U8Buffer) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Box::from_raw(value) };
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u16_buffer_create_with_reference(
-    value: *const u16,
-    size: usize,
-) -> *mut U16Buffer {
-    Box::into_raw(Box::new(U16Buffer::new_with_reference(value, size)))
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u16_buffer_destroy(value: *mut U16Buffer) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Box::from_raw(value) };
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_f32_buffer_create_with_reference(
-    value: *const f32,
-    size: usize,
-) -> *mut F32Buffer {
-    Box::into_raw(Box::new(F32Buffer::new_with_reference(value, size)))
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_f32_buffer_destroy(value: *mut F32Buffer) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Box::from_raw(value) };
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u32_buffer_create_with_reference(
-    value: *const u32,
-    size: usize,
-) -> *mut U32Buffer {
-    Box::into_raw(Box::new(U32Buffer::new_with_reference(value, size)))
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u32_buffer_destroy(value: *mut U32Buffer) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Box::from_raw(value) };
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_i32_buffer_create_with_reference(
-    value: *const i32,
-    size: usize,
-) -> *mut I32Buffer {
-    Box::into_raw(Box::new(I32Buffer::new_with_reference(value, size)))
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_i32_buffer_destroy(value: *mut I32Buffer) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Box::from_raw(value) };
 }
 
 #[no_mangle]

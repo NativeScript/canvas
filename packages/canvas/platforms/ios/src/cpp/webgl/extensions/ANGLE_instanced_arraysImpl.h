@@ -3,13 +3,9 @@
 //
 
 #pragma once
-
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 #include <vector>
 
-using namespace org::nativescript::canvas;
 
 class ANGLE_instanced_arraysImpl {
 public:

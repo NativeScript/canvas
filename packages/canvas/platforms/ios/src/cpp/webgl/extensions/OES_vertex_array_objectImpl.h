@@ -4,14 +4,10 @@
 
 #pragma once
 
-#include "canvas-cxx/src/lib.rs.h"
-#include "rust/cxx.h"
 #include "gl.h"
-#include "../../webgl2/WebGLVertexArrayObject.h"
+#include "WebGLVertexArrayObject.h"
 #include "Helpers.h"
 #include <vector>
-
-using namespace org::nativescript::canvas;
 
 class OES_vertex_array_objectImpl {
 public:

@@ -6,7 +6,6 @@
 
 #include "Common.h"
 #include "Helpers.h"
-#include "v8-fast-api-calls.h"
 #include <vector>
 
 class Path2D {

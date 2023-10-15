@@ -208,9 +208,8 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             context).ToChecked();
                     buf[i] = (float) item;
                 }
-                auto slice = canvas_native_f32_buffer_mut_create_with_reference(buf.data(), buf.size());
-    
-                canvas_native_matrix_update(matrix, slice);
+                
+                canvas_native_matrix_update(matrix, buf.data(), buf.size());
 
                 auto object = new MatrixImpl(matrix);
 
@@ -232,11 +231,10 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             context).ToChecked();
                     buf[i] = (float) item;
                 }
-                auto slice = canvas_native_f32_buffer_mut_create_with_reference(buf.data(), buf.size());
                 
-                canvas_native_matrix_update_3d(matrix, slice);
+                canvas_native_matrix_update_3d(matrix, buf.data(), buf.size());
 
-                auto object = new MatrixImpl(std::move(matrix));
+                auto object = new MatrixImpl(matrix);
 
                 auto ext = v8::External::New(isolate, object);
 
@@ -796,6 +794,6 @@ void MatrixImpl::SetM44(v8::Local<v8::String> property,
     canvas_native_matrix_set_m44(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
 }
 
-Matrix &MatrixImpl::GetMatrix() {
-    return *this->matrix_;
+Matrix* MatrixImpl::GetMatrix() {
+    return this->matrix_;
 }

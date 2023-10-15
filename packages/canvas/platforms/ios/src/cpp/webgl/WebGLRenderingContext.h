@@ -17,7 +17,7 @@
 #include "ImageBitmapImpl.h"
 #include "RafImpl.h"
 
-#include "canvas2d/CanvasRenderingContext2DImpl.h"
+#include "CanvasRenderingContext2DImpl.h"
 
 #include "WebGLBuffer.h"
 #include "WebGLFramebuffer.h"

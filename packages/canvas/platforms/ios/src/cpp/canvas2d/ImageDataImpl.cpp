@@ -8,10 +8,10 @@
 
 struct ImageDataBuffer {
 public:
-    explicit ImageDataBuffer(rust::Box<ImageData> imageData) : imageData_(std::move(imageData)) {
-        auto slice = canvas_native_image_data_get_data(*this->imageData_);
-        this->buf_ = slice.data();
-        this->size_ = slice.size();
+    explicit ImageDataBuffer(ImageData* imageData) : imageData_(imageData) {
+        this->slice_ = canvas_native_image_data_get_data(imageData_);
+        this->buf_ = canvas_native_u8_buffer_get_bytes_mut(slice_);
+        this->size_ = canvas_native_u8_buffer_get_length(slice_);
     }
 
     size_t size() const {
@@ -23,16 +23,20 @@ public:
     }
 
     ~ImageDataBuffer() {
-        this->buf_ = nullptr;
+        canvas_native_u8_buffer_destroy(slice_);
+        slice_ = nullptr;
+        canvas_native_image_data_destroy(imageData_);
+        imageData_ = nullptr;
     }
 
 private:
     uint8_t *buf_;
     size_t size_;
-    rust::Box<ImageData> imageData_;
+    ImageData* imageData_;
+    U8Buffer* slice_;
 };
 
-ImageDataImpl::ImageDataImpl(rust::Box<ImageData> imageData) : imageData_(std::move(imageData)) {}
+ImageDataImpl::ImageDataImpl(ImageData* imageData) : imageData_(imageData) {}
 
 void ImageDataImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -104,7 +108,8 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto image_data = canvas_native_context_create_image_data(
                 (int32_t) value->NumberValue(context).ToChecked(),
                 (int32_t) args[1]->NumberValue(context).ToChecked());
-        auto object = new ImageDataImpl(std::move(image_data));
+        
+        auto object = new ImageDataImpl(image_data);
 
         auto ext = v8::External::New(isolate, object);
 
@@ -120,13 +125,12 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto buffer_data = static_cast<u_int8_t *>(store->Data()) + arrayObject->ByteOffset();
         auto len = arrayObject->Length();
 
-        rust::Slice<const uint8_t> buf(buffer_data, len);
 
         auto image_data = canvas_native_context_create_image_data_with_data(
                 (int32_t) args[1]->NumberValue(context).ToChecked(),
-                (int32_t) args[2]->NumberValue(context).ToChecked(), buf);
+                (int32_t) args[2]->NumberValue(context).ToChecked(), buffer_data, len);
 
-        auto object = new ImageDataImpl(std::move(image_data));
+        auto object = new ImageDataImpl(image_data);
 
         auto ext = v8::External::New(isolate, object);
 

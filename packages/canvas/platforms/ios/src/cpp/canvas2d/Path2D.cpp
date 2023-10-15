@@ -401,15 +401,12 @@ void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
                                 context).ToChecked();
                     }
 
-                    auto buf = canvas_native_f32_buffer_create_with_reference(store.data(),
-                                                                              store.size());
                     canvas_native_path_round_rect(
                             ptr->GetPath(),
                             x, y,
                             width,
-                            height, buf);
-                    
-                    canvas_native_f32_buffer_destroy(buf);
+                            height, store.data(),
+                                                  store.size());
 
                 }
             }

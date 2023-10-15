@@ -156,7 +156,8 @@ ImageAssetImpl::GetError(v8::Local<v8::String> name,
     if (ptr != nullptr) {
         auto ret = canvas_native_image_asset_get_error(ptr->GetImageAsset());
         auto isolate = info.GetIsolate();
-        info.GetReturnValue().Set(ConvertToV8String(isolate, ret.c_str()));
+        info.GetReturnValue().Set(ConvertToV8String(isolate, ret));
+        canvas_native_string_destroy((char*)ret);
         return;
     }
     info.GetReturnValue().SetEmptyString();
@@ -253,18 +254,15 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
     
     
     std::thread thread(
-                       [jsi_callback](
-                                      const std::string &url,
-                                      ImageAsset * asset) {
-                                          
+                       [jsi_callback, asset](
+                                      const std::string &url) {
                                           auto done = canvas_native_image_asset_load_from_url(asset, url.c_str());
                                           
                                           write(jsi_callback->fd_[1],
                                                 &done,
                                                 sizeof(bool));
                                           
-                                      }, std::move(url),
-                       std::move(asset));
+                                      }, std::move(url));
     
     thread.detach();
     
@@ -281,9 +279,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
     auto task = [&jsi_callback, &current_queue, &queue, &asset, &url]() {
         
         auto done = canvas_native_image_asset_load_from_url(asset, url.c_str());
-        
-        delete asset;
-        
+        canvas_native_image_asset_destroy(asset);
         auto main_task = [&jsi_callback, &current_queue, &queue, &url, &done]() {
             
             
@@ -393,9 +389,8 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     
     
     std::thread thread(
-                       [jsi_callback](
-                                      const std::string &path,
-                                      ImageAsset * asset) {
+                       [jsi_callback, asset](
+                                      const std::string &path) {
                                           
                                           auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
                                           
@@ -403,8 +398,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
                                                 &done,
                                                 sizeof(bool));
                                           
-                                      }, std::move(path),
-                       std::move(asset));
+                                      }, std::move(path));
     
     thread.detach();
     
@@ -421,12 +415,11 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto task = [&jsi_callback, &current_queue, &queue, &asset, &path]() {
         
         auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
+    
+        canvas_native_image_asset_destroy(asset);
         
-        delete asset;
+        auto main_task = [&jsi_callback, &current_queue, &queue, &done]() {
         
-        auto main_task = [&jsi_callback, &current_queue, &queue, &url, &done]() {
-            
-            
             v8::Isolate *isolate = jsi_callback->isolate_;
             v8::Locker locker(isolate);
             v8::Isolate::Scope isolate_scope(isolate);
@@ -472,9 +465,8 @@ void ImageAssetImpl::FromBytesSync(const v8::FunctionCallbackInfo<v8::Value> &ar
         
         uintptr_t size = (uintptr_t)buf->ByteLength();
         auto data = (uint8_t *) buf->GetBackingStore()->Data();
-        auto buf = canvas_native_u8_buffer_create_with_reference(data, size);
         
-        auto done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), buf);
+        auto done = canvas_native_image_asset_load_from_raw(ptr->GetImageAsset(), data, size);
         
         args.GetReturnValue().Set(done);
     }
@@ -497,12 +489,11 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     auto bytes = args[0].As<v8::ArrayBuffer>();
     
     auto size = bytes->ByteLength();
+    
     auto data = (uint8_t *) bytes->GetBackingStore()->Data();
-    auto buf = canvas_native_u8_buffer_create_with_reference(data, size);
     
-    auto asset = canvas_native_image_asset_shared_clone(
-                                                        ptr->GetImageAsset());
-    
+    auto asset = canvas_native_image_asset_shared_clone(ptr->GetImageAsset());
+        
     auto callback = args[1].As<v8::Function>();
     
     auto jsi_callback = new JSICallback(isolate, callback);
@@ -543,18 +534,15 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     
     
     std::thread thread(
-                       [jsi_callback, &buf](ImageAsset * asset) {
-                           
-                           
-                           auto done = canvas_native_image_asset_load_from_raw(asset, buf);
-                           
-                           canvas_native_u8_buffer_destroy(buf);
-                           
+                       [jsi_callback, asset, data, size]() {
+            
+                           auto done = canvas_native_image_asset_load_from_raw(asset, data, size);
+                    
                            write(jsi_callback->fd_[1],
                                  &done,
                                  sizeof(bool));
                            
-                       }, std::move(asset));
+                       });
     
     thread.detach();
     
@@ -570,15 +558,13 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     
     auto queue = new NSOperationQueueWrapper(false);
     
-    auto task = [&jsi_callback, &current_queue, &queue, &asset, &path, &buf]() {
+    auto task = [jsi_callback, current_queue, queue, asset, data, size]() {
         
-        auto done = canvas_native_image_asset_load_from_raw(asset, buf);
+        auto done = canvas_native_image_asset_load_from_raw(asset, data, size);
+    
+        canvas_native_image_asset_destroy(asset);
         
-        canvas_native_u8_buffer_destroy(buf);
-        
-        delete asset;
-        
-        auto main_task = [&jsi_callback, &current_queue, &queue, &url, &done]() {
+        auto main_task = [&jsi_callback, &current_queue, &queue, &done]() {
             
             
             v8::Isolate *isolate = jsi_callback->isolate_;
@@ -620,9 +606,7 @@ void ImageAssetImpl::SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto context = isolate->GetCurrentContext();
     auto path = ConvertFromV8String(isolate, args[0]);
     auto format = (uint32_t) args[1]->NumberValue(context).ToChecked();
-    auto done = canvas_native_image_asset_save_path(
-                                                    ptr->GetImageAsset(),
-                                                    rust::Str(path.c_str()), format);
+    auto done = canvas_native_image_asset_save_path(ptr->GetImageAsset(), path.c_str(), format);
     
     args.GetReturnValue().Set(done);
 }
@@ -687,13 +671,10 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
     
     
     std::thread thread(
-                       [jsi_callback](
-                                      const std::string &path,
-                                      std::uint32_t format,
-                                      ImageAsset * asset) {
+                       [jsi_callback, asset, format](
+                                      const std::string &path) {
                                           
-                                          auto done = canvas_native_image_asset_save_path(
-                                                                                          *asset,
+                                          auto done = canvas_native_image_asset_save_path(asset,
                                                                                           path.c_str(),
                                                                                           format);
                                           
@@ -702,8 +683,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
                                                 &done,
                                                 sizeof(bool));
                                           
-                                      }, std::move(path), format,
-                       std::move(asset));
+                                      }, std::move(path), format);
     
     
     thread.detach();
@@ -719,14 +699,11 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
     
     auto task = [&jsi_callback, &current_queue, &queue, &asset, &path, &format]() {
         
-        auto done = canvas_native_image_asset_save_path(
-                                                        asset,
-                                                        path.c_str()
-                                                        format);
+        auto done = canvas_native_image_asset_save_path(asset, path.c_str(), format);
     
-        delete asset;
+        canvas_native_image_asset_destroy(asset);
         
-        auto main_task = [&jsi_callback, &current_queue, &queue, &url, &done]() {
+        auto main_task = [&jsi_callback, &current_queue, &queue, &done]() {
             
             
             v8::Isolate *isolate = jsi_callback->isolate_;
@@ -758,11 +735,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
     
 }
 
-ImageAsset &ImageAssetImpl::GetImageAsset() {
-    return *this->asset_;
-}
-
-ImageAsset &ImageAssetImpl::GetImageAsset(): const {
-    return *this->asset_;
+ImageAsset *ImageAssetImpl::GetImageAsset() {
+    return this->asset_;
 }
 

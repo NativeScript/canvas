@@ -214,26 +214,27 @@ inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8:
 }
 
 
-template<typename T>
-inline static rust::Slice<T>
-GetArrayBufferData(v8::Local<v8::ArrayBuffer> &array) {
-    auto buf = array->GetBackingStore()->Data();
-    auto size = array->ByteLength();
+//template<typename T>
+//inline static rust::Slice<T>
+//GetArrayBufferData(v8::Local<v8::ArrayBuffer> &array) {
+//    auto buf = array->GetBackingStore()->Data();
+//    auto size = array->ByteLength();
+//
+//    rust::Slice<T> slice(reinterpret_cast<T *>(buf), size);
+//    return std::move(slice);
+//}
 
-    rust::Slice<T> slice(reinterpret_cast<T *>(buf), size);
-    return std::move(slice);
-}
 
-template<typename T>
-inline static rust::Slice<T>
-GetTypedArrayData(v8::Local<v8::TypedArray> &array) {
-    auto buf = array->Buffer();
-    auto offset = array->ByteOffset();
-    auto size = buf->ByteLength();
-    rust::Slice<T> slice(reinterpret_cast<T *>(buf->GetBackingStore()->Data()) + offset,
-                         (size / sizeof(T)));
-    return std::move(slice);
-}
+//template<typename T>
+//inline static rust::Slice<T>
+//GetTypedArrayData(v8::Local<v8::TypedArray> &array) {
+//    auto buf = array->Buffer();
+//    auto offset = array->ByteOffset();
+//    auto size = buf->ByteLength();
+//    rust::Slice<T> slice(reinterpret_cast<T *>(buf->GetBackingStore()->Data()) + offset,
+//                         (size / sizeof(T)));
+//    return std::move(slice);
+//}
 
 
 

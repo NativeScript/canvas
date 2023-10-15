@@ -3,7 +3,6 @@
 //
 
 #include "CanvasPattern.h"
-#include "canvas-cxx/src/lib.rs.h"
 #include "Helpers.h"
 #include "Caches.h"
 

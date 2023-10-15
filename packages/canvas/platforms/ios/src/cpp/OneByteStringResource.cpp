@@ -9,7 +9,7 @@ OneByteStringResource::OneByteStringResource(char* string) : string_(string),len
 }
 
 OneByteStringResource::~OneByteStringResource() {
-    canvas_native_string_destroy(this->string_);
+    canvas_native_string_destroy((char*)this->string_);
 }
 
 const char *OneByteStringResource::data() const {

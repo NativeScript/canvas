@@ -52,7 +52,8 @@ WebGLActiveInfoImpl::GetName(v8::Local<v8::String> name,
     if (ptr != nullptr) {
         auto info_name = canvas_native_webgl_active_info_get_name(ptr->GetWebGLActiveInfo());
         info.GetReturnValue().Set(
-                ConvertToV8String(isolate, std::string(info_name.data(), info_name.size())));
+                ConvertToV8String(isolate, info_name));
+        canvas_native_string_destroy((char*)info_name);
         return;
     }
     info.GetReturnValue().SetEmptyString();

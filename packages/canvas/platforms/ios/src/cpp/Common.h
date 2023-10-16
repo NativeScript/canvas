@@ -7,7 +7,7 @@
 #include <string.h>
 
 #ifdef __APPLE__
-#include <NativeScript/v8.h>
+#include <NativeScript/include/v8.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -77,7 +77,7 @@ void TextEncoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    auto txtEncoder = new TextEncoderImpl(std::move(encoder));
+    auto txtEncoder = new TextEncoderImpl(encoder);
 
     auto ext = v8::External::New(isolate, txtEncoder);
 
@@ -113,10 +113,9 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto text = args[0];
 
     auto encoded = canvas_native_text_encoder_encode(ptr->GetTextEncoder(), ConvertFromV8String(isolate, text).c_str());
-    
-    
+
     auto data = canvas_native_u8_buffer_get_bytes_mut(encoded);
-    
+
     auto length = canvas_native_u8_buffer_get_length(encoded);
 
     auto store = v8::ArrayBuffer::NewBackingStore(data, length,
@@ -127,10 +126,10 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
                                                       }
                                                   },
                                                   encoded);
+
     auto buf = v8::ArrayBuffer::New(isolate, std::move(store));
 
     auto ret = v8::Uint8ClampedArray::New(buf, 0, length);
-
 
     args.GetReturnValue().Set(ret);
 }

@@ -27,7 +27,6 @@
 class CanvasRenderingContext2DImpl {
 public:
     CanvasRenderingContext2DImpl(CanvasRenderingContext2D* context);
-
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
     static CanvasRenderingContext2DImpl *GetPointer(const v8::Local<v8::Object> &object);

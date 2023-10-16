@@ -5,7 +5,7 @@ project(canvasnativev8)
 
 set(CMAKE_CXX_STANDARD 17)
 
-option(ENABLE_LTO "Enable cross language linking time optimization" ON)
+#option(ENABLE_LTO "Enable cross language linking time optimization" ON)
 #if (ENABLE_LTO)
 #    include(CheckIPOSupported)
 #    check_ipo_supported(RESULT supported OUTPUT error)
@@ -69,27 +69,39 @@ endif ()
 
 set (CPP_DIR ../../../platforms/ios/src/cpp)
 
+add_definitions(-DTARGET_OS_ANDROID)
+
 include_directories(
         canvasnativev8
 
         PUBLIC
 
+        ${PROJECT_SOURCE_DIR}/src/main/cpp
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
         ../../../platforms/ios/src/cpp
+        ../../../platforms/ios/src/cpp/canvas2d
+        ../../../platforms/ios/src/cpp/webgl
+        ../../../platforms/ios/src/cpp/webgl/extensions
+        ../../../platforms/ios/src/cpp/webgl2
 )
 
 set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
 
-# Add a custom command that builds the rust crate and generates C++ bridge code
-add_custom_command(
-        OUTPUT "" ${CANVAS_ANDROID_LIB}
-        # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
-        USES_TERMINAL
-)
+set(CANVAS_C ${PROJECT_NATIVE_ROOT_DIR}/canvas-c)
+set(CANVAS_ANDROID ${PROJECT_NATIVE_ROOT_DIR}/canvas-android)
+set(CANVAS_INCLUDE ${PROJECT_SOURCE_DIR}/src/main/cpp/include)
+message("CANVAS_ANDROID_LIB " ${CANVAS_ANDROID_LIB})
+
+#add_custom_command(
+#        OUTPUT ${CANVAS_INCLUDE}/canvas_android.h
+#        COMMAND cbindgen --config ${CANVAS_ANDROID}/cbindgen.toml  ${CANVAS_ANDROID}/src/lib.rs -l c > ${CANVAS_INCLUDE}/canvas_android.h
+#        USES_TERMINAL
+#)
+
+
+#add_library( canvasnative STATIC IMPORTED )
+#set_target_properties(canvasnative PROPERTIES IMPORTED_LOCATION ${CANVAS_ANDROID_LIB} )
 
 
 add_library(
@@ -97,7 +109,7 @@ add_library(
 
         SHARED
 
-        ${GL3STUB_SRC}
+          ${GL3STUB_SRC}
 
          ${CPP_DIR}/Caches.cpp
 
@@ -148,6 +160,24 @@ add_library(
          ${CPP_DIR}/JSIRuntime.cpp
 )
 
+#add_custom_command(
+#        TARGET canvasnativev8 PRE_BUILD
+#        # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+#        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+#        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+#        #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
+#        DEPENDS ${CANVAS_ANDROID_LIB}
+#       # USES_TERMINAL
+#)
+
+
+
+#add_custom_command(
+#        TARGET canvasnativev8 PRE_BUILD
+#        COMMAND cbindgen --config ${CANVAS_C}/cbindgen.toml  ${CANVAS_C}/src/lib.rs -l c > ${CANVAS_INCLUDE}/canvas_native.h
+#        DEPENDS ${CANVAS_INCLUDE}/canvas_native.h
+#        #USES_TERMINAL
+#)
 
 set_target_properties(
         canvasnativev8 PROPERTIES
@@ -175,6 +205,7 @@ if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND
             #${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
             ${CANVAS_ANDROID_LIB}
             android
+#            ${canvasnative}
             )
 
 else ()
@@ -191,10 +222,10 @@ else ()
 endif ()
 
 
-#add_custom_command(TARGET canvasnativev8
-#        POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy
-#        ${CANVAS_ANDROID_LIB}
-#        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasandroid.so
-#        )
+add_custom_command(TARGET canvasnativev8
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CANVAS_ANDROID_LIB}
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasandroid.so
+        )
 

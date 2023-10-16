@@ -15,7 +15,7 @@ CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
                                                                auto raf = canvas_native_raf_create(raf_callback_ptr, [](intptr_t callback, int64_t ts){
                                                                    OnRafCallbackOnFrame(callback, ts);
                                                                });
-                                                               
+
     this->SetRaf(std::make_shared<RafImpl>(raf_callback, raf_callback_ptr, raf));
 
     auto _raf = this->GetRaf();
@@ -210,7 +210,7 @@ void CanvasRenderingContext2DImpl::DrawPoint(const v8::FunctionCallbackInfo<v8::
 
     auto x = (float) args[0]->NumberValue(context).ToChecked();
     auto y = (float) args[1]->NumberValue(context).ToChecked();
-    
+
     canvas_native_context_draw_point(
             ptr->GetContext(), x, y);
     ptr->UpdateInvalidateState();
@@ -262,12 +262,12 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
 
             next = i + 2;
         }
-       
+
         canvas_native_context_draw_points(
                 ptr->GetContext(), pointMode,
                                           store.data(),store.size());
 
-        
+
         ptr->UpdateInvalidateState();
     }
 }
@@ -366,7 +366,7 @@ void CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
     auto font = canvas_native_context_get_font(ptr->GetContext());
     info.GetReturnValue().Set(ConvertToV8String(isolate, font));
-    
+
     canvas_native_string_destroy((char*) font);
 }
 
@@ -440,9 +440,9 @@ void CanvasRenderingContext2DImpl::GetImageSmoothingQuality(v8::Local<v8::String
     auto quality = canvas_native_context_get_image_smoothing_quality(ptr->GetContext());
     info.GetReturnValue().Set(
             ConvertToV8String(isolate, quality));
-    
+
     canvas_native_string_destroy((char*)quality);
-                              
+
 }
 
 void CanvasRenderingContext2DImpl::SetImageSmoothingQuality(v8::Local<v8::String> property,
@@ -492,7 +492,7 @@ void CanvasRenderingContext2DImpl::GetLineJoin(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
     auto join = canvas_native_context_get_line_join(ptr->GetContext());
     info.GetReturnValue().Set(ConvertToV8String(isolate, join));
-    
+
     canvas_native_string_destroy((char*)join);
 }
 
@@ -518,7 +518,7 @@ void CanvasRenderingContext2DImpl::GetLineCap(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
     auto cap = canvas_native_context_get_line_cap(ptr->GetContext());
     info.GetReturnValue().Set(ConvertToV8String(isolate, cap));
-    
+
     canvas_native_string_destroy((char*)cap);
 }
 
@@ -697,7 +697,7 @@ void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::Str
     auto operation = canvas_native_context_get_global_composition(ptr->GetContext());
     info.GetReturnValue().Set(
             ConvertToV8String(info.GetIsolate(), operation));
-    
+
     canvas_native_string_destroy((char*) operation);
 }
 
@@ -729,7 +729,7 @@ void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> property,
         case PaintStyleType::PaintStyleTypeColor: {
             auto color = canvas_native_paint_style_get_current_fill_color_string(
                     ptr->GetContext());
-            
+
 
             auto value = new OneByteStringResource((char*)color);
             auto ret = v8::String::NewExternalOneByte(isolate, value);
@@ -1215,6 +1215,25 @@ CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::V
                 }
                 return;
             }
+            case NativeType::ImageBitmap: {
+                auto image_bitmap = ImageBitmapImpl::GetPointer(value.As<v8::Object>());
+                if (image_bitmap != nullptr) {
+                    auto rep = ConvertFromV8String(isolate, args[1]);
+                    auto pattern = canvas_native_context_create_pattern_asset(
+                            ptr->GetContext(),
+                            image_bitmap->GetImageAsset(), rep.c_str());
+                    auto style_type = canvas_native_context_get_style_type(pattern);
+                    if (style_type ==
+                        PaintStyleType::PaintStyleTypeNone) {
+                        args.GetReturnValue().SetUndefined();
+                        canvas_native_paint_style_destroy(pattern);
+                    } else {
+                        auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(pattern));
+                        args.GetReturnValue().Set(data);
+                    }
+                }
+                return;
+            }
             case NativeType::CanvasRenderingContext2D: {
                 auto canvas_2d = CanvasRenderingContext2DImpl::GetPointer(
                         value.As<v8::Object>());
@@ -1250,8 +1269,7 @@ CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::V
                         return;
                     } else {
                         auto ret = CanvasPattern::NewInstance(isolate, new CanvasPattern(
-                                std::move(
-                                        pattern)));
+                                pattern));
                         args.GetReturnValue().Set(ret);
                         return;
                     }
@@ -1292,7 +1310,7 @@ CanvasRenderingContext2DImpl::CreateLinearGradient(
                 y1);
 
         auto data = CanvasGradient::NewInstance(isolate, new CanvasGradient(
-                std::move(gradient)));
+                gradient));
 
         args.GetReturnValue().Set(data);
 
@@ -2005,7 +2023,7 @@ CanvasRenderingContext2DImpl::RoundRect(const v8::FunctionCallbackInfo<v8::Value
                                 i).ToLocalChecked()->NumberValue(context).ToChecked();
                     }
 
-                
+
                     canvas_native_context_round_rect(
                             ptr->GetContext(),
                             x, y,
@@ -2142,7 +2160,7 @@ CanvasRenderingContext2DImpl::SetLineDash(const v8::FunctionCallbackInfo<v8::Val
                 data.push_back(
                         static_cast<float>(item));
             }
-            
+
             canvas_native_context_set_line_dash(
                     ptr->GetContext(), data.data(), data.size());
         }
@@ -2333,6 +2351,9 @@ CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
     if (raf != nullptr) {
         canvas_native_raf_stop(raf->GetRaf());
     }
+
+    canvas_native_context_destroy(this->GetContext());
+    this->context_ = nullptr;
 }
 
 void CanvasRenderingContext2DImpl::UpdateInvalidateState() {

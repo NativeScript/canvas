@@ -9,12 +9,14 @@
 #include <vector>
 #include "Helpers.h"
 #include "Common.h"
+#ifdef __APPLE__
 #include "NSOperationQueueWrapper.h"
+#endif
 
 class ImageAssetImpl{
 public:
     ImageAssetImpl(ImageAsset* asset);
-    
+
     ~ImageAssetImpl();
 
     ImageAsset* GetImageAsset();

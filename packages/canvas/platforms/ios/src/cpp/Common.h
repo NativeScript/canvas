@@ -23,6 +23,7 @@ extern "C" {
 
 #ifdef __ANDROID__
 #include "include/v8.h"
+#include "include/canvas_android.h"
 #include <android/log.h>
 #include <thread>
 #endif

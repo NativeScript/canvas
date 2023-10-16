@@ -7,6 +7,7 @@
 #include "Common.h"
 #ifdef __ANDROID__
 #include <android/looper.h>
+#include <cassert>
 #endif
 #include <unistd.h>
 #include <fcntl.h>

@@ -543,7 +543,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
-		//fillRule(this.canvas);
+		fillRule(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -612,7 +612,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
-		touchParticles(this.canvas);
+		//touchParticles(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');
@@ -1747,21 +1747,21 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-		//await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
+		await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
 		//	 sun.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png');
 		//	 moon.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png');
 		//	 earth.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
 
-		sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png')
-		.then(done =>{
-			console.log('sun', done);
-			return moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png')
-		}).then(done =>{
-			console.log('moon', done);
-			return earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
-		}).then(done =>{
-			console.log('earth', done);
-		})
+		// sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png')
+		// .then(done =>{
+		// 	console.log('sun', done);
+		// 	return moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png')
+		// }).then(done =>{
+		// 	console.log('moon', done);
+		// 	return earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
+		// }).then(done =>{
+		// 	console.log('earth', done);
+		// })
 
 		//console.log(sun.width, moon.width, earth.width);
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;

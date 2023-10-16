@@ -1,10 +1,10 @@
-import { Helpers } from '@nativescript/canvas/helpers';
+/*import { Helpers } from '@nativescript/canvas/helpers';
 Helpers.initialize();
 require('@nativescript/canvas-polyfill');
+*/
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
 declare const jp, GDPerformanceMonitor;
 let monitor;
-import { Canvas } from '@nativescript/canvas';
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
 
 Application.on('discardedError', (args) => {
@@ -43,6 +43,11 @@ JSI
 // eval(call);
 
 // : CONSOLE TIME: data: 4.250ms image data
+
+Application.on('uncaughtError', (args) => {
+	console.log('uncaughtError: error', args.error);
+	console.log('uncaughtError: platform error', args.android ?? args.ios);
+});
 Application.on('launch', (args) => {
 	require('@nativescript/canvas-polyfill');
 	if (global.isAndroid) {

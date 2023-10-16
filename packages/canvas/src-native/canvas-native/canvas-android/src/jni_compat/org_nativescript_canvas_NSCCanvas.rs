@@ -6,7 +6,6 @@ use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
-use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
 use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
 
@@ -156,7 +155,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DCont
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let ctx_2d = canvas_cxx::CanvasRenderingContext2D::new(
+    let ctx_2d = canvas_c::CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -213,7 +212,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurf
     if context == 0 {
         return;
     }
-    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
     context.make_current();
@@ -236,7 +235,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurf
     if context == 0 {
         return;
     }
-    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
     context.make_current();
@@ -358,7 +357,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
         return;
     }
 
-    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
     context.make_current();
@@ -381,7 +380,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPat
         return;
     }
 
-    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
     context.make_current();
@@ -474,7 +473,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBi
                         AlphaType::Premul,
                         None,
                     );
-                    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+                    let context = context as *mut canvas_c::CanvasRenderingContext2D;
                     let context = unsafe { &mut *context };
                     let mut context = context.get_context_mut();
 

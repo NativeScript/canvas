@@ -3,11 +3,13 @@ language = "C"
 namespace = "ffi"
 include_guard = "CANVAS_C_H"
 
+
 [parse.expand]
 features = ["2d", "webgl"]
 
 [export]
 include = ["GLConstants", "InvalidateState"]
+exclude = ["AChoreographer", "AChoreographer_frameCallback", "AChoreographer_frameCallback64", "AChoreographer_getInstance", "AChoreographer_postFrameCallback", "AChoreographer_postFrameCallbackDelayed", "AChoreographer_postFrameCallback64", "AChoreographer_postFrameCallbackDelayed64"]
 
 [defines]
 "target_os = ios" = "TARGET_OS_IOS"

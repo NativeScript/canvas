@@ -4,12 +4,14 @@
 
 #include "OneByteStringResource.h"
 
-OneByteStringResource::OneByteStringResource(char* string) : string_(string),length_(strlen(string)) {
+OneByteStringResource::OneByteStringResource(char *string) : string_(string),
+                                                             length_(strlen(string)) {
 
 }
 
 OneByteStringResource::~OneByteStringResource() {
-    canvas_native_string_destroy((char*)this->string_);
+    canvas_native_string_destroy((char *) this->string_);
+    this->string_ = nullptr;
 }
 
 const char *OneByteStringResource::data() const {

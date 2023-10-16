@@ -2,6 +2,7 @@
 // Created by Osei Fortune on 03/04/2022.
 //
 
+#include <array>
 #include "MatrixImpl.h"
 #include "Caches.h"
 
@@ -208,7 +209,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             context).ToChecked();
                     buf[i] = (float) item;
                 }
-                
+
                 canvas_native_matrix_update(matrix, buf.data(), buf.size());
 
                 auto object = new MatrixImpl(matrix);
@@ -231,7 +232,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             context).ToChecked();
                     buf[i] = (float) item;
                 }
-                
+
                 canvas_native_matrix_update_3d(matrix, buf.data(), buf.size());
 
                 auto object = new MatrixImpl(matrix);

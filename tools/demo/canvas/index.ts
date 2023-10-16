@@ -1,6 +1,5 @@
 import { DemoSharedBase } from '../utils';
 import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders, path as filePath } from '@nativescript/core';
-import Chart from 'chart.js';
 
 let Matter;
 import { Canvas } from '@nativescript/canvas';
@@ -52,19 +51,26 @@ import {
 } from './canvas2d';
 
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
-import Vex from 'vexflow';
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
 import { issue54 } from './issues';
+var Chart;
+var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
 	private svg: Svg.Svg;
 	private svg2: Svg.Svg;
 	private svg3: Svg.Svg;
 	private svg4: Svg.Svg;
+
+	constructor() {
+		super();
+		Chart = require('chart.js');
+		Vex = require('vexflow');
+	}
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
@@ -504,7 +510,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	// Unmoved square
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
-		filterBlur(this.canvas);
+		//filterBlur(this.canvas);
 		//handleVideo(this.canvas);
 		// const worker = new CanvasWorker();
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
@@ -606,7 +612,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
-		//touchParticles(this.canvas);
+		touchParticles(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');
@@ -1741,21 +1747,21 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-		await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
+		//await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
 		//	 sun.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png');
 		//	 moon.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png');
 		//	 earth.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
 
-		// sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png')
-		// .then(done =>{
-		// 	console.log('sun', done);
-		// 	return moon.loadFromUrl('https://mdn.mozillademos.org/files/1443/Canvas_moon.png')
-		// }).then(done =>{
-		// 	console.log('moon', done);
-		// 	return earth.loadFromUrl('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
-		// }).then(done =>{
-		// 	console.log('earth', done);
-		// })
+		sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png')
+		.then(done =>{
+			console.log('sun', done);
+			return moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png')
+		}).then(done =>{
+			console.log('moon', done);
+			return earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
+		}).then(done =>{
+			console.log('earth', done);
+		})
 
 		//console.log(sun.width, moon.width, earth.width);
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;

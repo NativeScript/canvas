@@ -533,6 +533,7 @@
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=x86_64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
+				KEEP_PRIVATE_EXTERNS = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -575,6 +576,8 @@
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				REEXPORTED_LIBRARY_NAMES = "";
+				SEPARATE_SYMBOL_EDIT = NO;
 				SKIP_INSTALL = YES;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_SWIFT_SYMBOLS = YES;
@@ -616,6 +619,7 @@
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=arm64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*][arch=x86_64]" = 11.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]" = 14.2;
+				KEEP_PRIVATE_EXTERNS = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -657,6 +661,8 @@
 				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.triniwiz.CanvasNative;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				REEXPORTED_LIBRARY_NAMES = "";
+				SEPARATE_SYMBOL_EDIT = NO;
 				SKIP_INSTALL = YES;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_SWIFT_SYMBOLS = YES;

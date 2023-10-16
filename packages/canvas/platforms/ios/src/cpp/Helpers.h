@@ -19,8 +19,8 @@
 
 
 
-const char *LOG_TAG = "JS";
-int m_maxLogcatObjectSize = 4096;
+static const char *LOG_TAG = "JS";
+static int m_maxLogcatObjectSize = 4096;
 
 #ifdef __ANDROID__
 static void sendToADBLogcat(const std::string &message, android_LogPriority logPriority) {
@@ -238,7 +238,7 @@ inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8:
 
 
 
-void SetFastMethod(v8::Isolate* isolate,
+static void SetFastMethod(v8::Isolate* isolate,
                    v8::Local<v8::Template> that,
                    const char* name,
                    v8::FunctionCallback slow_callback,
@@ -283,7 +283,7 @@ static void SetFastMethod(v8::Local<v8::Context> context,
     that->Set(context, name_string, function).Check();
 }
 
-void SetFastMethodNoSideEffect(v8::Local<v8::Context> context,
+static void SetFastMethodNoSideEffect(v8::Local<v8::Context> context,
                                v8::Local<v8::Object> that,
                                const char* name,
                                v8::FunctionCallback slow_callback,
@@ -306,7 +306,7 @@ void SetFastMethodNoSideEffect(v8::Local<v8::Context> context,
             v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
     that->Set(context, name_string, function).Check();
 }
-void SetFastMethodNoSideEffect(v8::Isolate* isolate,
+static void SetFastMethodNoSideEffect(v8::Isolate* isolate,
                                v8::Local<v8::Template> that,
                                const char* name,
                                v8::FunctionCallback slow_callback,

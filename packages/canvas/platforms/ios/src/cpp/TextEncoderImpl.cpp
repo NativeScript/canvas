@@ -114,6 +114,7 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto encoded = canvas_native_text_encoder_encode(ptr->GetTextEncoder(), ConvertFromV8String(isolate, text).c_str());
     
+    
     auto data = canvas_native_u8_buffer_get_bytes_mut(encoded);
     
     auto length = canvas_native_u8_buffer_get_length(encoded);

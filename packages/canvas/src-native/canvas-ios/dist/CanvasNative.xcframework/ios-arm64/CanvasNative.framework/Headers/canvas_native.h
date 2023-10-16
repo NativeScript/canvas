@@ -1056,7 +1056,7 @@ struct ImageData *canvas_native_image_data_get_shared_instance(struct ImageData 
 
 struct ImageAsset *canvas_native_image_asset_create(void);
 
-struct ImageAsset *canvas_native_image_asset_shared_clone(const struct ImageAsset *asset);
+struct ImageAsset *canvas_native_image_asset_shared_clone(struct ImageAsset *asset);
 
 bool canvas_native_image_asset_load_from_fd(struct ImageAsset *asset, int fd);
 
@@ -1633,8 +1633,8 @@ struct ContextAttributes *canvas_native_webgl_get_context_attributes(struct WebG
 
 uint32_t canvas_native_webgl_get_error(struct WebGLState *state);
 
-const struct WebGLExtension *canvas_native_webgl_get_extension(const char *name,
-                                                               struct WebGLState *state);
+struct WebGLExtension *canvas_native_webgl_get_extension(const char *name,
+                                                         struct WebGLState *state);
 
 struct WebGLFramebufferAttachmentParameter *canvas_native_webgl_get_framebuffer_attachment_parameter(uint32_t target,
                                                                                                      uint32_t attachment,
@@ -1804,6 +1804,22 @@ void canvas_native_webgl_tex_image2d_image_none(int32_t target,
                                                 int32_t image_type,
                                                 struct WebGLState *state);
 
+void canvas_native_webgl_tex_image2d_canvas2d(int32_t target,
+                                              int32_t level,
+                                              int32_t internalformat,
+                                              int32_t format,
+                                              int32_t image_type,
+                                              struct CanvasRenderingContext2D *canvas,
+                                              struct WebGLState *state);
+
+void canvas_native_webgl_tex_image2d_webgl(int32_t target,
+                                           int32_t level,
+                                           int32_t _internalformat,
+                                           int32_t _format,
+                                           int32_t _image_type,
+                                           struct WebGLState *webgl,
+                                           struct WebGLState *state);
+
 void canvas_native_webgl_tex_image2d(int32_t target,
                                      int32_t level,
                                      int32_t internalformat,
@@ -1825,6 +1841,14 @@ void canvas_native_webgl_tex_image2d_none(int32_t target,
                                           int32_t format,
                                           int32_t image_type,
                                           struct WebGLState *state);
+
+void canvas_native_webgl_tex_image2d_image_asset(int32_t target,
+                                                 int32_t level,
+                                                 int32_t internalformat,
+                                                 int32_t format,
+                                                 int32_t image_type,
+                                                 struct ImageAsset *image_asset,
+                                                 struct WebGLState *state);
 
 void canvas_native_webgl_tex_parameterf(uint32_t target,
                                         uint32_t pname,
@@ -2666,5 +2690,11 @@ void canvas_native_f32_buffer_destroy(struct F32Buffer *buffer);
 uintptr_t canvas_native_f32_buffer_mut_get_length(const struct F32Buffer *buffer);
 
 uintptr_t canvas_native_f32_buffer_get_length(const struct F32Buffer *buffer);
+
+uintptr_t canvas_native_string_buffer_get_length(const struct StringBuffer *buffer);
+
+char *canvas_native_string_buffer_get_value_at(const struct StringBuffer *buffer, uintptr_t index);
+
+void canvas_native_string_buffer_destroy(struct StringBuffer *buffer);
 
 #endif /* CANVAS_C_H */

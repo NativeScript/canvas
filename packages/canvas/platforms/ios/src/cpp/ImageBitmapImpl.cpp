@@ -3,7 +3,6 @@
 //
 
 #include "ImageBitmapImpl.h"
-#include "ImageAssetImpl.h"
 #include "Caches.h"
 
 ImageBitmapImpl::ImageBitmapImpl(ImageAsset* asset)

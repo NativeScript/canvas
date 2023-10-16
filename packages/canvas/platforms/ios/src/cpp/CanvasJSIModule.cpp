@@ -160,11 +160,10 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                 auto asset = canvas_native_image_asset_create();
 
-                auto shared_asset = canvas_native_image_asset_shared_clone(*asset);
+                auto shared_asset = canvas_native_image_asset_shared_clone(asset);
 
 
-                auto ret = new ImageBitmapImpl(
-                        std::move(asset));
+                auto ret = new ImageBitmapImpl(asset);
 
                 auto cbFunc = args[count - 1].As<v8::Function>();
                 auto data = v8::External::New(isolate, ret);
@@ -296,10 +295,9 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
             } else if (len == 5 || len == 6) {
                 auto asset = canvas_native_image_asset_create();
 
-                auto shared_asset = canvas_native_image_asset_shared_clone(*asset);
+                auto shared_asset = canvas_native_image_asset_shared_clone(asset);
 
-                auto ret = new ImageBitmapImpl(
-                        std::move(asset));
+                auto ret = new ImageBitmapImpl(asset);
 
                 auto cbFunc = args[count - 1].As<v8::Function>();
                 auto data = v8::External::New(isolate, ret);
@@ -449,77 +447,177 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
 #ifdef __APPLE__
 
-                /*
+                auto current_queue = new NSOperationQueueWrapper(true);
+                    
+                
+                auto bufferValue = args[0];
 
-                 auto current_queue = NSOperationQueue.currentQueue;
+                if (isArrayBuffer) {
+                    auto arrayBuffer = bufferValue.As<v8::ArrayBuffer>();
+                    auto dataBuffer = (uint8_t *) arrayBuffer->GetBackingStore()->Data();
+                    v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
+                    std::thread thread(
+                            [&dataBuffer, jsi_callback, &options, shared_asset, current_queue](
+                                    float sx_or_options,
+                                    float sy,
+                                    float sw,
+                                    float sh,
+                                    v8::Global<v8::ArrayBuffer> ab,
+                                    size_t size
+                            ) {
 
-        auto file = arguments[0].asString(runtime).utf8(runtime);
+                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+                                        dataBuffer, size,
+                                        sx_or_options,
+                                        sy,
+                                        sw,
+                                        sh,
+                                        options.flipY,
+                                        options.premultiplyAlpha,
+                                        options.colorSpaceConversion,
+                                        options.resizeQuality,
+                                        options.resizeWidth,
+                                        options.resizeHeight, shared_asset);
 
+                                
+                                auto main_task = [jsi_callback, current_queue, done]() {
+                                    
+                                    
+                                    v8::Isolate *isolate = jsi_callback->isolate_;
+                                    v8::Locker locker(isolate);
+                                    v8::Isolate::Scope isolate_scope(isolate);
+                                    v8::HandleScope handle_scope(isolate);
+                                    v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
+                                    v8::Local<v8::External> cbData = jsi_callback->data_->Get(
+                                            isolate).As<v8::External>();
+                                    v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                                    v8::Context::Scope context_scope(context);
 
-        auto cbFunc = std::make_shared<jsi::Value>(
-                                                   runtime, arguments[1]);
+                                    auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
+                                            context).ToLocalChecked()->NewInstance(
+                                            context).ToLocalChecked();
 
-        auto jsi_callback = new JSIReadFileCallback(
-                                                    std::shared_ptr<jsi::Value>(
-                                                                                cbFunc));
+                                    SetNativeType(isolate, ret, NativeType::ImageBitmap);
 
+                                    ret->SetInternalField(0, cbData);
 
-        auto queue = [NSOperationQueue new];
-        [queue addOperationWithBlock:^{
+                                    v8::Local<v8::Value> args[2];
 
+                                    if (done) {
+                                        args[0] = v8::Null(isolate);
+                                        args[1] = ret;
+                                    } else {
+                                        args[0] = v8::Exception::Error(
+                                                ConvertToV8String(isolate, "Failed to load image"));
+                                        args[1] = v8::Null(isolate);
+                                    }
 
-            bool done = false;
-            auto ret = canvas_native_helper_read_file(
-                                                      rust::Str(file.c_str()));
+                                    callback->Call(context, context->Global(), 2, args);
+                                 
+                                    
+                                    delete jsi_callback;
+                                    delete current_queue;
+                                    
+                                };
+                                current_queue->addOperation(main_task);
 
-            if (!canvas_native_helper_read_file_has_error(*ret)) {
-                auto buf = canvas_native_helper_read_file_get_data(
-                                                                   std::move(ret));
+                            },
+                            (float) sx_or_options->NumberValue(context).ToChecked(),
+                            (float) sy->NumberValue(context).ToChecked(),
+                            (float) sw->NumberValue(context).ToChecked(),
+                            (float) sh->NumberValue(context).ToChecked(),
+                                       std::move(ab),
+                            arrayBuffer->ByteLength());
 
-                auto vec_buffer = std::make_shared<VecMutableBuffer<uint8_t>>(
-                                                                              std::move(buf));
+                    thread.detach();
 
-                jsi_callback->data_ = std::make_shared<jsi::Value>(runtime, jsi::ArrayBuffer(
-                                                                                             runtime,
-                                                                                             vec_buffer));
-                done = true;
-            } else {
-                auto error = canvas_native_helper_read_file_get_error(
-                                                                      *ret);
-
-                jsi_callback->data_ = std::make_shared<jsi::Value>(runtime,jsi::String::createFromAscii(
-                                                                                                        runtime,
-                                                                                                        error.c_str()));
-            }
-
-
-
-
-            [current_queue addOperationWithBlock:^{
-
-
-                auto func = jsi_callback->value_->asObject(
-                                                           runtime).asFunction(
-                                                                               runtime);
-
-
-
-                if (done) {
-                    auto buf = jsi_callback->data_->asObject(runtime).getArrayBuffer(runtime);
-                    func.call(runtime, {jsi::Value::null(), std::move(buf)});
-                } else {
-                    auto error = jsi_callback->data_->asString(runtime);
-                    func.call(runtime, {std::move(error), jsi::Value::null()});
+                    return;
                 }
 
-                delete static_cast<JSIReadFileCallback *>(jsi_callback);
+                auto ta = bufferValue.As<v8::TypedArray>();
+                
+                auto array = ta->Buffer();
+                auto offset = ta->ByteOffset();
+                auto size = ta->Length();
+                auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
+                
+                
+                
+                v8::Global<v8::TypedArray> ab(isolate, ta);
+                std::thread thread(
+                        [jsi_callback, &options, data_ptr, size, shared_asset, current_queue](
+                                float sx_or_options,
+                                float sy,
+                                float sw,
+                                float sh,
+                                v8::Global<v8::TypedArray> ab
+                        ) {
 
+                            auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+                                    data_ptr, size,
+                                    sx_or_options,
+                                    sy,
+                                    sw,
+                                    sh,
+                                    options.flipY,
+                                    options.premultiplyAlpha,
+                                    options.colorSpaceConversion,
+                                    options.resizeQuality,
+                                    options.resizeWidth,
+                                    options.resizeHeight, shared_asset);
 
-            }];
-        }];
+                            
+                            auto main_task = [jsi_callback, current_queue, done]() {
+                                
+                                
+                                v8::Isolate *isolate = jsi_callback->isolate_;
+                                v8::Locker locker(isolate);
+                                v8::Isolate::Scope isolate_scope(isolate);
+                                v8::HandleScope handle_scope(isolate);
+                                v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
+                                v8::Local<v8::External> cbData = jsi_callback->data_->Get(
+                                        isolate).As<v8::External>();
+                                v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                                v8::Context::Scope context_scope(context);
 
+                                auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
+                                        context).ToLocalChecked()->NewInstance(
+                                        context).ToLocalChecked();
 
-                 */
+                                SetNativeType(isolate, ret, NativeType::ImageBitmap);
+
+                                ret->SetInternalField(0, cbData);
+
+                                v8::Local<v8::Value> args[2];
+
+                                if (done) {
+                                    args[0] = v8::Null(isolate);
+                                    args[1] = ret;
+                                } else {
+                                    args[0] = v8::Exception::Error(
+                                            ConvertToV8String(isolate, "Failed to load image"));
+                                    args[1] = v8::Null(isolate);
+                                }
+
+                                callback->Call(context, context->Global(), 2, args);
+                             
+                                
+                                delete jsi_callback;
+                                delete current_queue;
+                                
+                            };
+                            current_queue->addOperation(main_task);
+
+                          
+
+                        },
+                        (float) sx_or_options->NumberValue(context).ToChecked(),
+                        (float) sy->NumberValue(context).ToChecked(),
+                        (float) sw->NumberValue(context).ToChecked(),
+                        (float) sh->NumberValue(context).ToChecked(), std::move(ab));
+                thread.detach();
+                
+                
 
 #endif
 
@@ -810,6 +908,120 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
     thread.detach();
     
 #endif
+    
+    
+    
+#ifdef __APPLE__
+    
+    auto current_queue = new NSOperationQueueWrapper(true);
+    
+    auto queue = new NSOperationQueueWrapper(false);
+    
+    auto task = [jsi_callback, current_queue, queue, file]() {
+        
+        
+        
+        bool done = false;
+        auto ret = canvas_native_helper_read_file(file.c_str());
+
+        if (!canvas_native_helper_read_file_has_error(ret)) {
+            auto buf = canvas_native_helper_read_file_get_data(ret);
+            
+            jsi_callback->SetData(buf);
+
+            done = true;
+        } else {
+            auto error = canvas_native_helper_read_file_get_error(ret);
+
+            jsi_callback->SetError((char*)error);
+        }
+
+        canvas_native_helper_destroy(ret);
+        
+        
+        
+        
+        auto main_task = [jsi_callback, current_queue, queue, done]() {
+            
+
+            v8::Isolate *isolate = jsi_callback->isolate_;
+            v8::Locker locker(isolate);
+            v8::Isolate::Scope isolate_scope(isolate);
+            v8::HandleScope handle_scope(isolate);
+            v8::Local<v8::Function> callback = jsi_callback->callback_.Get(isolate);
+            v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+            v8::Context::Scope context_scope(context);
+
+            v8::Local<v8::Value> args[2];
+
+            if (done) {
+                args[0] = v8::Null(isolate);
+
+                auto vec = jsi_callback->data_;
+                
+                
+                auto buf = (void*)canvas_native_u8_buffer_get_bytes(vec);
+                auto size = (size_t)canvas_native_u8_buffer_get_length(vec);
+                
+
+                auto store = v8::ArrayBuffer::NewBackingStore(buf, size,
+                                                              [](void *data,
+                                                                 size_t length,
+                                                                 void *deleter_data) {
+                                                                  if (deleter_data !=
+                                                                      nullptr) {
+                                                                      // a little extreme :'D
+                                                                      delete static_cast<JSIReadFileCallback *>(deleter_data);
+                                                                  }
+                                                              },
+                                                              jsi_callback);
+
+                args[1] = v8::ArrayBuffer::New(isolate, std::move(store));
+            } else {
+                auto error = jsi_callback->error_;
+                args[0] = v8::Exception::Error(ConvertToV8String(isolate, error));
+                args[1] = v8::Null(isolate);
+            }
+
+            v8::TryCatch tc(isolate);
+            v8::Local<v8::Value> result;
+            if (!callback->Call(context, context->Global(), 2, args).ToLocal(
+                    &result)) {
+                if (tc.HasCaught()) {
+
+                    v8::Local<v8::Value> stack;
+                    bool success = tc.StackTrace(context).ToLocal(&stack);
+                    if (!success || stack.IsEmpty()) {
+                        delete jsi_callback;
+                        return;
+                    }
+
+                    v8::Local<v8::String> stackV8Str;
+                    success = stack->ToDetailString(context).ToLocal(&stackV8Str);
+                    if (!success || stackV8Str.IsEmpty()) {
+                        delete jsi_callback;
+                        return;
+                    }
+                    LogToConsole(ConvertFromV8String(isolate, stackV8Str));
+
+                }
+            }
+
+            if (!done) {
+                delete jsi_callback;
+            }
+            
+            delete queue;
+            delete current_queue;
+            
+        };
+        current_queue->addOperation(main_task);
+    };
+    
+    queue->addOperation(task);
+#endif
+    
+    
 
 }
 

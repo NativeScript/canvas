@@ -8,7 +8,17 @@
 
 #ifdef __APPLE__
 #include <NativeScript/v8.h>
-#include <CanvasNative/CanvasNative.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <CanvasNative/canvas_ios.h>
+#include <CanvasNative/canvas_native.h>
+
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 #ifdef __ANDROID__

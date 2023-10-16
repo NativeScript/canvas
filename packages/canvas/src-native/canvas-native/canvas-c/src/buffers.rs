@@ -1,4 +1,5 @@
 use bytes::BytesMut;
+use std::ffi::{c_char, CString};
 
 #[derive(Clone)]
 enum U8BufferInner {
@@ -212,13 +213,13 @@ impl<'a> StringRefBuffer<'a> {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u8_buffer_get_bytes(buffer: *const U8Buffer) -> *const u8 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.get_buffer().as_ptr()
 }
 #[no_mangle]
 pub extern "C" fn canvas_native_u8_buffer_get_bytes_mut(buffer: *mut U8Buffer) -> *mut u8 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &mut *buffer };
     buffer.get_buffer_mut().as_mut_ptr()
 }
@@ -235,27 +236,27 @@ pub extern "C" fn canvas_native_u8_buffer_destroy(buffer: *mut U8Buffer) {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u8_buffer_mut_get_length(buffer: *const U8Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u8_buffer_get_length(buffer: *const U8Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u16_buffer_get_bytes(buffer: *const U16Buffer) -> *const u16 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.get_buffer().as_ptr()
 }
 #[no_mangle]
 pub extern "C" fn canvas_native_u16_buffer_get_bytes_mut(buffer: *mut U16Buffer) -> *mut u16 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &mut *buffer };
     buffer.get_buffer_mut().as_mut_ptr()
 }
@@ -272,27 +273,27 @@ pub extern "C" fn canvas_native_u16_buffer_destroy(buffer: *mut U16Buffer) {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u16_buffer_mut_get_length(buffer: *const U16Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u16_buffer_get_length(buffer: *const U16Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u32_buffer_get_bytes(buffer: *const U32Buffer) -> *const u32 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.get_buffer().as_ptr()
 }
 #[no_mangle]
 pub extern "C" fn canvas_native_u32_buffer_get_bytes_mut(buffer: *mut U32Buffer) -> *mut u32 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &mut *buffer };
     buffer.get_buffer_mut().as_mut_ptr()
 }
@@ -309,27 +310,27 @@ pub extern "C" fn canvas_native_u32_buffer_destroy(buffer: *mut U32Buffer) {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u32_buffer_mut_get_length(buffer: *const U32Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_u32_buffer_get_length(buffer: *const U32Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_i32_buffer_get_bytes(buffer: *const I32Buffer) -> *const i32 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.get_buffer().as_ptr()
 }
 #[no_mangle]
 pub extern "C" fn canvas_native_i32_buffer_get_bytes_mut(buffer: *mut I32Buffer) -> *mut i32 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &mut *buffer };
     buffer.get_buffer_mut().as_mut_ptr()
 }
@@ -346,27 +347,27 @@ pub extern "C" fn canvas_native_i32_buffer_destroy(buffer: *mut I32Buffer) {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_i32_buffer_mut_get_length(buffer: *const I32Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_i32_buffer_get_length(buffer: *const I32Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_f32_buffer_get_bytes(buffer: *const F32Buffer) -> *const f32 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.get_buffer().as_ptr()
 }
 #[no_mangle]
 pub extern "C" fn canvas_native_f32_buffer_get_bytes_mut(buffer: *mut F32Buffer) -> *mut f32 {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &mut *buffer };
     buffer.get_buffer_mut().as_mut_ptr()
 }
@@ -383,14 +384,44 @@ pub extern "C" fn canvas_native_f32_buffer_destroy(buffer: *mut F32Buffer) {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_f32_buffer_mut_get_length(buffer: *const F32Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_f32_buffer_get_length(buffer: *const F32Buffer) -> usize {
-    assert!(buffer.is_null());
+    assert!(!buffer.is_null());
     let buffer = unsafe { &*buffer };
     buffer.length()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_string_buffer_get_length(buffer: *const StringBuffer) -> usize {
+    assert!(!buffer.is_null());
+    let buffer = unsafe { &*buffer };
+    buffer.length()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_string_buffer_get_value_at(
+    buffer: *const StringBuffer,
+    index: usize,
+) -> *mut c_char {
+    assert!(!buffer.is_null());
+    let buffer = unsafe { &*buffer };
+    match buffer.0.get(index) {
+        None => std::ptr::null_mut(),
+        Some(value) => CString::new(value.to_string()).unwrap().into_raw(),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_string_buffer_destroy(buffer: *mut StringBuffer) {
+    if buffer.is_null() {
+        return;
+    }
+    unsafe {
+        let _ = Box::from_raw(buffer);
+    }
 }

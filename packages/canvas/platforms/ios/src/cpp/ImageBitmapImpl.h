@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ImageAssetImpl.h"
 #include "Helpers.h"
 #include <vector>
 

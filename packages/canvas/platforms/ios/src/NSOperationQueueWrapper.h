@@ -1,13 +1,11 @@
-#import <Foundation/Foundation.h>
-
-
+#include <functional>
 class NSOperationQueueWrapper {
 public:
     NSOperationQueueWrapper(bool currentQueue);
     ~NSOperationQueueWrapper();
 
-    void addOperation(void (*task)());
+    void addOperation(std::function<void()> task);
 
 private:
-    NSOperationQueue *operationQueue;
+void *operationQueue;
 };

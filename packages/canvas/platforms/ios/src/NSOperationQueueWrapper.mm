@@ -1,8 +1,5 @@
 #import "NSOperationQueueWrapper.h"
-
-
-#import <Foundation/Foundation.h>
-#import "NSOperationQueueWrapper.h"
+#include <Foundation/Foundation.h>
 
 @interface NSOperationQueueWrapperObjC : NSObject
 - (void)addOperation:(void (^)())task;
@@ -28,13 +25,10 @@
     return self;
 }
 
-- (void)dealloc {
-    // In ARC, there's no need to manually release
-}
+- (void)dealloc {}
 
 - (void)addOperation:(void (^)())task {
     NSBlockOperation* operation = [NSBlockOperation blockOperationWithBlock:^{
-        // Call the C++ task
         task();
     }];
     
@@ -51,18 +45,29 @@
 NSOperationQueueWrapper::NSOperationQueueWrapper(bool currentQueue) {
     if (currentQueue) {
         NSOperationQueueWrapperObjC* objcWrapper = [[NSOperationQueueWrapperObjC alloc] initWithCurrentQueue];
-        operationQueue = [objcWrapper getOperationQueue];
+        
+        CFTypeRef ptr = (__bridge_retained CFTypeRef)objcWrapper;
+    
+        operationQueue = (void*)ptr;
     }else {
-        NSOperationQueueWrapperObjC* objcWrapper = [NSOperationQueueWrapperObjC init];
-        operationQueue = [objcWrapper getOperationQueue];
+        NSOperationQueueWrapperObjC* objcWrapper = [[NSOperationQueueWrapperObjC alloc] init];
+        CFTypeRef ptr = (__bridge_retained CFTypeRef)objcWrapper;
+        operationQueue = (void*)ptr;
     }
    
 }
 
-NSOperationQueueWrapper::~NSOperationQueueWrapper() {}
+NSOperationQueueWrapper::~NSOperationQueueWrapper() {
+    if(operationQueue != nullptr){
+        CFBridgingRelease(operationQueue);
+        operationQueue = nullptr;
+    }
+}
 
-void NSOperationQueueWrapper::addOperation(void (*task)()) {
-    NSOperationQueueWrapperObjC* queue = static_cast<NSOperationQueueWrapperObjC*>(operationQueue);
+void NSOperationQueueWrapper::addOperation(std::function<void()> task) {
+    
+    auto queue = (__bridge NSOperationQueueWrapperObjC*)(operationQueue);
+    
     [queue addOperation:^{
         task();
     }];

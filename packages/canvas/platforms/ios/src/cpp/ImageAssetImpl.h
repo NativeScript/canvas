@@ -9,6 +9,7 @@
 #include <vector>
 #include "Helpers.h"
 #include "Common.h"
+#include "NSOperationQueueWrapper.h"
 
 class ImageAssetImpl{
 public:
